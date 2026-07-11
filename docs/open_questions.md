@@ -19,7 +19,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 ### Q3. Are services operated or referred? — PROVISIONAL
 - **Source:** Model v3, Appendix A.3. A real fork on the highest-frequency revenue line.
-- **Provisional stance in the specs:** the service-order flow (docs 07/09/10) is designed **referral-first**: the provider fulfils and is the merchant of record; myUNO takes a configurable take-rate (`services.take_rate_pct`). The data model carries a per-service `fulfilment_mode` field (`referred` / `operated`) so switching any category to operated later is a configuration change, not a redesign.
+- **Provisional stance in the specs:** the service-order flow (docs 07/09/10) is designed **referral-first for fulfilment**: the provider fulfils and bears service liability; myUNO takes a configurable take-rate (`services.take_rate_pct`). Payment, however, runs through the platform's licensed-provider checkout in both modes (one checkout, one refund rail — doc 10 §3), with the provider's share remitted on a payout cadence. The per-service `fulfilment_mode` field (`referred` / `operated`) makes switching any category to operated a configuration change, not a redesign.
 - **Needs from founder:** confirm referral-first for the first loop, and which categories (if any) should be operated in-house from day one (e.g. housekeeping performed by own staff).
 
 ### Q4. How many projects, and how are they chosen? — OPEN

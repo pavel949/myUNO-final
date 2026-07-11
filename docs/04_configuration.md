@@ -81,6 +81,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 |---|---|---|---|---|
 | `services.take_rate_pct` | percent | project, per-category via key suffix `services.take_rate_pct.<category_key>` | `15` ⚠ Q14 | myUNO's commission on service orders; category-specific keys beat the general one. |
 | `services.advance_notice_hours_default` | int | project | `24` | Default earliest bookable slot for new services. |
+| `services.require_admin_approval` | boolean | global | `true` | New/edited provider services need an admin spot-check before going live (doc 07 F-PROV-2). |
 | `services.payout_period` | enum `weekly, biweekly, monthly` | global | `weekly` | Provider remittance cadence (doc 10 §5). |
 | `tickets.sla_hours.urgent` / `.high` / `.normal` / `.low` | int | project | `4` / `24` / `72` / `168` | Response SLA per priority — sets `sla_due_at`; breach fires escalation (doc 09 §3). |
 | `tickets.default_assignee` | enum `unassigned, project_ops_lead` | project | `project_ops_lead` | Auto-assignment target on creation (the project's designated lead staff identity, set in project admin). |

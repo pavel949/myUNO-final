@@ -21,9 +21,11 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | `booking.requests_block_calendar` | boolean | project | `false` | Whether un-answered requests block availability. |
 | `booking.min_nights_default` | int | unit | `2` | Default minimum stay for new units (each unit stores its own). |
 | `booking.max_advance_days` | int | project | `365` | How far ahead stays can be booked. |
+| `booking.payment.methods_enabled` | json (list) | project | `["cash"]` | Which payment methods are offered (Q8). `cash` is the loop-one primary rail for the RU clientele; add `card_provider` when the licensed provider (default **Opn/Omise**) is switched on. Crypto is not an option (Q21). |
+| `booking.payment.cash_receipt_required` | boolean | project | `true` | Require a receipt/чек reference when cash is accepted (recorded on the `Payment`). |
 | `booking.same_day_cutoff_hour` | int (0–23) | project | `16` | Latest hour (project timezone) a same-day check-in can be booked. |
-| `booking.deposit.mode` | enum `off, preauth` | unit | `off` ⚠ Q6 | Security deposit handling. `preauth` = card pre-authorization via the licensed provider, released after check-out inspection. Funds are never held by myUNO. |
-| `booking.deposit.amount_thb` | money_thb | unit | `0` ⚠ Q6 | Pre-auth amount when mode is `preauth`. |
+| `booking.deposit.mode` | enum `off, preauth` | unit | `off` (confirmed Q6) | Security deposit handling. `preauth` = card pre-authorization via the licensed provider, released after check-out inspection. Funds are never held by myUNO; **deposits are never taken in cash** (that would be fund-holding). |
+| `booking.deposit.amount_thb` | money_thb | unit | `0` (confirmed Q6) | Pre-auth amount when mode is `preauth`. |
 | `booking.checkin_hour` / `booking.checkout_hour` | int | unit | `15` / `11` | Standard times shown everywhere and used by ops scheduling. |
 | `owner_stay.charge_cleaning` | boolean | project | `true` ⚠ Q7 | Whether the post-owner-stay turnover clean is charged to the owner's statement. |
 | `owner_stay.notice_hours` | int | project | `48` | Minimum notice for an owner to book their own unit (lets ops clear conflicts). |
@@ -48,20 +50,19 @@ The season calendar is a `schedule` parameter edited with a dedicated calendar e
 
 | Key | Type | Scope | Default | Meaning |
 |---|---|---|---|---|
-| `pricing.season.calendar` | schedule | project | `[{season:"peak", from:"12-15", to:"01-15"}, {season:"high", from:"11-01", to:"04-30"}, {season:"low", from:"05-01", to:"10-31"}]` ⚠ Q13 | Month-day ranges → season names; more specific ranges win (peak sits inside high). |
-| `pricing.season.markup_pct.high` | percent | project | `25` ⚠ Q13 | Markup over base rate for `high` nights. |
-| `pricing.season.markup_pct.peak` | percent | project | `60` ⚠ Q13 | Markup for `peak` nights. |
-| `pricing.season.markup_pct.low` | percent | project | `0` | Markup (or discount, negative allowed) for `low` nights. |
+| `pricing.season.calendar` | schedule | project, unit | see below | **A fully flexible list of named price periods** — any number of them, each `{name, from (MM-DD), to (MM-DD), markup_pct}`. Per Q13 there is **no fixed set of seasons**: the founder adds/removes periods (peak, high, shoulder, low, an event week — anything) and edits every date and percentage in the admin panel. `markup_pct` may be negative (a discount). More specific (shorter) ranges win where periods overlap. |
 | `pricing.los_discount.weekly_pct` | percent | unit | `5` | Length-of-stay discount, ≥ 7 nights. |
 | `pricing.los_discount.monthly_pct` | percent | unit | `20` | Length-of-stay discount, ≥ 28 nights (beats weekly). |
 | `pricing.cleaning_fee_thb` | money_thb | unit | `0` | Per-stay cleaning fee added to the breakdown (0 = folded into rate). |
 | `pricing.guest_service_fee_pct` | percent | project | `0` | Optional guest-facing service fee line (0 = none; kept for parity decisions later). |
 
+**Default `pricing.season.calendar`** (an editable *starting example* for The Title Legendary — Phuket-conventional, not a constraint): `[{name:"peak", from:"12-15", to:"01-15", markup_pct:60}, {name:"high", from:"11-01", to:"04-30", markup_pct:25}, {name:"shoulder", from:"05-01", to:"06-30", markup_pct:10}, {name:"low", from:"07-01", to:"10-31", markup_pct:0}]`. The founder reshapes this freely.
+
 Night price resolution (doc 02 §3.4): `PricingRule` → `base_nightly_thb × (1 + season markup)` → `base_nightly_thb`.
 
 ## 5. Group `cancellation` — the policies
 
-Named policies are `schedule` parameters: an ordered list of `{days_before_checkin: N, refund_pct: P}` steps — the refund is the first step whose threshold the cancellation moment still satisfies. Snapshotted onto every booking at creation (doc 02 §3.1), so edits never touch existing bookings. Defaults ⚠ Q12:
+Named policies are `schedule` parameters: an ordered list of `{days_before_checkin: N, refund_pct: P}` steps — the refund is the first step whose threshold the cancellation moment still satisfies. Snapshotted onto every booking at creation (doc 02 §3.1), so edits never touch existing bookings. Defaults (confirmed Q12, editable any time):
 
 | Key | Type | Scope | Default schedule |
 |---|---|---|---|
@@ -71,7 +72,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `cancellation.default_policy` | enum of policy names | unit | `moderate` | Which policy new units get. |
 | `cancellation.host_cancel_full_refund` | boolean | global | `true` | Platform/host-side cancellation always refunds 100% regardless of policy. |
 | `cancellation.no_show_treated_as` | enum `late_cancel, forfeit` | project | `late_cancel` | No-show refund treatment (late_cancel = the `days:0` step applies). |
-| `service.cancel_window_hours` | int | project | `24` ⚠ Q12 | Service orders: full refund until this many hours before the slot; none after. |
+| `service.cancel_window_hours` | int | project | `24` (confirmed Q12) | Service orders: full refund until this many hours before the slot; none after. |
 | `service.provider_no_show_refund_pct` | percent | global | `100` | Always full refund on provider no-show (also auto-raises a ticket). |
 | `service.accept_sla_hours` | int | project | `12` | Hours a provider has to accept a paid order before auto-decline + full refund. |
 
@@ -92,9 +93,10 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 
 | Key | Type | Scope | Default | Meaning |
 |---|---|---|---|---|
-| `finance.statement.day_of_month` | int | global | `5` ⚠ Q17 | Day statements for the previous month are generated as drafts. |
+| `finance.statement.day_of_month` | int | global | `5` (confirmed Q17) | Day statements for the previous month are generated as drafts. |
 | `finance.statement.requires_admin_signoff` | boolean | global | `true` | Draft → published requires admin action (the v3 sign-off gate). |
 | `finance.occupancy_tax_pct` | percent | project | `0` | Occupancy/local tax line if applicable (0 until counsel says otherwise; the breakdown supports it from day one). |
+| `finance.payout.default_thb_account` | string | global | `Bank of Ayudhya (Krungsri) 475-1-22131-3 · SWIFT AYUDTHBK` | The company account owner THB payouts are sent from (Q18); recorded on each `Payout`. International/non-THB payouts are a future decision (Q22). |
 | `compliance.tm30_sla_hours` | int | global | `24` | **The legal deadline.** Editable only to be *stricter*; the editor refuses values > 24. |
 | `compliance.tm30_escalation_hours_before` | int | global | `6` | How long before `due_at` an unfiled TM30 escalates to admin. |
 | `compliance.passport_required_hours_before_checkin` | int | project | `24` | Pre-arrival passport deadline; unmet → `verification_status=failed` path (Q11). |

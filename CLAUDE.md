@@ -6,83 +6,71 @@ This file is read at the start of every session. It is the project's constitutio
 
 **myUNO** — the operating platform for serviced living in Phuket's Andaman corridor, for a Russian-speaking clientele. It runs a residence's whole life: **stay, live, own**. Model: `docs/business/Ignatev_Estate_Business_and_Operating_Model_v3.md`. Positioning: `docs/business/positioning.md`. Journey coverage: `docs/business/user_journey_audit.md`.
 
+**Status: the specification suite (docs 00–16) is complete.** The build phase executes `docs/16_build_plan.md` one task at a time. Decisions D1–D10 are locked in `docs/01_architecture_decisions.md`; if any must move, that document changes first and the suite follows.
+
 ## The architecture spine — non-negotiable
 
-**project → unit → identity → roles**
+**project → unit → identity → roles**, enforced **in the schema** (doc 02), not by convention:
 
 - **Project** — a development where inventory is concentrated; first-class, with its own brand, community, services.
-- **Unit** — a home inside a project; at any time belongs to one project and one owner.
+- **Unit** — a home inside a project; at any time belongs to one project and one owner. Its **engagement type** (direct-managed / via management company / owner-direct) selects its configurable economics.
 - **Identity** — a person, global and singular.
-- **Roles** — scoped to projects and units; they decide what a person sees and can do.
+- **Roles** — `RoleAssignment` rows scoped to projects and units; **roles are data, not code branches**. Permission checks go through `core.can()` against the doc 03 matrix.
 - **Portfolio overlay** — an owner's aggregated view across all projects where they hold units.
 
-The platform is the single **system of record**. OTAs, Telegram, WhatsApp, commodity CRM/booking tools are all **channels** to it. Enter a unit once; it appears everywhere; the transaction happens on our rails. If a requirement seems to need a different shape, **stop and ask**.
+The platform is the single **system of record** (map: doc 14 §4). OTAs, Telegram, WhatsApp, the CRM, and payment tools are all **channels** onto it. Enter a unit once; it appears everywhere; the transaction happens on our rails. If a requirement seems to need a different shape, **stop and ask**.
 
-## Modular architecture — a modular monolith
+## The locked stack & shape (doc 01 D2, doc 14)
 
-- **Core** (never duplicated): identity / customer base, projects, units, bookings, payments, compliance.
-- **Modules** attach to the core through a **defined interface**.
-- **Three rules:** (1) a module never owns the customer — the customer lives in the core; (2) modules connect only through the core; (3) common → core, specific → module.
+One **modular monolith**: Next.js (App Router) + TypeScript strict + PostgreSQL + Prisma (migration files, never db-push), Tailwind themed from the design tokens, Vitest three-tier tests. Modules live in `src/modules/*`, each exposing one `index.ts` interface. **Three rules:** (1) a module never owns the customer — only `core` writes identities/roles; (2) modules connect only through the core and the shared seams; (3) common → core, specific → module. No microservices; no plugin infrastructure before the first loop.
 
-Build as a **modular monolith, not microservices.** Design boundaries now; don't build plugin infrastructure before the first loop.
+## Everything editable without code — three layers (built first, always used)
 
-## Everything editable without code — three layers
+- **Content / i18n.** Every user-facing string is a **content key** (RU/EN/TH) in the database, edited in the admin panel, rendered via `t()`. Agents never write user-facing copy inline — missing strings become keys with `needs_review` drafts (doc 05 §1). The `no-literal-ui-text` lint enforces this.
+- **Configuration / business rules.** Every commission, fee, rate, cap, markup, SLA — and the **cancellation policy** — is a registered parameter (doc 04) read via `config.get()`, overridable per project/unit, audit-logged. New rules must be added to doc 04 in the same commit.
+- **Design.** All UI comes from the **design system** (doc 06): tokens, components with all states (empty/loading/error included), screen compositions. Agents never invent colours, type, or components.
 
-- **Content / i18n.** Every user-facing string is a **content key** with **RU / EN / TH**, editable via the admin panel. Agents never write user-facing copy inline.
-- **Configuration / business rules.** Every commission, fee, rate, cap, markup, SLA — and the **cancellation policy** — lives in **editable configuration**, never hardcoded, overridable per project.
-- **Design.** All UI is built from the **design system** (`docs/06_design_system.md`), which expands the brand. Agents never invent colours, type, or components.
-
-**The rule that ties them together:** the look comes from the **design system**, the words from the **content layer**, the rules from **configuration**, the structure from the **specs**. Nothing is invented.
+**The rule that ties them together:** the look from the **design system**, the words from the **content layer**, the rules from **configuration**, the structure from the **specs**. Nothing is invented.
 
 ## Roles & permissions
 
-Everyone is a role: owner, guest, buyer, provider, staff (operations, on-site host), management company / juristic person, admin/founder. Roles are scoped to projects and units. Announcements can be posted by the **juristic person / management company**, not only by myUNO. Nothing is visible or doable outside a role's scope.
+Roles: owner, guest, resident, buyer, provider member, MC member, juristic member, staff (ops, on-site host), admin/founder — scoped to projects and units per the doc 03 matrix (its table-driven test must stay in lockstep). Announcements are posted by **myUNO or the juristic person / management company**. Any role may consume services. Nothing is visible or doable outside a role's scope; enforcement is server-side in every query.
 
 ## Communication & services — a shared layer across roles
 
-- Messaging, tickets/complaints, and announcements are a **shared layer**, not locked to guest↔host. Any owner or resident can raise a ticket and **see its status** — transparency for remote owners.
-- The concierge / partner services marketplace (repairs, cleaning, transfers, …) is available to **any role** — not only guests. Messages, tickets, announcements, and service orders **attach to the identity and its role**.
-- **Booking is first-class for both stays and services**, and so are their **cancellation, refund, and modification** flows — not afterthoughts. Every flow covers its **unhappy paths** (payment fails, verification fails, TM30 can't file, provider no-show), not only the happy path.
+Threads, tickets, announcements, and notifications are the **shared `comms` layer** (doc 09), never rebuilt inside a feature. Any owner or resident can raise a ticket and **see its status and history** — transparency for remote owners. The services marketplace serves **any role**; orders attach to the identity **and its role**. Booking is first-class for both stays and services, and so are **cancellation, refund, and modification** — with every unhappy path (payment fails, verification fails, TM30 can't file, provider no-show) specified in doc 07 and built.
 
-## Unit engagement types
+## Money rules (doc 10)
 
-A unit relates to the platform in one of several ways, each with its own **configurable economics**: directly managed (NOI split with cap), listed via a management company (platform fee), owner-direct listing. Engagement type drives which commission config applies.
-
-## Scope discipline — first loop first
-
-Build the **reachable first loop only**: owners + guests + services + capturing the guest→buyer signal, in **one project**. The spine, roles, config, content, design, and communication foundations exist from day one. Breadth (multi-project at scale, whole-complex onboarding, management-company absorption, the full community marketplace, a full service-desk) comes later. Flag scope creep and stop.
+Charging is **cash-first in loop one** — a recorded cash payment captures who took it, when, and the receipt/чек number (the primary rail for the RU clientele) — with the provider **payment seam** behind it (mock adapter; default provider **Opn/Omise**; cards and Thai methods switched on later — Q8). **Crypto is not accepted** (SEC/BOT-licensed activity — Q21). Amounts are **server-computed, client-sent totals never trusted**; THB only (satang integers); deposits are provider pre-authorizations only, **never held in cash**; the **ledger is append-only** and every statement number links to its source rows; statements gate on admin sign-off; a direct-managed unit without its NOI cap refuses statement generation — no guessing.
 
 ## Legal non-negotiables
 
 - **Currency exchange:** never operate FX. Route to a licensed exchanger only. (AMLO.)
-- **Guest funds / deposits:** never hold funds without a license. Route through a licensed payment provider. (Bank of Thailand.)
-- **Immigration:** file TM30 within 24 hours of every foreign guest's arrival.
-- **Licensing:** confirm short-let / permitted-use legality per property before it goes live.
-- **Personal data:** handle passports, payment data, PII under Thailand's PDPA (see the security spec).
+- **Guest funds / deposits:** never hold funds without a license. Deposits are provider pre-authorizations only (Q6). (Bank of Thailand.)
+- **Immigration:** TM30 within 24 hours of every foreign guest's arrival — a first-class SLA object with escalation (doc 07 F-OPS-2). The 24h config ceiling may only be tightened.
+- **Licensing:** permitted-use confirmation is a hard gate before any unit goes live.
+- **Personal data:** passports, payment data, PII under PDPA per doc 12 — field-level encryption for 🔒 fields, access logging, retention jobs. Builders never log PII, never store card data, never put PII in analytics or URLs.
 
 ## No invention — stop and ask
 
-If a detail is missing — a text, a rule, a field, a flow step, a component — the agent **STOPS and ASKS**. It never invents.
+If a detail is missing — a text, a rule, a field, a flow step, a component — the agent **STOPS and ASKS**: log it in `docs/open_questions.md` and stop at that edge. Never guess. ⚠-marked provisional defaults in the specs trace to open questions Q1–Q20 and stand until the founder rules.
 
 ## Legacy policy
 
-`legacy/*` is a **parts bin, not a foundation, and not the look.** Reuse isolated components and logic. **Rebuild the data model** around the spine; the visual language is single and new. Never wire the new app to legacy architecture; never run legacy code as part of the new system.
+The founder's old repos (sibling folders, see `legacy/README.md`) are a **parts bin, not a foundation, and not the look**. Doc 00 holds the take/don't-take decisions: re-implement taken *patterns* idiomatically inside `src/modules/*`; never import legacy files, schemas, or visuals; never run legacy code as part of the new system.
 
-## Fable owns integrity and finds the gaps
+## Working conventions (build phase)
 
-Fable is responsible that the whole system works end to end as **one coherent, functional product**. It **finds gaps**: it walks every role's journey in `docs/business/user_journey_audit.md` from start to finish (especially the remote owner) and maintains `docs/open_questions.md` — anything a scenario needs that the specs don't cover. It asks the founder rather than inventing.
-
-## Working conventions
-
-- Modular monolith, clear boundaries; one module at a time.
-- **Stop and ask** at real forks.
-- **Commit after each unit of work**, with a clear message.
+- Execute `docs/16_build_plan.md` **one task per session, in order**. Read the task's named specs first.
+- Every task ends with green tests + build + lints and **a commit naming the task id**. Tests named in a DoD are mandatory.
+- New events → doc 13; new notifications → doc 11; new config → doc 04; new content namespaces → doc 05 — updated in the same commit, or the addition is invalid.
 - Write and explain for a **non-technical founder** — plain language.
-- Do not expand scope on your own. Smaller and correct beats broad and shaky.
+- Do not expand scope. First loop first (through T-032); smaller and correct beats broad and shaky.
 
 ## Where things are
 
 - `docs/business/` — model, positioning, journey audit. `docs/brand/` — brand and art direction.
-- `docs/00_legacy_audit` · `01_architecture_decisions` · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` · `15_deployment` · `16_build_plan` · `open_questions` (maintained)
+- The suite: `docs/00_legacy_audit` · `01_architecture_decisions` (locked D1–D10) · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` · `15_deployment` · `16_build_plan` · `open_questions` (maintained — the founder's question queue).
 
 *Maintained by Fable. Keep this file current as the architecture solidifies.*

@@ -1,3 +1,6 @@
+-- CreateExtension for citext
+CREATE EXTENSION IF NOT EXISTS "citext";
+
 -- CreateEnum
 CREATE TYPE "IdentityStatus" AS ENUM ('active', 'invited', 'blocked', 'merged');
 

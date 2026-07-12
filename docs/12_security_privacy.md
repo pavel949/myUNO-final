@@ -21,7 +21,7 @@
 
 ## 2. PDPA posture
 
-- **Controller:** the operating legal entity (⚠ Q16 — exact name goes into `legal.privacy` content).
+- **Controller:** **Ignatev Estate Co., Ltd** (DBD 083-5-56602358-7; Plaza Del Mar, No.1 Pasak-Koktanod Rd, office 115–116, Cherngtalay, Thalang, Phuket 83110; director Pavel Ignatev; pavel@ignatevestate.com; +66 92 240 7355) — the operating entity and PDPA data controller (Q16). Displayed in `legal.privacy`. A dedicated privacy-contact mailbox may be added later if different from the above.
 - **Consent & notice:** registration and checkout consent lines link the privacy notice (`legal.privacy`, RU/EN/TH); passport capture screens carry the purpose explainer (`checkin.tm30.explainer` — "Thai immigration law requires…").
 - **Data-subject rights:** access/export (account settings → "download my data" produces the identity's records minus others' data), rectification (profile editing; staff-assisted for records), deletion (account deletion anonymizes the identity — name → "Deleted user", contact fields nulled — while preserving financial/compliance records the law requires; the request and outcome are audit-logged).
 - **Cross-border:** hosting region choice (doc 15) and the provider list are disclosed in the privacy notice.

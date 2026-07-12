@@ -22,7 +22,7 @@ URL scheme: public site under `/{locale}/…` (`ru` default, `hreflang` alternat
 | `/providers` | Providers audience page | `audience.providers.*` | Apply (F-PROV-1) |
 | `/trust` | How trust works | `trust.*` | — |
 | `/trust/ombudsman` | The credential (⚠ Q15 content) | `trust.ombudsman.*` | — |
-| `/legal/terms`, `/legal/privacy` | Legal (⚠ Q16 content) | `legal.*` | — |
+| `/legal/terms`, `/legal/privacy` | Legal (Q16 facts below) | `legal.*` | — |
 | `/auth/*` | Register/login/reset/claim | `auth.*` | F-AUTH |
 
 ## 2. Master landing `/`
@@ -34,7 +34,9 @@ Sections in order (S1 composition):
 4. **Trust, made visible** — `landing.trust.title` + three steps (`landing.trust.verified/handled/protected`) with `VerifiedBadge` iconography; link to `/trust`.
 5. **Featured projects** — live projects as `ProjectHeader` cards ("{name} · on myUNO"), from data.
 6. **Services taste** — a `ServiceCard` rail + `landing.services.title/body` ("everything around the stay, vetted").
-7. **Footer** (`deep`): nav, locale switcher, legal/trust links, entity details (`legal.entity.*` ⚠ Q16).
+7. **Footer** (`deep`): nav, locale switcher, legal/trust links, entity details (`legal.entity.*` — seeded from the facts below, Q16).
+
+**Entity & contact facts (Q16 — seed values for the `legal.*` content keys; the strings still live in the content layer per doc 05):** operating entity **Ignatev Estate Co., Ltd** · DBD registration **083-5-56602358-7** · registered address **Plaza Del Mar, No.1 Pasak-Koktanod Rd, office 115–116, Cherngtalay, Thalang, Phuket 83110** · director **Pavel Ignatev** · email **pavel@ignatevestate.com** · phone **+66 92 240 7355**. These populate the footer, `/legal/terms`, and `/legal/privacy` (the PDPA controller line, doc 12). *Still pending (Q16):* a dedicated public support/WhatsApp line and privacy mailbox if different from the above; Ignatev Capital's entity details if named publicly; the Ombudsman credential text (Q15).
 
 ## 3. Audience pages (one template, six voices)
 

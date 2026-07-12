@@ -1,0 +1,28 @@
+{
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-html-link-for-pages": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "warn",
+          {
+            "patterns": [
+              {
+                "group": ["../"],
+                "message": "Relative imports outside module boundaries not allowed. Use module index.ts interfaces (doc 14 §3)"
+              }
+            ]
+          }
+        ],
+        "no-literal-ui-text": "off"
+      }
+    }
+  ]
+}

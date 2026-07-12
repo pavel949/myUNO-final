@@ -46,6 +46,11 @@ jobs:
           NEXTAUTH_URL: http://localhost:3000
         run: npm run build
 
+      - name: Generate and apply migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+        run: npx prisma migrate deploy
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuid } from 'uuid';
 
 // Test database client — uses DATABASE_URL_TEST if set, else DATABASE_URL
@@ -159,6 +160,3 @@ export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
     },
   });
 }
-
-// Import Decimal properly
-import { Decimal } from '@prisma/client/runtime/library';

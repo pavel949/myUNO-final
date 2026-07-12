@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Placeholder {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+}
+
+// T-001 placeholder: actual schema spine (Identity, Project, Unit, RoleAssignment, etc.)
+// and first migration are T-002 (docs/16_build_plan.md, docs/02_data_model.md).
+// This allows T-001 to compile; T-002 replaces it with the real schema.

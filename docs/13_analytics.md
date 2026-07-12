@@ -32,7 +32,7 @@ Naming `domain.action`; every event carries `occurred_at`, actor (identity or an
 | `search.no_results` | Empty result set | filters (what demand we're missing) |
 | `stay.booking_started` | Review screen reached | unit, nights, party, total |
 | `stay.booking_requested / .request_approved / .request_declined` | Request path | booking id |
-| `stay.payment_succeeded / .payment_failed / .hold_expired` | Payment outcomes | booking, amount, provider, failure class |
+| `stay.payment_succeeded / .payment_failed / .hold_expired` | Payment outcomes | booking, amount, **method (`cash`\|`card_provider`)**, provider, failure class |
 | `stay.confirmed / .modified / .cancelled / .checked_in / .checked_out / .completed / .no_show` | Lifecycle | booking, channel, nights, values |
 | `stay.extension_requested` | In-stay extension | booking, added nights |
 | `service.catalog_viewed / .service_viewed` | Marketplace browsing | category, service, viewer role |

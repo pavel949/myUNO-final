@@ -42,7 +42,7 @@ Threads, tickets, announcements, and notifications are the **shared `comms` laye
 
 ## Money rules (doc 10)
 
-All charging through the **payment seam** (mock adapter until the licensed provider lands — Q8); amounts are **server-computed, client-sent totals never trusted**; THB only (satang integers); the **ledger is append-only** and every statement number links to its source rows; statements gate on admin sign-off; a direct-managed unit without its NOI cap refuses statement generation — no guessing.
+Charging is **cash-first in loop one** — a recorded cash payment captures who took it, when, and the receipt/чек number (the primary rail for the RU clientele) — with the provider **payment seam** behind it (mock adapter; default provider **Opn/Omise**; cards and Thai methods switched on later — Q8). **Crypto is not accepted** (SEC/BOT-licensed activity — Q21). Amounts are **server-computed, client-sent totals never trusted**; THB only (satang integers); deposits are provider pre-authorizations only, **never held in cash**; the **ledger is append-only** and every statement number links to its source rows; statements gate on admin sign-off; a direct-managed unit without its NOI cap refuses statement generation — no guessing.
 
 ## Legal non-negotiables
 

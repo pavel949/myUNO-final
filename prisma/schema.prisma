@@ -10,11 +10,460 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Placeholder {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
+// Enums — kept early for readability
+
+enum IdentityStatus {
+  active
+  invited
+  blocked
+  merged
 }
 
-// T-001 placeholder: actual schema spine (Identity, Project, Unit, RoleAssignment, etc.)
-// and first migration are T-002 (docs/16_build_plan.md, docs/02_data_model.md).
-// This allows T-001 to compile; T-002 replaces it with the real schema.
+enum AuthProvider {
+  google
+  apple
+}
+
+enum OneTimeTokenPurpose {
+  password_reset
+  email_verify
+  account_claim
+}
+
+enum ProjectStatus {
+  draft
+  live
+  archived
+}
+
+enum UnitType {
+  villa
+  condo
+  townhouse
+}
+
+enum UnitStatus {
+  draft
+  mobilizing
+  live
+  paused
+  offboarded
+}
+
+enum UnitEngagementType {
+  direct_managed
+  via_management_company
+  owner_direct
+}
+
+enum UnitEngagementStatus {
+  draft
+  active
+  ended
+}
+
+enum OrganizationType {
+  management_company
+  juristic_person
+  developer
+}
+
+enum OrganizationStatus {
+  active
+  suspended
+}
+
+enum RoleType {
+  owner
+  guest
+  resident
+  buyer
+  provider_member
+  mc_member
+  juristic_member
+  staff_ops
+  onsite_host
+}
+
+enum RoleScopeType {
+  platform
+  project
+  unit
+}
+
+enum RoleStatus {
+  active
+  revoked
+}
+
+enum MediaAssetKind {
+  photo
+  document
+  receipt
+  passport
+  avatar
+  brand
+}
+
+// --- The spine ---
+
+model Identity {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  firstName String @map("first_name")
+  lastName String @map("last_name")
+  latinFirstName String? @map("latin_first_name")
+  latinLastName String? @map("latin_last_name")
+  email String? @unique @db.Citext
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  phone String? @unique
+  phoneVerifiedAt DateTime? @map("phone_verified_at")
+  hashedPassword String? @map("hashed_password")
+  preferredLocale String @default("en") @map("preferred_locale")
+  avatarMediaId String? @map("avatar_media_id")
+  status IdentityStatus @default(active)
+  isAdmin Boolean @default(false) @map("is_admin")
+  notesInternal String? @map("notes_internal")
+  mergedIntoId String? @map("merged_into_id")
+
+  // Relations
+  avatarMedia MediaAsset? @relation(name: "identityAvatar", fields: [avatarMediaId], references: [id])
+  mergedInto Identity? @relation(name: "identityMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom Identity[] @relation(name: "identityMerge")
+
+  authAccounts AuthAccount[]
+  oneTimeTokens OneTimeToken[]
+  ownedUnits Unit[] @relation("unitOwner")
+  roleAssignments RoleAssignment[] @relation("roleAssignmentIdentity")
+  grantedRoles RoleAssignment[] @relation("grantedRoles")
+  mediaAssets MediaAsset[] @relation("uploadedBy")
+  auditLogs AuditLog[] @relation("actor")
+  contentKeyUpdates Translation[] @relation("updatedBy")
+  configChanges ConfigChange[] @relation("changedBy")
+  unitEngagements UnitEngagement[] @relation("engagementOwner")
+
+  @@map("identity")
+}
+
+model AuthAccount {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  provider AuthProvider
+  providerAccountId String @map("provider_account_id")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("auth_account")
+}
+
+model OneTimeToken {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  purpose OneTimeTokenPurpose
+  tokenHash String @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@map("one_time_token")
+}
+
+model Project {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  slug String @unique
+  name String
+  areaLabelKey String @map("area_label_key")
+  descriptionKey String @map("description_key")
+  latitude Decimal @db.Decimal(9, 6)
+  longitude Decimal @db.Decimal(9, 6)
+  address String
+  timezone String @default("Asia/Bangkok")
+  coverMediaId String? @map("cover_media_id")
+  amenityKeys String[] @default([]) @map("amenity_keys")
+  handbookKey String @map("handbook_key")
+  status ProjectStatus @default(draft)
+  defaultCurrency String @default("THB") @map("default_currency")
+
+  // Relations
+  coverMedia MediaAsset? @relation(name: "projectCover", fields: [coverMediaId], references: [id])
+  units Unit[]
+  roleAssignments RoleAssignment[] @relation("projectScope")
+  galleryMedia ProjectMedia[]
+  organizations Organization[]
+
+  @@map("project")
+}
+
+model Unit {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId String @map("project_id")
+  ownerIdentityId String? @map("owner_identity_id")
+  name String
+  unitType UnitType @map("unit_type")
+  bedrooms Int
+  bathrooms Int
+  maxGuests Int @map("max_guests")
+  sizeSqm Int? @map("size_sqm")
+  floor String?
+  addressSupplement String @map("address_supplement")
+  descriptionKey String? @map("description_key")
+  amenityKeys String[] @default([]) @map("amenity_keys")
+  baseNightlyThb Int @map("base_nightly_thb")
+  minNights Int @map("min_nights")
+  instantBook Boolean @default(true) @map("instant_book")
+  cancellationPolicyKey String? @map("cancellation_policy_key")
+  status UnitStatus @default(draft)
+  permittedUseConfirmedAt DateTime? @map("permitted_use_confirmed_at")
+  coverMediaId String? @map("cover_media_id")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner Identity? @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
+  coverMedia MediaAsset? @relation(name: "unitCover", fields: [coverMediaId], references: [id])
+  media UnitMedia[]
+  engagements UnitEngagement[]
+  roleAssignments RoleAssignment[] @relation("unitScope")
+
+  @@unique([projectId, name])
+  @@map("unit")
+}
+
+model UnitEngagement {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  engagementType UnitEngagementType @map("engagement_type")
+  ownerIdentityId String @map("owner_identity_id")
+  managementOrgId String? @map("management_org_id")
+  noiCapAnnualThb Int? @map("noi_cap_annual_thb")
+  feeOverridePct Decimal? @map("fee_override_pct") @db.Decimal(5, 2)
+  setupFeeThb Int? @map("setup_fee_thb")
+  mandateMediaId String? @map("mandate_media_id")
+  startsOn DateTime? @map("starts_on")
+  endsOn DateTime? @map("ends_on")
+  status UnitEngagementStatus @default(draft)
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner Identity @relation(name: "engagementOwner", fields: [ownerIdentityId], references: [id])
+  managementOrg Organization? @relation(fields: [managementOrgId], references: [id])
+  mandateMedia MediaAsset? @relation(name: "engagementMandate", fields: [mandateMediaId], references: [id])
+
+  @@index([unitId, status])
+  @@map("unit_engagement")
+}
+
+model Organization {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String
+  orgType OrganizationType @map("org_type")
+  projectId String? @map("project_id")
+  contactEmail String @map("contact_email")
+  contactPhone String @map("contact_phone")
+  status OrganizationStatus @default(active)
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  engagements UnitEngagement[]
+  roleAssignments RoleAssignment[]
+
+  @@map("organization")
+}
+
+model RoleAssignment {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  role RoleType
+  scopeType RoleScopeType @map("scope_type")
+  projectId String? @map("project_id")
+  unitId String? @map("unit_id")
+  organizationId String? @map("organization_id")
+  providerId String? @map("provider_id")
+  status RoleStatus @default(active)
+  grantedByIdentityId String? @map("granted_by_identity_id")
+
+  // Relations
+  identity Identity @relation(name: "roleAssignmentIdentity", fields: [identityId], references: [id], onDelete: Cascade)
+  project Project? @relation(name: "projectScope", fields: [projectId], references: [id], onDelete: Cascade)
+  unit Unit? @relation(name: "unitScope", fields: [unitId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  grantedBy Identity? @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
+
+  @@index([identityId, status])
+  @@map("role_assignment")
+}
+
+model MediaAsset {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  storageKey String @unique @map("storage_key")
+  kind MediaAssetKind
+  mimeType String @map("mime_type")
+  sizeBytes Int @map("size_bytes")
+  uploadedByIdentityId String @map("uploaded_by_identity_id")
+  encrypted Boolean @default(false)
+  deleteAfter DateTime? @map("delete_after")
+
+  // Relations
+  uploadedBy Identity @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
+  identityAvatars Identity[] @relation("identityAvatar")
+  projectCovers Project[] @relation("projectCover")
+  unitCovers Unit[] @relation("unitCover")
+  unitMedia UnitMedia[]
+  projectMedia ProjectMedia[]
+  engagementMandates UnitEngagement[] @relation("engagementMandate")
+
+  @@map("media_asset")
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actorIdentityId String? @map("actor_identity_id")
+  action String
+  entityType String @map("entity_type")
+  entityId String @map("entity_id")
+  data Json? @db.JsonB
+  at DateTime @default(now())
+
+  // Relations
+  actor Identity? @relation(name: "actor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
+
+  @@map("audit_log")
+}
+
+// --- Join tables for many-to-many relationships ---
+
+model UnitMedia {
+  unitId String @map("unit_id")
+  mediaId String @map("media_id")
+  sort Int @default(0)
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([unitId, mediaId])
+  @@map("unit_media")
+}
+
+model ProjectMedia {
+  projectId String @map("project_id")
+  mediaId String @map("media_id")
+  sort Int @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, mediaId])
+  @@map("project_media")
+}
+
+// --- Configuration & content (minimal stubs for T-002, full schema in T-003/T-004) ---
+
+model ConfigParameter {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  key String @unique
+  valueType String @map("value_type")
+  defaultValue Json? @map("default_value") @db.JsonB
+  enumOptions Json? @map("enum_options") @db.JsonB
+  jsonSchema Json? @map("json_schema") @db.JsonB
+  scopeableTo String @map("scopeable_to")
+  groupKey String @map("group_key")
+  description String
+
+  @@map("config_parameter")
+}
+
+model ConfigOverride {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parameterKey String @map("parameter_key")
+  scopeType String @map("scope_type")
+  scopeId String @map("scope_id")
+  value Json @db.JsonB
+  updatedByIdentityId String @map("updated_by_identity_id")
+
+  @@unique([parameterKey, scopeType, scopeId])
+  @@map("config_override")
+}
+
+model ConfigChange {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parameterKey String @map("parameter_key")
+  scopeType String? @map("scope_type")
+  scopeId String? @map("scope_id")
+  oldValue Json? @map("old_value") @db.JsonB
+  newValue Json? @map("new_value") @db.JsonB
+  changedByIdentityId String @map("changed_by_identity_id")
+
+  changedBy Identity @relation(name: "changedBy", fields: [changedByIdentityId], references: [id])
+
+  @@map("config_change")
+}
+
+model ContentKey {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  key String @unique
+  namespace String
+  description String
+  supportsRich Boolean @default(false) @map("supports_rich")
+
+  translations Translation[]
+
+  @@map("content_key")
+}
+
+model Translation {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contentKeyId String @map("content_key_id")
+  locale String
+  value String
+  status String @default("ok")
+  updatedByIdentityId String @map("updated_by_identity_id")
+
+  contentKey ContentKey @relation(fields: [contentKeyId], references: [id], onDelete: Cascade)
+  updatedBy Identity @relation(name: "updatedBy", fields: [updatedByIdentityId], references: [id])
+
+  @@unique([contentKeyId, locale])
+  @@map("translation")
+}

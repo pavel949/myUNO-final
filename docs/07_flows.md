@@ -31,8 +31,13 @@ Screen S4. `BookingWidget` recomputes `PriceBreakdown` on every change via the p
 ⚠ Selected dates conflict (someone booked meanwhile) → widget error state + calendar refresh.
 
 ### F-GUEST-3 · Book & pay (instant)
-`[keys] booking.*, payments.*` · Screen S5. Requires auth (inline register/login without losing state). Review screen fields: dates/party recap, breakdown, `guest_note` textarea, policy consent check. **Pay** → server creates `Booking(status=pending_payment, hold_expires_at=now+[cfg] booking.hold_minutes)`, `Payment(purpose=stay)`, redirects to provider checkout (or mock page). Success URL / webhook → idempotent confirm → `status=confirmed`, ledger entry, notifications N-02/N-03, system message into the stay thread.
-⚠ **Payment fails/abandoned** → booking stays `pending_payment`; trips page shows hold countdown + "complete payment" CTA; expiry → `expired`, dates free, notification N-04. ⚠ Dates taken between review and pay → 409 screen with re-search CTA, nothing charged. ⚠ Deposit pre-auth declined (`[cfg] booking.deposit.mode=preauth`) → treated as payment failure with specific message.
+`[keys] booking.*, payments.*` · Screen S5. Requires auth (inline register/login without losing state). Review screen fields: dates/party recap, breakdown, `guest_note` textarea, **payment method** (from `[cfg] booking.payment.methods_enabled` — cash-only in loop one, so this collapses to a single "Reserve · pay in cash" choice), policy consent check.
+
+**Cash path** (`cash`, the loop-one default and primary rail for RU clients, Q8) → server creates `Booking(status=pending_payment, hold_expires_at=null)` — the reservation **blocks the dates but has no card-hold expiry**; the guest pays in person (on arrival or by agreement). A staff/host records the money via **F-OPS-6**, creating `Payment(method=cash, status=succeeded, received_by, received_at, receipt_ref)` and flipping the booking to `confirmed` (ledger revenue entry, N-02/N-03, system message into the stay thread). Check-in is gated on cash collected when `[cfg] booking.cash_due_blocks_checkin=true`.
+
+**Card path** (`card_provider`, when the provider is switched on) → server creates `Booking(status=pending_payment, hold_expires_at=now+[cfg] booking.hold_minutes)`, `Payment(purpose=stay, method=card_provider)`, redirects to provider checkout (or mock page). Success URL / webhook → idempotent confirm → `status=confirmed`, ledger entry, N-02/N-03, system message.
+
+⚠ **Cash never collected** (guest no-show / doesn't pay) → staff cancel the reservation from the ops board (reason `no_show`), dates freed — no auto-expiry for cash. ⚠ **Card payment fails/abandoned** → booking stays `pending_payment`; trips page shows hold countdown + "complete payment" CTA; expiry → `expired`, dates free, N-04. ⚠ Dates taken between review and reserve → 409 screen with re-search CTA, nothing charged. ⚠ Deposit pre-auth declined (`[cfg] booking.deposit.mode=preauth`) → treated as payment failure with specific message.
 
 ### F-GUEST-4 · Request to book (non-instant)
 Same review screen; CTA creates `Booking(status=requested, requested_expires_at=now+[cfg] booking.request_hours)` — **no payment yet**. Host/ops respond (F-OPS-5). Approve → `pending_payment` + notification N-05 with pay link (hold clock starts); decline or timeout → `declined` + N-06 (auto-decline by the scheduler).
@@ -129,6 +134,10 @@ Unit calendar: add/remove `BlockedDate` (reason required), add/remove `PricingRu
 
 ### F-OPS-5 · Respond to booking request
 Requests inbox: party, dates, guest history chip, breakdown → Approve / Decline (reason select) → F-GUEST-4 continues.
+
+### F-OPS-6 · Record a cash payment (the loop-one primary rail)
+`[keys] payments.*` · From the ops board or the booking/order detail, a staff/host with scope records cash received: amount (defaults to the outstanding total), **receipt/чек reference** (required when `[cfg] booking.payment.cash_receipt_required=true`), optional receipt photo → creates `Payment(method=cash, status=succeeded, received_by=self, received_at=now)`; a stay flips `pending_payment → confirmed`, a service order `placed → paid`; a `LedgerEntry(rental_revenue|service_commission …)` is written the same day (doc 10 §2–3). Cash **refunds** are the mirror: staff record `Refund(method=cash, paid_back_by=self)`. Same-day cash is reconciled against bank deposits into the Krungsri account (doc 10 §9).
+⚠ Amount recorded ≠ outstanding total → allowed (partial cash) but the booking stays with a visible balance until fully settled; check-in gate (if on) requires full settlement.
 
 ## 6. Service orders — any role (F-SVC)
 

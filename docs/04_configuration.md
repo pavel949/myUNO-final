@@ -23,6 +23,7 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | `booking.max_advance_days` | int | project | `365` | How far ahead stays can be booked. |
 | `booking.payment.methods_enabled` | json (list) | project | `["cash"]` | Which payment methods are offered (Q8). `cash` is the loop-one primary rail for the RU clientele; add `card_provider` when the licensed provider (default **Opn/Omise**) is switched on. Crypto is not an option (Q21). |
 | `booking.payment.cash_receipt_required` | boolean | project | `true` | Require a receipt/чек reference when cash is accepted (recorded on the `Payment`). |
+| `booking.cash_due_blocks_checkin` | boolean | project | `true` | For a cash booking, whether check-in is gated on the cash being collected and recorded (doc 07 F-GUEST-3/F-OPS-6). |
 | `booking.same_day_cutoff_hour` | int (0–23) | project | `16` | Latest hour (project timezone) a same-day check-in can be booked. |
 | `booking.deposit.mode` | enum `off, preauth` | unit | `off` (confirmed Q6) | Security deposit handling. `preauth` = card pre-authorization via the licensed provider, released after check-out inspection. Funds are never held by myUNO; **deposits are never taken in cash** (that would be fund-holding). |
 | `booking.deposit.amount_thb` | money_thb | unit | `0` (confirmed Q6) | Pre-auth amount when mode is `preauth`. |

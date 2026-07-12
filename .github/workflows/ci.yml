@@ -63,4 +63,4 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
-        run: npm test 2>&1 | tee test-output.log
+        run: npx vitest run 2>&1 | tee test-output.log

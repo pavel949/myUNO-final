@@ -28,7 +28,7 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | `booking.deposit.mode` | enum `off, preauth` | unit | `off` (confirmed Q6) | Security deposit handling. `preauth` = card pre-authorization via the licensed provider, released after check-out inspection. Funds are never held by myUNO; **deposits are never taken in cash** (that would be fund-holding). |
 | `booking.deposit.amount_thb` | money_thb | unit | `0` (confirmed Q6) | Pre-auth amount when mode is `preauth`. |
 | `booking.checkin_hour` / `booking.checkout_hour` | int | unit | `15` / `11` | Standard times shown everywhere and used by ops scheduling. |
-| `owner_stay.charge_cleaning` | boolean | project | `true` ⚠ Q7 | Whether the post-owner-stay turnover clean is charged to the owner's statement. |
+| `owner_stay.charge_cleaning` | boolean | project | `true` (confirmed Q7) | Whether the post-owner-stay turnover clean is charged to the owner's statement. |
 | `owner_stay.notice_hours` | int | project | `48` | Minimum notice for an owner to book their own unit (lets ops clear conflicts). |
 
 ## 3. Group `engagement` — commissions by engagement type

@@ -55,7 +55,7 @@ Per `[cfg] services.payout_period` (default weekly): report per provider = fulfi
 
 After statement publication (the sign-off gate, F-FIN-1): `Payout(payee_type=owner)` records the transfer (amount = owner share, method `bank_transfer_thb`, bank reference, date). THB payouts go from **Bank of Ayudhya (Krungsri) 475-1-22131-3, SWIFT AYUDTHBK** (`finance.payout.default_thb_account`, Q18). Execution is **manual at the bank in loop one** — the platform is the record, not the rail. **International / non-THB owner payouts are a future decision (Q22)**; where an owner wants non-THB, it is **routing only** — the statement page may show licensed-exchanger information (`trust`/`legal` content keys); the platform never converts, quotes, or carries FX.
 
-## 7. Deposits (⚠ Q6, provisional)
+## 7. Deposits (Q6, confirmed)
 
 `preauth` mode: authorization placed via the provider before check-in; released (voided) automatically after a clean check-out inspection; damage claim (F-DIS-1) may capture up to the authorized amount after the 48h evidence window. Where the chosen provider cannot pre-auth, or mode is `off` (the default): **no deposit exists** — damage is claimed after the fact against the condition record and invoiced through the provider. In no case does a deposit sit in a myUNO account.
 

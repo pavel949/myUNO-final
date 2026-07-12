@@ -38,7 +38,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `audience.*` | The audience pages: `audience.owners.*`, `audience.guests.*`, `audience.developers.*`, `audience.buyers.*`, `audience.mc.*`, `audience.providers.*`. |
 | `project_page.*` | The per-project public landing template ("{Project} on myUNO"). |
 | `trust.*` | Trust pages: how-it-works, verification, the Ombudsman credential (`trust.ombudsman.*` — reserved, ⚠ Q15), dispute handling. |
-| `legal.*` | Terms, privacy, PDPA notices, entity/contact details (⚠ Q16). |
+| `legal.*` | Terms, privacy, PDPA notices, entity/contact details (Q16 facts seeded — see doc 08). |
 | `auth.*` | Register, login, verify, reset, claim-account flows. |
 | `search.*` | Search & discovery UI (filters, availability, results, map). |
 | `listing.*` | Unit/listing detail page (amenities heading, policies block, house rules). |

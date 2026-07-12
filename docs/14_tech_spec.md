@@ -91,7 +91,7 @@ analytics.track(eventKey, dims)                                    // doc 13
 
 | Integration | Loop-one shape |
 |---|---|
-| **Payment provider** (⚠ Q8) | One adapter implementing the finance seam; `mock` adapter ships first; webhook endpoint signature-verified |
+| **Payment: cash + provider** | Cash is the loop-one primary rail (recorded, no adapter); cards via one provider adapter behind the finance seam — `mock` ships first, default **Opn/Omise** when live (Q8); webhook signature-verified |
 | **OTA calendars** | Per-unit iCal: export URL (our bookings+blocks) + import poller (job, 15-min) creating `BlockedDate(reason=ota_import)` or external bookings; conflict → N-25 (doc 01 D8) |
 | **WhatsApp Business / Telegram bot** (⚠ Q9) | `deliver()` channel adapters, config-disabled until provisioned |
 | **Resend (email)** | Adapter + console fallback |

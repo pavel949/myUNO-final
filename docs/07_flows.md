@@ -122,7 +122,7 @@ Admin grants `staff_ops`/`onsite_host` per project → invite → staff land on 
 ### F-OPS-1 · Daily ops board
 Arrivals (verification state, check-in action → condition report camera flow), departures (inspection checklist → check-out report), TM30 queue, tickets by SLA, today's service orders in their projects.
 
-### F-OPS-2 · TM30 filing (the 24h rail) ⚠ provisional Q10
+### F-OPS-2 · TM30 filing (the 24h rail) — manual-with-tracking (Q10, confirmed)
 Check-in confirmation spawns `Tm30Filing` per foreign `BookingGuest` (`due_at = checked_in_at + [cfg] compliance.tm30_sla_hours`). Queue item shows passport data (access-logged), address block ready to copy, deep link to the official portal. Staff file → mark `filed` + upload receipt.
 ⚠ **Portal won't accept / down** → mark `failed` + `failure_note` → status `escalated` at `due_at − [cfg] compliance.tm30_escalation_hours_before` → admin N-24 (urgent); the queue keeps the item red until `filed`. The record proves diligence either way.
 

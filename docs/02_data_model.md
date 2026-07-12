@@ -371,22 +371,29 @@ Full money semantics are doc 10; these are the records.
 | `purpose` | enum `stay, stay_balance, service_order, deposit_preauth` | What it pays. |
 | `booking_id` / `service_order_id` | FK, one of, nullable | The target. |
 | `payer_identity_id` | FK→Identity | Who pays. |
-| `provider` | enum `mock, <licensed_provider>` | The payment seam adapter used (Q8). |
-| `provider_session_id` | text, nullable | Checkout session/charge id at the provider. Unique per provider. |
+| `method` | enum `cash, card_provider` | **How it was paid.** `cash` = collected in person — the loop-one primary rail for the RU clientele (Q8); `card_provider` = through the payment seam. |
+| `provider` | enum `cash, mock, <licensed_provider>` | Adapter used. `cash` for hand-collected money; `mock` until the licensed provider (default **Opn/Omise**) is live (Q8). |
+| `provider_session_id` | text, nullable | Checkout session/charge id at the provider. Unique per provider. Null for cash. |
 | `amount_thb` | int | Charged amount (or authorized, for pre-auth). |
-| `status` | enum `created, pending, succeeded, failed, expired, voided` | `voided` = pre-auth released. |
-| `succeeded_at` | timestamptz, nullable | Settlement moment. |
+| `received_by_identity_id` | FK→Identity, nullable | **Cash only** — the staff/host who accepted the money (accountability). |
+| `received_at` | timestamptz, nullable | **Cash only** — when it was collected. |
+| `receipt_ref` | text, nullable | **Cash only** — the receipt / чек number issued to the guest. |
+| `receipt_media_id` | FK→MediaAsset, nullable | **Cash only** — photo/scan of the issued receipt. |
+| `status` | enum `created, pending, succeeded, failed, expired, voided` | `voided` = pre-auth released. A recorded cash payment is created directly as `succeeded`. |
+| `succeeded_at` | timestamptz, nullable | Settlement moment (= `received_at` for cash). |
 | `failure_reason` | text, nullable | Provider's error, for support. |
 
-### 5.2 `Refund` — money going back, always via the provider
+### 5.2 `Refund` — money going back, by the original method
 
 | Field | Type | Meaning |
 |---|---|---|
 | `payment_id` | FK→Payment | The original charge. |
+| `method` | enum `cash, card_provider` | Refund rail — mirrors the payment's method (a card charge refunds via the provider; a cash payment is refunded in cash and recorded). |
 | `amount_thb` | int | Refunded amount (≤ remaining refundable). |
 | `reason` | enum `cancellation, modification_decrease, provider_no_show, dispute_resolution, goodwill` | Why. |
-| `status` | enum `requested, processing, succeeded, failed` | Provider-side lifecycle. |
-| `provider_refund_id` | text, nullable | Provider reference. |
+| `status` | enum `requested, processing, succeeded, failed` | Provider-side lifecycle; a recorded cash refund is created as `succeeded`. |
+| `provider_refund_id` | text, nullable | Provider reference (null for cash). |
+| `paid_back_by_identity_id` | FK→Identity, nullable | **Cash only** — the staff/host who handed the money back. |
 | `initiated_by_identity_id` | FK→Identity | Who triggered (system for auto-refunds). |
 
 ### 5.3 `LedgerEntry` — every baht that touches a unit or the platform

@@ -46,6 +46,13 @@ jobs:
           NEXTAUTH_URL: http://localhost:3000
         run: npm run build
 
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U test; do
+            echo 'Waiting for PostgreSQL...'
+            sleep 1
+          done
+
       - name: Generate and apply migrations
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
@@ -56,4 +63,4 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
-        run: npm test
+        run: npm test 2>&1 | tee test-output.log

@@ -9,3 +9,12 @@ export { useT } from './content.hook';
 export { seedContent } from './seed';
 export type { Locale, TranslationParams, ContentKeyData, TranslationValue } from './types';
 export { LOCALES, DEFAULT_LOCALE, getLocaleFallbackChain } from './types';
+export {
+  updateTranslation,
+  createContentKey,
+  getContentKey,
+  listContentKeys,
+  listNamespaces,
+  exportToCSV,
+  importFromCSV,
+} from './edit.service';

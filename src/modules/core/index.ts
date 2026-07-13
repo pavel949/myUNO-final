@@ -18,3 +18,5 @@ export {
   getUnitRoleAssignments,
   getIdentitiesWithRole,
 } from './roles';
+
+export * as people from './people.service';

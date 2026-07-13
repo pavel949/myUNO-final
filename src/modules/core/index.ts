@@ -2,4 +2,19 @@
 // Owns: Identity, Project, Unit, RoleAssignment, permissions
 // Used by: all other modules for identity & role resolution
 
-export {};
+export {
+  can,
+  getIdentityRoles,
+  hasRole,
+  PERMISSIONS,
+  type AccessLevel,
+} from './permissions';
+
+export {
+  grantRole,
+  revokeRole,
+  getIdentityRoleAssignments,
+  getProjectRoleAssignments,
+  getUnitRoleAssignments,
+  getIdentitiesWithRole,
+} from './roles';

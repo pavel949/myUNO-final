@@ -20,3 +20,12 @@ export {
 } from './roles';
 
 export * as people from './people.service';
+
+export {
+  getApplicableSeasonMarkup,
+  getApplicableNightlyPrice,
+  computePriceBreakdown,
+  isActiveHold,
+  checkAvailability,
+  type PriceBreakdown,
+} from './availability.service';

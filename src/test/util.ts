@@ -31,6 +31,8 @@ export async function resetDb() {
   await db.unitMedia.deleteMany();
   await db.roleAssignment.deleteMany();
   await db.unitEngagement.deleteMany();
+  await db.blockedDate.deleteMany();
+  await db.pricingRule.deleteMany();
   await db.unit.deleteMany();
   await db.organization.deleteMany();
   await db.project.deleteMany();
@@ -87,13 +89,26 @@ export async function createProject(opts: ProjectFactoryOpts = {}) {
 }
 
 export interface UnitFactoryOpts {
-  projectId: string;
+  projectId?: string;
   ownerIdentityId?: string;
   name?: string;
   status?: 'draft' | 'mobilizing' | 'live' | 'paused' | 'offboarded';
+  baseNightlyThb?: number;
+  maxGuests?: number;
+  minNights?: number;
+  instantBook?: boolean;
 }
 
-export async function createUnit(opts: UnitFactoryOpts) {
+export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
+  // Support both positional and options-based calling
+  const opts = typeof projectIdOrOpts === 'string'
+    ? { projectId: projectIdOrOpts }
+    : projectIdOrOpts;
+
+  if (!opts.projectId) {
+    throw new Error('projectId is required');
+  }
+
   return db.unit.create({
     data: {
       projectId: opts.projectId,
@@ -102,11 +117,11 @@ export async function createUnit(opts: UnitFactoryOpts) {
       unitType: 'villa',
       bedrooms: 2,
       bathrooms: 1,
-      maxGuests: 4,
+      maxGuests: opts.maxGuests ?? 4,
       addressSupplement: '101',
-      baseNightlyThb: 2000,
-      minNights: 1,
-      instantBook: true,
+      baseNightlyThb: opts.baseNightlyThb ?? 2000,
+      minNights: opts.minNights ?? 1,
+      instantBook: opts.instantBook ?? true,
       status: opts.status || 'draft',
     },
   });

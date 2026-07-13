@@ -96,6 +96,13 @@ enum RoleStatus {
   revoked
 }
 
+enum BlockedDateReason {
+  maintenance
+  owner_hold
+  ota_import
+  other
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -143,6 +150,7 @@ model Identity {
   contentKeyUpdates Translation[] @relation("updatedBy")
   configChanges ConfigChange[] @relation("changedBy")
   unitEngagements UnitEngagement[] @relation("engagementOwner")
+  createdBlockedDates BlockedDate[] @relation("blockedDateCreator")
 
   @@map("identity")
 }
@@ -239,9 +247,51 @@ model Unit {
   media UnitMedia[]
   engagements UnitEngagement[]
   roleAssignments RoleAssignment[] @relation("unitScope")
+  blockedDates BlockedDate[]
+  pricingRules PricingRule[]
 
   @@unique([projectId, name])
   @@map("unit")
+}
+
+model BlockedDate {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  reason BlockedDateReason
+  note String?
+  createdByIdentityId String? @map("created_by_identity_id")
+  externalRef String? @map("external_ref")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, startDate, endDate])
+  @@map("blocked_date")
+}
+
+model PricingRule {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  nightlyThb Int @map("nightly_thb")
+  label String?
+  minNightsOverride Int? @map("min_nights_override")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, startDate, endDate])
+  @@map("pricing_rule")
 }
 
 model UnitEngagement {

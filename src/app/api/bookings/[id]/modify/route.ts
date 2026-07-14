@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createCheckout } from '@/modules/finance';
+import { createNotification } from '@/modules/comms';
 
 /**
  * POST /api/bookings/[id]/modify
@@ -161,6 +162,28 @@ export async function POST(
         actorIdentityId: user.identityId,
       },
     });
+
+    // Notify the guest of the modification
+    // Best-effort: failure doesn't block the response
+    try {
+      await createNotification(prisma, {
+        identityId: user.identityId,
+        type: 'stay_dates_modified',
+        titleKey: 'notify.stay_dates_modified.title',
+        bodyKey: 'notify.stay_dates_modified.body',
+        params: {
+          bookingId,
+          oldStartDate: booking.startDate.toISOString(),
+          oldEndDate: booking.endDate.toISOString(),
+          newStartDate: newStartDate.toISOString(),
+          newEndDate: newEndDate.toISOString(),
+          balanceThb,
+        },
+        channels: ['in_app', 'email'],
+      });
+    } catch (err) {
+      console.error('Failed to notify guest of booking modification:', err);
+    }
 
     return NextResponse.json(
       {

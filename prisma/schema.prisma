@@ -220,6 +220,66 @@ enum MediaAssetKind {
   brand
 }
 
+enum NotificationChannel {
+  in_app
+  email
+  whatsapp
+  telegram
+}
+
+enum NotificationType {
+  auth_verify_email
+  auth_password_reset
+  auth_account_claim
+  stay_confirmed
+  stay_request_placed
+  stay_request_approved
+  stay_request_declined
+  stay_hold_expired
+  stay_prearrival_passports
+  stay_checkin_instructions
+  stay_checkout_reminder
+  stay_cancelled
+  stay_dates_modified
+  stay_review_prompt
+  stay_post_stay
+  stay_new_booking_ops
+  stay_request_received
+  stay_modified_ops
+  stay_verification_failed
+  stay_owner_stay_booked
+  ops_ical_conflict
+  compliance_tm30_escalation
+  order_new
+  order_accepted
+  order_declined
+  order_failed_no_show
+  order_review_prompt
+  provider_remittance
+  provider_approved
+  provider_rejected
+  provider_application_reminder
+  owner_statement_published
+  owner_payout_recorded
+  owner_unit_live
+  finance_refund_failed
+  stay_damage_claim
+  message_new
+  ticket_status_changed
+  ticket_assigned
+  ticket_sla_escalation
+  announcement_published
+  review_reply
+  lead_received
+}
+
+enum NotificationDeliveryStatus {
+  pending
+  sent
+  failed
+  read
+}
+
 // --- The spine ---
 
 model Identity {
@@ -268,6 +328,8 @@ model Identity {
   refundsPaidBy Refund[] @relation("refundPaidBy")
   refundsInitiatedBy Refund[] @relation("refundInitiatedBy")
   ledgerEntriesCreated LedgerEntry[] @relation("ledgerEntryCreator")
+  notifications Notification[]
+  notificationPreferences NotificationPreference[]
 
   @@map("identity")
 }
@@ -823,4 +885,58 @@ model Translation {
 
   @@unique([contentKeyId, locale])
   @@map("translation")
+}
+
+// --- Notifications & messaging ---
+
+model Notification {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  identityId String @map("identity_id")
+  type NotificationType
+  params Json @db.JsonB
+  titleKey String @map("title_key")
+  bodyKey String @map("body_key")
+  readAt DateTime? @map("read_at")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([identityId, createdAt])
+  @@map("notification")
+}
+
+model NotificationDelivery {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notificationId String @map("notification_id")
+  channel NotificationChannel
+  status NotificationDeliveryStatus @default(pending)
+  sentAt DateTime? @map("sent_at")
+  failureReason String? @map("failure_reason")
+  externalRef String? @map("external_ref")
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, channel])
+  @@map("notification_delivery")
+}
+
+model NotificationPreference {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  type NotificationType
+  channel NotificationChannel
+  muted Boolean @default(false)
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, type, channel])
+  @@map("notification_preference")
 }

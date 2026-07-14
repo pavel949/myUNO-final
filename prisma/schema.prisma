@@ -293,6 +293,30 @@ enum MessageKind {
   system
 }
 
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum TicketStatus {
+  open
+  acknowledged
+  in_progress
+  waiting_reporter
+  resolved
+  closed
+  cancelled
+}
+
+enum TicketEventType {
+  status_change
+  assignment
+  comment_added
+  sla_escalation
+}
+
 // --- The spine ---
 
 model Identity {
@@ -345,6 +369,9 @@ model Identity {
   notificationPreferences NotificationPreference[]
   threadParticipants ThreadParticipant[]
   sentMessages Message[]
+  ticketsRaised Ticket[] @relation("ticketRaisedBy")
+  ticketsAssigned Ticket[] @relation("ticketAssignee")
+  ticketEvents TicketEvent[]
 
   @@map("identity")
 }
@@ -408,6 +435,7 @@ model Project {
   bookings Booking[]
   ledgerEntries LedgerEntry[]
   threads Thread[]
+  tickets Ticket[]
 
   @@map("project")
 }
@@ -448,6 +476,7 @@ model Unit {
   pricingRules PricingRule[]
   bookings Booking[]
   ledgerEntries LedgerEntry[]
+  tickets Ticket[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -773,6 +802,7 @@ model MediaAsset {
   engagementMandates UnitEngagement[] @relation("engagementMandate")
   bookingGuestPassports BookingGuest[]
   paymentReceipts Payment[] @relation("paymentReceipt")
+  ticketMedias TicketMedia[]
 
   @@map("media_asset")
 }
@@ -973,6 +1003,7 @@ model Thread {
 
   participants ThreadParticipant[]
   messages Message[]
+  tickets Ticket[]
 
   @@index([projectId, lastMessageAt])
   @@index([contextType, contextId])
@@ -1012,4 +1043,75 @@ model Message {
 
   @@index([threadId, createdAt])
   @@map("message")
+}
+
+model Ticket {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId String @map("project_id")
+  unitId String? @map("unit_id")
+  raisedByIdentityId String @map("raised_by_identity_id")
+  raisedByRole RoleType @map("raised_by_role")
+  assigneeIdentityId String? @map("assignee_identity_id")
+
+  categoryKey String @map("category_key")
+  title String
+  description String?
+  priority TicketPriority @default(normal)
+  status TicketStatus @default(open)
+
+  slaDueAt DateTime? @map("sla_due_at")
+  resolvedAt DateTime? @map("resolved_at")
+  resolutionNote String? @map("resolution_note")
+
+  threadId String? @map("thread_id")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  raisedBy Identity @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
+  assignee Identity? @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
+  thread Thread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  events TicketEvent[]
+  media TicketMedia[]
+
+  @@index([projectId, status])
+  @@index([assigneeIdentityId, slaDueAt])
+  @@map("ticket")
+}
+
+model TicketEvent {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticketId String @map("ticket_id")
+  eventType TicketEventType @map("event_type")
+  actorIdentityId String? @map("actor_identity_id")
+  data Json?
+
+  // Relations
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor Identity? @relation(fields: [actorIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_event")
+}
+
+model TicketMedia {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticketId String @map("ticket_id")
+  mediaId String @map("media_id")
+  position Int @default(0)
+
+  // Relations
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, mediaId])
+  @@index([ticketId, position])
+  @@map("ticket_media")
 }

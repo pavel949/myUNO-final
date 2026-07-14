@@ -220,6 +220,149 @@ enum MediaAssetKind {
   brand
 }
 
+enum NotificationChannel {
+  in_app
+  email
+  whatsapp
+  telegram
+}
+
+enum NotificationType {
+  auth_verify_email
+  auth_password_reset
+  auth_account_claim
+  stay_confirmed
+  stay_request_placed
+  stay_request_approved
+  stay_request_declined
+  stay_hold_expired
+  stay_prearrival_passports
+  stay_checkin_instructions
+  stay_checkout_reminder
+  stay_cancelled
+  stay_dates_modified
+  stay_review_prompt
+  stay_post_stay
+  stay_new_booking_ops
+  stay_request_received
+  stay_modified_ops
+  stay_verification_failed
+  stay_owner_stay_booked
+  ops_ical_conflict
+  compliance_tm30_escalation
+  order_new
+  order_accepted
+  order_declined
+  order_failed_no_show
+  order_review_prompt
+  provider_remittance
+  provider_approved
+  provider_rejected
+  provider_application_reminder
+  owner_statement_published
+  owner_payout_recorded
+  owner_unit_live
+  finance_refund_failed
+  stay_damage_claim
+  message_new
+  ticket_status_changed
+  ticket_assigned
+  ticket_sla_escalation
+  announcement_published
+  review_reply
+  lead_received
+}
+
+enum NotificationDeliveryStatus {
+  pending
+  sent
+  failed
+  read
+}
+
+enum ThreadContextType {
+  booking
+  service_order
+  ticket
+  unit
+  general
+}
+
+enum MessageKind {
+  user
+  system
+}
+
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum TicketStatus {
+  open
+  acknowledged
+  in_progress
+  waiting_reporter
+  resolved
+  closed
+  cancelled
+}
+
+enum TicketEventType {
+  status_change
+  assignment
+  comment_added
+  sla_escalation
+}
+
+enum AnnouncementAudience {
+  everyone
+  owners
+  residents
+  guests_in_stay
+  staff
+}
+
+enum AnnouncementPostedAs {
+  myuno
+  management_company
+  juristic_person
+}
+
+enum AnnouncementStatus {
+  draft
+  published
+  unpublished
+}
+
+enum ProviderStatus {
+  applied
+  vetting
+  active
+  suspended
+  offboarded
+}
+
+enum ServiceStatus {
+  draft
+  active
+  paused
+}
+
+enum PriceModel {
+  fixed
+  per_hour
+  per_person
+  quote
+}
+
+enum FulfilmentMode {
+  referred
+  operated
+}
+
 // --- The spine ---
 
 model Identity {
@@ -268,6 +411,16 @@ model Identity {
   refundsPaidBy Refund[] @relation("refundPaidBy")
   refundsInitiatedBy Refund[] @relation("refundInitiatedBy")
   ledgerEntriesCreated LedgerEntry[] @relation("ledgerEntryCreator")
+  notifications Notification[]
+  notificationPreferences NotificationPreference[]
+  threadParticipants ThreadParticipant[]
+  sentMessages Message[]
+  ticketsRaised Ticket[] @relation("ticketRaisedBy")
+  ticketsAssigned Ticket[] @relation("ticketAssignee")
+  ticketEvents TicketEvent[]
+  announcementsCreated Announcement[]
+  announcementReads AnnouncementRead[]
+  vettedProviders Provider[] @relation("providerVettedBy")
 
   @@map("identity")
 }
@@ -330,6 +483,11 @@ model Project {
   organizations Organization[]
   bookings Booking[]
   ledgerEntries LedgerEntry[]
+  threads Thread[]
+  tickets Ticket[]
+  announcements Announcement[]
+  providerServiceAreas ProviderProject[]
+  serviceProjects ServiceProject[]
 
   @@map("project")
 }
@@ -370,6 +528,7 @@ model Unit {
   pricingRules PricingRule[]
   bookings Booking[]
   ledgerEntries LedgerEntry[]
+  tickets Ticket[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -642,8 +801,104 @@ model Organization {
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   engagements UnitEngagement[]
   roleAssignments RoleAssignment[]
+  announcements Announcement[]
 
   @@map("organization")
+}
+
+model Provider {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String
+  description String?
+  contactEmail String @map("contact_email")
+  contactPhone String @map("contact_phone")
+  categoryKeys String[] @default([]) @map("category_keys")
+  status ProviderStatus @default(applied)
+  vetted_at DateTime? @map("vetted_at")
+  vetted_by_identity_id String? @map("vetted_by_identity_id")
+  payoutMethod Json? @map("payout_method") @db.JsonB
+  logoMediaId String? @map("logo_media_id")
+
+  // Relations
+  vetted_by Identity? @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)
+  logoMedia MediaAsset? @relation("providerLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  roleAssignments RoleAssignment[]
+  services Service[]
+  serviceAreas ProviderProject[]
+
+  @@index([status, vetted_at])
+  @@map("provider")
+}
+
+model ProviderProject {
+  provider_id String @map("provider_id")
+  project_id String @map("project_id")
+
+  provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@id([provider_id, project_id])
+  @@map("provider_project")
+}
+
+
+model Service {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  provider_id String @map("provider_id")
+  categoryKey String @map("category_key")
+  title String
+  description String?
+  titleRu String? @map("title_ru")
+  titleEn String? @map("title_en")
+  titleTh String? @map("title_th")
+  descriptionRu String? @map("description_ru")
+  descriptionEn String? @map("description_en")
+  descriptionTh String? @map("description_th")
+  priceModel PriceModel @map("price_model")
+  basePriceThb Int? @map("base_price_thb")
+  durationMin Int? @map("duration_min")
+  fulfilmentMode FulfilmentMode @default(referred) @map("fulfilment_mode")
+  advanceNoticeHours Int @default(0) @map("advance_notice_hours")
+  status ServiceStatus @default(draft)
+  coverMediaId String? @map("cover_media_id")
+
+  // Relations
+  provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  coverMedia MediaAsset? @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  media ServiceMedia[] @relation("serviceMediaList")
+  availableProjects ServiceProject[]
+
+  @@index([provider_id, status])
+  @@map("service")
+}
+
+model ServiceMedia {
+  service_id String @map("service_id")
+  media_id String @map("media_id")
+  position Int @default(0)
+
+  service Service @relation("serviceMediaList", fields: [service_id], references: [id], onDelete: Cascade)
+  media MediaAsset @relation("serviceImage", fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@id([service_id, media_id])
+  @@map("service_media")
+}
+
+model ServiceProject {
+  service_id String @map("service_id")
+  project_id String @map("project_id")
+
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@id([service_id, project_id])
+  @@map("service_project")
 }
 
 model RoleAssignment {
@@ -666,6 +921,7 @@ model RoleAssignment {
   project Project? @relation(name: "projectScope", fields: [projectId], references: [id], onDelete: Cascade)
   unit Unit? @relation(name: "unitScope", fields: [unitId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  provider Provider? @relation(fields: [providerId], references: [id], onDelete: Cascade)
   grantedBy Identity? @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
 
   @@index([identityId, status])
@@ -695,6 +951,10 @@ model MediaAsset {
   engagementMandates UnitEngagement[] @relation("engagementMandate")
   bookingGuestPassports BookingGuest[]
   paymentReceipts Payment[] @relation("paymentReceipt")
+  ticketMedias TicketMedia[]
+  providerLogos Provider[] @relation("providerLogo")
+  serviceCoverMedia Service[] @relation("serviceCover")
+  serviceMedia ServiceMedia[] @relation("serviceImage")
 
   @@map("media_asset")
 }
@@ -823,4 +1083,232 @@ model Translation {
 
   @@unique([contentKeyId, locale])
   @@map("translation")
+}
+
+// --- Notifications & messaging ---
+
+model Notification {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  identityId String @map("identity_id")
+  type NotificationType
+  params Json @db.JsonB
+  titleKey String @map("title_key")
+  bodyKey String @map("body_key")
+  readAt DateTime? @map("read_at")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([identityId, createdAt])
+  @@map("notification")
+}
+
+model NotificationDelivery {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notificationId String @map("notification_id")
+  channel NotificationChannel
+  status NotificationDeliveryStatus @default(pending)
+  sentAt DateTime? @map("sent_at")
+  failureReason String? @map("failure_reason")
+  externalRef String? @map("external_ref")
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, channel])
+  @@map("notification_delivery")
+}
+
+model NotificationPreference {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  type NotificationType
+  channel NotificationChannel
+  muted Boolean @default(false)
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, type, channel])
+  @@map("notification_preference")
+}
+
+// --- Messaging ---
+
+model Thread {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contextType ThreadContextType @map("context_type")
+  contextId String? @map("context_id")
+  projectId String? @map("project_id")
+  lastMessageAt DateTime? @map("last_message_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  participants ThreadParticipant[]
+  messages Message[]
+  tickets Ticket[]
+
+  @@index([projectId, lastMessageAt])
+  @@index([contextType, contextId])
+  @@map("thread")
+}
+
+model ThreadParticipant {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  threadId String @map("thread_id")
+  identityId String @map("identity_id")
+  participantRole String @map("participant_role")
+  lastReadAt DateTime? @map("last_read_at")
+  muted Boolean @default(false)
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, identityId])
+  @@index([identityId])
+  @@map("thread_participant")
+}
+
+model Message {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  threadId String @map("thread_id")
+  senderIdentityId String? @map("sender_identity_id")
+  body String?
+  messageKind MessageKind @default(user) @map("message_kind")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender Identity? @relation(fields: [senderIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([threadId, createdAt])
+  @@map("message")
+}
+
+model Ticket {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId String @map("project_id")
+  unitId String? @map("unit_id")
+  raisedByIdentityId String @map("raised_by_identity_id")
+  raisedByRole RoleType @map("raised_by_role")
+  assigneeIdentityId String? @map("assignee_identity_id")
+
+  categoryKey String @map("category_key")
+  title String
+  description String?
+  priority TicketPriority @default(normal)
+  status TicketStatus @default(open)
+
+  slaDueAt DateTime? @map("sla_due_at")
+  resolvedAt DateTime? @map("resolved_at")
+  resolutionNote String? @map("resolution_note")
+
+  threadId String? @map("thread_id")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  raisedBy Identity @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
+  assignee Identity? @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
+  thread Thread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  events TicketEvent[]
+  media TicketMedia[]
+
+  @@index([projectId, status])
+  @@index([assigneeIdentityId, slaDueAt])
+  @@map("ticket")
+}
+
+model TicketEvent {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticketId String @map("ticket_id")
+  eventType TicketEventType @map("event_type")
+  actorIdentityId String? @map("actor_identity_id")
+  data Json?
+
+  // Relations
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor Identity? @relation(fields: [actorIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_event")
+}
+
+model TicketMedia {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticketId String @map("ticket_id")
+  mediaId String @map("media_id")
+  position Int @default(0)
+
+  // Relations
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, mediaId])
+  @@index([ticketId, position])
+  @@map("ticket_media")
+}
+
+model Announcement {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId String @map("project_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  organizationId String? @map("organization_id")
+
+  title String
+  body String
+  audience AnnouncementAudience
+  postedAs AnnouncementPostedAs @map("posted_as")
+  status AnnouncementStatus @default(draft)
+  isPinned Boolean @default(false) @map("is_pinned")
+  isImportant Boolean @default(false) @map("is_important")
+  expiresAt DateTime? @map("expires_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  reads AnnouncementRead[]
+
+  @@index([projectId, status, createdAt])
+  @@index([postedAs, organizationId])
+  @@map("announcement")
+}
+
+model AnnouncementRead {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  announcementId String @map("announcement_id")
+  identityId String @map("identity_id")
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, identityId])
+  @@index([identityId, createdAt])
+  @@map("announcement_read")
 }

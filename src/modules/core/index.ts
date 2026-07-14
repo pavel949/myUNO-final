@@ -29,3 +29,29 @@ export {
   checkAvailability,
   type PriceBreakdown,
 } from './availability.service';
+
+export {
+  createComplianceRecord,
+  updateComplianceRecord,
+  getComplianceRecord,
+  getUnitComplianceRecords,
+  deleteComplianceRecord,
+  checkMobilizationGate,
+  completeMobilizationStep,
+  getUnitMobilizationChecklist,
+  isMobilizationComplete,
+  initializeMobilizationChecklist,
+  type CreateComplianceRecordInput,
+  type UpdateComplianceRecordInput,
+} from './compliance.service';
+
+export {
+  createUnitEngagement,
+  updateUnitEngagement,
+  getUnitEngagement,
+  getActiveEngagement,
+  getUnitEngagements,
+  deleteUnitEngagement,
+  type CreateUnitEngagementInput,
+  type UpdateUnitEngagementInput,
+} from './engagement.service';

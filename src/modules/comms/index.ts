@@ -35,3 +35,16 @@ export {
   publishMessage,
   hasSubscribers as hasThreadSubscribers,
 } from './thread.bus';
+
+export {
+  raiseTicket,
+  updateTicketStatus,
+  assignTicket,
+  addComment,
+  recordTicketEvent,
+  getTicketDetail,
+  getProjectTickets,
+  getReporterTickets,
+  type RaiseTicketInput,
+  type UpdateTicketStatusInput,
+} from './ticket.service';

@@ -12,3 +12,15 @@ export {
   type ApproveProviderInput,
   type RejectProviderInput,
 } from './provider.service';
+
+export {
+  createServiceOrder,
+  acceptServiceOrder,
+  declineServiceOrder,
+  fulfillServiceOrder,
+  cancelServiceOrder,
+  rateServiceOrder,
+  getServiceOrder,
+  type CreateServiceOrderInput,
+  type ServiceOrderDetails,
+} from './service-order.service';

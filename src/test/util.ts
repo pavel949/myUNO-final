@@ -178,3 +178,45 @@ export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
     },
   });
 }
+
+export interface ProviderFactoryOpts {
+  name?: string;
+  description?: string;
+  status?: 'applied' | 'vetting' | 'active' | 'suspended' | 'offboarded';
+  categoryKeys?: string[];
+}
+
+export async function createProvider(opts: ProviderFactoryOpts = {}) {
+  return db.provider.create({
+    data: {
+      name: opts.name || `Provider-${uuid().slice(0, 8)}`,
+      description: opts.description || 'Test Provider',
+      contactEmail: `provider-${uuid().slice(0, 8)}@example.com`,
+      contactPhone: '+66800000000',
+      categoryKeys: opts.categoryKeys || ['cleaning'],
+      status: opts.status || 'applied',
+    },
+  });
+}
+
+export interface ServiceFactoryOpts {
+  providerId: string;
+  categoryKey?: string;
+  title?: string;
+  status?: 'draft' | 'active' | 'paused';
+  priceModel?: 'fixed' | 'per_hour' | 'per_person' | 'quote';
+  basePriceThb?: number;
+}
+
+export async function createService(opts: ServiceFactoryOpts) {
+  return db.service.create({
+    data: {
+      provider_id: opts.providerId,
+      categoryKey: opts.categoryKey || 'cleaning',
+      title: opts.title || `Service-${uuid().slice(0, 8)}`,
+      status: opts.status || 'draft',
+      priceModel: opts.priceModel || 'fixed',
+      basePriceThb: opts.basePriceThb || 1000,
+    },
+  });
+}

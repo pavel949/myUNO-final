@@ -363,6 +363,23 @@ enum FulfilmentMode {
   operated
 }
 
+enum ServiceOrderStatus {
+  placed
+  paid
+  accepted
+  declined
+  expired
+  fulfilled
+  cancelled
+  failed
+  closed
+}
+
+enum ReviewTargetType {
+  stay
+  service_order
+}
+
 // --- The spine ---
 
 model Identity {
@@ -418,6 +435,10 @@ model Identity {
   ticketsRaised Ticket[] @relation("ticketRaisedBy")
   ticketsAssigned Ticket[] @relation("ticketAssignee")
   ticketEvents TicketEvent[]
+  serviceOrdersPlaced ServiceOrder[] @relation("serviceOrderOrderer")
+  serviceOrdersCancelled ServiceOrder[] @relation("serviceOrderCancelledBy")
+  reviewsWritten Review[]
+  reviewsReplied Review[] @relation("reviewRepliedBy")
   announcementsCreated Announcement[]
   announcementReads AnnouncementRead[]
   vettedProviders Provider[] @relation("providerVettedBy")
@@ -488,6 +509,7 @@ model Project {
   announcements Announcement[]
   providerServiceAreas ProviderProject[]
   serviceProjects ServiceProject[]
+  serviceOrders ServiceOrder[]
 
   @@map("project")
 }
@@ -529,6 +551,7 @@ model Unit {
   bookings Booking[]
   ledgerEntries LedgerEntry[]
   tickets Ticket[]
+  serviceOrders ServiceOrder[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -615,6 +638,7 @@ model Booking {
   changes BookingChange[]
   payments Payment[]
   ledgerEntries LedgerEntry[]
+  serviceOrders ServiceOrder[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -688,6 +712,7 @@ model Payment {
 
   // Relations
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
   payer Identity @relation(name: "paymentPayer", fields: [payerIdentityId], references: [id])
   receivedBy Identity? @relation(name: "paymentReceivedBy", fields: [receivedByIdentityId], references: [id])
   receiptMedia MediaAsset? @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
@@ -828,6 +853,7 @@ model Provider {
   roleAssignments RoleAssignment[]
   services Service[]
   serviceAreas ProviderProject[]
+  serviceOrders ServiceOrder[]
 
   @@index([status, vetted_at])
   @@map("provider")
@@ -873,6 +899,7 @@ model Service {
   coverMedia MediaAsset? @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   media ServiceMedia[] @relation("serviceMediaList")
   availableProjects ServiceProject[]
+  serviceOrders ServiceOrder[]
 
   @@index([provider_id, status])
   @@map("service")
@@ -899,6 +926,87 @@ model ServiceProject {
 
   @@id([service_id, project_id])
   @@map("service_project")
+}
+
+model ServiceOrder {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // What and where
+  service_id String @map("service_id")
+  provider_id String @map("provider_id")
+  project_id String @map("project_id")
+  unit_id String? @map("unit_id")
+  booking_id String? @map("booking_id")
+
+  // Who ordered
+  orderer_identity_id String @map("orderer_identity_id")
+  orderer_role RoleType @map("orderer_role")
+
+  // Slot and quantity
+  scheduled_start DateTime @map("scheduled_start")
+  scheduled_end DateTime @map("scheduled_end")
+  quantity Int @default(1)
+
+  // Pricing
+  price_breakdown Json @db.JsonB @map("price_breakdown")
+  total_thb Int @map("total_thb")
+  take_rate_pct_snapshot Decimal @map("take_rate_pct_snapshot")
+
+  // Status and lifecycle
+  status ServiceOrderStatus @default(placed)
+  cancelled_at DateTime? @map("cancelled_at")
+  cancelled_by_identity_id String? @map("cancelled_by_identity_id")
+  cancellation_reason String? @map("cancellation_reason")
+  refund_accrued_thb Int @default(0) @map("refund_accrued_thb")
+
+  // Notes
+  note_to_provider String? @map("note_to_provider")
+  address_note String? @map("address_note")
+
+  // Relations
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  unit Unit? @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  booking Booking? @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  orderer Identity @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
+  cancelledBy Identity? @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  payments Payment[]
+
+  @@index([project_id, status, createdAt])
+  @@index([provider_id, status])
+  @@index([orderer_identity_id, createdAt])
+  @@map("service_order")
+}
+
+model Review {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  target_type ReviewTargetType @map("target_type")
+  target_id String @map("target_id")
+  author_identity_id String @map("author_identity_id")
+
+  rating Int // 1-5
+  comment String?
+
+  reply String?
+  replied_at DateTime? @map("replied_at")
+  replier_identity_id String? @map("replier_identity_id")
+
+  status String @default("published") // "published" or "hidden"
+
+  // Relations — polymorphic pattern (target_type determines what target_id references)
+  author Identity @relation(fields: [author_identity_id], references: [id], onDelete: Cascade)
+  replier Identity? @relation(name: "reviewRepliedBy", fields: [replier_identity_id], references: [id], onDelete: SetNull)
+
+  @@unique([target_type, target_id, author_identity_id])
+  @@index([target_type, target_id])
+  @@index([author_identity_id])
+  @@map("review")
 }
 
 model RoleAssignment {

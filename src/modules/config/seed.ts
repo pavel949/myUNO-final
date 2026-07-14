@@ -432,6 +432,28 @@ export async function seedConfig(db: PrismaClient) {
     ],
   });
 
+  // Group: owner
+  await db.configParameter.createMany({
+    data: [
+      {
+        key: 'owner_stay.notice_hours',
+        valueType: 'int',
+        defaultValue: 24,
+        scopeableTo: 'project',
+        groupKey: 'owner',
+        description: 'Minimum hours in advance an owner must book their own stay',
+      },
+      {
+        key: 'owner_stay.charge_cleaning',
+        valueType: 'boolean',
+        defaultValue: false,
+        scopeableTo: 'unit',
+        groupKey: 'owner',
+        description: 'Whether to charge cleaning fee for owner stays',
+      },
+    ],
+  });
+
   // Group: finance, compliance, notify, auth, i18n
   await db.configParameter.createMany({
     data: [

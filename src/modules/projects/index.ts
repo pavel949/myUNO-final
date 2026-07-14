@@ -19,3 +19,13 @@ export {
   confirmPermittedUse,
   getUnitDetail,
 } from './units';
+
+export {
+  bookOwnerStay,
+  getOwnerDashboard,
+  getOwnerBookingsList,
+  getOwnerPortfolioShape,
+  getOwnerProjects,
+  type OwnerDashboardData,
+  type OwnerStayInput,
+} from './owner.service';

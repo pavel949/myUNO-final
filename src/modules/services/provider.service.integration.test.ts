@@ -166,7 +166,7 @@ describe('provider.service — integration tests', () => {
       const notification = await db.notification.findFirst({
         where: {
           type: 'provider_approved',
-          recipientIdentityId: admin.id,
+          identityId: admin.id,
         },
       });
 
@@ -217,7 +217,7 @@ describe('provider.service — integration tests', () => {
       const notification = await db.notification.findFirst({
         where: {
           type: 'provider_rejected',
-          recipientIdentityId: admin.id,
+          identityId: admin.id,
         },
       });
 

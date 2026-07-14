@@ -2,4 +2,7 @@
 // Owns: Thread, Message, Ticket, Announcement, Notification
 // Used by: all modules (notify)
 
-export {};
+export {
+  createNotification,
+  type CreateNotificationInput,
+} from './notification.service';

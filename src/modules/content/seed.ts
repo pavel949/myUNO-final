@@ -617,6 +617,81 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Offboarded',
     th: 'สิ้นสุด',
   },
+  // Service status labels
+  {
+    key: 'service.status.draft',
+    namespace: 'service',
+    description: 'Service status: awaiting admin approval',
+    ru: 'На рассмотрении',
+    en: 'Draft',
+    th: 'รอการพิจารณา',
+  },
+  {
+    key: 'service.status.active',
+    namespace: 'service',
+    description: 'Service status: visible to end users',
+    ru: 'Активен',
+    en: 'Active',
+    th: 'ใช้งานได้',
+  },
+  {
+    key: 'service.status.paused',
+    namespace: 'service',
+    description: 'Service status: temporarily hidden or rejected',
+    ru: 'Приостановлен',
+    en: 'Paused',
+    th: 'หยุดชั่วคราว',
+  },
+  // Service price model labels
+  {
+    key: 'service.priceModel.fixed',
+    namespace: 'service',
+    description: 'Price model: fixed price per service',
+    ru: 'Фиксированная цена',
+    en: 'Fixed Price',
+    th: 'ราคาคงที่',
+  },
+  {
+    key: 'service.priceModel.per_hour',
+    namespace: 'service',
+    description: 'Price model: hourly rate',
+    ru: 'Почасовая тариф',
+    en: 'Hourly Rate',
+    th: 'อัตรารายชั่วโมง',
+  },
+  {
+    key: 'service.priceModel.per_person',
+    namespace: 'service',
+    description: 'Price model: per person charge',
+    ru: 'За одного человека',
+    en: 'Per Person',
+    th: 'ต่อคน',
+  },
+  {
+    key: 'service.priceModel.quote',
+    namespace: 'service',
+    description: 'Price model: custom quote required',
+    ru: 'По запросу',
+    en: 'Quote',
+    th: 'ตามใบเสนอราคา',
+  },
+  // Service fulfilment mode labels
+  {
+    key: 'service.fulfilmentMode.referred',
+    namespace: 'service',
+    description: 'Service fulfilment: provider delivers',
+    ru: 'Поставщик выполняет',
+    en: 'Provider Delivers',
+    th: 'ผู้ให้บริการจัดหา',
+  },
+  {
+    key: 'service.fulfilmentMode.operated',
+    namespace: 'service',
+    description: 'Service fulfilment: platform coordinates',
+    ru: 'myUNO координирует',
+    en: 'Platform Coordinates',
+    th: 'myUNO ประสานงาน',
+  },
 ];
 
 export async function seedContent(

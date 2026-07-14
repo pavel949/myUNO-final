@@ -211,6 +211,27 @@ enum LedgerEntryType {
   adjustment
 }
 
+enum OwnerStatementStatus {
+  draft
+  published
+  superseded
+}
+
+enum PayoutPayeeType {
+  owner
+  provider
+}
+
+enum PayoutMethod {
+  bank_transfer_thb
+  other
+}
+
+enum PayoutStatus {
+  recorded
+  reconciled
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -493,6 +514,9 @@ model Identity {
   conditionReportsCreated ConditionReport[]
   complianceRecordsVerified ComplianceRecord[] @relation("complianceVerifier")
   mobilizationCompletions MobilizationChecklistItem[] @relation("mobilizationCompletedBy")
+  statementsOwned OwnerStatement[] @relation("statementOwner")
+  statementsPublished OwnerStatement[] @relation("statementPublishedBy")
+  payoutsRecorded Payout[]
 
   @@map("identity")
 }
@@ -606,6 +630,7 @@ model Unit {
   conditionReports ConditionReport[]
   complianceRecords ComplianceRecord[]
   mobilizationChecklist MobilizationChecklistItem[]
+  statements OwnerStatement[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -830,6 +855,7 @@ model LedgerEntry {
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   refund Refund? @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  statement OwnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
   createdBy Identity? @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
 
   @@index([unitId, occurredOn])
@@ -838,6 +864,70 @@ model LedgerEntry {
   @@index([paymentId])
   @@index([refundId])
   @@map("ledger_entry")
+}
+
+model OwnerStatement {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  ownerIdentityId String @map("owner_identity_id")
+  engagementId String @map("engagement_id")
+  periodStart DateTime @map("period_start")
+  periodEnd DateTime @map("period_end")
+  grossRevenueTh Int @map("gross_revenue_thb")
+  totalCostsTh Int @map("total_costs_thb")
+  noiTh Int @map("noi_thb")
+  ownerShareTh Int @map("owner_share_thb")
+  estateShareTh Int @map("estate_share_thb")
+  capApplied Boolean @default(false) @map("cap_applied")
+  status OwnerStatementStatus @default(draft)
+  publishedAt DateTime? @map("published_at")
+  publishedByIdentityId String? @map("published_by_identity_id")
+  pdfMediaId String? @map("pdf_media_id")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner Identity @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
+  engagement UnitEngagement @relation(fields: [engagementId], references: [id])
+  publishedBy Identity? @relation(name: "statementPublishedBy", fields: [publishedByIdentityId], references: [id])
+  pdfMedia MediaAsset? @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
+  ledgerEntries LedgerEntry[]
+  payouts Payout[]
+
+  @@index([unitId, periodStart, periodEnd])
+  @@index([ownerIdentityId, status])
+  @@index([status, publishedAt])
+  @@map("owner_statement")
+}
+
+model Payout {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  payeeType PayoutPayeeType @map("payee_type")
+  ownerStatementId String? @map("owner_statement_id")
+  providerId String? @map("provider_id")
+  periodStart DateTime? @map("period_start")
+  periodEnd DateTime? @map("period_end")
+  amountThb Int @map("amount_thb")
+  method PayoutMethod
+  reference String
+  executedOn DateTime @map("executed_on") @db.Date
+  recordedByIdentityId String @map("recorded_by_identity_id")
+  status PayoutStatus @default(recorded)
+
+  // Relations
+  ownerStatement OwnerStatement? @relation(fields: [ownerStatementId], references: [id], onDelete: SetNull)
+  provider Provider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  recordedBy Identity @relation(fields: [recordedByIdentityId], references: [id])
+
+  @@index([payeeType, status])
+  @@index([ownerStatementId])
+  @@index([providerId, periodStart, periodEnd])
+  @@index([executedOn])
+  @@map("payout")
 }
 
 model UnitEngagement {
@@ -862,6 +952,7 @@ model UnitEngagement {
   owner Identity @relation(name: "engagementOwner", fields: [ownerIdentityId], references: [id])
   managementOrg Organization? @relation(fields: [managementOrgId], references: [id])
   mandateMedia MediaAsset? @relation(name: "engagementMandate", fields: [mandateMediaId], references: [id])
+  statements OwnerStatement[]
 
   @@index([unitId, status])
   @@map("unit_engagement")
@@ -911,6 +1002,7 @@ model Provider {
   services Service[]
   serviceAreas ProviderProject[]
   serviceOrders ServiceOrder[]
+  payouts Payout[]
 
   @@index([status, vetted_at])
   @@map("provider")
@@ -1123,6 +1215,7 @@ model MediaAsset {
   tm30Receipts Tm30Filing[] @relation("tm30Receipt")
   conditionReportPhotos ConditionReportMedia[] @relation("conditionReportPhoto")
   complianceRecordDocs ComplianceRecord[] @relation("complianceRecordDoc")
+  statementPdfs OwnerStatement[] @relation("statementPdf")
 
   @@map("media_asset")
 }

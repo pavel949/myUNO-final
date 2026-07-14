@@ -1,4 +1,5 @@
 import { PrismaClient, OwnerStatement } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 import { computeUnitLedgerTotals, type LedgerEntryWithRelations } from './ledger.service';
 
 export interface StatementGenerationInput {
@@ -58,7 +59,7 @@ export async function generateOwnerStatement(
   const engagement = unit.engagements[0];
 
   // Enforce: direct_managed MUST have NOI cap set
-  if (engagement.type === 'direct_managed' && !engagement.noiCapAnnualThb) {
+  if (engagement.engagementType === 'direct_managed' && !engagement.noiCapAnnualThb) {
     throw new Error(
       `Statement generation refused: direct_managed unit ${unitId} missing noi_cap_annual_thb. Admin must set the cap before statements can be generated.`
     );
@@ -67,27 +68,12 @@ export async function generateOwnerStatement(
   // Compute ledger totals for the period
   const totals = await computeUnitLedgerTotals(db, unitId, periodStart, periodEnd);
 
-  // Get all ledger entries for the period (for line items)
-  const entries = await db.ledgerEntry.findMany({
-    where: {
-      unitId,
-      occurredOn: {
-        gte: periodStart,
-        lte: periodEnd,
-      },
-    },
-    orderBy: { occurredOn: 'asc' },
-  });
-
-  const revenueEntries = entries.filter((e) => e.amountThb > 0);
-  const costEntries = entries.filter((e) => e.amountThb < 0);
-
   // Compute owner share based on engagement type
   let ownerShareThb = 0;
   let estateShareThb = 0;
   let capApplied = false;
 
-  if (engagement.type === 'direct_managed') {
+  if (engagement.engagementType === 'direct_managed') {
     // NOI cap pro-rata: owner gets MIN(NOI, cap_pro_rata)
     const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
     const capProRataThb = Math.round((engagement.noiCapAnnualThb! * daysInPeriod) / 365);
@@ -96,17 +82,23 @@ export async function generateOwnerStatement(
     ownerShareThb = Math.min(noi, capProRataThb);
     estateShareThb = Math.max(0, noi - capProRataThb);
     capApplied = capProRataThb < noi; // Cap applied if it limited the owner share
-  } else if (engagement.type === 'via_management_company') {
+  } else if (engagement.engagementType === 'via_management_company') {
     // MC gets remainder; owner receives NOI minus MC fee
-    const mcFeePercentage = engagement.mcPlatformFeePct || 0;
-    const mcFeeThb = Math.round((totals.netTh * mcFeePercentage) / 100);
+    const mcFeePercentage = await getConfig(db, 'engagement.via_mc.platform_fee_pct', {
+      projectId: unit.projectId,
+      unitId,
+    });
+    const mcFeeThb = Math.round((totals.netTh * (mcFeePercentage || 0)) / 100);
     ownerShareThb = totals.netTh - mcFeeThb;
     estateShareThb = mcFeeThb; // Estate keeps platform fee
     capApplied = false;
-  } else if (engagement.type === 'owner_direct') {
+  } else if (engagement.engagementType === 'owner_direct') {
     // Owner gets NOI minus booking fee
-    const bookingFeePercentage = engagement.ownerDirectBookingFeePct || 0;
-    const bookingFeeThb = Math.round((totals.netTh * bookingFeePercentage) / 100);
+    const bookingFeePercentage = await getConfig(db, 'engagement.owner_direct.booking_fee_pct', {
+      projectId: unit.projectId,
+      unitId,
+    });
+    const bookingFeeThb = Math.round((totals.netTh * (bookingFeePercentage || 0)) / 100);
     ownerShareThb = totals.netTh - bookingFeeThb;
     estateShareThb = bookingFeeThb; // Estate keeps fee
     capApplied = false;

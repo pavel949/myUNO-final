@@ -303,6 +303,24 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Administrator',
     th: 'ผู้ดูแลระบบ',
   },
+
+  // Notification keys
+  {
+    key: 'notify.stay_dates_modified.title',
+    namespace: 'notify',
+    description: 'Notification: stay dates modified',
+    ru: 'Даты вашего проживания изменены',
+    en: 'Your stay dates have been modified',
+    th: 'วันที่พักของคุณถูกเปลี่ยนแปลง',
+  },
+  {
+    key: 'notify.stay_dates_modified.body',
+    namespace: 'notify',
+    description: 'Notification: stay dates modified details',
+    ru: 'Ваше бронирование было обновлено новыми датами. Проверьте детали в приложении.',
+    en: 'Your booking has been updated with new dates. Check the details in the app.',
+    th: 'การจองของคุณได้รับการอัปเดตด้วยวันที่ใหม่ โปรดตรวจสอบรายละเอียดในแอป',
+  },
 ];
 
 export async function seedContent(

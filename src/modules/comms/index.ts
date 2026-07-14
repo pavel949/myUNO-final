@@ -17,3 +17,21 @@ export {
   publishNotification,
   hasSubscribers,
 } from './notification.bus';
+
+export {
+  findOrCreateThread,
+  sendMessage,
+  markThreadRead,
+  getThreadsForIdentity,
+  getThreadMessages,
+  addSystemMessage,
+  getUnreadCounts,
+  type CreateThreadInput,
+  type SendMessageInput,
+} from './thread.service';
+
+export {
+  subscribe as subscribeThread,
+  publishMessage,
+  hasSubscribers as hasThreadSubscribers,
+} from './thread.bus';

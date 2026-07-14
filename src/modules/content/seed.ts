@@ -321,6 +321,16 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Your booking has been updated with new dates. Check the details in the app.',
     th: 'การจองของคุณได้รับการอัปเดตด้วยวันที่ใหม่ โปรดตรวจสอบรายละเอียดในแอป',
   },
+
+  // Thread system messages
+  {
+    key: 'thread.system.booking_confirmed',
+    namespace: 'thread',
+    description: 'System message: booking confirmed',
+    ru: 'Бронирование подтверждено. Платеж получен.',
+    en: 'Booking confirmed. Payment received.',
+    th: 'การจองได้รับการยืนยัน ชำระเงินแล้ว',
+  },
 ];
 
 export async function seedContent(

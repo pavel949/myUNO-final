@@ -280,6 +280,19 @@ enum NotificationDeliveryStatus {
   read
 }
 
+enum ThreadContextType {
+  booking
+  service_order
+  ticket
+  unit
+  general
+}
+
+enum MessageKind {
+  user
+  system
+}
+
 // --- The spine ---
 
 model Identity {
@@ -330,6 +343,8 @@ model Identity {
   ledgerEntriesCreated LedgerEntry[] @relation("ledgerEntryCreator")
   notifications Notification[]
   notificationPreferences NotificationPreference[]
+  threadParticipants ThreadParticipant[]
+  sentMessages Message[]
 
   @@map("identity")
 }
@@ -392,6 +407,7 @@ model Project {
   organizations Organization[]
   bookings Booking[]
   ledgerEntries LedgerEntry[]
+  threads Thread[]
 
   @@map("project")
 }
@@ -939,4 +955,61 @@ model NotificationPreference {
 
   @@unique([identityId, type, channel])
   @@map("notification_preference")
+}
+
+// --- Messaging ---
+
+model Thread {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contextType ThreadContextType @map("context_type")
+  contextId String? @map("context_id")
+  projectId String? @map("project_id")
+  lastMessageAt DateTime? @map("last_message_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  participants ThreadParticipant[]
+  messages Message[]
+
+  @@index([projectId, lastMessageAt])
+  @@index([contextType, contextId])
+  @@map("thread")
+}
+
+model ThreadParticipant {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  threadId String @map("thread_id")
+  identityId String @map("identity_id")
+  participantRole String @map("participant_role")
+  lastReadAt DateTime? @map("last_read_at")
+  muted Boolean @default(false)
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, identityId])
+  @@index([identityId])
+  @@map("thread_participant")
+}
+
+model Message {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  threadId String @map("thread_id")
+  senderIdentityId String? @map("sender_identity_id")
+  body String?
+  messageKind MessageKind @default(user) @map("message_kind")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender Identity? @relation(fields: [senderIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([threadId, createdAt])
+  @@map("message")
 }

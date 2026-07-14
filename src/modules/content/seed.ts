@@ -331,6 +331,142 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Booking confirmed. Payment received.',
     th: 'การจองได้รับการยืนยัน ชำระเงินแล้ว',
   },
+
+  // Ticket categories
+  {
+    key: 'catalog.ticket_category.maintenance',
+    namespace: 'catalog',
+    description: 'Ticket category: maintenance',
+    ru: 'Техническое обслуживание',
+    en: 'Maintenance',
+    th: 'การบำรุงรักษา',
+  },
+  {
+    key: 'catalog.ticket_category.housekeeping',
+    namespace: 'catalog',
+    description: 'Ticket category: housekeeping',
+    ru: 'Уборка',
+    en: 'Housekeeping',
+    th: 'การทำความสะอาด',
+  },
+  {
+    key: 'catalog.ticket_category.complaint',
+    namespace: 'catalog',
+    description: 'Ticket category: complaint',
+    ru: 'Жалоба',
+    en: 'Complaint',
+    th: 'การร้องเรียน',
+  },
+  {
+    key: 'catalog.ticket_category.billing_question',
+    namespace: 'catalog',
+    description: 'Ticket category: billing question',
+    ru: 'Вопрос о счете',
+    en: 'Billing Question',
+    th: 'คำถามเกี่ยวกับการเรียกเก็บเงิน',
+  },
+
+  // Ticket status labels
+  {
+    key: 'ticket.status.open',
+    namespace: 'ticket',
+    description: 'Ticket status: open',
+    ru: 'Открыто',
+    en: 'Open',
+    th: 'เปิด',
+  },
+  {
+    key: 'ticket.status.acknowledged',
+    namespace: 'ticket',
+    description: 'Ticket status: acknowledged',
+    ru: 'Подтверждено получение',
+    en: 'Acknowledged',
+    th: 'ยืนยันแล้ว',
+  },
+  {
+    key: 'ticket.status.in_progress',
+    namespace: 'ticket',
+    description: 'Ticket status: in progress',
+    ru: 'В процессе',
+    en: 'In Progress',
+    th: 'กำลังดำเนินการ',
+  },
+  {
+    key: 'ticket.status.waiting_reporter',
+    namespace: 'ticket',
+    description: 'Ticket status: waiting for reporter',
+    ru: 'Ожидание ответа',
+    en: 'Waiting for Reporter',
+    th: 'รอการตอบสนอง',
+  },
+  {
+    key: 'ticket.status.resolved',
+    namespace: 'ticket',
+    description: 'Ticket status: resolved',
+    ru: 'Решено',
+    en: 'Resolved',
+    th: 'แก้ไขแล้ว',
+  },
+  {
+    key: 'ticket.status.closed',
+    namespace: 'ticket',
+    description: 'Ticket status: closed',
+    ru: 'Закрыто',
+    en: 'Closed',
+    th: 'ปิด',
+  },
+
+  // Ticket priority labels
+  {
+    key: 'ticket.priority.low',
+    namespace: 'ticket',
+    description: 'Ticket priority: low',
+    ru: 'Низкий',
+    en: 'Low',
+    th: 'ต่ำ',
+  },
+  {
+    key: 'ticket.priority.normal',
+    namespace: 'ticket',
+    description: 'Ticket priority: normal',
+    ru: 'Обычный',
+    en: 'Normal',
+    th: 'ปกติ',
+  },
+  {
+    key: 'ticket.priority.high',
+    namespace: 'ticket',
+    description: 'Ticket priority: high',
+    ru: 'Высокий',
+    en: 'High',
+    th: 'สูง',
+  },
+  {
+    key: 'ticket.priority.urgent',
+    namespace: 'ticket',
+    description: 'Ticket priority: urgent',
+    ru: 'Срочный',
+    en: 'Urgent',
+    th: 'เร่งด่วน',
+  },
+
+  // Ticket system messages
+  {
+    key: 'thread.system.ticket_created',
+    namespace: 'thread',
+    description: 'System message: ticket created',
+    ru: 'Заявка создана.',
+    en: 'Ticket created.',
+    th: 'ได้สร้างตั๋ว',
+  },
+  {
+    key: 'thread.system.sla_escalated',
+    namespace: 'thread',
+    description: 'System message: SLA escalated',
+    ru: 'SLA истек. Требуется срочное внимание.',
+    en: 'SLA escalated. Urgent attention required.',
+    th: 'SLA หมดลง ต้องให้ความสำคัญเร่งด่วน',
+  },
 ];
 
 export async function seedContent(

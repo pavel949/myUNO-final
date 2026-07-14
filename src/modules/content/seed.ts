@@ -467,6 +467,66 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'SLA escalated. Urgent attention required.',
     th: 'SLA หมดลง ต้องให้ความสำคัญเร่งด่วน',
   },
+
+  // Announcement labels
+  {
+    key: 'announcement.audience.everyone',
+    namespace: 'announcement',
+    description: 'Audience: everyone',
+    ru: 'Все',
+    en: 'Everyone',
+    th: 'ทุกคน',
+  },
+  {
+    key: 'announcement.audience.owners',
+    namespace: 'announcement',
+    description: 'Audience: owners only',
+    ru: 'Только владельцы',
+    en: 'Owners Only',
+    th: 'เจ้าของเท่านั้น',
+  },
+  {
+    key: 'announcement.audience.residents',
+    namespace: 'announcement',
+    description: 'Audience: residents only',
+    ru: 'Только резиденты',
+    en: 'Residents Only',
+    th: 'ผู้พักอาศัยเท่านั้น',
+  },
+  {
+    key: 'announcement.audience.guests_in_stay',
+    namespace: 'announcement',
+    description: 'Audience: current guests only',
+    ru: 'Только текущие гости',
+    en: 'Current Guests Only',
+    th: 'แขกปัจจุบันเท่านั้น',
+  },
+  {
+    key: 'announcement.audience.staff',
+    namespace: 'announcement',
+    description: 'Audience: staff only',
+    ru: 'Только персонал',
+    en: 'Staff Only',
+    th: 'พนักงานเท่านั้น',
+  },
+
+  // Announcement notification (N-32)
+  {
+    key: 'notify.announcement_published.title',
+    namespace: 'notify',
+    description: 'Notification: announcement published',
+    ru: 'Новое объявление',
+    en: 'New Announcement',
+    th: 'ประกาศใหม่',
+  },
+  {
+    key: 'notify.announcement_published.body',
+    namespace: 'notify',
+    description: 'Notification: announcement published body',
+    ru: '{title}. Прочитайте полный текст в приложении.',
+    en: '{title}. Read the full message in the app.',
+    th: '{title}. อ่านข้อความเต็มในแอป',
+  },
 ];
 
 export async function seedContent(

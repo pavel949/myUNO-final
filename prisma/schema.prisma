@@ -317,6 +317,26 @@ enum TicketEventType {
   sla_escalation
 }
 
+enum AnnouncementAudience {
+  everyone
+  owners
+  residents
+  guests_in_stay
+  staff
+}
+
+enum AnnouncementPostedAs {
+  myuno
+  management_company
+  juristic_person
+}
+
+enum AnnouncementStatus {
+  draft
+  published
+  unpublished
+}
+
 // --- The spine ---
 
 model Identity {
@@ -372,6 +392,8 @@ model Identity {
   ticketsRaised Ticket[] @relation("ticketRaisedBy")
   ticketsAssigned Ticket[] @relation("ticketAssignee")
   ticketEvents TicketEvent[]
+  announcementsCreated Announcement[]
+  announcementReads AnnouncementRead[]
 
   @@map("identity")
 }
@@ -436,6 +458,7 @@ model Project {
   ledgerEntries LedgerEntry[]
   threads Thread[]
   tickets Ticket[]
+  announcements Announcement[]
 
   @@map("project")
 }
@@ -749,6 +772,7 @@ model Organization {
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   engagements UnitEngagement[]
   roleAssignments RoleAssignment[]
+  announcements Announcement[]
 
   @@map("organization")
 }
@@ -1114,4 +1138,49 @@ model TicketMedia {
   @@unique([ticketId, mediaId])
   @@index([ticketId, position])
   @@map("ticket_media")
+}
+
+model Announcement {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId String @map("project_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  organizationId String? @map("organization_id")
+
+  title String
+  body String
+  audience AnnouncementAudience
+  postedAs AnnouncementPostedAs @map("posted_as")
+  status AnnouncementStatus @default(draft)
+  isPinned Boolean @default(false) @map("is_pinned")
+  isImportant Boolean @default(false) @map("is_important")
+  expiresAt DateTime? @map("expires_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  reads AnnouncementRead[]
+
+  @@index([projectId, status, createdAt])
+  @@index([postedAs, organizationId])
+  @@map("announcement")
+}
+
+model AnnouncementRead {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  announcementId String @map("announcement_id")
+  identityId String @map("identity_id")
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, identityId])
+  @@index([identityId, createdAt])
+  @@map("announcement_read")
 }

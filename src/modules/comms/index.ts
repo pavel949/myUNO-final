@@ -48,3 +48,16 @@ export {
   type RaiseTicketInput,
   type UpdateTicketStatusInput,
 } from './ticket.service';
+
+export {
+  createAnnouncement,
+  publishAnnouncement,
+  unpublishAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  getProjectAnnouncements,
+  markAnnouncementRead,
+  getUnreadCount,
+  type CreateAnnouncementInput,
+  type UpdateAnnouncementInput,
+} from './announcement.service';

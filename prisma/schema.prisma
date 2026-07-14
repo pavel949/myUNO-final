@@ -232,6 +232,13 @@ enum PayoutStatus {
   reconciled
 }
 
+enum DepositClaimStatus {
+  filed
+  approved
+  rejected
+  disputed
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -517,6 +524,7 @@ model Identity {
   statementsOwned OwnerStatement[] @relation("statementOwner")
   statementsPublished OwnerStatement[] @relation("statementPublishedBy")
   payoutsRecorded Payout[]
+  depositClaimsFiled DepositClaim[] @relation("depositClaimFiled")
 
   @@map("identity")
 }
@@ -720,6 +728,7 @@ model Booking {
   serviceOrders ServiceOrder[]
   tm30Filings Tm30Filing[]
   conditionReports ConditionReport[]
+  depositClaims DepositClaim[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -928,6 +937,31 @@ model Payout {
   @@index([providerId, periodStart, periodEnd])
   @@index([executedOn])
   @@map("payout")
+}
+
+model DepositClaim {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingId String @map("booking_id")
+  claimantIdentityId String @map("claimant_identity_id")
+  description String
+  claimedAmountThb Int @map("claimed_amount_thb")
+  status DepositClaimStatus @default(filed)
+  evidenceMediaIds String[] @default([]) @map("evidence_media_ids")
+  filedAt DateTime @map("filed_at")
+  resolutionAt DateTime? @map("resolution_at")
+  resolutionNote String?
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  claimant Identity @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
+  evidenceMedia MediaAsset[] @relation(name: "claimEvidence")
+
+  @@index([bookingId, status])
+  @@index([claimantIdentityId, filedAt])
+  @@map("deposit_claim")
 }
 
 model UnitEngagement {
@@ -1216,6 +1250,7 @@ model MediaAsset {
   conditionReportPhotos ConditionReportMedia[] @relation("conditionReportPhoto")
   complianceRecordDocs ComplianceRecord[] @relation("complianceRecordDoc")
   statementPdfs OwnerStatement[] @relation("statementPdf")
+  claimEvidence DepositClaim[] @relation("claimEvidence")
 
   @@map("media_asset")
 }

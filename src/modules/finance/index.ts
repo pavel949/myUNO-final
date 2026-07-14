@@ -50,3 +50,16 @@ export {
   type ProviderRemittanceInput,
   type RemittanceReport,
 } from './payout.service';
+
+export {
+  createPreAuthDeposit,
+  voidDepositOnCleanCheckout,
+  captureDepositOnClaim,
+  releaseDepositOnDisputeResolution,
+  fileDepositClaim,
+  approveClaim,
+  rejectClaim,
+  getClaimsAwaitingResolution,
+  type DepositClaimInput,
+  type DepositClaimDetails,
+} from './deposits.service';

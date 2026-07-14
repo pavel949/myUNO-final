@@ -228,6 +228,7 @@ export interface BookingFactoryOpts {
   startDate?: Date;
   endDate?: Date;
   status?: 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled';
+  verificationStatus?: 'not_required' | 'pending' | 'passports_received' | 'failed';
 }
 
 export async function createBooking(opts: BookingFactoryOpts) {
@@ -247,6 +248,7 @@ export async function createBooking(opts: BookingFactoryOpts) {
       children: 0,
       totalThb: 4000,
       status: opts.status || 'confirmed',
+      verificationStatus: opts.verificationStatus || 'not_required',
     },
   });
 }

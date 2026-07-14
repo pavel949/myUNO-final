@@ -1,5 +1,5 @@
 // module: ops — public interface (see docs/07_flows.md §F-OPS)
-// Owns: Tm30Filing, ConditionReport, ComplianceRecord
+// Owns: Tm30Filing, ConditionReport, ComplianceRecord, verification
 // Depends on: core, config, comms
 
 export {
@@ -13,3 +13,12 @@ export {
   type Tm30FilingDetails,
   type CreateConditionReportInput,
 } from './tm30-filing.service';
+
+export {
+  capturePassportData,
+  markVerificationFailed,
+  decryptPassportNumber,
+  checkVerificationDeadlines,
+  type CapturePassportDataInput,
+  type VerificationCheckResult,
+} from './verification.service';

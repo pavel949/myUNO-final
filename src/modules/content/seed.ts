@@ -775,6 +775,40 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'TM30 for {{guest_name}} not filed within 24h. Urgent action required.',
     th: 'TM30 สำหรับ {{guest_name}} ไม่ได้ยื่นภายใน 24 ชั่วโมง จำเป็นต้องดำเนินการเร่งด่วน',
   },
+
+  // Pre-arrival verification (doc 07 F-GUEST-5)
+  {
+    key: 'notify.stay.prearrival_passports.title',
+    namespace: 'notify',
+    description: 'Notification: pre-arrival passport reminder (N-07)',
+    ru: 'Пожалуйста, предоставьте данные паспорта',
+    en: 'Please Provide Your Passport Information',
+    th: 'กรุณาให้ข้อมูลหนังสือเดินทางของคุณ',
+  },
+  {
+    key: 'notify.stay.prearrival_passports.body',
+    namespace: 'notify',
+    description: 'Notification: pre-arrival passport reminder details',
+    ru: 'Чтобы завершить подготовку к приезду в {{unit_name}}, пожалуйста, предоставьте данные паспорта для каждого гостя. Крайний срок: {{deadline}}.',
+    en: 'To complete your arrival preparation at {{unit_name}}, please provide passport details for each guest. Deadline: {{deadline}}.',
+    th: 'เพื่อให้การเตรียมการถึง {{unit_name}} สมบูรณ์ โปรดให้ข้อมูลหนังสือเดินทางของแต่ละแขก ส่วนหนึ่ง: {{deadline}}',
+  },
+  {
+    key: 'notify.stay.verification_failed.title',
+    namespace: 'notify',
+    description: 'Notification: verification deadline missed (N-08)',
+    ru: 'Требуется срочно предоставить паспортные данные',
+    en: 'Passport Information Required Urgently',
+    th: 'ต้องการข้อมูลหนังสือเดินทางอย่างเร่งด่วน',
+  },
+  {
+    key: 'notify.stay.verification_failed.body',
+    namespace: 'notify',
+    description: 'Notification: verification deadline missed details',
+    ru: 'Гость {{guest_name}} в {{unit_name}} не предоставил паспортные данные к установленному сроку. Персонал может запросить данные при заселении.',
+    en: 'Guest {{guest_name}} at {{unit_name}} did not provide passport information by the deadline. Staff can request details at check-in.',
+    th: 'แขก {{guest_name}} ที่ {{unit_name}} ไม่ได้ให้ข้อมูลหนังสือเดินทางตามกำหนด พนักงานสามารถขอรายละเอียดได้ระหว่างเช็คอิน',
+  },
 ];
 
 export async function seedContent(

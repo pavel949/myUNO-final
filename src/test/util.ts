@@ -33,6 +33,9 @@ export async function resetDb() {
   await db.unitEngagement.deleteMany();
   await db.blockedDate.deleteMany();
   await db.pricingRule.deleteMany();
+  await db.bookingChange.deleteMany();
+  await db.bookingGuest.deleteMany();
+  await db.booking.deleteMany();
   await db.unit.deleteMany();
   await db.organization.deleteMany();
   await db.project.deleteMany();

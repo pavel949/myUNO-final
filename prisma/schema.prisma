@@ -103,6 +103,49 @@ enum BlockedDateReason {
   other
 }
 
+enum BookingType {
+  guest_stay
+  owner_stay
+  external_ota
+  internal_block
+}
+
+enum BookingChannel {
+  direct
+  airbnb
+  booking_com
+  agoda
+  agent
+  manual
+}
+
+enum BookingStatus {
+  requested
+  pending_payment
+  confirmed
+  checked_in
+  checked_out
+  completed
+  declined
+  expired
+  cancelled
+}
+
+enum VerificationStatus {
+  not_required
+  pending
+  passports_received
+  failed
+}
+
+enum BookingChangeType {
+  dates
+  party
+  cancel
+  status
+  price
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -151,6 +194,10 @@ model Identity {
   configChanges ConfigChange[] @relation("changedBy")
   unitEngagements UnitEngagement[] @relation("engagementOwner")
   createdBlockedDates BlockedDate[] @relation("blockedDateCreator")
+  bookingsAsGuest Booking[] @relation("bookingGuest")
+  bookingsCancelled Booking[] @relation("bookingCancelledBy")
+  bookingGuestsAs BookingGuest[]
+  bookingChanges BookingChange[]
 
   @@map("identity")
 }
@@ -211,6 +258,7 @@ model Project {
   roleAssignments RoleAssignment[] @relation("projectScope")
   galleryMedia ProjectMedia[]
   organizations Organization[]
+  bookings Booking[]
 
   @@map("project")
 }
@@ -249,6 +297,7 @@ model Unit {
   roleAssignments RoleAssignment[] @relation("unitScope")
   blockedDates BlockedDate[]
   pricingRules PricingRule[]
+  bookings Booking[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -292,6 +341,96 @@ model PricingRule {
 
   @@index([unitId, startDate, endDate])
   @@map("pricing_rule")
+}
+
+model Booking {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  projectId String @map("project_id")
+  guestIdentityId String @map("guest_identity_id")
+  bookingType BookingType @map("booking_type")
+  channel BookingChannel
+  externalRef String? @map("external_ref")
+  status BookingStatus @default(pending_payment)
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  adults Int
+  children Int
+  priceBreakdown Json? @map("price_breakdown") @db.JsonB
+  totalThb Int @map("total_thb")
+  balanceDueThb Int @default(0) @map("balance_due_thb")
+  refundAccruedThb Int @default(0) @map("refund_accrued_thb")
+  cancellationPolicySnapshot Json? @map("cancellation_policy_snapshot") @db.JsonB
+  holdExpiresAt DateTime? @map("hold_expires_at")
+  requestExpiresAt DateTime? @map("requested_expires_at")
+  verificationStatus VerificationStatus @default(not_required) @map("verification_status")
+  checkedInAt DateTime? @map("checked_in_at")
+  checkedOutAt DateTime? @map("checked_out_at")
+  cancelledAt DateTime? @map("cancelled_at")
+  cancelledByIdentityId String? @map("cancelled_by_identity_id")
+  cancellationReason String? @map("cancellation_reason")
+  guestNote String? @map("guest_note")
+  internalNote String? @map("internal_note")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  guestIdentity Identity @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
+  cancelledBy Identity? @relation(name: "bookingCancelledBy", fields: [cancelledByIdentityId], references: [id], onDelete: SetNull)
+  guests BookingGuest[]
+  changes BookingChange[]
+
+  @@unique([externalRef, channel])
+  @@index([unitId, status, startDate, endDate])
+  @@index([guestIdentityId])
+  @@index([projectId])
+  @@index([status])
+  @@map("booking")
+}
+
+model BookingGuest {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingId String @map("booking_id")
+  identityId String? @map("identity_id")
+  fullName String @map("full_name")
+  nationality String
+  passportNumber String @map("passport_number")
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  passportMediaId String? @map("passport_media_id")
+  isLead Boolean @default(false)
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  identity Identity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  passportMedia MediaAsset? @relation(fields: [passportMediaId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@map("booking_guest")
+}
+
+model BookingChange {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bookingId String @map("booking_id")
+  changeType BookingChangeType @map("change_type")
+  oldValue Json? @map("old_value") @db.JsonB
+  newValue Json? @map("new_value") @db.JsonB
+  priceDeltaThb Int @default(0) @map("price_delta_thb")
+  actorIdentityId String @map("actor_identity_id")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor Identity @relation(fields: [actorIdentityId], references: [id])
+
+  @@index([bookingId])
+  @@map("booking_change")
 }
 
 model UnitEngagement {
@@ -388,6 +527,7 @@ model MediaAsset {
   unitMedia UnitMedia[]
   projectMedia ProjectMedia[]
   engagementMandates UnitEngagement[] @relation("engagementMandate")
+  bookingGuestPassports BookingGuest[]
 
   @@map("media_asset")
 }

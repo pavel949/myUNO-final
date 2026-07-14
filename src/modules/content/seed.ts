@@ -757,6 +757,24 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Share your feedback on {{service_title}}',
     th: 'แชร์ความคิดเห็นของคุณเกี่ยวกับ {{service_title}}',
   },
+
+  // TM30 Immigration filing (doc 07 F-OPS-2)
+  {
+    key: 'tm30.escalation.title',
+    namespace: 'tm30',
+    description: 'Notification: TM30 filing escalated (F-OPS-2)',
+    ru: 'TM30 требует внимания',
+    en: 'TM30 Filing Needs Attention',
+    th: 'การยื่น TM30 ต้องการความสนใจ',
+  },
+  {
+    key: 'tm30.escalation.body',
+    namespace: 'tm30',
+    description: 'Notification body: TM30 escalation',
+    ru: 'Виза гостя {{guest_name}} не подана в течение 24 часов. Требуется срочное действие.',
+    en: 'TM30 for {{guest_name}} not filed within 24h. Urgent action required.',
+    th: 'TM30 สำหรับ {{guest_name}} ไม่ได้ยื่นภายใน 24 ชั่วโมง จำเป็นต้องดำเนินการเร่งด่วน',
+  },
 ];
 
 export async function seedContent(

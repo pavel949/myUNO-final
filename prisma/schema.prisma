@@ -380,6 +380,53 @@ enum ReviewTargetType {
   service_order
 }
 
+enum Tm30FilingStatus {
+  pending
+  filed
+  failed
+  escalated
+  not_required
+}
+
+enum ConditionReportType {
+  baseline
+  check_in
+  check_out
+  incident
+}
+
+enum ComplianceRecordType {
+  permitted_use
+  insurance
+  license
+  title_audit
+  other
+}
+
+enum ComplianceRecordStatus {
+  pending
+  confirmed
+  expired
+  failed
+}
+
+enum MobilizationChecklistItemStep {
+  qualify
+  mandate
+  legal_audit
+  condition_survey
+  standards_uplift
+  pricing_setup
+  golive_checklist
+}
+
+enum MobilizationChecklistItemStatus {
+  pending
+  done
+  blocked
+  skipped
+}
+
 // --- The spine ---
 
 model Identity {
@@ -442,6 +489,10 @@ model Identity {
   announcementsCreated Announcement[]
   announcementReads AnnouncementRead[]
   vettedProviders Provider[] @relation("providerVettedBy")
+  tm30FilingsFiled Tm30Filing[] @relation("tm30FilingFiled")
+  conditionReportsCreated ConditionReport[]
+  complianceRecordsVerified ComplianceRecord[] @relation("complianceVerifier")
+  mobilizationCompletions MobilizationChecklistItem[] @relation("mobilizationCompletedBy")
 
   @@map("identity")
 }
@@ -552,6 +603,9 @@ model Unit {
   ledgerEntries LedgerEntry[]
   tickets Ticket[]
   serviceOrders ServiceOrder[]
+  conditionReports ConditionReport[]
+  complianceRecords ComplianceRecord[]
+  mobilizationChecklist MobilizationChecklistItem[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -639,6 +693,8 @@ model Booking {
   payments Payment[]
   ledgerEntries LedgerEntry[]
   serviceOrders ServiceOrder[]
+  tm30Filings Tm30Filing[]
+  conditionReports ConditionReport[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -666,6 +722,7 @@ model BookingGuest {
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   identity Identity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
   passportMedia MediaAsset? @relation(fields: [passportMediaId], references: [id], onDelete: SetNull)
+  tm30Filing Tm30Filing?
 
   @@index([bookingId])
   @@map("booking_guest")
@@ -1063,6 +1120,9 @@ model MediaAsset {
   providerLogos Provider[] @relation("providerLogo")
   serviceCoverMedia Service[] @relation("serviceCover")
   serviceMedia ServiceMedia[] @relation("serviceImage")
+  tm30Receipts Tm30Filing[] @relation("tm30Receipt")
+  conditionReportPhotos ConditionReportMedia[] @relation("conditionReportPhoto")
+  complianceRecordDocs ComplianceRecord[] @relation("complianceRecordDoc")
 
   @@map("media_asset")
 }
@@ -1419,4 +1479,123 @@ model AnnouncementRead {
   @@unique([announcementId, identityId])
   @@index([identityId, createdAt])
   @@map("announcement_read")
+}
+
+// --- Operations (TM30, condition reports, compliance) ---
+
+model Tm30Filing {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingId String @map("booking_id")
+  bookingGuestId String @unique @map("booking_guest_id")
+  dueAt DateTime @map("due_at")
+  status Tm30FilingStatus @default(pending)
+
+  filedAt DateTime? @map("filed_at")
+  filedByIdentityId String? @map("filed_by_identity_id")
+  receiptMediaId String? @map("receipt_media_id")
+  failureNote String? @map("failure_note")
+  escalatedAt DateTime? @map("escalated_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingGuest BookingGuest @relation(fields: [bookingGuestId], references: [id], onDelete: Cascade)
+  filedBy Identity? @relation(name: "tm30FilingFiled", fields: [filedByIdentityId], references: [id], onDelete: SetNull)
+  receiptMedia MediaAsset? @relation(name: "tm30Receipt", fields: [receiptMediaId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId, status])
+  @@index([dueAt, status])
+  @@index([filedByIdentityId])
+  @@map("tm30_filing")
+}
+
+model ConditionReport {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  bookingId String? @map("booking_id")
+  reportType ConditionReportType @map("report_type")
+  notes String?
+  createdByIdentityId String @map("created_by_identity_id")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdBy Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+  media ConditionReportMedia[]
+
+  @@index([unitId, reportType, createdAt])
+  @@index([bookingId])
+  @@map("condition_report")
+}
+
+model ConditionReportMedia {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reportId String @map("report_id")
+  mediaId String @map("media_id")
+  sort Int @default(0)
+  caption String?
+
+  // Relations
+  report ConditionReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(name: "conditionReportPhoto", fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([reportId, mediaId])
+  @@index([reportId, sort])
+  @@map("condition_report_media")
+}
+
+model ComplianceRecord {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  recordType ComplianceRecordType @map("record_type")
+  status ComplianceRecordStatus @default(pending)
+
+  label String?
+  expiresOn DateTime? @map("expires_on") @db.Date
+  mediaId String? @map("media_id")
+  notes String?
+  verifiedAt DateTime? @map("verified_at")
+  verifiedByIdentityId String? @map("verified_by_identity_id")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  media MediaAsset? @relation(name: "complianceRecordDoc", fields: [mediaId], references: [id], onDelete: SetNull)
+  verifiedBy Identity? @relation(name: "complianceVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, status])
+  @@index([unitId, recordType])
+  @@map("compliance_record")
+}
+
+model MobilizationChecklistItem {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  step MobilizationChecklistItemStep
+  status MobilizationChecklistItemStatus @default(pending)
+
+  completedAt DateTime? @map("completed_at")
+  completedByIdentityId String? @map("completed_by_identity_id")
+  notes String?
+  requirementLabel String? @map("requirement_label")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  completedBy Identity? @relation(name: "mobilizationCompletedBy", fields: [completedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@unique([unitId, step])
+  @@index([unitId, status])
+  @@map("mobilization_checklist_item")
 }

@@ -220,3 +220,55 @@ export async function createService(opts: ServiceFactoryOpts) {
     },
   });
 }
+
+export interface BookingFactoryOpts {
+  unitId: string;
+  projectId: string;
+  guestIdentityId: string;
+  startDate?: Date;
+  endDate?: Date;
+  status?: 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled';
+}
+
+export async function createBooking(opts: BookingFactoryOpts) {
+  const startDate = opts.startDate || new Date('2026-07-15');
+  const endDate = opts.endDate || new Date('2026-07-17');
+
+  return db.booking.create({
+    data: {
+      unitId: opts.unitId,
+      projectId: opts.projectId,
+      guestIdentityId: opts.guestIdentityId,
+      bookingType: 'guest_stay',
+      channel: 'direct',
+      startDate,
+      endDate,
+      adults: 2,
+      children: 0,
+      totalThb: 4000,
+      status: opts.status || 'confirmed',
+    },
+  });
+}
+
+export interface BookingGuestFactoryOpts {
+  bookingId: string;
+  fullName: string;
+  nationality: string;
+  passportNumber: string;
+  dateOfBirth?: Date;
+  isLead?: boolean;
+}
+
+export async function createBookingGuest(opts: BookingGuestFactoryOpts) {
+  return db.bookingGuest.create({
+    data: {
+      bookingId: opts.bookingId,
+      fullName: opts.fullName,
+      nationality: opts.nationality,
+      passportNumber: opts.passportNumber,
+      dateOfBirth: opts.dateOfBirth,
+      isLead: opts.isLead || true,
+    },
+  });
+}

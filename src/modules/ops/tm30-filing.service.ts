@@ -104,10 +104,10 @@ export async function markTm30FilingFailed(
   tm30FilingId: string,
   failureNote: string
 ): Promise<void> {
-  const filing = await db.tm30Filing.findUnique({
+  const filing = (await db.tm30Filing.findUnique({
     where: { id: tm30FilingId },
     include: { booking: true, bookingGuest: true },
-  });
+  })) as any;
 
   if (!filing) {
     throw new Error(`Tm30Filing ${tm30FilingId} not found`);
@@ -166,6 +166,100 @@ export async function getTm30Queue(
   });
 
   return filings as any;
+}
+
+/**
+ * Log access to TM30 filing passport data (for audit trail).
+ * Called when staff views passport details for a filing.
+ */
+export async function logTm30PassportAccess(
+  db: PrismaClient,
+  tm30FilingId: string,
+  accessorIdentityId: string,
+  action: string = 'viewed_passport'
+): Promise<void> {
+  const filing = (await db.tm30Filing.findUnique({
+    where: { id: tm30FilingId },
+    include: { booking: true, bookingGuest: true },
+  })) as any;
+
+  if (!filing) {
+    throw new Error(`Tm30Filing ${tm30FilingId} not found`);
+  }
+
+  // Log access in the audit log
+  await db.auditLog.create({
+    data: {
+      action,
+      entityType: 'tm30_filing',
+      entityId: tm30FilingId,
+      actorIdentityId: accessorIdentityId,
+      data: {
+        bookingId: filing.bookingId,
+        guestName: filing.bookingGuest?.fullName,
+      } as any,
+    },
+  });
+}
+
+/**
+ * Check and escalate TM30 filings that are approaching their deadline.
+ * Sets escalated status when due_at - escalation_hours_before is reached.
+ */
+export async function checkTm30Escalations(
+  db: PrismaClient,
+  projectId: string
+): Promise<{ checked: number; escalated: number }> {
+  const now = new Date();
+  let checkedCount = 0;
+  let escalatedCount = 0;
+
+  const filings = (await db.tm30Filing.findMany({
+    where: {
+      booking: { projectId },
+      status: 'pending',
+    },
+    include: { booking: true, bookingGuest: true },
+  })) as any;
+
+  for (const filing of filings) {
+    checkedCount++;
+
+    // Get escalation threshold
+    const escalationHoursBefore =
+      ((await getConfig(db, 'compliance.tm30_escalation_hours_before', {
+        projectId,
+      })) as number | undefined) || 6;
+
+    const escalationThreshold = new Date(filing.dueAt.getTime() - escalationHoursBefore * 60 * 60 * 1000);
+
+    if (now >= escalationThreshold && !filing.escalatedAt) {
+      // Escalate and notify admin (N-24)
+      await db.tm30Filing.update({
+        where: { id: filing.id },
+        data: {
+          status: 'escalated',
+          escalatedAt: now,
+        },
+      });
+
+      // Notify admin/ops
+      await createNotification(db, {
+        identityId: filing.booking.projectId,
+        type: 'compliance.tm30_escalation',
+        titleKey: 'tm30.escalation.title',
+        bodyKey: 'tm30.escalation.body',
+        params: {
+          filing_id: filing.id,
+          guest_name: filing.bookingGuest?.fullName || 'Guest',
+        },
+      });
+
+      escalatedCount++;
+    }
+  }
+
+  return { checked: checkedCount, escalated: escalatedCount };
 }
 
 /**

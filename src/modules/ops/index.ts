@@ -7,6 +7,8 @@ export {
   markTm30FilingFiled,
   markTm30FilingFailed,
   getTm30Queue,
+  logTm30PassportAccess,
+  checkTm30Escalations,
   createConditionReport,
   getConditionReport,
   type CreateTm30FilingInput,

@@ -96,6 +96,121 @@ enum RoleStatus {
   revoked
 }
 
+enum BlockedDateReason {
+  maintenance
+  owner_hold
+  ota_import
+  other
+}
+
+enum BookingType {
+  guest_stay
+  owner_stay
+  external_ota
+  internal_block
+}
+
+enum BookingChannel {
+  direct
+  airbnb
+  booking_com
+  agoda
+  agent
+  manual
+}
+
+enum BookingStatus {
+  requested
+  pending_payment
+  confirmed
+  checked_in
+  checked_out
+  completed
+  declined
+  expired
+  cancelled
+}
+
+enum VerificationStatus {
+  not_required
+  pending
+  passports_received
+  failed
+}
+
+enum BookingChangeType {
+  dates
+  party
+  cancel
+  status
+  price
+}
+
+enum PaymentPurpose {
+  stay
+  stay_balance
+  service_order
+  deposit_preauth
+}
+
+enum PaymentMethod {
+  cash
+  card_provider
+}
+
+enum PaymentProvider {
+  cash
+  mock
+  opn
+}
+
+enum PaymentStatus {
+  created
+  pending
+  succeeded
+  failed
+  expired
+  voided
+}
+
+enum RefundMethod {
+  cash
+  card_provider
+}
+
+enum RefundReason {
+  cancellation
+  modification_decrease
+  provider_no_show
+  dispute_resolution
+  goodwill
+}
+
+enum RefundStatus {
+  requested
+  processing
+  succeeded
+  failed
+}
+
+enum LedgerEntryType {
+  rental_revenue
+  service_commission
+  ota_commission_cost
+  cleaning_cost
+  maintenance_cost
+  consumables_cost
+  utilities_cost
+  mc_platform_fee
+  owner_direct_fee
+  setup_fee
+  tax_collected
+  payout_owner
+  payout_provider
+  refund_out
+  adjustment
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -143,6 +258,16 @@ model Identity {
   contentKeyUpdates Translation[] @relation("updatedBy")
   configChanges ConfigChange[] @relation("changedBy")
   unitEngagements UnitEngagement[] @relation("engagementOwner")
+  createdBlockedDates BlockedDate[] @relation("blockedDateCreator")
+  bookingsAsGuest Booking[] @relation("bookingGuest")
+  bookingsCancelled Booking[] @relation("bookingCancelledBy")
+  bookingGuestsAs BookingGuest[]
+  bookingChanges BookingChange[]
+  paymentsPayer Payment[] @relation("paymentPayer")
+  paymentsReceivedBy Payment[] @relation("paymentReceivedBy")
+  refundsPaidBy Refund[] @relation("refundPaidBy")
+  refundsInitiatedBy Refund[] @relation("refundInitiatedBy")
+  ledgerEntriesCreated LedgerEntry[] @relation("ledgerEntryCreator")
 
   @@map("identity")
 }
@@ -203,6 +328,8 @@ model Project {
   roleAssignments RoleAssignment[] @relation("projectScope")
   galleryMedia ProjectMedia[]
   organizations Organization[]
+  bookings Booking[]
+  ledgerEntries LedgerEntry[]
 
   @@map("project")
 }
@@ -239,9 +366,237 @@ model Unit {
   media UnitMedia[]
   engagements UnitEngagement[]
   roleAssignments RoleAssignment[] @relation("unitScope")
+  blockedDates BlockedDate[]
+  pricingRules PricingRule[]
+  bookings Booking[]
+  ledgerEntries LedgerEntry[]
 
   @@unique([projectId, name])
   @@map("unit")
+}
+
+model BlockedDate {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  reason BlockedDateReason
+  note String?
+  createdByIdentityId String? @map("created_by_identity_id")
+  externalRef String? @map("external_ref")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, startDate, endDate])
+  @@map("blocked_date")
+}
+
+model PricingRule {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  nightlyThb Int @map("nightly_thb")
+  label String?
+  minNightsOverride Int? @map("min_nights_override")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, startDate, endDate])
+  @@map("pricing_rule")
+}
+
+model Booking {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId String @map("unit_id")
+  projectId String @map("project_id")
+  guestIdentityId String @map("guest_identity_id")
+  bookingType BookingType @map("booking_type")
+  channel BookingChannel
+  externalRef String? @map("external_ref")
+  status BookingStatus @default(pending_payment)
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  adults Int
+  children Int
+  priceBreakdown Json? @map("price_breakdown") @db.JsonB
+  totalThb Int @map("total_thb")
+  balanceDueThb Int @default(0) @map("balance_due_thb")
+  refundAccruedThb Int @default(0) @map("refund_accrued_thb")
+  cancellationPolicySnapshot Json? @map("cancellation_policy_snapshot") @db.JsonB
+  holdExpiresAt DateTime? @map("hold_expires_at")
+  requestExpiresAt DateTime? @map("requested_expires_at")
+  verificationStatus VerificationStatus @default(not_required) @map("verification_status")
+  checkedInAt DateTime? @map("checked_in_at")
+  checkedOutAt DateTime? @map("checked_out_at")
+  cancelledAt DateTime? @map("cancelled_at")
+  cancelledByIdentityId String? @map("cancelled_by_identity_id")
+  cancellationReason String? @map("cancellation_reason")
+  guestNote String? @map("guest_note")
+  internalNote String? @map("internal_note")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  guestIdentity Identity @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
+  cancelledBy Identity? @relation(name: "bookingCancelledBy", fields: [cancelledByIdentityId], references: [id], onDelete: SetNull)
+  guests BookingGuest[]
+  changes BookingChange[]
+  payments Payment[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([externalRef, channel])
+  @@index([unitId, status, startDate, endDate])
+  @@index([guestIdentityId])
+  @@index([projectId])
+  @@index([status])
+  @@map("booking")
+}
+
+model BookingGuest {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingId String @map("booking_id")
+  identityId String? @map("identity_id")
+  fullName String @map("full_name")
+  nationality String
+  passportNumber String @map("passport_number")
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  passportMediaId String? @map("passport_media_id")
+  isLead Boolean @default(false)
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  identity Identity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  passportMedia MediaAsset? @relation(fields: [passportMediaId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@map("booking_guest")
+}
+
+model BookingChange {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bookingId String @map("booking_id")
+  changeType BookingChangeType @map("change_type")
+  oldValue Json? @map("old_value") @db.JsonB
+  newValue Json? @map("new_value") @db.JsonB
+  priceDeltaThb Int @default(0) @map("price_delta_thb")
+  actorIdentityId String @map("actor_identity_id")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor Identity @relation(fields: [actorIdentityId], references: [id])
+
+  @@index([bookingId])
+  @@map("booking_change")
+}
+
+model Payment {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  purpose PaymentPurpose
+  bookingId String? @map("booking_id")
+  serviceOrderId String? @map("service_order_id")
+  payerIdentityId String @map("payer_identity_id")
+  method PaymentMethod
+  provider PaymentProvider
+  providerSessionId String? @map("provider_session_id")
+  amountThb Int @map("amount_thb")
+  receivedByIdentityId String? @map("received_by_identity_id")
+  receivedAt DateTime? @map("received_at")
+  receiptRef String? @map("receipt_ref")
+  receiptMediaId String? @map("receipt_media_id")
+  status PaymentStatus @default(created)
+  succeededAt DateTime? @map("succeeded_at")
+  failureReason String? @map("failure_reason")
+
+  // Relations
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payer Identity @relation(name: "paymentPayer", fields: [payerIdentityId], references: [id])
+  receivedBy Identity? @relation(name: "paymentReceivedBy", fields: [receivedByIdentityId], references: [id])
+  receiptMedia MediaAsset? @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
+  refunds Refund[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([bookingId])
+  @@index([payerIdentityId])
+  @@index([status])
+  @@unique([providerSessionId, provider])
+  @@map("payment")
+}
+
+model Refund {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  paymentId String @map("payment_id")
+  method RefundMethod
+  amountThb Int @map("amount_thb")
+  reason RefundReason
+  status RefundStatus @default(requested)
+  providerRefundId String? @map("provider_refund_id")
+  paidBackByIdentityId String? @map("paid_back_by_identity_id")
+  initiatedByIdentityId String @map("initiated_by_identity_id")
+
+  // Relations
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paidBackBy Identity? @relation(name: "refundPaidBy", fields: [paidBackByIdentityId], references: [id])
+  initiatedBy Identity @relation(name: "refundInitiatedBy", fields: [initiatedByIdentityId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([paymentId])
+  @@index([status])
+  @@map("refund")
+}
+
+model LedgerEntry {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entryType LedgerEntryType @map("entry_type")
+  amountThb Int @map("amount_thb")
+  unitId String? @map("unit_id")
+  projectId String? @map("project_id")
+  bookingId String? @map("booking_id")
+  serviceOrderId String? @map("service_order_id")
+  paymentId String? @map("payment_id")
+  refundId String? @map("refund_id")
+  statementId String? @map("statement_id")
+  occurredOn DateTime @map("occurred_on")
+  description String
+  createdByIdentityId String? @map("created_by_identity_id")
+
+  // Relations
+  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  refund Refund? @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  createdBy Identity? @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
+
+  @@index([unitId, occurredOn])
+  @@index([projectId, occurredOn])
+  @@index([bookingId])
+  @@index([paymentId])
+  @@index([refundId])
+  @@map("ledger_entry")
 }
 
 model UnitEngagement {
@@ -338,6 +693,8 @@ model MediaAsset {
   unitMedia UnitMedia[]
   projectMedia ProjectMedia[]
   engagementMandates UnitEngagement[] @relation("engagementMandate")
+  bookingGuestPassports BookingGuest[]
+  paymentReceipts Payment[] @relation("paymentReceipt")
 
   @@map("media_asset")
 }

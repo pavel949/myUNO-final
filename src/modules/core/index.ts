@@ -55,3 +55,12 @@ export {
   type CreateUnitEngagementInput,
   type UpdateUnitEngagementInput,
 } from './engagement.service';
+
+export {
+  deleteExpiredMediaAssets,
+  anonymizeDeletedIdentities,
+  expireOldTokens,
+  exportIdentityData,
+  requestIdentityDeletion,
+  runRetentionJobs,
+} from './retention.service';

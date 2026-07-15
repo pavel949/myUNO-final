@@ -8,3 +8,6 @@ export { EmptyState, LoadingState, ErrorState } from './StateComponents';
 
 // Owner components
 export { StatTile, ProjectSwitcher, BookingsList, LatestStatementCard, OpenTicketsList, SellInterestCard, OwnerStayModal } from './owner';
+
+// In-stay components
+export { StayCard, QuickActionsRow, ActiveOrdersList, AnnouncementsSection } from './instay';

@@ -29,3 +29,13 @@ export {
   MessengerChannel,
   type MessengerConfig,
 } from './messenger';
+
+export {
+  registerHubSpotCrm,
+  syncIdentityToCrm,
+  syncBookingToCrm,
+  handleCrmWebhook,
+  getCrmStatus,
+  type CrmConfig,
+  type CrmContact,
+} from './crm';

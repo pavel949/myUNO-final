@@ -155,4 +155,15 @@ export class StripeProvider implements PaymentProvider {
   }
 }
 
-export const stripeProvider = new StripeProvider();
+let _stripeInstance: StripeProvider | null = null;
+
+/**
+ * Lazy-load Stripe provider. Instantiation deferred until first use.
+ * Only throws if PAYMENT_PROVIDER='stripe' is explicitly configured.
+ */
+export function getStripeProvider(): StripeProvider {
+  if (!_stripeInstance) {
+    _stripeInstance = new StripeProvider();
+  }
+  return _stripeInstance;
+}

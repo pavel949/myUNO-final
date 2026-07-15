@@ -44,7 +44,10 @@ function getStatusCode(error: unknown): number {
     if (error.message.includes('validation') || error.message.includes('invalid')) {
       return 400;
     }
-    if (error.message.includes('not found') || error.message.includes('unauthorized')) {
+    if (error.message.includes('unauthorized')) {
+      return 401;
+    }
+    if (error.message.includes('not found')) {
       return 404;
     }
   }

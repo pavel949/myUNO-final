@@ -5,7 +5,7 @@
  */
 
 import { PaymentProvider, ProviderConfig } from './types';
-import { stripeProvider } from './stripe';
+import { getStripeProvider } from './stripe';
 
 // Mock provider for development
 const mockProvider: PaymentProvider = {
@@ -61,7 +61,7 @@ export function getPaymentProvider(): PaymentProvider {
 
   switch (provider) {
     case 'stripe':
-      return stripeProvider;
+      return getStripeProvider();
     case 'omise':
       // const omiseProvider = new OmiseProvider();
       // return omiseProvider;

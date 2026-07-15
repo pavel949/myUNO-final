@@ -38,7 +38,6 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
       startDate,
       endDate,
       status,
-      checkedInAt,
       guestNationality,
     },
     ref

@@ -13,7 +13,10 @@ export function middleware(_request: NextRequest) {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self'",
+      // Next.js App Router hydrates via inline <script> tags (self.__next_f),
+      // so 'unsafe-inline' is required or all client interactivity is blocked.
+      // Tightening to nonces needs Next's nonce plumbing — tracked for post-launch.
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'", // Tailwind needs inline styles
       "img-src 'self' data: https:",
       "font-src 'self'",

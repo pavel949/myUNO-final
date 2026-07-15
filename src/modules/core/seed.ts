@@ -357,6 +357,35 @@ export async function seedDemoData(db: PrismaClient) {
     update: { ownerIdentityId: ownerIdentity.id },
   });
 
+  // 5b. Demo unit photos (cover + gallery rows)
+  const demoPhotos: Array<{ unit: { id: string }; path: string }> = [
+    { unit: unitDirect, path: '/demo/villa-a.svg' },
+    { unit: unitMC, path: '/demo/condo-b.svg' },
+    { unit: unitOwnerDirect, path: '/demo/townhouse-c.svg' },
+  ];
+  for (const photo of demoPhotos) {
+    const asset = await db.mediaAsset.upsert({
+      where: { storageKey: photo.path },
+      create: {
+        storageKey: photo.path,
+        kind: 'photo',
+        mimeType: 'image/svg+xml',
+        sizeBytes: 2048,
+        uploadedByIdentityId: ownerIdentity.id,
+      },
+      update: {},
+    });
+    await db.unitMedia.upsert({
+      where: { unitId_mediaId: { unitId: photo.unit.id, mediaId: asset.id } },
+      create: { unitId: photo.unit.id, mediaId: asset.id, sort: 0 },
+      update: {},
+    });
+    await db.unit.update({
+      where: { id: photo.unit.id },
+      data: { coverMediaId: asset.id },
+    });
+  }
+
   // 6. Create unit engagements (three types)
   await db.unitEngagement.upsert({
     where: { id: unitDirect.id + '-direct' },

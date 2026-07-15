@@ -115,6 +115,12 @@ export async function GET(req: NextRequest) {
         project: {
           select: { id: true, name: true },
         },
+        coverMedia: { select: { storageKey: true } },
+        media: {
+          orderBy: { sort: 'asc' },
+          take: 1,
+          select: { media: { select: { storageKey: true } } },
+        },
       },
       take: limit,
       skip: offset,
@@ -126,7 +132,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        units,
+        units: units.map((unit) => {
+          const { coverMedia, media, ...rest } = unit;
+          return {
+            ...rest,
+            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
+          };
+        }),
         total,
         limit,
         offset,

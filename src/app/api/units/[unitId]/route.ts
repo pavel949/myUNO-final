@@ -32,6 +32,11 @@ export async function GET(
         project: {
           select: { id: true, name: true },
         },
+        coverMedia: { select: { storageKey: true } },
+        media: {
+          orderBy: { sort: 'asc' },
+          select: { media: { select: { id: true, storageKey: true } } },
+        },
       },
     });
 
@@ -39,8 +44,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
-    const { status: _status, ...publicUnit } = unit;
-    return NextResponse.json(publicUnit);
+    const { status: _status, coverMedia, media, ...publicUnit } = unit;
+    const gallery = media.map((m) => m.media.storageKey);
+    const cover = coverMedia?.storageKey || gallery[0] || null;
+    return NextResponse.json({
+      ...publicUnit,
+      images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });

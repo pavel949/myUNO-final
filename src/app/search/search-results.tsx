@@ -11,6 +11,7 @@ interface Unit {
   baseNightlyThb: number;
   description?: string;
   projectId?: string;
+  coverUrl?: string | null;
 }
 
 interface SearchResult {
@@ -149,7 +150,16 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
                 href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
               >
-                <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                {unit.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={unit.coverUrl}
+                    alt={unit.name}
+                    className="aspect-video w-full object-cover"
+                  />
+                ) : (
+                  <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                )}
                 <div className="p-16">
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
                   <p className="text-heading-3 font-bold text-brand-andaman mb-4">

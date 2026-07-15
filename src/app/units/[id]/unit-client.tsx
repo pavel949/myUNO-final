@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 interface Unit {
   id: string;
   name: string;
+  images?: string[];
   description?: string;
   baseNightlyThb: number;
   maxGuests?: number;
@@ -240,7 +241,29 @@ export default function UnitDetailClient({
           {/* Unit details */}
           <div className="lg:col-span-2">
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden mb-32">
-              <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+              {unit.images && unit.images.length > 0 ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={unit.images[0]}
+                  alt={unit.name}
+                  className="aspect-video w-full object-cover"
+                />
+              ) : (
+                <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+              )}
+              {unit.images && unit.images.length > 1 && (
+                <div className="grid grid-cols-4 gap-4 p-8">
+                  {unit.images.slice(1, 5).map((image) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={image}
+                      src={image}
+                      alt={unit.name}
+                      className="aspect-video w-full object-cover rounded-sm"
+                    />
+                  ))}
+                </div>
+              )}
               <div className="p-24">
                 <h1 className="text-heading-1 font-bold text-text-ink mb-8">{unit.name}</h1>
                 {unit.project?.name && (

@@ -455,6 +455,73 @@ enum MobilizationChecklistItemStatus {
   skipped
 }
 
+enum AnalyticsEventKey {
+  page_landing_viewed
+  page_project_viewed
+  page_unit_viewed
+  page_audience_viewed
+  search_performed
+  search_no_results
+  stay_booking_started
+  stay_booking_requested
+  stay_request_approved
+  stay_request_declined
+  stay_payment_succeeded
+  stay_payment_failed
+  stay_hold_expired
+  stay_confirmed
+  stay_modified
+  stay_cancelled
+  stay_checked_in
+  stay_checked_out
+  stay_completed
+  stay_no_show
+  stay_extension_requested
+  service_catalog_viewed
+  service_service_viewed
+  service_order_placed
+  service_order_paid
+  service_order_accepted
+  service_order_declined
+  service_order_fulfilled
+  service_order_cancelled
+  service_order_no_show
+  review_submitted
+  message_thread_started
+  ticket_raised
+  ticket_resolved
+  ticket_sla_breached
+  announcement_published
+  announcement_read
+  owner_statement_viewed
+  owner_payout_recorded
+  owner_sell_interest
+  lead_submitted
+  signal_detected
+  signal_reviewed
+  signal_handed_to_capital
+  signal_dismissed
+  auth_registered
+  auth_claimed
+  notify_delivered
+  notify_failed
+}
+
+enum BuyerSignalKey {
+  repeat_stay
+  long_stay
+  purchase_question
+  listing_engagement
+  direct_inquiry
+}
+
+enum BuyerSignalStatus {
+  open
+  reviewed
+  handed_to_capital
+  dismissed
+}
+
 // --- The spine ---
 
 model Identity {
@@ -525,6 +592,10 @@ model Identity {
   statementsPublished OwnerStatement[] @relation("statementPublishedBy")
   payoutsRecorded Payout[]
   depositClaimsFiled DepositClaim[] @relation("depositClaimFiled")
+  analyticsEventsAsIdentity AnalyticsEvent[] @relation("analyticsEventIdentity")
+  analyticsEventsAsActor AnalyticsEvent[] @relation("analyticsEventActor")
+  buyerSignals BuyerSignal[]
+  buyerSignalsReviewed BuyerSignal[] @relation("buyerSignalReviewer")
 
   @@map("identity")
 }
@@ -593,6 +664,8 @@ model Project {
   providerServiceAreas ProviderProject[]
   serviceProjects ServiceProject[]
   serviceOrders ServiceOrder[]
+  analyticsEvents AnalyticsEvent[]
+  metricsDaily MetricDaily[]
 
   @@map("project")
 }
@@ -639,6 +712,8 @@ model Unit {
   complianceRecords ComplianceRecord[]
   mobilizationChecklist MobilizationChecklistItem[]
   statements OwnerStatement[]
+  analyticsEvents AnalyticsEvent[]
+  metricsDaily MetricDaily[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -729,6 +804,7 @@ model Booking {
   tm30Filings Tm30Filing[]
   conditionReports ConditionReport[]
   depositClaims DepositClaim[]
+  analyticsEvents AnalyticsEvent[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -1157,6 +1233,7 @@ model ServiceOrder {
   orderer Identity @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
   cancelledBy Identity? @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
   payments Payment[]
+  analyticsEvents AnalyticsEvent[]
 
   @@index([project_id, status, createdAt])
   @@index([provider_id, status])
@@ -1726,4 +1803,90 @@ model MobilizationChecklistItem {
   @@unique([unitId, step])
   @@index([unitId, status])
   @@map("mobilization_checklist_item")
+}
+
+// --- Analytics & signals ---
+
+model AnalyticsEvent {
+  id String @id @default(uuid())
+  occurredAt DateTime @default(now()) @map("occurred_at")
+
+  eventKey AnalyticsEventKey @map("event_key")
+  projectId String? @map("project_id")
+  unitId String? @map("unit_id")
+  bookingId String? @map("booking_id")
+  serviceOrderId String? @map("service_order_id")
+  identityId String? @map("identity_id")
+  actorIdentityId String? @map("actor_identity_id")
+
+  // JSON payload for event-specific dimensions (no PII per doc 12)
+  dimensions Json @default("{}")
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  identity Identity? @relation(name: "analyticsEventIdentity", fields: [identityId], references: [id], onDelete: SetNull)
+  actorIdentity Identity? @relation(name: "analyticsEventActor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([eventKey, occurredAt])
+  @@index([projectId, occurredAt])
+  @@index([unitId, occurredAt])
+  @@index([identityId, occurredAt])
+  @@map("analytics_event")
+}
+
+model MetricDaily {
+  id String @id @default(uuid())
+  date DateTime @db.Date @map("date")
+
+  projectId String @map("project_id")
+  unitId String @map("unit_id")
+
+  // Core metrics
+  nightsAvailable Int @default(0) @map("nights_available")
+  nightsOccupied Int @default(0) @map("nights_occupied")
+  rentalRevenueCents Int @default(0) @map("rental_revenue_cents")
+  serviceOrderCount Int @default(0) @map("service_order_count")
+  serviceOrderRevenueCents Int @default(0) @map("service_order_revenue_cents")
+
+  // Derived metrics (computed on read)
+  occupancyPct Float? @map("occupancy_pct")
+  adrCents Int? @map("adr_cents")
+  revpanCents Int? @map("revpan_cents")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, date])
+  @@index([projectId, date])
+  @@index([date])
+  @@map("metric_daily")
+}
+
+model BuyerSignal {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @map("identity_id")
+  signalKey BuyerSignalKey @map("signal_key")
+  status BuyerSignalStatus @default(open)
+  strength Int @default(1)
+
+  // Dedup: only one open signal per identity+key at a time
+  closedAt DateTime? @map("closed_at")
+  notes String?
+  reviewedByIdentityId String? @map("reviewed_by_identity_id")
+
+  // Relations
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  reviewedBy Identity? @relation(name: "buyerSignalReviewer", fields: [reviewedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@unique([identityId, signalKey])
+  @@index([status, createdAt])
+  @@index([signalKey, status])
+  @@map("buyer_signal")
 }

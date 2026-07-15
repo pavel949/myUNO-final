@@ -1,4 +1,5 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
+import { track } from '@/modules/analytics';
 
 export interface CreateBookingInput {
   unitId: string;
@@ -190,13 +191,29 @@ export async function confirmBooking(
     throw new Error(`Cannot confirm booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const updated = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'confirmed',
       holdExpiresAt: null,
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (updated.endDate.getTime() - updated.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_confirmed', {
+    bookingId: updated.id,
+    unitId: updated.unitId,
+    projectId: updated.projectId,
+    identityId: updated.guestIdentityId,
+    channel: updated.channel,
+    nights,
+    totalThb: updated.totalThb,
+  });
+
+  return updated;
 }
 
 /**
@@ -218,7 +235,7 @@ export async function cancelBooking(
     throw new Error(`Cannot cancel booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const cancelled = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'cancelled',
@@ -230,6 +247,22 @@ export async function cancelBooking(
       requestExpiresAt: null,
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (cancelled.endDate.getTime() - cancelled.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_cancelled', {
+    bookingId: cancelled.id,
+    unitId: cancelled.unitId,
+    projectId: cancelled.projectId,
+    identityId: cancelled.guestIdentityId,
+    nights,
+    reason,
+    refundThb: refundAmountThb,
+  });
+
+  return cancelled;
 }
 
 /**

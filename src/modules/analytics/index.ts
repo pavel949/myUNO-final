@@ -1,5 +1,4 @@
-// module: analytics — public interface (see docs/14_tech_spec.md §3)
-// Owns: Event, MetricDaily, Detector
-// Used by: all modules (track() helper)
-
-export {};
+export { track } from './track';
+export type { TrackDimensions } from './track';
+export { rollupMetricsDaily } from './rollup';
+export { detectBuyerSignals } from './signals';

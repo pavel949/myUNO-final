@@ -1582,6 +1582,55 @@ const UI_SHELL_KEYS: KeyDef[] = [
   // Check-out notification (owner)
   { key: 'notify.stay_checked_out.title', namespace: 'notify', description: 'Notification: guest checked out (owner)', en: 'Guest checked out', ru: 'Гость выехал', status: NR },
   { key: 'notify.stay_checked_out.body', namespace: 'notify', description: 'Notification body: guest checked out', en: '{unit_name} is free — ready for turnaround.', ru: '{unit_name} свободен — можно готовить к следующему заезду.', status: NR },
+
+  // Messaging + notifications bell (Phase E)
+  { key: 'nav.messages', namespace: 'nav', description: 'Navbar link: messages inbox', en: 'Messages', ru: 'Сообщения', status: NR },
+  { key: 'nav.bell_aria', namespace: 'nav', description: 'Bell aria-label', en: 'Notifications', ru: 'Уведомления', status: NR },
+  { key: 'nav.bell_empty', namespace: 'nav', description: 'Bell empty state', en: 'No notifications yet.', ru: 'Уведомлений пока нет.', status: NR },
+  { key: 'nav.bell_mark_all', namespace: 'nav', description: 'Bell mark-all-read', en: 'Mark all read', ru: 'Отметить всё прочитанным', status: NR },
+  { key: 'messages.inbox.title', namespace: 'messages', description: 'Inbox title', en: 'Messages', ru: 'Сообщения', status: NR },
+  { key: 'messages.inbox.empty', namespace: 'messages', description: 'Inbox empty state', en: 'No conversations yet. Message us from any of your trips and we will answer here.', ru: 'Диалогов пока нет. Напишите нам из любой поездки — ответим здесь.', status: NR },
+  { key: 'messages.thread.back', namespace: 'messages', description: 'Back to inbox', en: '← Messages', ru: '← Сообщения', status: NR },
+  { key: 'messages.thread.loading', namespace: 'messages', description: 'Thread loading', en: 'Loading conversation…', ru: 'Загружаем диалог…', status: NR },
+  { key: 'messages.thread.not_found', namespace: 'messages', description: 'Thread not found', en: 'Conversation not found', ru: 'Диалог не найден', status: NR },
+  { key: 'messages.thread.placeholder', namespace: 'messages', description: 'Message input placeholder', en: 'Write a message…', ru: 'Напишите сообщение…', status: NR },
+  { key: 'messages.thread.send', namespace: 'messages', description: 'Send button', en: 'Send', ru: 'Отправить', status: NR },
+  { key: 'messages.thread.error_generic', namespace: 'messages', description: 'Send error', en: 'Could not send. Please try again.', ru: 'Не отправилось. Попробуйте ещё раз.', status: NR },
+  { key: 'notify.message_new.title', namespace: 'notify', description: 'Notification: new message', en: 'New message', ru: 'Новое сообщение', status: NR },
+  { key: 'notify.message_new.body', namespace: 'notify', description: 'Notification body: new message', en: '{sender_name} sent you a message.', ru: '{sender_name} отправил(а) вам сообщение.', status: NR },
+  { key: 'notify.ticket_opened.title', namespace: 'notify', description: 'Notification: ticket raised (staff)', en: 'New request raised', ru: 'Новая заявка', status: NR },
+  { key: 'notify.ticket_opened.body', namespace: 'notify', description: 'Notification body: ticket raised', en: '"{title}" — open the ops board to pick it up.', ru: '«{title}» — откройте панель операций, чтобы взять в работу.', status: NR },
+
+  // Tickets (guest/owner requests)
+  { key: 'tickets.list.title', namespace: 'tickets', description: 'Tickets list title', en: 'My requests', ru: 'Мои заявки', status: NR },
+  { key: 'tickets.list.empty', namespace: 'tickets', description: 'Tickets empty state', en: 'No requests yet. Raise one from your trip or unit and track its progress here.', ru: 'Заявок пока нет. Создайте её из поездки или дома и следите за статусом здесь.', status: NR },
+  { key: 'tickets.status.open', namespace: 'tickets', description: 'Ticket status: open', en: 'Open', ru: 'Открыта', status: NR },
+  { key: 'tickets.status.acknowledged', namespace: 'tickets', description: 'Ticket status: acknowledged', en: 'Acknowledged', ru: 'Принята', status: NR },
+  { key: 'tickets.status.in_progress', namespace: 'tickets', description: 'Ticket status: in progress', en: 'In progress', ru: 'В работе', status: NR },
+  { key: 'tickets.status.waiting_reporter', namespace: 'tickets', description: 'Ticket status: waiting reporter', en: 'Waiting for you', ru: 'Ждём вас', status: NR },
+  { key: 'tickets.status.resolved', namespace: 'tickets', description: 'Ticket status: resolved', en: 'Resolved', ru: 'Решена', status: NR },
+  { key: 'tickets.status.closed', namespace: 'tickets', description: 'Ticket status: closed', en: 'Closed', ru: 'Закрыта', status: NR },
+  { key: 'tickets.status.cancelled', namespace: 'tickets', description: 'Ticket status: cancelled', en: 'Cancelled', ru: 'Отменена', status: NR },
+  { key: 'tickets.new.title', namespace: 'tickets', description: 'Raise ticket title', en: 'Raise a request', ru: 'Создать заявку', status: NR },
+  { key: 'tickets.new.back', namespace: 'tickets', description: 'Back to tickets', en: '← My requests', ru: '← Мои заявки', status: NR },
+  { key: 'tickets.new.category', namespace: 'tickets', description: 'Field: category', en: 'Category', ru: 'Категория', status: NR },
+  { key: 'tickets.new.category.maintenance', namespace: 'tickets', description: 'Category: maintenance', en: 'Maintenance', ru: 'Техобслуживание', status: NR },
+  { key: 'tickets.new.category.housekeeping', namespace: 'tickets', description: 'Category: housekeeping', en: 'Housekeeping', ru: 'Уборка', status: NR },
+  { key: 'tickets.new.category.complaint', namespace: 'tickets', description: 'Category: complaint', en: 'Complaint', ru: 'Жалоба', status: NR },
+  { key: 'tickets.new.category.billing_question', namespace: 'tickets', description: 'Category: billing', en: 'Billing question', ru: 'Вопрос по оплате', status: NR },
+  { key: 'tickets.new.subject', namespace: 'tickets', description: 'Field: subject', en: 'Subject', ru: 'Тема', status: NR },
+  { key: 'tickets.new.description', namespace: 'tickets', description: 'Field: description', en: 'Describe the issue', ru: 'Опишите проблему', status: NR },
+  { key: 'tickets.new.priority', namespace: 'tickets', description: 'Field: priority', en: 'Priority', ru: 'Приоритет', status: NR },
+  { key: 'tickets.new.priority.normal', namespace: 'tickets', description: 'Priority: normal', en: 'Normal', ru: 'Обычный', status: NR },
+  { key: 'tickets.new.priority.high', namespace: 'tickets', description: 'Priority: high', en: 'High', ru: 'Высокий', status: NR },
+  { key: 'tickets.new.priority.urgent', namespace: 'tickets', description: 'Priority: urgent', en: 'Urgent', ru: 'Срочный', status: NR },
+  { key: 'tickets.new.submit', namespace: 'tickets', description: 'Submit button', en: 'Send request', ru: 'Отправить заявку', status: NR },
+  { key: 'tickets.new.missing_context', namespace: 'tickets', description: 'Missing context note', en: 'Open this form from your trip or unit so we know which home it concerns.', ru: 'Откройте форму из поездки или дома, чтобы мы знали, о каком жилье речь.', status: NR },
+  { key: 'tickets.new.error_generic', namespace: 'tickets', description: 'Submit error', en: 'Could not send. Please try again.', ru: 'Не отправилось. Попробуйте ещё раз.', status: NR },
+
+  // Services stub
+  { key: 'services.browse.title', namespace: 'services', description: 'Services page title', en: 'Services', ru: 'Услуги', status: NR },
+  { key: 'services.browse.coming', namespace: 'services', description: 'Services coming soon note', en: 'The services marketplace is opening soon — cleaning, repairs, deliveries, all vetted. Meanwhile, message us from your trip and we will arrange anything you need.', ru: 'Маркетплейс услуг скоро откроется — уборка, ремонт, доставка, всё проверено. А пока напишите нам из поездки — организуем всё, что нужно.', status: NR },
 ];
 
 

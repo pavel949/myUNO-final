@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from './Button';
+import { NotificationBell, type BellLabels } from './NotificationBell';
 
 export interface NavbarUser {
   firstName: string;
@@ -18,6 +19,7 @@ export interface NavbarLabels {
   register: string;
   logout: string;
   myTrips: string;
+  messages: string;
   ownerDashboard: string;
   mcPortal: string;
   opsBoard: string;
@@ -28,9 +30,10 @@ export interface NavbarLabels {
 interface NavbarProps {
   user: NavbarUser | null;
   labels: NavbarLabels;
+  bellLabels: BellLabels;
 }
 
-export function Navbar({ user, labels }: NavbarProps) {
+export function Navbar({ user, labels, bellLabels }: NavbarProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -52,6 +55,7 @@ export function Navbar({ user, labels }: NavbarProps) {
   const userLinks = user
     ? [
         { href: '/trips', label: labels.myTrips },
+        { href: '/messages', label: labels.messages },
         ...(user.roles.includes('owner')
           ? [{ href: '/owner', label: labels.ownerDashboard }]
           : []),
@@ -105,6 +109,7 @@ export function Navbar({ user, labels }: NavbarProps) {
                   {link.label}
                 </Link>
               ))}
+              <NotificationBell labels={bellLabels} />
               <span className="text-small text-text-secondary">{user.firstName}</span>
               <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>
                 {labels.logout}
@@ -126,7 +131,10 @@ export function Navbar({ user, labels }: NavbarProps) {
           )}
         </div>
 
-        {/* Mobile hamburger */}
+        {/* Mobile bell + hamburger */}
+        <div className="md:hidden flex items-center">
+          {user && <NotificationBell labels={bellLabels} />}
+        </div>
         <button
           type="button"
           aria-label={labels.menu}

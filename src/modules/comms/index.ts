@@ -6,3 +6,19 @@ export {
   createNotification,
   type CreateNotificationInput,
 } from './notification.service';
+
+export {
+  findOrCreateThread,
+  sendMessage,
+  listThreadsFor,
+  getThread,
+  type ThreadParticipantInput,
+  type FindOrCreateThreadInput,
+} from './thread.service';
+
+export {
+  createTicket,
+  listTicketsFor,
+  getTicket,
+  type CreateTicketInput,
+} from './ticket.service';

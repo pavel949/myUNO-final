@@ -105,9 +105,20 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     }
   };
 
-  const handleExpressSellInterest = () => {
-    // TODO: Open thread with admin for sell interest
-    console.log('Express sell interest');
+  const handleExpressSellInterest = async () => {
+    // Sell-interest card -> a general thread with the admins (doc 07 F-OWN)
+    const response = await fetch('/api/threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contextType: 'general',
+        body: '[sell-interest]',
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      window.location.href = `/messages/${data.threadId}`;
+    }
   };
 
   const isSingleUnit = !shape.isPortfolio;

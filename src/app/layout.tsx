@@ -24,6 +24,10 @@ export default async function RootLayout({
     'nav.register': 'Sign up',
     'nav.logout': 'Log out',
     'nav.my_trips': 'My trips',
+    'nav.messages': 'Messages',
+    'nav.bell_aria': 'Notifications',
+    'nav.bell_empty': 'No notifications yet.',
+    'nav.bell_mark_all': 'Mark all read',
     'nav.owner_dashboard': 'Owner dashboard',
     'nav.mc_portal': 'MC portal',
     'nav.ops': 'Ops',
@@ -71,11 +75,17 @@ export default async function RootLayout({
             register: navLabels['nav.register'],
             logout: navLabels['nav.logout'],
             myTrips: navLabels['nav.my_trips'],
+            messages: navLabels['nav.messages'],
             ownerDashboard: navLabels['nav.owner_dashboard'],
             mcPortal: navLabels['nav.mc_portal'],
             opsBoard: navLabels['nav.ops'],
             admin: navLabels['nav.admin'],
             menu: navLabels['nav.menu'],
+          }}
+          bellLabels={{
+            aria: navLabels['nav.bell_aria'],
+            empty: navLabels['nav.bell_empty'],
+            markAll: navLabels['nav.bell_mark_all'],
           }}
         />
         <div className="flex-1">{children}</div>

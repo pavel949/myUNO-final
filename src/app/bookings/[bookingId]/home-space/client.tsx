@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import React from 'react';
 import {
   StayCard,
@@ -59,24 +60,39 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   activeOrders,
   announcements,
 }) => {
-  const handleMessageHost = () => {
-    // TODO: Open message host modal (F-COM-1)
-    console.log('Message host');
+  const router = useRouter();
+  const handleMessageHost = async () => {
+    // F-COM-1: booking-context thread with ops + owner
+    const response = await fetch('/api/threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contextType: 'booking',
+        contextId: booking.id,
+        body: `[${booking.unit.name}]`,
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      router.push(`/messages/${data.threadId}`);
+    }
   };
 
   const handleOrderService = () => {
-    // TODO: Open service order modal (F-SVC-2)
-    console.log('Order service');
+    // F-SVC-2: services marketplace scoped to this stay
+    router.push(`/services?bookingId=${booking.id}`);
   };
 
   const handleRaiseIssue = () => {
-    // TODO: Open raise ticket modal (F-COM-3)
-    console.log('Raise issue');
+    // F-COM-3: raise-ticket form pre-scoped to this stay
+    router.push(
+      `/tickets/new?projectId=${booking.unit.project.id}&unitId=${booking.unit.id}&bookingId=${booking.id}`
+    );
   };
 
   const handleExtendStay = () => {
-    // TODO: Open extend stay modal (F-GUEST-9)
-    console.log('Extend stay');
+    // F-GUEST-9: date change lives on the trip page
+    router.push(`/trips/${booking.id}`);
   };
 
   return (

@@ -19,3 +19,13 @@ export {
   type ICalEvent,
   type ICalImportResult,
 } from './ical-import';
+
+export {
+  registerWhatsAppAccount,
+  registerTelegramAccount,
+  sendMessengerMessage,
+  handleMessengerWebhook,
+  getMessengerStatus,
+  MessengerChannel,
+  type MessengerConfig,
+} from './messenger';

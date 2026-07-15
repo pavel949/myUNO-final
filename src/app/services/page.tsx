@@ -1,28 +1,41 @@
+import { Suspense } from 'react';
 import { getLabels } from '@/lib/i18n';
+import ServicesClient from './services-client';
 
 export const dynamic = 'force-dynamic';
 
-// S11 marketplace browse lands with the services phase; this page keeps the
-// entry point honest (no dead link) until then.
 export default async function ServicesPage() {
   const labels = await getLabels({
     'services.browse.title': 'Services',
-    'services.browse.coming':
-      'The services marketplace is opening soon — cleaning, repairs, deliveries, all vetted. Meanwhile, message us from your trip and we will arrange anything you need.',
+    'services.browse.subtitle':
+      'Cleaning, repairs, deliveries — every provider vetted, every order on the record.',
+    'services.browse.empty': 'No services available yet — check back soon.',
+    'services.browse.vetted': 'Vetted',
+    'services.browse.from': 'from',
+    'services.browse.order': 'Order',
+    'services.browse.when': 'When',
+    'services.browse.quantity': 'Quantity',
+    'services.browse.note': 'Note to provider (optional)',
+    'services.browse.confirm_order': 'Place order — ฿{total}',
+    'services.browse.login_needed': 'Log in to place an order.',
+    'services.browse.ordered': 'Order placed. The provider will confirm shortly.',
+    'services.browse.error_generic': 'Could not place the order. Please try again.',
+    'services.my_orders.title': 'My orders',
+    'services.my_orders.empty': 'No orders yet.',
+    'services.order_status.placed': 'Awaiting provider',
+    'services.order_status.paid': 'Paid',
+    'services.order_status.expired': 'Expired',
+    'services.order_status.failed': 'Failed',
+    'services.order_status.accepted': 'Accepted',
+    'services.order_status.declined': 'Declined',
+    'services.order_status.fulfilled': 'Fulfilled',
+    'services.order_status.cancelled': 'Cancelled',
+    'services.order_status.closed': 'Closed',
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-24">
-          {labels['services.browse.title']}
-        </h1>
-        <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-          <p className="text-body text-text-secondary">
-            {labels['services.browse.coming']}
-          </p>
-        </div>
-      </div>
-    </main>
+    <Suspense>
+      <ServicesClient labels={labels} />
+    </Suspense>
   );
 }

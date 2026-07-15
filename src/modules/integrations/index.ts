@@ -2,4 +2,12 @@
 // Owns: Integration accounts, channel adapters (OTA, messenger, CRM, payment)
 // Depends on: core, booking, comms, finance
 
-export {};
+export {
+  registerIntegrationAccount,
+  getIntegrationAccount,
+  updateIntegrationStatus,
+  recordIntegrationSync,
+  disableIntegrationAccount,
+  listIntegrationAccounts,
+  type IntegrationAccountConfig,
+} from './integrations';

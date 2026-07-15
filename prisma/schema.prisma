@@ -522,6 +522,28 @@ enum BuyerSignalStatus {
   dismissed
 }
 
+enum IntegrationKey {
+  ical_airbnb
+  ical_booking
+  ical_agoda
+  payment_provider
+  whatsapp
+  telegram
+  crm_hubspot
+}
+
+enum IntegrationScopeType {
+  platform
+  project
+  unit
+}
+
+enum IntegrationStatus {
+  active
+  error
+  disabled
+}
+
 // --- The spine ---
 
 model Identity {
@@ -666,6 +688,7 @@ model Project {
   serviceOrders ServiceOrder[]
   analyticsEvents AnalyticsEvent[]
   metricsDaily MetricDaily[]
+  integrationAccounts IntegrationAccount[]
 
   @@map("project")
 }
@@ -714,6 +737,7 @@ model Unit {
   statements OwnerStatement[]
   analyticsEvents AnalyticsEvent[]
   metricsDaily MetricDaily[]
+  integrationAccounts IntegrationAccount[]
 
   @@unique([projectId, name])
   @@map("unit")
@@ -1890,3 +1914,37 @@ model BuyerSignal {
   @@index([signalKey, status])
   @@map("buyer_signal")
 }
+
+// --- Integrations (iCal, payment providers, messaging, CRM) ---
+
+model IntegrationAccount {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // What integration and where it's scoped
+  integrationKey IntegrationKey @map("integration_key")
+  scopeType IntegrationScopeType @map("scope_type")
+
+  // Scope IDs: only one of these is populated based on scopeType
+  platformId String? @map("platform_id")
+  projectId String? @map("project_id")
+  unitId String? @map("unit_id")
+
+  // Integration state & secrets
+  config Json @default("{}") // contains provider_account, auth tokens, etc. — encrypted per doc 12
+  status IntegrationStatus @default(active)
+  lastSyncAt DateTime? @map("last_sync_at")
+  lastError String? @map("last_error")
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit Unit? @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationKey, scopeType, projectId, unitId])
+  @@index([scopeType, projectId])
+  @@index([scopeType, unitId])
+  @@index([status, lastSyncAt])
+  @@map("integration_account")
+}
+

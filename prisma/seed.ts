@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { seedConfig } from '../src/modules/config/seed';
 import { seedContent } from '../src/modules/content/seed';
+import { seedDemoData } from '../src/modules/core/seed';
 
 const db = new PrismaClient();
 
@@ -11,6 +12,8 @@ async function main() {
     console.log('✓ Config seeded');
     await seedContent(db);
     console.log('✓ Content seeded');
+    await seedDemoData(db);
+    console.log('✓ Demo data seeded');
     console.log('✓ Seed completed successfully');
   } catch (error) {
     console.error('Seed failed:', error);

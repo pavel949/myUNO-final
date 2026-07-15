@@ -11,3 +11,11 @@ export {
   listIntegrationAccounts,
   type IntegrationAccountConfig,
 } from './integrations';
+
+export {
+  importICalEvents,
+  createConflictNotifications,
+  clearOtaImports,
+  type ICalEvent,
+  type ICalImportResult,
+} from './ical-import';

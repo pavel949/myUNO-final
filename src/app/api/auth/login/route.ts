@@ -5,6 +5,16 @@ import {
   sessionCookieOptions,
   SESSION_COOKIE_NAME,
 } from '@/modules/auth';
+import { checkRateLimit, resetRateLimit } from '@/app/libs/rateLimit';
+
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +28,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ipKey = `login:ip:${clientIp(request)}`;
+    const accountKey = `login:acct:${String(email).toLowerCase()}`;
+    const ipLimit = checkRateLimit(ipKey);
+    const acctLimit = checkRateLimit(accountKey);
+    if (!ipLimit.allowed || !acctLimit.allowed) {
+      const retryAfterMs = Math.max(ipLimit.retryAfterMs || 0, acctLimit.retryAfterMs || 0);
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.', code: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      );
+    }
+
     const identity = await login({ email, password });
+    resetRateLimit(accountKey);
 
     const response = NextResponse.json(
       {

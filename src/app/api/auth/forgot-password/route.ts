@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requestPasswordReset } from '@/modules/auth';
+import { checkRateLimit } from '@/app/libs/rateLimit';
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +19,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email required' },
         { status: 400 }
+      );
+    }
+
+    const ipLimit = checkRateLimit(`reset:ip:${clientIp(request)}`);
+    const acctLimit = checkRateLimit(`reset:acct:${String(email).toLowerCase()}`);
+    if (!ipLimit.allowed || !acctLimit.allowed) {
+      const retryAfterMs = Math.max(ipLimit.retryAfterMs || 0, acctLimit.retryAfterMs || 0);
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.', code: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
       );
     }
 

@@ -28,6 +28,7 @@ interface PriceBreakdown {
   cleaningFee: number;
   subtotalAfterFees: number;
   serviceFee: number;
+  occupancyTax: number;
   total: number;
 }
 
@@ -48,6 +49,7 @@ export interface UnitDetailLabels {
   priceNights: string;
   discountLongStay: string;
   cleaningFee: string;
+  occupancyTax: string;
   total: string;
   bookingType: string;
   instantBook: string;
@@ -131,6 +133,7 @@ export default function UnitDetailClient({
             unitId: unit.id,
             startDate,
             endDate,
+            guestCount: adults + children,
           }),
         });
 
@@ -143,7 +146,7 @@ export default function UnitDetailClient({
     };
 
     fetchBreakdown();
-  }, [unit, startDate, endDate, labels.errorPrice]);
+  }, [unit, startDate, endDate, adults, children, labels.errorPrice]);
 
   const handleBooking = async () => {
     if (!startDate || !endDate || !breakdown || !unit) return;
@@ -162,7 +165,6 @@ export default function UnitDetailClient({
           endDate,
           adultsCount: adults,
           childrenCount: children,
-          totalThb: breakdown.total,
           instantBook: bookingType === 'instant',
           guestNote: guestNote || undefined,
           paymentMethod: 'cash',
@@ -321,6 +323,14 @@ export default function UnitDetailClient({
                       <span className="text-text-secondary">{labels.cleaningFee}</span>
                       <span className="text-text-ink font-semibold">
                         ฿{breakdown.cleaningFee?.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {breakdown.occupancyTax > 0 && (
+                    <div className="flex justify-between text-small">
+                      <span className="text-text-secondary">{labels.occupancyTax}</span>
+                      <span className="text-text-ink font-semibold">
+                        ฿{breakdown.occupancyTax?.toLocaleString()}
                       </span>
                     </div>
                   )}

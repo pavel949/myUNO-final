@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createBooking } from '@/modules/booking';
+import { createBooking, DEFAULT_POLICIES } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
+import { computePriceBreakdown } from '@/modules/core';
+import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
  * POST /api/bookings
@@ -16,19 +18,18 @@ import { createCheckout } from '@/modules/finance';
  * - endDate: ISO date string
  * - adultsCount: number
  * - childrenCount: number
- * - totalThb: number (server will validate this)
  * - instantBook: boolean
  * - guestNote?: string
  * - paymentMethod?: 'cash' | 'card_provider'
+ *
+ * The total is ALWAYS computed server-side from the pricing engine —
+ * any client-sent amount is ignored (doc 10: never trust client totals).
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      throw createPublicError('unauthorized', 401);
     }
 
     const body = await req.json();
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
       endDate: endDateStr,
       adultsCount,
       childrenCount,
-      totalThb,
       instantBook,
       guestNote,
       paymentMethod = 'cash',
@@ -53,24 +53,39 @@ export async function POST(req: NextRequest) {
       !endDateStr ||
       adultsCount === undefined ||
       childrenCount === undefined ||
-      totalThb === undefined ||
       instantBook === undefined
     ) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      throw createPublicError('invalid request: missing required fields', 400);
     }
 
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    if (startDate >= endDate) {
-      return NextResponse.json(
-        { error: 'startDate must be before endDate' },
-        { status: 400 }
-      );
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate >= endDate) {
+      throw createPublicError('invalid request: startDate must be before endDate', 400);
     }
+
+    // Server-computed price — the single source of truth for the charge.
+    // Also validates party size and min-nights.
+    const guestCount = Number(adultsCount) + Number(childrenCount);
+    const breakdown = await computePriceBreakdown(
+      prisma,
+      unitId,
+      startDate,
+      endDate,
+      guestCount
+    );
+
+    // Snapshot the unit's cancellation policy at booking time (doc 07 F-GUEST-8)
+    const unit = await prisma.unit.findUnique({
+      where: { id: unitId },
+      select: { cancellationPolicyKey: true, status: true },
+    });
+    if (!unit || unit.status !== 'live') {
+      throw createPublicError('not found', 404);
+    }
+    const policy =
+      DEFAULT_POLICIES[unit.cancellationPolicyKey || 'flexible'] || DEFAULT_POLICIES.flexible;
 
     // Create booking via booking service
     const booking = await createBooking(prisma, {
@@ -81,14 +96,13 @@ export async function POST(req: NextRequest) {
       channel: 'direct',
       startDate,
       endDate,
-      adults: adultsCount,
-      children: childrenCount,
-      totalThb,
+      adults: Number(adultsCount),
+      children: Number(childrenCount),
+      totalThb: breakdown.total_thb,
       instantBook,
       guestNote,
-      priceBreakdown: {
-        total: totalThb,
-      },
+      priceBreakdown: { ...breakdown },
+      cancellationPolicySnapshot: { ...policy },
     });
 
     // If instant book and card payment method, create checkout session
@@ -97,7 +111,7 @@ export async function POST(req: NextRequest) {
         purpose: 'stay',
         bookingId: booking.id,
         payerIdentityId: user.identityId,
-        amountThb: totalThb,
+        amountThb: breakdown.total_thb,
       });
 
       return NextResponse.json(
@@ -121,23 +135,27 @@ export async function POST(req: NextRequest) {
     }
 
     // For request-to-book, return the booking
-    if (!instantBook) {
-      return NextResponse.json(
-        {
-          booking,
-          message: 'Request to book created. Awaiting host approval.',
-        },
-        { status: 201 }
-      );
-    }
-
     return NextResponse.json(
-      { booking },
+      {
+        booking,
+        message: 'Request to book created. Awaiting host approval.',
+      },
       { status: 201 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Booking creation error:', message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    // Domain errors from the pricing/booking engine carry guest-actionable
+    // messages (dates unavailable, below min nights, party too large)
+    if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
+      const msg = error.message;
+      if (
+        msg.includes('unavailable') ||
+        msg.includes('minimum') ||
+        msg.includes('exceeds') ||
+        msg.includes('not found')
+      ) {
+        return NextResponse.json({ error: msg }, { status: 400 });
+      }
+    }
+    return handleError(error);
   }
 }

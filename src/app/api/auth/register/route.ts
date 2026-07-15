@@ -5,6 +5,16 @@ import {
   sessionCookieOptions,
   SESSION_COOKIE_NAME,
 } from '@/modules/auth';
+import { checkRateLimit } from '@/app/libs/rateLimit';
+
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +26,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+
+    const ipLimit = checkRateLimit(`register:ip:${clientIp(request)}`);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.', code: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((ipLimit.retryAfterMs || 0) / 1000)) } }
       );
     }
 

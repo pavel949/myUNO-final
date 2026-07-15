@@ -35,3 +35,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Vercel Cron issues GET requests; same handler, same CRON_SECRET guard.
+export const GET = POST;

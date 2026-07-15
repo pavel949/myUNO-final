@@ -1,3 +1,12 @@
+import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
-  return Response.json({ status: 'ok' });
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return Response.json({ status: 'ok', db: 'ok' });
+  } catch {
+    return Response.json({ status: 'degraded', db: 'unreachable' }, { status: 503 });
+  }
 }

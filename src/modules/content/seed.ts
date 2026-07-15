@@ -1341,6 +1341,11 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'landing.search.children', namespace: 'landing', description: 'Hero search: children count label', en: 'Children', ru: 'Дети', status: NR },
   { key: 'landing.search.submit', namespace: 'landing', description: 'Hero search: submit button', en: 'Find your stay', ru: 'Найти жильё', status: NR },
 
+  // Shell states
+  { key: 'common.not_found.title', namespace: 'common', description: '404 page title', en: 'Page not found', ru: 'Страница не найдена', status: NR },
+  { key: 'common.not_found.body', namespace: 'common', description: '404 page body', en: "The page you're looking for doesn't exist or has moved.", ru: 'Такой страницы нет или она была перемещена.', status: NR },
+  { key: 'common.not_found.home', namespace: 'common', description: '404 back-home button', en: 'Back to home', ru: 'На главную', status: NR },
+
   // Navbar
   { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
   { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
@@ -1448,6 +1453,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'listing.price_nights', namespace: 'listing', description: 'Price line: nights multiplier', en: '× {nights} nights', ru: '× {nights} ноч.', status: NR },
   { key: 'listing.discount_long_stay', namespace: 'listing', description: 'Price line: long-stay discount', en: 'Long stay discount', ru: 'Скидка за длительное проживание', status: NR },
   { key: 'listing.cleaning_fee', namespace: 'listing', description: 'Price line: cleaning fee', en: 'Cleaning fee', ru: 'Уборка', status: NR },
+  { key: 'listing.occupancy_tax', namespace: 'listing', description: 'Price line: occupancy tax', en: 'Occupancy tax', ru: 'Туристический налог', status: NR },
   { key: 'listing.total', namespace: 'listing', description: 'Price line: total', en: 'Total', ru: 'Итого', status: NR },
   { key: 'listing.booking_type', namespace: 'listing', description: 'Booking widget: booking type label', en: 'Booking type', ru: 'Тип бронирования', status: NR },
   { key: 'listing.instant_book', namespace: 'listing', description: 'Booking type: instant', en: 'Instant book', ru: 'Мгновенное бронирование', status: NR },

@@ -22,6 +22,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
       'You can also pay in cash to our team at check-in — we will confirm your booking on the spot.',
     'booking.detail.receipt': 'Receipt',
     'booking.detail.home_space': 'Open my home space',
+    'booking.detail.passports': 'Pre-arrival: add passports',
     'booking.detail.cancel_title': 'Cancel this trip',
     'booking.detail.cancel_button': 'Cancel booking',
     'booking.detail.cancel_confirm':

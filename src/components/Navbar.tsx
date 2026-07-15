@@ -20,6 +20,7 @@ export interface NavbarLabels {
   myTrips: string;
   ownerDashboard: string;
   mcPortal: string;
+  opsBoard: string;
   admin: string;
   menu: string;
 }
@@ -56,6 +57,9 @@ export function Navbar({ user, labels }: NavbarProps) {
           : []),
         ...(user.roles.includes('mc_member')
           ? [{ href: '/mc', label: labels.mcPortal }]
+          : []),
+        ...(user.roles.includes('staff_ops') || user.isAdmin
+          ? [{ href: '/ops', label: labels.opsBoard }]
           : []),
         ...(user.isAdmin ? [{ href: '/app/admin/signals', label: labels.admin }] : []),
       ]

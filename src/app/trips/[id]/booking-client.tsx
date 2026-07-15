@@ -255,13 +255,23 @@ export default function BookingDetailClient({
             </div>
           </div>
 
-          {stayStartedOrConfirmed && (
-            <Link href={`/bookings/${booking.id}/home-space`}>
-              <Button variant="secondary" size="sm">
-                {labels['booking.detail.home_space']}
-              </Button>
-            </Link>
-          )}
+          <div className="flex flex-wrap gap-12">
+            {stayStartedOrConfirmed && (
+              <Link href={`/bookings/${booking.id}/home-space`}>
+                <Button variant="secondary" size="sm">
+                  {labels['booking.detail.home_space']}
+                </Button>
+              </Link>
+            )}
+            {['pending_payment', 'confirmed', 'checked_in'].includes(booking.status) &&
+              booking.viewer.isGuest && (
+                <Link href={`/bookings/${booking.id}/passports`}>
+                  <Button variant="ghost" size="sm">
+                    {labels['booking.detail.passports']}
+                  </Button>
+                </Link>
+              )}
+          </div>
         </div>
 
         {error && (

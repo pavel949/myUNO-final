@@ -26,6 +26,7 @@ export default async function RootLayout({
     'nav.my_trips': 'My trips',
     'nav.owner_dashboard': 'Owner dashboard',
     'nav.mc_portal': 'MC portal',
+    'nav.ops': 'Ops',
     'nav.admin': 'Admin',
     'nav.menu': 'Menu',
   });
@@ -72,6 +73,7 @@ export default async function RootLayout({
             myTrips: navLabels['nav.my_trips'],
             ownerDashboard: navLabels['nav.owner_dashboard'],
             mcPortal: navLabels['nav.mc_portal'],
+            opsBoard: navLabels['nav.ops'],
             admin: navLabels['nav.admin'],
             menu: navLabels['nav.menu'],
           }}

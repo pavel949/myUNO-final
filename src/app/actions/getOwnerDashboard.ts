@@ -9,9 +9,21 @@ export async function fetchOwnerDashboard(ownerIdentityId: string) {
     const shape = await getOwnerPortfolioShape(prisma, ownerIdentityId);
     const projects = shape.isPortfolio ? await getOwnerProjects(prisma, ownerIdentityId) : [];
 
+    // Bookings across ALL the owner's units (portfolio owners were
+    // previously shown only their first unit's bookings)
     let bookings: any[] = [];
     if (dashboard.units.length > 0) {
-      bookings = await getOwnerBookingsList(prisma, dashboard.units[0].id, ownerIdentityId, 10);
+      const perUnit = await Promise.all(
+        dashboard.units.map((unit: { id: string }) =>
+          getOwnerBookingsList(prisma, unit.id, ownerIdentityId, 10)
+        )
+      );
+      bookings = perUnit
+        .flat()
+        .sort(
+          (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        )
+        .slice(0, 10);
     }
 
     return {

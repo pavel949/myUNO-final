@@ -63,11 +63,27 @@ interface DashboardData {
   openTicketsCount: number;
 }
 
+interface FeeLine {
+  unitName?: string;
+  description?: string;
+  source?: string;
+  feeThb?: number;
+  feeAmount?: number;
+}
+
+interface FeeReport {
+  periodStart: string | Date;
+  periodEnd: string | Date;
+  feeLines: FeeLine[];
+  summaryThb: { grossAmount: number; platformFeeAmount: number };
+}
+
 interface MCDashboardClientProps {
   dashboard: DashboardData;
   units: Unit[];
   bookings: Booking[];
   tickets: Ticket[];
+  feeReport?: FeeReport | null;
 }
 
 export function MCDashboardClient({
@@ -75,6 +91,7 @@ export function MCDashboardClient({
   units,
   bookings,
   tickets,
+  feeReport,
 }: MCDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tickets' | 'calendar' | 'reports'>('overview');
 
@@ -201,7 +218,7 @@ export function MCDashboardClient({
                           </div>
                         </div>
                         <Link
-                          href={`/mc/units/${unit.id}`}
+                          href={`/units/${unit.id}`}
                           className="text-brand-andaman font-semibold hover:underline"
                         >
                           Manage →
@@ -316,7 +333,7 @@ export function MCDashboardClient({
                         </h3>
                       </div>
                       <Link
-                        href={`/mc/tickets/${ticket.id}`}
+                        href={`/tickets`}
                         className="text-brand-andaman font-semibold hover:underline"
                       >
                         View →
@@ -336,9 +353,27 @@ export function MCDashboardClient({
         {activeTab === 'calendar' && (
           <div className="bg-white border border-border-line rounded-lg p-24">
             <h2 className="text-heading-2 font-bold text-text-ink mb-20">Calendar View</h2>
-            <p className="text-body text-text-secondary">
-              Calendar view coming soon — shows bookings and availability across all managed units
-            </p>
+            {bookings.length === 0 ? (
+              <p className="text-body text-text-secondary">No bookings in the period.</p>
+            ) : (
+              units.map((unit) => {
+                const unitBookings = bookings.filter((b) => b.unit?.id === unit.id);
+                return (
+                  <div key={unit.id} className="mb-20">
+                    <p className="text-body font-semibold text-text-ink mb-8">{unit.name}</p>
+                    {unitBookings.length === 0 ? (
+                      <p className="text-small text-text-secondary">Free — no bookings.</p>
+                    ) : (
+                      unitBookings.map((b) => (
+                        <p key={b.id} className="text-small text-text-secondary">
+                          {new Date(b.startDate).toLocaleDateString()} — {new Date(b.endDate).toLocaleDateString()} · {b.status}
+                        </p>
+                      ))
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
 
@@ -346,9 +381,35 @@ export function MCDashboardClient({
         {activeTab === 'reports' && (
           <div className="bg-white border border-border-line rounded-lg p-24">
             <h2 className="text-heading-2 font-bold text-text-ink mb-20">Fee Reports</h2>
-            <p className="text-body text-text-secondary">
-              Fee reports and platform commission statements coming soon
-            </p>
+            {!feeReport ? (
+              <p className="text-body text-text-secondary">No fee data for this period.</p>
+            ) : (
+              <div>
+                <p className="text-small text-text-secondary mb-16">
+                  {new Date(feeReport.periodStart).toLocaleDateString()} — {new Date(feeReport.periodEnd).toLocaleDateString()}
+                </p>
+                <div className="grid grid-cols-2 gap-16 mb-24">
+                  <div className="bg-surface-background rounded-lg p-16">
+                    <p className="text-small text-text-secondary">Gross revenue</p>
+                    <p className="text-heading-2 font-bold text-text-ink">฿{feeReport.summaryThb.grossAmount.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-surface-background rounded-lg p-16">
+                    <p className="text-small text-text-secondary">Platform fees</p>
+                    <p className="text-heading-2 font-bold text-brand-andaman">฿{feeReport.summaryThb.platformFeeAmount.toLocaleString()}</p>
+                  </div>
+                </div>
+                {feeReport.feeLines.length > 0 && (
+                  <div>
+                    {feeReport.feeLines.map((line, i) => (
+                      <div key={i} className="flex justify-between py-8 border-b border-border-line last:border-b-0 text-small">
+                        <span className="text-text-secondary">{line.unitName || line.description || line.source}</span>
+                        <span className="text-text-ink font-semibold">฿{(line.feeThb ?? line.feeAmount ?? 0).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

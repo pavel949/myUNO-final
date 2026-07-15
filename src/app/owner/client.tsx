@@ -92,14 +92,19 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   const handleOwnerStay = async (unitId: string, startDate: Date, endDate: Date) => {
     setOwnerStayLoading(true);
     try {
-      // TODO: Call bookOwnerStay API
-      console.log('Booking owner stay:', { unitId, startDate, endDate });
-      // const response = await fetch('/api/owner-stays', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ unitId, startDate, endDate }),
-      // });
-      // if (!response.ok) throw new Error('Failed to book owner stay');
+      const response = await fetch('/api/owner-stays', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unitId, startDate, endDate }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to book owner stay');
+      }
+      setShowOwnerStayModal(false);
+      window.location.reload();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Failed to book owner stay');
     } finally {
       setOwnerStayLoading(false);
     }

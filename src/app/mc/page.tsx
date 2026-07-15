@@ -1,6 +1,6 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { fetchMCDashboard } from '@/app/actions/getMCDashboard';
+import { fetchMCDashboard, fetchMCFeeReport } from '@/app/actions/getMCDashboard';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { MCDashboardClient } from './client';
 
@@ -25,5 +25,22 @@ export default async function MCPortalPage() {
     mcRole.organizationId as string
   );
 
-  return <MCDashboardClient {...data} />;
+  // Current-month fee report for the reports tab
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  let feeReport = null;
+  try {
+    feeReport = await fetchMCFeeReport(
+      user.identityId,
+      mcRole.projectId as string,
+      mcRole.organizationId as string,
+      periodStart,
+      periodEnd
+    );
+  } catch {
+    feeReport = null;
+  }
+
+  return <MCDashboardClient {...data} feeReport={feeReport as never} />;
 }

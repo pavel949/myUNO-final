@@ -31,9 +31,11 @@ export function computeRefundPercentage(
   checkInDate: Date,
   cancellationTime: Date = new Date()
 ): number {
-  // Calculate days from cancellation to check-in
+  // Full days from cancellation to check-in. Floor, not ceil: 21 hours before
+  // check-in is 0 full days — ceil would round it up to 1 and grant a 100%
+  // refund inside the no-refund window.
   const msPerDay = 1000 * 60 * 60 * 24;
-  const daysUntilCheckIn = Math.ceil(
+  const daysUntilCheckIn = Math.floor(
     (checkInDate.getTime() - cancellationTime.getTime()) / msPerDay
   );
 

@@ -1,5 +1,7 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { fetchInStayHomeSpace } from '@/app/actions/getInStayHomeSpace';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { InStayHomeSpaceClient } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +13,12 @@ interface InStayHomeSpacePageProps {
 }
 
 export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePageProps) {
-  const guestIdentityId = 'guest-1'; // TODO: Get from auth session
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect(`/login?next=/bookings/${params.bookingId}/home-space`);
+  }
 
-  const data = await fetchInStayHomeSpace(params.bookingId, guestIdentityId);
+  const data = await fetchInStayHomeSpace(params.bookingId, user.identityId);
 
   return <InStayHomeSpaceClient {...data} />;
 }

@@ -14,19 +14,25 @@ const config: Config = {
         brand: {
           andaman: '#0E4F4B',
           deep: '#0A3733',
+          // Alias of brand.deep — widely used in page gradients
+          'andaman-dark': '#0A3733',
           sun: '#D69A3A',
           'sun-soft': '#E7C079',
         },
-        // Surfaces
+        // Surfaces (doc 06 §2.1: ivory = page background, paper = cards)
         surface: {
           ivory: '#F5EFE4',
           paper: '#FBF8F1',
+          // Alias of surface.ivory — the page background
+          background: '#F5EFE4',
         },
         // Text
         text: {
           ink: '#16211F',
           stone: '#7E8C88',
           'stone-2': '#A7B2AE',
+          // Alias of text.stone — secondary copy
+          secondary: '#7E8C88',
         },
         // Borders
         border: {
@@ -66,6 +72,10 @@ const config: Config = {
         'body-strong': ['15px', { lineHeight: '23px', fontWeight: '600' }],
         'small': ['13px', { lineHeight: '19px' }],
         'num': ['15px', { fontWeight: '500' }],
+        // Heading aliases of the doc 06 scale (display-xl / display / title)
+        'heading-1': ['40px', { lineHeight: '44px', letterSpacing: '-1%', fontWeight: '600' }],
+        'heading-2': ['28px', { lineHeight: '34px', fontWeight: '600' }],
+        'heading-3': ['20px', { lineHeight: '26px', fontWeight: '600' }],
       },
       fontWeight: {
         display: '600',
@@ -84,8 +94,12 @@ const config: Config = {
         24: '24px',
         32: '32px',
         40: '40px',
+        44: '44px',
+        48: '48px',
         56: '56px',
+        64: '64px',
         80: '80px',
+        96: '96px',
       },
       borderRadius: {
         sm: '8px',

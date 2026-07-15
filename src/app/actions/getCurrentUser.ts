@@ -2,26 +2,52 @@
 
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/modules/auth';
 
-// Extract the current user from the session cookie
-// Session format: a simple header with the identity ID
-export async function getCurrentUser() {
+export interface CurrentUser {
+  identityId: string;
+  email: string | null;
+  firstName: string;
+  lastName: string;
+  isAdmin: boolean;
+  roles: {
+    role: string;
+    projectId: string | null;
+    unitId: string | null;
+    organizationId: string | null;
+  }[];
+}
+
+// Extract the current user from the signed session cookie.
+// The cookie is set by /api/auth/login and /api/auth/register and is
+// HMAC-signed — a tampered or expired token verifies to null.
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const cookieStore = await cookies();
-    // Look for a session token in cookies (format: user-id:timestamp:signature)
-    // For now, we'll look for a simple X-User-ID header equivalent stored in a cookie
-    const sessionToken = cookieStore.get('auth-session')?.value;
+    const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
     if (!sessionToken) {
       return null;
     }
 
-    // Parse the token to extract identity ID
-    // Format: identityId (for development; in production use JWT)
-    const identityId = sessionToken;
+    const session = verifySessionToken(sessionToken);
+    if (!session) {
+      return null;
+    }
 
     const identity = await prisma.identity.findUnique({
-      where: { id: identityId },
+      where: { id: session.identityId },
+      include: {
+        roleAssignments: {
+          where: { status: 'active' },
+          select: {
+            role: true,
+            projectId: true,
+            unitId: true,
+            organizationId: true,
+          },
+        },
+      },
     });
 
     if (!identity || identity.status === 'blocked') {
@@ -34,8 +60,9 @@ export async function getCurrentUser() {
       firstName: identity.firstName,
       lastName: identity.lastName,
       isAdmin: identity.isAdmin,
+      roles: identity.roleAssignments,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

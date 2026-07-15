@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function SignalsPage() {
   const user = await getCurrentUser();
   if (!user?.identityId) {
-    redirect('/auth/login');
+    redirect('/login');
   }
 
   const isAdmin = await prisma.identity.findUnique({

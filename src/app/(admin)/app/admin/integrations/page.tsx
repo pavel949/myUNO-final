@@ -8,7 +8,7 @@ export default async function IntegrationsPage() {
   const user = await getCurrentUser();
 
   if (!user?.identityId) {
-    redirect('/auth/login');
+    redirect('/login');
   }
 
   // Check admin access

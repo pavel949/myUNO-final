@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { login } from '@/modules/auth';
+import {
+  login,
+  createSessionToken,
+  sessionCookieOptions,
+  SESSION_COOKIE_NAME,
+} from '@/modules/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const identity = await login({ email, password });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         id: identity.id,
         email: identity.email,
@@ -25,6 +30,12 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
+    response.cookies.set(
+      SESSION_COOKIE_NAME,
+      createSessionToken(identity.id),
+      sessionCookieOptions()
+    );
+    return response;
   } catch (error) {
     if (error instanceof Error && 'code' in error && 'statusCode' in error) {
       const authError = error as any;

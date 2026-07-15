@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { SearchBar } from '@/components/SearchBar';
 
 interface Unit {
   id: string;
@@ -18,7 +20,32 @@ interface SearchResult {
   offset: number;
 }
 
-export default function SearchResults() {
+export interface SearchResultsLabels {
+  title: string;
+  resultsSummary: string;
+  prompt: string;
+  loading: string;
+  errorGeneric: string;
+  empty: string;
+  emptyHint: string;
+  perNight: string;
+  showing: string;
+  barCheckIn: string;
+  barCheckOut: string;
+  barAdults: string;
+  barChildren: string;
+  barSubmit: string;
+}
+
+function fill(template: string, params: Record<string, string | number>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  }
+  return result;
+}
+
+export default function SearchResults({ labels }: { labels: SearchResultsLabels }) {
   const searchParams = useSearchParams();
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,21 +55,23 @@ export default function SearchResults() {
   const endDate = searchParams.get('endDate');
   const adults = searchParams.get('adults') || '1';
   const children = searchParams.get('children') || '0';
+  const hasDates = Boolean(startDate && endDate);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      if (!startDate || !endDate) {
-        setError('Search dates are required');
-        return;
-      }
+    if (!hasDates) {
+      setResults(null);
+      setError(null);
+      return;
+    }
 
+    const fetchResults = async () => {
       setLoading(true);
       setError(null);
 
       try {
         const params = new URLSearchParams({
-          startDate,
-          endDate,
+          startDate: startDate as string,
+          endDate: endDate as string,
           adultsCount: adults,
           childrenCount: children,
           limit: '50',
@@ -50,94 +79,93 @@ export default function SearchResults() {
 
         const response = await fetch(`/api/search/units?${params}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch results');
+          throw new Error(labels.errorGeneric);
         }
 
         const data = await response.json();
         setResults(data);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'An error occurred'
-        );
+        setError(err instanceof Error ? err.message : labels.errorGeneric);
       } finally {
         setLoading(false);
       }
     };
 
     fetchResults();
-  }, [startDate, endDate, adults, children]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="text-center">
-          <p className="text-gray-600">Loading results...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [hasDates, startDate, endDate, adults, children, labels.errorGeneric]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Search Results
-          </h1>
-          <p className="text-gray-600">
-            {startDate} to {endDate} • {parseInt(adults) + parseInt(children)} guests
-          </p>
+        <div className="mb-24">
+          <h1 className="text-heading-1 font-bold text-text-ink mb-16">{labels.title}</h1>
+          <SearchBar
+            labels={{
+              checkIn: labels.barCheckIn,
+              checkOut: labels.barCheckOut,
+              adults: labels.barAdults,
+              children: labels.barChildren,
+              submit: labels.barSubmit,
+            }}
+            initialStartDate={startDate || ''}
+            initialEndDate={endDate || ''}
+            initialAdults={Number(adults) || 2}
+            initialChildren={Number(children) || 0}
+          />
         </div>
 
-        {results && results.units.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-600 mb-4">No units found matching your criteria.</p>
-            <a
-              href="/"
-              className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              New Search
-            </a>
+        {!hasDates && <p className="text-body text-text-secondary">{labels.prompt}</p>}
+
+        {hasDates && (
+          <p className="text-body text-text-secondary mb-24">
+            {fill(labels.resultsSummary, {
+              from: startDate as string,
+              to: endDate as string,
+              guests: Number(adults) + Number(children),
+            })}
+          </p>
+        )}
+
+        {loading && <p className="text-body text-text-secondary">{labels.loading}</p>}
+
+        {error && (
+          <div className="bg-state-error/10 border border-state-error rounded-lg p-16 mb-24">
+            <p className="text-body text-state-error">{error}</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results?.units.map((unit) => (
-              <a
+        )}
+
+        {!loading && results && results.units.length === 0 && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+            <p className="text-body text-text-ink mb-8">{labels.empty}</p>
+            <p className="text-small text-text-secondary">{labels.emptyHint}</p>
+          </div>
+        )}
+
+        {!loading && results && results.units.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
+            {results.units.map((unit) => (
+              <Link
                 key={unit.id}
                 href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
               >
-                <div className="aspect-video bg-gradient-to-br from-blue-400 to-blue-600" />
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {unit.name}
-                  </h3>
-                  <p className="text-2xl font-bold text-blue-600 mb-2">
+                <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                <div className="p-16">
+                  <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
+                  <p className="text-heading-3 font-bold text-brand-andaman mb-4">
                     ฿{unit.baseNightlyThb?.toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-600">per night</p>
+                  <p className="text-small text-text-secondary">{labels.perNight}</p>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}
 
-        {results && results.total > results.limit && (
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
-              Showing {results.units.length} of {results.total} results
+        {!loading && results && results.total > results.limit && (
+          <div className="mt-32 text-center">
+            <p className="text-small text-text-secondary">
+              {fill(labels.showing, { shown: results.units.length, total: results.total })}
             </p>
           </div>
         )}

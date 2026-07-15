@@ -56,11 +56,11 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
+      <div className="min-h-screen flex items-center justify-center bg-surface-background">
+        <div className="bg-surface-paper border border-border-line rounded-lg p-8 max-w-md w-full text-center">
           <div className="mb-4">
             <svg
-              className="w-16 h-16 text-green-500 mx-auto"
+              className="w-16 h-16 text-state-success mx-auto"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -73,18 +73,18 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-text-ink mb-2">
             Payment Confirmed
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-text-secondary mb-4">
             Your booking has been confirmed successfully.
           </p>
           {bookingId && (
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-text-stone mb-6">
               Booking ID: {bookingId}
             </p>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-text-stone">
             Redirecting to your bookings...
           </p>
         </div>
@@ -93,26 +93,26 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-surface-background">
+      <div className="bg-surface-paper border border-border-line rounded-lg p-8 max-w-md w-full">
+        <h1 className="text-2xl font-bold text-text-ink mb-6">
           Complete Payment
         </h1>
 
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-text-ink">
             <span className="font-semibold">Mock Checkout</span>
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-text-secondary mt-1">
             This is a test checkout page. Click "Pay Now" to simulate card
             payment.
           </p>
         </div>
 
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-6 p-4 bg-surface-background rounded-lg border border-border-line">
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-600">Session ID:</span>
-            <span className="text-xs font-mono text-gray-800 truncate">
+            <span className="text-sm text-text-secondary">Session ID:</span>
+            <span className="text-xs font-mono text-text-ink truncate">
               {params.sessionId}
             </span>
           </div>
@@ -120,19 +120,19 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm text-red-800">{error}</p>
+            <p className="text-sm text-state-error">{error}</p>
           </div>
         )}
 
         <button
           onClick={handlePayment}
           disabled={isLoading}
-          className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+          className="w-full py-3 px-4 bg-brand-andaman text-surface-ivory font-semibold rounded-lg hover:bg-brand-deep disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isLoading ? 'Processing...' : 'Pay Now'}
         </button>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
+        <p className="text-xs text-text-stone text-center mt-4">
           No real payment will be charged during testing.
         </p>
       </div>

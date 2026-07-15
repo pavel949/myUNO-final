@@ -14,7 +14,8 @@ interface KeyDef {
   supportsRich?: boolean;
   ru: string;
   en: string;
-  th: string;
+  th?: string; // omitted → falls back to en via the locale chain until translated
+  status?: 'ok' | 'needs_review'; // agent-drafted copy ships as needs_review (doc 05 §1)
 }
 
 const COMMON_KEYS: KeyDef[] = [
@@ -1319,13 +1320,154 @@ const COMMON_KEYS: KeyDef[] = [
   },
 ];
 
+
+// UI shell keys added by the usability-restoration pass (navbar, footer, auth
+// pages, search, unit detail). Agent-drafted copy — seeded EN + RU as
+// needs_review (doc 05 §1); TH omitted so the locale chain falls back to EN
+// until the founder's translator fills it in.
+const NR = 'needs_review' as const;
+
+const UI_SHELL_KEYS: KeyDef[] = [
+  // Landing additions
+  { key: 'landing.doors.title', namespace: 'landing', description: 'Audience doors section title', en: 'Who are you?', ru: 'Кто вы?', status: NR },
+  { key: 'landing.trust.verified_body', namespace: 'landing', description: 'Trust point body: guests verified', en: 'Passports, backgrounds, proof of funds.', ru: 'Паспорта, проверка, подтверждение средств.', status: NR },
+  { key: 'landing.trust.handled_body', namespace: 'landing', description: 'Trust point body: compliance handled', en: 'TM30, taxes, PDPA — we file it all.', ru: 'TM30, налоги, PDPA — мы подаём всё.', status: NR },
+  { key: 'landing.trust.protected_body', namespace: 'landing', description: 'Trust point body: data protected', en: 'Encrypted fields, access logs, retention policies.', ru: 'Шифрование данных, журнал доступа, сроки хранения.', status: NR },
+  { key: 'landing.trust.cta', namespace: 'landing', description: 'Trust section link to /trust', en: 'Learn how', ru: 'Узнать как', status: NR },
+  { key: 'landing.services.cta', namespace: 'landing', description: 'Services section CTA button', en: 'Browse services', ru: 'Смотреть услуги', status: NR },
+  { key: 'landing.search.check_in', namespace: 'landing', description: 'Hero search: check-in date label', en: 'Check-in', ru: 'Заезд', status: NR },
+  { key: 'landing.search.check_out', namespace: 'landing', description: 'Hero search: check-out date label', en: 'Check-out', ru: 'Выезд', status: NR },
+  { key: 'landing.search.adults', namespace: 'landing', description: 'Hero search: adults count label', en: 'Adults', ru: 'Взрослые', status: NR },
+  { key: 'landing.search.children', namespace: 'landing', description: 'Hero search: children count label', en: 'Children', ru: 'Дети', status: NR },
+  { key: 'landing.search.submit', namespace: 'landing', description: 'Hero search: submit button', en: 'Find your stay', ru: 'Найти жильё', status: NR },
+
+  // Navbar
+  { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
+  { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
+  { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', status: NR },
+  { key: 'nav.register', namespace: 'nav', description: 'Navbar button: sign up', en: 'Sign up', ru: 'Регистрация', status: NR },
+  { key: 'nav.logout', namespace: 'nav', description: 'Navbar button: log out', en: 'Log out', ru: 'Выйти', status: NR },
+  { key: 'nav.my_trips', namespace: 'nav', description: 'Navbar link: my trips', en: 'My trips', ru: 'Мои поездки', status: NR },
+  { key: 'nav.owner_dashboard', namespace: 'nav', description: 'Navbar link: owner dashboard', en: 'Owner dashboard', ru: 'Кабинет владельца', status: NR },
+  { key: 'nav.mc_portal', namespace: 'nav', description: 'Navbar link: MC portal', en: 'MC portal', ru: 'Портал УК', status: NR },
+  { key: 'nav.admin', namespace: 'nav', description: 'Navbar link: admin panel', en: 'Admin', ru: 'Админ', status: NR },
+  { key: 'nav.menu', namespace: 'nav', description: 'Mobile menu button aria-label', en: 'Menu', ru: 'Меню', status: NR },
+
+  // Footer
+  { key: 'nav.footer.brand_column', namespace: 'nav', description: 'Footer column title: brand', en: 'myUNO', ru: 'myUNO', status: NR },
+  { key: 'nav.footer.home', namespace: 'nav', description: 'Footer link: home', en: 'Home', ru: 'Главная', status: NR },
+  { key: 'nav.footer.trust', namespace: 'nav', description: 'Footer link: trust', en: 'Trust', ru: 'Доверие', status: NR },
+  { key: 'nav.footer.audience_column', namespace: 'nav', description: 'Footer column title: audiences', en: 'For Everyone', ru: 'Для всех', status: NR },
+  { key: 'nav.footer.owners', namespace: 'nav', description: 'Footer link: owners', en: 'Owners', ru: 'Владельцы', status: NR },
+  { key: 'nav.footer.guests', namespace: 'nav', description: 'Footer link: guests', en: 'Guests', ru: 'Гости', status: NR },
+  { key: 'nav.footer.providers', namespace: 'nav', description: 'Footer link: providers', en: 'Providers', ru: 'Поставщики услуг', status: NR },
+  { key: 'nav.footer.partners_column', namespace: 'nav', description: 'Footer column title: partners', en: 'Partners', ru: 'Партнёры', status: NR },
+  { key: 'nav.footer.developers', namespace: 'nav', description: 'Footer link: developers', en: 'Developers', ru: 'Девелоперы', status: NR },
+  { key: 'nav.footer.buyers', namespace: 'nav', description: 'Footer link: buyers', en: 'Buyers', ru: 'Покупатели', status: NR },
+  { key: 'nav.footer.management', namespace: 'nav', description: 'Footer link: management companies', en: 'Management', ru: 'Управляющие компании', status: NR },
+  { key: 'nav.footer.legal_column', namespace: 'nav', description: 'Footer column title: legal', en: 'Legal', ru: 'Правовая информация', status: NR },
+  { key: 'nav.footer.terms', namespace: 'nav', description: 'Footer link: terms of service', en: 'Terms', ru: 'Условия', status: NR },
+  { key: 'nav.footer.privacy', namespace: 'nav', description: 'Footer link: privacy policy', en: 'Privacy', ru: 'Конфиденциальность', status: NR },
+  { key: 'nav.footer.company_line', namespace: 'nav', description: 'Footer legal entity line', en: 'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com', ru: 'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com', status: NR },
+  { key: 'nav.footer.copyright', namespace: 'nav', description: 'Footer copyright line', en: '© 2026 myUNO. All rights reserved.', ru: '© 2026 myUNO. Все права защищены.', status: NR },
+
+  // Auth: login
+  { key: 'auth.login.title', namespace: 'auth', description: 'Login page title', en: 'Welcome back', ru: 'С возвращением', status: NR },
+  { key: 'auth.login.subtitle', namespace: 'auth', description: 'Login page subtitle', en: 'Log in to manage your stays, units, and services.', ru: 'Войдите, чтобы управлять поездками, домами и услугами.', status: NR },
+  { key: 'auth.login.email', namespace: 'auth', description: 'Login field: email', en: 'Email', ru: 'Эл. почта', status: NR },
+  { key: 'auth.login.password', namespace: 'auth', description: 'Login field: password', en: 'Password', ru: 'Пароль', status: NR },
+  { key: 'auth.login.submit', namespace: 'auth', description: 'Login submit button', en: 'Log in', ru: 'Войти', status: NR },
+  { key: 'auth.login.error_generic', namespace: 'auth', description: 'Login generic error', en: 'Login failed. Please try again.', ru: 'Не удалось войти. Попробуйте ещё раз.', status: NR },
+  { key: 'auth.login.no_account', namespace: 'auth', description: 'Login: no account prompt', en: "Don't have an account?", ru: 'Ещё нет аккаунта?', status: NR },
+  { key: 'auth.login.register_link', namespace: 'auth', description: 'Login: link to register', en: 'Sign up', ru: 'Зарегистрироваться', status: NR },
+  { key: 'auth.login.forgot_password', namespace: 'auth', description: 'Login: forgot password link', en: 'Forgot your password?', ru: 'Забыли пароль?', status: NR },
+
+  // Auth: register
+  { key: 'auth.register.title', namespace: 'auth', description: 'Register page title', en: 'Create your account', ru: 'Создайте аккаунт', status: NR },
+  { key: 'auth.register.subtitle', namespace: 'auth', description: 'Register page subtitle', en: 'Book stays, order services, and manage your units in one place.', ru: 'Бронируйте жильё, заказывайте услуги и управляйте домами в одном месте.', status: NR },
+  { key: 'auth.register.first_name', namespace: 'auth', description: 'Register field: first name', en: 'First name', ru: 'Имя', status: NR },
+  { key: 'auth.register.last_name', namespace: 'auth', description: 'Register field: last name', en: 'Last name', ru: 'Фамилия', status: NR },
+  { key: 'auth.register.email', namespace: 'auth', description: 'Register field: email', en: 'Email', ru: 'Эл. почта', status: NR },
+  { key: 'auth.register.password', namespace: 'auth', description: 'Register field: password', en: 'Password', ru: 'Пароль', status: NR },
+  { key: 'auth.register.password_help', namespace: 'auth', description: 'Register password requirements', en: 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.', ru: 'Не менее 8 символов, с заглавной и строчной буквой и цифрой.', status: NR },
+  { key: 'auth.register.submit', namespace: 'auth', description: 'Register submit button', en: 'Sign up', ru: 'Зарегистрироваться', status: NR },
+  { key: 'auth.register.error_generic', namespace: 'auth', description: 'Register generic error', en: 'Registration failed. Please try again.', ru: 'Не удалось зарегистрироваться. Попробуйте ещё раз.', status: NR },
+  { key: 'auth.register.have_account', namespace: 'auth', description: 'Register: already have account prompt', en: 'Already have an account?', ru: 'Уже есть аккаунт?', status: NR },
+  { key: 'auth.register.login_link', namespace: 'auth', description: 'Register: link to login', en: 'Log in', ru: 'Войти', status: NR },
+
+  // Auth: password reset
+  { key: 'auth.reset.title', namespace: 'auth', description: 'Password reset page title', en: 'Reset your password', ru: 'Сброс пароля', status: NR },
+  { key: 'auth.reset.request_subtitle', namespace: 'auth', description: 'Password reset request subtitle', en: "Enter your email and we'll send you a reset link.", ru: 'Укажите почту — мы отправим ссылку для сброса.', status: NR },
+  { key: 'auth.reset.confirm_subtitle', namespace: 'auth', description: 'Password reset confirm subtitle', en: 'Choose a new password for your account.', ru: 'Придумайте новый пароль для аккаунта.', status: NR },
+  { key: 'auth.reset.email', namespace: 'auth', description: 'Password reset field: email', en: 'Email', ru: 'Эл. почта', status: NR },
+  { key: 'auth.reset.new_password', namespace: 'auth', description: 'Password reset field: new password', en: 'New password', ru: 'Новый пароль', status: NR },
+  { key: 'auth.reset.password_help', namespace: 'auth', description: 'Password reset requirements', en: 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.', ru: 'Не менее 8 символов, с заглавной и строчной буквой и цифрой.', status: NR },
+  { key: 'auth.reset.request_submit', namespace: 'auth', description: 'Password reset request submit', en: 'Send reset link', ru: 'Отправить ссылку', status: NR },
+  { key: 'auth.reset.confirm_submit', namespace: 'auth', description: 'Password reset confirm submit', en: 'Set new password', ru: 'Сохранить новый пароль', status: NR },
+  { key: 'auth.reset.request_sent', namespace: 'auth', description: 'Password reset request sent message', en: 'If that email is registered, a reset link is on its way.', ru: 'Если такая почта зарегистрирована, ссылка уже отправлена.', status: NR },
+  { key: 'auth.reset.success', namespace: 'auth', description: 'Password reset success message', en: 'Password updated. You can now log in.', ru: 'Пароль обновлён. Теперь можно войти.', status: NR },
+  { key: 'auth.reset.error_generic', namespace: 'auth', description: 'Password reset generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', status: NR },
+  { key: 'auth.reset.back_to_login', namespace: 'auth', description: 'Password reset: back to login link', en: 'Back to log in', ru: 'Назад ко входу', status: NR },
+
+  // Auth: email verification
+  { key: 'auth.verify.title', namespace: 'auth', description: 'Email verification page title', en: 'Email verification', ru: 'Подтверждение почты', status: NR },
+  { key: 'auth.verify.success', namespace: 'auth', description: 'Email verification success', en: 'Your email is verified. Welcome to myUNO!', ru: 'Почта подтверждена. Добро пожаловать в myUNO!', status: NR },
+  { key: 'auth.verify.failure', namespace: 'auth', description: 'Email verification failure', en: 'This verification link is invalid or has expired. Please request a new one.', ru: 'Ссылка недействительна или устарела. Запросите новую.', status: NR },
+  { key: 'auth.verify.go_login', namespace: 'auth', description: 'Email verification: go to login', en: 'Go to log in', ru: 'Перейти ко входу', status: NR },
+
+  // Search page
+  { key: 'search.title', namespace: 'search', description: 'Search page title', en: 'Find your stay', ru: 'Найдите жильё', status: NR },
+  { key: 'search.results_summary', namespace: 'search', description: 'Search results summary line', en: '{from} to {to} · {guests} guests', ru: '{from} — {to} · гостей: {guests}', status: NR },
+  { key: 'search.prompt', namespace: 'search', description: 'Search page prompt when no dates chosen', en: 'Choose your dates to see available homes.', ru: 'Выберите даты, чтобы увидеть доступные дома.', status: NR },
+  { key: 'search.loading', namespace: 'search', description: 'Search loading message', en: 'Loading results…', ru: 'Загружаем результаты…', status: NR },
+  { key: 'search.error_generic', namespace: 'search', description: 'Search generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', status: NR },
+  { key: 'search.empty', namespace: 'search', description: 'Search empty state', en: 'No homes are available for these dates.', ru: 'На эти даты свободных домов нет.', status: NR },
+  { key: 'search.empty_hint', namespace: 'search', description: 'Search empty state hint', en: 'Try different dates or a shorter stay.', ru: 'Попробуйте другие даты или более короткий срок.', status: NR },
+  { key: 'search.per_night', namespace: 'search', description: 'Price unit: per night', en: 'per night', ru: 'за ночь', status: NR },
+  { key: 'search.showing', namespace: 'search', description: 'Search pagination summary', en: 'Showing {shown} of {total} results', ru: 'Показано {shown} из {total}', status: NR },
+  { key: 'search.bar_check_in', namespace: 'search', description: 'Search bar: check-in label', en: 'Check-in', ru: 'Заезд', status: NR },
+  { key: 'search.bar_check_out', namespace: 'search', description: 'Search bar: check-out label', en: 'Check-out', ru: 'Выезд', status: NR },
+  { key: 'search.bar_adults', namespace: 'search', description: 'Search bar: adults label', en: 'Adults', ru: 'Взрослые', status: NR },
+  { key: 'search.bar_children', namespace: 'search', description: 'Search bar: children label', en: 'Children', ru: 'Дети', status: NR },
+  { key: 'search.bar_submit', namespace: 'search', description: 'Search bar: submit button', en: 'Search', ru: 'Искать', status: NR },
+
+  // Unit detail page
+  { key: 'listing.loading', namespace: 'listing', description: 'Unit detail loading message', en: 'Loading unit details…', ru: 'Загружаем данные…', status: NR },
+  { key: 'listing.not_found', namespace: 'listing', description: 'Unit detail not found', en: 'Unit not found', ru: 'Дом не найден', status: NR },
+  { key: 'listing.back_to_results', namespace: 'listing', description: 'Unit detail: back to search results link', en: '← Back to results', ru: '← Назад к результатам', status: NR },
+  { key: 'listing.default_description', namespace: 'listing', description: 'Unit detail default description', en: 'A beautiful home in Phuket.', ru: 'Прекрасный дом на Пхукете.', status: NR },
+  { key: 'listing.max_guests', namespace: 'listing', description: 'Unit fact: max guests', en: 'Max guests', ru: 'Макс. гостей', status: NR },
+  { key: 'listing.min_stay', namespace: 'listing', description: 'Unit fact: minimum stay', en: 'Min stay', ru: 'Мин. срок', status: NR },
+  { key: 'listing.nights', namespace: 'listing', description: 'Plural: nights', en: 'nights', ru: 'ночей', status: NR },
+  { key: 'listing.night', namespace: 'listing', description: 'Singular: night', en: 'night', ru: 'ночь', status: NR },
+  { key: 'listing.bedrooms', namespace: 'listing', description: 'Unit fact: bedrooms', en: 'Bedrooms', ru: 'Спальни', status: NR },
+  { key: 'listing.bathrooms', namespace: 'listing', description: 'Unit fact: bathrooms', en: 'Bathrooms', ru: 'Ванные', status: NR },
+  { key: 'listing.cancellation_policy', namespace: 'listing', description: 'Unit: cancellation policy heading', en: 'Cancellation policy', ru: 'Условия отмены', status: NR },
+  { key: 'listing.cancellation_default', namespace: 'listing', description: 'Unit: default cancellation text', en: 'Flexible cancellation', ru: 'Гибкая отмена', status: NR },
+  { key: 'listing.per_night', namespace: 'listing', description: 'Price unit suffix', en: '/ night', ru: '/ ночь', status: NR },
+  { key: 'listing.price_nights', namespace: 'listing', description: 'Price line: nights multiplier', en: '× {nights} nights', ru: '× {nights} ноч.', status: NR },
+  { key: 'listing.discount_long_stay', namespace: 'listing', description: 'Price line: long-stay discount', en: 'Long stay discount', ru: 'Скидка за длительное проживание', status: NR },
+  { key: 'listing.cleaning_fee', namespace: 'listing', description: 'Price line: cleaning fee', en: 'Cleaning fee', ru: 'Уборка', status: NR },
+  { key: 'listing.total', namespace: 'listing', description: 'Price line: total', en: 'Total', ru: 'Итого', status: NR },
+  { key: 'listing.booking_type', namespace: 'listing', description: 'Booking widget: booking type label', en: 'Booking type', ru: 'Тип бронирования', status: NR },
+  { key: 'listing.instant_book', namespace: 'listing', description: 'Booking type: instant', en: 'Instant book', ru: 'Мгновенное бронирование', status: NR },
+  { key: 'listing.request_to_book', namespace: 'listing', description: 'Booking type: request', en: 'Request to book', ru: 'Запрос на бронирование', status: NR },
+  { key: 'listing.guest_note', namespace: 'listing', description: 'Booking widget: guest note label', en: 'Guest note (optional)', ru: 'Комментарий (необязательно)', status: NR },
+  { key: 'listing.guest_note_placeholder', namespace: 'listing', description: 'Booking widget: guest note placeholder', en: 'Any special requests…', ru: 'Особые пожелания…', status: NR },
+  { key: 'listing.reserve', namespace: 'listing', description: 'Booking widget: reserve button', en: 'Reserve', ru: 'Забронировать', status: NR },
+  { key: 'listing.reserving', namespace: 'listing', description: 'Booking widget: reserving in progress', en: 'Booking…', ru: 'Бронируем…', status: NR },
+  { key: 'listing.pick_dates', namespace: 'listing', description: 'Booking widget: prompt to pick dates', en: 'Choose dates on the search page to see the price.', ru: 'Выберите даты на странице поиска, чтобы увидеть цену.', status: NR },
+  { key: 'listing.error_price', namespace: 'listing', description: 'Booking widget: price calc error', en: 'Failed to calculate price', ru: 'Не удалось рассчитать цену', status: NR },
+  { key: 'listing.error_booking', namespace: 'listing', description: 'Booking widget: booking error', en: 'Booking failed', ru: 'Не удалось забронировать', status: NR },
+];
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
 ): Promise<void> {
   const identityId = systemIdentityId || 'system';
 
-  for (const keyDef of COMMON_KEYS) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,
@@ -1335,16 +1477,17 @@ export async function seedContent(
       keyDef.supportsRich || false
     );
 
-    // Set translations for all locales
+    // Set translations for all provided locales
     const locales: Locale[] = ['ru', 'en', 'th'];
     for (const locale of locales) {
       const value = keyDef[locale];
+      if (value === undefined) continue;
       await setTranslation(
         db,
         keyDef.key,
         locale,
         value,
-        'ok',
+        keyDef.status || 'ok',
         identityId
       );
     }

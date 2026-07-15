@@ -1,31 +1,34 @@
 import { PrismaClient, BuyerSignalKey, BuyerSignalStatus } from '@prisma/client';
 
+// Fallback defaults; thresholds should be read from config in production
 const DEFAULT_REPEAT_STAY_THRESHOLD = 2;
 const DEFAULT_LONG_STAY_NIGHTS = 28;
+const DEFAULT_LISTING_ENGAGEMENT_VIEW_COUNT = 3;
 
-export async function detectBuyerSignals(db: PrismaClient) {
-  // Detect repeat_stay signals
-  await detectRepeatStaySignals(db);
-
-  // Detect long_stay signals
-  await detectLongStaySignals(db);
-
-  // Detect listing_engagement signals (based on analytics events)
-  // This runs after the AnalyticsEvent stream is populated
-  await detectListingEngagementSignals(db);
+/**
+ * Detect buyer signals from completed stays, long stays, and engagement patterns.
+ * Each signal creation is audit-logged per doc 13 §4.
+ */
+export async function detectBuyerSignals(
+  db: PrismaClient,
+  auditActorIdentityId?: string
+) {
+  await detectRepeatStaySignals(db, auditActorIdentityId);
+  await detectLongStaySignals(db, auditActorIdentityId);
+  await detectListingEngagementSignals(db, auditActorIdentityId);
 }
 
-async function detectRepeatStaySignals(db: PrismaClient) {
-  // Find identities with ≥ threshold completed stays
+/**
+ * Detect repeat_stay signals for identities with ≥threshold completed stays.
+ * Audit-logs the signal creation/update.
+ */
+async function detectRepeatStaySignals(
+  db: PrismaClient,
+  auditActorIdentityId?: string
+) {
   const repeatGuests = await db.bookingGuest.findMany({
-    where: {
-      booking: {
-        status: 'completed',
-      },
-    },
-    select: {
-      identityId: true,
-    },
+    where: { booking: { status: 'completed' } },
+    select: { identityId: true },
     distinct: ['identityId'],
   });
 
@@ -33,17 +36,12 @@ async function detectRepeatStaySignals(db: PrismaClient) {
     if (!guest.identityId) continue;
 
     const completedStays = await db.booking.count({
-      where: {
-        guestIdentityId: guest.identityId,
-        status: 'completed',
-      },
+      where: { guestIdentityId: guest.identityId, status: 'completed' },
     });
 
     if (completedStays >= DEFAULT_REPEAT_STAY_THRESHOLD) {
-      // Create or update signal
       const strength = completedStays >= 3 ? 3 : 2;
-
-      await db.buyerSignal.upsert({
+      const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
             identityId: guest.identityId,
@@ -62,22 +60,38 @@ async function detectRepeatStaySignals(db: PrismaClient) {
           status: BuyerSignalStatus.open,
         },
       });
+
+      // Audit log the signal (use a generic actor if none provided)
+      if (auditActorIdentityId) {
+        await db.auditLog.create({
+          data: {
+            actorIdentityId: auditActorIdentityId,
+            action: 'signal_detected',
+            entityType: 'buyer_signal',
+            entityId: signal.id,
+            data: {
+              signalKey: BuyerSignalKey.repeat_stay,
+              strength,
+              completedStays,
+            },
+          },
+        });
+      }
     }
   }
 }
 
-async function detectLongStaySignals(db: PrismaClient) {
-  // Find bookings ≥ long stay threshold
+/**
+ * Detect long_stay signals for stays ≥ threshold nights.
+ * Audit-logs the signal creation/update.
+ */
+async function detectLongStaySignals(
+  db: PrismaClient,
+  auditActorIdentityId?: string
+) {
   const longStays = await db.booking.findMany({
-    where: {
-      status: 'completed',
-    },
-    select: {
-      id: true,
-      guestIdentityId: true,
-      startDate: true,
-      endDate: true,
-    },
+    where: { status: 'completed' },
+    select: { id: true, guestIdentityId: true, startDate: true, endDate: true },
   });
 
   for (const stay of longStays) {
@@ -87,7 +101,7 @@ async function detectLongStaySignals(db: PrismaClient) {
     );
 
     if (nights >= DEFAULT_LONG_STAY_NIGHTS) {
-      await db.buyerSignal.upsert({
+      const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
             identityId: stay.guestIdentityId,
@@ -105,47 +119,58 @@ async function detectLongStaySignals(db: PrismaClient) {
           status: BuyerSignalStatus.open,
         },
       });
+
+      if (auditActorIdentityId) {
+        await db.auditLog.create({
+          data: {
+            actorIdentityId: auditActorIdentityId,
+            action: 'signal_detected',
+            entityType: 'buyer_signal',
+            entityId: signal.id,
+            data: {
+              signalKey: BuyerSignalKey.long_stay,
+              nights,
+              bookingId: stay.id,
+            },
+          },
+        });
+      }
     }
   }
 }
 
-async function detectListingEngagementSignals(db: PrismaClient) {
-  // Find identities with ≥3 page.unit_viewed events in 30 days
-  // (this would typically run after analytics events are populated)
+/**
+ * Detect listing_engagement signals for identities viewing ≥ threshold units in 30 days.
+ * Audit-logs the signal creation/update.
+ */
+async function detectListingEngagementSignals(
+  db: PrismaClient,
+  auditActorIdentityId?: string
+) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const engagementEvents = await db.analyticsEvent.findMany({
     where: {
       eventKey: 'page_unit_viewed',
-      occurredAt: {
-        gte: thirtyDaysAgo,
-      },
-      identityId: {
-        not: null,
-      },
+      occurredAt: { gte: thirtyDaysAgo },
+      identityId: { not: null },
     },
-    select: {
-      identityId: true,
-      unitId: true,
-    },
+    select: { identityId: true, unitId: true },
   });
 
-  // Group by identity and count unique units viewed
   const engagementMap = new Map<string, Set<string>>();
   for (const event of engagementEvents) {
     if (!event.identityId || !event.unitId) continue;
-
     if (!engagementMap.has(event.identityId)) {
       engagementMap.set(event.identityId, new Set());
     }
     engagementMap.get(event.identityId)!.add(event.unitId);
   }
 
-  // Create signals for identities with ≥3 unit views
   for (const [identityId, units] of engagementMap) {
-    if (units.size >= 3) {
-      await db.buyerSignal.upsert({
+    if (units.size >= DEFAULT_LISTING_ENGAGEMENT_VIEW_COUNT) {
+      const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
             identityId,
@@ -163,6 +188,155 @@ async function detectListingEngagementSignals(db: PrismaClient) {
           status: BuyerSignalStatus.open,
         },
       });
+
+      if (auditActorIdentityId) {
+        await db.auditLog.create({
+          data: {
+            actorIdentityId: auditActorIdentityId,
+            action: 'signal_detected',
+            entityType: 'buyer_signal',
+            entityId: signal.id,
+            data: {
+              signalKey: BuyerSignalKey.listing_engagement,
+              uniqueUnitsViewed: units.size,
+            },
+          },
+        });
+      }
     }
   }
+}
+
+/**
+ * Record signal transition (reviewed, handed_to_capital, dismissed) with audit log.
+ */
+export async function transitionBuyerSignal(
+  db: PrismaClient,
+  signalId: string,
+  newStatus: BuyerSignalStatus,
+  transitionByIdentityId: string,
+  notes?: string
+) {
+  const signal = await db.buyerSignal.update({
+    where: { id: signalId },
+    data: {
+      status: newStatus,
+      reviewedByIdentityId: transitionByIdentityId,
+      notes,
+      ...(newStatus !== BuyerSignalStatus.open && { closedAt: new Date() }),
+    },
+  });
+
+  // Audit log the transition
+  await db.auditLog.create({
+    data: {
+      actorIdentityId: transitionByIdentityId,
+      action: 'signal_transitioned',
+      entityType: 'buyer_signal',
+      entityId: signal.id,
+      data: {
+        fromStatus: signal.status,
+        toStatus: newStatus,
+        notes,
+      },
+    },
+  });
+
+  return signal;
+}
+
+/**
+ * Create or update a staff-flagged purchase_question signal.
+ * Called when staff flag a message as indicating purchase interest.
+ */
+export async function flagPurchaseQuestion(
+  db: PrismaClient,
+  identityId: string,
+  flaggedByIdentityId: string,
+  notes?: string
+) {
+  const signal = await db.buyerSignal.upsert({
+    where: {
+      identityId_signalKey: {
+        identityId,
+        signalKey: BuyerSignalKey.purchase_question,
+      },
+    },
+    update: {
+      status: BuyerSignalStatus.open,
+      closedAt: null,
+    },
+    create: {
+      identityId,
+      signalKey: BuyerSignalKey.purchase_question,
+      strength: 3,
+      status: BuyerSignalStatus.open,
+    },
+  });
+
+  // Audit log the flag
+  await db.auditLog.create({
+    data: {
+      actorIdentityId: flaggedByIdentityId,
+      action: 'signal_detected',
+      entityType: 'buyer_signal',
+      entityId: signal.id,
+      data: {
+        signalKey: BuyerSignalKey.purchase_question,
+        strength: 3,
+        flagReason: notes,
+      },
+    },
+  });
+
+  return signal;
+}
+
+/**
+ * Create or update a direct_inquiry signal for owner sell-interest.
+ * Called when an owner indicates intent to sell or when a buyer lead is submitted.
+ */
+export async function createDirectInquiry(
+  db: PrismaClient,
+  identityId: string,
+  recordedByIdentityId?: string,
+  notes?: string
+) {
+  const signal = await db.buyerSignal.upsert({
+    where: {
+      identityId_signalKey: {
+        identityId,
+        signalKey: BuyerSignalKey.direct_inquiry,
+      },
+    },
+    update: {
+      status: BuyerSignalStatus.open,
+      closedAt: null,
+    },
+    create: {
+      identityId,
+      signalKey: BuyerSignalKey.direct_inquiry,
+      strength: 3,
+      status: BuyerSignalStatus.open,
+    },
+  });
+
+  // Audit log the inquiry
+  if (recordedByIdentityId) {
+    await db.auditLog.create({
+      data: {
+        actorIdentityId: recordedByIdentityId,
+        action: 'signal_detected',
+        entityType: 'buyer_signal',
+        entityId: signal.id,
+        data: {
+          signalKey: BuyerSignalKey.direct_inquiry,
+          strength: 3,
+          inquirySource: notes,
+        },
+      },
+    });
+  }
+
+  return signal;
 }

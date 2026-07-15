@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import * as financeService from '@/modules/finance';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 
 /**
  * POST /api/checkout/confirm
@@ -40,6 +41,11 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await financeService.verifyAndConfirm(prisma, sessionId);
+
+    // First confirmation of a stay payment → notify guest + owner, email guest
+    if (result.confirmed && result.payment?.bookingId) {
+      await notifyBookingConfirmed(prisma, result.payment.bookingId);
+    }
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {

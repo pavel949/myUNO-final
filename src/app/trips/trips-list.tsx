@@ -115,7 +115,8 @@ export default function TripsList() {
             {trips.map((trip) => (
               <div
                 key={trip.id}
-                className="bg-surface-paper border border-border-line rounded-lg p-6 hover:shadow-lg transition"
+                onClick={() => router.push(`/trips/${trip.id}`)}
+                className="bg-surface-paper border border-border-line rounded-lg p-6 hover:shadow-lg transition cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -167,7 +168,7 @@ export default function TripsList() {
                         Payment pending
                       </p>
                       <button
-                        onClick={() => router.push(`/trips/${trip.id}/pay`)}
+                        onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}`); }}
                         className="px-4 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep text-sm"
                       >
                         Complete Payment

@@ -56,6 +56,9 @@ export interface UnitDetailLabels {
   requestToBook: string;
   guestNote: string;
   guestNotePlaceholder: string;
+  paymentMethod: string;
+  payCash: string;
+  payCard: string;
   reserve: string;
   reserving: string;
   pickDates: string;
@@ -87,6 +90,7 @@ export default function UnitDetailClient({
   const [error, setError] = useState<string | null>(null);
   const [bookingType, setBookingType] = useState<'instant' | 'request'>('instant');
   const [guestNote, setGuestNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_provider'>('cash');
   const [submitting, setSubmitting] = useState(false);
 
   const startDate = searchParams.get('startDate');
@@ -167,7 +171,7 @@ export default function UnitDetailClient({
           childrenCount: children,
           instantBook: bookingType === 'instant',
           guestNote: guestNote || undefined,
-          paymentMethod: 'cash',
+          paymentMethod,
         }),
       });
 
@@ -360,6 +364,24 @@ export default function UnitDetailClient({
                     <option value="instant">{labels.instantBook}</option>
                   )}
                   <option value="request">{labels.requestToBook}</option>
+                </select>
+              </div>
+
+              <div className="mb-24">
+                <label
+                  htmlFor="payment-method"
+                  className="block text-small font-semibold text-text-ink mb-8"
+                >
+                  {labels.paymentMethod}
+                </label>
+                <select
+                  id="payment-method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card_provider')}
+                  className="w-full h-48 px-12 border border-border-line rounded-sm text-body bg-surface-paper text-text-ink"
+                >
+                  <option value="cash">{labels.payCash}</option>
+                  <option value="card_provider">{labels.payCard}</option>
                 </select>
               </div>
 

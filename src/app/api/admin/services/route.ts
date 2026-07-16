@@ -27,7 +27,7 @@ export async function GET() {
           select: { project_id: true },
         },
       },
-      orderBy: { created_at: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     return NextResponse.json(
@@ -35,11 +35,11 @@ export async function GET() {
         id: s.id,
         title: s.title,
         description: s.description,
-        categoryKey: s.category_key,
-        priceModel: s.price_model,
-        basePriceThb: s.base_price_thb,
+        categoryKey: s.categoryKey,
+        priceModel: s.priceModel,
+        basePriceThb: s.basePriceThb,
         provider: s.provider,
-        createdAt: s.created_at,
+        createdAt: s.createdAt,
         availableProjectIds: s.availableProjects.map((p) => p.project_id),
       }))
     );

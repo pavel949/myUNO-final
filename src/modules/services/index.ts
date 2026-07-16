@@ -24,3 +24,15 @@ export {
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';
+
+export {
+  createService,
+  getService,
+  updateService,
+  getServicesByProvider,
+  listPublicServices,
+  approveService,
+  rejectService,
+  type CreateServiceInput,
+  type UpdateServiceInput,
+} from './service.service';

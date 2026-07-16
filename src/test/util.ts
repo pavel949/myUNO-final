@@ -2,10 +2,13 @@ import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuid } from 'uuid';
 
-// Test database client — uses DATABASE_URL_TEST if set, else DATABASE_URL
-const testDatabaseUrl = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL;
+// Test database client — requires DATABASE_URL_TEST to protect production database
+const testDatabaseUrl = process.env.DATABASE_URL_TEST;
 if (!testDatabaseUrl) {
-  throw new Error('DATABASE_URL or DATABASE_URL_TEST must be set');
+  throw new Error(
+    'DATABASE_URL_TEST must be set to run tests. It protects the live database from accidental deletion. ' +
+    'Set it to a separate test database connection string in .env.'
+  );
 }
 
 export const db = new PrismaClient({

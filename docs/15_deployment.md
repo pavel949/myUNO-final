@@ -30,7 +30,21 @@ The choice is deliberately boring and reversible: the app is a standard Next.js 
 
 Seeds (config registry, content keys, catalogs — docs 04/05) ship as idempotent seed scripts run with migrations, so a fresh environment stands up complete.
 
-## 4. Day-to-day operation
+## 4. Encryption key handling (before production go-live)
+
+**The non-negotiable:** The `ENCRYPTION_KEY` (AES-256-GCM, 64-hex) encrypts sensitive PII — chiefly TM30 passports (doc 12 §3). Once this key has encrypted any data in the database, **it can never be changed or lost** — a different key causes permanent decryption failure (GCM auth-tag mismatch) and the data becomes unrecoverable.
+
+**Before any production traffic:**
+
+1. **Generate the key once** — `openssl rand -hex 32` in a secure context.
+2. **Set it identically** in all environments (local `.env`, staging Vercel env vars, production Vercel env vars) and **write it down in a secure, physical location** (e.g., a hardware-secured vault, never in a shared file or chat).
+3. **Before database swaps** (e.g., migrating from Neon to Supabase): verify the key is set identically in the new environment **before** any data writes. Staging → production swap: same key both places.
+4. **Never rotate this key** once it contains encrypted data. If the key is suspected compromised, encrypt new data with a new key and migrate old encrypted fields individually — a migration is the only safe path.
+5. **Access control:** only the deployment system (Vercel) and local dev machines should have read access; log every decryption attempt (doc 12 §5).
+
+**What happens if the key is lost or changed:** All existing passports (every TM30 filing row) becomes unreadable. No recovery. Plan accordingly — ops must guard this value as carefully as a database password.
+
+## 5. Day-to-day operation
 
 - **The scheduler** runs the jobs registry (doc 14 §1): hold expiry & request auto-decline (every 5 min), iCal sync (15 min), notification digests, nightly metric rollups + retention deletions, monthly statement generation. Every job reports its last run + outcome to an admin health panel — a silent scheduler is a visible red light, not a mystery.
 - **Monitoring & alerts:** uptime check on the public site and the API; error tracking (e.g. Sentry) with alerts to the founder/ops channel; job-failure and webhook-failure alerts; the in-app admin dashboard already surfaces business-level red flags (TM30 at risk, refund failures, iCal conflicts).

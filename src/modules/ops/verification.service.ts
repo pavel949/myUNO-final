@@ -115,7 +115,7 @@ export async function markVerificationFailed(
   if (opsLead?.identity) {
     await createNotification(db, {
       identityId: opsLead.identity.id,
-      type: 'stay.verification_failed',
+      type: 'stay_verification_failed',
       titleKey: 'notify.stay.verification_failed.title',
       bodyKey: 'notify.stay.verification_failed.body',
       params: {

@@ -1,24 +1,63 @@
 // module: comms — public interface (see docs/14_tech_spec.md §3)
-// Owns: Thread, Message, Ticket, Announcement, Notification
-// Used by: all modules (notify)
+// Owns: Notifications, threads, tickets, announcements (loop 2+)
+// Depends on: core, finance (for order notifications)
 
 export {
   createNotification,
+  markNotificationRead,
+  getUnreadNotifications,
+  getRecentNotifications,
+  isNotificationMuted,
+  setNotificationMute,
   type CreateNotificationInput,
-} from './notification.service';
+} from './comms.service';
+
+export {
+  subscribe,
+  publishNotification,
+  hasSubscribers,
+} from './notification.bus';
 
 export {
   findOrCreateThread,
   sendMessage,
-  listThreadsFor,
-  getThread,
-  type ThreadParticipantInput,
-  type FindOrCreateThreadInput,
+  markThreadRead,
+  getThreadsForIdentity,
+  getThreadMessages,
+  addSystemMessage,
+  getUnreadCounts,
+  type CreateThreadInput,
+  type SendMessageInput,
 } from './thread.service';
 
 export {
-  createTicket,
-  listTicketsFor,
-  getTicket,
-  type CreateTicketInput,
+  subscribe as subscribeThread,
+  publishMessage,
+  hasSubscribers as hasThreadSubscribers,
+} from './thread.bus';
+
+export {
+  raiseTicket,
+  updateTicketStatus,
+  assignTicket,
+  addComment,
+  recordTicketEvent,
+  getTicketDetail,
+  getProjectTickets,
+  getReporterTickets,
+  type RaiseTicketInput,
+  type UpdateTicketStatusInput,
 } from './ticket.service';
+
+export {
+  createAnnouncement,
+  publishAnnouncement,
+  unpublishAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  getProjectAnnouncements,
+  markAnnouncementRead,
+  getUnreadCount,
+  type CreateAnnouncementInput,
+  type UpdateAnnouncementInput,
+} from './announcement.service';

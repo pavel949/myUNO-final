@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import { listThreadsFor } from '@/modules/comms';
+import { getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,29 @@ export default async function MessagesInboxPage() {
     redirect('/login?next=/messages');
   }
 
-  const threads = await listThreadsFor(prisma, user.identityId);
+  const rawThreads = await getThreadsForIdentity(prisma, user.identityId);
+  const unread = await getUnreadCounts(prisma, user.identityId);
+  const otherIds = Array.from(
+    new Set(
+      rawThreads.flatMap((t) =>
+        t.participants.map((p) => p.identityId).filter((id) => id !== user.identityId)
+      )
+    )
+  );
+  const identities = await prisma.identity.findMany({
+    where: { id: { in: otherIds } },
+    select: { id: true, firstName: true, lastName: true },
+  });
+  const nameById = new Map(identities.map((i) => [i.id, `${i.firstName} ${i.lastName}`]));
+  const threads = rawThreads.map((t) => ({
+    id: t.id,
+    lastMessageAt: t.lastMessageAt,
+    lastMessage: t.messages[0]?.body || null,
+    unreadCount: unread[t.id] || 0,
+    others: t.participants
+      .filter((p) => p.identityId !== user.identityId)
+      .map((p) => ({ id: p.identityId, name: nameById.get(p.identityId) || 'myUNO' })),
+  }));
 
   const labels = await getLabels({
     'messages.inbox.title': 'Messages',

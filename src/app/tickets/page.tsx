@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import { listTicketsFor } from '@/modules/comms';
+import { getReporterTickets } from '@/modules/comms';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export default async function TicketsPage() {
     redirect('/login?next=/tickets');
   }
 
-  const tickets = await listTicketsFor(prisma, user.identityId);
+  const tickets = await getReporterTickets(prisma, user.identityId);
 
   const labels = await getLabels({
     'tickets.list.title': 'My requests',
@@ -69,7 +69,7 @@ export default async function TicketsPage() {
                     statusStyle[ticket.status] || 'bg-surface-ivory text-text-ink'
                   }`}
                 >
-                  {labels[`tickets.status.${ticket.status}`] || ticket.status}
+                  {(labels as Record<string, string>)[`tickets.status.${ticket.status}`] || ticket.status}
                 </span>
               </div>
             ))}

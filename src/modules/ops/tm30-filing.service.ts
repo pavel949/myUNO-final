@@ -246,7 +246,7 @@ export async function checkTm30Escalations(
       // Notify admin/ops
       await createNotification(db, {
         identityId: filing.booking.projectId,
-        type: 'compliance.tm30_escalation',
+        type: 'compliance_tm30_escalation',
         titleKey: 'tm30.escalation.title',
         bodyKey: 'tm30.escalation.body',
         params: {

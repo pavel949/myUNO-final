@@ -1,4 +1,5 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
+import { findOrCreateThread, addSystemMessage } from '@/modules/comms';
 
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
@@ -267,6 +268,32 @@ export async function verifyAndConfirm(
         where: { id: confirmed.bookingId },
         data: { status: 'confirmed' },
       });
+
+      // Create thread for booking communication (best-effort)
+      try {
+        const fullBooking = await db.booking.findUnique({
+          where: { id: confirmed.bookingId },
+          select: { guestIdentityId: true },
+        });
+
+        if (fullBooking) {
+          await findOrCreateThread(db, {
+            contextType: 'booking',
+            contextId: confirmed.bookingId,
+            projectId: booking.projectId,
+            participantIdentityIds: [fullBooking.guestIdentityId],
+          });
+
+          // Post system message for booking confirmation
+          await addSystemMessage(
+            db,
+            confirmed.bookingId,
+            `Booking confirmed. Payment received.`
+          );
+        }
+      } catch (err) {
+        console.error('Failed to create booking thread:', err);
+      }
     }
   }
 

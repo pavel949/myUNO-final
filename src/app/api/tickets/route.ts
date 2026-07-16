@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createTicket, listTicketsFor } from '@/modules/comms';
+import { raiseTicket, getReporterTickets } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import type { RoleType } from '@prisma/client';
 
@@ -12,7 +12,7 @@ export async function GET() {
     if (!user) {
       throw createPublicError('unauthorized', 401);
     }
-    const tickets = await listTicketsFor(prisma, user.identityId);
+    const tickets = await getReporterTickets(prisma, user.identityId);
     return NextResponse.json({ tickets });
   } catch (error) {
     return handleError(error);
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       throw createPublicError('Access denied.', 403);
     }
 
-    const ticket = await createTicket(prisma, {
+    const ticket = await raiseTicket(prisma, {
       projectId,
       unitId,
       raisedByIdentityId: user.identityId,

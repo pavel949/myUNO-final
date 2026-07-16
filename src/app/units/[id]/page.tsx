@@ -37,6 +37,13 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'listing.pick_dates': 'Choose dates on the search page to see the price.',
     'listing.error_price': 'Failed to calculate price',
     'listing.error_booking': 'Booking failed',
+    'listing.amenities': 'Amenities',
+    'catalog.amenities.wifi.label': 'Wi-Fi',
+    'catalog.amenities.pool.label': 'Pool',
+    'catalog.amenities.kitchen.label': 'Kitchen',
+    'catalog.amenities.gym.label': 'Gym',
+    'catalog.amenities.parking.label': 'Parking',
+    'catalog.amenities.aircon.label': 'Air conditioning',
   });
 
   return (
@@ -75,6 +82,15 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           pickDates: labels['listing.pick_dates'],
           errorPrice: labels['listing.error_price'],
           errorBooking: labels['listing.error_booking'],
+          amenitiesTitle: labels['listing.amenities'],
+          amenityLabels: {
+            wifi: labels['catalog.amenities.wifi.label'],
+            pool: labels['catalog.amenities.pool.label'],
+            kitchen: labels['catalog.amenities.kitchen.label'],
+            gym: labels['catalog.amenities.gym.label'],
+            parking: labels['catalog.amenities.parking.label'],
+            aircon: labels['catalog.amenities.aircon.label'],
+          },
         }}
       />
     </Suspense>

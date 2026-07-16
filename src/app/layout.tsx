@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
@@ -16,6 +16,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const locale = getRequestLocale();
 
   const navLabels = await getLabels({
     'nav.find_stay': 'Find a stay',
@@ -56,7 +57,7 @@ export default async function RootLayout({
   });
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className="min-h-screen flex flex-col">
         <Navbar
           user={
@@ -87,6 +88,7 @@ export default async function RootLayout({
             empty: navLabels['nav.bell_empty'],
             markAll: navLabels['nav.bell_mark_all'],
           }}
+          locale={locale}
         />
         <div className="flex-1">{children}</div>
         <Footer

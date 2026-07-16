@@ -31,9 +31,10 @@ interface NavbarProps {
   user: NavbarUser | null;
   labels: NavbarLabels;
   bellLabels: BellLabels;
+  locale: string;
 }
 
-export function Navbar({ user, labels, bellLabels }: NavbarProps) {
+export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -98,6 +99,19 @@ export function Navbar({ user, labels, bellLabels }: NavbarProps) {
 
         {/* Desktop auth area */}
         <div className="hidden md:flex items-center gap-16">
+          <select
+            aria-label="Language"
+            value={locale}
+            onChange={(e) => {
+              document.cookie = `locale=${e.target.value}; path=/; max-age=31536000; samesite=lax`;
+              router.refresh();
+            }}
+            className="h-40 px-8 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
+          >
+            <option value="en">EN</option>
+            <option value="ru">RU</option>
+            <option value="th">TH</option>
+          </select>
           {user ? (
             <>
               {userLinks.map((link) => (

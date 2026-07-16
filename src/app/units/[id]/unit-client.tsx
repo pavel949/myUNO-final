@@ -9,6 +9,7 @@ interface Unit {
   id: string;
   name: string;
   images?: string[];
+  amenityKeys?: string[];
   description?: string;
   baseNightlyThb: number;
   maxGuests?: number;
@@ -65,6 +66,8 @@ export interface UnitDetailLabels {
   pickDates: string;
   errorPrice: string;
   errorBooking: string;
+  amenitiesTitle: string;
+  amenityLabels: Record<string, string>;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -303,6 +306,23 @@ export default function UnitDetailClient({
                     </div>
                   )}
                 </div>
+                {unit.amenityKeys && unit.amenityKeys.length > 0 && (
+                  <div className="mb-24">
+                    <p className="text-small font-semibold text-text-ink mb-8">
+                      {labels.amenitiesTitle}
+                    </p>
+                    <div className="flex flex-wrap gap-8">
+                      {unit.amenityKeys.map((key) => (
+                        <span
+                          key={key}
+                          className="px-12 py-4 rounded-full bg-surface-background border border-border-line text-small text-text-ink"
+                        >
+                          {labels.amenityLabels[key] || key}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="bg-surface-background rounded-lg p-16">
                   <p className="text-small font-semibold text-text-ink mb-8">
                     {labels.cancellationPolicy}

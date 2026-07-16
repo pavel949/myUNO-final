@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './Button';
 
@@ -20,10 +20,6 @@ interface SearchBarProps {
   initialChildren?: number;
 }
 
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function SearchBar({
   labels,
   initialStartDate = '',
@@ -36,6 +32,12 @@ export function SearchBar({
   const [endDate, setEndDate] = useState(initialEndDate);
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
+  const [todayISO, setTodayISO] = useState('');
+
+  // Set today's date only on client to avoid hydration mismatch
+  useEffect(() => {
+    setTodayISO(new Date().toISOString().slice(0, 10));
+  }, []);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -66,7 +68,7 @@ export function SearchBar({
           id="search-start"
           type="date"
           required
-          min={todayISO()}
+          min={todayISO}
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           className={fieldClass}
@@ -80,7 +82,7 @@ export function SearchBar({
           id="search-end"
           type="date"
           required
-          min={startDate || todayISO()}
+          min={startDate || todayISO}
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
           className={fieldClass}

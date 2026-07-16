@@ -1,41 +1,33 @@
-import { Suspense } from 'react';
-import { getLabels } from '@/lib/i18n';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { redirect } from 'next/navigation';
 import ServicesClient from './services-client';
 
-export const dynamic = 'force-dynamic';
+export const metadata = {
+  title: 'Services',
+};
 
 export default async function ServicesPage() {
-  const labels = await getLabels({
-    'services.browse.title': 'Services',
-    'services.browse.subtitle':
-      'Cleaning, repairs, deliveries — every provider vetted, every order on the record.',
-    'services.browse.empty': 'No services available yet — check back soon.',
-    'services.browse.vetted': 'Vetted',
-    'services.browse.from': 'from',
-    'services.browse.order': 'Order',
-    'services.browse.when': 'When',
-    'services.browse.quantity': 'Quantity',
-    'services.browse.note': 'Note to provider (optional)',
-    'services.browse.confirm_order': 'Place order — ฿{total}',
-    'services.browse.login_needed': 'Log in to place an order.',
-    'services.browse.ordered': 'Order placed. The provider will confirm shortly.',
-    'services.browse.error_generic': 'Could not place the order. Please try again.',
-    'services.my_orders.title': 'My orders',
-    'services.my_orders.empty': 'No orders yet.',
-    'services.order_status.placed': 'Awaiting provider',
-    'services.order_status.paid': 'Paid',
-    'services.order_status.expired': 'Expired',
-    'services.order_status.failed': 'Failed',
-    'services.order_status.accepted': 'Accepted',
-    'services.order_status.declined': 'Declined',
-    'services.order_status.fulfilled': 'Fulfilled',
-    'services.order_status.cancelled': 'Cancelled',
-    'services.order_status.closed': 'Closed',
-  });
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Get the project context from the user's roles
+  const userRole = user.roles[0];
+  if (!userRole?.projectId) {
+    redirect('/');
+  }
 
   return (
-    <Suspense>
-      <ServicesClient labels={labels} />
-    </Suspense>
+    <div className="min-h-screen bg-surface-background p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-heading-1">Services</h1>
+          <p className="text-text-secondary mt-2">Browse vetted services available for your property</p>
+        </div>
+        <ServicesClient projectId={userRole.projectId} />
+      </div>
+    </div>
   );
 }

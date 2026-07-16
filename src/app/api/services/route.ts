@@ -1,40 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { listPublicServices } from '@/modules/services';
 import { prisma } from '@/lib/prisma';
-import { handleError } from '@/app/libs/errorHandler';
+import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * GET /api/services — active, vetted marketplace services (S11).
- * Public read; optional ?projectId scope (services are platform-wide in
- * loop one — the param is accepted for the project-scoped rail).
- */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const services = await prisma.service.findMany({
-      where: { status: 'active', provider: { status: 'active' } },
-      include: {
-        provider: { select: { id: true, name: true, vetted_at: true } },
-        coverMedia: { select: { storageKey: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get the project context from the user's roles
+    const userRole = user.roles[0];
+    if (!userRole?.projectId) {
+      return NextResponse.json(
+        { error: 'No project context' },
+        { status: 400 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const categoryKey = searchParams.get('categoryKey') || undefined;
+
+    const services = await listPublicServices(prisma, userRole.projectId, {
+      categoryKey: categoryKey || undefined,
     });
 
-    return NextResponse.json({
-      services: services.map((s) => ({
-        id: s.id,
-        title: s.title,
-        description: s.description,
-        categoryKey: s.categoryKey,
-        priceModel: s.priceModel,
-        basePriceThb: s.basePriceThb,
-        durationMin: s.durationMin,
-        advanceNoticeHours: s.advanceNoticeHours,
-        providerName: s.provider?.name || null,
-        providerVetted: Boolean(s.provider?.vetted_at),
-        coverUrl: s.coverMedia?.storageKey || null,
-      })),
-    });
+    return NextResponse.json(services);
   } catch (error) {
-    return handleError(error);
+    console.error('Error fetching services:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch services' },
+      { status: 500 }
+    );
   }
 }

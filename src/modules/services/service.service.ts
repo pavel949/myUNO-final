@@ -257,7 +257,7 @@ export async function listPublicServices(
 export async function approveService(
   db: PrismaClient,
   serviceId: string,
-  _approvedByIdentityId: string
+  approvedByIdentityId: string
 ): Promise<void> {
   const service = await db.service.findUnique({
     where: { id: serviceId },
@@ -273,7 +273,11 @@ export async function approveService(
 
   await db.service.update({
     where: { id: serviceId },
-    data: { status: 'active' },
+    data: {
+      status: 'active',
+      approved_at: new Date(),
+      approved_by_identity_id: approvedByIdentityId,
+    },
   });
 }
 
@@ -301,6 +305,11 @@ export async function rejectService(
 
   await db.service.update({
     where: { id: serviceId },
-    data: { status: 'paused' },
+    data: {
+      status: 'paused',
+      // Clear approval tracking when rejected (allows resubmission)
+      approved_at: null,
+      approved_by_identity_id: null,
+    },
   });
 }

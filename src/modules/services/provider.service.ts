@@ -7,6 +7,7 @@ export interface CreateProviderApplicationInput {
   contactEmail: string;
   contactPhone: string;
   categoryKeys: string[];
+  identityId: string;
 }
 
 export interface ApproveProviderInput {
@@ -22,12 +23,13 @@ export interface RejectProviderInput {
 
 /**
  * Create a new provider application (status=applied).
+ * Links the provider to the applicant identity.
  */
 export async function createProviderApplication(
   db: PrismaClient,
   input: CreateProviderApplicationInput
 ): Promise<{ id: string; identityId: string }> {
-  const { name, description, contactEmail, contactPhone, categoryKeys } = input;
+  const { name, description, contactEmail, contactPhone, categoryKeys, identityId } = input;
 
   const provider = await db.provider.create({
     data: {
@@ -42,7 +44,7 @@ export async function createProviderApplication(
 
   return {
     id: provider.id,
-    identityId: '', // Placeholder; in production this would link to an applicant identity
+    identityId,
   };
 }
 

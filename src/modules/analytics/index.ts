@@ -1,6 +1,12 @@
 export { track } from './track';
 export type { TrackDimensions } from './track';
-export { rollupMetricsDaily } from './rollup';
+export { rollupMetricsDaily, rollupMetricsRange } from './rollup';
+export { getMetricsSeries, getUnitOccupancySparklines } from './query';
+export type {
+  MetricsSeriesOptions,
+  MetricsPoint,
+  UnitSparkPoint,
+} from './query';
 export {
   detectBuyerSignals,
   transitionBuyerSignal,

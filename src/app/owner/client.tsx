@@ -11,6 +11,8 @@ import {
   SellInterestCard,
   OwnerStayModal,
 } from '@/components';
+import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
+import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 
 interface UnitData {
   id: string;
@@ -67,6 +69,8 @@ interface OwnerDashboardClientProps {
   shape: PortfolioShape;
   projects: Project[];
   bookings: Booking[];
+  trends: OwnerTrends;
+  labels: Record<string, string>;
 }
 
 const formatCurrency = (thb: number): string => {
@@ -77,11 +81,19 @@ const formatCurrency = (thb: number): string => {
   }).format(thb);
 };
 
+const monthLabel = (period: string): string => {
+  // period is 'YYYY-MM'
+  const d = new Date(`${period}-01T00:00:00Z`);
+  return d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
+};
+
 export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   dashboard,
   shape,
   projects,
   bookings,
+  trends,
+  labels,
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     shape.isPortfolio ? projects[0]?.id || null : null
@@ -99,12 +111,12 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to book owner stay');
+        throw new Error(data?.error || labels['owner.stay.error']);
       }
       setShowOwnerStayModal(false);
       window.location.reload();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Failed to book owner stay');
+      window.alert(err instanceof Error ? err.message : labels['owner.stay.error']);
     } finally {
       setOwnerStayLoading(false);
     }
@@ -132,13 +144,31 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     ? dashboard.units.filter((u) => u.projectId === selectedProjectId)
     : dashboard.units;
 
+  const occupancyNow = shape.isPortfolio
+    ? dashboard.combinedOccupancyThisMonth
+    : currentUnit?.occupancyThisMonth || 0;
+  const revenueNow = shape.isPortfolio
+    ? dashboard.combinedRevenueThisMonth
+    : currentUnit?.revenueThisMonth || 0;
+
+  const chartLabels = {
+    tableToggleLabels: {
+      show: labels['owner.chart.show_table'],
+      hide: labels['owner.chart.hide_table'],
+    },
+    labelHeader: labels['owner.chart.month'],
+    emptyLabel: labels['owner.trends.empty'],
+  };
+
   return (
     <div className="min-h-screen bg-surface-background">
       <div className="max-w-6xl mx-auto px-24 py-40">
         {/* Header */}
         <div className="mb-40">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-8">Owner Dashboard</h1>
-          <p className="text-body text-text-secondary">Manage your properties and stay informed</p>
+          <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+            {labels['owner.dashboard.title']}
+          </h1>
+          <p className="text-body text-text-secondary">{labels['owner.dashboard.subtitle']}</p>
         </div>
 
         {/* Portfolio: Project Switcher */}
@@ -155,19 +185,70 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Stat Tiles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-20 mb-40">
           <StatTile
-            label="Occupancy This Month"
-            value={`${shape.isPortfolio ? dashboard.combinedOccupancyThisMonth : currentUnit?.occupancyThisMonth || 0} nights`}
+            label={labels['owner.dashboard.occupancy_this_month']}
+            value={`${occupancyNow} ${labels['owner.stats.nights']}`}
             variant="occupancy"
+            delta={
+              <DeltaChip
+                currentValue={occupancyNow}
+                previousValue={trends.prevMonth ? trends.prevMonth.nights : null}
+                vsLabel={labels['owner.stats.vs_last_month']}
+                newLabel={labels['owner.stats.new_period']}
+              />
+            }
           />
           <StatTile
-            label="Revenue This Month"
-            value={formatCurrency(
-              shape.isPortfolio
-                ? dashboard.combinedRevenueThisMonth
-                : currentUnit?.revenueThisMonth || 0
-            )}
+            label={labels['owner.dashboard.revenue_this_month']}
+            value={formatCurrency(revenueNow)}
             variant="revenue"
+            delta={
+              <DeltaChip
+                currentValue={revenueNow}
+                previousValue={trends.prevMonth ? trends.prevMonth.revenueThb : null}
+                vsLabel={labels['owner.stats.vs_last_month']}
+                newLabel={labels['owner.stats.new_period']}
+              />
+            }
           />
+        </div>
+
+        {/* Trends — last 6 months from the analytics rollup */}
+        <div className="mb-40">
+          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            {labels['owner.trends.title']}
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+            <div className="bg-surface-paper border border-border-line rounded-md p-24">
+              <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                {labels['owner.trends.revenue']}
+              </h3>
+              <BarChart
+                data={trends.monthly.map((p) => ({
+                  label: monthLabel(p.period),
+                  value: p.rentalRevenueThb,
+                }))}
+                color={CHART_SERIES[0]}
+                formatValue={formatThbCompact}
+                valueHeader={labels['owner.chart.revenue']}
+                {...chartLabels}
+              />
+            </div>
+            <div className="bg-surface-paper border border-border-line rounded-md p-24">
+              <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                {labels['owner.trends.occupancy']}
+              </h3>
+              <LineChart
+                data={trends.monthly.map((p) => ({
+                  label: monthLabel(p.period),
+                  value: Math.round(p.occupancyPct),
+                }))}
+                max={100}
+                formatValue={(v) => `${v}%`}
+                valueHeader={labels['owner.chart.occupancy']}
+                {...chartLabels}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Unit Cards Grid or Single Unit View */}
@@ -175,19 +256,25 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           <div className="space-y-32">
             {/* Single Unit: Bookings */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">Recent Bookings</h2>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.bookings']}
+              </h2>
               <BookingsList bookings={bookings} />
             </div>
 
             {/* Single Unit: Latest Statement */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">Latest Statement</h2>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.statement']}
+              </h2>
               <LatestStatementCard statementId={currentUnit?.latestStatementId || null} />
             </div>
 
             {/* Single Unit: Open Tickets */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">Open Tickets</h2>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.tickets']}
+              </h2>
               <OpenTicketsList count={currentUnit?.openTicketsCount || 0} />
             </div>
 
@@ -199,7 +286,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 fullWidth
                 onClick={() => setShowOwnerStayModal(true)}
               >
-                Book My Stay
+                {labels['owner.stay.book_action']}
               </Button>
             </div>
 
@@ -210,31 +297,48 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           </div>
         ) : (
           <div className="space-y-32">
-            {/* Portfolio: Units Grid */}
+            {/* Portfolio: Units Grid (doc 06 S7 — per-unit rows with occupancy sparkline) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
               {filteredUnits.map((unit) => (
                 <div
                   key={unit.id}
-                  className="border border-border-line rounded-md p-24 hover:shadow-md transition-shadow"
+                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
                 >
-                  <h3 className="text-heading-3 font-semibold text-text-ink mb-16">{unit.name}</h3>
+                  <div className="flex items-start justify-between gap-12 mb-16">
+                    <h3 className="text-heading-3 font-semibold text-text-ink">{unit.name}</h3>
+                    <Sparkline
+                      values={trends.sparklines[unit.id] || []}
+                      max={1}
+                      title={labels['owner.units.last30']}
+                    />
+                  </div>
                   <div className="space-y-12">
                     <div className="flex justify-between">
-                      <span className="text-body text-text-secondary">Occupancy</span>
-                      <span className="text-body font-medium text-text-ink">{unit.occupancyThisMonth} nights</span>
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.units.occupancy']}
+                      </span>
+                      <span className="text-body font-medium text-text-ink">
+                        {unit.occupancyThisMonth} {labels['owner.stats.nights']}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-body text-text-secondary">Revenue</span>
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.units.revenue']}
+                      </span>
                       <span className="text-body font-medium text-text-ink">
                         {formatCurrency(unit.revenueThisMonth)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-body text-text-secondary">Bookings</span>
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.units.bookings']}
+                      </span>
                       <span className="text-body font-medium text-text-ink">{unit.bookingsCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-body text-text-secondary">Open Tickets</span>
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.units.open_tickets']}
+                      </span>
                       <span className="text-body font-medium text-text-ink">{unit.openTicketsCount}</span>
                     </div>
                   </div>

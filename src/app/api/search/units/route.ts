@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { track } from '@/modules/analytics';
 
 /**
  * GET /api/search/units
@@ -129,6 +130,13 @@ export async function GET(req: NextRequest) {
 
     // Fetch total count
     const total = await prisma.unit.count({ where });
+
+    await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
+      projectId,
+      resultsCount: total,
+      hasDates: Boolean(startDate && endDate),
+      guests: totalGuests,
+    });
 
     return NextResponse.json(
       {

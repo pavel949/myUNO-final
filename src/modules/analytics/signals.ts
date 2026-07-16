@@ -26,25 +26,25 @@ async function detectRepeatStaySignals(
   db: PrismaClient,
   auditActorIdentityId?: string
 ) {
-  const repeatGuests = await db.bookingGuest.findMany({
-    where: { booking: { status: 'completed' } },
-    select: { identityId: true },
-    distinct: ['identityId'],
+  // Candidates are the booking guest identities themselves (doc 13 §4):
+  // completed stays counted per guestIdentityId, not per registered
+  // BookingGuest row (which would miss guests who never filed passports).
+  const repeatGuests = await db.booking.groupBy({
+    by: ['guestIdentityId'],
+    where: { status: 'completed' },
+    _count: { _all: true },
   });
 
   for (const guest of repeatGuests) {
-    if (!guest.identityId) continue;
-
-    const completedStays = await db.booking.count({
-      where: { guestIdentityId: guest.identityId, status: 'completed' },
-    });
+    if (!guest.guestIdentityId) continue;
+    const completedStays = guest._count._all;
 
     if (completedStays >= DEFAULT_REPEAT_STAY_THRESHOLD) {
       const strength = completedStays >= 3 ? 3 : 2;
       const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
-            identityId: guest.identityId,
+            identityId: guest.guestIdentityId,
             signalKey: BuyerSignalKey.repeat_stay,
           },
         },
@@ -54,7 +54,7 @@ async function detectRepeatStaySignals(
           closedAt: null,
         },
         create: {
-          identityId: guest.identityId,
+          identityId: guest.guestIdentityId,
           signalKey: BuyerSignalKey.repeat_stay,
           strength,
           status: BuyerSignalStatus.open,

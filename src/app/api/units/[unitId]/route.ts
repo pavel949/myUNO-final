@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { track } from '@/modules/analytics';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 /**
  * GET /api/units/[unitId]
@@ -43,6 +45,14 @@ export async function GET(
     if (!unit || unit.status !== 'live') {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
+
+    // Doc 13: page_unit_viewed feeds the listing_engagement buyer signal
+    const viewer = await getCurrentUser().catch(() => null);
+    await track(prisma, 'page_unit_viewed', {
+      unitId: unit.id,
+      projectId: unit.projectId,
+      identityId: viewer?.identityId,
+    });
 
     const { status: _status, coverMedia, media, ...publicUnit } = unit;
     const gallery = media.map((m) => m.media.storageKey);

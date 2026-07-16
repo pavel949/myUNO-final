@@ -17,7 +17,7 @@ export async function fetchMCDashboard(
   try {
     const dashboard = await getMCDashboard(prisma, mcIdentityId, projectId, organizationId);
     const unitsRaw = await getMCManagedUnits(prisma, mcIdentityId, projectId, organizationId);
-    const bookingsRaw = await getMCBookings(prisma, mcIdentityId, projectId, organizationId, 10);
+    const bookingsRaw = await getMCBookings(prisma, mcIdentityId, projectId, organizationId, 50);
     const ticketsRaw = await getMCTickets(prisma, mcIdentityId, projectId, organizationId, 10);
 
     // Cast to any to avoid type mismatches between Prisma and client types

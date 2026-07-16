@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetDb, factories } from '@/test/util';
+import { resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { prisma } from '@/lib/prisma';
-import { track, rollupMetricsDaily, detectBuyerSignals } from './index';
+import {
+  track,
+  rollupMetricsDaily,
+  rollupMetricsRange,
+  getMetricsSeries,
+  getUnitOccupancySparklines,
+  detectBuyerSignals,
+} from './index';
 import { AnalyticsEventKey, BookingStatus, BuyerSignalKey } from '@prisma/client';
 
 describe('Analytics Module', () => {
@@ -11,15 +18,14 @@ describe('Analytics Module', () => {
 
   describe('track', () => {
     it('creates an analytics event with provided dimensions', async () => {
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
-      const identity = await factories.identity(prisma);
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const identity = await createIdentity();
 
       await track(prisma, 'stay_confirmed', {
         projectId: project.id,
         unitId: unit.id,
         identityId: identity.id,
-        bookingId: 'booking-123',
         nights: 3,
         revenue: 10000,
       });
@@ -66,11 +72,11 @@ describe('Analytics Module', () => {
 
   describe('rollupMetricsDaily', () => {
     it('computes metrics for a unit on a given date', async () => {
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
-      const owner = await factories.identity(prisma);
-      const guest1 = await factories.identity(prisma);
-      const guest2 = await factories.identity(prisma);
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const owner = await createIdentity();
+      const guest1 = await createIdentity();
+      const guest2 = await createIdentity();
 
       const targetDate = new Date('2025-01-15');
 
@@ -121,15 +127,70 @@ describe('Analytics Module', () => {
       });
 
       expect(metric).toBeDefined();
-      expect(metric?.nightsOccupied).toBe(2);
-      expect(metric?.rentalRevenueCents).toBe(1300000); // 13000 THB in cents
-      expect(metric?.occupancyPct).toBeGreaterThan(0);
+      // A unit-night is occupied or not — two overlapping bookings still occupy one night
+      expect(metric?.nightsOccupied).toBe(1);
+      expect(metric?.nightsAvailable).toBe(1);
+      expect(metric?.rentalRevenueCents).toBe(1300000); // 13000 THB in satang
+      expect(metric?.occupancyPct).toBe(100);
+    });
+
+    it('attributes multi-night booking revenue per night (no double counting)', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      // 4 nights, 8000 THB total → 2000 THB attributed per night
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-10'),
+          endDate: new Date('2025-01-14'),
+          adults: 1,
+          children: 0,
+          totalThb: 8000,
+          status: BookingStatus.confirmed,
+        },
+      });
+
+      const days = await rollupMetricsRange(
+        prisma,
+        new Date('2025-01-09'),
+        new Date('2025-01-14')
+      );
+      expect(days).toBe(6);
+
+      const rows = await prisma.metricDaily.findMany({
+        where: { unitId: unit.id },
+        orderBy: { date: 'asc' },
+      });
+      const totalRevenue = rows.reduce((sum, r) => sum + r.rentalRevenueCents, 0);
+      expect(totalRevenue).toBe(800000); // exactly the booking total, once
+      const occupiedNights = rows.reduce((sum, r) => sum + r.nightsOccupied, 0);
+      expect(occupiedNights).toBe(4); // Jan 10–13 nights; 9th & 14th vacant
+    });
+
+    it('marks a non-live, unbooked unit as unavailable', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      await prisma.unit.update({ where: { id: unit.id }, data: { status: 'paused' } });
+
+      await rollupMetricsDaily(prisma, new Date('2025-01-15'));
+
+      const metric = await prisma.metricDaily.findUnique({
+        where: { unitId_date: { unitId: unit.id, date: new Date('2025-01-15') } },
+      });
+      expect(metric?.nightsAvailable).toBe(0);
+      expect(metric?.occupancyPct).toBe(0);
     });
 
     it('calculates ADR correctly when there are occupied nights', async () => {
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
-      const guest = await factories.identity(prisma);
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
 
       const targetDate = new Date('2025-01-15');
 
@@ -166,9 +227,9 @@ describe('Analytics Module', () => {
     });
 
     it('ignores bookings with inactive status', async () => {
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
-      const guest = await factories.identity(prisma);
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
 
       const targetDate = new Date('2025-01-15');
 
@@ -205,11 +266,102 @@ describe('Analytics Module', () => {
     });
   });
 
+  describe('getMetricsSeries', () => {
+    it('aggregates day rows into month buckets with weighted occupancy', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      await prisma.unit.update({ where: { id: unit.id }, data: { status: 'live' } });
+
+      // 2 occupied nights (Jan 10–12) at 3000 THB/night
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-10'),
+          endDate: new Date('2025-01-12'),
+          adults: 1,
+          children: 0,
+          totalThb: 6000,
+          status: BookingStatus.confirmed,
+        },
+      });
+
+      await rollupMetricsRange(prisma, new Date('2025-01-10'), new Date('2025-01-13'));
+
+      const series = await getMetricsSeries(prisma, {
+        unitIds: [unit.id],
+        from: new Date('2025-01-01'),
+        to: new Date('2025-01-31'),
+        groupBy: 'month',
+      });
+
+      expect(series).toHaveLength(1);
+      expect(series[0].period).toBe('2025-01');
+      expect(series[0].nightsOccupied).toBe(2);
+      expect(series[0].rentalRevenueThb).toBe(6000);
+      // createdAt is "now" (after 2025), so vacant 2025 days don't count as available
+      expect(series[0].nightsAvailable).toBe(2);
+      expect(series[0].occupancyPct).toBe(100);
+    });
+
+    it('returns per-day buckets and unit sparkline dots', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-03-05'),
+          endDate: new Date('2025-03-06'),
+          adults: 1,
+          children: 0,
+          totalThb: 2500,
+          status: BookingStatus.confirmed,
+        },
+      });
+
+      await rollupMetricsRange(prisma, new Date('2025-03-04'), new Date('2025-03-06'));
+
+      const series = await getMetricsSeries(prisma, {
+        projectId: project.id,
+        from: new Date('2025-03-01'),
+        to: new Date('2025-03-31'),
+        groupBy: 'day',
+      });
+      expect(series.map((p) => p.period)).toEqual([
+        '2025-03-04',
+        '2025-03-05',
+        '2025-03-06',
+      ]);
+      expect(series[1].rentalRevenueThb).toBe(2500);
+
+      const sparks = await getUnitOccupancySparklines(
+        prisma,
+        [unit.id],
+        30,
+        new Date('2025-03-06')
+      );
+      const dots = sparks[unit.id];
+      expect(dots.length).toBe(3);
+      expect(dots.find((d) => d.date === '2025-03-05')?.occupied).toBe(true);
+      expect(dots.find((d) => d.date === '2025-03-04')?.occupied).toBe(false);
+    });
+  });
+
   describe('detectBuyerSignals', () => {
     it('detects repeat_stay signal when guest has 2+ completed stays', async () => {
-      const guest = await factories.identity(prisma);
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
+      const guest = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
 
       // Create two completed stays
       await prisma.booking.create({
@@ -261,9 +413,9 @@ describe('Analytics Module', () => {
     });
 
     it('sets strength to 3 for guests with 3+ completed stays', async () => {
-      const guest = await factories.identity(prisma);
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
+      const guest = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
 
       // Create three completed stays
       for (let i = 0; i < 3; i++) {
@@ -299,9 +451,9 @@ describe('Analytics Module', () => {
     });
 
     it('detects long_stay signal for stays ≥ 28 nights', async () => {
-      const guest = await factories.identity(prisma);
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
+      const guest = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
 
       await prisma.booking.create({
         data: {
@@ -335,9 +487,9 @@ describe('Analytics Module', () => {
     });
 
     it('does not detect long_stay signal for stays < 28 nights', async () => {
-      const guest = await factories.identity(prisma);
-      const project = await factories.project(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id });
+      const guest = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
 
       await prisma.booking.create({
         data: {

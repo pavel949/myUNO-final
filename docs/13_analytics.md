@@ -69,3 +69,11 @@ Funnel: signals land in the admin **Signals** view (new → reviewed → handed_
 ## 5. Implementation notes
 
 One `track(eventKey, dims)` helper server-side (events emitted where the truth changes — in the modules, not the UI); nightly rollup job materializes the §1 metrics into a small `MetricDaily` table (unit × day grain: nights, revenue, orders — an implementation detail of this doc, added to doc 02's build as a derived table) so dashboards stay fast without an analytics stack. No third-party analytics in loop one; the data is the moat and stays home.
+
+### Implementation status (build phase)
+
+**Emitters live today** (8 of the §2 catalog): `stay_confirmed`, `stay_cancelled` (booking service); `stay_checked_in`, `stay_checked_out` (booking service state transitions); `service_order_placed`, `service_order_fulfilled` (service-order service); `page_unit_viewed` (unit detail API — feeds `listing_engagement`); `search_performed` / `search_no_results` (search API). The remaining catalog events are specified-not-yet-emitted; add emitters at the module seams as their features land.
+
+**`MetricDaily` definitions as built** (`src/modules/analytics/rollup.ts`): grain = unit × UTC day. `nightsAvailable` ∈ {0,1} — 1 when the unit existed that day and was occupied or live-and-unblocked; 0 before creation, while not `live`, or under a `BlockedDate`. `nightsOccupied` ∈ {0,1} — any confirmed/checked_in/checked_out/completed booking covering the night (owner stays occupy at zero revenue). Rental revenue is attributed **per night** (booking total ÷ nights), so summing days never double-counts a stay. Backfill: `GET /api/cron/rollup-metrics?from=YYYY-MM-DD&to=YYYY-MM-DD` (CRON_SECRET, ≤400 days per call).
+
+**Read seam**: dashboards read trends only through `getMetricsSeries()` / `getUnitOccupancySparklines()` (`src/modules/analytics/query.ts`) — day or month buckets, weighted occupancy, whole-THB amounts. Current-period headline numbers stay live-computed in their services (they must include today); everything historical comes from `MetricDaily`.

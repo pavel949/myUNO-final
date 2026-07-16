@@ -55,6 +55,21 @@ const config: Config = {
           info: '#0E4F4B',
           'info-soft': '#E3ECEA',
         },
+        // Data visualization (doc 06 §"Data visualization")
+        // Categorical series — validated palette; fixed order, never cycled;
+        // never used for text; status colors are never series colors.
+        chart: {
+          1: '#00937F', // teal (chart step of brand.andaman)
+          2: '#D69A3A', // brand.sun (relief rule: direct labels + table view)
+          3: '#C05840', // terracotta chart step
+          4: '#4477CC', // slate-blue (chart-only)
+          // Sequential ramp (magnitude): andaman light→dark
+          'seq-1': '#DCEEEB',
+          'seq-2': '#9CCFC8',
+          'seq-3': '#5BA79E',
+          'seq-4': '#2E7B74',
+          'seq-5': '#0E4F4B',
+        },
       },
       fontFamily: {
         display: ['Outfit', 'sans-serif'],

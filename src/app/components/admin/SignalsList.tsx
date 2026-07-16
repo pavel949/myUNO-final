@@ -1,25 +1,43 @@
 'use client';
 
-import { BuyerSignalStatus, BuyerSignalKey } from '@prisma/client';
+import { BuyerSignalStatus } from '@prisma/client';
 import { useState } from 'react';
 import type { AdminSignal } from '@/app/actions/getAdminSignals';
 
-const SIGNAL_KEY_LABELS: Record<BuyerSignalKey, string> = {
-  repeat_stay: 'Repeat Stay',
-  long_stay: 'Long Stay',
-  listing_engagement: 'Listing Engagement',
-  purchase_question: 'Purchase Question',
-  direct_inquiry: 'Direct Inquiry',
+// doc 06 §3.4 status → color mapping (state tokens only)
+const STATUS_STYLE: Record<string, string> = {
+  open: 'bg-state-warning-soft text-state-warning',
+  reviewed: 'bg-state-info-soft text-state-info',
+  handed_to_capital: 'bg-state-success-soft text-state-success',
+  dismissed: 'bg-surface-ivory text-text-stone',
 };
 
-const STATUS_LABELS: Record<BuyerSignalStatus, string> = {
-  open: 'Open',
-  reviewed: 'Reviewed',
-  handed_to_capital: 'Handed to Capital',
-  dismissed: 'Dismissed',
-};
+/** Strength as a filled-dot scale (1–3) plus the number — never color alone. */
+function StrengthDots({ strength, title }: { strength: number; title: string }) {
+  return (
+    <span className="inline-flex items-center gap-6" title={title} aria-label={title}>
+      <span className="inline-flex gap-2" aria-hidden>
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`inline-block w-8 h-8 rounded-full ${
+              i <= strength ? 'bg-brand-andaman' : 'bg-border-line'
+            }`}
+          />
+        ))}
+      </span>
+      <span className="text-small text-text-ink tabular-nums">{strength}</span>
+    </span>
+  );
+}
 
-export function SignalsList({ signals }: { signals: AdminSignal[] }) {
+export function SignalsList({
+  signals,
+  labels,
+}: {
+  signals: AdminSignal[];
+  labels: Record<string, string>;
+}) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,28 +63,28 @@ export function SignalsList({ signals }: { signals: AdminSignal[] }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update signal');
+        throw new Error(error.error || labels['admin.signals.error_update']);
       }
 
       window.location.reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update signal');
+      setError(err instanceof Error ? err.message : labels['admin.signals.error_update']);
       setUpdating(null);
     }
   };
 
   if (signals.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No signals found</p>
+      <div className="text-center py-32">
+        <p className="text-text-secondary">{labels['admin.signals.empty']}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-16">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <div className="bg-state-error-soft border border-state-error rounded-lg p-16 text-state-error">
           {error}
         </div>
       )}
@@ -74,84 +92,87 @@ export function SignalsList({ signals }: { signals: AdminSignal[] }) {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Identity
+            <tr className="border-b border-border-line">
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.identity']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Signal
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.signal']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Strength
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.strength']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Status
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.status']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Reviewed By
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.reviewed_by']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Actions
+              <th className="text-left py-12 px-16 font-semibold text-text-secondary">
+                {labels['admin.signals.col.actions']}
               </th>
             </tr>
           </thead>
           <tbody>
             {signals.map((signal) => (
-              <tr key={signal.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4">
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">
+              <tr
+                key={signal.id}
+                className="border-b border-border-line hover:bg-surface-ivory"
+              >
+                <td className="py-12 px-16">
+                  <div className="text-small">
+                    <p className="font-medium text-text-ink">
                       {signal.identity?.firstName} {signal.identity?.lastName}
                     </p>
-                    <p className="text-gray-500">{signal.identity?.email}</p>
+                    <p className="text-text-secondary">{signal.identity?.email}</p>
                   </div>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm font-medium">
-                    {SIGNAL_KEY_LABELS[signal.signalKey]}
+                <td className="py-12 px-16">
+                  <span className="text-small font-medium text-text-ink">
+                    {labels[`admin.signals.key.${signal.signalKey}`] || signal.signalKey}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm">{signal.strength}</span>
+                <td className="py-12 px-16">
+                  <StrengthDots
+                    strength={signal.strength}
+                    title={(labels['admin.signals.strength_of'] || '{value}').replace(
+                      '{value}',
+                      String(signal.strength)
+                    )}
+                  />
                 </td>
-                <td className="py-3 px-4">
+                <td className="py-12 px-16">
                   <span
-                    className={`text-sm font-medium px-2 py-1 rounded ${
-                      signal.status === 'open'
-                        ? 'bg-blue-100 text-blue-700'
-                        : signal.status === 'reviewed'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : signal.status === 'handed_to_capital'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
+                    className={`text-small font-medium px-8 py-4 rounded-full ${
+                      STATUS_STYLE[signal.status] || 'bg-surface-ivory text-text-stone'
                     }`}
                   >
-                    {STATUS_LABELS[signal.status]}
+                    {labels[`admin.signals.status.${signal.status}`] || signal.status}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm">
+                <td className="py-12 px-16">
+                  <span className="text-small text-text-ink">
                     {signal.reviewedBy
                       ? `${signal.reviewedBy.firstName} ${signal.reviewedBy.lastName}`
                       : '—'}
                   </span>
                 </td>
-                <td className="py-3 px-4">
+                <td className="py-12 px-16">
                   {signal.status === 'open' && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-8">
                       <button
                         onClick={() =>
                           handleTransition(signal.id, BuyerSignalStatus.reviewed)
                         }
                         disabled={updating === signal.id}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                        className="text-small font-medium text-brand-andaman hover:underline disabled:opacity-50"
                       >
-                        Mark Reviewed
+                        {labels['admin.signals.action.mark_reviewed']}
                       </button>
                     </div>
                   )}
                   {signal.status === 'reviewed' && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-8">
                       <button
                         onClick={() =>
                           handleTransition(
@@ -160,18 +181,18 @@ export function SignalsList({ signals }: { signals: AdminSignal[] }) {
                           )
                         }
                         disabled={updating === signal.id}
-                        className="text-xs font-medium text-green-600 hover:text-green-800 disabled:opacity-50"
+                        className="text-small font-medium text-state-success hover:underline disabled:opacity-50"
                       >
-                        Hand to Capital
+                        {labels['admin.signals.action.hand_to_capital']}
                       </button>
                       <button
                         onClick={() =>
                           handleTransition(signal.id, BuyerSignalStatus.dismissed)
                         }
                         disabled={updating === signal.id}
-                        className="text-xs font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                        className="text-small font-medium text-text-stone hover:underline disabled:opacity-50"
                       >
-                        Dismiss
+                        {labels['admin.signals.action.dismiss']}
                       </button>
                     </div>
                   )}

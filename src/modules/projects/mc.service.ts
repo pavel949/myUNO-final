@@ -274,22 +274,30 @@ export async function getMCDashboard(
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-  const monthBookings = await db.booking.count({
-    where: {
-      unitId: {
-        in: units.map((u) => u.id),
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const countBookings = (from: Date, to: Date) =>
+    db.booking.count({
+      where: {
+        unitId: {
+          in: units.map((u) => u.id),
+        },
+        startDate: {
+          lt: to,
+        },
+        endDate: {
+          gt: from,
+        },
+        status: {
+          in: ['confirmed', 'checked_in', 'checked_out'],
+        },
       },
-      startDate: {
-        lt: monthEnd,
-      },
-      endDate: {
-        gt: monthStart,
-      },
-      status: {
-        in: ['confirmed', 'checked_in', 'checked_out'],
-      },
-    },
-  });
+    });
+
+  const [monthBookings, prevMonthBookings] = await Promise.all([
+    countBookings(monthStart, monthEnd),
+    countBookings(prevMonthStart, monthStart),
+  ]);
 
   // Count open tickets
   const openTickets = await db.ticket.count({
@@ -309,6 +317,7 @@ export async function getMCDashboard(
     organizationId,
     unitsCount: units.length,
     bookingsThisMonth: monthBookings,
+    bookingsPrevMonth: prevMonthBookings,
     openTicketsCount: openTickets,
   };
 }
@@ -405,6 +414,7 @@ export async function getMCFeeReport(
     id: string;
     type: 'booking_platform_fee' | 'service_platform_fee';
     description: string;
+    unitName: string | null;
     grossAmount: number;
     feePercentage: number;
     feeAmount: number;
@@ -419,6 +429,7 @@ export async function getMCFeeReport(
       id: `booking-${booking.id}`,
       type: 'booking_platform_fee' as const,
       description: `Platform fee for ${booking.unit.name}`,
+      unitName: booking.unit.name,
       grossAmount: booking.totalThb,
       feePercentage: feePct,
       feeAmount: Math.round(booking.totalThb * (feePct / 100)),
@@ -437,6 +448,7 @@ export async function getMCFeeReport(
       id: `service-${order.id}`,
       type: 'service_platform_fee' as const,
       description: `Platform fee for service order`,
+      unitName: order.unit.name,
       grossAmount: order.total_thb,
       feePercentage: feePct,
       feeAmount: Math.round(order.total_thb * (feePct / 100)),

@@ -282,13 +282,22 @@ export async function checkInBooking(
     throw new Error(`Cannot check in booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const checkedIn = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'checked_in',
       checkedInAt,
     },
   });
+
+  await track(db, 'stay_checked_in', {
+    bookingId: checkedIn.id,
+    unitId: checkedIn.unitId,
+    projectId: checkedIn.projectId,
+    identityId: checkedIn.guestIdentityId,
+  });
+
+  return checkedIn;
 }
 
 /**
@@ -308,13 +317,22 @@ export async function checkOutBooking(
     throw new Error(`Cannot check out booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const checkedOut = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'checked_out',
       checkedOutAt,
     },
   });
+
+  await track(db, 'stay_checked_out', {
+    bookingId: checkedOut.id,
+    unitId: checkedOut.unitId,
+    projectId: checkedOut.projectId,
+    identityId: checkedOut.guestIdentityId,
+  });
+
+  return checkedOut;
 }
 
 /**

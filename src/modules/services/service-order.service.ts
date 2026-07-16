@@ -1,6 +1,7 @@
 import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
+import { track } from '@/modules/analytics';
 
 export interface CreateServiceOrderInput {
   serviceId: string;
@@ -105,6 +106,15 @@ export async function createServiceOrder(
       order_id: order.id,
       service_title: service.title,
     },
+  });
+
+  await track(db, 'service_order_placed', {
+    serviceOrderId: order.id,
+    projectId,
+    unitId,
+    bookingId,
+    identityId: ordererIdentityId,
+    totalThb,
   });
 
   return { id: order.id };
@@ -271,6 +281,14 @@ export async function fulfillServiceOrder(
       order_id: order.id,
       service_title: order.service?.title || 'Service',
     },
+  });
+
+  await track(db, 'service_order_fulfilled', {
+    serviceOrderId: order.id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
   });
 }
 

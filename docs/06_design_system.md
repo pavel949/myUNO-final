@@ -145,6 +145,27 @@ Every component ships with **all** its states: default, hover/press, focus-visib
 
 `confirmed/paid/filed/resolved/active → success` · `pending_payment/requested/vetting/in_progress/needs_review → warning` · `cancelled/declined/failed/expired/breached → error` · `draft/completed/closed/not_required → neutral (stone)` · `checked_in/accepted/published → info`. Builders never choose status colors ad hoc.
 
+### 3.5 Data visualization
+
+All charts come from `src/components/viz/*` — plain SVG, no chart library. Form first: a single headline number is a `HeroNumber`/`StatTile` (never a one-bar chart); a handful of headline numbers is a KPI row of tiles; trends use `LineChart`/`BarChart`; part-to-whole uses `HBarStack`; per-row trends in lists use `Sparkline`; calendar occupancy uses `MonthHeatStrip`. Never a dual-axis chart — two measures of different scale get two charts.
+
+**Series palette (categorical — `chart.1…4` in the Tailwind config).** Fixed order, never cycled; ≤2 series is the norm here, 4 is the ceiling — fold the rest into "Other":
+
+| Slot | Hex | Note |
+|---|---|---|
+| 1 | `#00937F` | teal — the chart step of `brand.andaman` (the brand hue itself is below the chart lightness band) |
+| 2 | `#D69A3A` | `brand.sun` — 2.32:1 on paper, so the **relief rule** applies: every chart ships direct labels + a table view |
+| 3 | `#C05840` | terracotta chart step (status `error` `#AE4E38` never appears inside chart marks, so no collision) |
+| 4 | `#4477CC` | slate-blue, chart-only token |
+
+Validated (light mode, card surface `surface.paper #FBF8F1`) with the dataviz palette validator: `validate_palette.js "#00937F,#D69A3A,#C05840,#4477CC" --mode light --surface "#FBF8F1"` → all checks pass (worst adjacent CVD ΔE 12.8, normal-vision ΔE 17.1). Re-run on any edit. Darkening slot 2 to clear 3:1 was tested and rejected (breaks the gold↔terracotta normal-vision floor). The product is light-only; dark steps get selected and validated if a dark theme ever ships.
+
+**Sequential ramp (magnitude)** — one hue, andaman light→dark: `#DCEEEB → #9CCFC8 → #5BA79E → #2E7B74 → #0E4F4B` (`chart.seq-1…5`). **Diverging** (if ever needed): teal ↔ terracotta poles, neutral `#F0EBE0` midpoint. **Status colors (§3.4) are reserved** — never series colors; they always ship with an icon or label, never color alone.
+
+**Marks & chrome.** 2px lines; 4px rounded data-ends anchored to a square baseline; 2px surface gaps between adjacent fills; hairline grid = `border.line`; axis/labels = `text.stone`; values and labels always wear text tokens, never a series color. Direction/state chips (`DeltaChip`) carry an arrow icon plus color, never color alone.
+
+**Interaction & accessibility.** Every line/bar chart ships a hover tooltip with a hit target larger than the mark; every chart has a "view as table" toggle (`ChartTable`); a legend appears at ≥2 series (a single series is named by its section title); direct labels are selective (max + latest), never a number on every point. All chart-adjacent text comes from the content layer.
+
 ## 4. Screen compositions
 
 Field-level detail lives in doc 07 (flows) and doc 08 (pages); these are the layout skeletons every implementation follows. All are mobile-first; desktop notes in parentheses.

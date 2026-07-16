@@ -1733,9 +1733,41 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'tickets.new.missing_context', namespace: 'tickets', description: 'Missing context note', en: 'Open this form from your trip or unit so we know which home it concerns.', ru: 'Откройте форму из поездки или дома, чтобы мы знали, о каком жилье речь.', status: NR },
   { key: 'tickets.new.error_generic', namespace: 'tickets', description: 'Submit error', en: 'Could not send. Please try again.', ru: 'Не отправилось. Попробуйте ещё раз.', status: NR },
 
-  // Services stub
+  // Services marketplace (F-SVC, doc 09 §4)
   { key: 'services.browse.title', namespace: 'services', description: 'Services page title', en: 'Services', ru: 'Услуги', status: NR },
-  { key: 'services.browse.coming', namespace: 'services', description: 'Services coming soon note', en: 'The services marketplace is opening soon — cleaning, repairs, deliveries, all vetted. Meanwhile, message us from your trip and we will arrange anything you need.', ru: 'Маркетплейс услуг скоро откроется — уборка, ремонт, доставка, всё проверено. А пока напишите нам из поездки — организуем всё, что нужно.', status: NR },
+  { key: 'services.browse.subtitle', namespace: 'services', description: 'Services page subtitle', en: 'Browse vetted services available for your property', ru: 'Смотрите проверенные услуги, доступные для вашего дома', status: NR },
+  { key: 'services.browse.all', namespace: 'services', description: 'Services filter: all services', en: 'All Services', ru: 'Все услуги', status: NR },
+  { key: 'services.browse.empty', namespace: 'services', description: 'Services: no services available', en: 'No services available', ru: 'Услуги не доступны', status: NR },
+  { key: 'services.browse.loading', namespace: 'services', description: 'Services: loading state', en: 'Loading services...', ru: 'Загружаем услуги...', status: NR },
+  { key: 'services.card.by', namespace: 'services', description: 'Service card: by provider label', en: 'by', ru: 'от', status: NR },
+  { key: 'services.card.vetted', namespace: 'services', description: 'Service card: vetted badge', en: 'Vetted', ru: 'Проверено', status: NR },
+  { key: 'services.card.category', namespace: 'services', description: 'Service card: category label', en: 'Category:', ru: 'Категория:', status: NR },
+  { key: 'services.card.price_model', namespace: 'services', description: 'Service card: price model label', en: 'Price Model:', ru: 'Модель цены:', status: NR },
+  { key: 'services.card.base_price', namespace: 'services', description: 'Service card: base price label', en: 'Base Price:', ru: 'Базовая цена:', status: NR },
+  { key: 'services.card.details', namespace: 'services', description: 'Service card: view details link', en: 'View Details →', ru: 'Подробнее →', status: NR },
+
+  // Provider services editor (T-022)
+  { key: 'provider.services.title', namespace: 'provider', description: 'Provider services page title', en: 'My Services', ru: 'Мои услуги', status: NR },
+  { key: 'provider.services.subtitle', namespace: 'provider', description: 'Provider services page subtitle', en: 'Manage your services for approval', ru: 'Управляйте своими услугами для одобрения', status: NR },
+  { key: 'provider.services.add', namespace: 'provider', description: 'Add service button', en: 'Add Service', ru: 'Добавить услугу', status: NR },
+  { key: 'provider.services.cancel', namespace: 'provider', description: 'Cancel form button', en: 'Cancel', ru: 'Отменить', status: NR },
+  { key: 'provider.services.create_form_title', namespace: 'provider', description: 'Create service form title', en: 'Create New Service', ru: 'Создать новую услугу', status: NR },
+  { key: 'provider.services.form.title', namespace: 'provider', description: 'Form field: service title', en: 'Title *', ru: 'Название *', status: NR },
+  { key: 'provider.services.form.description', namespace: 'provider', description: 'Form field: service description', en: 'Description', ru: 'Описание', status: NR },
+  { key: 'provider.services.form.category', namespace: 'provider', description: 'Form field: service category', en: 'Category *', ru: 'Категория *', status: NR },
+  { key: 'provider.services.form.category_placeholder', namespace: 'provider', description: 'Form field: category placeholder', en: 'e.g., concierge, cleaning, transportation', ru: 'напр., консьерж, уборка, транспорт', status: NR },
+  { key: 'provider.services.form.price_model', namespace: 'provider', description: 'Form field: price model', en: 'Price Model *', ru: 'Модель цены *', status: NR },
+  { key: 'provider.services.form.base_price', namespace: 'provider', description: 'Form field: base price', en: 'Base Price (THB)', ru: 'Базовая цена (THB)', status: NR },
+  { key: 'provider.services.form.submit', namespace: 'provider', description: 'Form field: submit button', en: 'Create Service', ru: 'Создать услугу', status: NR },
+  { key: 'provider.services.empty', namespace: 'provider', description: 'No services yet message', en: 'No services yet. Create one to get started!', ru: 'Услуг пока нет. Создайте первую, чтобы начать!', status: NR },
+  { key: 'provider.services.loading', namespace: 'provider', description: 'Loading services state', en: 'Loading your services...', ru: 'Загружаем ваши услуги...', status: NR },
+  { key: 'provider.services.status', namespace: 'provider', description: 'Service status label', en: 'Status:', ru: 'Статус:', status: NR },
+  { key: 'provider.services.status_draft', namespace: 'provider', description: 'Service status: draft (pending approval)', en: 'draft (Pending approval)', ru: 'черновик (Ожидает одобрения)', status: NR },
+  { key: 'provider.services.status_active', namespace: 'provider', description: 'Service status: active (approved)', en: 'active (Approved)', ru: 'активный (Одобрено)', status: NR },
+  { key: 'provider.services.delete', namespace: 'provider', description: 'Delete service button', en: 'Delete', ru: 'Удалить', status: NR },
+  { key: 'provider.services.delete_confirm', namespace: 'provider', description: 'Delete service confirmation', en: 'Are you sure you want to delete this service?', ru: 'Вы уверены, что хотите удалить эту услугу?', status: NR },
+  { key: 'provider.services.delete_error', namespace: 'provider', description: 'Delete service error', en: 'Failed to delete service', ru: 'Не удалось удалить услугу', status: NR },
+  { key: 'provider.services.create_error', namespace: 'provider', description: 'Create service error', en: 'Failed to create service', ru: 'Не удалось создать услугу', status: NR },
 
   // Owner dashboard — trends & dataviz (doc 06 §3.5)
   { key: 'owner.dashboard.subtitle', namespace: 'owner', description: 'Owner dashboard subtitle', en: 'Manage your properties and stay informed', ru: 'Управляйте своей недвижимостью и будьте в курсе', status: NR },
@@ -1865,6 +1897,23 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'admin.integrations.about_disabled', namespace: 'admin', description: 'Info: disabled status meaning', en: 'Disabled — integration manually disabled; no syncs will occur', ru: 'Отключена — интеграция выключена вручную; синхронизаций не будет', status: NR },
   { key: 'admin.integrations.about_export', namespace: 'admin', description: 'Info: iCal export path', en: 'Per-unit iCal export is available at /api/units/[unitId]/ical/export', ru: 'Экспорт iCal по юниту доступен по адресу /api/units/[unitId]/ical/export', status: NR },
   { key: 'admin.integrations.about_conflicts', namespace: 'admin', description: 'Info: conflict detection', en: 'Conflict detection is active — OTA bookings overlapping platform bookings are logged', ru: 'Обнаружение конфликтов включено — пересечения OTA-бронирований с платформенными записываются в журнал', status: NR },
+
+  // Admin — service approval queue (T-022, F-SVC-1)
+  { key: 'admin.services.title', namespace: 'admin', description: 'Services approval page title', en: 'Service Approvals', ru: 'Одобрение услуг', status: NR },
+  { key: 'admin.services.subtitle', namespace: 'admin', description: 'Services approval page subtitle', en: 'Review and approve new services from vetted providers', ru: 'Проверяйте и одобряйте новые услуги от проверенных провайдеров', status: NR },
+  { key: 'admin.services.loading', namespace: 'admin', description: 'Services loading state', en: 'Loading pending services...', ru: 'Загружаем услуги на одобрение...', status: NR },
+  { key: 'admin.services.empty', namespace: 'admin', description: 'Services empty state', en: 'No services pending approval', ru: 'Нет услуг, ожидающих одобрения', status: NR },
+  { key: 'admin.services.error', namespace: 'admin', description: 'Services error loading state', en: 'Failed to load pending services', ru: 'Не удалось загрузить услуги', status: NR },
+  { key: 'admin.services.card.provider', namespace: 'admin', description: 'Service card: provider label', en: 'Provider:', ru: 'Провайдер:', status: NR },
+  { key: 'admin.services.card.category', namespace: 'admin', description: 'Service card: category label', en: 'Category:', ru: 'Категория:', status: NR },
+  { key: 'admin.services.card.price_model', namespace: 'admin', description: 'Service card: price model label', en: 'Price Model:', ru: 'Модель цены:', status: NR },
+  { key: 'admin.services.card.base_price', namespace: 'admin', description: 'Service card: base price label', en: 'Base Price:', ru: 'Базовая цена:', status: NR },
+  { key: 'admin.services.card.submitted', namespace: 'admin', description: 'Service card: submission date label', en: 'Submitted:', ru: 'Отправлено:', status: NR },
+  { key: 'admin.services.action.approve', namespace: 'admin', description: 'Service action: approve', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.services.action.reject', namespace: 'admin', description: 'Service action: reject', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.services.approve_success', namespace: 'admin', description: 'Service approved successfully', en: 'Service approved', ru: 'Услуга одобрена', status: NR },
+  { key: 'admin.services.reject_success', namespace: 'admin', description: 'Service rejected successfully', en: 'Service rejected', ru: 'Услуга отклонена', status: NR },
+  { key: 'admin.services.action_error', namespace: 'admin', description: 'Service action error', en: 'Failed to process service', ru: 'Не удалось обработать услугу', status: NR },
 ];
 
 

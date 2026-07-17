@@ -364,12 +364,16 @@ describe('ticket.service — integration tests', () => {
         reporter.id
       );
 
-      // Should see all events in order
-      expect(detail?.events).toHaveLength(6); // created + 5 status changes
+      // Should see all events in order: created(open) + acknowledged +
+      // assignment + in_progress + waiting_reporter + in_progress + resolved.
+      expect(detail?.events).toHaveLength(7);
       expect(detail?.events[0]?.eventType).toBe('status_change');
       expect(detail?.events[0]?.data?.newStatus).toBe('open');
-      expect(detail?.events[5]?.data?.newStatus).toBe('resolved');
-      expect(detail?.events[5]?.data?.note).toBe(
+      // The reporter sees the assignment in the timeline too (a distinct event).
+      expect(detail?.events.some((e) => e.eventType === 'assignment')).toBe(true);
+      const resolvedEvent = detail?.events[detail.events.length - 1];
+      expect(resolvedEvent?.data?.newStatus).toBe('resolved');
+      expect(resolvedEvent?.data?.note).toBe(
         'Contacted neighbor about noise levels'
       );
 

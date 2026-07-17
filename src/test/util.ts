@@ -208,6 +208,23 @@ export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
   });
 }
 
+export async function createOrganization(
+  name = `Org-${uuid().slice(0, 8)}`,
+  projectId?: string,
+  orgType: 'management_company' | 'juristic_person' | 'developer' = 'management_company'
+) {
+  return db.organization.create({
+    data: {
+      name,
+      orgType,
+      projectId,
+      contactEmail: `org-${uuid().slice(0, 8)}@example.com`,
+      contactPhone: '+66800000000',
+      status: 'active',
+    },
+  });
+}
+
 export interface ProviderFactoryOpts {
   name?: string;
   description?: string;

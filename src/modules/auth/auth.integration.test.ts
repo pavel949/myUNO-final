@@ -69,26 +69,26 @@ describe('Auth module', () => {
       });
 
       await expect(
-        auth.register({
+        register({
           firstName: 'Jane',
           lastName: 'Doe',
           email: 'john@example.com',
           password: 'AnotherPass123',
           locale: 'en',
         })
-      ).rejects.toThrow('email_exists');
+      ).rejects.toMatchObject({ code: 'email_exists' });
     });
 
     it('rejects weak password', async () => {
       await expect(
-        auth.register({
+        register({
           firstName: 'John',
           lastName: 'Doe',
           email: 'john@example.com',
           password: 'weak',
           locale: 'en',
         })
-      ).rejects.toThrow('weak_password');
+      ).rejects.toMatchObject({ code: 'weak_password' });
     });
   });
 
@@ -118,20 +118,20 @@ describe('Auth module', () => {
 
     it('rejects invalid email', async () => {
       await expect(
-        auth.login({
+        login({
           email: 'nonexistent@example.com',
           password: identityPassword,
         })
-      ).rejects.toThrow('invalid_credentials');
+      ).rejects.toMatchObject({ code: 'invalid_credentials' });
     });
 
     it('rejects invalid password', async () => {
       await expect(
-        auth.login({
+        login({
           email: identityEmail,
           password: 'WrongPassword123',
         })
-      ).rejects.toThrow('invalid_credentials');
+      ).rejects.toMatchObject({ code: 'invalid_credentials' });
     });
 
     it('rejects blocked identity', async () => {
@@ -141,11 +141,11 @@ describe('Auth module', () => {
       });
 
       await expect(
-        auth.login({
+        login({
           email: identityEmail,
           password: identityPassword,
         })
-      ).rejects.toThrow('identity_blocked');
+      ).rejects.toMatchObject({ code: 'identity_blocked' });
     });
   });
 
@@ -291,11 +291,11 @@ describe('Auth module', () => {
       });
 
       await expect(
-        auth.confirmPasswordReset({
+        confirmPasswordReset({
           token,
           newPassword,
         })
-      ).rejects.toThrow('invalid_token');
+      ).rejects.toMatchObject({ code: 'invalid_token' });
     });
   });
 
@@ -365,7 +365,7 @@ describe('Auth module', () => {
       await verifyEmail(token);
 
       // Try to verify again with same token
-      await expect(verifyEmail(token)).rejects.toThrow('invalid_token');
+      await expect(verifyEmail(token)).rejects.toMatchObject({ code: 'invalid_token' });
     });
   });
 
@@ -436,7 +436,7 @@ describe('Auth module', () => {
 
       await expect(
         claimAccount(token, 'NewPassword123')
-      ).rejects.toThrow('invalid_status');
+      ).rejects.toMatchObject({ code: 'invalid_status' });
     });
   });
 });

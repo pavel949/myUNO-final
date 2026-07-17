@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import {
   deleteExpiredMediaAssets,
   anonymizeDeletedIdentities,
@@ -16,6 +16,7 @@ describe('Retention & Privacy', () => {
 
   describe('deleteExpiredMediaAssets', () => {
     it('deletes media past delete_after date', async () => {
+      const uploader = await createIdentity();
       const past = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
       const future = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day from now
 
@@ -26,7 +27,7 @@ describe('Retention & Privacy', () => {
           kind: 'passport',
           mimeType: 'image/jpeg',
           sizeBytes: 1024,
-          uploadedByIdentityId: 'system',
+          uploadedByIdentityId: uploader.id,
           deleteAfter: past,
         },
       });
@@ -37,7 +38,7 @@ describe('Retention & Privacy', () => {
           kind: 'passport',
           mimeType: 'image/jpeg',
           sizeBytes: 1024,
-          uploadedByIdentityId: 'system',
+          uploadedByIdentityId: uploader.id,
           deleteAfter: future,
         },
       });
@@ -52,13 +53,14 @@ describe('Retention & Privacy', () => {
     });
 
     it('does not delete media without delete_after', async () => {
+      const uploader = await createIdentity();
       await db.mediaAsset.create({
         data: {
           storageKey: 'permanent-doc',
           kind: 'document',
           mimeType: 'application/pdf',
           sizeBytes: 2048,
-          uploadedByIdentityId: 'system',
+          uploadedByIdentityId: uploader.id,
         },
       });
 
@@ -81,7 +83,7 @@ describe('Retention & Privacy', () => {
       await db.oneTimeToken.create({
         data: {
           identityId: identity.id,
-          type: 'email_verification',
+          purpose: 'email_verify',
           tokenHash: 'hash-expired',
           expiresAt: past,
         },
@@ -90,7 +92,7 @@ describe('Retention & Privacy', () => {
       await db.oneTimeToken.create({
         data: {
           identityId: identity.id,
-          type: 'email_verification',
+          purpose: 'email_verify',
           tokenHash: 'hash-active',
           expiresAt: future,
         },
@@ -113,16 +115,14 @@ describe('Retention & Privacy', () => {
       const unit = await createUnit(project.id);
 
       // Create a booking by this identity
-      await db.booking.create({
-        data: {
-          unitId: unit.id,
-          guestIdentityId: identity.id,
-          startDate: new Date('2026-07-15'),
-          endDate: new Date('2026-07-20'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: identity.id,
+        startDate: new Date('2026-07-15'),
+        endDate: new Date('2026-07-20'),
+        totalThb: 5000,
+        status: 'confirmed',
       });
 
       const exported = await exportIdentityData(db, identity.id);
@@ -151,7 +151,7 @@ describe('Retention & Privacy', () => {
         where: { id: identity.id },
       });
 
-      expect(updated!.status).toBe('deleted');
+      expect(updated!.status).toBe('merged');
 
       // Verify audit log entry
       const auditEntries = await db.auditLog.findMany({
@@ -174,10 +174,12 @@ describe('Retention & Privacy', () => {
       await db.identity.update({
         where: { id: identity.id },
         data: {
-          status: 'deleted',
-          updatedAt: past, // Simulate old deletion request
+          status: 'merged',
         },
       });
+      // `updatedAt` is an @updatedAt field (Prisma overrides manual values on
+      // update), so backdate it via raw SQL to simulate an old deletion request.
+      await db.$executeRaw`UPDATE "identity" SET updated_at = ${past} WHERE id = ${identity.id}`;
 
       const result = await anonymizeDeletedIdentities(db, 30);
 
@@ -203,7 +205,7 @@ describe('Retention & Privacy', () => {
       await db.identity.update({
         where: { id: identity.id },
         data: {
-          status: 'deleted',
+          status: 'merged',
         },
       });
 
@@ -232,7 +234,7 @@ describe('Retention & Privacy', () => {
           kind: 'passport',
           mimeType: 'image/jpeg',
           sizeBytes: 1024,
-          uploadedByIdentityId: 'system',
+          uploadedByIdentityId: identity.id,
           deleteAfter: past,
         },
       });
@@ -241,7 +243,7 @@ describe('Retention & Privacy', () => {
       await db.oneTimeToken.create({
         data: {
           identityId: identity.id,
-          type: 'email_verification',
+          purpose: 'email_verify',
           tokenHash: 'old-hash',
           expiresAt: past,
         },

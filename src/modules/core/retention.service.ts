@@ -67,7 +67,7 @@ export async function anonymizeDeletedIdentities(
         action: 'identity_anonymized',
         entityType: 'identity',
         entityId: identity.id,
-        actorIdentityId: 'system',
+        actorIdentityId: null, // System-initiated action; no acting identity
         data: {
           reason: 'deletion_request_grace_period_expired',
           gracePeriodDays,

@@ -1767,7 +1767,26 @@ export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
 ): Promise<void> {
-  const identityId = systemIdentityId || 'system';
+  // Translation.updatedByIdentityId is a FK to identity. Ensure a stable
+  // system identity exists to author seeded translations (the literal 'system'
+  // string is not a real row and violated the FK).
+  let identityId = systemIdentityId;
+  if (!identityId) {
+    const system = await db.identity.upsert({
+      where: { email: 'system@myuno.internal' },
+      update: {},
+      create: {
+        firstName: 'myUNO',
+        lastName: 'System',
+        email: 'system@myuno.internal',
+        status: 'active',
+        preferredLocale: 'en',
+        isAdmin: true,
+      },
+      select: { id: true },
+    });
+    identityId = system.id;
+  }
 
   for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS]) {
     // Ensure content key exists

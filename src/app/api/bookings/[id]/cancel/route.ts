@@ -28,10 +28,10 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const { reason = 'guest_cancelled' } = body;
 
-    // Fetch the booking
+    // Fetch the booking (guestIdentityId lives on the row; never pull the raw identity)
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { unit: true, guestIdentity: true },
+      include: { unit: true },
     });
 
     if (!booking) {
@@ -52,8 +52,10 @@ export async function POST(
       );
     }
 
-    // Check if booking is in a cancellable state
-    const cancellableStatuses = ['pending_payment', 'confirmed', 'checked_in'];
+    // Check if booking is in a cancellable state.
+    // 'requested' is included per doc 02 §3.1 — a guest may withdraw a
+    // booking request freely (nothing has been paid yet).
+    const cancellableStatuses = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
     if (!cancellableStatuses.includes(booking.status)) {
       return NextResponse.json(
         { error: `Cannot cancel booking with status ${booking.status}` },
@@ -61,9 +63,12 @@ export async function POST(
       );
     }
 
-    // Calculate refund amount based on policy snapshot
+    // Calculate refund amount based on policy snapshot.
+    // Only paid statuses can accrue a refund — requested/pending_payment
+    // bookings have no payment to refund.
+    const paidStatuses = ['confirmed', 'checked_in'];
     let refundAmountThb = 0;
-    if (booking.cancellationPolicySnapshot) {
+    if (paidStatuses.includes(booking.status) && booking.cancellationPolicySnapshot) {
       const policy = booking.cancellationPolicySnapshot as any as CancellationPolicy;
       const now = new Date();
       refundAmountThb = computeRefundAmount(

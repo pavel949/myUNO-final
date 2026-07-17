@@ -18,11 +18,11 @@ export async function GET(
 
   // Check admin permission
   if (
-    !can({
+    !(await can({
       identity,
       action: 'content:view',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -72,11 +72,11 @@ export async function PUT(
 
   // Check admin permission
   if (
-    !can({
+    !(await can({
       identity,
       action: 'content:edit',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

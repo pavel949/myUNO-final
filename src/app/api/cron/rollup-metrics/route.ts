@@ -9,9 +9,10 @@ import {
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret — refuse when unset ("Bearer undefined" must not authenticate)
+  const cronSecret = process.env.CRON_SECRET;
   const secret = req.headers.get('Authorization');
-  if (secret !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronSecret || secret !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

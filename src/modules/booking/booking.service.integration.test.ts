@@ -93,8 +93,9 @@ describe('booking.service — integration tests', () => {
       });
 
       // Try to book overlapping dates
-      const err = await expect(
-        bookingService.createBooking(db, {
+      let caught: any;
+      try {
+        await bookingService.createBooking(db, {
           unitId: unit.id,
           projectId: project.id,
           guestIdentityId: guest2.id,
@@ -106,10 +107,12 @@ describe('booking.service — integration tests', () => {
           children: 0,
           totalThb: 8000,
           instantBook: true,
-        })
-      ).rejects.toThrow();
-
-      expect((err as any).caught?.code).toBe('DOUBLE_BOOK');
+        });
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeDefined();
+      expect(caught.code).toBe('DOUBLE_BOOK');
     });
 
     it('prevents double-booking with checked_in reservation', async () => {
@@ -156,7 +159,7 @@ describe('booking.service — integration tests', () => {
           totalThb: 8000,
           instantBook: true,
         })
-      ).rejects.toThrow('DOUBLE_BOOK');
+      ).rejects.toThrow('unavailable');
     });
 
     it('prevents double-booking with pending_payment hold', async () => {
@@ -195,7 +198,49 @@ describe('booking.service — integration tests', () => {
           totalThb: 8000,
           instantBook: true,
         })
-      ).rejects.toThrow('DOUBLE_BOOK');
+      ).rejects.toThrow('unavailable');
+    });
+
+    it('allows re-booking dates whose pending hold has expired', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest1 = await createIdentity();
+      const guest2 = await createIdentity();
+
+      // First guest starts a hold, then abandons it (hold expires in the past)
+      const abandoned = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest1.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+      await db.booking.update({
+        where: { id: abandoned.id },
+        data: { holdExpiresAt: new Date('2026-01-01') }, // expired
+      });
+
+      // Second guest can now book the same dates — the dead hold must not block
+      const rebooked = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest2.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-02'),
+        endDate: new Date('2026-08-06'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+      expect(rebooked.status).toBe('pending_payment');
     });
 
     it('allows booking non-overlapping dates', async () => {

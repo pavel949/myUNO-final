@@ -25,6 +25,8 @@ export default async function AdminBookingsPage() {
     'admin.bookings.record_cash': 'Record cash',
     'admin.bookings.receipt_placeholder': 'Receipt / чек №',
     'admin.bookings.cancel': 'Cancel',
+    'admin.bookings.approve': 'Approve request',
+    'admin.bookings.decline': 'Decline request',
     'admin.bookings.cancel_confirm': 'Cancel this booking (policy refund applies)?',
     'admin.bookings.error_generic': 'Action failed. Please try again.',
   });

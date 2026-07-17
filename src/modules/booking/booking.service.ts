@@ -42,6 +42,16 @@ export interface CancelBookingInput {
   refundAmountThb: number;
 }
 
+// PDPA/doc 12: identity rows carry hashedPassword and PII — never include the
+// raw relation in anything that reaches an API response. Select only safe fields.
+export const SAFE_IDENTITY_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  preferredLocale: true,
+} as const;
+
 /**
  * Create a new booking.
  * Instant bookings go to pending_payment; request-to-book go to requested.
@@ -69,13 +79,18 @@ export async function createBooking(
     guestNote,
   } = input;
 
-  // Check for double-booking (race condition)
+  // Check for double-booking (race condition). An unpaid hold only blocks
+  // while it is still live — an abandoned checkout must not poison the dates.
+  const now0 = new Date();
   const conflicting = await db.booking.findFirst({
     where: {
       unitId,
-      status: { in: ['confirmed', 'checked_in', 'pending_payment'] },
       startDate: { lt: endDate },
       endDate: { gt: startDate },
+      OR: [
+        { status: { in: ['confirmed', 'checked_in'] } },
+        { status: 'pending_payment', holdExpiresAt: { gt: now0 } },
+      ],
     },
   });
 
@@ -109,7 +124,7 @@ export async function createBooking(
     },
     include: {
       unit: true,
-      guestIdentity: true,
+      guestIdentity: { select: SAFE_IDENTITY_SELECT },
     },
   });
 }
@@ -230,7 +245,8 @@ export async function cancelBooking(
     throw new Error(`Booking ${bookingId} not found`);
   }
 
-  const cancellableStatuses: BookingStatus[] = ['pending_payment', 'confirmed', 'checked_in'];
+  // 'requested' included per doc 02 §3.1 — guest may withdraw a request freely.
+  const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
   if (!cancellableStatuses.includes(booking.status)) {
     throw new Error(`Cannot cancel booking with status ${booking.status}`);
   }
@@ -405,7 +421,7 @@ export async function getBooking(db: PrismaClient, bookingId: string) {
     where: { id: bookingId },
     include: {
       unit: true,
-      guestIdentity: true,
+      guestIdentity: { select: SAFE_IDENTITY_SELECT },
       guests: true,
       changes: true,
     },

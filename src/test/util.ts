@@ -20,32 +20,20 @@ export const db = new PrismaClient({
 });
 
 /**
- * Reset database by deleting all tables (in dependency order to respect FKs)
+ * Reset database by truncating every table (CASCADE handles FK order).
+ * Enumerating tables from pg_tables keeps this correct as the schema grows —
+ * the previous hand-maintained delete list silently missed newer tables
+ * (Payout, ServiceOrder, …) and failed on FK constraints.
  */
 export async function resetDb() {
-  // Order matters: delete child tables before parents
-  await db.translation.deleteMany();
-  await db.contentKey.deleteMany();
-  await db.configChange.deleteMany();
-  await db.configOverride.deleteMany();
-  await db.configParameter.deleteMany();
-  await db.auditLog.deleteMany();
-  await db.projectMedia.deleteMany();
-  await db.unitMedia.deleteMany();
-  await db.roleAssignment.deleteMany();
-  await db.unitEngagement.deleteMany();
-  await db.blockedDate.deleteMany();
-  await db.pricingRule.deleteMany();
-  await db.bookingChange.deleteMany();
-  await db.bookingGuest.deleteMany();
-  await db.booking.deleteMany();
-  await db.unit.deleteMany();
-  await db.organization.deleteMany();
-  await db.project.deleteMany();
-  await db.oneTimeToken.deleteMany();
-  await db.authAccount.deleteMany();
-  await db.mediaAsset.deleteMany();
-  await db.identity.deleteMany();
+  const tables = await db.$queryRaw<Array<{ tablename: string }>>`
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
+  `;
+  if (tables.length === 0) return;
+  await db.$executeRawUnsafe(
+    `TRUNCATE TABLE ${tables.map((t) => `"${t.tablename}"`).join(', ')} CASCADE`
+  );
 }
 
 // --- Factories ---
@@ -230,8 +218,13 @@ export interface BookingFactoryOpts {
   guestIdentityId: string;
   startDate?: Date;
   endDate?: Date;
-  status?: 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled';
+  status?: 'requested' | 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled' | 'declined' | 'expired';
   verificationStatus?: 'not_required' | 'pending' | 'passports_received' | 'failed';
+  totalThb?: number;
+  adults?: number;
+  children?: number;
+  holdExpiresAt?: Date | null;
+  cancellationPolicySnapshot?: Record<string, unknown>;
 }
 
 export async function createBooking(opts: BookingFactoryOpts) {
@@ -247,11 +240,15 @@ export async function createBooking(opts: BookingFactoryOpts) {
       channel: 'direct',
       startDate,
       endDate,
-      adults: 2,
-      children: 0,
-      totalThb: 4000,
+      adults: opts.adults ?? 2,
+      children: opts.children ?? 0,
+      totalThb: opts.totalThb ?? 4000,
       status: opts.status || 'confirmed',
       verificationStatus: opts.verificationStatus || 'not_required',
+      ...(opts.holdExpiresAt !== undefined && { holdExpiresAt: opts.holdExpiresAt }),
+      ...(opts.cancellationPolicySnapshot && {
+        cancellationPolicySnapshot: opts.cancellationPolicySnapshot as any,
+      }),
     },
   });
 }

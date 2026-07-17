@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { checkVerificationDeadlines } from '@/modules/ops';
 import { runRetentionJobs } from '@/modules/core';
 import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
+import { expireHolds, autoDeclineRequests } from '@/modules/booking';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,23 @@ export const dynamic = 'force-dynamic';
  * Each job is isolated: one failing job never blocks the others.
  */
 export async function POST(req: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
   const secret = req.headers.get('Authorization');
-  if (secret !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Refuse when CRON_SECRET is unset — otherwise "Bearer undefined" authenticates.
+  if (!cronSecret || secret !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const results: Record<string, string> = {};
+
+  try {
+    const expired = await expireHolds(prisma);
+    const declined = await autoDeclineRequests(prisma);
+    results.bookingLifecycle = `ok (${expired} holds expired, ${declined} requests auto-declined)`;
+  } catch (error) {
+    console.error('[Cron run-all] booking lifecycle failed:', error);
+    results.bookingLifecycle = 'failed';
+  }
 
   try {
     await checkVerificationDeadlines(prisma);

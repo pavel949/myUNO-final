@@ -37,10 +37,10 @@ export async function POST(
       childrenCount,
     } = body;
 
-    // Fetch the booking
+    // Fetch the booking (guestIdentityId lives on the row; never pull the raw identity)
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { unit: true, guestIdentity: true },
+      include: { unit: true },
     });
 
     if (!booking) {
@@ -77,14 +77,17 @@ export async function POST(
       );
     }
 
-    // Validate availability (excluding this booking)
+    // Validate availability (excluding this booking; expired unpaid holds don't block)
     const conflicting = await prisma.booking.findFirst({
       where: {
         unitId: booking.unitId,
         id: { not: bookingId },
-        status: { in: ['confirmed', 'checked_in', 'pending_payment'] },
         startDate: { lt: newEndDate },
         endDate: { gt: newStartDate },
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+        ],
       },
     });
 
@@ -135,7 +138,7 @@ export async function POST(
         totalThb: newTotalThb,
         ...(balanceThb < 0 && { refundAccruedThb: (booking.refundAccruedThb || 0) + Math.abs(balanceThb) }),
       },
-      include: { unit: true, guestIdentity: true },
+      include: { unit: true },
     });
 
     // Create a booking change record for audit

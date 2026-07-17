@@ -150,16 +150,6 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
-      // Get provider identity to accept order
-      const providerIdentity = await db.roleAssignment.findFirst({
-        where: { providerId: provider.id, role: 'provider_member', status: 'active' },
-        select: { identityId: true },
-      });
-
-      if (!providerIdentity) {
-        throw new Error('No provider member role found');
-      }
-
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 
       const order = await db.serviceOrder.findUnique({

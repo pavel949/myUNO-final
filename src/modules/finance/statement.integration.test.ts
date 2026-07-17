@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createBooking,
+  setGlobalConfig,
+} from '@/test/util';
 import {
   generateOwnerStatement,
   publishStatement,
@@ -19,21 +27,16 @@ describe('Statements (T-030)', () => {
     it('generates statement with NOI above cap: cap bites', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Create engagement: direct_managed with 10k annual cap
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
-
-      const engagement = await db.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'direct_managed',
+          ownerIdentityId: owner.id,
+          engagementType: 'direct_managed',
           status: 'active',
           noiCapAnnualThb: 10000, // Annual cap
-          mandateMediaId: 'mock-mandate',
         },
       });
 
@@ -41,32 +44,24 @@ describe('Statements (T-030)', () => {
       const periodEnd = new Date('2026-07-31');
 
       // Record revenue: 15000
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 10000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 10000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit.id, 10000, periodStart);
 
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-15'),
-          endDate: new Date('2026-07-20'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-15'),
+        endDate: new Date('2026-07-20'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit.id, 5000, periodStart);
@@ -109,20 +104,15 @@ describe('Statements (T-030)', () => {
     it('cap does NOT bite when NOI is below cap', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
-
-      const engagement = await db.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'direct_managed',
+          ownerIdentityId: owner.id,
+          engagementType: 'direct_managed',
           status: 'active',
           noiCapAnnualThb: 100000, // High annual cap
-          mandateMediaId: 'mock-mandate',
         },
       });
 
@@ -130,17 +120,13 @@ describe('Statements (T-030)', () => {
       const periodEnd = new Date('2026-07-31');
 
       // Revenue: 5000, Costs: 1000 → NOI: 4000
-      const booking = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking.id, unit.id, 5000, periodStart);
@@ -172,21 +158,16 @@ describe('Statements (T-030)', () => {
     it('refusal when direct_managed unit lacks NOI cap', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
-
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Create engagement WITHOUT cap
       await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'direct_managed',
+          ownerIdentityId: owner.id,
+          engagementType: 'direct_managed',
           status: 'active',
           // noiCapAnnualThb: null (missing!)
-          mandateMediaId: 'mock-mandate',
         },
       });
 
@@ -208,39 +189,30 @@ describe('Statements (T-030)', () => {
     it('generates statement with MC platform fee deduction', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
-
-      // MC engagement: 20% platform fee
+      // MC engagement; 20% platform fee comes from configuration
       await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'via_management_company',
+          ownerIdentityId: owner.id,
+          engagementType: 'via_management_company',
           status: 'active',
-          mcPlatformFeePct: 20,
-          mandateMediaId: 'mock-mandate',
         },
       });
+      await setGlobalConfig('engagement.via_mc.platform_fee_pct', 20);
 
       const periodStart = new Date('2026-07-01');
       const periodEnd = new Date('2026-07-31');
 
       // Revenue: 10000, Costs: 1000 → NOI: 9000
-      const booking = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-15'),
-          totalPrice: 10000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-15'),
+        totalThb: 10000,
       });
 
       await recordBookingRevenue(db, booking.id, unit.id, 10000, periodStart);
@@ -276,53 +248,41 @@ describe('Statements (T-030)', () => {
     it('generates statement with booking fee deduction', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
-
-      // Owner-direct engagement: 5% booking fee
+      // Owner-direct engagement; 5% booking fee comes from configuration
       await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'owner_direct',
+          ownerIdentityId: owner.id,
+          engagementType: 'owner_direct',
           status: 'active',
-          ownerDirectBookingFeePct: 5,
         },
       });
+      await setGlobalConfig('engagement.owner_direct.booking_fee_pct', 5);
 
       const periodStart = new Date('2026-07-01');
       const periodEnd = new Date('2026-07-31');
 
       // Revenue: 20000, Costs: 2000 → NOI: 18000
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-01'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 12000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-01'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 12000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit.id, 12000, periodStart);
 
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-20'),
-          endDate: new Date('2026-07-28'),
-          totalPrice: 8000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-20'),
+        endDate: new Date('2026-07-28'),
+        totalThb: 8000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit.id, 8000, periodStart);
@@ -358,20 +318,15 @@ describe('Statements (T-030)', () => {
     it('publishes draft statement and marks previous as superseded', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
       const admin = await createIdentity();
-
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
 
       await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'owner_direct',
+          ownerIdentityId: owner.id,
+          engagementType: 'owner_direct',
           status: 'active',
-          ownerDirectBookingFeePct: 0,
         },
       });
 
@@ -379,17 +334,13 @@ describe('Statements (T-030)', () => {
       const periodEnd = new Date('2026-07-31');
 
       // Create and publish first statement
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit.id, 5000, periodStart);
@@ -403,17 +354,13 @@ describe('Statements (T-030)', () => {
       await publishStatement(db, stmt1.id, admin.id);
 
       // Create a correction: add another booking, regenerate
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-20'),
-          endDate: new Date('2026-07-25'),
-          totalPrice: 3000,
-          guestCount: 1,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-20'),
+        endDate: new Date('2026-07-25'),
+        totalThb: 3000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit.id, 3000, periodStart);
@@ -450,35 +397,24 @@ describe('Statements (T-030)', () => {
       const project = await createProject();
       const owner = await createIdentity();
       const otherOwner = await createIdentity();
-      const unit1 = await createUnit(project.id);
-      const unit2 = await createUnit(project.id);
-
-      await db.unit.updateMany({
-        where: { id: { in: [unit1.id, unit2.id] } },
-        data: { ownerIdentityId: owner.id },
-      });
-
-      // Unit2 belongs to otherOwner
-      await db.unit.update({
-        where: { id: unit2.id },
-        data: { ownerIdentityId: otherOwner.id },
-      });
+      const unit1 = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const unit2 = await createUnit({ projectId: project.id, ownerIdentityId: otherOwner.id });
 
       await Promise.all([
         db.unitEngagement.create({
           data: {
             unitId: unit1.id,
-            type: 'owner_direct',
+            ownerIdentityId: owner.id,
+            engagementType: 'owner_direct',
             status: 'active',
-            ownerDirectBookingFeePct: 0,
           },
         }),
         db.unitEngagement.create({
           data: {
             unitId: unit2.id,
-            type: 'owner_direct',
+            ownerIdentityId: otherOwner.id,
+            engagementType: 'owner_direct',
             status: 'active',
-            ownerDirectBookingFeePct: 0,
           },
         }),
       ]);
@@ -487,17 +423,13 @@ describe('Statements (T-030)', () => {
       const periodEnd = new Date('2026-07-31');
 
       // Generate statements for both units
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit1.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit1.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit1.id, 5000, periodStart);
@@ -508,17 +440,13 @@ describe('Statements (T-030)', () => {
         periodEnd,
       });
 
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit2.id,
-          projectId: project.id,
-          guestIdentityId: otherOwner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 8000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit2.id,
+        projectId: project.id,
+        guestIdentityId: otherOwner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 8000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit2.id, 8000, periodStart);
@@ -549,34 +477,24 @@ describe('Statements (T-030)', () => {
       const project = await createProject();
       const owner1 = await createIdentity();
       const owner2 = await createIdentity();
-      const unit1 = await createUnit(project.id);
-      const unit2 = await createUnit(project.id);
-
-      await db.unit.update({
-        where: { id: unit1.id },
-        data: { ownerIdentityId: owner1.id },
-      });
-
-      await db.unit.update({
-        where: { id: unit2.id },
-        data: { ownerIdentityId: owner2.id },
-      });
+      const unit1 = await createUnit({ projectId: project.id, ownerIdentityId: owner1.id });
+      const unit2 = await createUnit({ projectId: project.id, ownerIdentityId: owner2.id });
 
       await Promise.all([
         db.unitEngagement.create({
           data: {
             unitId: unit1.id,
-            type: 'owner_direct',
+            ownerIdentityId: owner1.id,
+            engagementType: 'owner_direct',
             status: 'active',
-            ownerDirectBookingFeePct: 0,
           },
         }),
         db.unitEngagement.create({
           data: {
             unitId: unit2.id,
-            type: 'owner_direct',
+            ownerIdentityId: owner2.id,
+            engagementType: 'owner_direct',
             status: 'active',
-            ownerDirectBookingFeePct: 0,
           },
         }),
       ]);
@@ -585,17 +503,13 @@ describe('Statements (T-030)', () => {
       const periodEnd = new Date('2026-07-31');
 
       // Generate statements for both units
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit1.id,
-          projectId: project.id,
-          guestIdentityId: owner1.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit1.id,
+        projectId: project.id,
+        guestIdentityId: owner1.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit1.id, 5000, periodStart);
@@ -606,17 +520,13 @@ describe('Statements (T-030)', () => {
         periodEnd,
       });
 
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit2.id,
-          projectId: project.id,
-          guestIdentityId: owner2.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 8000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit2.id,
+        projectId: project.id,
+        guestIdentityId: owner2.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 8000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit2.id, 8000, periodStart);
@@ -641,19 +551,14 @@ describe('Statements (T-030)', () => {
     it('returns the most recent published statement', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id);
-
-      await db.unit.update({
-        where: { id: unit.id },
-        data: { ownerIdentityId: owner.id },
-      });
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       await db.unitEngagement.create({
         data: {
           unitId: unit.id,
-          type: 'owner_direct',
+          ownerIdentityId: owner.id,
+          engagementType: 'owner_direct',
           status: 'active',
-          ownerDirectBookingFeePct: 0,
         },
       });
 
@@ -668,17 +573,13 @@ describe('Statements (T-030)', () => {
         end: new Date('2026-07-31'),
       };
 
-      const booking1 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-06-05'),
-          endDate: new Date('2026-06-10'),
-          totalPrice: 3000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking1 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-06-05'),
+        endDate: new Date('2026-06-10'),
+        totalThb: 3000,
       });
 
       await recordBookingRevenue(db, booking1.id, unit.id, 3000, june.start);
@@ -691,17 +592,13 @@ describe('Statements (T-030)', () => {
 
       await publishStatement(db, stmt1.id, owner.id);
 
-      const booking2 = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: owner.id,
-          startDate: new Date('2026-07-05'),
-          endDate: new Date('2026-07-10'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking2 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: owner.id,
+        startDate: new Date('2026-07-05'),
+        endDate: new Date('2026-07-10'),
+        totalThb: 5000,
       });
 
       await recordBookingRevenue(db, booking2.id, unit.id, 5000, july.start);

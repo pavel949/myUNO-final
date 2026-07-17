@@ -17,7 +17,7 @@ describe('Owner experience (T-033)', () => {
     it('books an owner stay in their own unit', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Book owner stay
       const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h from now
@@ -39,7 +39,7 @@ describe('Owner experience (T-033)', () => {
     it('refuses owner stay if not enough notice', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Try to book with insufficient notice (less than 24h default)
       const startDate = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12h from now
@@ -59,10 +59,13 @@ describe('Owner experience (T-033)', () => {
       const owner = await createIdentity();
       const guest = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Create a guest booking
-      const guestBooking = await createBooking(unit.id, guest.id, {
+      await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-10'),
         endDate: new Date('2026-08-15'),
       });
@@ -86,11 +89,14 @@ describe('Owner experience (T-033)', () => {
     it('provides dashboard data for single-unit owner', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Create some bookings
       const guest = await createIdentity();
-      await createBooking(unit.id, guest.id, {
+      await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-07-15'),
         endDate: new Date('2026-07-20'),
         totalThb: 5000,
@@ -107,8 +113,8 @@ describe('Owner experience (T-033)', () => {
     it('provides dashboard data for portfolio owner (multi-unit)', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      const unit1 = await createUnit(project.id, owner.id);
-      const unit2 = await createUnit(project.id, owner.id);
+      const unit1 = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const unit2 = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       const dashboard = await getOwnerDashboard(db, owner.id);
 
@@ -121,10 +127,13 @@ describe('Owner experience (T-033)', () => {
       const owner = await createIdentity();
       const guest = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       // Create guest booking
-      const guestBooking = await createBooking(unit.id, guest.id, {
+      const guestBooking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-07-15'),
         endDate: new Date('2026-07-20'),
         totalThb: 5000,
@@ -161,7 +170,7 @@ describe('Owner experience (T-033)', () => {
     it('detects single-unit owner', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      await createUnit(project.id, owner.id);
+      await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       const shape = await getOwnerPortfolioShape(db, owner.id);
 
@@ -172,8 +181,8 @@ describe('Owner experience (T-033)', () => {
     it('detects multi-unit portfolio owner', async () => {
       const owner = await createIdentity();
       const project = await createProject();
-      await createUnit(project.id, owner.id);
-      await createUnit(project.id, owner.id);
+      await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       const shape = await getOwnerPortfolioShape(db, owner.id);
 
@@ -186,9 +195,9 @@ describe('Owner experience (T-033)', () => {
       const project1 = await createProject();
       const project2 = await createProject();
 
-      await createUnit(project1.id, owner.id);
-      await createUnit(project1.id, owner.id); // Second unit in same project
-      await createUnit(project2.id, owner.id);
+      await createUnit({ projectId: project1.id, ownerIdentityId: owner.id });
+      await createUnit({ projectId: project1.id, ownerIdentityId: owner.id }); // Second unit in same project
+      await createUnit({ projectId: project2.id, ownerIdentityId: owner.id });
 
       const shape = await getOwnerPortfolioShape(db, owner.id);
 
@@ -203,8 +212,8 @@ describe('Owner experience (T-033)', () => {
       const project1 = await createProject();
       const project2 = await createProject();
 
-      await createUnit(project1.id, owner.id);
-      await createUnit(project2.id, owner.id);
+      await createUnit({ projectId: project1.id, ownerIdentityId: owner.id });
+      await createUnit({ projectId: project2.id, ownerIdentityId: owner.id });
 
       const projects = await getOwnerProjects(db, owner.id);
 
@@ -217,8 +226,8 @@ describe('Owner experience (T-033)', () => {
       const owner = await createIdentity();
       const project = await createProject();
 
-      await createUnit(project.id, owner.id);
-      await createUnit(project.id, owner.id);
+      await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       const projects = await getOwnerProjects(db, owner.id);
       const projectData = projects[0];
@@ -232,9 +241,12 @@ describe('Owner experience (T-033)', () => {
       const owner = await createIdentity();
       const guest = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, owner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-10'),
         endDate: new Date('2026-08-15'),
         totalThb: 5000,
@@ -257,7 +269,7 @@ describe('Owner experience (T-033)', () => {
       const owner = await createIdentity();
       const otherOwner = await createIdentity();
       const project = await createProject();
-      const unit = await createUnit(project.id, otherOwner.id);
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: otherOwner.id });
 
       await expect(getOwnerBookingsList(db, unit.id, owner.id)).rejects.toThrow('Access denied');
     });

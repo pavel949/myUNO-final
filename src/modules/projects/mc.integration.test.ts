@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetDb, factories } from '@/test/util';
-import { prisma } from '@/lib/prisma';
+import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import {
   getMCManagedUnits,
   getMCBookings,
@@ -17,8 +16,8 @@ describe('MC Service', () => {
   describe('getMCManagedUnits', () => {
     it('returns units managed by the MC organization', async () => {
       // Create project, org, and MC member identity
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test Management Company',
           orgType: 'management_company',
@@ -28,8 +27,8 @@ describe('MC Service', () => {
         },
       });
 
-      const mcIdentity = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcIdentity.id,
           role: 'mc_member',
@@ -40,11 +39,11 @@ describe('MC Service', () => {
       });
 
       // Create owner and unit with MC engagement
-      const ownerIdentity = await factories.identity(prisma);
-      const unit = await factories.unit(prisma, { projectId: project.id, ownerIdentityId: ownerIdentity.id });
+      const ownerIdentity = await createIdentity();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: ownerIdentity.id });
 
       // Create active MC engagement
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unit.id,
           engagementType: 'via_management_company',
@@ -55,7 +54,7 @@ describe('MC Service', () => {
       });
 
       // Fetch managed units
-      const units = await getMCManagedUnits(prisma, mcIdentity.id, project.id, mcOrg.id);
+      const units = await getMCManagedUnits(db, mcIdentity.id, project.id, mcOrg.id);
 
       expect(units).toHaveLength(1);
       expect(units[0].id).toBe(unit.id);
@@ -63,8 +62,8 @@ describe('MC Service', () => {
     });
 
     it('throws error if identity is not an MC member', async () => {
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test MC',
           orgType: 'management_company',
@@ -74,18 +73,18 @@ describe('MC Service', () => {
         },
       });
 
-      const randomIdentity = await factories.identity(prisma);
+      const randomIdentity = await createIdentity();
 
       await expect(
-        getMCManagedUnits(prisma, randomIdentity.id, project.id, mcOrg.id)
+        getMCManagedUnits(db, randomIdentity.id, project.id, mcOrg.id)
       ).rejects.toThrow('MC member does not have access');
     });
 
     it('scope-leak test: MC A cannot see MC B units', async () => {
-      const project = await factories.project(prisma);
+      const project = await createProject();
 
       // Create two MC organizations
-      const mcOrgA = await prisma.organization.create({
+      const mcOrgA = await db.organization.create({
         data: {
           name: 'MC A',
           orgType: 'management_company',
@@ -95,7 +94,7 @@ describe('MC Service', () => {
         },
       });
 
-      const mcOrgB = await prisma.organization.create({
+      const mcOrgB = await db.organization.create({
         data: {
           name: 'MC B',
           orgType: 'management_company',
@@ -106,8 +105,8 @@ describe('MC Service', () => {
       });
 
       // Create MC A member
-      const mcMemberA = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcMemberA = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcMemberA.id,
           role: 'mc_member',
@@ -118,12 +117,12 @@ describe('MC Service', () => {
       });
 
       // Create units managed by each MC
-      const ownerA = await factories.identity(prisma);
-      const unitA = await factories.unit(prisma, {
+      const ownerA = await createIdentity();
+      const unitA = await createUnit({
         projectId: project.id,
         ownerIdentityId: ownerA.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unitA.id,
           engagementType: 'via_management_company',
@@ -133,12 +132,12 @@ describe('MC Service', () => {
         },
       });
 
-      const ownerB = await factories.identity(prisma);
-      const unitB = await factories.unit(prisma, {
+      const ownerB = await createIdentity();
+      const unitB = await createUnit({
         projectId: project.id,
         ownerIdentityId: ownerB.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unitB.id,
           engagementType: 'via_management_company',
@@ -149,21 +148,21 @@ describe('MC Service', () => {
       });
 
       // MC A fetches units - should only see unitA
-      const unitsForMCA = await getMCManagedUnits(prisma, mcMemberA.id, project.id, mcOrgA.id);
+      const unitsForMCA = await getMCManagedUnits(db, mcMemberA.id, project.id, mcOrgA.id);
       expect(unitsForMCA).toHaveLength(1);
       expect(unitsForMCA[0].id).toBe(unitA.id);
 
       // MC A cannot access MC B's units (would fail on access check)
       await expect(
-        getMCManagedUnits(prisma, mcMemberA.id, project.id, mcOrgB.id)
+        getMCManagedUnits(db, mcMemberA.id, project.id, mcOrgB.id)
       ).rejects.toThrow('MC member does not have access');
     });
   });
 
   describe('getMCBookings', () => {
     it('returns bookings for MC-managed units only', async () => {
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test MC',
           orgType: 'management_company',
@@ -173,8 +172,8 @@ describe('MC Service', () => {
         },
       });
 
-      const mcIdentity = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcIdentity.id,
           role: 'mc_member',
@@ -185,12 +184,12 @@ describe('MC Service', () => {
       });
 
       // Create MC-managed unit
-      const owner = await factories.identity(prisma);
-      const mcUnit = await factories.unit(prisma, {
+      const owner = await createIdentity();
+      const mcUnit = await createUnit({
         projectId: project.id,
         ownerIdentityId: owner.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: mcUnit.id,
           engagementType: 'via_management_company',
@@ -201,12 +200,12 @@ describe('MC Service', () => {
       });
 
       // Create direct-managed unit (MC should not see)
-      const directOwner = await factories.identity(prisma);
-      const directUnit = await factories.unit(prisma, {
+      const directOwner = await createIdentity();
+      const directUnit = await createUnit({
         projectId: project.id,
         ownerIdentityId: directOwner.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: directUnit.id,
           engagementType: 'direct_managed',
@@ -216,14 +215,14 @@ describe('MC Service', () => {
       });
 
       // Create bookings for both units
-      const guest1 = await factories.identity(prisma);
-      const booking1 = await prisma.booking.create({
+      const guest1 = await createIdentity();
+      const booking1 = await db.booking.create({
         data: {
           unitId: mcUnit.id,
           projectId: project.id,
           guestIdentityId: guest1.id,
           bookingType: 'guest_stay',
-          channel: 'platform',
+          channel: 'direct',
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-01-05'),
           adults: 1,
@@ -233,14 +232,14 @@ describe('MC Service', () => {
         },
       });
 
-      const guest2 = await factories.identity(prisma);
-      await prisma.booking.create({
+      const guest2 = await createIdentity();
+      await db.booking.create({
         data: {
           unitId: directUnit.id,
           projectId: project.id,
           guestIdentityId: guest2.id,
           bookingType: 'guest_stay',
-          channel: 'platform',
+          channel: 'direct',
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-01-05'),
           adults: 1,
@@ -251,7 +250,7 @@ describe('MC Service', () => {
       });
 
       // MC should only see booking1
-      const bookings = await getMCBookings(prisma, mcIdentity.id, project.id, mcOrg.id);
+      const bookings = await getMCBookings(db, mcIdentity.id, project.id, mcOrg.id);
       expect(bookings).toHaveLength(1);
       expect(bookings[0].id).toBe(booking1.id);
       expect(bookings[0].totalThb).toBe(10000);
@@ -260,8 +259,8 @@ describe('MC Service', () => {
 
   describe('getMCFeeReport', () => {
     it('calculates fee lines correctly using config fee percentage', async () => {
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test MC',
           orgType: 'management_company',
@@ -271,8 +270,8 @@ describe('MC Service', () => {
         },
       });
 
-      const mcIdentity = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcIdentity.id,
           role: 'mc_member',
@@ -283,12 +282,12 @@ describe('MC Service', () => {
       });
 
       // Create unit with custom fee override
-      const owner = await factories.identity(prisma);
-      const unit = await factories.unit(prisma, {
+      const owner = await createIdentity();
+      const unit = await createUnit({
         projectId: project.id,
         ownerIdentityId: owner.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unit.id,
           engagementType: 'via_management_company',
@@ -300,17 +299,17 @@ describe('MC Service', () => {
       });
 
       // Create booking in report period
-      const guest = await factories.identity(prisma);
+      const guest = await createIdentity();
       const periodStart = new Date('2025-01-01');
       const periodEnd = new Date('2025-02-01');
 
-      await prisma.booking.create({
+      await db.booking.create({
         data: {
           unitId: unit.id,
           projectId: project.id,
           guestIdentityId: guest.id,
           bookingType: 'guest_stay',
-          channel: 'platform',
+          channel: 'direct',
           startDate: new Date('2025-01-10'),
           endDate: new Date('2025-01-15'),
           adults: 2,
@@ -321,7 +320,7 @@ describe('MC Service', () => {
       });
 
       const report = await getMCFeeReport(
-        prisma,
+        db,
         mcIdentity.id,
         project.id,
         mcOrg.id,
@@ -341,8 +340,8 @@ describe('MC Service', () => {
     });
 
     it('uses default fee percentage when no override is set', async () => {
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test MC',
           orgType: 'management_company',
@@ -352,8 +351,8 @@ describe('MC Service', () => {
         },
       });
 
-      const mcIdentity = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcIdentity.id,
           role: 'mc_member',
@@ -364,12 +363,12 @@ describe('MC Service', () => {
       });
 
       // Create unit without fee override (should use default 10%)
-      const owner = await factories.identity(prisma);
-      const unit = await factories.unit(prisma, {
+      const owner = await createIdentity();
+      const unit = await createUnit({
         projectId: project.id,
         ownerIdentityId: owner.id,
       });
-      await prisma.unitEngagement.create({
+      await db.unitEngagement.create({
         data: {
           unitId: unit.id,
           engagementType: 'via_management_company',
@@ -380,17 +379,17 @@ describe('MC Service', () => {
         },
       });
 
-      const guest = await factories.identity(prisma);
+      const guest = await createIdentity();
       const periodStart = new Date('2025-01-01');
       const periodEnd = new Date('2025-02-01');
 
-      await prisma.booking.create({
+      await db.booking.create({
         data: {
           unitId: unit.id,
           projectId: project.id,
           guestIdentityId: guest.id,
           bookingType: 'guest_stay',
-          channel: 'platform',
+          channel: 'direct',
           startDate: new Date('2025-01-10'),
           endDate: new Date('2025-01-15'),
           adults: 1,
@@ -401,7 +400,7 @@ describe('MC Service', () => {
       });
 
       const report = await getMCFeeReport(
-        prisma,
+        db,
         mcIdentity.id,
         project.id,
         mcOrg.id,
@@ -417,8 +416,8 @@ describe('MC Service', () => {
 
   describe('getMCDashboard', () => {
     it('returns correct dashboard stats for MC', async () => {
-      const project = await factories.project(prisma);
-      const mcOrg = await prisma.organization.create({
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
         data: {
           name: 'Test MC',
           orgType: 'management_company',
@@ -428,8 +427,8 @@ describe('MC Service', () => {
         },
       });
 
-      const mcIdentity = await factories.identity(prisma);
-      await prisma.roleAssignment.create({
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
         data: {
           identityId: mcIdentity.id,
           role: 'mc_member',
@@ -440,18 +439,18 @@ describe('MC Service', () => {
       });
 
       // Create units
-      const owner = await factories.identity(prisma);
-      const unit1 = await factories.unit(prisma, {
+      const owner = await createIdentity();
+      const unit1 = await createUnit({
         projectId: project.id,
         ownerIdentityId: owner.id,
       });
-      const unit2 = await factories.unit(prisma, {
+      const unit2 = await createUnit({
         projectId: project.id,
         ownerIdentityId: owner.id,
       });
 
       for (const unit of [unit1, unit2]) {
-        await prisma.unitEngagement.create({
+        await db.unitEngagement.create({
           data: {
             unitId: unit.id,
             engagementType: 'via_management_company',
@@ -463,17 +462,17 @@ describe('MC Service', () => {
       }
 
       // Create bookings this month
-      const guest = await factories.identity(prisma);
+      const guest = await createIdentity();
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      await prisma.booking.create({
+      await db.booking.create({
         data: {
           unitId: unit1.id,
           projectId: project.id,
           guestIdentityId: guest.id,
           bookingType: 'guest_stay',
-          channel: 'platform',
+          channel: 'direct',
           startDate: new Date(monthStart),
           endDate: new Date(monthStart.getTime() + 5 * 24 * 60 * 60 * 1000),
           adults: 1,
@@ -484,19 +483,20 @@ describe('MC Service', () => {
       });
 
       // Create open ticket
-      await prisma.ticket.create({
+      await db.ticket.create({
         data: {
           unitId: unit1.id,
           projectId: project.id,
           raisedByIdentityId: guest.id,
           raisedByRole: 'guest',
+          categoryKey: 'maintenance',
           title: 'Test Ticket',
           status: 'open',
           priority: 'normal',
         },
       });
 
-      const dashboard = await getMCDashboard(prisma, mcIdentity.id, project.id, mcOrg.id);
+      const dashboard = await getMCDashboard(db, mcIdentity.id, project.id, mcOrg.id);
 
       expect(dashboard.unitsCount).toBe(2);
       expect(dashboard.bookingsThisMonth).toBe(1);

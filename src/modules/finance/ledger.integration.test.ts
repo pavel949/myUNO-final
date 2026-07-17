@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createBooking, createProvider, createService } from '@/test/util';
 import {
   recordCost,
   recordBookingRevenue,
@@ -161,8 +161,9 @@ describe('Ledger & Cost Recording (T-029)', () => {
       const guest = await createIdentity();
       const booking = await createBooking({
         unitId: unit.id,
+        projectId: project.id,
         guestIdentityId: guest.id,
-        totalPrice: 8000,
+        totalThb: 8000,
       });
 
       const entry = await recordBookingRevenue(db, booking.id, unit.id, 8000, new Date('2026-07-20'));
@@ -177,14 +178,26 @@ describe('Ledger & Cost Recording (T-029)', () => {
     it('records refund out when refund is processed', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
+      const payer = await createIdentity();
+      const actor = await createIdentity();
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          payerIdentityId: payer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: 1000,
+          status: 'succeeded',
+        },
+      });
       const refund = await db.refund.create({
         data: {
-          paymentId: 'test-payment-123', // FK would normally be validated; using direct for test
+          paymentId: payment.id,
           method: 'cash',
           amountThb: 1000,
           reason: 'cancellation',
           status: 'succeeded',
-          initiatedByIdentityId: 'system',
+          initiatedByIdentityId: actor.id,
         },
       });
 
@@ -200,20 +213,23 @@ describe('Ledger & Cost Recording (T-029)', () => {
     it('records service commission', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
+      const orderer = await createIdentity();
+      const provider = await createProvider();
+      const service = await createService({ providerId: provider.id });
       const order = await db.serviceOrder.create({
         data: {
-          serviceId: 'test-service-123',
-          providerId: 'test-provider-123',
-          ordererIdentityId: 'test-identity',
-          ordererRole: 'owner',
-          projectId: project.id,
-          unitId: unit.id,
-          scheduledStart: new Date(),
-          scheduledEnd: new Date(),
-          totalThb: 5000,
+          service_id: service.id,
+          provider_id: provider.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          project_id: project.id,
+          unit_id: unit.id,
+          scheduled_start: new Date(),
+          scheduled_end: new Date(),
+          total_thb: 5000,
           status: 'placed',
-          priceBreakdown: {},
-          takeRatePctSnapshot: 15,
+          price_breakdown: {},
+          take_rate_pct_snapshot: 15,
         },
       });
 
@@ -304,8 +320,9 @@ describe('Ledger & Cost Recording (T-029)', () => {
       // Add revenue
       const booking = await createBooking({
         unitId: unit.id,
+        projectId: project.id,
         guestIdentityId: guest.id,
-        totalPrice: 10000,
+        totalThb: 10000,
       });
 
       await recordBookingRevenue(db, booking.id, unit.id, 10000, new Date('2026-07-10'));
@@ -374,17 +391,14 @@ describe('Ledger & Cost Recording (T-029)', () => {
       const staff = await createIdentity();
 
       // Create and confirm booking with cash payment
-      const booking = await db.booking.create({
-        data: {
-          unitId: unit.id,
-          projectId: project.id,
-          guestIdentityId: guest.id,
-          startDate: new Date('2026-08-01'),
-          endDate: new Date('2026-08-05'),
-          totalPrice: 5000,
-          guestCount: 2,
-          status: 'confirmed',
-        },
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        totalThb: 5000,
+        status: 'confirmed',
       });
 
       // Record cash payment (as would happen in F-OPS-6)

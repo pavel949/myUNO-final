@@ -18,18 +18,16 @@ describe('finance.service — integration tests', () => {
       const guest = await createIdentity();
       const receiver = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: false,
+        status: 'requested',
       });
 
       expect(booking.status).toBe('requested');
@@ -96,18 +94,16 @@ describe('finance.service — integration tests', () => {
       const refunder = await createIdentity();
       const actor = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: false,
+        status: 'requested',
       });
 
       // Record initial payment
@@ -166,7 +162,7 @@ describe('finance.service — integration tests', () => {
           paidBackByIdentityId: actor.id,
           initiatedByIdentityId: actor.id,
         })
-      ).rejects.toThrow('Use recordCashRefund for cash payments');
+      ).rejects.toThrow('Can only refund cash payments');
     });
   });
 
@@ -176,18 +172,16 @@ describe('finance.service — integration tests', () => {
       const unit = await createUnit(project.id);
       const guest = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: true,
+        status: 'pending_payment',
       });
 
       const session = await financeService.createCheckout(db, {
@@ -218,18 +212,16 @@ describe('finance.service — integration tests', () => {
       const unit = await createUnit(project.id);
       const guest = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: true,
+        status: 'pending_payment',
       });
 
       const session = await financeService.createCheckout(db, {
@@ -262,18 +254,16 @@ describe('finance.service — integration tests', () => {
       const unit = await createUnit(project.id);
       const guest = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: true,
+        status: 'pending_payment',
       });
 
       const session = await financeService.createCheckout(db, {
@@ -394,18 +384,16 @@ describe('finance.service — integration tests', () => {
       const guest = await createIdentity();
       const actor = await createIdentity();
 
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: true,
+        status: 'pending_payment',
       });
 
       const session = await financeService.createCheckout(db, {
@@ -443,18 +431,16 @@ describe('finance.service — integration tests', () => {
       const receiver = await createIdentity();
 
       // Create request-to-book
-      const booking = await createBooking(db, {
+      const booking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-05'),
         adults: 2,
         children: 0,
         totalThb: 8000,
-        instantBook: false,
+        status: 'requested',
       });
       expect(booking.status).toBe('requested');
 

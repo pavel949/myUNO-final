@@ -21,7 +21,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -43,7 +46,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -73,7 +79,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -108,7 +117,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -159,7 +171,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -202,7 +217,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -233,7 +251,10 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
@@ -257,12 +278,18 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking1 = await createBooking(unit.id, guest.id, {
+      const booking1 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
 
-      const booking2 = await createBooking(unit.id, guest.id, {
+      const booking2 = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-09-01'),
         endDate: new Date('2026-09-07'),
       });
@@ -299,10 +326,16 @@ describe('Deposits & Damage Claims (T-032)', () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
 
-      const booking = await createBooking(unit.id, guest.id, {
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-07'),
       });
+
+      // A pre-auth deposit must exist so approving the claim can capture it
+      await createPreAuthDeposit(db, booking.id, 2000);
 
       await db.booking.update({
         where: { id: booking.id },

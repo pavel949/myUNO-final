@@ -30,9 +30,10 @@ async function checkForConflicts(
   unitId: string,
   startDate: Date,
   endDate: Date,
-  excludeUid?: string, // UID to exclude from conflict check (for idempotency)
 ): Promise<Booking | null> {
-  // Find any confirmed booking that overlaps this range
+  // Find any active platform booking that overlaps this range. Platform bookings
+  // are never created from OTA imports, so there is no self to exclude here —
+  // idempotency for re-imported OTA UIDs is handled by getExistingBlockedDate.
   const conflicting = await db.booking.findFirst({
     where: {
       unitId,
@@ -40,8 +41,6 @@ async function checkForConflicts(
       // Overlap check: booking.start < this.end AND booking.end > this.start
       startDate: { lt: endDate },
       endDate: { gt: startDate },
-      // Exclude self if re-importing the same UID
-      externalRef: excludeUid ? { not: excludeUid } : undefined,
     },
   });
 
@@ -87,7 +86,6 @@ export async function importICalEvents(
           unitId,
           event.dtStart,
           event.dtEnd,
-          event.uid,
         );
 
         if (conflictingBooking) {

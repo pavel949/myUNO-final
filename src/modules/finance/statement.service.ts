@@ -74,8 +74,10 @@ export async function generateOwnerStatement(
   let capApplied = false;
 
   if (engagement.engagementType === 'direct_managed') {
-    // NOI cap pro-rata: owner gets MIN(NOI, cap_pro_rata)
-    const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+    // NOI cap pro-rata: owner gets MIN(NOI, cap_pro_rata).
+    // The period is inclusive of both endpoints — July 1 to July 31 is 31 days,
+    // not 30 — so add one day to the endpoint difference.
+    const daysInPeriod = Math.round((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const capProRataThb = Math.round((engagement.noiCapAnnualThb! * daysInPeriod) / 365);
 
     const noi = totals.netTh;

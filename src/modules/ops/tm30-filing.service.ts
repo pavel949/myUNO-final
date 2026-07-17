@@ -129,16 +129,26 @@ export async function markTm30FilingFailed(
 
   // Notify ops team of escalation if this is the first escalation
   if (!filing.escalatedAt) {
-    await createNotification(db, {
-      identityId: filing.booking.projectId, // Will be refined to ops role per project
-      type: 'compliance_tm30_escalation',
-      titleKey: 'tm30.escalation.title',
-      bodyKey: 'tm30.escalation.body',
-      params: {
-        filing_id: tm30FilingId,
-        guest_name: filing.bookingGuest.fullName,
+    const opsLead = await db.roleAssignment.findFirst({
+      where: {
+        projectId: filing.booking.projectId,
+        role: 'staff_ops',
+        status: 'active',
       },
     });
+
+    if (opsLead) {
+      await createNotification(db, {
+        identityId: opsLead.identityId,
+        type: 'compliance_tm30_escalation',
+        titleKey: 'tm30.escalation.title',
+        bodyKey: 'tm30.escalation.body',
+        params: {
+          filing_id: tm30FilingId,
+          guest_name: filing.bookingGuest.fullName,
+        },
+      });
+    }
   }
 }
 
@@ -244,16 +254,26 @@ export async function checkTm30Escalations(
       });
 
       // Notify admin/ops
-      await createNotification(db, {
-        identityId: filing.booking.projectId,
-        type: 'compliance_tm30_escalation',
-        titleKey: 'tm30.escalation.title',
-        bodyKey: 'tm30.escalation.body',
-        params: {
-          filing_id: filing.id,
-          guest_name: filing.bookingGuest?.fullName || 'Guest',
+      const opsLead = await db.roleAssignment.findFirst({
+        where: {
+          projectId,
+          role: 'staff_ops',
+          status: 'active',
         },
       });
+
+      if (opsLead) {
+        await createNotification(db, {
+          identityId: opsLead.identityId,
+          type: 'compliance_tm30_escalation',
+          titleKey: 'tm30.escalation.title',
+          bodyKey: 'tm30.escalation.body',
+          params: {
+            filing_id: filing.id,
+            guest_name: filing.bookingGuest?.fullName || 'Guest',
+          },
+        });
+      }
 
       escalatedCount++;
     }

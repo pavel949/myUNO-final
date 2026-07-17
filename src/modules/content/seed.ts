@@ -1346,6 +1346,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'notify.stay_confirmed.body', namespace: 'notify', description: 'Notification body: stay confirmed (guest)', en: '{unit_name}: {start_date} — {end_date}. Total ฿{total_thb}. See My trips for details.', ru: '{unit_name}: {start_date} — {end_date}. Итого ฿{total_thb}. Детали — в «Мои поездки».', status: NR },
   { key: 'notify.stay_confirmed.owner_title', namespace: 'notify', description: 'Notification: stay confirmed (owner)', en: 'New confirmed booking', ru: 'Новое подтверждённое бронирование', status: NR },
   { key: 'notify.stay_confirmed.owner_body', namespace: 'notify', description: 'Notification body: stay confirmed (owner)', en: '{unit_name} is booked {start_date} — {end_date} for ฿{total_thb}.', ru: '{unit_name} забронирован {start_date} — {end_date} на сумму ฿{total_thb}.', status: NR },
+  { key: 'notify.stay_request_approved.title', namespace: 'notify', description: 'Notification: booking request approved (guest)', en: 'Booking request approved', ru: 'Заявка на бронирование одобрена', status: NR },
+  { key: 'notify.stay_request_approved.body', namespace: 'notify', description: 'Notification body: booking request approved (guest)', en: '{unit_name} ({start_date} — {end_date}) is approved. Complete payment from My trips to confirm.', ru: '{unit_name} ({start_date} — {end_date}) одобрено. Завершите оплату в «Мои поездки», чтобы подтвердить.', status: NR },
+  { key: 'notify.stay_request_declined.title', namespace: 'notify', description: 'Notification: booking request declined (guest)', en: 'Booking request declined', ru: 'Заявка на бронирование отклонена', status: NR },
+  { key: 'notify.stay_request_declined.body', namespace: 'notify', description: 'Notification body: booking request declined (guest)', en: 'Your request for {unit_name} ({start_date} — {end_date}) was declined. No charge was made.', ru: 'Ваша заявка на {unit_name} ({start_date} — {end_date}) отклонена. Оплата не производилась.', status: NR },
   { key: 'email.stay_confirmed.subject', namespace: 'email', description: 'Email subject: booking confirmation', en: 'Your stay is confirmed — {unit_name}', ru: 'Ваше бронирование подтверждено — {unit_name}', status: NR },
   { key: 'email.stay_confirmed.body', namespace: 'email', description: 'Email body: booking confirmation', en: 'Hi {first_name},\n\nYour booking at {unit_name} is confirmed.\n\nCheck-in: {start_date}\nCheck-out: {end_date}\nTotal: ฿{total_thb}\n\nSee your trip and prepare for arrival: {trips_url}\n\nmyUNO — serviced living in Phuket', ru: 'Здравствуйте, {first_name}!\n\nВаше бронирование {unit_name} подтверждено.\n\nЗаезд: {start_date}\nВыезд: {end_date}\nИтого: ฿{total_thb}\n\nДетали поездки и подготовка к заезду: {trips_url}\n\nmyUNO — обслуживаемое проживание на Пхукете', status: NR },
 
@@ -1356,6 +1360,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Navbar
   { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
+  { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', status: NR },
   { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
   { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', status: NR },
   { key: 'nav.register', namespace: 'nav', description: 'Navbar button: sign up', en: 'Sign up', ru: 'Регистрация', status: NR },

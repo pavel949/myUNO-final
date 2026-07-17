@@ -1,8 +1,34 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createProvider,
+  createService,
+} from '@/test/util';
 import { recordOwnerPayout, recordProviderRemittance, computeProviderRemittance, getFailedRefunds } from './payout.service';
 import { generateOwnerStatement, publishStatement } from './statement.service';
-import { recordBookingRevenue } from './ledger.service';
+
+/**
+ * Give a unit an owner and an active owner_direct engagement so a statement can
+ * be generated for it. Statement generation refuses units with no owner/engagement.
+ */
+async function seedStatementUnit() {
+  const project = await createProject();
+  const owner = await createIdentity();
+  const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+  await db.unitEngagement.create({
+    data: {
+      unitId: unit.id,
+      ownerIdentityId: owner.id,
+      engagementType: 'owner_direct',
+      status: 'active',
+    },
+  });
+  return { project, owner, unit };
+}
 
 describe('Payouts & Reconciliation (T-031)', () => {
   beforeEach(async () => {
@@ -11,9 +37,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
   describe('owner payout recording', () => {
     it('records payout linked to published statement', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
-      const owner = await createIdentity();
+      const { unit } = await seedStatementUnit();
       const staff = await createIdentity();
 
       // Create and publish a statement
@@ -44,8 +68,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
     });
 
     it('refuses payout when statement not published', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
+      const { unit } = await seedStatementUnit();
       const staff = await createIdentity();
 
       // Create draft statement (don't publish)
@@ -72,13 +95,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
   describe('provider remittance recording', () => {
     it('records provider remittance payout', async () => {
       const staff = await createIdentity();
-      const provider = await db.provider.create({
-        data: {
-          name: 'Test Provider',
-          contactEmail: 'provider@test.com',
-          contactPhone: '+66-812345678',
-        },
-      });
+      const provider = await createProvider();
 
       // Record remittance
       const payout = await recordProviderRemittance(db, {
@@ -102,24 +119,21 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
   describe('remittance math computation', () => {
     it('computes remittance: fulfilled orders - refunds', async () => {
-      const staff = await createIdentity();
-      const provider = await db.provider.create({
-        data: {
-          name: 'Test Provider',
-          contactEmail: 'provider@test.com',
-          contactPhone: '+66-812345678',
-        },
-      });
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id });
+      const orderer = await createIdentity();
+      const provider = await createProvider();
+      const service = await createService({ providerId: provider.id });
 
       // Create service order (fulfilled)
-      const order = await db.serviceOrder.create({
+      await db.serviceOrder.create({
         data: {
-          service_id: 'test-service',
+          service_id: service.id,
           provider_id: provider.id,
-          orderer_identity_id: 'test-identity',
+          orderer_identity_id: orderer.id,
           orderer_role: 'owner',
-          project_id: 'test-project',
-          unit_id: 'test-unit',
+          project_id: project.id,
+          unit_id: unit.id,
           scheduled_start: new Date(),
           scheduled_end: new Date(),
           total_thb: 10000,
@@ -138,24 +152,23 @@ describe('Payouts & Reconciliation (T-031)', () => {
     });
 
     it('deducts clawed-back refunds from remittance', async () => {
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id });
+      const orderer = await createIdentity();
+      const payer = await createIdentity();
       const staff = await createIdentity();
-      const provider = await db.provider.create({
-        data: {
-          name: 'Test Provider',
-          contactEmail: 'provider@test.com',
-          contactPhone: '+66-812345678',
-        },
-      });
+      const provider = await createProvider();
+      const service = await createService({ providerId: provider.id });
 
       // Create service order
       const order = await db.serviceOrder.create({
         data: {
-          service_id: 'test-service',
+          service_id: service.id,
           provider_id: provider.id,
-          orderer_identity_id: 'test-identity',
+          orderer_identity_id: orderer.id,
           orderer_role: 'owner',
-          project_id: 'test-project',
-          unit_id: 'test-unit',
+          project_id: project.id,
+          unit_id: unit.id,
           scheduled_start: new Date(),
           scheduled_end: new Date(),
           total_thb: 10000,
@@ -170,7 +183,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
         data: {
           purpose: 'service_order',
           serviceOrderId: order.id,
-          payerIdentityId: 'test-payer',
+          payerIdentityId: payer.id,
           method: 'card_provider',
           provider: 'mock',
           amountThb: 10000,
@@ -179,14 +192,14 @@ describe('Payouts & Reconciliation (T-031)', () => {
         },
       });
 
-      const refund = await db.refund.create({
+      await db.refund.create({
         data: {
           paymentId: payment.id,
           method: 'card_provider',
           amountThb: 2000,
           reason: 'provider_no_show',
           status: 'succeeded',
-          initiatedByIdentityId: 'staff',
+          initiatedByIdentityId: staff.id,
         },
       });
 
@@ -202,12 +215,13 @@ describe('Payouts & Reconciliation (T-031)', () => {
   describe('failed refunds surfacing', () => {
     it('lists failed refunds for reconciliation', async () => {
       const staff = await createIdentity();
+      const payer = await createIdentity();
 
       // Create payment and failed refund
       const payment = await db.payment.create({
         data: {
           purpose: 'stay',
-          payerIdentityId: 'test-payer',
+          payerIdentityId: payer.id,
           method: 'card_provider',
           provider: 'mock',
           amountThb: 5000,
@@ -239,12 +253,13 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
     it('failed refund persists until status changed', async () => {
       const staff = await createIdentity();
+      const payer = await createIdentity();
 
       // Create failed refund
       const payment = await db.payment.create({
         data: {
           purpose: 'stay',
-          payerIdentityId: 'test-payer',
+          payerIdentityId: payer.id,
           method: 'card_provider',
           provider: 'mock',
           amountThb: 5000,
@@ -282,8 +297,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
   describe('payout reconciliation workflow', () => {
     it('records payout as unreconciled, then marks reconciled', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
+      const { unit } = await seedStatementUnit();
       const staff = await createIdentity();
 
       // Create and publish statement

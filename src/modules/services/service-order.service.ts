@@ -204,7 +204,10 @@ export async function declineServiceOrder(
         reason: 'provider_no_show', // Decline is treated as provider no-show
         status: 'succeeded',
         paidBackByIdentityId: null,
-        initiatedByIdentityId: declinedByProviderId,
+        // A provider decline is triggered by the Provider (not an Identity); the
+        // refund's initiator must be a real Identity, so record the orderer, who
+        // is the refund's beneficiary and always present on the order.
+        initiatedByIdentityId: order.orderer_identity_id,
       },
     });
 
@@ -322,8 +325,10 @@ export async function cancelServiceOrder(
 
   const now = new Date();
   const cancelWindowMs = cancelWindowHours * 60 * 60 * 1000;
+  // Cancelling with more than the window's notice before the scheduled start
+  // earns a full refund; cancelling inside the window earns nothing.
   const refundPct =
-    order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 0 : 100;
+    order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 100 : 0;
 
   const refundThb = Math.round((order.total_thb * refundPct) / 100);
 

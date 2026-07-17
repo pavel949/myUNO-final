@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, setGlobalConfig } from '@/test/util';
 import * as providerService from './provider.service';
 import * as serviceService from './service.service';
 import { seedConfig, getConfig, setConfigOverride } from '@/modules/config';
@@ -114,7 +114,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       const result = await serviceService.createService(db, {
         providerId: provider.id,
@@ -150,7 +150,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -189,7 +189,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -225,7 +225,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -257,7 +257,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -289,7 +289,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -319,7 +319,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
@@ -358,7 +358,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       // Create multiple services
       await serviceService.createService(db, {
@@ -395,7 +395,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       // Create two services
       const service1 = await serviceService.createService(db, {
@@ -442,7 +442,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       // Create service with no project restrictions
       await serviceService.createService(db, {
@@ -477,7 +477,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       // Create service available only in project1
       await serviceService.createService(db, {
@@ -511,7 +511,7 @@ describe('service.service — integration tests', () => {
       });
 
       // Don't approve the provider
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       // Create service for unapproved provider
       await serviceService.createService(db, {
@@ -551,7 +551,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', false);
+      await setGlobalConfig('services.require_admin_approval', false);
 
       // Create services in different categories
       await serviceService.createService(db, {
@@ -598,7 +598,7 @@ describe('service.service — integration tests', () => {
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       // Create two services
       const draftService = await serviceService.createService(db, {
@@ -646,7 +646,7 @@ describe('service.service — integration tests', () => {
       await providerService.approveProvider(db, providerApp.id, admin.id);
 
       // Step 3: Create service (approval required)
-      await configService.set(db, 'services.require_admin_approval', true);
+      await setGlobalConfig('services.require_admin_approval', true);
 
       const serviceApp = await serviceService.createService(db, {
         providerId: providerApp.id,

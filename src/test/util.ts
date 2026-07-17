@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuid } from 'uuid';
+import { clearConfigCache } from '@/modules/config';
+import { clearTranslationCache } from '@/modules/content';
 
 // Test database client — requires DATABASE_URL_TEST to protect production database
 const testDatabaseUrl = process.env.DATABASE_URL_TEST;
@@ -20,10 +22,15 @@ export const db = new PrismaClient({
 });
 
 /**
- * Reset database by truncating every table (CASCADE handles FK order).
- * Enumerating tables from pg_tables keeps this correct as the schema grows —
- * the previous hand-maintained delete list silently missed newer tables
- * (Payout, ServiceOrder, …) and failed on FK constraints.
+ * Reset the database between tests. Enumerates every table from pg_tables so it
+ * stays correct as the schema grows (the old hand-maintained delete list silently
+ * missed newer tables and failed on FK constraints).
+ *
+ * Uses DELETE with FK triggers disabled (session_replication_role = replica)
+ * rather than TRUNCATE: TRUNCATE takes an ACCESS EXCLUSIVE lock that deadlocks
+ * against the best-effort background notification/email queries that can still
+ * be in flight from a just-finished test. DELETE takes row-level locks and
+ * doesn't conflict, so resets are deadlock-free.
  */
 export async function resetDb() {
   const tables = await db.$queryRaw<Array<{ tablename: string }>>`
@@ -31,9 +38,40 @@ export async function resetDb() {
     WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
   `;
   if (tables.length === 0) return;
-  await db.$executeRawUnsafe(
-    `TRUNCATE TABLE ${tables.map((t) => `"${t.tablename}"`).join(', ')} CASCADE`
-  );
+  await db.$transaction([
+    db.$executeRawUnsafe(`SET session_replication_role = 'replica'`),
+    ...tables.map((t) => db.$executeRawUnsafe(`DELETE FROM "${t.tablename}"`)),
+    db.$executeRawUnsafe(`SET session_replication_role = 'origin'`),
+  ]);
+  // Module-level in-memory caches survive a DB wipe — clear them so a test
+  // never reads a value cached from a prior test's data.
+  clearConfigCache();
+  clearTranslationCache();
+}
+
+/**
+ * Set a global config value in tests (writes a global-scoped override, which
+ * getConfig resolves ahead of the seeded default). Keeps tests independent of
+ * the full config seed.
+ */
+export async function setGlobalConfig(key: string, value: unknown) {
+  await db.configOverride.upsert({
+    where: {
+      parameterKey_scopeType_scopeId: {
+        parameterKey: key,
+        scopeType: 'global',
+        scopeId: 'global',
+      },
+    },
+    create: {
+      parameterKey: key,
+      scopeType: 'global',
+      scopeId: 'global',
+      value: value as any,
+      updatedByIdentityId: 'test',
+    },
+    update: { value: value as any },
+  });
 }
 
 // --- Factories ---

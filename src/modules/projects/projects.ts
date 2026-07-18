@@ -70,7 +70,10 @@ export async function createProject(input: CreateProjectInput) {
       address,
       timezone,
       amenityKeys,
-      handbookKey: (handbookKey || null) as any,
+      // handbookKey is a required content-key column; default to the project's
+      // conventional handbook key when the caller doesn't supply one (the
+      // content itself can stay an unfilled draft).
+      handbookKey: handbookKey || 'project.handbook.default',
       status,
       defaultCurrency: 'THB',
     },

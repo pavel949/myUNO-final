@@ -59,7 +59,6 @@ describe('People & roles service', () => {
     });
 
     it('respects limit and offset', async () => {
-      const admin = await createIdentity({ isAdmin: true });
       for (let i = 0; i < 5; i++) {
         await createIdentity({
           firstName: `User${i}`,
@@ -316,7 +315,7 @@ describe('People & roles service', () => {
       expect(claimed.emailVerifiedAt).toBeDefined();
 
       // Verify token is consumed
-      const storedToken = await prisma.oneTimeToken.findUnique({
+      const storedToken = await prisma.oneTimeToken.findFirst({
         where: { tokenHash: hashToken(token) },
       });
       expect(storedToken?.consumedAt).toBeDefined();

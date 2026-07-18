@@ -81,9 +81,13 @@ export async function GET(req: NextRequest) {
     if (startDate && endDate) {
       const conflictingUnits = await prisma.booking.findMany({
         where: {
-          status: { in: ['confirmed', 'checked_in', 'pending_payment'] },
           startDate: { lt: endDate },
           endDate: { gt: startDate },
+          OR: [
+            { status: { in: ['confirmed', 'checked_in'] } },
+            // Unpaid holds only block while still live
+            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+          ],
         },
         select: { unitId: true },
         distinct: ['unitId'],

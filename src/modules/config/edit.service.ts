@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { ConfigKey } from './types';
-import { getConfig } from './config.service';
+import { getConfig, invalidateConfig } from './config.service';
 
 interface ConfigChangeInput {
   identityId: string;
@@ -107,6 +107,9 @@ export async function updateConfigParameter(
       changedByIdentityId: identityId,
     } as any,
   });
+
+  // Invalidate cache so the new value takes effect immediately
+  invalidateConfig(paramKey as string);
 }
 
 /**
@@ -134,13 +137,13 @@ export async function clearConfigOverride(
   const oldValue = await getConfig(db, paramKey, { projectId, unitId });
 
   // Delete the override
-  await db.configOverride.delete({
+  // deleteMany is idempotent — clearing a scope with no override is a no-op,
+  // not an error (delete() would throw P2025).
+  await db.configOverride.deleteMany({
     where: {
-      parameterKey_scopeType_scopeId: {
-        parameterKey: paramKey as string,
-        scopeType,
-        scopeId,
-      },
+      parameterKey: paramKey as string,
+      scopeType,
+      scopeId,
     },
   });
 
@@ -155,4 +158,7 @@ export async function clearConfigOverride(
       changedByIdentityId: identityId,
     } as any,
   });
+
+  // Invalidate cache so the reverted value takes effect immediately
+  invalidateConfig(paramKey as string);
 }

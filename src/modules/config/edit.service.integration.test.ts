@@ -285,7 +285,7 @@ describe('Config edit service', () => {
         },
       });
 
-      expect(override).toBeUndefined();
+      expect(override).toBeNull();
     });
 
     it('logs revert change with null newValue', async () => {
@@ -324,6 +324,7 @@ describe('Config edit service', () => {
           maxGuests: 6,
           addressSupplement: '101',
           baseNightlyThb: 2000,
+          minNights: 1,
           status: 'draft',
         },
       });
@@ -363,7 +364,7 @@ describe('Config edit service', () => {
         },
       });
 
-      expect(override).toBeUndefined();
+      expect(override).toBeNull();
     });
   });
 });

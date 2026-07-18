@@ -21,7 +21,9 @@ interface PermissionEntry {
  */
 export const PERMISSIONS: PermissionEntry[] = [
   // Projects & units — 6 capabilities
-  { action: 'projects:edit_and_set_live', role: 'staff_ops', access: 'allow' },
+  // NOTE: 'projects:edit_and_set_live' is admin-only per doc 03 §3 (row:
+  // "Create/edit projects, set live" = ✅ only for admin). staff_ops must NOT
+  // have it — an earlier allow row here was a privilege escalation (removed).
 
   { action: 'units:create', role: 'staff_ops', access: 'allow' },
   { action: 'units:create', role: 'mc_member', access: 'allow', scope: 'their_units' },

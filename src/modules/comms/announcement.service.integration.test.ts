@@ -78,7 +78,7 @@ describe('announcement.service — integration tests', () => {
       const notification = await db.notification.findFirst({
         where: {
           type: 'announcement_published',
-          recipientIdentityId: owner.id,
+          identityId: owner.id,
         },
       });
 

@@ -164,6 +164,18 @@ describe('tm30-filing.service', () => {
         bookingGuestId: bookingGuest.id,
       });
 
+      // Ops lead who should receive the escalation notification
+      const ops = await createIdentity();
+      await db.roleAssignment.create({
+        data: {
+          identityId: ops.id,
+          role: 'staff_ops',
+          scopeType: 'project',
+          projectId: project.id,
+          status: 'active',
+        },
+      });
+
       const notificationsBefore = await db.notification.count();
       await markTm30FilingFailed(db, filing.id, 'Rejected by Immigration Office');
       const notificationsAfter = await db.notification.count();
@@ -293,21 +305,21 @@ describe('tm30-filing.service', () => {
       // Create media assets for photos
       const photo1 = await db.mediaAsset.create({
         data: {
-          storage_key: 'photo1.jpg',
+          storageKey: 'photo1.jpg',
           kind: 'photo',
-          mime_type: 'image/jpeg',
-          size_bytes: 1024,
-          uploaded_by_identity_id: uploader.id,
+          mimeType: 'image/jpeg',
+          sizeBytes: 1024,
+          uploadedByIdentityId: uploader.id,
         },
       });
 
       const photo2 = await db.mediaAsset.create({
         data: {
-          storage_key: 'photo2.jpg',
+          storageKey: 'photo2.jpg',
           kind: 'photo',
-          mime_type: 'image/jpeg',
-          size_bytes: 2048,
-          uploaded_by_identity_id: uploader.id,
+          mimeType: 'image/jpeg',
+          sizeBytes: 2048,
+          uploadedByIdentityId: uploader.id,
         },
       });
 
@@ -340,11 +352,11 @@ describe('tm30-filing.service', () => {
 
       const photo = await db.mediaAsset.create({
         data: {
-          storage_key: 'photo.jpg',
+          storageKey: 'photo.jpg',
           kind: 'photo',
-          mime_type: 'image/jpeg',
-          size_bytes: 1024,
-          uploaded_by_identity_id: uploader.id,
+          mimeType: 'image/jpeg',
+          sizeBytes: 1024,
+          uploadedByIdentityId: uploader.id,
         },
       });
 

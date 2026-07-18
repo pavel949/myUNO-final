@@ -106,6 +106,26 @@ export default function BookingsAdminClient({
             {booking.status.replace(/_/g, ' ')}
           </span>
           <div className="flex items-center gap-8">
+            {booking.status === 'requested' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="sun"
+                  onClick={() => act(booking.id, 'respond', { action: 'approve' })}
+                  isLoading={busyId === booking.id}
+                >
+                  {labels['admin.bookings.approve']}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => act(booking.id, 'respond', { action: 'decline' })}
+                  isLoading={busyId === booking.id}
+                >
+                  {labels['admin.bookings.decline']}
+                </Button>
+              </>
+            )}
             {booking.status === 'pending_payment' && (
               <>
                 <input

@@ -99,14 +99,13 @@ export async function t(
     if (cached) return formatPlaceholders(cached, params);
   }
 
-  // Try database for each fallback locale
+  // Try database for each fallback locale. Translations are keyed by the
+  // ContentKey's uuid id (FK), so match through the relation on the human key.
   for (const tryLocale of fallbackChain) {
-    const translation = await db.translation.findUnique({
+    const translation = await db.translation.findFirst({
       where: {
-        contentKeyId_locale: {
-          contentKeyId: key,
-          locale: tryLocale,
-        },
+        locale: tryLocale,
+        contentKey: { key },
       },
     });
 
@@ -133,15 +132,25 @@ export async function setTranslation(
   status: 'ok' | 'needs_review' | 'missing',
   changedByIdentityId: string
 ): Promise<void> {
+  // Translation.contentKeyId is a FK to ContentKey.id (uuid), not the human key.
+  // Resolve it so the row satisfies the FK constraint.
+  const keyRow = await db.contentKey.findUnique({
+    where: { key: contentKey },
+    select: { id: true },
+  });
+  if (!keyRow) {
+    throw new Error(`Content key "${contentKey}" not found — call ensureContentKey first`);
+  }
+
   await db.translation.upsert({
     where: {
       contentKeyId_locale: {
-        contentKeyId: contentKey,
+        contentKeyId: keyRow.id,
         locale,
       },
     },
     create: {
-      contentKeyId: contentKey,
+      contentKeyId: keyRow.id,
       locale,
       value,
       status,

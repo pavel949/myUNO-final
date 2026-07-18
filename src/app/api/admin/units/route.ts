@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
 
   // Check admin permission
   if (
-    !can({
+    !(await can({
       identity,
       action: 'units:create',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -50,11 +50,11 @@ export async function GET(req: NextRequest) {
 
   // Check admin permission
   if (
-    !can({
+    !(await can({
       identity,
       action: 'units:list',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

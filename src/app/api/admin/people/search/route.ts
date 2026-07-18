@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
 
   // Check admin permission
   if (
-    !can({
+    !(await can({
       identity,
       action: 'people:view',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

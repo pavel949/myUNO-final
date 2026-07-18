@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuid } from 'uuid';
+import { clearConfigCache } from '@/modules/config';
+import { clearTranslationCache } from '@/modules/content';
 
 // Test database client — requires DATABASE_URL_TEST to protect production database
 const testDatabaseUrl = process.env.DATABASE_URL_TEST;
@@ -20,32 +22,56 @@ export const db = new PrismaClient({
 });
 
 /**
- * Reset database by deleting all tables (in dependency order to respect FKs)
+ * Reset the database between tests. Enumerates every table from pg_tables so it
+ * stays correct as the schema grows (the old hand-maintained delete list silently
+ * missed newer tables and failed on FK constraints).
+ *
+ * Uses DELETE with FK triggers disabled (session_replication_role = replica)
+ * rather than TRUNCATE: TRUNCATE takes an ACCESS EXCLUSIVE lock that deadlocks
+ * against the best-effort background notification/email queries that can still
+ * be in flight from a just-finished test. DELETE takes row-level locks and
+ * doesn't conflict, so resets are deadlock-free.
  */
 export async function resetDb() {
-  // Order matters: delete child tables before parents
-  await db.translation.deleteMany();
-  await db.contentKey.deleteMany();
-  await db.configChange.deleteMany();
-  await db.configOverride.deleteMany();
-  await db.configParameter.deleteMany();
-  await db.auditLog.deleteMany();
-  await db.projectMedia.deleteMany();
-  await db.unitMedia.deleteMany();
-  await db.roleAssignment.deleteMany();
-  await db.unitEngagement.deleteMany();
-  await db.blockedDate.deleteMany();
-  await db.pricingRule.deleteMany();
-  await db.bookingChange.deleteMany();
-  await db.bookingGuest.deleteMany();
-  await db.booking.deleteMany();
-  await db.unit.deleteMany();
-  await db.organization.deleteMany();
-  await db.project.deleteMany();
-  await db.oneTimeToken.deleteMany();
-  await db.authAccount.deleteMany();
-  await db.mediaAsset.deleteMany();
-  await db.identity.deleteMany();
+  const tables = await db.$queryRaw<Array<{ tablename: string }>>`
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
+  `;
+  if (tables.length === 0) return;
+  await db.$transaction([
+    db.$executeRawUnsafe(`SET session_replication_role = 'replica'`),
+    ...tables.map((t) => db.$executeRawUnsafe(`DELETE FROM "${t.tablename}"`)),
+    db.$executeRawUnsafe(`SET session_replication_role = 'origin'`),
+  ]);
+  // Module-level in-memory caches survive a DB wipe — clear them so a test
+  // never reads a value cached from a prior test's data.
+  clearConfigCache();
+  clearTranslationCache();
+}
+
+/**
+ * Set a global config value in tests (writes a global-scoped override, which
+ * getConfig resolves ahead of the seeded default). Keeps tests independent of
+ * the full config seed.
+ */
+export async function setGlobalConfig(key: string, value: unknown) {
+  await db.configOverride.upsert({
+    where: {
+      parameterKey_scopeType_scopeId: {
+        parameterKey: key,
+        scopeType: 'global',
+        scopeId: 'global',
+      },
+    },
+    create: {
+      parameterKey: key,
+      scopeType: 'global',
+      scopeId: 'global',
+      value: value as any,
+      updatedByIdentityId: 'test',
+    },
+    update: { value: value as any },
+  });
 }
 
 // --- Factories ---
@@ -182,6 +208,23 @@ export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
   });
 }
 
+export async function createOrganization(
+  name = `Org-${uuid().slice(0, 8)}`,
+  projectId?: string,
+  orgType: 'management_company' | 'juristic_person' | 'developer' = 'management_company'
+) {
+  return db.organization.create({
+    data: {
+      name,
+      orgType,
+      projectId,
+      contactEmail: `org-${uuid().slice(0, 8)}@example.com`,
+      contactPhone: '+66800000000',
+      status: 'active',
+    },
+  });
+}
+
 export interface ProviderFactoryOpts {
   name?: string;
   description?: string;
@@ -230,8 +273,13 @@ export interface BookingFactoryOpts {
   guestIdentityId: string;
   startDate?: Date;
   endDate?: Date;
-  status?: 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled';
+  status?: 'requested' | 'pending_payment' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled' | 'declined' | 'expired';
   verificationStatus?: 'not_required' | 'pending' | 'passports_received' | 'failed';
+  totalThb?: number;
+  adults?: number;
+  children?: number;
+  holdExpiresAt?: Date | null;
+  cancellationPolicySnapshot?: Record<string, unknown>;
 }
 
 export async function createBooking(opts: BookingFactoryOpts) {
@@ -247,11 +295,15 @@ export async function createBooking(opts: BookingFactoryOpts) {
       channel: 'direct',
       startDate,
       endDate,
-      adults: 2,
-      children: 0,
-      totalThb: 4000,
+      adults: opts.adults ?? 2,
+      children: opts.children ?? 0,
+      totalThb: opts.totalThb ?? 4000,
       status: opts.status || 'confirmed',
       verificationStatus: opts.verificationStatus || 'not_required',
+      ...(opts.holdExpiresAt !== undefined && { holdExpiresAt: opts.holdExpiresAt }),
+      ...(opts.cancellationPolicySnapshot && {
+        cancellationPolicySnapshot: opts.cancellationPolicySnapshot as any,
+      }),
     },
   });
 }

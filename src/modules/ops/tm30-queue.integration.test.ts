@@ -138,7 +138,7 @@ describe('TM30 queue operations', () => {
 
       const auditLog = await db.auditLog.findFirst({
         where: {
-          resourceId: filing.id,
+          entityId: filing.id,
           action: 'viewed_passport_details',
         },
       });

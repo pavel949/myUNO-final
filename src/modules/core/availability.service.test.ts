@@ -69,7 +69,7 @@ describe('Availability & Pricing Service', () => {
 
     it('applies PricingRule over season markup and base', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, { baseNightlyThb: 1000 });
+      const unit = await createUnit({ projectId: project.id, baseNightlyThb: 1000 });
 
       // Create a PricingRule for this date
       await prisma.pricingRule.create({
@@ -92,7 +92,7 @@ describe('Availability & Pricing Service', () => {
 
     it('applies season markup when no PricingRule exists', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, { baseNightlyThb: 1000 });
+      const unit = await createUnit({ projectId: project.id, baseNightlyThb: 1000 });
 
       // Without a rule, should fall back to base (config doesn't have season)
       const price = await getApplicableNightlyPrice(
@@ -107,7 +107,7 @@ describe('Availability & Pricing Service', () => {
 
     it('applies base price as fallback', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, { baseNightlyThb: 1500 });
+      const unit = await createUnit({ projectId: project.id, baseNightlyThb: 1500 });
 
       const price = await getApplicableNightlyPrice(
         prisma,
@@ -122,7 +122,7 @@ describe('Availability & Pricing Service', () => {
   describe('computePriceBreakdown', () => {
     it('rejects party size exceeding max guests', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, { maxGuests: 4 });
+      const unit = await createUnit({ projectId: project.id, maxGuests: 4 });
 
       await expect(
         computePriceBreakdown(
@@ -137,7 +137,7 @@ describe('Availability & Pricing Service', () => {
 
     it('rejects stay shorter than minimum nights', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, { minNights: 3 });
+      const unit = await createUnit({ projectId: project.id, minNights: 3 });
 
       await expect(
         computePriceBreakdown(
@@ -152,7 +152,7 @@ describe('Availability & Pricing Service', () => {
 
     it('computes basic breakdown without discounts', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -177,7 +177,7 @@ describe('Availability & Pricing Service', () => {
 
     it('applies weekly LOS discount (≥7 nights)', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -212,7 +212,7 @@ describe('Availability & Pricing Service', () => {
 
     it('applies monthly LOS discount (≥28 nights) and beats weekly', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -260,7 +260,7 @@ describe('Availability & Pricing Service', () => {
 
     it('includes cleaning fee in breakdown', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -295,7 +295,7 @@ describe('Availability & Pricing Service', () => {
 
     it('includes guest service fee in breakdown', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -330,7 +330,7 @@ describe('Availability & Pricing Service', () => {
 
     it('includes occupancy tax in breakdown', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -365,7 +365,7 @@ describe('Availability & Pricing Service', () => {
 
     it('computes full breakdown with all fees and discounts', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id, {
+      const unit = await createUnit({ projectId: project.id,
         baseNightlyThb: 1000,
         minNights: 1,
         maxGuests: 2,
@@ -441,10 +441,10 @@ describe('Availability & Pricing Service', () => {
       // Cleaning fee: 1000
       expect(breakdown.cleaning_fee_thb).toBe(1000);
 
-      // Service fee: 12% of (7000 - 700 + 1000) = 12% of 7300 = 876
+      // Service fee: 12% of (subtotal - LOS discount) = 12% of 6300 = 756
+      // (the cleaning fee is not part of the guest service-fee base)
       const subtotalAfterDiscount = 7000 - 700;
-      const serviceFeeBase = subtotalAfterDiscount + 1000;
-      expect(breakdown.service_fee_thb).toBe(Math.round(serviceFeeBase * 0.12));
+      expect(breakdown.service_fee_thb).toBe(Math.round(subtotalAfterDiscount * 0.12));
 
       // Occupancy tax: 8% of (7000 - 700 + 1000 + service_fee)
       const taxBase = subtotalAfterDiscount + 1000 + breakdown.service_fee_thb;

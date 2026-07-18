@@ -219,7 +219,7 @@ export default async function LandingPage() {
             {labels['landing.services.body']}
           </p>
           <Link
-            href="/guests"
+            href="/services"
             className="inline-flex items-center justify-center bg-brand-andaman text-surface-ivory px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
             {labels['landing.services.cta']}

@@ -71,7 +71,7 @@ describe('thread.service — integration tests', () => {
       const guest = await createIdentity();
       const host = await createIdentity();
 
-      await threadService.findOrCreateThread(db, {
+      const thread = await threadService.findOrCreateThread(db, {
         contextType: 'booking',
         contextId: 'booking-789',
         projectId: project.id,
@@ -83,7 +83,7 @@ describe('thread.service — integration tests', () => {
       });
 
       const participants = await db.threadParticipant.findMany({
-        where: { threadId: 'booking-789' },
+        where: { threadId: thread.id },
       });
 
       const guestParticipant = participants.find((p) => p.identityId === guest.id);

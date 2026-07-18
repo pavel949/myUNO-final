@@ -129,7 +129,6 @@ describe('Compliance & Mobilization', () => {
           engagementType: 'direct_managed',
           ownerIdentityId: owner.id,
           noiCapAnnualThb: 500000,
-          mandateMediaId: 'test-media-id',
           status: 'active',
         },
       });
@@ -247,14 +246,14 @@ describe('Compliance & Mobilization', () => {
       ).rejects.toThrow('NOI cap is required');
     });
 
-    it('allows noiCapAnnualThb to be optional for via_owner engagement', async () => {
+    it('allows noiCapAnnualThb to be optional for owner_direct engagement', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
       const owner = await createIdentity();
 
       const { id } = await createUnitEngagement(db, {
         unitId: unit.id,
-        engagementType: 'via_owner',
+        engagementType: 'owner_direct',
         ownerIdentityId: owner.id,
       });
 

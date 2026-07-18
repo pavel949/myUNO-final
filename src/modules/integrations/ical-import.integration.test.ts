@@ -180,7 +180,7 @@ describe('iCal import integration tests', () => {
     const blocked = await prisma.blockedDate.findFirst({
       where: { unitId: unit.id, externalRef: event.uid },
     });
-    expect(blocked).toBeUndefined();
+    expect(blocked).toBeNull();
   });
 
   it('handles import errors gracefully and records integration sync state', async () => {
@@ -243,7 +243,7 @@ describe('iCal import integration tests', () => {
       events
     );
 
-    expect(result.imported).toBe(1); // First event succeeds
+    expect(result.imported).toBe(2); // Both valid events succeed
     expect(result.errors).toHaveLength(0); // No actual errors in happy path
     expect(result.conflicts).toHaveLength(0);
 

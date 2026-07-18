@@ -18,11 +18,11 @@ export async function POST(
 
   // Check admin permission for compliance actions
   if (
-    !can({
+    !(await can({
       identity,
       action: 'compliance:confirm_permitted_use',
       resource: { resourceType: 'platform' },
-    })
+    }))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

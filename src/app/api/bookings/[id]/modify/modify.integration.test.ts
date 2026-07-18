@@ -1,328 +1,215 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { prisma } from '@/lib/prisma';
-import { POST } from './route';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createBooking,
+} from '@/test/util';
 
-let mockUser: any;
+const mockGetCurrentUser = vi.fn();
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util');
+  return { prisma: util.db };
+});
+
+import { POST } from './route';
+
+function makeRequest(body: unknown): NextRequest {
+  return new NextRequest('http://localhost/api/bookings/x/modify', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 describe('POST /api/bookings/[id]/modify', () => {
-  let guestIdentity: any;
-  let unitOwner: any;
-  let unit: any;
-  let project: any;
+  let guest: Awaited<ReturnType<typeof createIdentity>>;
+  let projectId: string;
+  let unitId: string;
 
-  beforeAll(async () => {
-    // Create test project
-    project = await prisma.project.create({
-      data: {
-        name: 'Test Project',
-        slug: 'test-project-modify',
-        status: 'active',
-      },
-    });
-
-    // Create owner identity
-    unitOwner = await prisma.identity.create({
-      data: {
-        type: 'guest',
-        email: `owner-modify-${Date.now()}@test.com`,
-      },
-    });
-
-    // Create guest identity
-    guestIdentity = await prisma.identity.create({
-      data: {
-        type: 'guest',
-        email: `guest-modify-${Date.now()}@test.com`,
-      },
-    });
-
-    // Create unit with price
-    unit = await prisma.unit.create({
-      data: {
-        name: 'Test Unit Modify',
-        projectId: project.id,
-        ownerIdentityId: unitOwner.id,
-        unitType: 'villa',
-        bedrooms: 1,
-        bathrooms: 1,
-        maxGuests: 4,
-        addressSupplement: 'Test Address',
-        baseNightlyThb: 1000,
-        minNights: 1,
-      },
-    });
+  beforeEach(async () => {
+    await resetDb();
+    guest = await createIdentity({ firstName: 'Guest' });
+    const project = await createProject({ status: 'live' });
+    projectId = project.id;
+    // baseNightlyThb 1000 so night math is easy to assert
+    const unit = await createUnit({ projectId, baseNightlyThb: 1000, minNights: 1 });
+    unitId = unit.id;
   });
 
-  afterAll(async () => {
-    await prisma.unit.deleteMany({ where: { id: unit.id } });
-    await prisma.project.deleteMany({ where: { id: project.id } });
-    await prisma.identity.deleteMany({ where: { id: { in: [guestIdentity.id, unitOwner.id] } } });
+  const asUser = (identityId: string) => ({
+    identityId,
+    email: 'x@test.com',
+    firstName: 'X',
+    lastName: 'Y',
+    isAdmin: false,
+    roles: [],
   });
 
-  it('guest can extend booking with balance due', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-08-15T15:00:00Z'),
-        endDate: new Date('2026-08-17T15:00:00Z'), // 2 nights
-        adults: 2,
-        children: 0,
-        totalThb: 2000, // 2 nights × 1000
-      },
+  it('extends a booking and reports the balance due', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-15'),
+      endDate: new Date('2026-08-17'), // 2 nights
+      totalThb: 2000,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        endDate: '2026-08-18T15:00:00Z', // extend by 1 night
-      }),
+    const res = await POST(makeRequest({ endDate: '2026-08-18' }), {
+      params: { id: booking.id },
     });
+    const body = await res.json();
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(result.booking.totalThb).toBe(3000); // 3 nights × 1000
-    expect(result.pricing.balanceThb).toBe(1000); // owed for additional night
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.totalThb).toBe(3000);
+    expect(body.pricing.balanceThb).toBe(1000);
   });
 
-  it('guest can shorten booking with refund accrued', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-08-20T15:00:00Z'),
-        endDate: new Date('2026-08-23T15:00:00Z'), // 3 nights
-        adults: 2,
-        children: 0,
-        totalThb: 3000, // 3 nights × 1000
-      },
+  it('shortens a booking and accrues a refund', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-20'),
+      endDate: new Date('2026-08-23'), // 3 nights
+      totalThb: 3000,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        endDate: '2026-08-22T15:00:00Z', // shorten by 1 night
-      }),
+    const res = await POST(makeRequest({ endDate: '2026-08-22' }), {
+      params: { id: booking.id },
     });
+    const body = await res.json();
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(result.booking.totalThb).toBe(2000); // 2 nights × 1000
-    expect(result.pricing.balanceThb).toBe(-1000); // refund due
-    expect(result.booking.refundAccruedThb).toBe(1000); // accrued refund
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.totalThb).toBe(2000);
+    expect(body.pricing.balanceThb).toBe(-1000);
+    expect(body.booking.refundAccruedThb).toBe(1000);
   });
 
-  it('guest can change party size', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-08-25T15:00:00Z'),
-        endDate: new Date('2026-08-27T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 2000,
-      },
+  it('changes party size', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-25'),
+      endDate: new Date('2026-08-27'),
+      totalThb: 2000,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        adultsCount: 3,
-        childrenCount: 1,
-      }),
+    const res = await POST(makeRequest({ adultsCount: 3, childrenCount: 1 }), {
+      params: { id: booking.id },
     });
+    const body = await res.json();
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(result.booking.adults).toBe(3);
-    expect(result.booking.children).toBe(1);
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.adults).toBe(3);
+    expect(body.booking.children).toBe(1);
   });
 
-  it('detects availability conflict when modifying dates', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    // Create two bookings
-    const booking1 = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-09-01T15:00:00Z'),
-        endDate: new Date('2026-09-03T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 2000,
-      },
+  it('never leaks the guest password hash in the response', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-25'),
+      endDate: new Date('2026-08-27'),
+      totalThb: 2000,
     });
 
-    // Create another user's booking
-    const otherGuest = await prisma.identity.create({
-      data: {
-        type: 'guest',
-        email: `other-${Date.now()}@test.com`,
-      },
+    const res = await POST(makeRequest({ adultsCount: 3 }), {
+      params: { id: booking.id },
     });
-
-    const booking2 = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: otherGuest.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-09-05T15:00:00Z'),
-        endDate: new Date('2026-09-07T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 2000,
-      },
-    });
-
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    // Try to extend booking1 into booking2's dates
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        endDate: '2026-09-06T15:00:00Z', // conflicts with booking2
-      }),
-    });
-
-    const response = await POST(req, { params: { id: booking1.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(result.error).toContain('unavailable');
-
-    await prisma.booking.deleteMany({ where: { id: { in: [booking1.id, booking2.id] } } });
-    await prisma.identity.deleteMany({ where: { id: otherGuest.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    const raw = JSON.stringify(await res.json());
+    expect(raw).not.toContain('hashedPassword');
   });
 
-  it('unauthorized user cannot modify booking', async () => {
-    mockUser = { identityId: 'unauthorized-id' };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-09-10T15:00:00Z'),
-        endDate: new Date('2026-09-12T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 2000,
-      },
+  it('detects an availability conflict when extending into another booking', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking1 = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-09-01'),
+      endDate: new Date('2026-09-03'),
+      totalThb: 2000,
+    });
+    const otherGuest = await createIdentity({ firstName: 'Other' });
+    await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: otherGuest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-09-05'),
+      endDate: new Date('2026-09-07'),
+      totalThb: 2000,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        endDate: '2026-09-13T15:00:00Z',
-      }),
+    const res = await POST(makeRequest({ endDate: '2026-09-06' }), {
+      params: { id: booking1.id },
     });
+    const body = await res.json();
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(403);
-    expect(result.error).toContain('Not authorized');
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(400);
+    expect(body.error).toContain('unavailable');
   });
 
-  it('cannot modify non-confirmed booking', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'pending_payment', // not confirmed
-        startDate: new Date('2026-09-15T15:00:00Z'),
-        endDate: new Date('2026-09-17T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 2000,
-      },
+  it('rejects an unauthorized modifier with 403', async () => {
+    const stranger = await createIdentity({ firstName: 'Stranger' });
+    mockGetCurrentUser.mockResolvedValue(asUser(stranger.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-09-10'),
+      endDate: new Date('2026-09-12'),
+      totalThb: 2000,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
+    const res = await POST(makeRequest({ endDate: '2026-09-13' }), {
+      params: { id: booking.id },
+    });
+    const body = await res.json();
 
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/modify'), {
-      method: 'POST',
-      body: JSON.stringify({
-        endDate: '2026-09-18T15:00:00Z',
-      }),
+    expect(res.status).toBe(403);
+    expect(body.error).toContain('authorized');
+  });
+
+  it('cannot modify a non-confirmed booking', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'pending_payment',
+      startDate: new Date('2026-09-15'),
+      endDate: new Date('2026-09-17'),
+      totalThb: 2000,
     });
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
+    const res = await POST(makeRequest({ endDate: '2026-09-18' }), {
+      params: { id: booking.id },
+    });
+    const body = await res.json();
 
-    expect(response.status).toBe(400);
-    expect(result.error).toContain('Cannot modify booking');
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(400);
+    expect(body.error).toContain('Cannot modify booking');
   });
 });

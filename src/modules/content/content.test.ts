@@ -4,10 +4,22 @@ import { t, setTranslation, ensureContentKey, clearTranslationCache } from './co
 import { seedContent } from './seed';
 import { DEFAULT_LOCALE } from './types';
 
+// Translations are FK-linked to ContentKey.id and authored by a real identity.
+// A helper to resolve a content key's uuid for direct table assertions.
+async function keyId(key: string): Promise<string> {
+  const row = await db.contentKey.findUnique({ where: { key }, select: { id: true } });
+  if (!row) throw new Error(`content key ${key} not seeded`);
+  return row.id;
+}
+
 describe('T-004 · Content module', () => {
+  let authorId: string;
+
   beforeAll(async () => {
     await resetDb();
     await seedContent(db);
+    // A real identity to author test translations (updatedByIdentityId is a FK).
+    authorId = (await createIdentity()).id;
   });
 
   afterAll(async () => {
@@ -23,11 +35,11 @@ describe('T-004 · Content module', () => {
 
     it('falls back to en when requested locale missing', async () => {
       clearTranslationCache();
-      // Delete TH translation
+      // Delete TH translation (keyed by the ContentKey uuid, not the human key)
       await db.translation.delete({
         where: {
           contentKeyId_locale: {
-            contentKeyId: 'common.action.save',
+            contentKeyId: await keyId('common.action.save'),
             locale: 'th',
           },
         },
@@ -47,7 +59,7 @@ describe('T-004 · Content module', () => {
         'ru',
         'Только русский',
         'ok',
-        'system'
+        authorId
       );
 
       const result = await t(db, 'test.fallback.only_ru', {}, 'th');
@@ -88,7 +100,7 @@ describe('T-004 · Content module', () => {
         'en',
         'Hello {name}, you have {count} messages',
         'ok',
-        'system'
+        authorId
       );
 
       const result = await t(db, 'test.placeholder.simple', {
@@ -107,7 +119,7 @@ describe('T-004 · Content module', () => {
         'en',
         '{user} confirmed {user}',
         'ok',
-        'system'
+        authorId
       );
 
       const result = await t(db, 'test.placeholder.repeat', { user: 'Bob' });
@@ -123,7 +135,7 @@ describe('T-004 · Content module', () => {
         'en',
         'No placeholders here',
         'ok',
-        'system'
+        authorId
       );
 
       const result = await t(db, 'test.placeholder.none');
@@ -145,13 +157,13 @@ describe('T-004 · Content module', () => {
       clearTranslationCache();
       const key = 'test.cache.invalidate';
       await ensureContentKey(db, key, 'test', 'Test cache');
-      await setTranslation(db, key, 'en', 'Original', 'ok', 'system');
+      await setTranslation(db, key, 'en', 'Original', 'ok', authorId);
 
       const value1 = await t(db, key, {}, 'en');
       expect(value1).toBe('Original');
 
       // Update translation
-      await setTranslation(db, key, 'en', 'Updated', 'ok', 'system');
+      await setTranslation(db, key, 'en', 'Updated', 'ok', authorId);
 
       const value2 = await t(db, key, {}, 'en');
       expect(value2).toBe('Updated');
@@ -170,8 +182,10 @@ describe('T-004 · Content module', () => {
     });
 
     it('creates translations for all locales', async () => {
+      // Use a key not mutated by the fallback-chain tests above (which delete
+      // the TH row of common.action.save to exercise the fallback).
       const translations = await db.translation.findMany({
-        where: { contentKeyId: 'common.action.save' },
+        where: { contentKey: { key: 'common.action.cancel' } },
       });
 
       expect(translations).toHaveLength(3);
@@ -222,7 +236,7 @@ describe('T-004 · Content module', () => {
       const translation = await db.translation.findUnique({
         where: {
           contentKeyId_locale: {
-            contentKeyId: key,
+            contentKeyId: await keyId(key),
             locale: 'en',
           },
         },

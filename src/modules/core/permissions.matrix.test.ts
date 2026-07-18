@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db as prisma, resetDb, factories } from '@/test/util';
+import { db as prisma, resetDb, createProject } from '@/test/util';
 import { can, PERMISSIONS, getIdentityRoles, hasRole } from './permissions';
 import { grantRole, revokeRole } from './roles';
 import { RoleType } from '@prisma/client';
@@ -248,7 +248,7 @@ const MATRIX_CAPABILITIES = [
     capability: 'Submit own passport data pre-arrival',
     action: 'compliance:submit_own_passport_data',
     expected: {
-      admin: false, // n/a
+      admin: true, // admin bypasses all via isAdmin (can() rule 2); n/a in practice
       staff_ops: false, // n/a
       onsite_host: false, // n/a
       owner: true,
@@ -364,7 +364,7 @@ const MATRIX_CAPABILITIES = [
     capability: 'View own statements & payouts',
     action: 'money:view_own_statements_and_payouts',
     expected: {
-      admin: false, // n/a
+      admin: true, // admin bypasses all via isAdmin (can() rule 2); n/a in practice
       staff_ops: false, // n/a
       onsite_host: false, // n/a
       owner: true,
@@ -544,7 +544,7 @@ const MATRIX_CAPABILITIES = [
     capability: 'Review own completed stay/order',
     action: 'reviews:review_own_completed_stay_or_order',
     expected: {
-      admin: false, // n/a
+      admin: true, // admin bypasses all via isAdmin (can() rule 2); n/a in practice
       staff_ops: false, // n/a
       onsite_host: false, // n/a
       owner: true,
@@ -674,19 +674,27 @@ const MATRIX_CAPABILITIES = [
 
 describe('Permissions matrix (doc 03 §3)', () => {
   let testProjectId: string;
+  // grantRole requires an admin granter (only core/admins write roles).
+  let adminGranterId: string;
 
   beforeEach(async () => {
     await resetDb();
 
     // Create a test project for scoped role tests
-    const project = await prisma.project.create({
-      data: {
-        name: 'Test Project',
-        status: 'live',
-      },
-    });
+    const project = await createProject({ status: 'live' });
 
     testProjectId = project.id;
+
+    const granter = await prisma.identity.create({
+      data: {
+        firstName: 'Granter',
+        lastName: 'Admin',
+        email: `granter-${testProjectId}@test.com`,
+        isAdmin: true,
+        status: 'active',
+      },
+    });
+    adminGranterId = granter.id;
   });
 
   afterEach(async () => {
@@ -727,15 +735,15 @@ describe('Permissions matrix (doc 03 §3)', () => {
         },
       });
 
-      // Grant some roles to the blocked user
+      // Grant a role that would otherwise allow the action
       await grantRole({
         identityId: blocked.id,
-        role: 'admin',
+        role: 'guest',
         scopeType: 'platform',
-        grantedByIdentityId: blocked.id,
+        grantedByIdentityId: adminGranterId,
       });
 
-      // Even with admin role, blocked identities should be denied
+      // Even with a permitting role, blocked identities are denied (can() rule 1)
       const result = await can({
         identity: blocked,
         action: 'stays:book_or_pay',
@@ -750,27 +758,33 @@ describe('Permissions matrix (doc 03 §3)', () => {
       describe(`Capability: ${capability.capability}`, () => {
         for (const [role, expectedCanAccess] of Object.entries(capability.expected)) {
           it(`${role} ${expectedCanAccess ? 'can' : 'cannot'} ${capability.action}`, async () => {
+            // 'admin' is the isAdmin flag (the founder), not a RoleType — it
+            // bypasses the PERMISSIONS table. Every other role is a data-driven
+            // RoleAssignment scoped to the test project.
+            const isAdminRole = role === 'admin';
             const identity = await prisma.identity.create({
               data: {
                 firstName: role,
                 lastName: 'User',
                 email: `${role}@test.com`,
                 status: 'active',
+                isAdmin: isAdminRole,
               },
             });
 
-            // Grant the role to the identity
-            await grantRole({
-              identityId: identity.id,
-              role: role as RoleType,
-              scopeType: 'platform',
-              projectId: testProjectId,
-              grantedByIdentityId: identity.id,
-            });
+            if (!isAdminRole) {
+              await grantRole({
+                identityId: identity.id,
+                role: role as RoleType,
+                scopeType: 'platform',
+                projectId: testProjectId,
+                grantedByIdentityId: adminGranterId,
+              });
 
-            // Verify the role was granted
-            const roles = await getIdentityRoles(identity.id);
-            expect(roles).toContain(role as RoleType);
+              // Verify the role was granted
+              const roles = await getIdentityRoles(identity.id);
+              expect(roles).toContain(role as RoleType);
+            }
 
             // Test the permission
             const result = await can({
@@ -805,16 +819,11 @@ describe('Permissions matrix (doc 03 §3)', () => {
         role: 'staff_ops',
         scopeType: 'project',
         projectId: testProjectId,
-        grantedByIdentityId: identity.id,
+        grantedByIdentityId: adminGranterId,
       });
 
       // Create another project
-      const otherProject = await prisma.project.create({
-        data: {
-          name: 'Other Project',
-          status: 'live',
-        },
-      });
+      const otherProject = await createProject({ status: 'live' });
 
       // Should allow in testProjectId
       const allowedResult = await can({
@@ -855,7 +864,7 @@ describe('Permissions matrix (doc 03 §3)', () => {
         role: 'staff_ops',
         scopeType: 'project',
         projectId: testProjectId,
-        grantedByIdentityId: identity.id,
+        grantedByIdentityId: adminGranterId,
       });
 
       let result = await can({
@@ -897,7 +906,7 @@ describe('Permissions matrix (doc 03 §3)', () => {
         role: 'staff_ops',
         scopeType: 'project',
         projectId: testProjectId,
-        grantedByIdentityId: identity.id,
+        grantedByIdentityId: adminGranterId,
       });
 
       await revokeRole({
@@ -912,7 +921,7 @@ describe('Permissions matrix (doc 03 §3)', () => {
         role: 'staff_ops',
         scopeType: 'project',
         projectId: testProjectId,
-        grantedByIdentityId: identity.id,
+        grantedByIdentityId: adminGranterId,
       });
 
       const result = await can({

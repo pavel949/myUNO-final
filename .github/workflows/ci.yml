@@ -67,4 +67,6 @@ jobs:
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        run: npx vitest run 2>&1 | tee test-output.log
+        run: |
+          set -o pipefail
+          npx vitest run 2>&1 | tee test-output.log

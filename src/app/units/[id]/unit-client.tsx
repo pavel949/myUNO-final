@@ -390,24 +390,16 @@ export default function UnitDetailClient({
                 </div>
               )}
 
+              {/* Booking type is a property of the unit, not a guest choice —
+                  showing it read-only prevents a guest routing themselves into
+                  request-to-book on an instant-book unit. */}
               <div className="mb-24">
-                <label
-                  htmlFor="booking-type"
-                  className="block text-small font-semibold text-text-ink mb-8"
-                >
+                <span className="block text-small font-semibold text-text-ink mb-8">
                   {labels.bookingType}
-                </label>
-                <select
-                  id="booking-type"
-                  value={bookingType}
-                  onChange={(e) => setBookingType(e.target.value as 'instant' | 'request')}
-                  className="w-full h-48 px-12 border border-border-line rounded-sm text-body bg-surface-paper text-text-ink"
-                >
-                  {unit.instantBook !== false && (
-                    <option value="instant">{labels.instantBook}</option>
-                  )}
-                  <option value="request">{labels.requestToBook}</option>
-                </select>
+                </span>
+                <p className="text-body text-text-secondary">
+                  {bookingType === 'instant' ? labels.instantBook : labels.requestToBook}
+                </p>
               </div>
 
               <div className="mb-24">

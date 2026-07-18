@@ -6,7 +6,7 @@ import {
   decryptPassportNumber,
   checkVerificationDeadlines,
 } from './verification.service';
-import { decrypt } from '@/lib/encryption';
+import { encrypt, decrypt } from '@/lib/encryption';
 
 describe('verification.service', () => {
   beforeEach(async () => {
@@ -57,17 +57,25 @@ describe('verification.service', () => {
         status: 'confirmed',
         verificationStatus: 'pending',
       });
-      const guest1 = await createBookingGuest({
-        bookingId: booking.id,
-        fullName: 'John Doe',
-        nationality: 'US',
-        passportNumber: 'AB123456',
+      // Guests start with no passport captured yet (empty string, as the real
+      // guest-add flow does), so completeness only flips after both capture.
+      const guest1 = await db.bookingGuest.create({
+        data: {
+          bookingId: booking.id,
+          fullName: 'John Doe',
+          nationality: 'US',
+          passportNumber: '',
+          isLead: true,
+        },
       });
-      const guest2 = await createBookingGuest({
-        bookingId: booking.id,
-        fullName: 'Jane Doe',
-        nationality: 'GB',
-        passportNumber: 'CD789012',
+      const guest2 = await db.bookingGuest.create({
+        data: {
+          bookingId: booking.id,
+          fullName: 'Jane Doe',
+          nationality: 'GB',
+          passportNumber: '',
+          isLead: false,
+        },
       });
 
       // Capture first guest
@@ -117,7 +125,7 @@ describe('verification.service', () => {
           bookingId: booking.id,
           fullName: 'Test User',
           nationality: 'US',
-          passportNumber: 'ENCRYPTED_VALUE',
+          passportNumber: encrypt('ENCRYPTED_VALUE'),
           isLead: true,
         },
       });

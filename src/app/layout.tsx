@@ -20,6 +20,7 @@ export default async function RootLayout({
 
   const navLabels = await getLabels({
     'nav.find_stay': 'Find a stay',
+    'nav.services': 'Services',
     'nav.trust': 'Trust',
     'nav.login': 'Log in',
     'nav.register': 'Sign up',
@@ -71,6 +72,7 @@ export default async function RootLayout({
           }
           labels={{
             findStay: navLabels['nav.find_stay'],
+            services: navLabels['nav.services'],
             trust: navLabels['nav.trust'],
             login: navLabels['nav.login'],
             register: navLabels['nav.register'],

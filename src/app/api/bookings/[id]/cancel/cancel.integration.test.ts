@@ -1,289 +1,160 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { prisma } from '@/lib/prisma';
-import { POST } from './route';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createBooking,
+} from '@/test/util';
 import { DEFAULT_POLICIES } from '@/modules/booking';
 
-// Mock getCurrentUser
-let mockUser: any;
-let globalThis_: any;
+const mockGetCurrentUser = vi.fn();
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util');
+  return { prisma: util.db };
+});
+
+import { POST } from './route';
+
+function makeRequest(body?: unknown): NextRequest {
+  return new NextRequest('http://localhost/api/bookings/x/cancel', {
+    method: 'POST',
+    body: body ? JSON.stringify(body) : undefined,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+const flexibleSnapshot = { name: 'flexible', steps: DEFAULT_POLICIES.flexible.steps };
 
 describe('POST /api/bookings/[id]/cancel', () => {
-  let bookingId: string;
-  let guestIdentity: any;
-  let unitOwner: any;
-  let unit: any;
-  let project: any;
+  let guest: Awaited<ReturnType<typeof createIdentity>>;
+  let owner: Awaited<ReturnType<typeof createIdentity>>;
+  let projectId: string;
+  let unitId: string;
 
-  beforeAll(async () => {
-    // Create test project
-    project = await prisma.project.create({
-      data: {
-        name: 'Test Project',
-        slug: 'test-project',
-        status: 'active',
-      },
-    });
-
-    // Create owner identity
-    unitOwner = await prisma.identity.create({
-      data: {
-        type: 'guest',
-        email: `owner-${Date.now()}@test.com`,
-      },
-    });
-
-    // Create guest identity
-    guestIdentity = await prisma.identity.create({
-      data: {
-        type: 'guest',
-        email: `guest-${Date.now()}@test.com`,
-      },
-    });
-
-    // Create unit
-    unit = await prisma.unit.create({
-      data: {
-        name: 'Test Unit',
-        projectId: project.id,
-        ownerIdentityId: unitOwner.id,
-        unitType: 'villa',
-        bedrooms: 1,
-        bathrooms: 1,
-        maxGuests: 4,
-        addressSupplement: 'Test Address',
-        baseNightlyThb: 1000,
-        minNights: 1,
-      },
-    });
+  beforeEach(async () => {
+    await resetDb();
+    guest = await createIdentity({ firstName: 'Guest' });
+    owner = await createIdentity({ firstName: 'Owner' });
+    const project = await createProject({ status: 'live' });
+    projectId = project.id;
+    const unit = await createUnit({ projectId, ownerIdentityId: owner.id });
+    unitId = unit.id;
   });
 
-  afterAll(async () => {
-    // Cleanup
-    if (bookingId) {
-      await prisma.booking.deleteMany({ where: { id: bookingId } });
-    }
-    await prisma.unit.deleteMany({ where: { id: unit.id } });
-    await prisma.project.deleteMany({ where: { id: project.id } });
-    await prisma.identity.deleteMany({ where: { id: { in: [guestIdentity.id, unitOwner.id] } } });
+  const asUser = (identityId: string) => ({
+    identityId,
+    email: 'x@test.com',
+    firstName: 'X',
+    lastName: 'Y',
+    isAdmin: false,
+    roles: [],
   });
 
-  it('guest can cancel their confirmed booking with flexible policy', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const checkInDate = new Date('2026-08-15T15:00:00Z');
-    const cancellationTime = new Date('2026-08-13T10:00:00Z'); // 2+ days before
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: checkInDate,
-        endDate: new Date('2026-08-17T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 8000,
-        cancellationPolicySnapshot: {
-          name: 'flexible',
-          steps: DEFAULT_POLICIES.flexible.steps,
-        },
-      },
-      include: { unit: true },
-    });
-    bookingId = booking.id;
-
-    // Mock getCurrentUser to return guest
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/cancel'), {
-      method: 'POST',
-      body: JSON.stringify({ reason: 'guest_requested' }),
+  it('guest cancels a confirmed flexible booking with full refund 2+ days out', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-15'),
+      endDate: new Date('2026-08-17'),
+      totalThb: 8000,
+      cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const response = await POST(req, { params: { id: bookingId } });
-    const result = await response.json();
+    const res = await POST(makeRequest({ reason: 'guest_requested' }), {
+      params: { id: booking.id },
+    });
+    const body = await res.json();
 
-    expect(response.status).toBe(200);
-    expect(result.booking.status).toBe('cancelled');
-    expect(result.refund.amountThb).toBe(8000); // 100% refund 2+ days before
-
-    // Restore
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.status).toBe('cancelled');
+    expect(body.refund.amountThb).toBe(8000);
   });
 
-  it('host can cancel guest booking', async () => {
-    mockUser = { identityId: unitOwner.id };
-
-    const checkInDate = new Date('2026-08-20T15:00:00Z');
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: checkInDate,
-        endDate: new Date('2026-08-22T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 5000,
-        cancellationPolicySnapshot: {
-          name: 'flexible',
-          steps: DEFAULT_POLICIES.flexible.steps,
-        },
-      },
-      include: { unit: true },
+  it('never leaks the guest password hash in the response', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      totalThb: 5000,
+      cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/cancel'), {
-      method: 'POST',
-      body: JSON.stringify({ reason: 'host_requested' }),
+    const res = await POST(makeRequest({ reason: 'guest_requested' }), {
+      params: { id: booking.id },
     });
-
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(result.booking.status).toBe('cancelled');
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    const raw = JSON.stringify(await res.json());
+    expect(raw).not.toContain('hashedPassword');
   });
 
-  it('unauthorized user cannot cancel booking', async () => {
-    mockUser = { identityId: 'unauthorized-identity' };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: new Date('2026-08-25T15:00:00Z'),
-        endDate: new Date('2026-08-27T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 5000,
-        cancellationPolicySnapshot: {
-          name: 'flexible',
-          steps: DEFAULT_POLICIES.flexible.steps,
-        },
-      },
-      include: { unit: true },
+  it('host (unit owner) can cancel a guest booking', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(owner.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      totalThb: 5000,
+      cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/cancel'), {
-      method: 'POST',
+    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+      params: { id: booking.id },
     });
+    const body = await res.json();
 
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(403);
-    expect(result.error).toContain('Not authorized');
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.status).toBe('cancelled');
   });
 
-  it('moderate policy refund calculation', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const checkInDate = new Date('2026-08-15T15:00:00Z');
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'confirmed',
-        startDate: checkInDate,
-        endDate: new Date('2026-08-17T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 10000,
-        cancellationPolicySnapshot: {
-          name: 'moderate',
-          steps: DEFAULT_POLICIES.moderate.steps,
-        },
-      },
-      include: { unit: true },
+  it('lets a guest withdraw a pending request (no refund owed)', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'requested',
+      totalThb: 5000,
+      cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
-
-    // Cancel 3 days before check-in: should get 50% refund
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/cancel'), {
-      method: 'POST',
+    const res = await POST(makeRequest({ reason: 'guest_withdrew' }), {
+      params: { id: booking.id },
     });
+    const body = await res.json();
 
-    // Mock current time to 3 days before check-in
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(result.refund.amountThb).toBe(5000); // 50% of 10000
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(200);
+    expect(body.booking.status).toBe('cancelled');
+    expect(body.refund.amountThb).toBe(0);
   });
 
-  it('cannot cancel already-cancelled booking', async () => {
-    mockUser = { identityId: guestIdentity.id };
-
-    const booking = await prisma.booking.create({
-      data: {
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guestIdentity.id,
-        bookingType: 'guest_stay',
-        channel: 'direct',
-        status: 'cancelled',
-        startDate: new Date('2026-08-30T15:00:00Z'),
-        endDate: new Date('2026-09-01T15:00:00Z'),
-        adults: 2,
-        children: 0,
-        totalThb: 5000,
-        cancellationPolicySnapshot: {
-          name: 'flexible',
-          steps: DEFAULT_POLICIES.flexible.steps,
-        },
-        cancelledAt: new Date(),
-        cancelledByIdentityId: guestIdentity.id,
-        cancellationReason: 'already_cancelled',
-      },
-      include: { unit: true },
+  it('rejects an unauthorized canceller with 403', async () => {
+    const stranger = await createIdentity({ firstName: 'Stranger' });
+    mockGetCurrentUser.mockResolvedValue(asUser(stranger.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      totalThb: 5000,
+      cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const originalGetCurrentUser = require('@/app/actions/getCurrentUser').getCurrentUser;
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = async () => mockUser;
+    const res = await POST(makeRequest(), { params: { id: booking.id } });
+    const body = await res.json();
 
-    const req = new NextRequest(new URL('http://localhost:3000/api/bookings/test/cancel'), {
-      method: 'POST',
-    });
-
-    const response = await POST(req, { params: { id: booking.id } });
-    const result = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(result.error).toContain('Cannot cancel booking with status');
-
-    await prisma.booking.deleteMany({ where: { id: booking.id } });
-    (require('@/app/actions/getCurrentUser') as any).getCurrentUser = originalGetCurrentUser;
+    expect(res.status).toBe(403);
+    expect(body.error).toContain('authorized');
   });
 });

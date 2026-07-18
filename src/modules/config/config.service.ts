@@ -132,7 +132,25 @@ export async function getConfig<K extends ConfigKey>(
     }
   }
 
-  // 3. Get global default from ConfigParameter
+  // 3. Try a global override (scopeType/scopeId = 'global'). This is what the
+  //    admin editor writes for a platform-wide value change; without reading it
+  //    here, every global config edit was silently ignored.
+  const globalOverride = await db.configOverride.findUnique({
+    where: {
+      parameterKey_scopeType_scopeId: {
+        parameterKey: key,
+        scopeType: 'global',
+        scopeId: 'global',
+      },
+    },
+  });
+  if (globalOverride) {
+    value = globalOverride.value;
+    cache.set(getCacheKey(key), value);
+    return value;
+  }
+
+  // 4. Fall back to the seeded ConfigParameter default
   const param = await db.configParameter.findUnique({
     where: { key },
   });
@@ -205,6 +223,14 @@ export async function setConfigOverride(
   });
 
   // Invalidate cache for this parameter
+  cache.invalidatePrefix(key);
+}
+
+/**
+ * Invalidate every cached scope of one parameter key. Call after any write to
+ * a parameter's value (override or default) so readers don't serve stale config.
+ */
+export function invalidateConfig(key: string): void {
   cache.invalidatePrefix(key);
 }
 

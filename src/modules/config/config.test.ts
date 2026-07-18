@@ -128,16 +128,16 @@ describe('T-003 · Config module', () => {
 
       const change = await db.configChange.findFirst({
         where: {
-          parameter_key: 'booking.hold_minutes',
-          scope_type: 'project',
-          scope_id: project.id,
+          parameterKey: 'booking.hold_minutes',
+          scopeType: 'project',
+          scopeId: project.id,
         },
       });
 
       expect(change).toBeDefined();
-      expect(change?.old_value).toBeNull();
-      expect(change?.new_value).toBe(45);
-      expect(change?.changed_by_identity_id).toBe(identity.id);
+      expect(change?.oldValue).toBeNull();
+      expect(change?.newValue).toBe(45);
+      expect(change?.changedByIdentityId).toBe(identity.id);
     });
 
     it('tracks old value when updating override', async () => {
@@ -161,17 +161,17 @@ describe('T-003 · Config module', () => {
 
       const changes = await db.configChange.findMany({
         where: {
-          parameter_key: 'booking.request_hours',
-          scope_type: 'project',
-          scope_id: project.id,
+          parameterKey: 'booking.request_hours',
+          scopeType: 'project',
+          scopeId: project.id,
         },
-        orderBy: { created_at: 'asc' },
+        orderBy: { createdAt: 'asc' },
       });
 
       expect(changes).toHaveLength(2);
-      expect(changes[0].new_value).toBe(12);
-      expect(changes[1].old_value).toBe(12);
-      expect(changes[1].new_value).toBe(48);
+      expect(changes[0].newValue).toBe(12);
+      expect(changes[1].oldValue).toBe(12);
+      expect(changes[1].newValue).toBe(48);
     });
   });
 

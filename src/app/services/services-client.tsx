@@ -1,281 +1,173 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/Button';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 
-interface MarketService {
+interface Service {
   id: string;
   title: string;
-  description: string | null;
+  description?: string;
   categoryKey: string;
   priceModel: string;
-  basePriceThb: number | null;
-  durationMin: number | null;
-  advanceNoticeHours: number;
-  providerName: string | null;
-  providerVetted: boolean;
-  coverUrl: string | null;
-}
-
-interface MyOrder {
-  id: string;
+  basePriceThb?: number;
   status: string;
-  scheduled_start: string;
-  total_thb: number;
-  service: { title: string } | null;
+  createdAt: string;
+  provider: {
+    id: string;
+    name: string;
+    status: string;
+    vetted_at?: string;
+  };
+  isVetted: boolean;
 }
 
-type Labels = Record<string, string>;
-
-function fill(template: string, params: Record<string, string | number>): string {
-  let result = template;
-  for (const [key, value] of Object.entries(params)) {
-    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
-  }
-  return result;
+interface ServicesClientProps {
+  projectId?: string;
 }
 
-export default function ServicesClient({ labels }: { labels: Labels }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const bookingId = searchParams.get('bookingId');
-
-  const [services, setServices] = useState<MarketService[]>([]);
-  const [orders, setOrders] = useState<MyOrder[]>([]);
-  const [loggedIn, setLoggedIn] = useState(true);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [when, setWhen] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [note, setNote] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [flash, setFlash] = useState<string | null>(null);
+export default function ServicesClient({}: ServicesClientProps) {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const [servicesRes, ordersRes] = await Promise.all([
-      fetch('/api/services'),
-      fetch('/api/service-orders'),
-    ]);
-    if (servicesRes.ok) {
-      const data = await servicesRes.json();
-      setServices(data.services || []);
+  const fetchServices = useCallback(async () => {
+    try {
+      setLoading(true);
+      const url = new URL('/api/services', window.location.origin);
+      if (selectedCategory) {
+        url.searchParams.set('categoryKey', selectedCategory);
+      }
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error('Failed to fetch');
+      const data = await response.json();
+      setServices(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch services:', err);
+      setError('Failed to load services');
+    } finally {
+      setLoading(false);
     }
-    if (ordersRes.status === 401) {
-      setLoggedIn(false);
-    } else if (ordersRes.ok) {
-      const data = await ordersRes.json();
-      setOrders(data.orders || []);
-    }
-  }, []);
+  }, [selectedCategory]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    fetchServices();
+  }, [fetchServices]);
 
-  const placeOrder = async (service: MarketService) => {
-    if (!loggedIn) {
-      router.push('/login?next=/services');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/service-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceId: service.id,
-          scheduledStart: when,
-          quantity,
-          bookingId: bookingId || undefined,
-          noteToProvider: note || undefined,
-        }),
-      });
-      const data = await response.json().catch(() => null);
-      if (response.status === 401) {
-        router.push('/login?next=/services');
-        return;
-      }
-      if (!response.ok) {
-        throw new Error(data?.error || labels['services.browse.error_generic']);
-      }
-      setOpenId(null);
-      setWhen('');
-      setQuantity(1);
-      setNote('');
-      setFlash(labels['services.browse.ordered']);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : labels['services.browse.error_generic']);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Extract unique categories from services
+  const categories = Array.from(
+    new Set(services.map((s) => s.categoryKey))
+  );
+
+  if (loading) {
+    return <div className="text-center py-8">Loading services...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600 py-8">{error}</div>;
+  }
+
+  const filteredServices = selectedCategory
+    ? services.filter((s) => s.categoryKey === selectedCategory)
+    : services;
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">
-          {labels['services.browse.title']}
-        </h1>
-        <p className="text-body text-text-secondary mb-24">
-          {labels['services.browse.subtitle']}
-        </p>
+    <div>
+      {/* Category filter chips */}
+      {categories.length > 0 && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`px-4 py-2 rounded-full font-medium transition ${
+              selectedCategory === null
+                ? 'bg-brand-teal text-white'
+                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+            }`}
+          >
+            All Services
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-full font-medium transition capitalize ${
+                selectedCategory === cat
+                  ? 'bg-brand-teal text-white'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {flash && (
-          <div className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-24">
-            <p className="text-body text-state-success">{flash}</p>
-          </div>
-        )}
-
-        {services.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center mb-32">
-            <p className="text-body text-text-secondary">
-              {labels['services.browse.empty']}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
-            {services.map((service) => (
-              <div
-                key={service.id}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden"
-              >
-                {service.coverUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={service.coverUrl}
-                    alt={service.title}
-                    className="aspect-video w-full object-cover"
-                  />
-                )}
-                <div className="p-16">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-subtitle font-semibold text-text-ink">
-                      {service.title}
-                    </h2>
-                    {service.providerVetted && (
-                      <span className="text-small text-state-success font-semibold">
-                        ✓ {labels['services.browse.vetted']}
-                      </span>
-                    )}
+      {/* Services grid */}
+      {filteredServices.length === 0 ? (
+        <div className="text-gray-500 py-8 text-center">
+          <p>No services available</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredServices.map((service) => (
+            <Link
+              key={service.id}
+              href={`/services/${service.id}`}
+              className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-lg transition"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {service.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    by {service.provider.name}
+                  </p>
+                </div>
+                {service.isVetted && (
+                  <div className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
+                    Vetted
                   </div>
-                  {service.providerName && (
-                    <p className="text-small text-text-secondary mb-4">{service.providerName}</p>
-                  )}
-                  {service.description && (
-                    <p className="text-small text-text-secondary mb-8">{service.description}</p>
-                  )}
-                  {service.basePriceThb !== null && (
-                    <p className="text-body font-bold text-brand-andaman mb-12">
-                      {labels['services.browse.from']} ฿{service.basePriceThb.toLocaleString()}
-                    </p>
-                  )}
-
-                  {openId === service.id ? (
-                    <div className="flex flex-col gap-12">
-                      <div className="flex flex-col gap-4">
-                        <label htmlFor={`when-${service.id}`} className="text-small text-text-stone">
-                          {labels['services.browse.when']}
-                        </label>
-                        <input
-                          id={`when-${service.id}`}
-                          type="datetime-local"
-                          value={when}
-                          onChange={(e) => setWhen(e.target.value)}
-                          className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-4">
-                        <label htmlFor={`qty-${service.id}`} className="text-small text-text-stone">
-                          {labels['services.browse.quantity']}
-                        </label>
-                        <input
-                          id={`qty-${service.id}`}
-                          type="number"
-                          min={1}
-                          max={20}
-                          value={quantity}
-                          onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-                          className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-4">
-                        <label htmlFor={`note-${service.id}`} className="text-small text-text-stone">
-                          {labels['services.browse.note']}
-                        </label>
-                        <input
-                          id={`note-${service.id}`}
-                          type="text"
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink"
-                        />
-                      </div>
-                      {error && <p className="text-small text-state-error">{error}</p>}
-                      <Button
-                        onClick={() => placeOrder(service)}
-                        isLoading={busy}
-                        disabled={!when}
-                        fullWidth
-                      >
-                        {fill(labels['services.browse.confirm_order'], {
-                          total: ((service.basePriceThb || 0) * quantity).toLocaleString(),
-                        })}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setOpenId(service.id);
-                        setError(null);
-                      }}
-                    >
-                      {labels['services.browse.order']}
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
 
-        <h2 className="text-heading-2 font-bold text-text-ink mb-16">
-          {labels['services.my_orders.title']}
-        </h2>
-        {!loggedIn || orders.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <p className="text-body text-text-secondary">
-              {loggedIn ? labels['services.my_orders.empty'] : labels['services.browse.login_needed']}
-            </p>
-          </div>
-        ) : (
-          <div className="bg-surface-paper border border-border-line rounded-lg">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between gap-12 p-16 border-b border-border-line last:border-b-0"
-              >
+              <p className="text-gray-600 text-sm mb-4">
+                {service.description || 'No description'}
+              </p>
+
+              <div className="space-y-2 text-sm">
                 <div>
-                  <p className="text-body font-semibold text-text-ink">
-                    {order.service?.title || '—'}
-                  </p>
-                  <p className="text-small text-text-secondary">
-                    {new Date(order.scheduled_start).toLocaleString()} · ฿
-                    {order.total_thb.toLocaleString()}
-                  </p>
+                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="text-gray-600 ml-2 capitalize">
+                    {service.categoryKey}
+                  </span>
                 </div>
-                <span className="text-small font-semibold text-text-ink">
-                  {labels[`services.order_status.${order.status}`] || order.status}
-                </span>
+                <div>
+                  <span className="font-medium text-gray-700">Price Model:</span>
+                  <span className="text-gray-600 ml-2 capitalize">
+                    {service.priceModel}
+                  </span>
+                </div>
+                {service.basePriceThb && (
+                  <div>
+                    <span className="font-medium text-gray-700">Base Price:</span>
+                    <span className="text-gray-600 ml-2">
+                      ฿{service.basePriceThb.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button className="text-brand-teal font-medium text-sm hover:underline">
+                  View Details →
+                </button>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

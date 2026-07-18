@@ -606,6 +606,7 @@ model Identity {
   announcementsCreated Announcement[]
   announcementReads AnnouncementRead[]
   vettedProviders Provider[] @relation("providerVettedBy")
+  servicesApproved Service[] @relation("serviceApprovedBy")
   tm30FilingsFiled Tm30Filing[] @relation("tm30FilingFiled")
   conditionReportsCreated ConditionReport[]
   complianceRecordsVerified ComplianceRecord[] @relation("complianceVerifier")
@@ -1176,10 +1177,13 @@ model Service {
   advanceNoticeHours Int @default(0) @map("advance_notice_hours")
   status ServiceStatus @default(draft)
   coverMediaId String? @map("cover_media_id")
+  approved_at DateTime? @map("approved_at")
+  approved_by_identity_id String? @map("approved_by_identity_id")
 
   // Relations
   provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
   coverMedia MediaAsset? @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  approvedBy Identity? @relation("serviceApprovedBy", fields: [approved_by_identity_id], references: [id], onDelete: SetNull)
   media ServiceMedia[] @relation("serviceMediaList")
   availableProjects ServiceProject[]
   serviceOrders ServiceOrder[]

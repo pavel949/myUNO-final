@@ -33,6 +33,15 @@ describe('T-004 · Content module', () => {
       expect(result).toBe('Сохранить');
     });
 
+    it('a warm fallback-locale cache never shadows the requested locale', async () => {
+      clearTranslationCache();
+      // Warm the RU cache first (as any RU page render would)…
+      await t(db, 'common.action.save', {}, 'ru');
+      // …then an EN request must still serve the English DB row, not cached RU.
+      const result = await t(db, 'common.action.save', {}, 'en');
+      expect(result).toBe('Save');
+    });
+
     it('falls back to en when requested locale missing', async () => {
       clearTranslationCache();
       // Delete TH translation (keyed by the ContentKey uuid, not the human key)

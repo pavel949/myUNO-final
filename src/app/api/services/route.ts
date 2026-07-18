@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
 
+// This GET uses no dynamic request API, so without this Next.js would cache
+// its response at build time — the catalog would never reflect DB changes.
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/services — active, vetted marketplace services (S11).
  * Public read; optional ?projectId scope (services are platform-wide in

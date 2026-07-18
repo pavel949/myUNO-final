@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// No dynamic request API in this GET — force it dynamic so OTA calendar
+// consumers always see current availability, not a build-time snapshot.
+export const dynamic = 'force-dynamic';
+
 const PRODID = '-//myUNO//Calendar//EN';
 const VERSION = '2.0';
 

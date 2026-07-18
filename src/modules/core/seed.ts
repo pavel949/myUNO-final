@@ -497,10 +497,12 @@ export async function seedDemoData(db: PrismaClient) {
       description: 'Professional cleaning and housekeeping services',
       contactEmail: providerIdentity.email!,
       contactPhone: '+66812345678',
-      status: 'applied',
+      // 'active' + vetted so the demo service is actually visible in the
+      // marketplace — GET /api/services filters provider.status='active'.
+      status: 'active',
       vetted_at: new Date(),
     },
-    update: { status: 'applied', vetted_at: new Date() },
+    update: { status: 'active', vetted_at: new Date() },
   });
 
   let providerRole = await db.roleAssignment.findFirst({

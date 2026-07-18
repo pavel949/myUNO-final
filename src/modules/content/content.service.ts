@@ -92,16 +92,17 @@ export async function t(
 ): Promise<string> {
   const fallbackChain = getLocaleFallbackChain(locale);
 
-  // Try cache for each fallback locale
+  // Per locale: cache first, then DB — only then move down the chain.
+  // (Checking the cache across the WHOLE chain before any DB read let a warm
+  // fallback-locale entry shadow the requested locale's DB row — e.g. a warm
+  // 'ru' cache served Russian to 'en' visitors even though the English
+  // translation existed. Translations are keyed by the ContentKey's uuid id
+  // (FK), so match through the relation on the human key.)
   for (const tryLocale of fallbackChain) {
     const cacheKey = getCacheKey(key, tryLocale);
     const cached = cache.get(cacheKey);
     if (cached) return formatPlaceholders(cached, params);
-  }
 
-  // Try database for each fallback locale. Translations are keyed by the
-  // ContentKey's uuid id (FK), so match through the relation on the human key.
-  for (const tryLocale of fallbackChain) {
     const translation = await db.translation.findFirst({
       where: {
         locale: tryLocale,
@@ -110,7 +111,7 @@ export async function t(
     });
 
     if (translation && translation.value) {
-      cache.set(getCacheKey(key, tryLocale), translation.value);
+      cache.set(cacheKey, translation.value);
       return formatPlaceholders(translation.value, params);
     }
   }

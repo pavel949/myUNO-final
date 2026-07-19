@@ -647,6 +647,212 @@ describe('service.service — integration tests', () => {
     });
   });
 
+  describe('getServiceAverageRating', () => {
+    it('returns average rating and review count (S6)', async () => {
+      const admin = await createIdentity();
+      const orderer1 = await createIdentity();
+      const orderer2 = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Rated Provider',
+        description: 'Gets rated',
+        contactEmail: 'rated@provider.com',
+        contactPhone: '+66812345694',
+        categoryKeys: ['cleaning'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        title: 'Rated Service',
+        priceModel: 'fixed',
+        basePriceThb: 2000,
+      });
+
+      // Create orders
+      const order1 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer1.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          total_thb: 2000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const order2 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer2.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-03'),
+          scheduled_end: new Date('2026-08-04'),
+          quantity: 1,
+          total_thb: 2000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      // Create reviews
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order1.id,
+          author_identity_id: orderer1.id,
+          rating: 5,
+          comment: 'Excellent',
+          status: 'published',
+        },
+      });
+
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order2.id,
+          author_identity_id: orderer2.id,
+          rating: 4,
+          comment: 'Good',
+          status: 'published',
+        },
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.averageRating).toBe(4.5);
+      expect(result!.reviewCount).toBe(2);
+    });
+
+    it('returns null when service has no reviews (S6)', async () => {
+      const admin = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Unrated Provider',
+        description: 'No reviews',
+        contactEmail: 'unrated@provider.com',
+        contactPhone: '+66812345695',
+        categoryKeys: ['catering'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'catering',
+        title: 'Unrated Service',
+        priceModel: 'per_person',
+        basePriceThb: 500,
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('ignores hidden reviews in average calculation (S6)', async () => {
+      const admin = await createIdentity();
+      const orderer1 = await createIdentity();
+      const orderer2 = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Hidden Review Provider',
+        description: 'Test hidden reviews',
+        contactEmail: 'hidden@provider.com',
+        contactPhone: '+66812345696',
+        categoryKeys: ['tours'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'tours',
+        title: 'Tour Service',
+        priceModel: 'fixed',
+        basePriceThb: 5000,
+      });
+
+      const order1 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer1.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const order2 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer2.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-03'),
+          scheduled_end: new Date('2026-08-04'),
+          quantity: 1,
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      // Create one published and one hidden review
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order1.id,
+          author_identity_id: orderer1.id,
+          rating: 5,
+          status: 'published',
+        },
+      });
+
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order2.id,
+          author_identity_id: orderer2.id,
+          rating: 1,
+          status: 'hidden', // Should be excluded
+        },
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.averageRating).toBe(5); // Only the 5-star review counts
+      expect(result!.reviewCount).toBe(1);
+    });
+  });
+
   describe('e2e — service creation → approval → visibility', () => {
     it('walks through complete service lifecycle and visibility', async () => {
       const admin = await createIdentity();

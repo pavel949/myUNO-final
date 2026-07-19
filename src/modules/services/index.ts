@@ -36,6 +36,7 @@ export {
   listPublicServices,
   approveService,
   rejectService,
+  getServiceAverageRating,
   type CreateServiceInput,
   type UpdateServiceInput,
 } from './service.service';

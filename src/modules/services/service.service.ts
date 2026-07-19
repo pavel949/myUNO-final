@@ -304,3 +304,45 @@ export async function rejectService(
     data: { status: 'paused' },
   });
 }
+
+/**
+ * Get the average rating for a service across all its fulfilled orders.
+ * Returns { averageRating, reviewCount } or null if no reviews exist.
+ */
+export async function getServiceAverageRating(
+  db: PrismaClient,
+  serviceId: string
+): Promise<{ averageRating: number; reviewCount: number } | null> {
+  // Get all order IDs for this service
+  const orders = await db.serviceOrder.findMany({
+    where: { service_id: serviceId },
+    select: { id: true },
+  });
+
+  if (orders.length === 0) {
+    return null;
+  }
+
+  const orderIds = orders.map((o) => o.id);
+
+  // Get all reviews for these orders (only published)
+  const reviews = await db.review.findMany({
+    where: {
+      target_type: 'service_order',
+      target_id: { in: orderIds },
+      status: 'published',
+    },
+  });
+
+  if (reviews.length === 0) {
+    return null;
+  }
+
+  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+  const averageRating = Math.round((sum / reviews.length) * 10) / 10;
+
+  return {
+    averageRating,
+    reviewCount: reviews.length,
+  };
+}

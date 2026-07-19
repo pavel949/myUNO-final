@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getAdminDashboardStats } from '@/modules/analytics';
 import { Sparkline, formatThb } from '@/components/viz';
+import { StatTile } from '@/components/StatTile';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,10 +50,9 @@ export default async function AdminDashboardPage() {
           <Link
             key={tile.label}
             href={tile.href}
-            className="bg-surface-paper border border-border-line rounded-lg p-24 hover:shadow-card"
+            className="hover:shadow-card transition-shadow"
           >
-            <p className="text-small text-text-secondary mb-8">{tile.label}</p>
-            <p className="text-heading-1 font-bold text-brand-andaman">{tile.value}</p>
+            <StatTile label={tile.label} value={tile.value} />
           </Link>
         ))}
       </div>

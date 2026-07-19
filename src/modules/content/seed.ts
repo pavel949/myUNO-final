@@ -1955,6 +1955,25 @@ const ADMIN_S3_KEYS: KeyDef[] = [
   { key: 'admin.services.error_generic', namespace: 'admin', description: 'Service action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
 ];
 
+const SERVICE_DETAIL_KEYS: KeyDef[] = [
+  // Service detail page (F-SVC-1)
+  { key: 'services.detail.title', namespace: 'services', description: 'Service detail page title', en: 'Service', ru: 'Услуга', status: NR },
+  { key: 'services.detail.by_provider', namespace: 'services', description: 'Provider attribution (template: {provider})', en: 'By {provider}', ru: 'От {provider}', status: NR },
+  { key: 'services.detail.vetted_badge', namespace: 'services', description: 'Vetted provider badge', en: 'Vetted', ru: 'Проверено', status: NR },
+  { key: 'services.detail.price_model', namespace: 'services', description: 'Section title: price model', en: 'Price model', ru: 'Модель цены', status: NR },
+  { key: 'services.detail.fixed', namespace: 'services', description: 'Price model: fixed', en: 'Fixed price', ru: 'Фиксированная цена', status: NR },
+  { key: 'services.detail.per_hour', namespace: 'services', description: 'Price model: hourly', en: 'Per hour', ru: 'За час', status: NR },
+  { key: 'services.detail.per_person', namespace: 'services', description: 'Price model: per person', en: 'Per person', ru: 'За человека', status: NR },
+  { key: 'services.detail.quote', namespace: 'services', description: 'Price model: quote', en: 'Quote on request', ru: 'По запросу', status: NR },
+  { key: 'services.detail.duration', namespace: 'services', description: 'Section title: typical duration', en: 'Typical duration', ru: 'Типичная продолжительность', status: NR },
+  { key: 'services.detail.duration_hours', namespace: 'services', description: 'Duration template: {minutes}', en: '{minutes} min', ru: '{minutes} мин', status: NR },
+  { key: 'services.detail.advance_notice', namespace: 'services', description: 'Section title: advance notice', en: 'Advance notice required', ru: 'Требуется предварительное уведомление', status: NR },
+  { key: 'services.detail.advance_notice_hours', namespace: 'services', description: 'Advance notice template: {hours}', en: '{hours}h', ru: '{hours}ч', status: NR },
+  { key: 'services.detail.advance_notice_none', namespace: 'services', description: 'Advance notice: none required', en: 'None', ru: 'Не требуется', status: NR },
+  { key: 'services.detail.about_provider', namespace: 'services', description: 'Section title: about the provider', en: 'About the provider', ru: 'О поставщике', status: NR },
+  { key: 'services.detail.order', namespace: 'services', description: 'CTA button: order this service', en: 'Order this service', ru: 'Заказать услугу', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -1981,7 +2000,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

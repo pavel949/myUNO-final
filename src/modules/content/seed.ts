@@ -1661,6 +1661,29 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.sections.tickets', namespace: 'owner', description: 'Section heading: open tickets', en: 'Open Tickets', ru: 'Открытые заявки', status: NR },
   { key: 'owner.stay.error', namespace: 'owner', description: 'Owner stay booking error', en: 'Failed to book owner stay', ru: 'Не удалось забронировать собственное проживание', status: NR },
 
+  // Owner compliance & alerts (doc 08 D2)
+  { key: 'owner.compliance.title', namespace: 'owner', description: 'Compliance section heading', en: 'Compliance', ru: 'Соответствие требованиям', status: NR },
+  { key: 'owner.compliance.subtitle', namespace: 'owner', description: 'Compliance section subtitle', en: 'Stay compliant with Thai legislation', ru: 'Соблюдайте требования тайского законодательства', status: NR },
+  { key: 'owner.compliance.permitted_use', namespace: 'owner', description: 'Compliance status: permitted use confirmation', en: 'Permitted Use Confirmed', ru: 'Разрешение на использование подтверждено', status: NR },
+  { key: 'owner.compliance.tm30_ontime', namespace: 'owner', description: 'Compliance metric: TM30 on-time %', en: 'TM30 On-Time', ru: 'TM30 в срок', status: NR },
+  { key: 'owner.compliance.records', namespace: 'owner', description: 'Compliance metric: compliance records', en: 'Compliance Records', ru: 'Документы соответствия', status: NR },
+  { key: 'owner.compliance.mobilization', namespace: 'owner', description: 'Compliance metric: mobilization progress', en: 'Mobilization Progress', ru: 'Прогресс подготовки', status: NR },
+
+  { key: 'owner.alerts.title', namespace: 'owner', description: 'Alerts section heading', en: 'Alerts', ru: 'Уведомления', status: NR },
+  { key: 'owner.alerts.empty', namespace: 'owner', description: 'No active alerts', en: 'No active alerts', ru: 'Нет активных уведомлений', status: NR },
+  { key: 'owner.alerts.tm30_overdue', namespace: 'owner', description: 'Alert type: TM30 overdue', en: 'TM30 Filing Overdue', ru: 'Просроченная подача TM30', status: NR },
+  { key: 'owner.alerts.tm30_escalated', namespace: 'owner', description: 'Alert type: TM30 escalated', en: 'TM30 Escalated', ru: 'TM30 эскалирована', status: NR },
+  { key: 'owner.alerts.unit_paused', namespace: 'owner', description: 'Alert type: unit paused', en: 'Unit Paused', ru: 'Юнит приостановлен', status: NR },
+  { key: 'owner.alerts.compliance_expiry', namespace: 'owner', description: 'Alert type: compliance record expiring', en: 'Compliance Document Expiring', ru: 'Документ соответствия истекает', status: NR },
+  { key: 'owner.alerts.ticket_sla', namespace: 'owner', description: 'Alert type: ticket SLA breached', en: 'Ticket SLA Breached', ru: 'Нарушено SLA заявки', status: NR },
+
+  { key: 'owner.statement.title', namespace: 'owner', description: 'Statements section heading', en: 'Financial Statements', ru: 'Финансовые отчёты', status: NR },
+  { key: 'owner.statement.empty', namespace: 'owner', description: 'No published statements', en: 'No statements yet', ru: 'Отчёты ещё не доступны', status: NR },
+  { key: 'owner.statement.period', namespace: 'owner', description: 'Statement table header: period', en: 'Period', ru: 'Период', status: NR },
+  { key: 'owner.statement.noi', namespace: 'owner', description: 'Statement table header: net operating income', en: 'Net Income', ru: 'Чистый доход', status: NR },
+  { key: 'owner.statement.your_share', namespace: 'owner', description: 'Statement table header: owner share', en: 'Your Share', ru: 'Ваша доля', status: NR },
+  { key: 'owner.statement.view', namespace: 'owner', description: 'View statement link', en: 'View', ru: 'Открыть', status: NR },
+
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },

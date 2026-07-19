@@ -13,6 +13,11 @@ export default async function OwnerPage() {
     redirect('/login?next=/owner');
   }
 
+  const isOwner = user.roles.some((role) => role.role === 'owner');
+  if (!isOwner) {
+    redirect('/');
+  }
+
   const data = await fetchOwnerDashboard(user.identityId);
 
   const labels = await getLabels({

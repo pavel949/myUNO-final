@@ -8,6 +8,7 @@ export {
   approveProvider,
   rejectProvider,
   getProvider,
+  getProviderForIdentity,
   type CreateProviderApplicationInput,
   type ApproveProviderInput,
   type RejectProviderInput,
@@ -21,6 +22,19 @@ export {
   cancelServiceOrder,
   rateServiceOrder,
   getServiceOrder,
+  getServiceOrdersByProvider,
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';
+
+export {
+  createService,
+  getService,
+  updateService,
+  getServicesByProvider,
+  listPublicServices,
+  approveService,
+  rejectService,
+  type CreateServiceInput,
+  type UpdateServiceInput,
+} from './service.service';

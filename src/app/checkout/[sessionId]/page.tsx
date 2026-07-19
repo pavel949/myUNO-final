@@ -16,6 +16,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     'payments.checkout.mock_note':
       'This is a test checkout page — no real card will be charged.',
     'payments.checkout.stay_label': 'Stay',
+    'payments.checkout.service_label': 'Service',
     'payments.checkout.dates_label': 'Dates',
     'payments.checkout.amount_label': 'Amount due',
     'payments.checkout.pay_now': 'Pay now',

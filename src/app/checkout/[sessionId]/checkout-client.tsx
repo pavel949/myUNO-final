@@ -15,6 +15,11 @@ interface SessionInfo {
     unitName: string | null;
     projectName: string | null;
   } | null;
+  serviceOrder: {
+    id: string;
+    scheduledStart: string;
+    serviceTitle: string | null;
+  } | null;
 }
 
 type Labels = Record<string, string>;
@@ -74,8 +79,15 @@ export default function CheckoutClient({
       if (result.confirmed || result.payment?.status === 'succeeded') {
         setSuccess(true);
         const bookingId = result.payment?.bookingId || session?.booking?.id;
+        const isServiceOrder = Boolean(
+          result.payment?.serviceOrderId || session?.serviceOrder?.id
+        );
         setTimeout(() => {
-          router.push(bookingId ? `/trips/${bookingId}` : '/trips');
+          if (isServiceOrder) {
+            router.push('/services');
+          } else {
+            router.push(bookingId ? `/trips/${bookingId}` : '/trips');
+          }
         }, 1500);
       } else {
         setError(labels['payments.checkout.error_generic']);
@@ -149,6 +161,26 @@ export default function CheckoutClient({
                   {new Date(session.booking.endDate).toLocaleDateString()}
                 </span>
               </div>
+            )}
+            {session.serviceOrder && (
+              <>
+                <div className="flex justify-between text-small">
+                  <span className="text-text-secondary">
+                    {labels['payments.checkout.service_label']}
+                  </span>
+                  <span className="text-text-ink font-semibold">
+                    {session.serviceOrder.serviceTitle}
+                  </span>
+                </div>
+                <div className="flex justify-between text-small">
+                  <span className="text-text-secondary">
+                    {labels['payments.checkout.dates_label']}
+                  </span>
+                  <span className="text-text-ink">
+                    {new Date(session.serviceOrder.scheduledStart).toLocaleString()}
+                  </span>
+                </div>
+              </>
             )}
             <div className="flex justify-between text-body font-bold pt-8 border-t border-border-line">
               <span className="text-text-ink">{labels['payments.checkout.amount_label']}</span>

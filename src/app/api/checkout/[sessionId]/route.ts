@@ -30,6 +30,13 @@ export async function GET(
             project: { select: { name: true } },
           },
         },
+        serviceOrder: {
+          select: {
+            id: true,
+            scheduled_start: true,
+            service: { select: { title: true } },
+          },
+        },
       },
     });
 
@@ -48,6 +55,13 @@ export async function GET(
             endDate: payment.booking.endDate,
             unitName: payment.booking.unit?.name || null,
             projectName: payment.booking.project?.name || null,
+          }
+        : null,
+      serviceOrder: payment.serviceOrder
+        ? {
+            id: payment.serviceOrder.id,
+            scheduledStart: payment.serviceOrder.scheduled_start,
+            serviceTitle: payment.serviceOrder.service?.title || null,
           }
         : null,
     });

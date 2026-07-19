@@ -21,10 +21,13 @@ interface MarketService {
 interface MyOrder {
   id: string;
   status: string;
-  scheduled_start: string;
-  total_thb: number;
-  service: { title: string } | null;
+  scheduledStart: string;
+  totalThb: number;
+  serviceTitle: string | null;
 }
+
+/** Order states from which the customer may still cancel (F-SVC-3). */
+const CANCELLABLE = new Set(['placed', 'paid', 'accepted']);
 
 type Labels = Record<string, string>;
 
@@ -72,6 +75,51 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const payOrder = async (order: MyOrder) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/service-orders/${order.id}/checkout`, {
+        method: 'POST',
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || labels['services.browse.error_generic']);
+      }
+      if (data?.checkoutUrl) {
+        router.push(data.checkoutUrl);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['services.browse.error_generic']);
+      setBusy(false);
+    }
+  };
+
+  const cancelOrder = async (order: MyOrder) => {
+    if (!window.confirm(labels['services.order.cancel_confirm'])) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/service-orders/${order.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || labels['services.browse.error_generic']);
+      }
+      setFlash(labels['services.order.cancelled_note']);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['services.browse.error_generic']);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const placeOrder = async (service: MarketService) => {
     if (!loggedIn) {
@@ -257,20 +305,37 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between gap-12 p-16 border-b border-border-line last:border-b-0"
+                className="flex flex-wrap items-center justify-between gap-12 p-16 border-b border-border-line last:border-b-0"
               >
                 <div>
                   <p className="text-body font-semibold text-text-ink">
-                    {order.service?.title || '—'}
+                    {order.serviceTitle || '—'}
                   </p>
                   <p className="text-small text-text-secondary">
-                    {new Date(order.scheduled_start).toLocaleString()} · ฿
-                    {order.total_thb.toLocaleString()}
+                    {new Date(order.scheduledStart).toLocaleString()} · ฿
+                    {order.totalThb.toLocaleString()}
                   </p>
                 </div>
-                <span className="text-small font-semibold text-text-ink">
-                  {labels[`services.order_status.${order.status}`] || order.status}
-                </span>
+                <div className="flex items-center gap-12">
+                  <span className="text-small font-semibold text-text-ink">
+                    {labels[`services.order_status.${order.status}`] || order.status}
+                  </span>
+                  {order.status === 'placed' && (
+                    <Button size="sm" onClick={() => payOrder(order)} isLoading={busy}>
+                      {labels['services.order.pay']}
+                    </Button>
+                  )}
+                  {CANCELLABLE.has(order.status) && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => cancelOrder(order)}
+                      isLoading={busy}
+                    >
+                      {labels['services.order.cancel']}
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

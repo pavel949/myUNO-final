@@ -56,6 +56,7 @@ Channel shorthand: **A** in-app · **E** email · **W** WhatsApp · **T** Telegr
 | N-21 ● | `order.accepted` | Provider accepts → orderer | A, E, W | Instant |
 | N-22 ● | `order.declined` | Decline / accept-SLA lapse → orderer | A, E | Instant, refund noted + alternatives |
 | N-22b ● | `order.failed_no_show` | No-show confirmed → orderer (+admin) | A, E | Instant, full-refund noted |
+| N-22c ● | `order.cancelled` | Order cancelled (by orderer or staff) → orderer | A, E | Instant, refund amount noted |
 | N-27 | `order.review_prompt` | Fulfilled + 12h → orderer | A | Scheduled, once |
 | N-23 | `provider.remittance` | Remittance recorded → provider members | A, E | Per payout cadence |
 | N-18 / N-19 | `provider.approved / .rejected` | Vetting outcome → applicant | E | Instant |

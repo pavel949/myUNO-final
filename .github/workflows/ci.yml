@@ -39,6 +39,26 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Wait for PostgreSQL (before build)
+        run: |
+          max_attempts=10
+          attempt=0
+          until [ $attempt -ge $max_attempts ]; do
+            if pg_isready -h localhost -p 5432 -U test; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Waiting for PostgreSQL... (attempt $((attempt + 1))/$max_attempts)"
+            sleep 1
+            ((attempt++))
+          done
+
+      - name: Create test database (before build)
+        env:
+          PGPASSWORD: test
+        run: |
+          psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
+
       - name: Build
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test

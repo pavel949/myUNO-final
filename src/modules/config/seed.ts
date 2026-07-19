@@ -497,6 +497,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Pre-arrival passport deadline',
       },
       {
+        key: 'compliance.expiry_warning_days',
+        valueType: 'int',
+        defaultValue: 30,
+        scopeableTo: 'project',
+        groupKey: 'compliance',
+        description: 'Days before compliance document expiry to raise an alert',
+      },
+      {
         key: 'retention.passport_media_days_after_checkout',
         valueType: 'int',
         defaultValue: 30,

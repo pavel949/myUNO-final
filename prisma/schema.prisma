@@ -1877,6 +1877,7 @@ model MetricDaily {
   // Core metrics
   nightsAvailable Int @default(0) @map("nights_available")
   nightsOccupied Int @default(0) @map("nights_occupied")
+  ownerStayNights Int @default(0) @map("owner_stay_nights")
   rentalRevenueCents Int @default(0) @map("rental_revenue_cents")
   serviceOrderCount Int @default(0) @map("service_order_count")
   serviceOrderRevenueCents Int @default(0) @map("service_order_revenue_cents")

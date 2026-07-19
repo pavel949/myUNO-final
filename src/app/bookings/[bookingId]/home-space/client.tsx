@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import React from 'react';
 import {
   StayCard,
   QuickActionsRow,
   ActiveOrdersList,
   AnnouncementsSection,
+  Button,
 } from '@/components';
 
 interface Unit {
@@ -53,12 +55,14 @@ interface InStayHomeSpaceClientProps {
   booking: Booking;
   activeOrders: ActiveOrder[];
   announcements: Announcement[];
+  labels: Record<string, string>;
 }
 
 export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   booking,
   activeOrders,
   announcements,
+  labels,
 }) => {
   const router = useRouter();
   const handleMessageHost = async () => {
@@ -99,7 +103,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     <div className="min-h-screen bg-surface-background">
       {/* Header with project branding */}
       <div className="bg-brand-andaman text-surface-ivory py-16 px-24 mb-32">
-        <p className="text-small">Welcome to</p>
+        <p className="text-small">{labels['home.welcome']}</p>
         <h1 className="text-heading-1 font-bold">{booking.unit.project.name}</h1>
       </div>
 
@@ -129,26 +133,32 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
         {/* Active orders section */}
         {activeOrders.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">Your Active Orders</h2>
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              {labels['home.active_orders']}
+            </h2>
             <ActiveOrdersList orders={activeOrders} />
           </div>
         )}
 
         {/* Handbook and resources section */}
         <div className="bg-surface-paper border border-border-line rounded-md p-32 mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">📚 Property Handbook</h2>
+          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            {labels['home.handbook.title']}
+          </h2>
           <p className="text-body text-text-secondary mb-20">
-            Learn about the property amenities, check-out procedures, and local information.
+            {labels['home.handbook.description']}
           </p>
-          <button className="text-brand-andaman font-medium hover:underline">
-            View Handbook →
-          </button>
+          <Link href={`/bookings/${booking.id}/home-space/handbook`}>
+            <Button variant="secondary" size="sm">
+              {labels['home.handbook.view_button']} →
+            </Button>
+          </Link>
         </div>
 
         {/* Footer message */}
         <div className="text-center py-32 mb-40">
           <p className="text-body text-text-secondary">
-            Need help? Contact the host or raise an issue above.
+            {labels['home.help_text']}
           </p>
         </div>
       </div>

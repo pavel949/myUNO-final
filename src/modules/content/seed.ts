@@ -1907,6 +1907,16 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.category.emergency_medical', namespace: 'services', description: 'Service category: emergency medical assistance', en: 'Emergency medical', ru: 'Экстренная медицина', status: NR },
 ];
 
+const HOME_KEYS: KeyDef[] = [
+  // Home-space (in-stay guest portal)
+  { key: 'home.welcome', namespace: 'home', description: 'Welcome to property heading', en: 'Welcome to', ru: 'Добро пожаловать в', status: NR },
+  { key: 'home.handbook.title', namespace: 'home', description: 'Property handbook section title', en: 'Property Handbook', ru: 'Справочник Имущества', status: NR },
+  { key: 'home.handbook.description', namespace: 'home', description: 'Property handbook description', en: 'Learn about the property amenities, check-out procedures, and local information.', ru: 'Узнайте о удобствах имущества, процедурах выписки и местной информации.', status: NR },
+  { key: 'home.handbook.view_button', namespace: 'home', description: 'View handbook button text', en: 'View Handbook', ru: 'Просмотреть Справочник', status: NR },
+  { key: 'home.help_text', namespace: 'home', description: 'Footer help text', en: 'Need help? Contact the host or raise an issue above.', ru: 'Нужна помощь? Свяжитесь с хозяином или сообщите о проблеме выше.', status: NR },
+  { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -1933,7 +1943,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

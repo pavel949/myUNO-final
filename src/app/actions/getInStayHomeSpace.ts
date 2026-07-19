@@ -17,6 +17,7 @@ export async function fetchInStayHomeSpace(bookingId: string, guestIdentityId: s
               select: {
                 id: true,
                 name: true,
+                handbookKey: true,
               },
             },
           },

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 
 /**
  * Get all units managed by an MC member.
@@ -421,9 +422,12 @@ export async function getMCFeeReport(
     date: Date;
   }> = [];
 
-  bookings.forEach((booking) => {
+  for (const booking of bookings) {
     const feeOverride = booking.unit.engagements[0]?.feeOverridePct;
-    const feePct = feeOverride ? Number(feeOverride) : 10; // Default 10% platform fee
+    const configDefault = await getConfig(db, 'engagement.via_mc.platform_fee_pct', {
+      projectId,
+    });
+    const feePct = feeOverride ? Number(feeOverride) : (configDefault ?? 12);
 
     feeLines.push({
       id: `booking-${booking.id}`,
@@ -435,14 +439,17 @@ export async function getMCFeeReport(
       feeAmount: Math.round(booking.totalThb * (feePct / 100)),
       date: booking.startDate,
     });
-  });
+  }
 
-  serviceOrders.forEach((order) => {
+  for (const order of serviceOrders) {
     // Skip orders without a unit (common area orders don't charge platform fee)
-    if (!order.unit) return;
+    if (!order.unit) continue;
 
     const feeOverride = order.unit.engagements[0]?.feeOverridePct;
-    const feePct = feeOverride ? Number(feeOverride) : 10;
+    const configDefault = await getConfig(db, 'services.take_rate_pct', {
+      projectId,
+    });
+    const feePct = feeOverride ? Number(feeOverride) : (configDefault ?? 15);
 
     feeLines.push({
       id: `service-${order.id}`,
@@ -454,7 +461,7 @@ export async function getMCFeeReport(
       feeAmount: Math.round(order.total_thb * (feePct / 100)),
       date: order.createdAt,
     });
-  });
+  }
 
   // Sort by date
   feeLines.sort((a, b) => b.date.getTime() - a.date.getTime());

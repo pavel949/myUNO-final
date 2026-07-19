@@ -112,6 +112,15 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Blocks:** nothing in loop one (THB payouts to the Krungsri account cover it).
 - **Needs from founder:** the intended rails for paying owners abroad, resolved with counsel — always FX-routing-to-a-licensed-exchanger, never operated in-house (AMLO).
 
+### Q23. Chinese (中文) locale — OPEN
+- **Source:** the founder's landing v3 (myunolandingv3.html) ships full EN/RU/**ZH** copy, but the platform's locale enum (doc 05, schema `Locale`) is ru/en/th only.
+- **Blocks:** nothing — the ZH copy is preserved in the landing file; the platform pages adopted its EN + RU.
+- **Needs from founder:** whether 中文 becomes a fourth platform locale (schema enum change + fallback-chain position), or stays a marketing-site-only language.
+
+### Q24. Landing v3 marketing elements — OPEN
+- **Source:** landing v3 contains lead-gen machinery (early-access form, founding terms, call-with-Pavel CTA, owner-record mockup, earnings-calculator teaser) that belongs to the marketing site, not the product app. Its owners/developers narrative copy **was** adopted into the audience pages (T1-AUD).
+- **Needs from founder:** where the marketing site lives (separate static page vs routes in the app), and whether the "What could my unit earn?" calculator becomes a product feature.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

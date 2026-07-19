@@ -13,3 +13,5 @@ export {
   flagPurchaseQuestion,
   createDirectInquiry,
 } from './signals';
+export { getAdminDashboardStats } from './dashboard.service';
+export type { AdminDashboardStats } from './dashboard.service';

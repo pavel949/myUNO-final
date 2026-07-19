@@ -24,3 +24,6 @@ export {
   type CapturePassportDataInput,
   type VerificationCheckResult,
 } from './verification.service';
+
+export { getOpsBoard } from './ops-board.service';
+export type { OpsBoardData } from './ops-board.service';

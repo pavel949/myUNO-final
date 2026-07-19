@@ -3,17 +3,10 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { getOpsBoard } from '@/modules/ops';
 import OpsBoardClient from './ops-client';
 
 export const dynamic = 'force-dynamic';
-
-function dayRange(date: Date): { from: Date; to: Date } {
-  const from = new Date(date);
-  from.setHours(0, 0, 0, 0);
-  const to = new Date(from);
-  to.setDate(to.getDate() + 1);
-  return { from, to };
-}
 
 export default async function OpsBoardPage() {
   const user = await getCurrentUser();
@@ -25,59 +18,7 @@ export default async function OpsBoardPage() {
     redirect('/');
   }
 
-  const { from, to } = dayRange(new Date());
-
-  const bookingSelect = {
-    id: true,
-    status: true,
-    startDate: true,
-    endDate: true,
-    totalThb: true,
-    adults: true,
-    children: true,
-    verificationStatus: true,
-    unit: { select: { name: true } },
-    guestIdentity: { select: { firstName: true, lastName: true } },
-    payments: {
-      where: { status: 'succeeded' as const, purpose: 'stay' as const },
-      select: { id: true },
-    },
-  };
-
-  const [arrivals, departures, pendingPayment, pendingServiceOrders] = await Promise.all([
-    prisma.booking.findMany({
-      where: {
-        startDate: { gte: from, lt: to },
-        status: { in: ['confirmed', 'pending_payment'] },
-      },
-      select: bookingSelect,
-      orderBy: { startDate: 'asc' },
-    }),
-    prisma.booking.findMany({
-      where: { endDate: { gte: from, lt: to }, status: 'checked_in' },
-      select: bookingSelect,
-      orderBy: { endDate: 'asc' },
-    }),
-    prisma.booking.findMany({
-      where: { status: 'pending_payment' },
-      select: bookingSelect,
-      orderBy: { startDate: 'asc' },
-      take: 50,
-    }),
-    // Service orders awaiting cash (placed = not yet paid) — F-OPS-6 for services
-    prisma.serviceOrder.findMany({
-      where: { status: 'placed' },
-      select: {
-        id: true,
-        scheduled_start: true,
-        total_thb: true,
-        service: { select: { title: true } },
-        orderer: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { scheduled_start: 'asc' },
-      take: 50,
-    }),
-  ]);
+  const { arrivals, departures, pendingPayment, pendingServiceOrders } = await getOpsBoard(prisma);
 
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',

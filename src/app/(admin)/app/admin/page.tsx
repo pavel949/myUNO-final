@@ -1,31 +1,14 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getMetricsSeries } from '@/modules/analytics';
+import { getAdminDashboardStats } from '@/modules/analytics';
 import { Sparkline, formatThb } from '@/components/viz';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const [units, liveUnits, bookings, pendingPayment, openTickets, identities] =
-    await Promise.all([
-      prisma.unit.count(),
-      prisma.unit.count({ where: { status: 'live' } }),
-      prisma.booking.count(),
-      prisma.booking.count({ where: { status: 'pending_payment' } }),
-      prisma.ticket.count({ where: { status: { in: ['open', 'acknowledged', 'in_progress'] } } }),
-      prisma.identity.count(),
-    ]);
-
-  // Platform-wide last 30 days from the analytics rollup (MetricDaily)
-  const now = new Date();
-  const last30 = await getMetricsSeries(prisma, {
-    from: new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
-    to: now,
-    groupBy: 'day',
-  });
-  const revenue30 = last30.reduce((sum, p) => sum + p.rentalRevenueThb, 0);
-  const nights30 = last30.reduce((sum, p) => sum + p.nightsOccupied, 0);
+  const { units, liveUnits, bookings, pendingPayment, openTickets, identities, revenue30, nights30, last30 } =
+    await getAdminDashboardStats(prisma);
 
   const labels = await getLabels({
     'admin.dashboard.title': 'Dashboard',

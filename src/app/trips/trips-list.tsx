@@ -43,7 +43,11 @@ const statusColors: Record<string, string> = {
   expired: 'bg-surface-ivory text-text-ink',
 };
 
-export default function TripsList() {
+interface TripsListProps {
+  labels: Record<string, string>;
+}
+
+export default function TripsList({ labels }: TripsListProps) {
   const router = useRouter();
   const [trips, setTrips] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +68,7 @@ export default function TripsList() {
         setTrips(data.bookings);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'An error occurred'
+          err instanceof Error ? err.message : labels['booking.trips.fetch_error'] || 'An error occurred'
         );
       } finally {
         setLoading(false);
@@ -78,7 +82,7 @@ export default function TripsList() {
     return (
       <div className="min-h-screen bg-surface-background p-8">
         <div className="text-center">
-          <p className="text-text-secondary">Loading your trips...</p>
+          <p className="text-text-secondary">{labels['booking.trips.loading']}</p>
         </div>
       </div>
     );
@@ -88,7 +92,7 @@ export default function TripsList() {
     <div className="min-h-screen bg-surface-background p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-ink">My Trips</h1>
+          <h1 className="text-3xl font-bold text-text-ink">{labels['booking.trips.title']}</h1>
           <p className="text-text-secondary">
             {trips.length} booking{trips.length !== 1 ? 's' : ''}
           </p>
@@ -102,12 +106,12 @@ export default function TripsList() {
 
         {trips.length === 0 ? (
           <div className="bg-surface-paper border border-border-line rounded-lg p-8 text-center">
-            <p className="text-text-secondary mb-4">No trips yet. Ready for your first adventure?</p>
+            <p className="text-text-secondary mb-4">{labels['booking.trips.empty_title']}</p>
             <a
               href="/"
               className="inline-block px-6 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep"
             >
-              Search Stays
+              {labels['booking.trips.empty_action']}
             </a>
           </div>
         ) : (
@@ -141,13 +145,13 @@ export default function TripsList() {
 
                 <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b">
                   <div>
-                    <p className="text-sm text-text-secondary">Check-in</p>
+                    <p className="text-sm text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
                       {new Date(trip.startDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-text-secondary">Check-out</p>
+                    <p className="text-sm text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
                       {new Date(trip.endDate).toLocaleDateString()}
                     </p>
@@ -156,7 +160,7 @@ export default function TripsList() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-text-secondary">Total</p>
+                    <p className="text-sm text-text-secondary">{labels['booking.trips.total']}</p>
                     <p className="text-2xl font-bold text-brand-andaman">
                       ฿{trip.totalThb?.toLocaleString()}
                     </p>
@@ -165,13 +169,13 @@ export default function TripsList() {
                   {trip.status === 'pending_payment' && (
                     <div className="text-right">
                       <p className="text-sm text-state-warning font-semibold mb-2">
-                        Payment pending
+                        {labels['booking.trips.payment_pending']}
                       </p>
                       <button
                         onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}`); }}
                         className="px-4 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep text-sm"
                       >
-                        Complete Payment
+                        {labels['booking.trips.payment_action']}
                       </button>
                     </div>
                   )}
@@ -179,7 +183,7 @@ export default function TripsList() {
                   {trip.status === 'confirmed' && (
                     <div className="text-right">
                       <p className="text-sm text-state-success font-semibold">
-                        Ready for check-in
+                        {labels['booking.trips.ready_checkin']}
                       </p>
                     </div>
                   )}
@@ -187,7 +191,7 @@ export default function TripsList() {
 
                 {trip.guestNote && (
                   <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm text-text-secondary mb-1">Guest Note:</p>
+                    <p className="text-sm text-text-secondary mb-1">{labels['booking.trips.note_label']}</p>
                     <p className="text-text-ink">{trip.guestNote}</p>
                   </div>
                 )}

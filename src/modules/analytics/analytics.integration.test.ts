@@ -519,4 +519,221 @@ describe('Analytics Module', () => {
       expect(signal).toBeNull();
     });
   });
+
+  describe('KPI Functions', () => {
+    it('getKpiSummary calculates occupancy, ADR, RevPAN correctly', async () => {
+      const { getKpiSummary } = await import('./kpi.service');
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const from = new Date('2025-01-01');
+      const to = new Date('2025-01-31');
+
+      // Create metric: 30 nights available, 20 occupied (no owner stays), 10000 THB revenue
+      await prisma.metricDaily.create({
+        data: {
+          date: from,
+          projectId: project.id,
+          unitId: unit.id,
+          nightsAvailable: 30,
+          nightsOccupied: 20,
+          ownerStayNights: 0,
+          rentalRevenueCents: 1000000, // 10000 THB
+        },
+      });
+
+      const kpi = await getKpiSummary(prisma, { from, to });
+
+      expect(kpi.occupancyPct).toBe(66); // 20/30
+      expect(kpi.adrThb).toBe(500); // 10000 / 20
+      expect(kpi.revpanThb).toBe(333); // 10000 / 30
+    });
+
+    it('getKpiSummary excludes owner stay nights from ADR', async () => {
+      const { getKpiSummary } = await import('./kpi.service');
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const from = new Date('2025-01-01');
+      const to = new Date('2025-01-31');
+
+      // 30 nights available, 20 occupied (5 owner, 15 guest), 10000 THB revenue from guest stays
+      await prisma.metricDaily.create({
+        data: {
+          date: from,
+          projectId: project.id,
+          unitId: unit.id,
+          nightsAvailable: 30,
+          nightsOccupied: 20,
+          ownerStayNights: 5,
+          rentalRevenueCents: 1000000,
+        },
+      });
+
+      const kpi = await getKpiSummary(prisma, { from, to });
+
+      expect(kpi.occupancyPct).toBe(66); // 20/30
+      expect(kpi.adrThb).toBe(666); // 10000 / 15 (guest nights only)
+      expect(kpi.revpanThb).toBe(333); // 10000 / 30
+    });
+
+    it('getServicesAttachRate returns percentage of bookings with services', async () => {
+      const { getServicesAttachRate } = await import('./kpi.service');
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const from = new Date('2025-01-01');
+      const to = new Date('2025-01-31');
+
+      // Create 2 bookings, 1 with service order
+      const b1 = await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: from,
+          endDate: new Date('2025-01-10'),
+          adults: 1,
+          children: 0,
+          totalThb: 50000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      const b2 = await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-15'),
+          endDate: new Date('2025-01-20'),
+          adults: 1,
+          children: 0,
+          totalThb: 30000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      await prisma.serviceOrder.create({
+        data: {
+          bookingId: b1.id,
+          serviceId: 'svc-1',
+          status: 'fulfilled',
+          totalThb: 5000,
+        },
+      });
+
+      const rate = await getServicesAttachRate(prisma, { from, to });
+      expect(rate).toBe(50); // 1 out of 2 bookings
+    });
+
+    it('getDirectShare returns percentage of direct bookings', async () => {
+      const { getDirectShare } = await import('./kpi.service');
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const from = new Date('2025-01-01');
+      const to = new Date('2025-01-31');
+
+      // Create 2 bookings: 1 direct, 1 via OTA
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: from,
+          endDate: new Date('2025-01-10'),
+          adults: 1,
+          children: 0,
+          totalThb: 50000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'airbnb',
+          startDate: new Date('2025-01-15'),
+          endDate: new Date('2025-01-20'),
+          adults: 1,
+          children: 0,
+          totalThb: 30000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      const share = await getDirectShare(prisma, { from, to });
+      expect(share).toBe(50); // 1 out of 2
+    });
+
+    it('getRepeatGuestRate returns percentage of guests with 2+ bookings', async () => {
+      const { getRepeatGuestRate } = await import('./kpi.service');
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest1 = await createIdentity();
+      const guest2 = await createIdentity();
+      const from = new Date('2025-01-01');
+      const to = new Date('2025-01-31');
+
+      // guest1: 2 bookings (repeat), guest2: 1 booking
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest1.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: from,
+          endDate: new Date('2025-01-10'),
+          adults: 1,
+          children: 0,
+          totalThb: 50000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest1.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-15'),
+          endDate: new Date('2025-01-20'),
+          adults: 1,
+          children: 0,
+          totalThb: 30000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest2.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-25'),
+          endDate: new Date('2025-01-27'),
+          adults: 1,
+          children: 0,
+          totalThb: 20000,
+          status: BookingStatus.completed,
+        },
+      });
+
+      const rate = await getRepeatGuestRate(prisma, { from, to });
+      expect(rate).toBe(50); // 1 repeat guest out of 2 unique
+    });
+  });
 });

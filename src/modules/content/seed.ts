@@ -1746,6 +1746,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'admin.dashboard.last30_revenue_spark', namespace: 'admin', description: 'Sparkline title: revenue per day', en: 'Rental revenue per day, last 30 days', ru: 'Доход от аренды по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_nights_spark', namespace: 'admin', description: 'Sparkline title: occupied nights per day', en: 'Occupied nights per day, last 30 days', ru: 'Занятые ночи по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_empty', namespace: 'admin', description: 'Trend row empty state', en: 'No rollup data yet — trends appear after the first nightly rollup.', ru: 'Данных пока нет — тренды появятся после первого ночного пересчёта.', status: NR },
+  { key: 'admin.dashboard.kpi_title', namespace: 'admin', description: 'KPI row heading', en: 'Key metrics (last 30 days)', ru: 'Ключевые показатели (последние 30 дней)', status: NR },
+  { key: 'admin.dashboard.occupancy', namespace: 'admin', description: 'KPI: occupancy %', en: 'Occupancy %', ru: 'Заполняемость %', status: NR },
+  { key: 'admin.dashboard.adr', namespace: 'admin', description: 'KPI: average daily rate', en: 'ADR (฿)', ru: 'ADR (฿)', status: NR },
+  { key: 'admin.dashboard.revpan', namespace: 'admin', description: 'KPI: revenue per available night', en: 'RevPAN (฿)', ru: 'RevPAN (฿)', status: NR },
+  { key: 'admin.dashboard.attach_rate', namespace: 'admin', description: 'KPI: service attach rate %', en: 'Service attach rate %', ru: 'Процент добавления услуг %', status: NR },
+  { key: 'admin.dashboard.direct_share', namespace: 'admin', description: 'KPI: direct bookings %', en: 'Direct bookings %', ru: 'Прямые бронирования %', status: NR },
+  { key: 'admin.dashboard.repeat_guests', namespace: 'admin', description: 'KPI: repeat guests %', en: 'Repeat guests %', ru: 'Постоянные гости %', status: NR },
 
   // Admin — buyer signals funnel & list
   { key: 'admin.signals.title', namespace: 'admin', description: 'Signals page title', en: 'Buyer Signals', ru: 'Сигналы покупателей', status: NR },
@@ -1843,6 +1850,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.order.cancelled_note', namespace: 'services', description: 'My-orders: flash after successful cancel', en: 'Order cancelled. Any refund due is on its way.', ru: 'Заказ отменён. Если полагается возврат — он уже оформляется.', status: NR },
   { key: 'payments.checkout.service_label', namespace: 'payments', description: 'Mock checkout: service line label (service-order payments)', en: 'Service', ru: 'Услуга', status: NR },
   { key: 'staff.ops.service_pending_cash', namespace: 'staff', description: 'Ops board: service orders awaiting cash section title', en: 'Service orders awaiting cash', ru: 'Заказы услуг: ожидают оплату наличными', status: NR },
+  { key: 'staff.ops.sla_title', namespace: 'staff', description: 'Ops board: SLA health section title', en: 'SLA health (last 7 days)', ru: 'Здоровье SLA (последние 7 дней)', status: NR },
+  { key: 'staff.ops.tm30_on_time', namespace: 'staff', description: 'Ops board: TM30 on-time rate', en: 'TM30 on-time %', ru: 'TM30 вовремя %', status: NR },
+  { key: 'staff.ops.tickets_past_sla', namespace: 'staff', description: 'Ops board: tickets with open SLA past due', en: 'Tickets past SLA', ru: 'Тикеты просроченные SLA', status: NR },
   { key: 'order.cancelled.title', namespace: 'order', description: 'Notification: service order cancelled', en: 'Order Cancelled', ru: 'Заказ отменён', status: NR },
   { key: 'order.cancelled.body', namespace: 'order', description: 'Notification body: service order cancelled (refund amount in satang-free THB)', en: 'Your order for {{service_title}} was cancelled. Refund due: ฿{{refund_thb}}.', ru: 'Ваш заказ на {{service_title}} отменён. Возврат: ฿{{refund_thb}}.', status: NR },
 

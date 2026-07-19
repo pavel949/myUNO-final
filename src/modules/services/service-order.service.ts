@@ -151,6 +151,16 @@ export async function acceptServiceOrder(
     data: { status: 'accepted' },
   });
 
+  // Track analytics event
+  await track(db, 'service_order_accepted', {
+    serviceOrderId: order.id,
+    serviceId: order.service_id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+  });
+
   // Notify orderer of acceptance (N-21)
   await createNotification(db, {
     identityId: order.orderer_identity_id,
@@ -228,6 +238,17 @@ export async function declineServiceOrder(
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
     data: { status: 'declined' },
+  });
+
+  // Track analytics event
+  await track(db, 'service_order_declined', {
+    serviceOrderId: order.id,
+    serviceId: order.service_id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+    reason: reason || 'no reason provided',
   });
 
   // Notify orderer of decline (N-22)

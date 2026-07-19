@@ -1,5 +1,42 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage } from '@/modules/comms';
+import { track } from '@/modules/analytics';
+
+/**
+ * Shared post-payment transition for service orders: placed → paid.
+ * Commission is recognized at fulfilment (recordServiceCommission), so no
+ * gross-revenue ledger entry is written here — the Payment row itself is the
+ * money-in record (doc 10; ledger presentation of gross service cash is an
+ * open founder question).
+ */
+async function markServiceOrderPaid(
+  db: PrismaClient,
+  serviceOrderId: string,
+  payerIdentityId: string
+): Promise<void> {
+  // Note: the ServiceOrder model region uses snake_case client fields.
+  const order = await db.serviceOrder.findUnique({
+    where: { id: serviceOrderId },
+    select: { status: true, project_id: true, unit_id: true, total_thb: true },
+  });
+
+  if (!order || order.status !== 'placed') {
+    return; // idempotent: already paid/advanced, or order gone
+  }
+
+  await db.serviceOrder.update({
+    where: { id: serviceOrderId },
+    data: { status: 'paid' },
+  });
+
+  await track(db, 'service_order_paid', {
+    serviceOrderId,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: payerIdentityId,
+    totalThb: order.total_thb,
+  });
+}
 
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
@@ -97,6 +134,11 @@ export async function recordCashPayment(
         data: { status: 'confirmed' },
       });
     }
+  }
+
+  // Cash taken for a service order: placed → paid
+  if (serviceOrderId && purpose === 'service_order') {
+    await markServiceOrderPaid(db, serviceOrderId, payerIdentityId);
   }
 
   return payment;
@@ -295,6 +337,11 @@ export async function verifyAndConfirm(
         console.error('Failed to create booking thread:', err);
       }
     }
+  }
+
+  // Card payment confirmed for a service order: placed → paid
+  if (confirmed.serviceOrderId && confirmed.purpose === 'service_order') {
+    await markServiceOrderPaid(db, confirmed.serviceOrderId, confirmed.payerIdentityId);
   }
 
   return { payment: confirmed, confirmed: true };

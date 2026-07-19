@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createServiceOrder } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
 
 /** GET /api/service-orders — the caller's orders, newest first. */
@@ -19,7 +20,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
-    return NextResponse.json({ orders });
+    return NextResponse.json({ orders: orders.map(serializeOrder) });
   } catch (error) {
     return handleError(error);
   }
@@ -74,7 +75,9 @@ export async function POST(req: NextRequest) {
     const durationMs = (service.durationMin || 60) * 60 * 1000;
     const end = new Date(start.getTime() + durationMs * qty);
 
-    // Booking context (project/unit scope + guest check)
+    // Project/unit context must be deterministic — never an arbitrary row.
+    // Priority: booking (validated as the caller's) → explicit projectId in
+    // the body (validated) → the single project when only one exists → 400.
     let projectId: string | null = null;
     let unitId: string | undefined;
     if (bookingId) {
@@ -87,9 +90,18 @@ export async function POST(req: NextRequest) {
       }
       projectId = booking.projectId;
       unitId = booking.unitId;
+    } else if (typeof body.projectId === 'string' && body.projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: body.projectId },
+        select: { id: true },
+      });
+      if (!project) {
+        throw createPublicError('invalid request: unknown project', 400);
+      }
+      projectId = project.id;
     } else {
-      const firstProject = await prisma.project.findFirst({ select: { id: true } });
-      projectId = firstProject?.id || null;
+      const projects = await prisma.project.findMany({ select: { id: true }, take: 2 });
+      projectId = projects.length === 1 ? projects[0].id : null;
     }
     if (!projectId) {
       throw createPublicError('invalid request: no project context', 400);

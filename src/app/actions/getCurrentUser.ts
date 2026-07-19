@@ -15,6 +15,7 @@ export interface CurrentUser {
     projectId: string | null;
     unitId: string | null;
     organizationId: string | null;
+    providerId: string | null;
   }[];
 }
 
@@ -45,6 +46,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
             projectId: true,
             unitId: true,
             organizationId: true,
+            providerId: true,
           },
         },
       },

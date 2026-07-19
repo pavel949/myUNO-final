@@ -22,6 +22,11 @@ export default async function ServicesPage() {
     'services.browse.error_generic': 'Could not place the order. Please try again.',
     'services.my_orders.title': 'My orders',
     'services.my_orders.empty': 'No orders yet.',
+    'services.order.pay': 'Pay',
+    'services.order.cancel': 'Cancel',
+    'services.order.cancel_confirm':
+      'Cancel this order? Cancelling early enough before the visit refunds in full; inside the cancellation window there is no refund.',
+    'services.order.cancelled_note': 'Order cancelled. Any refund due is on its way.',
     'services.order_status.placed': 'Awaiting provider',
     'services.order_status.paid': 'Paid',
     'services.order_status.expired': 'Expired',

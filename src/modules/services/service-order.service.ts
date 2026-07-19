@@ -373,6 +373,28 @@ export async function cancelServiceOrder(
       refund_accrued_thb: refundThb,
     },
   });
+
+  // Notify orderer of cancellation (staff/ops cancels included; when the
+  // orderer cancelled themselves this doubles as the confirmation).
+  await createNotification(db, {
+    identityId: order.orderer_identity_id,
+    type: 'order_cancelled',
+    titleKey: 'order.cancelled.title',
+    bodyKey: 'order.cancelled.body',
+    params: {
+      order_id: order.id,
+      service_title: order.service?.title || 'Service',
+      refund_thb: refundThb,
+    },
+  });
+
+  await track(db, 'service_order_cancelled', {
+    serviceOrderId: order.id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: cancelledByIdentityId,
+    totalThb: order.total_thb,
+  });
 }
 
 /**

@@ -281,6 +281,7 @@ enum NotificationType {
   order_new
   order_accepted
   order_declined
+  order_cancelled
   order_failed_no_show
   order_review_prompt
   provider_remittance

@@ -1812,6 +1812,16 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'audience.developers.point1', namespace: 'audience', description: 'Developers page: point 1', en: 'The income story closes your sales. But once the keys change hands, that promise runs on someone else\'s operation — and your name carries the risk if it falls short.', ru: 'История про доход закрывает ваши сделки. Но как только ключи переданы, обещание держится на чужой работе — а если что-то не так, отвечает ваше имя.' },
   { key: 'audience.developers.point2', namespace: 'audience', description: 'Developers page: point 2', en: 'Keep the owner, the data, and the standard under your brand — for the life of the project, not just until move-in.', ru: 'Удержите владельца, данные и стандарт под своим брендом — на всю жизнь проекта, а не только до заселения.' },
   { key: 'audience.developers.point3', namespace: 'audience', description: 'Developers page: point 3', en: 'One system from first sale to every future re-sale, instead of a CRM stitched to a rental manager stitched to three booking sites.', ru: 'Одна система — от первой продажи до каждой перепродажи, вместо CRM, склеенной с управляющей компанией и тремя площадками бронирования.' },
+
+  // S1 — service-order money & lifecycle surfaces (pay, cancel, ops cash)
+  { key: 'services.order.pay', namespace: 'services', description: 'My-orders: pay button on an unpaid order', en: 'Pay', ru: 'Оплатить', status: NR },
+  { key: 'services.order.cancel', namespace: 'services', description: 'My-orders: cancel button', en: 'Cancel', ru: 'Отменить', status: NR },
+  { key: 'services.order.cancel_confirm', namespace: 'services', description: 'My-orders: cancel confirmation with refund-window note', en: 'Cancel this order? Cancelling early enough before the visit refunds in full; inside the cancellation window there is no refund.', ru: 'Отменить заказ? При отмене заранее возвращается полная сумма; внутри окна отмены возврата нет.', status: NR },
+  { key: 'services.order.cancelled_note', namespace: 'services', description: 'My-orders: flash after successful cancel', en: 'Order cancelled. Any refund due is on its way.', ru: 'Заказ отменён. Если полагается возврат — он уже оформляется.', status: NR },
+  { key: 'payments.checkout.service_label', namespace: 'payments', description: 'Mock checkout: service line label (service-order payments)', en: 'Service', ru: 'Услуга', status: NR },
+  { key: 'staff.ops.service_pending_cash', namespace: 'staff', description: 'Ops board: service orders awaiting cash section title', en: 'Service orders awaiting cash', ru: 'Заказы услуг: ожидают оплату наличными', status: NR },
+  { key: 'order.cancelled.title', namespace: 'order', description: 'Notification: service order cancelled', en: 'Order Cancelled', ru: 'Заказ отменён', status: NR },
+  { key: 'order.cancelled.body', namespace: 'order', description: 'Notification body: service order cancelled (refund amount in satang-free THB)', en: 'Your order for {{service_title}} was cancelled. Refund due: ฿{{refund_thb}}.', ru: 'Ваш заказ на {{service_title}} отменён. Возврат: ฿{{refund_thb}}.', status: NR },
 ];
 
 

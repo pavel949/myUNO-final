@@ -17,6 +17,14 @@ interface OpsBooking {
   paid: boolean;
 }
 
+interface OpsServiceOrder {
+  id: string;
+  scheduledStart: string;
+  totalThb: number;
+  serviceTitle: string;
+  ordererName: string;
+}
+
 type Labels = Record<string, string>;
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -31,11 +39,13 @@ export default function OpsBoardClient({
   arrivals,
   departures,
   pendingPayment,
+  pendingServiceOrders,
   labels,
 }: {
   arrivals: OpsBooking[];
   departures: OpsBooking[];
   pendingPayment: OpsBooking[];
+  pendingServiceOrders: OpsServiceOrder[];
   labels: Labels;
 }) {
   const router = useRouter();
@@ -51,6 +61,38 @@ export default function OpsBoardClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || labels['staff.ops.error_generic']);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['staff.ops.error_generic']);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const recordServiceCash = async (order: OpsServiceOrder) => {
+    const receiptRef = (receipts[order.id] || '').trim();
+    if (!receiptRef) return;
+    if (
+      !window.confirm(
+        fill(labels['staff.ops.confirm_cash'], {
+          amount: order.totalThb.toLocaleString(),
+        })
+      )
+    ) {
+      return;
+    }
+    setBusyId(order.id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/service-orders/${order.id}/record-cash-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiptRef }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
@@ -202,6 +244,54 @@ export default function OpsBoardClient({
           </div>
         )}
       />
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+          {labels['staff.ops.service_pending_cash']}
+        </h2>
+        {pendingServiceOrders.length === 0 ? (
+          <p className="text-body text-text-secondary py-8">{labels['staff.ops.empty']}</p>
+        ) : (
+          pendingServiceOrders.map((order) => (
+            <div
+              key={order.id}
+              className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-body font-semibold text-text-ink">
+                  {order.serviceTitle}
+                  <span className="text-text-secondary font-normal"> · {order.ordererName}</span>
+                </p>
+                <p className="text-small text-text-secondary">
+                  {new Date(order.scheduledStart).toLocaleString()} · ฿
+                  {order.totalThb.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-8">
+                <input
+                  type="text"
+                  value={receipts[order.id] || ''}
+                  onChange={(e) =>
+                    setReceipts((prev) => ({ ...prev, [order.id]: e.target.value }))
+                  }
+                  placeholder={labels['staff.ops.receipt_placeholder']}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+                  style={{ width: '160px' }}
+                />
+                <Button
+                  size="sm"
+                  variant="sun"
+                  onClick={() => recordServiceCash(order)}
+                  isLoading={busyId === order.id}
+                  disabled={!(receipts[order.id] || '').trim()}
+                >
+                  {labels['staff.ops.record_cash']}
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </section>
     </div>
   );
 }

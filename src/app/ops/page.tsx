@@ -44,7 +44,7 @@ export default async function OpsBoardPage() {
     },
   };
 
-  const [arrivals, departures, pendingPayment] = await Promise.all([
+  const [arrivals, departures, pendingPayment, pendingServiceOrders] = await Promise.all([
     prisma.booking.findMany({
       where: {
         startDate: { gte: from, lt: to },
@@ -62,6 +62,19 @@ export default async function OpsBoardPage() {
       where: { status: 'pending_payment' },
       select: bookingSelect,
       orderBy: { startDate: 'asc' },
+      take: 50,
+    }),
+    // Service orders awaiting cash (placed = not yet paid) — F-OPS-6 for services
+    prisma.serviceOrder.findMany({
+      where: { status: 'placed' },
+      select: {
+        id: true,
+        scheduled_start: true,
+        total_thb: true,
+        service: { select: { title: true } },
+        orderer: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { scheduled_start: 'asc' },
       take: 50,
     }),
   ]);
@@ -87,6 +100,7 @@ export default async function OpsBoardPage() {
     'staff.ops.receipt_placeholder': 'Receipt / чек №',
     'staff.ops.confirm_cash': 'Confirm ฿{amount} received',
     'staff.ops.error_generic': 'Action failed. Please try again.',
+    'staff.ops.service_pending_cash': 'Service orders awaiting cash',
   });
 
   const serialize = (list: typeof arrivals) =>
@@ -123,6 +137,15 @@ export default async function OpsBoardPage() {
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}
           pendingPayment={serialize(pendingPayment)}
+          pendingServiceOrders={pendingServiceOrders.map((o) => ({
+            id: o.id,
+            scheduledStart: o.scheduled_start.toISOString(),
+            totalThb: o.total_thb,
+            serviceTitle: o.service?.title || '—',
+            ordererName: o.orderer
+              ? `${o.orderer.firstName} ${o.orderer.lastName}`
+              : '—',
+          }))}
           labels={labels}
         />
       </div>

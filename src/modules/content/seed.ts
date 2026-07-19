@@ -1927,6 +1927,34 @@ const HOME_KEYS: KeyDef[] = [
   { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
 ];
 
+const ADMIN_S3_KEYS: KeyDef[] = [
+  // Admin navigation (S3: services vetting)
+  { key: 'admin.nav.providers', namespace: 'admin', description: 'Admin nav: provider vetting', en: 'Provider Vetting', ru: 'Проверка поставщиков', status: NR },
+  { key: 'admin.nav.services', namespace: 'admin', description: 'Admin nav: service submissions', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+
+  // Provider vetting page
+  { key: 'admin.providers.title', namespace: 'admin', description: 'Provider applications page title', en: 'Provider Applications', ru: 'Заявки от поставщиков', status: NR },
+  { key: 'admin.providers.empty', namespace: 'admin', description: 'Provider list empty state', en: 'No pending applications.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.providers.approve', namespace: 'admin', description: 'Button: approve provider', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.providers.reject', namespace: 'admin', description: 'Button: reject provider', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.providers.status_applied', namespace: 'admin', description: 'Provider status: applied', en: 'Applied', ru: 'Заявка получена', status: NR },
+  { key: 'admin.providers.status_approved', namespace: 'admin', description: 'Provider status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.providers.status_rejected', namespace: 'admin', description: 'Provider status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.providers.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.providers.error_generic', namespace: 'admin', description: 'Provider action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+
+  // Service vetting page
+  { key: 'admin.services.title', namespace: 'admin', description: 'Service submissions page title', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+  { key: 'admin.services.empty', namespace: 'admin', description: 'Service list empty state', en: 'No pending submissions.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.services.approve', namespace: 'admin', description: 'Button: approve service', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.services.reject', namespace: 'admin', description: 'Button: reject service', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.services.status_draft', namespace: 'admin', description: 'Service status: draft/pending', en: 'Draft', ru: 'На рассмотрении', status: NR },
+  { key: 'admin.services.status_vetted', namespace: 'admin', description: 'Service status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.services.status_rejected', namespace: 'admin', description: 'Service status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.services.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.services.error_generic', namespace: 'admin', description: 'Service action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -1953,7 +1981,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

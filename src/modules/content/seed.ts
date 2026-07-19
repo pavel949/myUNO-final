@@ -1974,6 +1974,36 @@ const SERVICE_DETAIL_KEYS: KeyDef[] = [
   { key: 'services.detail.order', namespace: 'services', description: 'CTA button: order this service', en: 'Order this service', ru: 'Заказать услугу', status: NR },
 ];
 
+const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
+  // Service order detail page (F-SVC-4)
+  { key: 'service-order.detail.title', namespace: 'service-order', description: 'Order detail page title', en: 'Service Order', ru: 'Заказ услуги', status: NR },
+  { key: 'service-order.detail.order_id', namespace: 'service-order', description: 'Field label: order ID', en: 'Order ID', ru: 'ID заказа', status: NR },
+  { key: 'service-order.detail.status', namespace: 'service-order', description: 'Field label: order status', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'service-order.detail.placed', namespace: 'service-order', description: 'Status: order placed', en: 'Placed', ru: 'Размещён', status: NR },
+  { key: 'service-order.detail.accepted', namespace: 'service-order', description: 'Status: order accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'service-order.detail.declined', namespace: 'service-order', description: 'Status: order declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'service-order.detail.fulfilled', namespace: 'service-order', description: 'Status: order fulfilled', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'service-order.detail.cancelled', namespace: 'service-order', description: 'Status: order cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+  { key: 'service-order.detail.scheduled', namespace: 'service-order', description: 'Section title: scheduling', en: 'Scheduled', ru: 'Запланировано', status: NR },
+  { key: 'service-order.detail.scheduled_start', namespace: 'service-order', description: 'Field: start date & time', en: 'Start date & time', ru: 'Дата и время начала', status: NR },
+  { key: 'service-order.detail.scheduled_end', namespace: 'service-order', description: 'Field: end date & time', en: 'End date & time', ru: 'Дата и время окончания', status: NR },
+  { key: 'service-order.detail.quantity', namespace: 'service-order', description: 'Field: order quantity', en: 'Quantity', ru: 'Количество', status: NR },
+  { key: 'service-order.detail.pricing', namespace: 'service-order', description: 'Section title: pricing', en: 'Pricing', ru: 'Цена', status: NR },
+  { key: 'service-order.detail.total_price', namespace: 'service-order', description: 'Field: total price', en: 'Total price', ru: 'Итоговая цена', status: NR },
+  { key: 'service-order.detail.payment_status', namespace: 'service-order', description: 'Field: payment status', en: 'Payment status', ru: 'Статус платежа', status: NR },
+  { key: 'service-order.detail.paid', namespace: 'service-order', description: 'Payment status: paid', en: 'Paid', ru: 'Оплачено', status: NR },
+  { key: 'service-order.detail.unpaid', namespace: 'service-order', description: 'Payment status: unpaid', en: 'Unpaid', ru: 'Не оплачено', status: NR },
+  { key: 'service-order.detail.provider_info', namespace: 'service-order', description: 'Section title: service provider', en: 'Service Provider', ru: 'Поставщик услуг', status: NR },
+  { key: 'service-order.detail.contact_provider', namespace: 'service-order', description: 'Button: contact provider', en: 'Contact Provider', ru: 'Связаться с поставщиком', status: NR },
+  { key: 'service-order.detail.location', namespace: 'service-order', description: 'Section title: location', en: 'Location', ru: 'Местоположение', status: NR },
+  { key: 'service-order.detail.notes', namespace: 'service-order', description: 'Section title: notes', en: 'Notes', ru: 'Примечания', status: NR },
+  { key: 'service-order.detail.note_to_provider', namespace: 'service-order', description: 'Field: note to provider', en: 'Note to Provider', ru: 'Примечание для поставщика', status: NR },
+  { key: 'service-order.detail.address_note', namespace: 'service-order', description: 'Field: special location note', en: 'Special Location Note', ru: 'Специальное примечание о месте', status: NR },
+  { key: 'service-order.detail.cancellation_reason', namespace: 'service-order', description: 'Field: why order was cancelled', en: 'Cancellation Reason', ru: 'Причина отмены', status: NR },
+  { key: 'service-order.detail.cancel_order', namespace: 'service-order', description: 'Button: cancel order', en: 'Cancel Order', ru: 'Отменить заказ', status: NR },
+  { key: 'service-order.detail.confirm_cancellation', namespace: 'service-order', description: 'Button: confirm cancellation', en: 'Confirm Cancellation', ru: 'Подтвердить отмену', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -2000,7 +2030,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

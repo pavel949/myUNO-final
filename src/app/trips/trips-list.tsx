@@ -76,7 +76,7 @@ export default function TripsList({ labels }: TripsListProps) {
     };
 
     fetchTrips();
-  }, [router]);
+  }, [router, labels]);
 
   if (loading) {
     return (

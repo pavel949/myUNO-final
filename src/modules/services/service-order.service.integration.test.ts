@@ -708,5 +708,185 @@ describe('service-order.service — integration tests', () => {
       expect(review?.target_id).toBe(orderResult.id);
       expect(review?.rating).toBe(5);
     });
+
+    it('expireStaleServiceOrders marks orders past SLA as expired (S5)', async () => {
+      const { serviceOrderService, seedConfig } = await setupModule();
+      await seedConfig(db);
+      await seedConfig(db);
+
+      // Create test data
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const provider = await createProvider({ status: 'active' });
+      const orderer = await createIdentity();
+      const service = await db.service.create({
+        data: {
+          title: 'Test Service',
+          description: 'Desc',
+          category_key: 'cleaning',
+          price_model: 'per_hour',
+          base_price_thb: 500,
+          provider_id: provider.id,
+          project_id: project.id,
+          status: 'approved',
+        },
+      });
+
+      // Create an order that's old (12+ hours ago)
+      const pastDate = new Date(Date.now() - 13 * 60 * 60 * 1000);
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: unit.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'placed',
+          scheduled_start: new Date(),
+          scheduled_end: new Date(Date.now() + 60 * 60 * 1000),
+          quantity: 1,
+          price_breakdown: { base: 500 },
+          total_thb: 500,
+          take_rate_pct_snapshot: 15,
+          created_at: pastDate,
+          updated_at: pastDate,
+        },
+      });
+
+      // Run expiry job with 12-hour SLA
+      const result = await serviceOrderService.expireStaleServiceOrders(db, 12);
+
+      expect(result.expired).toBe(1);
+
+      const expiredOrder = await db.serviceOrder.findUnique({
+        where: { id: order.id },
+      });
+
+      expect(expiredOrder?.status).toBe('expired');
+      expect(expiredOrder?.expired_at).toBeDefined();
+    });
+
+    it('expireStaleServiceOrders refunds paid orders (S5)', async () => {
+      const { serviceOrderService, seedConfig } = await setupModule();
+      await seedConfig(db);
+
+      // Create test data
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const provider = await createProvider({ status: 'active' });
+      const orderer = await createIdentity();
+      const service = await db.service.create({
+        data: {
+          title: 'Test Service',
+          description: 'Desc',
+          category_key: 'cleaning',
+          price_model: 'per_hour',
+          base_price_thb: 500,
+          provider_id: provider.id,
+          project_id: project.id,
+          status: 'approved',
+        },
+      });
+
+      // Create a paid order that's old
+      const pastDate = new Date(Date.now() - 13 * 60 * 60 * 1000);
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: unit.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'paid',
+          scheduled_start: new Date(),
+          scheduled_end: new Date(Date.now() + 60 * 60 * 1000),
+          quantity: 1,
+          price_breakdown: { base: 500 },
+          total_thb: 500,
+          take_rate_pct_snapshot: 15,
+          created_at: pastDate,
+          updated_at: pastDate,
+        },
+      });
+
+      // Add a successful payment
+      await db.payment.create({
+        data: {
+          service_order_id: order.id,
+          method: 'cash',
+          amount_thb: 500,
+          status: 'succeeded',
+          received_by: 'staff_member',
+        },
+      });
+
+      // Run expiry job
+      const result = await serviceOrderService.expireStaleServiceOrders(db, 12);
+
+      expect(result.refunded).toBe(1);
+
+      const expiredOrder = await db.serviceOrder.findUnique({
+        where: { id: order.id },
+      });
+
+      expect(expiredOrder?.refund_accrued_thb).toBe(500);
+    });
+
+    it('recordServiceCommission is called when order is fulfilled (S5)', async () => {
+      const { serviceOrderService, seedConfig } = await setupModule();
+      await seedConfig(db);
+
+      // Create test data
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const provider = await createProvider({ status: 'active' });
+      const orderer = await createIdentity();
+      const service = await db.service.create({
+        data: {
+          title: 'Test Service',
+          description: 'Desc',
+          category_key: 'cleaning',
+          price_model: 'per_hour',
+          base_price_thb: 500,
+          provider_id: provider.id,
+          project_id: project.id,
+          status: 'approved',
+        },
+      });
+
+      // Create and accept an order
+      const orderResult = await serviceOrderService.createServiceOrder(db, {
+        serviceId: service.id,
+        projectId: project.id,
+        unitId: unit.id,
+        ordererIdentityId: orderer.id,
+        ordererRole: 'owner',
+        scheduledStart: new Date('2026-08-01'),
+        scheduledEnd: new Date('2026-08-02'),
+        quantity: 1,
+        priceBreakdown: { base: 500 },
+        totalThb: 500,
+        tookRatePctSnapshot: 15,
+      });
+
+      await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
+
+      // Fulfill the order
+      await serviceOrderService.fulfillServiceOrder(db, orderResult.id, provider.id);
+
+      // Check that a LedgerEntry was created for the commission
+      const ledgerEntry = await db.ledgerEntry.findFirst({
+        where: {
+          type: 'service_commission',
+          service_order_id: orderResult.id,
+        },
+      });
+
+      expect(ledgerEntry).toBeDefined();
+      expect(ledgerEntry?.provider_id).toBe(provider.id);
+      expect(ledgerEntry?.amount_thb).toBeGreaterThan(0);
+    });
   });
 });

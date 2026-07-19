@@ -2,6 +2,7 @@ import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { recordServiceCommission } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 
 export interface CreateServiceOrderInput {
@@ -307,6 +308,19 @@ export async function fulfillServiceOrder(
     },
   });
 
+  // Record commission on fulfillment (S5)
+  const commissionThb = Math.round(
+    order.total_thb * (Number(order.take_rate_pct_snapshot) / 100)
+  );
+  await recordServiceCommission(
+    db,
+    order.id,
+    order.unit_id,
+    order.project_id,
+    commissionThb,
+    new Date()
+  );
+
   await track(db, 'service_order_fulfilled', {
     serviceOrderId: order.id,
     projectId: order.project_id,
@@ -528,4 +542,57 @@ export async function rateServiceOrder(
   });
 
   return { id: review.id };
+}
+
+/**
+ * Cron: expire service orders past the SLA (placed/paid status).
+ * Marks them expired and refunds any payment collected.
+ */
+export async function expireStaleServiceOrders(
+  db: PrismaClient,
+  slaHours: number
+): Promise<{ expired: number; refunded: number }> {
+  const cutoffTime = new Date(Date.now() - slaHours * 60 * 60 * 1000);
+
+  const expiredOrders = await db.serviceOrder.findMany({
+    where: {
+      status: { in: ['placed', 'paid'] },
+      createdAt: { lt: cutoffTime },
+      expired_at: null,
+    },
+    include: {
+      payments: true,
+    },
+  });
+
+  let refunded = 0;
+
+  for (const order of expiredOrders) {
+    // Mark as expired
+    await db.serviceOrder.update({
+      where: { id: order.id },
+      data: {
+        status: 'expired' as ServiceOrderStatus,
+        expired_at: new Date(),
+      },
+    });
+
+    // Refund any successful payment
+    if (order.payments.some((p) => p.status === 'succeeded')) {
+      await db.serviceOrder.update({
+        where: { id: order.id },
+        data: {
+          refund_accrued_thb: order.total_thb,
+        },
+      });
+      refunded++;
+    }
+
+    // Note: order expired due to no response; provider sees it in queue (status=expired)
+  }
+
+  return {
+    expired: expiredOrders.length,
+    refunded,
+  };
 }

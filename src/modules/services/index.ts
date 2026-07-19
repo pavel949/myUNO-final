@@ -23,6 +23,7 @@ export {
   rateServiceOrder,
   getServiceOrder,
   getServiceOrdersByProvider,
+  expireStaleServiceOrders,
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';

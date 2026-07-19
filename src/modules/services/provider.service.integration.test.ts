@@ -3,8 +3,11 @@ import { db, resetDb, createIdentity, createProject } from '@/test/util';
 import * as providerService from './provider.service';
 
 describe('provider.service — integration tests', () => {
+  let applicant: Awaited<ReturnType<typeof createIdentity>>;
+
   beforeEach(async () => {
     await resetDb();
+    applicant = await createIdentity({ firstName: 'Applicant' });
   });
 
   afterEach(async () => {
@@ -14,6 +17,7 @@ describe('provider.service — integration tests', () => {
   describe('createProviderApplication', () => {
     it('creates a new provider application with applied status', async () => {
       const result = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Elite Cleaning Services',
         description: 'Professional cleaning for luxury properties',
         contactEmail: 'info@elite-cleaning.com',
@@ -38,6 +42,7 @@ describe('provider.service — integration tests', () => {
     it('retrieves providers filtered by status', async () => {
       // Create multiple providers
       const applied1 = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Provider A',
         description: 'Description A',
         contactEmail: 'a@example.com',
@@ -46,6 +51,7 @@ describe('provider.service — integration tests', () => {
       });
 
       const applied2 = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Provider B',
         description: 'Description B',
         contactEmail: 'b@example.com',
@@ -68,6 +74,7 @@ describe('provider.service — integration tests', () => {
 
       // Create and approve a provider
       const providerToApprove = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Approved Provider',
         description: 'Already approved',
         contactEmail: 'approved@example.com',
@@ -79,6 +86,7 @@ describe('provider.service — integration tests', () => {
 
       // Create an unapproved provider
       await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Unapproved Provider',
         description: 'Still waiting',
         contactEmail: 'unapproved@example.com',
@@ -101,6 +109,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Pending Provider',
         description: 'Awaiting approval',
         contactEmail: 'pending@example.com',
@@ -129,6 +138,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Provider With Role',
         description: 'Will get a role',
         contactEmail: 'role@example.com',
@@ -154,6 +164,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Notified Provider',
         description: 'Should receive notification',
         contactEmail: 'notified@example.com',
@@ -166,7 +177,7 @@ describe('provider.service — integration tests', () => {
       const notification = await db.notification.findFirst({
         where: {
           type: 'provider_approved',
-          identityId: admin.id,
+          identityId: applicant.id,
         },
       });
 
@@ -180,6 +191,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Rejected Provider',
         description: 'Will be rejected',
         contactEmail: 'rejected@example.com',
@@ -200,6 +212,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Rejected With Notification',
         description: 'Should be notified',
         contactEmail: 'reject-notified@example.com',
@@ -217,7 +230,7 @@ describe('provider.service — integration tests', () => {
       const notification = await db.notification.findFirst({
         where: {
           type: 'provider_rejected',
-          identityId: admin.id,
+          identityId: applicant.id,
         },
       });
 
@@ -231,6 +244,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Full Provider',
         description: 'Complete data',
         contactEmail: 'full@example.com',
@@ -255,6 +269,7 @@ describe('provider.service — integration tests', () => {
 
       // Unapproved provider
       const unapproved = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Unapproved',
         description: 'No vetting',
         contactEmail: 'unvetted@example.com',
@@ -267,6 +282,7 @@ describe('provider.service — integration tests', () => {
 
       // Approved provider
       const approved = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Approved',
         description: 'Vetted',
         contactEmail: 'vetted@example.com',
@@ -287,6 +303,7 @@ describe('provider.service — integration tests', () => {
 
       // Step 1: Create application
       const application = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Chef Services',
         description: 'Professional culinary for private dinners',
         contactEmail: 'chef@example.com',
@@ -329,6 +346,7 @@ describe('provider.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Badge Test',
         description: 'Testing badge logic',
         contactEmail: 'badge@example.com',

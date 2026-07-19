@@ -607,6 +607,7 @@ model Identity {
   announcementsCreated Announcement[]
   announcementReads AnnouncementRead[]
   vettedProviders Provider[] @relation("providerVettedBy")
+  providerApplications Provider[] @relation("providerApplicant")
   tm30FilingsFiled Tm30Filing[] @relation("tm30FilingFiled")
   conditionReportsCreated ConditionReport[]
   complianceRecordsVerified ComplianceRecord[] @relation("complianceVerifier")
@@ -1127,11 +1128,15 @@ model Provider {
   status ProviderStatus @default(applied)
   vetted_at DateTime? @map("vetted_at")
   vetted_by_identity_id String? @map("vetted_by_identity_id")
+  // The identity that submitted the application — receives the
+  // provider_member role and the N-18/N-19 vetting outcome (F-PROV-1).
+  applicant_identity_id String? @map("applicant_identity_id")
   payoutMethod Json? @map("payout_method") @db.JsonB
   logoMediaId String? @map("logo_media_id")
 
   // Relations
   vetted_by Identity? @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)
+  applicant Identity? @relation("providerApplicant", fields: [applicant_identity_id], references: [id], onDelete: SetNull)
   logoMedia MediaAsset? @relation("providerLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
   roleAssignments RoleAssignment[]
   services Service[]

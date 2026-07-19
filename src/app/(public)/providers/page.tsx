@@ -8,7 +8,7 @@ const copy: AudienceCopy = {
   titleDraft: 'For Providers',
   subtitleDraft: 'Steady order flow. Direct comms. Fair pay.',
   ctaDraft: 'Apply',
-  ctaHref: '/register',
+  ctaHref: '/provider/apply',
 };
 
 export async function generateMetadata(): Promise<Metadata> {

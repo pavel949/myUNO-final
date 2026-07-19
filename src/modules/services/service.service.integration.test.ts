@@ -5,9 +5,12 @@ import * as serviceService from './service.service';
 import { seedConfig, getConfig, setConfigOverride } from '@/modules/config';
 
 describe('service.service — integration tests', () => {
+  let applicant: Awaited<ReturnType<typeof createIdentity>>;
+
   beforeEach(async () => {
     await resetDb();
     await seedConfig(db);
+    applicant = await createIdentity({ firstName: 'Applicant' });
   });
 
   afterEach(async () => {
@@ -21,6 +24,7 @@ describe('service.service — integration tests', () => {
 
       // Create and approve a provider
       const providerApp = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Test Provider',
         description: 'For testing',
         contactEmail: 'test@provider.com',
@@ -69,6 +73,7 @@ describe('service.service — integration tests', () => {
 
       // Create and approve a provider
       const providerApp = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Quick Provider',
         description: 'No approval needed',
         contactEmail: 'quick@provider.com',
@@ -106,6 +111,7 @@ describe('service.service — integration tests', () => {
       const project2 = await createProject({ name: 'Project 2' });
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Multi-Project Provider',
         description: 'Available in multiple projects',
         contactEmail: 'multi@provider.com',
@@ -142,6 +148,7 @@ describe('service.service — integration tests', () => {
       const project = await createProject();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Detail Provider',
         description: 'Test retrieval',
         contactEmail: 'detail@provider.com',
@@ -181,6 +188,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Draft Provider',
         description: 'Test draft editing',
         contactEmail: 'draft@provider.com',
@@ -217,6 +225,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Active Provider',
         description: 'Cannot edit active service',
         contactEmail: 'active@provider.com',
@@ -249,6 +258,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Approval Provider',
         description: 'For approval testing',
         contactEmail: 'approval@provider.com',
@@ -281,6 +291,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Already Active',
         description: 'Cannot approve again',
         contactEmail: 'alreadyactive@provider.com',
@@ -311,6 +322,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Rejection Provider',
         description: 'For rejection testing',
         contactEmail: 'rejection@provider.com',
@@ -350,6 +362,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Multi-Service Provider',
         description: 'Offers multiple services',
         contactEmail: 'multi-service@provider.com',
@@ -387,6 +400,7 @@ describe('service.service — integration tests', () => {
       const admin = await createIdentity();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Status Filter Provider',
         description: 'For status filtering',
         contactEmail: 'status-filter@provider.com',
@@ -434,6 +448,7 @@ describe('service.service — integration tests', () => {
       const project2 = await createProject({ name: 'Project 2' });
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Unrestricted Provider',
         description: 'Available everywhere',
         contactEmail: 'unrestricted@provider.com',
@@ -469,6 +484,7 @@ describe('service.service — integration tests', () => {
       const project2 = await createProject({ name: 'Project 2' });
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Restricted Provider',
         description: 'Limited to specific projects',
         contactEmail: 'restricted@provider.com',
@@ -503,6 +519,7 @@ describe('service.service — integration tests', () => {
 
       // Create an unapproved provider
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Unvetted Provider',
         description: 'Not approved yet',
         contactEmail: 'unvetted-service@provider.com',
@@ -543,6 +560,7 @@ describe('service.service — integration tests', () => {
       const project = await createProject();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Multi-Category Provider',
         description: 'Multiple services',
         contactEmail: 'multi-cat@provider.com',
@@ -590,6 +608,7 @@ describe('service.service — integration tests', () => {
       const project = await createProject();
 
       const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Draft/Active Provider',
         description: 'Mixed statuses',
         contactEmail: 'mixed-status@provider.com',
@@ -635,6 +654,7 @@ describe('service.service — integration tests', () => {
 
       // Step 1: Create provider
       const providerApp = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
         name: 'Luxury Spa Co',
         description: 'Premium spa services',
         contactEmail: 'spa@luxury.com',

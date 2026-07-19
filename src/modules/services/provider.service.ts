@@ -7,6 +7,9 @@ export interface CreateProviderApplicationInput {
   contactEmail: string;
   contactPhone: string;
   categoryKeys: string[];
+  /** The identity submitting the application (F-PROV-1) — receives the
+   *  provider_member role and the vetting-outcome notifications. */
+  applicantIdentityId: string;
 }
 
 export interface ApproveProviderInput {
@@ -27,7 +30,14 @@ export async function createProviderApplication(
   db: PrismaClient,
   input: CreateProviderApplicationInput
 ): Promise<{ id: string; identityId: string }> {
-  const { name, description, contactEmail, contactPhone, categoryKeys } = input;
+  const {
+    name,
+    description,
+    contactEmail,
+    contactPhone,
+    categoryKeys,
+    applicantIdentityId,
+  } = input;
 
   const provider = await db.provider.create({
     data: {
@@ -37,12 +47,13 @@ export async function createProviderApplication(
       contactPhone,
       categoryKeys,
       status: 'applied',
+      applicant_identity_id: applicantIdentityId,
     },
   });
 
   return {
     id: provider.id,
-    identityId: '', // Placeholder; in production this would link to an applicant identity
+    identityId: applicantIdentityId,
   };
 }
 
@@ -102,34 +113,38 @@ export async function approveProvider(
     },
   });
 
-  // Create provider_member role for the provider (for first staff member).
-  // In production, this would be done via a separate staff management flow.
-  // For now, we create a role pointing to the approver's identity as a placeholder.
-  await db.roleAssignment.create({
-    data: {
-      identityId: approvedByIdentityId,
-      role: 'provider_member' as RoleType,
-      scopeType: 'platform',
-      providerId,
-      status: 'active',
-      grantedByIdentityId: approvedByIdentityId,
-    },
-  });
-
-  // Send N-18 notification
-  try {
-    await createNotification(db, {
-      identityId: approvedByIdentityId,
-      type: 'provider_approved',
-      titleKey: 'notify.provider_approved.title',
-      bodyKey: 'notify.provider_approved.body',
-      params: {
-        name: provider.name,
+  // The applicant becomes the provider's first member (multi-member invites
+  // are post-loop-one). Legacy applications without an applicant get no role —
+  // the admin assigns one manually.
+  if (provider.applicant_identity_id) {
+    await db.roleAssignment.create({
+      data: {
+        identityId: provider.applicant_identity_id,
+        role: 'provider_member' as RoleType,
+        scopeType: 'platform',
+        providerId,
+        status: 'active',
+        grantedByIdentityId: approvedByIdentityId,
       },
-      channels: ['in_app', 'email'],
     });
-  } catch (err) {
-    console.error(`Failed to send approval notification for provider ${providerId}`, err);
+  }
+
+  // Send N-18 to the applicant (the vetting outcome is theirs, not the approver's)
+  if (provider.applicant_identity_id) {
+    try {
+      await createNotification(db, {
+        identityId: provider.applicant_identity_id,
+        type: 'provider_approved',
+        titleKey: 'notify.provider_approved.title',
+        bodyKey: 'notify.provider_approved.body',
+        params: {
+          name: provider.name,
+        },
+        channels: ['in_app', 'email'],
+      });
+    } catch (err) {
+      console.error(`Failed to send approval notification for provider ${providerId}`, err);
+    }
   }
 }
 
@@ -142,7 +157,7 @@ export async function approveProvider(
 export async function rejectProvider(
   db: PrismaClient,
   providerId: string,
-  rejectedByIdentityId: string,
+  _rejectedByIdentityId: string,
   reason?: string
 ): Promise<void> {
   const provider = await db.provider.findUnique({
@@ -161,22 +176,59 @@ export async function rejectProvider(
     },
   });
 
-  // Send N-19 notification with rejection reason
-  try {
-    await createNotification(db, {
-      identityId: rejectedByIdentityId,
-      type: 'provider_rejected',
-      titleKey: 'notify.provider_rejected.title',
-      bodyKey: 'notify.provider_rejected.body',
-      params: {
-        name: provider.name,
-        reason: reason || 'Application does not meet our criteria',
-      },
-      channels: ['in_app', 'email'],
-    });
-  } catch (err) {
-    console.error(`Failed to send rejection notification for provider ${providerId}`, err);
+  // Send N-19 to the applicant with the rejection reason
+  if (provider.applicant_identity_id) {
+    try {
+      await createNotification(db, {
+        identityId: provider.applicant_identity_id,
+        type: 'provider_rejected',
+        titleKey: 'notify.provider_rejected.title',
+        bodyKey: 'notify.provider_rejected.body',
+        params: {
+          name: provider.name,
+          reason: reason || 'Application does not meet our criteria',
+        },
+        channels: ['in_app', 'email'],
+      });
+    } catch (err) {
+      console.error(`Failed to send rejection notification for provider ${providerId}`, err);
+    }
   }
+}
+
+/**
+ * The provider record an identity is attached to: their active membership's
+ * provider if they have one, else their latest application (so an applicant
+ * can watch their own vetting status before any role exists).
+ */
+export async function getProviderForIdentity(
+  db: PrismaClient,
+  identityId: string
+): Promise<{
+  id: string;
+  name: string;
+  status: string;
+  categoryKeys: string[];
+  isMember: boolean;
+} | null> {
+  const membership = await db.roleAssignment.findFirst({
+    where: { identityId, role: 'provider_member', status: 'active' },
+    select: { providerId: true },
+  });
+  const provider = membership?.providerId
+    ? await db.provider.findUnique({ where: { id: membership.providerId } })
+    : await db.provider.findFirst({
+        where: { applicant_identity_id: identityId },
+        orderBy: { createdAt: 'desc' },
+      });
+  if (!provider) return null;
+  return {
+    id: provider.id,
+    name: provider.name,
+    status: provider.status,
+    categoryKeys: provider.categoryKeys,
+    isMember: Boolean(membership?.providerId),
+  };
 }
 
 /**

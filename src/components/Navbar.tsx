@@ -22,6 +22,7 @@ export interface NavbarLabels {
   myTrips: string;
   messages: string;
   ownerDashboard: string;
+  providerPortal: string;
   mcPortal: string;
   opsBoard: string;
   admin: string;
@@ -60,6 +61,9 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
         { href: '/messages', label: labels.messages },
         ...(user.roles.includes('owner')
           ? [{ href: '/owner', label: labels.ownerDashboard }]
+          : []),
+        ...(user.roles.includes('provider_member')
+          ? [{ href: '/provider', label: labels.providerPortal }]
           : []),
         ...(user.roles.includes('mc_member')
           ? [{ href: '/mc', label: labels.mcPortal }]

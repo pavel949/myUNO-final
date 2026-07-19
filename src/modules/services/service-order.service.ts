@@ -2,6 +2,7 @@ import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { notifyProviderMembers } from './provider-notify';
 
 export interface CreateServiceOrderInput {
   serviceId: string;
@@ -96,9 +97,8 @@ export async function createServiceOrder(
     },
   });
 
-  // Notify provider of new order (N-26)
-  await createNotification(db, {
-    identityId: service.provider_id,
+  // Notify the provider's members of the new order (N-26)
+  await notifyProviderMembers(db, service.provider_id, {
     type: 'order_new',
     titleKey: 'order.new.title',
     bodyKey: 'order.new.body',
@@ -388,6 +388,18 @@ export async function cancelServiceOrder(
     },
   });
 
+  // The provider's members lose a job — tell them too.
+  await notifyProviderMembers(db, order.provider_id, {
+    type: 'order_cancelled',
+    titleKey: 'order.cancelled.title',
+    bodyKey: 'order.cancelled.body',
+    params: {
+      order_id: order.id,
+      service_title: order.service?.title || 'Service',
+      refund_thb: refundThb,
+    },
+  });
+
   await track(db, 'service_order_cancelled', {
     serviceOrderId: order.id,
     projectId: order.project_id,
@@ -425,6 +437,29 @@ export async function getServiceOrder(
 
 /**
  * Rate a service order (create a review).
+ * List a provider's orders for the portal queue, newest first. Actionable
+ * statuses (placed/paid/accepted) sort ahead of terminal ones so the queue
+ * reads work-first.
+ */
+export async function getServiceOrdersByProvider(
+  db: PrismaClient,
+  providerId: string,
+  filters?: { limit?: number }
+): Promise<any[]> {
+  const orders = await db.serviceOrder.findMany({
+    where: { provider_id: providerId },
+    include: { service: { select: { title: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: filters?.limit ?? 100,
+  });
+  const actionable = new Set(['placed', 'paid', 'accepted']);
+  return orders.sort(
+    (a, b) =>
+      Number(actionable.has(b.status)) - Number(actionable.has(a.status))
+  );
+}
+
+/**
  * Creates a polymorphic Review record with target_type=service_order.
  */
 export async function rateServiceOrder(

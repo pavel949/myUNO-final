@@ -48,17 +48,37 @@ jobs:
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
         run: npm run build
 
-      - name: Wait for PostgreSQL
+      - name: Wait for PostgreSQL (with retry)
         run: |
-          until pg_isready -h localhost -p 5432 -U test; do
-            echo 'Waiting for PostgreSQL...'
-            sleep 1
+          max_attempts=30
+          attempt=0
+          until [ $attempt -ge $max_attempts ]; do
+            if pg_isready -h localhost -p 5432 -U test; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Waiting for PostgreSQL... (attempt $((attempt + 1))/$max_attempts)"
+            sleep 2
+            ((attempt++))
           done
+          if [ $attempt -ge $max_attempts ]; then
+            echo "PostgreSQL failed to start"
+            exit 1
+          fi
+
+      - name: Create test database
+        env:
+          PGPASSWORD: test
+        run: |
+          psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
+          psql -h localhost -U test -d myuno_test -c "CREATE EXTENSION IF NOT EXISTS citext;" 2>/dev/null || true
 
       - name: Generate and apply migrations
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
-        run: npx prisma migrate deploy
+        run: |
+          npx prisma migrate deploy --skip-generate
+        timeout-minutes: 5
 
       - name: Run tests
         env:
@@ -70,3 +90,4 @@ jobs:
         run: |
           set -o pipefail
           npx vitest run 2>&1 | tee test-output.log
+        timeout-minutes: 10

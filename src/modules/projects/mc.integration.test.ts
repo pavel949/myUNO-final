@@ -362,7 +362,7 @@ describe('MC Service', () => {
         },
       });
 
-      // Create unit without fee override (should use default 10%)
+      // Create unit without fee override (should use default 12% from config)
       const owner = await createIdentity();
       const unit = await createUnit({
         projectId: project.id,
@@ -375,7 +375,7 @@ describe('MC Service', () => {
           ownerIdentityId: owner.id,
           managementOrgId: mcOrg.id,
           status: 'active',
-          // No feeOverridePct - should default to 10%
+          // No feeOverridePct - should default to 12% (engagement.via_mc.platform_fee_pct config default)
         },
       });
 
@@ -408,9 +408,9 @@ describe('MC Service', () => {
         periodEnd
       );
 
-      // Verify default 10% fee: 100,000 * 10% = 10,000
-      expect(report.feeLines[0].feePercentage).toBe(10);
-      expect(report.feeLines[0].feeAmount).toBe(10000);
+      // Verify default 12% fee: 100,000 * 12% = 12,000
+      expect(report.feeLines[0].feePercentage).toBe(12);
+      expect(report.feeLines[0].feeAmount).toBe(12000);
     });
   });
 

@@ -30,3 +30,8 @@ export {
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';
+
+export {
+  getInStayHomeSpace,
+  type InStayHomeSpaceData,
+} from './home-space.service';

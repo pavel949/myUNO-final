@@ -30,7 +30,7 @@ interface Booking {
   unit: Unit;
   guest: {
     id: string;
-    nationality: string;
+    nationality: string | null;
   } | null;
 }
 
@@ -116,7 +116,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
           endDate={booking.endDate}
           status={booking.status}
           checkedInAt={booking.checkedInAt}
-          guestNationality={booking.guest?.nationality}
+          guestNationality={booking.guest?.nationality ?? undefined}
         />
 
         {/* Quick actions row */}

@@ -103,7 +103,7 @@ export async function createBooking(
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
-  return db.booking.create({
+  const booking = await db.booking.create({
     data: {
       unitId,
       projectId,
@@ -127,6 +127,21 @@ export async function createBooking(
       guestIdentity: { select: SAFE_IDENTITY_SELECT },
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  await track(db, 'stay_booking_started', {
+    bookingId: booking.id,
+    unitId,
+    projectId,
+    identityId: guestIdentityId,
+    channel,
+    bookingType,
+    nights,
+    totalThb,
+  });
+
+  return booking;
 }
 
 /**

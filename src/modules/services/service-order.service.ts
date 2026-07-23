@@ -2,6 +2,7 @@ import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { recordServiceCommission } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 
 export interface CreateServiceOrderInput {
@@ -151,6 +152,16 @@ export async function acceptServiceOrder(
     data: { status: 'accepted' },
   });
 
+  // Track analytics event
+  await track(db, 'service_order_accepted', {
+    serviceOrderId: order.id,
+    serviceId: order.service_id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+  });
+
   // Notify orderer of acceptance (N-21)
   await createNotification(db, {
     identityId: order.orderer_identity_id,
@@ -230,6 +241,17 @@ export async function declineServiceOrder(
     data: { status: 'declined' },
   });
 
+  // Track analytics event
+  await track(db, 'service_order_declined', {
+    serviceOrderId: order.id,
+    serviceId: order.service_id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+    reason: reason || 'no reason provided',
+  });
+
   // Notify orderer of decline (N-22)
   await createNotification(db, {
     identityId: order.orderer_identity_id,
@@ -285,6 +307,19 @@ export async function fulfillServiceOrder(
       service_title: order.service?.title || 'Service',
     },
   });
+
+  // Record commission on fulfillment (S5)
+  const commissionThb = Math.round(
+    order.total_thb * (Number(order.take_rate_pct_snapshot) / 100)
+  );
+  await recordServiceCommission(
+    db,
+    order.id,
+    order.unit_id,
+    order.project_id,
+    commissionThb,
+    new Date()
+  );
 
   await track(db, 'service_order_fulfilled', {
     serviceOrderId: order.id,
@@ -507,4 +542,57 @@ export async function rateServiceOrder(
   });
 
   return { id: review.id };
+}
+
+/**
+ * Cron: expire service orders past the SLA (placed/paid status).
+ * Marks them expired and refunds any payment collected.
+ */
+export async function expireStaleServiceOrders(
+  db: PrismaClient,
+  slaHours: number
+): Promise<{ expired: number; refunded: number }> {
+  const cutoffTime = new Date(Date.now() - slaHours * 60 * 60 * 1000);
+
+  const expiredOrders = await db.serviceOrder.findMany({
+    where: {
+      status: { in: ['placed', 'paid'] },
+      createdAt: { lt: cutoffTime },
+      expired_at: null,
+    },
+    include: {
+      payments: true,
+    },
+  });
+
+  let refunded = 0;
+
+  for (const order of expiredOrders) {
+    // Mark as expired
+    await db.serviceOrder.update({
+      where: { id: order.id },
+      data: {
+        status: 'expired' as ServiceOrderStatus,
+        expired_at: new Date(),
+      },
+    });
+
+    // Refund any successful payment
+    if (order.payments.some((p) => p.status === 'succeeded')) {
+      await db.serviceOrder.update({
+        where: { id: order.id },
+        data: {
+          refund_accrued_thb: order.total_thb,
+        },
+      });
+      refunded++;
+    }
+
+    // Note: order expired due to no response; provider sees it in queue (status=expired)
+  }
+
+  return {
+    expired: expiredOrders.length,
+    refunded,
+  };
 }

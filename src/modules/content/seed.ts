@@ -1661,6 +1661,29 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.sections.tickets', namespace: 'owner', description: 'Section heading: open tickets', en: 'Open Tickets', ru: 'Открытые заявки', status: NR },
   { key: 'owner.stay.error', namespace: 'owner', description: 'Owner stay booking error', en: 'Failed to book owner stay', ru: 'Не удалось забронировать собственное проживание', status: NR },
 
+  // Owner compliance & alerts (doc 08 D2)
+  { key: 'owner.compliance.title', namespace: 'owner', description: 'Compliance section heading', en: 'Compliance', ru: 'Соответствие требованиям', status: NR },
+  { key: 'owner.compliance.subtitle', namespace: 'owner', description: 'Compliance section subtitle', en: 'Stay compliant with Thai legislation', ru: 'Соблюдайте требования тайского законодательства', status: NR },
+  { key: 'owner.compliance.permitted_use', namespace: 'owner', description: 'Compliance status: permitted use confirmation', en: 'Permitted Use Confirmed', ru: 'Разрешение на использование подтверждено', status: NR },
+  { key: 'owner.compliance.tm30_ontime', namespace: 'owner', description: 'Compliance metric: TM30 on-time %', en: 'TM30 On-Time', ru: 'TM30 в срок', status: NR },
+  { key: 'owner.compliance.records', namespace: 'owner', description: 'Compliance metric: compliance records', en: 'Compliance Records', ru: 'Документы соответствия', status: NR },
+  { key: 'owner.compliance.mobilization', namespace: 'owner', description: 'Compliance metric: mobilization progress', en: 'Mobilization Progress', ru: 'Прогресс подготовки', status: NR },
+
+  { key: 'owner.alerts.title', namespace: 'owner', description: 'Alerts section heading', en: 'Alerts', ru: 'Уведомления', status: NR },
+  { key: 'owner.alerts.empty', namespace: 'owner', description: 'No active alerts', en: 'No active alerts', ru: 'Нет активных уведомлений', status: NR },
+  { key: 'owner.alerts.tm30_overdue', namespace: 'owner', description: 'Alert type: TM30 overdue', en: 'TM30 Filing Overdue', ru: 'Просроченная подача TM30', status: NR },
+  { key: 'owner.alerts.tm30_escalated', namespace: 'owner', description: 'Alert type: TM30 escalated', en: 'TM30 Escalated', ru: 'TM30 эскалирована', status: NR },
+  { key: 'owner.alerts.unit_paused', namespace: 'owner', description: 'Alert type: unit paused', en: 'Unit Paused', ru: 'Юнит приостановлен', status: NR },
+  { key: 'owner.alerts.compliance_expiry', namespace: 'owner', description: 'Alert type: compliance record expiring', en: 'Compliance Document Expiring', ru: 'Документ соответствия истекает', status: NR },
+  { key: 'owner.alerts.ticket_sla', namespace: 'owner', description: 'Alert type: ticket SLA breached', en: 'Ticket SLA Breached', ru: 'Нарушено SLA заявки', status: NR },
+
+  { key: 'owner.statement.title', namespace: 'owner', description: 'Statements section heading', en: 'Financial Statements', ru: 'Финансовые отчёты', status: NR },
+  { key: 'owner.statement.empty', namespace: 'owner', description: 'No published statements', en: 'No statements yet', ru: 'Отчёты ещё не доступны', status: NR },
+  { key: 'owner.statement.period', namespace: 'owner', description: 'Statement table header: period', en: 'Period', ru: 'Период', status: NR },
+  { key: 'owner.statement.noi', namespace: 'owner', description: 'Statement table header: net operating income', en: 'Net Income', ru: 'Чистый доход', status: NR },
+  { key: 'owner.statement.your_share', namespace: 'owner', description: 'Statement table header: owner share', en: 'Your Share', ru: 'Ваша доля', status: NR },
+  { key: 'owner.statement.view', namespace: 'owner', description: 'View statement link', en: 'View', ru: 'Открыть', status: NR },
+
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },
@@ -1723,6 +1746,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'admin.dashboard.last30_revenue_spark', namespace: 'admin', description: 'Sparkline title: revenue per day', en: 'Rental revenue per day, last 30 days', ru: 'Доход от аренды по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_nights_spark', namespace: 'admin', description: 'Sparkline title: occupied nights per day', en: 'Occupied nights per day, last 30 days', ru: 'Занятые ночи по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_empty', namespace: 'admin', description: 'Trend row empty state', en: 'No rollup data yet — trends appear after the first nightly rollup.', ru: 'Данных пока нет — тренды появятся после первого ночного пересчёта.', status: NR },
+  { key: 'admin.dashboard.kpi_title', namespace: 'admin', description: 'KPI row heading', en: 'Key metrics (last 30 days)', ru: 'Ключевые показатели (последние 30 дней)', status: NR },
+  { key: 'admin.dashboard.occupancy', namespace: 'admin', description: 'KPI: occupancy %', en: 'Occupancy %', ru: 'Заполняемость %', status: NR },
+  { key: 'admin.dashboard.adr', namespace: 'admin', description: 'KPI: average daily rate', en: 'ADR (฿)', ru: 'ADR (฿)', status: NR },
+  { key: 'admin.dashboard.revpan', namespace: 'admin', description: 'KPI: revenue per available night', en: 'RevPAN (฿)', ru: 'RevPAN (฿)', status: NR },
+  { key: 'admin.dashboard.attach_rate', namespace: 'admin', description: 'KPI: service attach rate %', en: 'Service attach rate %', ru: 'Процент добавления услуг %', status: NR },
+  { key: 'admin.dashboard.direct_share', namespace: 'admin', description: 'KPI: direct bookings %', en: 'Direct bookings %', ru: 'Прямые бронирования %', status: NR },
+  { key: 'admin.dashboard.repeat_guests', namespace: 'admin', description: 'KPI: repeat guests %', en: 'Repeat guests %', ru: 'Постоянные гости %', status: NR },
 
   // Admin — buyer signals funnel & list
   { key: 'admin.signals.title', namespace: 'admin', description: 'Signals page title', en: 'Buyer Signals', ru: 'Сигналы покупателей', status: NR },
@@ -1820,6 +1850,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.order.cancelled_note', namespace: 'services', description: 'My-orders: flash after successful cancel', en: 'Order cancelled. Any refund due is on its way.', ru: 'Заказ отменён. Если полагается возврат — он уже оформляется.', status: NR },
   { key: 'payments.checkout.service_label', namespace: 'payments', description: 'Mock checkout: service line label (service-order payments)', en: 'Service', ru: 'Услуга', status: NR },
   { key: 'staff.ops.service_pending_cash', namespace: 'staff', description: 'Ops board: service orders awaiting cash section title', en: 'Service orders awaiting cash', ru: 'Заказы услуг: ожидают оплату наличными', status: NR },
+  { key: 'staff.ops.sla_title', namespace: 'staff', description: 'Ops board: SLA health section title', en: 'SLA health (last 7 days)', ru: 'Здоровье SLA (последние 7 дней)', status: NR },
+  { key: 'staff.ops.tm30_on_time', namespace: 'staff', description: 'Ops board: TM30 on-time rate', en: 'TM30 on-time %', ru: 'TM30 вовремя %', status: NR },
+  { key: 'staff.ops.tickets_past_sla', namespace: 'staff', description: 'Ops board: tickets with open SLA past due', en: 'Tickets past SLA', ru: 'Тикеты просроченные SLA', status: NR },
   { key: 'order.cancelled.title', namespace: 'order', description: 'Notification: service order cancelled', en: 'Order Cancelled', ru: 'Заказ отменён', status: NR },
   { key: 'order.cancelled.body', namespace: 'order', description: 'Notification body: service order cancelled (refund amount in satang-free THB)', en: 'Your order for {{service_title}} was cancelled. Refund due: ฿{{refund_thb}}.', ru: 'Ваш заказ на {{service_title}} отменён. Возврат: ฿{{refund_thb}}.', status: NR },
 
@@ -1884,6 +1917,93 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.category.emergency_medical', namespace: 'services', description: 'Service category: emergency medical assistance', en: 'Emergency medical', ru: 'Экстренная медицина', status: NR },
 ];
 
+const HOME_KEYS: KeyDef[] = [
+  // Home-space (in-stay guest portal)
+  { key: 'home.welcome', namespace: 'home', description: 'Welcome to property heading', en: 'Welcome to', ru: 'Добро пожаловать в', status: NR },
+  { key: 'home.handbook.title', namespace: 'home', description: 'Property handbook section title', en: 'Property Handbook', ru: 'Справочник Имущества', status: NR },
+  { key: 'home.handbook.description', namespace: 'home', description: 'Property handbook description', en: 'Learn about the property amenities, check-out procedures, and local information.', ru: 'Узнайте о удобствах имущества, процедурах выписки и местной информации.', status: NR },
+  { key: 'home.handbook.view_button', namespace: 'home', description: 'View handbook button text', en: 'View Handbook', ru: 'Просмотреть Справочник', status: NR },
+  { key: 'home.help_text', namespace: 'home', description: 'Footer help text', en: 'Need help? Contact the host or raise an issue above.', ru: 'Нужна помощь? Свяжитесь с хозяином или сообщите о проблеме выше.', status: NR },
+  { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
+];
+
+const ADMIN_S3_KEYS: KeyDef[] = [
+  // Admin navigation (S3: services vetting)
+  { key: 'admin.nav.providers', namespace: 'admin', description: 'Admin nav: provider vetting', en: 'Provider Vetting', ru: 'Проверка поставщиков', status: NR },
+  { key: 'admin.nav.services', namespace: 'admin', description: 'Admin nav: service submissions', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+
+  // Provider vetting page
+  { key: 'admin.providers.title', namespace: 'admin', description: 'Provider applications page title', en: 'Provider Applications', ru: 'Заявки от поставщиков', status: NR },
+  { key: 'admin.providers.empty', namespace: 'admin', description: 'Provider list empty state', en: 'No pending applications.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.providers.approve', namespace: 'admin', description: 'Button: approve provider', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.providers.reject', namespace: 'admin', description: 'Button: reject provider', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.providers.status_applied', namespace: 'admin', description: 'Provider status: applied', en: 'Applied', ru: 'Заявка получена', status: NR },
+  { key: 'admin.providers.status_approved', namespace: 'admin', description: 'Provider status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.providers.status_rejected', namespace: 'admin', description: 'Provider status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.providers.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.providers.error_generic', namespace: 'admin', description: 'Provider action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+
+  // Service vetting page
+  { key: 'admin.services.title', namespace: 'admin', description: 'Service submissions page title', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+  { key: 'admin.services.empty', namespace: 'admin', description: 'Service list empty state', en: 'No pending submissions.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.services.approve', namespace: 'admin', description: 'Button: approve service', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.services.reject', namespace: 'admin', description: 'Button: reject service', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.services.status_draft', namespace: 'admin', description: 'Service status: draft/pending', en: 'Draft', ru: 'На рассмотрении', status: NR },
+  { key: 'admin.services.status_vetted', namespace: 'admin', description: 'Service status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.services.status_rejected', namespace: 'admin', description: 'Service status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.services.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.services.error_generic', namespace: 'admin', description: 'Service action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+];
+
+const SERVICE_DETAIL_KEYS: KeyDef[] = [
+  // Service detail page (F-SVC-1)
+  { key: 'services.detail.title', namespace: 'services', description: 'Service detail page title', en: 'Service', ru: 'Услуга', status: NR },
+  { key: 'services.detail.by_provider', namespace: 'services', description: 'Provider attribution (template: {provider})', en: 'By {provider}', ru: 'От {provider}', status: NR },
+  { key: 'services.detail.vetted_badge', namespace: 'services', description: 'Vetted provider badge', en: 'Vetted', ru: 'Проверено', status: NR },
+  { key: 'services.detail.price_model', namespace: 'services', description: 'Section title: price model', en: 'Price model', ru: 'Модель цены', status: NR },
+  { key: 'services.detail.fixed', namespace: 'services', description: 'Price model: fixed', en: 'Fixed price', ru: 'Фиксированная цена', status: NR },
+  { key: 'services.detail.per_hour', namespace: 'services', description: 'Price model: hourly', en: 'Per hour', ru: 'За час', status: NR },
+  { key: 'services.detail.per_person', namespace: 'services', description: 'Price model: per person', en: 'Per person', ru: 'За человека', status: NR },
+  { key: 'services.detail.quote', namespace: 'services', description: 'Price model: quote', en: 'Quote on request', ru: 'По запросу', status: NR },
+  { key: 'services.detail.duration', namespace: 'services', description: 'Section title: typical duration', en: 'Typical duration', ru: 'Типичная продолжительность', status: NR },
+  { key: 'services.detail.duration_hours', namespace: 'services', description: 'Duration template: {minutes}', en: '{minutes} min', ru: '{minutes} мин', status: NR },
+  { key: 'services.detail.advance_notice', namespace: 'services', description: 'Section title: advance notice', en: 'Advance notice required', ru: 'Требуется предварительное уведомление', status: NR },
+  { key: 'services.detail.advance_notice_hours', namespace: 'services', description: 'Advance notice template: {hours}', en: '{hours}h', ru: '{hours}ч', status: NR },
+  { key: 'services.detail.advance_notice_none', namespace: 'services', description: 'Advance notice: none required', en: 'None', ru: 'Не требуется', status: NR },
+  { key: 'services.detail.about_provider', namespace: 'services', description: 'Section title: about the provider', en: 'About the provider', ru: 'О поставщике', status: NR },
+  { key: 'services.detail.order', namespace: 'services', description: 'CTA button: order this service', en: 'Order this service', ru: 'Заказать услугу', status: NR },
+];
+
+const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
+  // Service order detail page (F-SVC-4)
+  { key: 'service-order.detail.title', namespace: 'service-order', description: 'Order detail page title', en: 'Service Order', ru: 'Заказ услуги', status: NR },
+  { key: 'service-order.detail.order_id', namespace: 'service-order', description: 'Field label: order ID', en: 'Order ID', ru: 'ID заказа', status: NR },
+  { key: 'service-order.detail.status', namespace: 'service-order', description: 'Field label: order status', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'service-order.detail.placed', namespace: 'service-order', description: 'Status: order placed', en: 'Placed', ru: 'Размещён', status: NR },
+  { key: 'service-order.detail.accepted', namespace: 'service-order', description: 'Status: order accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'service-order.detail.declined', namespace: 'service-order', description: 'Status: order declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'service-order.detail.fulfilled', namespace: 'service-order', description: 'Status: order fulfilled', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'service-order.detail.cancelled', namespace: 'service-order', description: 'Status: order cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+  { key: 'service-order.detail.scheduled', namespace: 'service-order', description: 'Section title: scheduling', en: 'Scheduled', ru: 'Запланировано', status: NR },
+  { key: 'service-order.detail.scheduled_start', namespace: 'service-order', description: 'Field: start date & time', en: 'Start date & time', ru: 'Дата и время начала', status: NR },
+  { key: 'service-order.detail.scheduled_end', namespace: 'service-order', description: 'Field: end date & time', en: 'End date & time', ru: 'Дата и время окончания', status: NR },
+  { key: 'service-order.detail.quantity', namespace: 'service-order', description: 'Field: order quantity', en: 'Quantity', ru: 'Количество', status: NR },
+  { key: 'service-order.detail.pricing', namespace: 'service-order', description: 'Section title: pricing', en: 'Pricing', ru: 'Цена', status: NR },
+  { key: 'service-order.detail.total_price', namespace: 'service-order', description: 'Field: total price', en: 'Total price', ru: 'Итоговая цена', status: NR },
+  { key: 'service-order.detail.payment_status', namespace: 'service-order', description: 'Field: payment status', en: 'Payment status', ru: 'Статус платежа', status: NR },
+  { key: 'service-order.detail.paid', namespace: 'service-order', description: 'Payment status: paid', en: 'Paid', ru: 'Оплачено', status: NR },
+  { key: 'service-order.detail.unpaid', namespace: 'service-order', description: 'Payment status: unpaid', en: 'Unpaid', ru: 'Не оплачено', status: NR },
+  { key: 'service-order.detail.provider_info', namespace: 'service-order', description: 'Section title: service provider', en: 'Service Provider', ru: 'Поставщик услуг', status: NR },
+  { key: 'service-order.detail.contact_provider', namespace: 'service-order', description: 'Button: contact provider', en: 'Contact Provider', ru: 'Связаться с поставщиком', status: NR },
+  { key: 'service-order.detail.location', namespace: 'service-order', description: 'Section title: location', en: 'Location', ru: 'Местоположение', status: NR },
+  { key: 'service-order.detail.notes', namespace: 'service-order', description: 'Section title: notes', en: 'Notes', ru: 'Примечания', status: NR },
+  { key: 'service-order.detail.note_to_provider', namespace: 'service-order', description: 'Field: note to provider', en: 'Note to Provider', ru: 'Примечание для поставщика', status: NR },
+  { key: 'service-order.detail.address_note', namespace: 'service-order', description: 'Field: special location note', en: 'Special Location Note', ru: 'Специальное примечание о месте', status: NR },
+  { key: 'service-order.detail.cancellation_reason', namespace: 'service-order', description: 'Field: why order was cancelled', en: 'Cancellation Reason', ru: 'Причина отмены', status: NR },
+  { key: 'service-order.detail.cancel_order', namespace: 'service-order', description: 'Button: cancel order', en: 'Cancel Order', ru: 'Отменить заказ', status: NR },
+  { key: 'service-order.detail.confirm_cancellation', namespace: 'service-order', description: 'Button: confirm cancellation', en: 'Confirm Cancellation', ru: 'Подтвердить отмену', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -1910,7 +2030,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

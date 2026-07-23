@@ -103,6 +103,7 @@ export interface OtherConfig {
   'compliance.tm30_sla_hours': number;
   'compliance.tm30_escalation_hours_before': number;
   'compliance.passport_required_hours_before_checkin': number;
+  'compliance.expiry_warning_days': number;
   'retention.passport_media_days_after_checkout': number;
   'notify.channel.email.enabled': boolean;
   'notify.channel.whatsapp.enabled': boolean;

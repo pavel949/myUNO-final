@@ -111,7 +111,7 @@ export async function recordCashPayment(
   if (bookingId && purpose === 'stay') {
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
-      select: { unitId: true, projectId: true },
+      select: { unitId: true, projectId: true, guestIdentityId: true },
     });
 
     if (booking) {
@@ -132,6 +132,15 @@ export async function recordCashPayment(
       await db.booking.update({
         where: { id: bookingId },
         data: { status: 'confirmed' },
+      });
+
+      // Track analytics event
+      await track(db, 'stay_payment_succeeded', {
+        bookingId,
+        unitId: booking.unitId,
+        projectId: booking.projectId,
+        identityId: booking.guestIdentityId,
+        amountThb,
       });
     }
   }

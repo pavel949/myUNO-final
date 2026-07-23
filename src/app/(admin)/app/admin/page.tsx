@@ -8,7 +8,7 @@ import { StatTile } from '@/components/StatTile';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const { units, liveUnits, bookings, pendingPayment, openTickets, identities, revenue30, nights30, last30 } =
+  const { units, liveUnits, bookings, pendingPayment, openTickets, identities, revenue30, nights30, last30, kpis } =
     await getAdminDashboardStats(prisma);
 
   const labels = await getLabels({
@@ -18,6 +18,13 @@ export default async function AdminDashboardPage() {
     'admin.dashboard.tickets': 'Open tickets',
     'admin.dashboard.people': 'People',
     'admin.dashboard.last30_title': 'Last 30 days',
+    'admin.dashboard.kpi_title': 'Key metrics (last 30 days)',
+    'admin.dashboard.occupancy': 'Occupancy %',
+    'admin.dashboard.adr': 'ADR (฿)',
+    'admin.dashboard.revpan': 'RevPAN (฿)',
+    'admin.dashboard.attach_rate': 'Service attach rate %',
+    'admin.dashboard.direct_share': 'Direct bookings %',
+    'admin.dashboard.repeat_guests': 'Repeat guests %',
     'admin.dashboard.last30_revenue': 'Rental revenue',
     'admin.dashboard.last30_nights': 'Occupied nights',
     'admin.dashboard.last30_revenue_spark': 'Rental revenue per day, last 30 days',
@@ -40,6 +47,15 @@ export default async function AdminDashboardPage() {
     { href: '/app/admin', label: labels['admin.dashboard.people'], value: String(identities) },
   ];
 
+  const kpiTiles = [
+    { label: labels['admin.dashboard.occupancy'], value: `${kpis.occupancyPct}%` },
+    { label: labels['admin.dashboard.adr'], value: formatThb(kpis.adrThb) },
+    { label: labels['admin.dashboard.revpan'], value: formatThb(kpis.revpanThb) },
+    { label: labels['admin.dashboard.attach_rate'], value: `${kpis.attachRatePct}%` },
+    { label: labels['admin.dashboard.direct_share'], value: `${kpis.directSharePct}%` },
+    { label: labels['admin.dashboard.repeat_guests'], value: `${kpis.repeatGuestRatePct}%` },
+  ];
+
   return (
     <div>
       <h1 className="text-heading-1 font-bold text-text-ink mb-24">
@@ -54,6 +70,19 @@ export default async function AdminDashboardPage() {
           >
             <StatTile label={tile.label} value={tile.value} />
           </Link>
+        ))}
+      </div>
+
+      {/* KPI row */}
+      <h2 className="text-heading-3 font-semibold text-text-ink mt-32 mb-16">
+        {labels['admin.dashboard.kpi_title']}
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+        {kpiTiles.map((tile) => (
+          <div key={tile.label} className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <p className="text-small text-text-secondary mb-8">{tile.label}</p>
+            <p className="text-heading-2 font-semibold text-text-ink">{tile.value}</p>
+          </div>
         ))}
       </div>
 

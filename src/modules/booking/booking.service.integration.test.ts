@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import * as bookingService from './booking.service';
+import { getInStayHomeSpace } from './home-space.service';
 
 describe('booking.service — integration tests', () => {
   beforeEach(async () => {
@@ -1152,6 +1153,64 @@ describe('booking.service — integration tests', () => {
 
       expect(bookings).toHaveLength(2);
       expect(bookings[0].startDate > bookings[1].startDate).toBe(true);
+    });
+  });
+
+  describe('getInStayHomeSpace (D1)', () => {
+    it('returns booking details, active orders, and announcements for an authorized guest', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.booking.id).toBe(booking.id);
+      expect(data.booking.startDate).toBe(booking.startDate.toISOString());
+      expect(data.booking.endDate).toBe(booking.endDate.toISOString());
+      expect(data.activeOrders).toEqual([]);
+      expect(data.announcements).toEqual([]);
+    });
+
+    it('rejects access when guestIdentityId does not match the booking guest', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest1 = await createIdentity();
+      const guest2 = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest1.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      await expect(getInStayHomeSpace(db, booking.id, guest2.id)).rejects.toThrow('Access denied');
+    });
+
+    it('throws when booking is not found', async () => {
+      const guest = await createIdentity();
+      await expect(getInStayHomeSpace(db, 'nonexistent-id', guest.id)).rejects.toThrow('Booking not found');
     });
   });
 });

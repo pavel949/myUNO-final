@@ -26,8 +26,13 @@ export {
   getOwnerBookingsList,
   getOwnerPortfolioShape,
   getOwnerProjects,
+  getOwnerAlerts,
+  getOwnerComplianceSummary,
+  getOwnerStatements,
   type OwnerDashboardData,
   type OwnerStayInput,
+  type OwnerAlert,
+  type OwnerComplianceStatus,
 } from './owner.service';
 
 export {

@@ -23,6 +23,7 @@ export {
   rateServiceOrder,
   getServiceOrder,
   getServiceOrdersByProvider,
+  expireStaleServiceOrders,
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';
@@ -35,6 +36,7 @@ export {
   listPublicServices,
   approveService,
   rejectService,
+  getServiceAverageRating,
   type CreateServiceInput,
   type UpdateServiceInput,
 } from './service.service';

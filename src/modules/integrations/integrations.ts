@@ -1,7 +1,30 @@
 import { PrismaClient, IntegrationKey, IntegrationScopeType, IntegrationStatus } from '@prisma/client';
+import { encrypt, decrypt } from '@/lib/encryption';
 
 export interface IntegrationAccountConfig {
   [key: string]: any; // Integration-specific config, encrypted per doc 12
+}
+
+/**
+ * Integration configs carry credentials (API tokens, portal passwords), so
+ * the JSON is AES-256-GCM encrypted before storage: the `config` column
+ * holds a single ciphertext string. Reads go through decryptConfig, which
+ * also accepts legacy plaintext objects (pre-encryption rows).
+ */
+function encryptConfig(config: IntegrationAccountConfig): string {
+  return encrypt(JSON.stringify(config));
+}
+
+function decryptConfig(stored: unknown): IntegrationAccountConfig {
+  if (typeof stored === 'string') {
+    try {
+      return JSON.parse(decrypt(stored)) as IntegrationAccountConfig;
+    } catch {
+      return {};
+    }
+  }
+  // Legacy plaintext object
+  return (stored ?? {}) as IntegrationAccountConfig;
 }
 
 export async function registerIntegrationAccount(
@@ -28,7 +51,7 @@ export async function registerIntegrationAccount(
     return await db.integrationAccount.update({
       where: { id: account.id },
       data: {
-        config,
+        config: encryptConfig(config),
         status: IntegrationStatus.active,
       },
     });
@@ -40,10 +63,15 @@ export async function registerIntegrationAccount(
       scopeType,
       projectId,
       unitId,
-      config,
+      config: encryptConfig(config),
       status: IntegrationStatus.active,
     },
   });
+}
+
+/** Decrypt an account's config for use by an adapter. */
+export function getDecryptedConfig(account: { config: unknown }): IntegrationAccountConfig {
+  return decryptConfig(account.config);
 }
 
 export async function getIntegrationAccount(

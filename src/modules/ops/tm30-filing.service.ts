@@ -1,4 +1,5 @@
 import { PrismaClient, Tm30FilingStatus } from '@prisma/client';
+import { safeDecrypt } from './guest-pii';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 
@@ -145,7 +146,7 @@ export async function markTm30FilingFailed(
         bodyKey: 'tm30.escalation.body',
         params: {
           filing_id: tm30FilingId,
-          guest_name: filing.bookingGuest.fullName,
+          guest_name: safeDecrypt(filing.bookingGuest.fullName) || 'Guest',
         },
       });
     }
@@ -206,7 +207,7 @@ export async function logTm30PassportAccess(
       actorIdentityId: accessorIdentityId,
       data: {
         bookingId: filing.bookingId,
-        guestName: filing.bookingGuest?.fullName,
+        bookingGuestId: filing.bookingGuestId,
       } as any,
     },
   });
@@ -270,7 +271,7 @@ export async function checkTm30Escalations(
           bodyKey: 'tm30.escalation.body',
           params: {
             filing_id: filing.id,
-            guest_name: filing.bookingGuest?.fullName || 'Guest',
+            guest_name: safeDecrypt(filing.bookingGuest?.fullName) || 'Guest',
           },
         });
       }

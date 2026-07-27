@@ -847,10 +847,13 @@ model BookingGuest {
 
   bookingId String @map("booking_id")
   identityId String? @map("identity_id")
+  // 🔒 fullName, passportNumber, and dateOfBirth hold AES-256-GCM ciphertext
+  // (ops/guest-pii seam). nationality stays plaintext: the TM30 obligation
+  // filters on it in SQL (doc 02 §3.2 note).
   fullName String @map("full_name")
   nationality String
   passportNumber String @map("passport_number")
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  dateOfBirth String? @map("date_of_birth")
   passportMediaId String? @map("passport_media_id")
   isLead Boolean @default(false)
 

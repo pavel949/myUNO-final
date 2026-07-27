@@ -1,4 +1,55 @@
 import { PrismaClient } from '@prisma/client';
+import { getConfig } from '@/modules/config';
+
+/**
+ * Scrub passport data for bookings checked out more than
+ * `[cfg] retention.passport_media_days_after_checkout` days ago (doc 12 §6):
+ * clears the encrypted passport number and date of birth, and marks any
+ * passport scan for deletion (picked up by deleteExpiredMediaAssets).
+ * The guest's name stays (it is on the booking record for statements);
+ * identity anonymization handles full erasure separately.
+ */
+export async function scrubExpiredPassportData(
+  db: PrismaClient
+): Promise<{ scrubbedGuests: number; mediaMarked: number }> {
+  const days =
+    ((await getConfig(db, 'retention.passport_media_days_after_checkout')) as
+      | number
+      | undefined) ?? 30;
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const guests = await db.bookingGuest.findMany({
+    where: {
+      OR: [{ passportNumber: { not: '' } }, { passportMediaId: { not: null } }],
+      booking: {
+        checkedOutAt: { not: null, lte: cutoff },
+      },
+    },
+    select: { id: true, passportMediaId: true },
+  });
+
+  let mediaMarked = 0;
+  const now = new Date();
+  for (const guest of guests) {
+    if (guest.passportMediaId) {
+      await db.mediaAsset.update({
+        where: { id: guest.passportMediaId },
+        data: { deleteAfter: now },
+      });
+      mediaMarked++;
+    }
+    await db.bookingGuest.update({
+      where: { id: guest.id },
+      data: {
+        passportNumber: '',
+        dateOfBirth: null,
+        passportMediaId: null,
+      },
+    });
+  }
+
+  return { scrubbedGuests: guests.length, mediaMarked };
+}
 
 /**
  * Delete expired media assets (passport images, documents past their delete_after date).
@@ -264,7 +315,14 @@ export async function exportIdentityData(
  */
 export async function runRetentionJobs(
   db: PrismaClient
-): Promise<{ deletedMedia: number; anonymizedIdentities: number; expiredTokens: number }> {
+): Promise<{
+  deletedMedia: number;
+  anonymizedIdentities: number;
+  expiredTokens: number;
+  scrubbedPassports: number;
+}> {
+  // Scrub first so freshly-marked passport media is deleted in the same run.
+  const passportResult = await scrubExpiredPassportData(db);
   const mediaResult = await deleteExpiredMediaAssets(db);
   const identityResult = await anonymizeDeletedIdentities(db);
   const tokenResult = await expireOldTokens(db);
@@ -273,6 +331,7 @@ export async function runRetentionJobs(
     deletedMedia: mediaResult.deleted,
     anonymizedIdentities: identityResult.anonymized,
     expiredTokens: tokenResult.deleted,
+    scrubbedPassports: passportResult.scrubbedGuests,
   };
 }
 

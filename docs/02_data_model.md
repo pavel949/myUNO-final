@@ -234,10 +234,10 @@ One row per person in the party (the lead guest included).
 |---|---|---|
 | `booking_id` | FK→Booking | The stay. |
 | `identity_id` | FK→Identity, nullable | Linked when the party member has an identity (lead guest always). |
-| `full_name` | text | As in passport. 🔒 |
-| `nationality` | text (ISO alpha-2) | Passport country. 🔒 |
+| `full_name` | text, encrypted | As in passport. 🔒 AES-256-GCM ciphertext (ops guest-PII seam). |
+| `nationality` | text (ISO alpha-2) | Passport country. Plaintext by decision: the TM30 obligation and foreign-guest KPIs filter on it in SQL, which ciphertext would break; it is a country code, not an identifier. |
 | `passport_number` | text, encrypted | 🔒 Field-level encrypted (doc 12). |
-| `date_of_birth` | date, nullable | 🔒 |
+| `date_of_birth` | text, nullable, encrypted | 🔒 Stored as ciphertext (hence text, not date). |
 | `passport_media_id` | FK→MediaAsset, nullable | Passport photo/scan, stored encrypted, auto-deleted per retention config (doc 12). 🔒 |
 | `is_lead` | boolean | The booker. |
 

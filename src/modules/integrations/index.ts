@@ -5,6 +5,7 @@
 export {
   registerIntegrationAccount,
   getIntegrationAccount,
+  getDecryptedConfig,
   updateIntegrationStatus,
   recordIntegrationSync,
   disableIntegrationAccount,

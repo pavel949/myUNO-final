@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { capturePassportData } from '@/modules/ops';
+import { capturePassportData, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 async function authorize(bookingId: string) {
@@ -52,11 +52,11 @@ export async function GET(
     return NextResponse.json({
       guests: guests.map((g) => ({
         id: g.id,
-        fullName: g.fullName,
+        fullName: safeDecrypt(g.fullName),
         nationality: g.nationality,
         isLead: g.isLead,
         passportProvided: Boolean(g.passportNumber),
-        dateOfBirth: g.dateOfBirth,
+        dateOfBirth: safeDecrypt(g.dateOfBirth),
       })),
     });
   } catch (error) {
@@ -90,15 +90,20 @@ export async function POST(
       );
     }
 
-    // Create the row, then let the ops module encrypt the passport and
-    // advance the booking's verification status (single encryption path).
+    // Encrypt name + date of birth here, then let the ops module encrypt the
+    // passport and advance the booking's verification status. All 🔒 fields
+    // are ciphertext before they touch the database (doc 12).
+    const encrypted = encryptGuestPii({
+      fullName: String(fullName),
+      dateOfBirth: dateOfBirth ? String(dateOfBirth) : null,
+    });
     const guest = await prisma.bookingGuest.create({
       data: {
         bookingId: params.id,
-        fullName: String(fullName),
+        fullName: encrypted.fullName,
         nationality: String(nationality),
         passportNumber: '',
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        dateOfBirth: encrypted.dateOfBirth,
         isLead: Boolean(isLead),
       },
     });
@@ -109,7 +114,7 @@ export async function POST(
     });
 
     return NextResponse.json(
-      { guest: { id: guest.id, fullName: guest.fullName, nationality: guest.nationality } },
+      { guest: { id: guest.id, fullName: String(fullName), nationality: guest.nationality } },
       { status: 201 }
     );
   } catch (error) {

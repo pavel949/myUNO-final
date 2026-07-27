@@ -313,7 +313,7 @@ export interface BookingGuestFactoryOpts {
   fullName: string;
   nationality: string;
   passportNumber: string;
-  dateOfBirth?: Date;
+  dateOfBirth?: string;
   isLead?: boolean;
 }
 

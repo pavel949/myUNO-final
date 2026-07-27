@@ -63,4 +63,5 @@ export {
   exportIdentityData,
   requestIdentityDeletion,
   runRetentionJobs,
+  scrubExpiredPassportData,
 } from './retention.service';

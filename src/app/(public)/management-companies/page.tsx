@@ -8,7 +8,8 @@ const copy: AudienceCopy = {
   titleDraft: 'For Management Companies',
   subtitleDraft: 'Demanded ops. Single platform. More income.',
   ctaDraft: 'Learn more',
-  ctaHref: 'mailto:pavel@ignatevestate.com',
+  ctaHref: '#lead-form',
+  leadAudience: 'mc',
 };
 
 export async function generateMetadata(): Promise<Metadata> {

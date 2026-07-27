@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { LeadFormSection } from '@/app/(public)/lead-form-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export default async function DevelopersPage() {
             {labels['audience.developers.hero_lede']}
           </p>
           <Link
-            href="mailto:pavel@ignatevestate.com"
+            href="#lead-form"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
             {labels['audience.developers.cta']} →
@@ -60,6 +61,10 @@ export default async function DevelopersPage() {
           ))}
         </ul>
       </section>
+
+      <div id="lead-form">
+        <LeadFormSection audience="developers" />
+      </div>
     </main>
   );
 }

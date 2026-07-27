@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { LeadFormSection } from '@/app/(public)/lead-form-section';
 
 /**
  * Shared shape for the audience landing pages (guests, developers, buyers,
@@ -16,6 +17,12 @@ export interface AudienceCopy {
   ctaDraft: string;
   /** Where the CTA button leads (e.g. /search, /register, mailto:…). */
   ctaHref: string;
+  /**
+   * When set, the page carries the public lead form (doc 08 §3) and the
+   * CTA can point at `#lead-form`. Only owners/developers/buyers/mc pages
+   * capture leads; guests go to search, providers to the apply flow.
+   */
+  leadAudience?: 'owners' | 'developers' | 'buyers' | 'mc';
 }
 
 async function audienceLabels(copy: AudienceCopy) {
@@ -54,6 +61,11 @@ export async function AudiencePage({ copy }: { copy: AudienceCopy }) {
           </Link>
         </div>
       </section>
+      {copy.leadAudience ? (
+        <div id="lead-form">
+          <LeadFormSection audience={copy.leadAudience} />
+        </div>
+      ) : null}
     </main>
   );
 }

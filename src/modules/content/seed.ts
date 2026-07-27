@@ -2039,6 +2039,24 @@ const PROJECT_PAGE_KEYS: KeyDef[] = [
   { key: 'project_page.trust.title', namespace: 'project_page', description: 'Project landing: trust band title', en: 'Trust, made visible', ru: 'Доверие, которое видно', status: NR },
 ];
 
+const LEAD_FORM_KEYS: KeyDef[] = [
+  // Public lead form on audience pages (doc 08 §3, N-29)
+  { key: 'audience.lead.title', namespace: 'audience', description: 'Lead form: section title', en: 'Leave your contact — we reply within a day', ru: 'Оставьте контакт — ответим в течение дня', status: NR },
+  { key: 'audience.lead.name', namespace: 'audience', description: 'Lead form: name field label', en: 'Your name', ru: 'Ваше имя', status: NR },
+  { key: 'audience.lead.contact', namespace: 'audience', description: 'Lead form: contact field label', en: 'How to reach you', ru: 'Как с вами связаться', status: NR },
+  { key: 'audience.lead.contact_hint', namespace: 'audience', description: 'Lead form: contact field hint', en: 'Phone, WhatsApp, Telegram, or email — whatever suits you.', ru: 'Телефон, WhatsApp, Telegram или почта — как вам удобно.', status: NR },
+  { key: 'audience.lead.message', namespace: 'audience', description: 'Lead form: free-text field label', en: 'Tell us about your situation (optional)', ru: 'Расскажите о вашей ситуации (необязательно)', status: NR },
+  { key: 'audience.lead.consent', namespace: 'audience', description: 'Lead form: PDPA consent line', en: 'I agree that myUNO stores this information to respond to my enquiry.', ru: 'Я согласен(на), что myUNO сохранит эти данные, чтобы ответить на мой запрос.', status: NR },
+  { key: 'audience.lead.consent_required', namespace: 'audience', description: 'Lead form: consent validation message', en: 'Please tick the consent box so we may contact you.', ru: 'Пожалуйста, отметьте согласие, чтобы мы могли с вами связаться.', status: NR },
+  { key: 'audience.lead.submit', namespace: 'audience', description: 'Lead form: submit button', en: 'Send', ru: 'Отправить', status: NR },
+  { key: 'audience.lead.submitting', namespace: 'audience', description: 'Lead form: submit button while sending', en: 'Sending…', ru: 'Отправляем…', status: NR },
+  { key: 'audience.lead.success', namespace: 'audience', description: 'Lead form: success state', en: 'Thank you — we received your message and will reply shortly.', ru: 'Спасибо — мы получили ваше сообщение и скоро ответим.', status: NR },
+  { key: 'audience.lead.error', namespace: 'audience', description: 'Lead form: error state', en: 'Something went wrong. Please try again, or email us directly.', ru: 'Что-то пошло не так. Попробуйте ещё раз или напишите нам напрямую.', status: NR },
+  // N-29 lead.received → admin (doc 11)
+  { key: 'notify.lead_received.title', namespace: 'notify', description: 'N-29 admin alert title: new public lead', en: 'New lead received', ru: 'Новый лид', status: NR },
+  { key: 'notify.lead_received.body', namespace: 'notify', description: 'N-29 admin alert body: new public lead', en: 'A visitor left their contact on the {audience} page. Open your inbox to reply.', ru: 'Посетитель оставил контакт на странице {audience}. Откройте входящие, чтобы ответить.', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -2065,7 +2083,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

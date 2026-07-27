@@ -37,6 +37,13 @@ export {
 } from './thread.bus';
 
 export {
+  submitLead,
+  LEAD_AUDIENCES,
+  type LeadAudience,
+  type SubmitLeadInput,
+} from './lead.service';
+
+export {
   raiseTicket,
   updateTicketStatus,
   assignTicket,

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
+import { assertCatalogKeys } from '@/modules/config';
 import { ProjectStatus } from '@prisma/client';
 
 interface CreateProjectInput {
@@ -58,6 +59,9 @@ export async function createProject(input: CreateProjectInput) {
   if (existing) {
     throw new Error(`Project with slug "${slug}" already exists`);
   }
+
+  // Amenity keys must exist in the doc 04 §8 catalog (DM-3)
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
 
   const project = await prisma.project.create({
     data: {
@@ -166,6 +170,9 @@ export async function updateProject(input: UpdateProjectInput) {
       );
     }
   }
+
+  // Amenity keys must exist in the doc 04 §8 catalog (DM-3)
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
 
   const updated = await prisma.project.update({
     where: { id: projectId },

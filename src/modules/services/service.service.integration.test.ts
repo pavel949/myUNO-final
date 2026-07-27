@@ -78,7 +78,7 @@ describe('service.service — integration tests', () => {
         description: 'No approval needed',
         contactEmail: 'quick@provider.com',
         contactPhone: '+66812345679',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       await providerService.approveProvider(db, providerApp.id, admin.id);
@@ -92,7 +92,7 @@ describe('service.service — integration tests', () => {
       // Create service
       const result = await serviceService.createService(db, {
         providerId: providerApp.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Dinner Party',
         priceModel: 'per_person',
         basePriceThb: 500,
@@ -153,7 +153,7 @@ describe('service.service — integration tests', () => {
         description: 'Test retrieval',
         contactEmail: 'detail@provider.com',
         contactPhone: '+66812345681',
-        categoryKeys: ['maintenance'],
+        categoryKeys: ['repairs'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -161,7 +161,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'maintenance',
+        categoryKey: 'repairs',
         title: 'AC Maintenance',
         priceModel: 'fixed',
         basePriceThb: 1500,
@@ -263,7 +263,7 @@ describe('service.service — integration tests', () => {
         description: 'For approval testing',
         contactEmail: 'approval@provider.com',
         contactPhone: '+66812345684',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -271,7 +271,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Pending Service',
         priceModel: 'per_person',
         basePriceThb: 400,
@@ -296,7 +296,7 @@ describe('service.service — integration tests', () => {
         description: 'Cannot approve again',
         contactEmail: 'alreadyactive@provider.com',
         contactPhone: '+66812345685',
-        categoryKeys: ['maintenance'],
+        categoryKeys: ['repairs'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -304,7 +304,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'maintenance',
+        categoryKey: 'repairs',
         title: 'Already Active Service',
         priceModel: 'fixed',
         basePriceThb: 1000,
@@ -327,7 +327,7 @@ describe('service.service — integration tests', () => {
         description: 'For rejection testing',
         contactEmail: 'rejection@provider.com',
         contactPhone: '+66812345686',
-        categoryKeys: ['events'],
+        categoryKeys: ['tours'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -335,7 +335,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'events',
+        categoryKey: 'tours',
         title: 'Rejected Service',
         priceModel: 'per_hour',
         basePriceThb: 800,
@@ -524,7 +524,7 @@ describe('service.service — integration tests', () => {
         description: 'Not approved yet',
         contactEmail: 'unvetted-service@provider.com',
         contactPhone: '+66812345691',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       // Don't approve the provider
@@ -533,7 +533,7 @@ describe('service.service — integration tests', () => {
       // Create service for unapproved provider
       await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Unapproved Catering',
         priceModel: 'per_person',
         basePriceThb: 600,
@@ -565,7 +565,7 @@ describe('service.service — integration tests', () => {
         description: 'Multiple services',
         contactEmail: 'multi-cat@provider.com',
         contactPhone: '+66812345692',
-        categoryKeys: ['cleaning', 'catering', 'tours'],
+        categoryKeys: ['cleaning', 'chef', 'tours'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -582,7 +582,7 @@ describe('service.service — integration tests', () => {
 
       await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Catering Service',
         priceModel: 'per_person',
         basePriceThb: 500,
@@ -594,7 +594,7 @@ describe('service.service — integration tests', () => {
       });
 
       const cateringServices = await serviceService.listPublicServices(db, project.id, {
-        categoryKey: 'catering',
+        categoryKey: 'chef',
       });
 
       expect(cleaningServices).toHaveLength(1);
@@ -749,7 +749,7 @@ describe('service.service — integration tests', () => {
         description: 'No reviews',
         contactEmail: 'unrated@provider.com',
         contactPhone: '+66812345695',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -757,7 +757,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Unrated Service',
         priceModel: 'per_person',
         basePriceThb: 500,
@@ -869,7 +869,7 @@ describe('service.service — integration tests', () => {
         description: 'Premium spa services',
         contactEmail: 'spa@luxury.com',
         contactPhone: '+66898765432',
-        categoryKeys: ['wellness'],
+        categoryKeys: ['massage_spa'],
       });
 
       // Step 2: Approve provider
@@ -880,7 +880,7 @@ describe('service.service — integration tests', () => {
 
       const serviceApp = await serviceService.createService(db, {
         providerId: providerApp.id,
-        categoryKey: 'wellness',
+        categoryKey: 'massage_spa',
         title: 'Signature Massage',
         titleRu: 'Фирменный массаж',
         description: 'Relaxing full-body treatment',

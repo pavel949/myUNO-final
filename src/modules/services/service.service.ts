@@ -1,5 +1,5 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
-import { getConfig } from '@/modules/config';
+import { getConfig, assertCatalogKeys } from '@/modules/config';
 
 export interface CreateServiceInput {
   providerId: string;
@@ -60,6 +60,10 @@ export async function createService(
     advanceNoticeHours = 0,
     availableProjectIds = [],
   } = input;
+
+  // Category must exist in the doc 04 §8 catalog — enforced here so every
+  // caller is covered, not only the API route (DM-3)
+  await assertCatalogKeys(db, 'catalog.service_categories', categoryKey);
 
   // Check if admin approval is required
   const requiresApproval = await getConfig(db, 'services.require_admin_approval');

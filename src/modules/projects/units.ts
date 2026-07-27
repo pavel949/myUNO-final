@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
+import { assertCatalogKeys } from '@/modules/config';
 import { UnitStatus, UnitType } from '@prisma/client';
 
 interface CreateUnitInput {
@@ -87,6 +88,10 @@ export async function createUnit(input: CreateUnitInput) {
   if (existing) {
     throw new Error(`Unit with name "${name}" already exists in this project`);
   }
+
+  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3)
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
 
   const unit = await prisma.unit.create({
     data: {
@@ -210,6 +215,10 @@ export async function updateUnit(input: UpdateUnitInput) {
       );
     }
   }
+
+  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3)
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
 
   const updated = await prisma.unit.update({
     where: { id: unitId },

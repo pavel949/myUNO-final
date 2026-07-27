@@ -68,6 +68,7 @@ export interface UnitDetailLabels {
   errorBooking: string;
   amenitiesTitle: string;
   amenityLabels: Record<string, string>;
+  policyLabels: Record<string, string>;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -328,7 +329,7 @@ export default function UnitDetailClient({
                     {labels.cancellationPolicy}
                   </p>
                   <p className="text-body text-text-secondary">
-                    {unit.cancellationPolicyKey || labels.cancellationDefault}
+                    {(unit.cancellationPolicyKey && labels.policyLabels[unit.cancellationPolicyKey]) || unit.cancellationPolicyKey || labels.cancellationDefault}
                   </p>
                 </div>
               </div>

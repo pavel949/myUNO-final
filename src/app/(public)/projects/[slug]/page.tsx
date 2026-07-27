@@ -86,6 +86,12 @@ export default async function ProjectLandingPage({
     'catalog.amenities.gym.label': 'Gym',
     'catalog.amenities.parking.label': 'Parking',
     'catalog.amenities.aircon.label': 'Air conditioning',
+    'catalog.amenities.sea_view.label': 'Sea view',
+    'catalog.amenities.washer.label': 'Washer',
+    'catalog.amenities.workspace.label': 'Workspace',
+    'catalog.amenities.kids_friendly.label': 'Kids friendly',
+    'catalog.amenities.pets_allowed.label': 'Pets allowed',
+    'catalog.amenities.security_24h.label': '24h security',
   });
 
   const [areaLabel, story, handbookTeaser, services] = await Promise.all([

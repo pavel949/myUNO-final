@@ -18,7 +18,7 @@ export async function seedDemoData(db: PrismaClient) {
       longitude: new Prisma.Decimal('98.3997'),
       address: '99/1 Moo 1, Tambol Layan, Phuket 83100',
       timezone: 'Asia/Bangkok',
-      amenityKeys: ['wifi', 'pool', 'gym', 'concierge', 'housekeeping'],
+      amenityKeys: ['wifi', 'pool', 'gym', 'security_24h', 'parking'],
       handbookKey: 'project.ignatev.handbook',
       status: 'live',
     },

@@ -308,7 +308,7 @@ describe('provider.service — integration tests', () => {
         description: 'Professional culinary for private dinners',
         contactEmail: 'chef@example.com',
         contactPhone: '+66898765432',
-        categoryKeys: ['culinary'],
+        categoryKeys: ['chef'],
       });
 
       // Verify applied status

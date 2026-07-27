@@ -2129,6 +2129,59 @@ const AUDIENCE_EXPANSION_KEYS: KeyDef[] = [
 ];
 
 
+const CATALOG_LABEL_KEYS: KeyDef[] = [
+  // Amenity labels — one per catalog.amenities entry (doc 04 §8, doc 05 §4)
+  { key: 'catalog.amenities.wifi.label', namespace: 'catalog', description: 'Amenity label: wifi', en: 'Wi-Fi', ru: 'Wi-Fi', status: NR },
+  { key: 'catalog.amenities.pool.label', namespace: 'catalog', description: 'Amenity label: pool', en: 'Pool', ru: 'Бассейн', status: NR },
+  { key: 'catalog.amenities.kitchen.label', namespace: 'catalog', description: 'Amenity label: kitchen', en: 'Kitchen', ru: 'Кухня', status: NR },
+  { key: 'catalog.amenities.gym.label', namespace: 'catalog', description: 'Amenity label: gym', en: 'Gym', ru: 'Спортзал', status: NR },
+  { key: 'catalog.amenities.parking.label', namespace: 'catalog', description: 'Amenity label: parking', en: 'Parking', ru: 'Парковка', status: NR },
+  { key: 'catalog.amenities.aircon.label', namespace: 'catalog', description: 'Amenity label: aircon', en: 'Air conditioning', ru: 'Кондиционер', status: NR },
+  { key: 'catalog.amenities.sea_view.label', namespace: 'catalog', description: 'Amenity label: sea view', en: 'Sea view', ru: 'Вид на море', status: NR },
+  { key: 'catalog.amenities.washer.label', namespace: 'catalog', description: 'Amenity label: washer', en: 'Washer', ru: 'Стиральная машина', status: NR },
+  { key: 'catalog.amenities.workspace.label', namespace: 'catalog', description: 'Amenity label: workspace', en: 'Workspace', ru: 'Рабочее место', status: NR },
+  { key: 'catalog.amenities.kids_friendly.label', namespace: 'catalog', description: 'Amenity label: kids friendly', en: 'Kids friendly', ru: 'Подходит для детей', status: NR },
+  { key: 'catalog.amenities.pets_allowed.label', namespace: 'catalog', description: 'Amenity label: pets allowed', en: 'Pets allowed', ru: 'Можно с питомцами', status: NR },
+  { key: 'catalog.amenities.security_24h.label', namespace: 'catalog', description: 'Amenity label: 24h security', en: '24h security', ru: 'Охрана 24/7', status: NR },
+  // Cancellation policy labels — guests see these, never the raw key
+  { key: 'catalog.cancellation_policies.flexible.label', namespace: 'catalog', description: 'Cancellation policy label: flexible', en: 'Flexible', ru: 'Гибкая', status: NR },
+  { key: 'catalog.cancellation_policies.moderate.label', namespace: 'catalog', description: 'Cancellation policy label: moderate', en: 'Moderate', ru: 'Умеренная', status: NR },
+  { key: 'catalog.cancellation_policies.strict.label', namespace: 'catalog', description: 'Cancellation policy label: strict', en: 'Strict', ru: 'Строгая', status: NR },
+  // Ticket category labels — full 8-key catalog (was 4 hardcoded in the UI)
+  { key: 'catalog.ticket_categories.maintenance.label', namespace: 'catalog', description: 'Ticket category label: maintenance', en: 'Maintenance', ru: 'Ремонт и обслуживание', status: NR },
+  { key: 'catalog.ticket_categories.housekeeping.label', namespace: 'catalog', description: 'Ticket category label: housekeeping', en: 'Housekeeping', ru: 'Уборка', status: NR },
+  { key: 'catalog.ticket_categories.complaint.label', namespace: 'catalog', description: 'Ticket category label: complaint', en: 'Complaint', ru: 'Жалоба', status: NR },
+  { key: 'catalog.ticket_categories.billing_question.label', namespace: 'catalog', description: 'Ticket category label: billing question', en: 'Billing question', ru: 'Вопрос по оплате', status: NR },
+  { key: 'catalog.ticket_categories.access.label', namespace: 'catalog', description: 'Ticket category label: access', en: 'Access & keys', ru: 'Доступ и ключи', status: NR },
+  { key: 'catalog.ticket_categories.noise.label', namespace: 'catalog', description: 'Ticket category label: noise', en: 'Noise', ru: 'Шум', status: NR },
+  { key: 'catalog.ticket_categories.common_area.label', namespace: 'catalog', description: 'Ticket category label: common area', en: 'Common areas', ru: 'Общие зоны', status: NR },
+  { key: 'catalog.ticket_categories.other.label', namespace: 'catalog', description: 'Ticket category label: other', en: 'Other', ru: 'Другое', status: NR },
+];
+
+const STATUS_LABEL_KEYS: KeyDef[] = [
+  // Missing BookingStatus labels (doc 05 §4: every doc 02 enum label under common.*)
+  { key: 'common.status.booking.checked_in', namespace: 'common', description: 'Booking status: checked in', en: 'Checked in', ru: 'Заселён', status: NR },
+  { key: 'common.status.booking.checked_out', namespace: 'common', description: 'Booking status: checked out', en: 'Checked out', ru: 'Выселен', status: NR },
+  { key: 'common.status.booking.completed', namespace: 'common', description: 'Booking status: completed', en: 'Completed', ru: 'Завершено', status: NR },
+  { key: 'common.status.booking.expired', namespace: 'common', description: 'Booking status: hold expired', en: 'Expired', ru: 'Истекло', status: NR },
+  // UnitStatus — real enum values (mobilizing/live/paused/offboarded)
+  { key: 'common.status.unit.mobilizing', namespace: 'common', description: 'Unit status: mobilizing', en: 'Mobilizing', ru: 'Подготовка', status: NR },
+  { key: 'common.status.unit.live', namespace: 'common', description: 'Unit status: live', en: 'Live', ru: 'Работает', status: NR },
+  { key: 'common.status.unit.paused', namespace: 'common', description: 'Unit status: paused', en: 'Paused', ru: 'Приостановлен', status: NR },
+  { key: 'common.status.unit.offboarded', namespace: 'common', description: 'Unit status: offboarded', en: 'Offboarded', ru: 'Выведен', status: NR },
+  // ServiceOrderStatus — full set
+  { key: 'common.status.service_order.placed', namespace: 'common', description: 'Service order status: placed', en: 'Placed', ru: 'Размещён', status: NR },
+  { key: 'common.status.service_order.paid', namespace: 'common', description: 'Service order status: paid', en: 'Paid', ru: 'Оплачен', status: NR },
+  { key: 'common.status.service_order.accepted', namespace: 'common', description: 'Service order status: accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'common.status.service_order.declined', namespace: 'common', description: 'Service order status: declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'common.status.service_order.expired', namespace: 'common', description: 'Service order status: expired', en: 'Expired', ru: 'Истёк', status: NR },
+  { key: 'common.status.service_order.fulfilled', namespace: 'common', description: 'Service order status: fulfilled', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'common.status.service_order.cancelled', namespace: 'common', description: 'Service order status: cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+  { key: 'common.status.service_order.failed', namespace: 'common', description: 'Service order status: failed (no-show)', en: 'Failed', ru: 'Сорван', status: NR },
+  { key: 'common.status.service_order.closed', namespace: 'common', description: 'Service order status: closed', en: 'Closed', ru: 'Закрыт', status: NR },
+];
+
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
@@ -2154,7 +2207,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

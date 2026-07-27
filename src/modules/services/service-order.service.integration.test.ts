@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createProvider, createService } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createProvider, createService } from '@/test/util';
 import * as serviceOrderService from './service-order.service';
 
 describe('service-order.service — integration tests', () => {
@@ -710,26 +710,15 @@ describe('service-order.service — integration tests', () => {
     });
 
     it('expireStaleServiceOrders marks orders past SLA as expired (S5)', async () => {
-      const { serviceOrderService, seedConfig } = await setupModule();
-      await seedConfig(db);
-      await seedConfig(db);
-
       // Create test data
       const project = await createProject();
       const unit = await createUnit(project.id);
       const provider = await createProvider({ status: 'active' });
       const orderer = await createIdentity();
-      const service = await db.service.create({
-        data: {
-          title: 'Test Service',
-          description: 'Desc',
-          category_key: 'cleaning',
-          price_model: 'per_hour',
-          base_price_thb: 500,
-          provider_id: provider.id,
-          project_id: project.id,
-          status: 'approved',
-        },
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
       });
 
       // Create an order that's old (12+ hours ago)
@@ -749,8 +738,7 @@ describe('service-order.service — integration tests', () => {
           price_breakdown: { base: 500 },
           total_thb: 500,
           take_rate_pct_snapshot: 15,
-          created_at: pastDate,
-          updated_at: pastDate,
+          createdAt: pastDate,
         },
       });
 
@@ -768,25 +756,15 @@ describe('service-order.service — integration tests', () => {
     });
 
     it('expireStaleServiceOrders refunds paid orders (S5)', async () => {
-      const { serviceOrderService, seedConfig } = await setupModule();
-      await seedConfig(db);
-
       // Create test data
       const project = await createProject();
       const unit = await createUnit(project.id);
       const provider = await createProvider({ status: 'active' });
       const orderer = await createIdentity();
-      const service = await db.service.create({
-        data: {
-          title: 'Test Service',
-          description: 'Desc',
-          category_key: 'cleaning',
-          price_model: 'per_hour',
-          base_price_thb: 500,
-          provider_id: provider.id,
-          project_id: project.id,
-          status: 'approved',
-        },
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
       });
 
       // Create a paid order that's old
@@ -806,19 +784,23 @@ describe('service-order.service — integration tests', () => {
           price_breakdown: { base: 500 },
           total_thb: 500,
           take_rate_pct_snapshot: 15,
-          created_at: pastDate,
-          updated_at: pastDate,
+          createdAt: pastDate,
         },
       });
 
       // Add a successful payment
+      const staff = await createIdentity();
       await db.payment.create({
         data: {
-          service_order_id: order.id,
+          purpose: 'service_order',
+          serviceOrderId: order.id,
+          payerIdentityId: orderer.id,
           method: 'cash',
-          amount_thb: 500,
+          provider: 'cash',
+          amountThb: 500,
           status: 'succeeded',
-          received_by: 'staff_member',
+          receivedByIdentityId: staff.id,
+          receivedAt: new Date(),
         },
       });
 
@@ -835,25 +817,20 @@ describe('service-order.service — integration tests', () => {
     });
 
     it('recordServiceCommission is called when order is fulfilled (S5)', async () => {
-      const { serviceOrderService, seedConfig } = await setupModule();
-      await seedConfig(db);
-
       // Create test data
       const project = await createProject();
       const unit = await createUnit(project.id);
       const provider = await createProvider({ status: 'active' });
       const orderer = await createIdentity();
-      const service = await db.service.create({
-        data: {
-          title: 'Test Service',
-          description: 'Desc',
-          category_key: 'cleaning',
-          price_model: 'per_hour',
-          base_price_thb: 500,
-          provider_id: provider.id,
-          project_id: project.id,
-          status: 'approved',
-        },
+      const admin = await createIdentity();
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
       });
 
       // Create and accept an order
@@ -879,14 +856,14 @@ describe('service-order.service — integration tests', () => {
       // Check that a LedgerEntry was created for the commission
       const ledgerEntry = await db.ledgerEntry.findFirst({
         where: {
-          type: 'service_commission',
-          service_order_id: orderResult.id,
+          entryType: 'service_commission',
+          serviceOrderId: orderResult.id,
         },
       });
 
-      expect(ledgerEntry).toBeDefined();
-      expect(ledgerEntry?.provider_id).toBe(provider.id);
-      expect(ledgerEntry?.amount_thb).toBeGreaterThan(0);
+      expect(ledgerEntry).not.toBeNull();
+      expect(ledgerEntry?.projectId).toBe(project.id);
+      expect(ledgerEntry?.amountThb).toBe(75); // 500 × 15% take rate
     });
   });
 });

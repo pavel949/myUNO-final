@@ -1,25 +1,48 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createMocks } from 'node-mocks-http';
-import { POST } from './route';
-import { db, resetDb, createIdentity, createProject, createProvider } from '@/test/util';
-import { seedConfig, setGlobalConfig } from '@/modules/config';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createProvider,
+} from '@/test/util';
+import { seedConfig } from '@/modules/config';
 import * as serviceService from '@/modules/services';
+
+const mockGetCurrentUser = vi.fn();
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util');
+  return { prisma: util.db };
+});
+
+import { POST } from './route';
+
+function ratePost(orderId: string, body: unknown): NextRequest {
+  return new NextRequest(`http://localhost/api/service-orders/${orderId}/rate`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
   let orderer: Awaited<ReturnType<typeof createIdentity>>;
-  let admin: Awaited<ReturnType<typeof createIdentity>>;
-  let provider: Awaited<ReturnType<typeof createProvider>>;
-  let project: Awaited<ReturnType<typeof createProject>>;
   let orderId: string;
 
   beforeEach(async () => {
     await resetDb();
+    mockGetCurrentUser.mockReset();
     await seedConfig(db);
 
     orderer = await createIdentity();
-    admin = await createIdentity();
-    provider = await createProvider();
-    project = await createProject();
+    const admin = await createIdentity();
+    const provider = await createProvider();
+    const project = await createProject();
 
     // Approve provider
     await db.provider.update({
@@ -27,9 +50,7 @@ describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
       data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
     });
 
-    await setGlobalConfig('services.require_admin_approval', false);
-
-    // Create service
+    // Create service (created as draft, then activated for the order)
     const service = await serviceService.createService(db, {
       providerId: provider.id,
       categoryKey: 'cleaning',
@@ -37,8 +58,9 @@ describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
       priceModel: 'fixed',
       basePriceThb: 2000,
     });
+    await db.service.update({ where: { id: service.id }, data: { status: 'active' } });
 
-    // Create order
+    // Create fulfilled order
     const orderResult = await db.serviceOrder.create({
       data: {
         service_id: service.id,
@@ -50,6 +72,7 @@ describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
         scheduled_start: new Date('2026-08-01'),
         scheduled_end: new Date('2026-08-02'),
         quantity: 1,
+        price_breakdown: { base: 2000 },
         total_thb: 2000,
         take_rate_pct_snapshot: 15,
       },
@@ -58,41 +81,26 @@ describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
     orderId = orderResult.id;
   });
 
-  afterEach(async () => {
-    await resetDb();
-  });
+  it('creates a review for a fulfilled service order (S6)', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: orderer.id,
+      email: orderer.email,
+      firstName: 'T',
+      lastName: 'U',
+      isAdmin: false,
+      roles: [],
+    });
 
-  it('creates a review for a service order (S6)', async () => {
-    const { req, res } = createMocks(
-      {
-        method: 'POST',
-        body: {
-          rating: 5,
-          comment: 'Excellent service!',
-        },
-      },
-      {
-        params: { id: orderId },
-      }
-    );
+    const res = await POST(ratePost(orderId, { rating: 5, comment: 'Excellent service!' }), {
+      params: { id: orderId },
+    });
 
-    // Mock getCurrentUser to return the orderer
-    vi.mock('@/app/actions/getCurrentUser', () => ({
-      getCurrentUser: vi.fn(async () => orderer),
-    }));
-
-    await POST(req as any, { params: { id: orderId } } as any);
-
-    expect(res._getStatusCode()).toBe(200);
-    const data = JSON.parse(res._getData());
+    expect(res.status).toBe(200);
+    const data = await res.json();
     expect(data.ok).toBe(true);
     expect(data.reviewId).toBeDefined();
 
-    // Verify review was created
-    const review = await db.review.findUnique({
-      where: { id: data.reviewId },
-    });
-
+    const review = await db.review.findUnique({ where: { id: data.reviewId } });
     expect(review?.rating).toBe(5);
     expect(review?.comment).toBe('Excellent service!');
     expect(review?.target_type).toBe('service_order');
@@ -101,27 +109,31 @@ describe('POST /api/service-orders/[id]/rate — rate an order (S6)', () => {
   });
 
   it('rejects invalid ratings (S6)', async () => {
-    const { req, res } = createMocks(
-      {
-        method: 'POST',
-        body: {
-          rating: 6, // Invalid
-          comment: 'Too high',
-        },
-      },
-      {
-        params: { id: orderId },
-      }
-    );
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: orderer.id,
+      email: orderer.email,
+      firstName: 'T',
+      lastName: 'U',
+      isAdmin: false,
+      roles: [],
+    });
 
-    vi.mock('@/app/actions/getCurrentUser', () => ({
-      getCurrentUser: vi.fn(async () => orderer),
-    }));
+    const res = await POST(ratePost(orderId, { rating: 6, comment: 'Too high' }), {
+      params: { id: orderId },
+    });
 
-    await POST(req as any, { params: { id: orderId } } as any);
-
-    expect(res._getStatusCode()).toBe(400);
-    const data = JSON.parse(res._getData());
+    expect(res.status).toBe(400);
+    const data = await res.json();
     expect(data.error).toBeDefined();
+  });
+
+  it('returns 401 when unauthenticated', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+
+    const res = await POST(ratePost(orderId, { rating: 5 }), {
+      params: { id: orderId },
+    });
+
+    expect(res.status).toBe(401);
   });
 });

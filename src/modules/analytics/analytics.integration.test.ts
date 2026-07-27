@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { resetDb, createIdentity, createProject, createUnit, createProvider, createService } from '@/test/util';
 import { prisma } from '@/lib/prisma';
 import {
   track,
@@ -543,7 +543,7 @@ describe('Analytics Module', () => {
 
       const kpi = await getKpiSummary(prisma, { from, to });
 
-      expect(kpi.occupancyPct).toBe(66); // 20/30
+      expect(kpi.occupancyPct).toBe(67); // 20/30 ≈ 66.7, rounded
       expect(kpi.adrThb).toBe(500); // 10000 / 20
       expect(kpi.revpanThb).toBe(333); // 10000 / 30
     });
@@ -570,8 +570,8 @@ describe('Analytics Module', () => {
 
       const kpi = await getKpiSummary(prisma, { from, to });
 
-      expect(kpi.occupancyPct).toBe(66); // 20/30
-      expect(kpi.adrThb).toBe(666); // 10000 / 15 (guest nights only)
+      expect(kpi.occupancyPct).toBe(67); // 20/30 ≈ 66.7, rounded
+      expect(kpi.adrThb).toBe(667); // 10000 / 15 (guest nights only), rounded
       expect(kpi.revpanThb).toBe(333); // 10000 / 30
     });
 
@@ -616,12 +616,28 @@ describe('Analytics Module', () => {
         },
       });
 
+      const provider = await createProvider({ status: 'active' });
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
+        basePriceThb: 5000,
+      });
       await prisma.serviceOrder.create({
         data: {
-          bookingId: b1.id,
-          serviceId: 'svc-1',
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          booking_id: b1.id,
+          orderer_identity_id: guest.id,
+          orderer_role: 'guest',
           status: 'fulfilled',
-          totalThb: 5000,
+          scheduled_start: new Date('2025-01-06'),
+          scheduled_end: new Date('2025-01-07'),
+          quantity: 1,
+          price_breakdown: { base: 5000 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
         },
       });
 

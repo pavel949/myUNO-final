@@ -1,231 +1,126 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { prisma } from '@/lib/prisma';
-import { resetDb } from '@/test/util';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createProvider,
+  createService,
+} from '@/test/util';
+
+const mockGetCurrentUser = vi.fn();
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util');
+  return { prisma: util.db };
+});
+
 import { GET } from './route';
+
+function adminUser(identity: { id: string; email: string | null }) {
+  return {
+    identityId: identity.id,
+    email: identity.email,
+    firstName: 'Admin',
+    lastName: 'User',
+    isAdmin: true,
+    roles: [],
+  };
+}
+
+async function makeOrder(status: 'placed' | 'accepted' | 'fulfilled') {
+  const project = await createProject({ status: 'live' });
+  const provider = await createProvider({ status: 'active' });
+  const service = await createService({ providerId: provider.id, status: 'active' });
+  const orderer = await createIdentity();
+  return db.serviceOrder.create({
+    data: {
+      service_id: service.id,
+      provider_id: provider.id,
+      project_id: project.id,
+      orderer_identity_id: orderer.id,
+      orderer_role: 'guest',
+      status,
+      scheduled_start: new Date('2026-08-01T10:00:00Z'),
+      scheduled_end: new Date('2026-08-01T12:00:00Z'),
+      quantity: 1,
+      price_breakdown: { base: 1000 },
+      total_thb: 1000,
+      take_rate_pct_snapshot: 15,
+    },
+  });
+}
 
 describe('GET /api/admin/service-orders', () => {
   beforeEach(async () => {
     await resetDb();
+    mockGetCurrentUser.mockReset();
   });
 
-  it('returns 200 with service orders', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Service',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('returns 401 when unauthenticated', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const res = await GET(
+      new NextRequest('http://localhost/api/admin/service-orders', { method: 'GET' })
+    );
+    expect(res.status).toBe(401);
+  });
 
-    const orderer = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'User',
-      },
-    });
+  it('returns service orders with service, provider, and orderer', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
+    await makeOrder('placed');
 
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Test Service',
-        description: 'A test service',
-        status: 'vetted',
-      },
-    });
-
-    await prisma.serviceOrder.create({
-      data: {
-        serviceId: service.id,
-        providerId: provider.id,
-        ordererId: orderer.id,
-        status: 'placed',
-        totalThb: 1000,
-      },
-    });
-
-    const url = new URL('http://localhost:3000/api/admin/service-orders');
-    url.searchParams.set('statuses', 'placed,paid,accepted');
-    url.searchParams.set('limit', '100');
-
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
+    const res = await GET(
+      new NextRequest(
+        'http://localhost/api/admin/service-orders?statuses=placed,paid,accepted&limit=100',
+        { method: 'GET' }
+      )
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(1);
+    expect(data[0].service.title).toBeTruthy();
+    expect(data[0].provider.name).toBeTruthy();
+    expect(data[0].orderer.firstName).toBeTruthy();
   });
 
-  it('filters by status', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Service',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('filters by the statuses parameter', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
+    await makeOrder('placed');
+    await makeOrder('fulfilled');
 
-    const orderer = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'User',
-      },
-    });
-
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Test Service',
-        description: 'A test service',
-        status: 'vetted',
-      },
-    });
-
-    // Create orders with different statuses
-    await prisma.serviceOrder.create({
-      data: {
-        serviceId: service.id,
-        providerId: provider.id,
-        ordererId: orderer.id,
-        status: 'placed',
-        totalThb: 1000,
-      },
-    });
-
-    await prisma.serviceOrder.create({
-      data: {
-        serviceId: service.id,
-        providerId: provider.id,
-        ordererId: orderer.id,
-        status: 'failed',
-        totalThb: 1000,
-      },
-    });
-
-    const url = new URL('http://localhost:3000/api/admin/service-orders');
-    url.searchParams.set('statuses', 'placed');
-
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
+    const res = await GET(
+      new NextRequest('http://localhost/api/admin/service-orders?statuses=placed', {
+        method: 'GET',
+      })
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.every((order: any) => order.status === 'placed')).toBe(true);
+    expect(data).toHaveLength(1);
+    expect(data[0].status).toBe('placed');
   });
 
-  it('paginates results', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Service',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('paginates with limit and offset', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
+    await makeOrder('placed');
+    await makeOrder('placed');
+    await makeOrder('placed');
 
-    const orderer = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'User',
-      },
-    });
-
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Test Service',
-        description: 'A test service',
-        status: 'vetted',
-      },
-    });
-
-    // Create multiple orders
-    for (let i = 0; i < 5; i++) {
-      await prisma.serviceOrder.create({
-        data: {
-          serviceId: service.id,
-          providerId: provider.id,
-          ordererId: orderer.id,
-          status: 'placed',
-          totalThb: 1000 + i * 100,
-        },
-      });
-    }
-
-    const url = new URL('http://localhost:3000/api/admin/service-orders');
-    url.searchParams.set('limit', '2');
-    url.searchParams.set('offset', '0');
-
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
+    const res = await GET(
+      new NextRequest(
+        'http://localhost/api/admin/service-orders?statuses=placed&limit=2&offset=0',
+        { method: 'GET' }
+      )
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.length).toBeLessThanOrEqual(2);
-  });
-
-  it('includes related entity details', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Service',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
-
-    const orderer = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Orderer',
-      },
-    });
-
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Test Service',
-        description: 'A test service',
-        status: 'vetted',
-      },
-    });
-
-    await prisma.serviceOrder.create({
-      data: {
-        serviceId: service.id,
-        providerId: provider.id,
-        ordererId: orderer.id,
-        status: 'placed',
-        totalThb: 1000,
-      },
-    });
-
-    const url = new URL('http://localhost:3000/api/admin/service-orders');
-
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
-    expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data.length).toBeGreaterThan(0);
-
-    const order = data[0];
-    expect(order.service).toBeDefined();
-    expect(order.provider).toBeDefined();
-    expect(order.orderer).toBeDefined();
-    expect(order.service.title).toBe('Test Service');
   });
 });

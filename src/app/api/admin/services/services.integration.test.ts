@@ -1,78 +1,90 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { prisma } from '@/lib/prisma';
-import { resetDb } from '@/test/util';
-import { GET, PATCH } from './[id]/route';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProvider,
+  createService,
+} from '@/test/util';
+
+const mockGetCurrentUser = vi.fn();
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util');
+  return { prisma: util.db };
+});
+
+import { GET } from './route';
+import { PATCH } from './[id]/route';
+
+function adminUser(identity: { id: string; email: string | null }) {
+  return {
+    identityId: identity.id,
+    email: identity.email,
+    firstName: 'Admin',
+    lastName: 'User',
+    isAdmin: true,
+    roles: [],
+  };
+}
+
+function get(url: string): NextRequest {
+  return new NextRequest(url, { method: 'GET' });
+}
+
+function patch(url: string, body: unknown): NextRequest {
+  return new NextRequest(url, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 describe('GET /api/admin/services', () => {
   beforeEach(async () => {
     await resetDb();
+    mockGetCurrentUser.mockReset();
   });
 
-  it('returns 200 when fetching draft services', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('returns 401 when unauthenticated', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const res = await GET(get('http://localhost/api/admin/services'));
+    expect(res.status).toBe(401);
+  });
 
-    await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Cleaning Service',
-        description: 'Professional cleaning',
-        status: 'draft',
-      },
-    });
+  it('returns draft services to an admin', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
 
-    const url = new URL('http://localhost:3000/api/admin/services');
-    url.searchParams.set('status', 'draft');
-    url.searchParams.set('limit', '50');
+    const provider = await createProvider({ status: 'active' });
+    await createService({ providerId: provider.id, status: 'draft' });
 
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
+    const res = await GET(
+      get('http://localhost/api/admin/services?status=draft&limit=50')
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(1);
+    expect(data[0].provider.name).toBe(provider.name);
   });
 
   it('paginates services with limit and offset', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
 
+    const provider = await createProvider({ status: 'active' });
     for (let i = 0; i < 5; i++) {
-      await prisma.service.create({
-        data: {
-          providerId: provider.id,
-          title: `Service ${i}`,
-          description: 'Test',
-          status: 'draft',
-        },
-      });
+      await createService({ providerId: provider.id, status: 'draft' });
     }
 
-    const url = new URL('http://localhost:3000/api/admin/services');
-    url.searchParams.set('limit', '2');
-    url.searchParams.set('offset', '0');
-
-    const req = new Request(url, { method: 'GET' });
-    const res = await GET(req);
-
+    const res = await GET(
+      get('http://localhost/api/admin/services?status=draft&limit=2&offset=0')
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.length).toBeLessThanOrEqual(2);
@@ -82,107 +94,61 @@ describe('GET /api/admin/services', () => {
 describe('PATCH /api/admin/services/[id]', () => {
   beforeEach(async () => {
     await resetDb();
+    mockGetCurrentUser.mockReset();
   });
 
-  it('approves a service submission', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('approves a draft service', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
 
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Cleaning Service',
-        description: 'Professional cleaning',
-        status: 'draft',
-      },
-    });
+    const provider = await createProvider({ status: 'active' });
+    const service = await createService({ providerId: provider.id, status: 'draft' });
 
-    const req = new Request('http://localhost:3000/api/admin/services/' + service.id, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'approve' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const res = await PATCH(req, { params: { id: service.id } });
+    const res = await PATCH(
+      patch(`http://localhost/api/admin/services/${service.id}`, { action: 'approve' }),
+      { params: { id: service.id } }
+    );
     expect(res.status).toBe(200);
-
     const data = await res.json();
     expect(data.message).toBe('Service approved');
+
+    const updated = await db.service.findUnique({ where: { id: service.id } });
+    expect(updated!.status).toBe('active');
   });
 
-  it('rejects a service with reason', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('rejects a draft service with a reason', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
 
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Cleaning Service',
-        description: 'Professional cleaning',
-        status: 'draft',
-      },
-    });
+    const provider = await createProvider({ status: 'active' });
+    const service = await createService({ providerId: provider.id, status: 'draft' });
 
-    const req = new Request('http://localhost:3000/api/admin/services/' + service.id, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'reject', reason: 'Insufficient detail' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const res = await PATCH(req, { params: { id: service.id } });
+    const res = await PATCH(
+      patch(`http://localhost/api/admin/services/${service.id}`, {
+        action: 'reject',
+        reason: 'Insufficient detail',
+      }),
+      { params: { id: service.id } }
+    );
     expect(res.status).toBe(200);
-
     const data = await res.json();
     expect(data.message).toBe('Service rejected');
+
+    const updated = await db.service.findUnique({ where: { id: service.id } });
+    expect(updated!.status).toBe('paused');
   });
 
-  it('returns 400 for invalid action', async () => {
-    const provider = await prisma.identity.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'Provider',
-        providerProfile: {
-          create: {
-            status: 'approved',
-          },
-        },
-      },
-    });
+  it('returns 400 for an invalid action', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
 
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        title: 'Cleaning Service',
-        description: 'Professional cleaning',
-        status: 'draft',
-      },
-    });
+    const provider = await createProvider({ status: 'active' });
+    const service = await createService({ providerId: provider.id, status: 'draft' });
 
-    const req = new Request('http://localhost:3000/api/admin/services/' + service.id, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'invalid' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const res = await PATCH(req, { params: { id: service.id } });
+    const res = await PATCH(
+      patch(`http://localhost/api/admin/services/${service.id}`, { action: 'invalid' }),
+      { params: { id: service.id } }
+    );
     expect(res.status).toBe(400);
   });
 });

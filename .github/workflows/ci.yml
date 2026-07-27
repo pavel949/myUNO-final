@@ -93,11 +93,15 @@ jobs:
           psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
           psql -h localhost -U test -d myuno_test -c "CREATE EXTENSION IF NOT EXISTS citext;" 2>/dev/null || true
 
-      - name: Generate and apply migrations
+      # Schema-push workflow: the branch has no prisma/migrations directory
+      # (the schema lives in schema.prisma; the test DB is throwaway), so
+      # `migrate deploy` left the CI database empty and every suite failed
+      # on missing tables. Push the schema directly instead.
+      - name: Apply schema to test database
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
         run: |
-          npx prisma migrate deploy --skip-generate
+          npx prisma db push --skip-generate
         timeout-minutes: 5
 
       - name: Run tests

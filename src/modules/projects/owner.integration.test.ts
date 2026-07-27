@@ -129,13 +129,22 @@ describe('Owner experience (T-033)', () => {
       const project = await createProject();
       const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      // Create guest booking
+      // Anchor all dates to "now" so the owner-stay 24h-notice rule and the
+      // this-month revenue window hold on any run date (fixed dates rotted).
+      const day = 24 * 60 * 60 * 1000;
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(12, 0, 0, 0);
+      const guestStart = monthStart;
+      const guestEnd = new Date(monthStart.getTime() + 2 * day);
+
+      // Create guest booking (within the current month)
       const guestBooking = await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        startDate: new Date('2026-07-15'),
-        endDate: new Date('2026-07-20'),
+        startDate: guestStart,
+        endDate: guestEnd,
         totalThb: 5000,
       });
 
@@ -143,14 +152,14 @@ describe('Owner experience (T-033)', () => {
       await db.booking.update({
         where: { id: guestBooking.id },
         data: {
-          checkedOutAt: new Date('2026-07-20'),
+          checkedOutAt: guestEnd,
           status: 'checked_out',
         },
       });
 
-      // Create owner stay (should not count as revenue)
-      const startDate = new Date('2026-07-21');
-      const endDate = new Date('2026-07-25');
+      // Create owner stay (should not count as revenue) — starts ≥ 48h ahead
+      const startDate = new Date(Date.now() + 2 * day);
+      const endDate = new Date(Date.now() + 6 * day);
       await bookOwnerStay(db, {
         unitId: unit.id,
         ownerIdentityId: owner.id,

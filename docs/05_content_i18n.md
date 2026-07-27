@@ -37,6 +37,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `landing.*` | The master landing page sections (doc 08 §2). |
 | `audience.*` | The audience pages: `audience.owners.*`, `audience.guests.*`, `audience.developers.*`, `audience.buyers.*`, `audience.mc.*`, `audience.providers.*`. |
 | `project_page.*` | The per-project public landing template ("{Project} on myUNO"). |
+| `projects.*` | The public projects hub `/projects` (list of live residences: cards, empty state, SEO title/description). |
 | `trust.*` | Trust pages: how-it-works, verification, the Ombudsman credential (`trust.ombudsman.*` — reserved, ⚠ Q15), dispute handling. |
 | `legal.*` | Terms, privacy, PDPA notices, entity/contact details (Q16 facts seeded — see doc 08). |
 | `auth.*` | Register, login, verify, reset, claim-account flows. |

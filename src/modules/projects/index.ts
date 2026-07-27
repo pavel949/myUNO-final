@@ -12,6 +12,15 @@ export {
 } from './projects';
 
 export {
+  listPublicProjects,
+  getPublicProjectBySlug,
+  listPublicUnitIds,
+  type PublicProjectCard,
+  type PublicProjectDetail,
+  type PublicProjectUnit,
+} from './public.service';
+
+export {
   createUnit,
   getUnit,
   listUnits,

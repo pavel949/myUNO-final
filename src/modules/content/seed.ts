@@ -1360,6 +1360,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Navbar
   { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
+  { key: 'nav.residences', namespace: 'nav', description: 'Navbar link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
   { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', status: NR },
   { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
   { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', status: NR },
@@ -1374,6 +1375,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   // Footer
   { key: 'nav.footer.brand_column', namespace: 'nav', description: 'Footer column title: brand', en: 'myUNO', ru: 'myUNO', status: NR },
   { key: 'nav.footer.home', namespace: 'nav', description: 'Footer link: home', en: 'Home', ru: 'Главная', status: NR },
+  { key: 'nav.footer.residences', namespace: 'nav', description: 'Footer link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
   { key: 'nav.footer.trust', namespace: 'nav', description: 'Footer link: trust', en: 'Trust', ru: 'Доверие', status: NR },
   { key: 'nav.footer.audience_column', namespace: 'nav', description: 'Footer column title: audiences', en: 'For Everyone', ru: 'Для всех', status: NR },
   { key: 'nav.footer.owners', namespace: 'nav', description: 'Footer link: owners', en: 'Owners', ru: 'Владельцы', status: NR },
@@ -2004,6 +2006,39 @@ const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
   { key: 'service-order.detail.confirm_cancellation', namespace: 'service-order', description: 'Button: confirm cancellation', en: 'Confirm Cancellation', ru: 'Подтвердить отмену', status: NR },
 ];
 
+const PROJECT_PAGE_KEYS: KeyDef[] = [
+  // Projects hub /projects (doc 08 §4)
+  { key: 'projects.meta.title', namespace: 'projects', description: 'Projects hub: SEO title', en: 'Our residences in Phuket | myUNO', ru: 'Наши резиденции на Пхукете | myUNO', status: NR },
+  { key: 'projects.meta.description', namespace: 'projects', description: 'Projects hub: SEO description', en: 'Explore the residences we operate: serviced homes with verified guests, managed operations, and full owner transparency.', ru: 'Резиденции под нашим управлением: сервисные дома, проверенные гости и полная прозрачность для собственников.', status: NR },
+  { key: 'projects.hub.kicker', namespace: 'projects', description: 'Projects hub: kicker above title', en: 'Where we operate', ru: 'Где мы работаем', status: NR },
+  { key: 'projects.hub.title', namespace: 'projects', description: 'Projects hub: page title', en: 'Our residences', ru: 'Наши резиденции', status: NR },
+  { key: 'projects.hub.subtitle', namespace: 'projects', description: 'Projects hub: subtitle', en: 'Every residence on myUNO runs on one platform: verified guests, managed services, transparent owner reporting.', ru: 'Каждая резиденция на myUNO работает на одной платформе: проверенные гости, сервис под управлением, прозрачная отчётность.', status: NR },
+  { key: 'projects.hub.units_live', namespace: 'projects', description: 'Projects hub: live unit count on a card', en: '{count} homes available', ru: 'Доступно домов: {count}', status: NR },
+  { key: 'projects.hub.from_price', namespace: 'projects', description: 'Projects hub: from-price on a card', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', status: NR },
+  { key: 'projects.hub.view', namespace: 'projects', description: 'Projects hub: card CTA', en: 'Explore the residence →', ru: 'Смотреть резиденцию →', status: NR },
+  { key: 'projects.hub.empty', namespace: 'projects', description: 'Projects hub: empty state title', en: 'Residences are being prepared for launch.', ru: 'Резиденции готовятся к запуску.', status: NR },
+  { key: 'projects.hub.empty_hint', namespace: 'projects', description: 'Projects hub: empty state hint', en: 'Check back soon, or search available stays directly.', ru: 'Загляните позже или сразу поищите доступное жильё.', status: NR },
+  { key: 'projects.hub.search_cta', namespace: 'projects', description: 'Projects hub: empty state search CTA', en: 'Search stays', ru: 'Найти жильё', status: NR },
+
+  // Per-project landing /projects/{slug} (S2, doc 08 §4)
+  { key: 'project_page.availability.title', namespace: 'project_page', description: 'Project landing: availability bar title', en: 'Check availability', ru: 'Проверить доступность', status: NR },
+  { key: 'project_page.units.title', namespace: 'project_page', description: 'Project landing: units grid title', en: 'Homes in this residence', ru: 'Дома в этой резиденции', status: NR },
+  { key: 'project_page.units.bedrooms', namespace: 'project_page', description: 'Project landing: unit card bedrooms', en: '{count} bd', ru: '{count} сп.', status: NR },
+  { key: 'project_page.units.bathrooms', namespace: 'project_page', description: 'Project landing: unit card bathrooms', en: '{count} ba', ru: '{count} ванн.', status: NR },
+  { key: 'project_page.units.guests', namespace: 'project_page', description: 'Project landing: unit card max guests', en: 'up to {count} guests', ru: 'до {count} гостей', status: NR },
+  { key: 'project_page.units.per_night', namespace: 'project_page', description: 'Project landing: unit card nightly price', en: '฿{price} / night', ru: '฿{price} / ночь', status: NR },
+  { key: 'project_page.units.view', namespace: 'project_page', description: 'Project landing: unit card CTA', en: 'View home →', ru: 'Смотреть дом →', status: NR },
+  { key: 'project_page.units.empty', namespace: 'project_page', description: 'Project landing: units grid empty state', en: 'Homes here are being prepared for booking.', ru: 'Дома здесь готовятся к бронированию.', status: NR },
+  { key: 'project_page.story.title', namespace: 'project_page', description: 'Project landing: story section title', en: 'About the residence', ru: 'О резиденции', status: NR },
+  { key: 'project_page.amenities.title', namespace: 'project_page', description: 'Project landing: amenities section title', en: 'Residence amenities', ru: 'Удобства резиденции', status: NR },
+  { key: 'project_page.services.title', namespace: 'project_page', description: 'Project landing: services section title', en: 'Services available here', ru: 'Доступные здесь услуги', status: NR },
+  { key: 'project_page.services.view_all', namespace: 'project_page', description: 'Project landing: browse all services link', en: 'Browse all services →', ru: 'Все услуги →', status: NR },
+  { key: 'project_page.location.title', namespace: 'project_page', description: 'Project landing: location section title', en: 'Location', ru: 'Расположение', status: NR },
+  { key: 'project_page.location.open_map', namespace: 'project_page', description: 'Project landing: open external map link', en: 'Open in maps →', ru: 'Открыть на карте →', status: NR },
+  { key: 'project_page.handbook.title', namespace: 'project_page', description: 'Project landing: handbook teaser title', en: 'Living here', ru: 'Жизнь здесь', status: NR },
+  { key: 'project_page.trust.title', namespace: 'project_page', description: 'Project landing: trust band title', en: 'Trust, made visible', ru: 'Доверие, которое видно', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -2030,7 +2065,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

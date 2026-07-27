@@ -121,6 +121,11 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Source:** landing v3 contains lead-gen machinery (early-access form, founding terms, call-with-Pavel CTA, owner-record mockup, earnings-calculator teaser) that belongs to the marketing site, not the product app. Its owners/developers narrative copy **was** adopted into the audience pages (T1-AUD).
 - **Needs from founder:** where the marketing site lives (separate static page vs routes in the app), and whether the "What could my unit earn?" calculator becomes a product feature.
 
+### Q25. Project landing FAQ content — OPEN
+- **Source:** doc 08 §4 (S2) lists a FAQ section on the per-project landing `/projects/{slug}`. The page is built (L1) with hero, availability, units grid, story, amenities, services, location, handbook teaser, and trust band — but FAQ questions and answers are project-specific content that doesn't exist yet.
+- **Blocks:** nothing — the page ships without the FAQ section; it appears once content exists.
+- **Needs from founder:** the actual FAQ entries for the first project (or a shared template set), supplied as `project_page.faq.*` keys in the content editor. Ties into Q20 (real content for the first project).
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

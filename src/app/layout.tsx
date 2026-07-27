@@ -20,6 +20,7 @@ export default async function RootLayout({
 
   const navLabels = await getLabels({
     'nav.find_stay': 'Find a stay',
+    'nav.residences': 'Residences',
     'nav.services': 'Services',
     'nav.trust': 'Trust',
     'nav.login': 'Log in',
@@ -41,6 +42,7 @@ export default async function RootLayout({
   const footerLabels = await getLabels({
     'nav.footer.brand_column': 'myUNO',
     'nav.footer.home': 'Home',
+    'nav.footer.residences': 'Residences',
     'nav.footer.trust': 'Trust',
     'nav.footer.audience_column': 'For Everyone',
     'nav.footer.owners': 'Owners',
@@ -73,6 +75,7 @@ export default async function RootLayout({
           }
           labels={{
             findStay: navLabels['nav.find_stay'],
+            residences: navLabels['nav.residences'],
             services: navLabels['nav.services'],
             trust: navLabels['nav.trust'],
             login: navLabels['nav.login'],
@@ -99,6 +102,7 @@ export default async function RootLayout({
           labels={{
             brandColumn: footerLabels['nav.footer.brand_column'],
             home: footerLabels['nav.footer.home'],
+            residences: footerLabels['nav.footer.residences'],
             trust: footerLabels['nav.footer.trust'],
             audienceColumn: footerLabels['nav.footer.audience_column'],
             owners: footerLabels['nav.footer.owners'],

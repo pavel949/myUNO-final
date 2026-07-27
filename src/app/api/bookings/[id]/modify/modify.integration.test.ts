@@ -73,6 +73,10 @@ describe('POST /api/bookings/[id]/modify', () => {
     expect(res.status).toBe(200);
     expect(body.booking.totalThb).toBe(3000);
     expect(body.pricing.balanceThb).toBe(1000);
+
+    // The unpaid difference is recorded on the booking for ops to collect (DM-4)
+    const row = await db.booking.findUnique({ where: { id: booking.id } });
+    expect(row!.balanceDueThb).toBe(1000);
   });
 
   it('shortens a booking and accrues a refund', async () => {

@@ -137,6 +137,9 @@ export async function POST(
         children: newChildren,
         totalThb: newTotalThb,
         ...(balanceThb < 0 && { refundAccruedThb: (booking.refundAccruedThb || 0) + Math.abs(balanceThb) }),
+        // Upward change: the unpaid difference is recorded so ops can collect
+        // it (doc 02 §3.1 balance_due_thb — was never written before DM-4).
+        ...(balanceThb > 0 && { balanceDueThb: (booking.balanceDueThb || 0) + balanceThb }),
       },
       include: { unit: true },
     });

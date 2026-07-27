@@ -151,7 +151,7 @@ describe('Retention & Privacy', () => {
         where: { id: identity.id },
       });
 
-      expect(updated!.status).toBe('merged');
+      expect(updated!.status).toBe('deletion_requested');
 
       // Verify audit log entry
       const auditEntries = await db.auditLog.findMany({
@@ -174,7 +174,7 @@ describe('Retention & Privacy', () => {
       await db.identity.update({
         where: { id: identity.id },
         data: {
-          status: 'merged',
+          status: 'deletion_requested',
         },
       });
       // `updatedAt` is an @updatedAt field (Prisma overrides manual values on
@@ -205,7 +205,7 @@ describe('Retention & Privacy', () => {
       await db.identity.update({
         where: { id: identity.id },
         data: {
-          status: 'merged',
+          status: 'deletion_requested',
         },
       });
 

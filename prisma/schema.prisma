@@ -17,6 +17,7 @@ enum IdentityStatus {
   invited
   blocked
   merged
+  deletion_requested
 }
 
 enum AuthProvider {
@@ -1194,6 +1195,7 @@ model Service {
   serviceOrders ServiceOrder[]
 
   @@index([provider_id, status])
+  @@index([categoryKey])
   @@map("service")
 }
 
@@ -1363,6 +1365,7 @@ model MediaAsset {
   statementPdfs OwnerStatement[] @relation("statementPdf")
   claimEvidence DepositClaim[] @relation("claimEvidence")
 
+  @@index([deleteAfter])
   @@map("media_asset")
 }
 
@@ -1380,6 +1383,8 @@ model AuditLog {
   // Relations
   actor Identity? @relation(name: "actor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
 
+  @@index([entityType, entityId])
+  @@index([actorIdentityId])
   @@map("audit_log")
 }
 
@@ -1456,6 +1461,7 @@ model ConfigChange {
 
   changedBy Identity @relation(name: "changedBy", fields: [changedByIdentityId], references: [id])
 
+  @@index([parameterKey])
   @@map("config_change")
 }
 
@@ -1471,6 +1477,7 @@ model ContentKey {
 
   translations Translation[]
 
+  @@index([namespace])
   @@map("content_key")
 }
 

@@ -69,7 +69,7 @@ One row per human, forever, across every role change. This is the "identity grap
 | `hashed_password` | text, nullable | bcrypt. Nullable for OAuth-only or channel-created identities (they set one on claim). Never serialized to the client — the `toSafe` rule from the legacy audit applies. 🔒 |
 | `preferred_locale` | enum `ru,en,th` | UI + notification language. Default from config `i18n.default_locale`. |
 | `avatar_media_id` | FK→MediaAsset, nullable | Profile photo. |
-| `status` | enum `active, invited, blocked, merged` | `invited` = created by staff/channel, not yet claimed. `merged` = duplicate folded into another identity (`merged_into_id` FK→Identity, nullable). |
+| `status` | enum `active, invited, blocked, merged, deletion_requested` | `invited` = created by staff/channel, not yet claimed. `merged` = duplicate folded into another identity (`merged_into_id` FK→Identity, nullable). `deletion_requested` = PDPA erasure requested; anonymized by the retention job after the grace period (never conflated with `merged`). |
 | `is_admin` | boolean, default false | Platform admin (founder). Kept on the identity, not a role row, so it can never be scoped away accidentally. |
 | `notes_internal` | text, nullable | Staff-only notes (visible per doc 03 matrix). |
 
@@ -648,6 +648,16 @@ Every privileged mutation (admin config/content edits, role grants, statement pu
 | `status` | enum `active, error, disabled` + `last_sync_at`, `last_error` | Health surfaced in admin. |
 
 ---
+
+## 10a. Build additions (implemented, back-filled into this doc)
+
+Two tables were added during the build and are now part of the model of record:
+
+### `DepositClaim` — damage claim against a deposit pre-authorization
+One row per claim on a booking's deposit pre-auth (doc 10 Q6 — deposits are provider pre-authorizations only). Fields: `booking_id` FK→Booking · `amount_thb` · `reason` text · `status` enum `filed, approved, rejected, disputed` · `evidence_media_ids` (media references) · filed/decided actor+timestamps. Claims settle through the payment provider's capture, never cash.
+
+### `MetricDaily` — the analytics rollup (doc 13 §2)
+Derived table, one row per unit × day, materialized nightly by the rollup cron: `nights_available`, `nights_occupied`, `owner_stay_nights`, `rental_revenue_cents`, plus project/unit FKs. Rebuildable from source tables at any time; never a source of truth.
 
 ## 11. What deliberately does NOT exist in loop one
 

@@ -132,4 +132,9 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 ---
 
+### Q27. Dead data-model surface — build or remove? — OPEN
+- **Source:** the data-model audit (DM vertical). Several schema tables have no working feature behind them: `AuthAccount` (Google/Apple login never wired), `ProviderProject` (provider service-area scoping), `ServiceMedia` (service photo galleries), and `TicketMedia`/`ProjectMedia` have read paths but no upload paths (ticket photo evidence and project galleries cannot be created). Passport *image* upload also doesn't exist yet — when it is built, the file bytes must be encrypted and `MediaAsset.encrypted` set (the field-level encryption of passport numbers/names/DOB landed in DM-1).
+- **Blocks:** nothing in loop one.
+- **Needs from founder:** which of these become real features in loop two (OAuth login, provider service areas, service galleries, ticket photos, project gallery uploads) and which get removed from the schema. Also two spec'd shapes that still need building decisions: `MessageMedia` (message photo attachments, doc 02 §7.1) and quote-model service orders (no `quote_requested` lifecycle state exists — doc 02 §4.3).
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

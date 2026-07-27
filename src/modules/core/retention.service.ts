@@ -83,13 +83,13 @@ export async function anonymizeDeletedIdentities(
   const now = new Date();
   const graceDeadline = new Date(now.getTime() - gracePeriodDays * 24 * 60 * 60 * 1000);
 
-  // Find identities with deletion requests (those marked as 'merged' = deletion pending)
-  // We'll anonymize any identity where status='merged' and updatedAt is past grace period
-
+  // Deletion requests carry their own status: `merged` means a duplicate
+  // folded into another identity (merged_into_id) and must NEVER be
+  // anonymized by this job (DM-4 — the old overload would have destroyed
+  // genuinely merged identities).
   const identities = await db.identity.findMany({
     where: {
-      // Look for identities marked for deletion (status=merged)
-      status: 'merged',
+      status: 'deletion_requested',
       // And where the update happened past the grace period
       updatedAt: { lte: graceDeadline },
     },
@@ -338,7 +338,7 @@ export async function runRetentionJobs(
 /**
  * Initiate a deletion request for an identity.
  * Logs the request in the audit trail. Actual deletion happens after grace period.
- * Marks identity as merged (status=merged) to indicate deletion pending.
+ * Marks the identity status deletion_requested; the retention job anonymizes it after the grace period.
  */
 export async function requestIdentityDeletion(
   db: PrismaClient,
@@ -352,11 +352,12 @@ export async function requestIdentityDeletion(
     throw new Error(`Identity ${identityId} not found`);
   }
 
-  // Mark for deletion by setting status to merged (pending deletion)
+  // Mark for deletion with the dedicated status — never 'merged', which
+  // means a duplicate folded into another identity (doc 02 §2.1).
   await db.identity.update({
     where: { id: identityId },
     data: {
-      status: 'merged',
+      status: 'deletion_requested',
     },
   });
 

@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: 'myUNO',
   description: 'Operating platform for serviced living in Phuket',
 };

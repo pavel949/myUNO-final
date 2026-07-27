@@ -126,6 +126,10 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Blocks:** nothing — the page ships without the FAQ section; it appears once content exists.
 - **Needs from founder:** the actual FAQ entries for the first project (or a shared template set), supplied as `project_page.faq.*` keys in the content editor. Ties into Q20 (real content for the first project).
 
+### Q26. Locale-in-URL routing (hreflang) — OPEN
+- **Source:** doc 08 §7 asks for canonical + `hreflang` triplets. The platform's locale is a **cookie**, not a URL segment, so every locale serves the same URL — `hreflang` is meaningless until locale-prefixed routes (`/ru/…`, `/en/…`, `/th/…`) exist. The L2 SEO layer shipped canonical tags, sitemap, robots.txt, llms.txt, and JSON-LD (Organization on home, LodgingBusiness per project); `hreflang` is the one §7 item that needs this structural decision. Unit-page `Product`+`Offer` JSON-LD also waits — the unit detail renders client-side today.
+- **Needs from founder:** whether to move to locale-prefixed URLs (an SEO win for RU/EN/TH search, but every link and redirect changes) — and if so, when.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

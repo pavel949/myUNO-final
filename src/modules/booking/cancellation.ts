@@ -2,6 +2,8 @@
  * Cancellation policy and refund calculation.
  * Policies are snapshots taken at booking time.
  */
+import { PrismaClient } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 
 export interface PolicyStep {
   days_before_checkin: number;
@@ -70,7 +72,44 @@ export function computeRefundAmount(
 }
 
 /**
- * Default cancellation policies.
+ * Resolve the cancellation policy for a booking snapshot from CONFIGURATION
+ * (doc 04 §5): steps come from `[cfg] cancellation.policy.<key>`, the key
+ * falls back to `[cfg] cancellation.default_policy`. Fails closed — an
+ * unknown key or missing schedule throws instead of silently degrading to
+ * the most generous policy.
+ */
+export async function resolveCancellationPolicy(
+  db: PrismaClient,
+  policyKey: string | null | undefined,
+  scope?: { projectId?: string; unitId?: string }
+): Promise<CancellationPolicy> {
+  const key =
+    policyKey ||
+    ((await getConfig(db, 'cancellation.default_policy', scope)) as string | undefined) ||
+    'moderate';
+
+  const steps = (await getConfig(db, `cancellation.policy.${key}` as never, scope)) as
+    | Array<{ days: number; pct: number }>
+    | undefined;
+
+  if (!Array.isArray(steps) || steps.length === 0) {
+    throw new Error(`Unknown cancellation policy: ${key}`);
+  }
+
+  return {
+    name: key,
+    steps: steps.map((s) => ({
+      days_before_checkin: Number(s.days),
+      refund_pct: Number(s.pct),
+    })),
+  };
+}
+
+/**
+ * The doc 04 §5 default policy *shapes*, kept as documentation and test
+ * fixtures. Runtime booking snapshots MUST use resolveCancellationPolicy —
+ * the configuration layer is the source of truth, so founder edits to
+ * `cancellation.policy.*` take effect without code changes.
  */
 export const DEFAULT_POLICIES: Record<string, CancellationPolicy> = {
   flexible: {

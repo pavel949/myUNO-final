@@ -108,6 +108,25 @@ export async function updateUnitEngagement(
     throw new Error('Mandate document is required to activate engagement');
   }
 
+  // Exactly one active engagement per unit (doc 02 §2.6) — a second active
+  // engagement makes the unit's economics ambiguous. Belt: this check;
+  // braces: the partial unique index in migration 6.
+  if (status === 'active' && engagement.status !== 'active') {
+    const competing = await db.unitEngagement.findFirst({
+      where: {
+        unitId: engagement.unitId,
+        status: 'active',
+        id: { not: engagementId },
+      },
+      select: { id: true },
+    });
+    if (competing) {
+      throw new Error(
+        `Unit ${engagement.unitId} already has an active engagement (${competing.id}); end it before activating another`
+      );
+    }
+  }
+
   // If engagement is direct-managed and noiCapAnnualThb is being set, validate it
   if (engagement.engagementType === 'direct_managed' && noiCapAnnualThb !== undefined && !noiCapAnnualThb) {
     throw new Error('NOI cap cannot be removed from direct-managed engagement');

@@ -27,6 +27,7 @@ export {
   computeRefundPercentage,
   computeRefundAmount,
   DEFAULT_POLICIES,
+  resolveCancellationPolicy,
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';

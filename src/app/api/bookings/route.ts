@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createBooking, DEFAULT_POLICIES } from '@/modules/booking';
+import { createBooking, resolveCancellationPolicy } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
 import { computePriceBreakdown } from '@/modules/core';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
@@ -84,8 +84,12 @@ export async function POST(req: NextRequest) {
     if (!unit || unit.status !== 'live') {
       throw createPublicError('not found', 404);
     }
-    const policy =
-      DEFAULT_POLICIES[unit.cancellationPolicyKey || 'flexible'] || DEFAULT_POLICIES.flexible;
+    // Config is the source of truth (doc 04 §5); an unknown policy key
+    // fails the booking instead of silently granting the most generous terms.
+    const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
+      projectId,
+      unitId,
+    });
 
     // Create booking via booking service
     const booking = await createBooking(prisma, {

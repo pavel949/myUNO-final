@@ -56,6 +56,7 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
   const endDate = searchParams.get('endDate');
   const adults = searchParams.get('adults') || '1';
   const children = searchParams.get('children') || '0';
+  const projectId = searchParams.get('projectId');
   const hasDates = Boolean(startDate && endDate);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
           childrenCount: children,
           limit: '50',
         });
+        if (projectId) params.set('projectId', projectId);
 
         const response = await fetch(`/api/search/units?${params}`);
         if (!response.ok) {
@@ -93,7 +95,7 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
     };
 
     fetchResults();
-  }, [hasDates, startDate, endDate, adults, children, labels.errorGeneric]);
+  }, [hasDates, startDate, endDate, adults, children, projectId, labels.errorGeneric]);
 
   return (
     <div className="min-h-screen bg-surface-background p-24 md:p-32">
@@ -101,6 +103,7 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
         <div className="mb-24">
           <h1 className="text-heading-1 font-bold text-text-ink mb-16">{labels.title}</h1>
           <SearchBar
+            projectId={projectId ?? undefined}
             labels={{
               checkIn: labels.barCheckIn,
               checkOut: labels.barCheckOut,

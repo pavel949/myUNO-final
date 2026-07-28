@@ -46,7 +46,7 @@ Lead forms (owners/developers/buyers/MC): name, contact (phone/WhatsApp/email), 
 
 ## 4. Per-project landing `/projects/{slug}`
 
-S2 composition: hero (project cover, name, `area_label_key`, the endorsed lockup), availability bar, units grid (live units), project story (`description_key` rich), amenities, services available here, location map, the project handbook teaser (public subset), trust band, FAQ. This page is the future "home space's public face" and the developer-pitch artifact (v3 §34.2).
+S2 composition: hero (project cover, name, `area_label_key`, the endorsed lockup), availability bar (**project-scoped** — the search carries `projectId`, LY-5), **styles + villa-categories cards** (renders only when the project defines `catalog.unit_categories`; counts from live units, "from" prices from `pricing.category_rates`), **long-stay block** (renders when any category sells monthly rates; CTA → the project's WhatsApp from `comms.whatsapp_number`), units grid (live units), project story (`description_key` rich), amenities, services available here, **guest reviews** (published stay reviews of the project, dynamic — renders only when they exist; author first name only), location map, the project handbook teaser (public subset), trust band (+ the project's licence line via `project.{slug}.licence` when present), FAQ (Q25). JSON-LD upgrades from `LodgingBusiness` to `schema.org/Resort` when the categories catalog exists. **Vanity URLs:** `/{slug}` redirects to the canonical `/projects/{slug}` for any live project (myuno.app/layantara); `/{slug}/guest` → the guest access flow. This page is the future "home space's public face" and the developer-pitch artifact (v3 §34.2).
 
 ## 5. The authenticated app (`/app`)
 

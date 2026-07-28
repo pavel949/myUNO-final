@@ -2039,6 +2039,16 @@ const PROJECT_PAGE_KEYS: KeyDef[] = [
   { key: 'project_page.location.open_map', namespace: 'project_page', description: 'Project landing: open external map link', en: 'Open in maps →', ru: 'Открыть на карте →', status: NR },
   { key: 'project_page.handbook.title', namespace: 'project_page', description: 'Project landing: handbook teaser title', en: 'Living here', ru: 'Жизнь здесь', status: NR },
   { key: 'project_page.trust.title', namespace: 'project_page', description: 'Project landing: trust band title', en: 'Trust, made visible', ru: 'Доверие, которое видно', status: NR },
+  { key: 'project_page.styles.title', namespace: 'project_page', description: 'Project landing: architectural styles section title', en: 'Three styles, one resort', ru: 'Три стиля — один резорт', zh: '三种风格，一个度假村', status: NR },
+  { key: 'project_page.categories.title', namespace: 'project_page', description: 'Project landing: villa categories section title', en: 'Villa categories', ru: 'Категории вилл', zh: '别墅类别', status: NR },
+  { key: 'project_page.categories.from_night', namespace: 'project_page', description: 'Category card: from-price per night', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', zh: '每晚 ฿{price} 起', status: NR },
+  { key: 'project_page.categories.villas_count', namespace: 'project_page', description: 'Category card: villa count', en: '{count} villas', ru: 'Вилл: {count}', zh: '{count} 栋别墅', status: NR },
+  { key: 'project_page.longstay.title', namespace: 'project_page', description: 'Project landing: long-stay block title', en: 'Long stays', ru: 'Длительное проживание', zh: '长期入住', status: NR },
+  { key: 'project_page.longstay.body', namespace: 'project_page', description: 'Project landing: long-stay block body', en: 'Stay a month or a season: flat monthly rates for 28+ nights, with housekeeping and concierge included.', ru: 'Живите месяц или сезон: фиксированные месячные тарифы от 28 ночей, уборка и консьерж включены.', zh: '住一个月或一季：28晚以上享固定月租，含客房清洁与礼宾服务。', status: NR },
+  { key: 'project_page.longstay.from_month', namespace: 'project_page', description: 'Long-stay block: from-price per month', en: 'from ฿{price} / month', ru: 'от ฿{price} / месяц', zh: '每月 ฿{price} 起', status: NR },
+  { key: 'project_page.longstay.cta', namespace: 'project_page', description: 'Long-stay block: request CTA', en: 'Request a long stay →', ru: 'Запросить длительное проживание →', zh: '咨询长住 →', status: NR },
+  { key: 'project_page.reviews.title', namespace: 'project_page', description: 'Project landing: reviews section title', en: 'Guest reviews', ru: 'Отзывы гостей', zh: '客人评价', status: NR },
+  { key: 'project_page.reviews.count', namespace: 'project_page', description: 'Reviews section: count label', en: '{count} reviews', ru: 'Отзывов: {count}', zh: '{count} 条评价', status: NR },
 ];
 
 const LEAD_FORM_KEYS: KeyDef[] = [

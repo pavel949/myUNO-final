@@ -31,6 +31,8 @@
 
 Password auth with bcrypt (cost ≥ 12); optional OAuth (Google/Apple); **rate-limited** login/reset/claim endpoints (per-IP and per-account, exponential backoff); single-use hashed tokens for reset/verify/claim (doc 02 §2.3) with TTLs from config; sessions as signed HTTP-only, `Secure`, `SameSite=Lax` cookies with rotation on privilege change; password change invalidates other sessions; admin accounts require strong passwords + (phase-marked) TOTP 2FA — the schema field exists from day one, enforcement configurable. Blocked identity (`status=blocked`) = immediate session kill (doc 03 §4).
 
+**Guest access by booking reference (LY-7).** `POST /api/auth/guest-access` takes `{bookingRef, email}`; a booking code **alone never opens anything** — when the pair matches the booking's guest, the way in (a single-use claim link for invited identities, a login link otherwise) is emailed to the guest's **own** address. The response is byte-identical for known and unknown pairs (no enumeration), rate-limited per IP, and errors collapse into the same uniform response. The admin "guest link" action mints the same single-use claim token (`account_claim`, `people:edit`-gated) for hand-delivery over WhatsApp.
+
 ## 4. Encryption & secrets
 
 - **In transit:** TLS everywhere, HSTS; webhooks signature-verified.

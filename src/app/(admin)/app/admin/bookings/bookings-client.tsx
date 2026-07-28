@@ -14,6 +14,8 @@ interface AdminBooking {
   guestName: string;
   paid: boolean;
   receiptRef: string | null;
+  guestIdentityId: string | null;
+  guestInvited: boolean;
 }
 
 type Labels = Record<string, string>;
@@ -38,6 +40,31 @@ export default function BookingsAdminClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [guestLink, setGuestLink] = useState<Record<string, string>>({});
+
+  // Mint an account-claim link for an invited guest (LY-7). The admin sends
+  // it over whichever channel the guest actually reads (WhatsApp, email).
+  const generateGuestLink = async (bookingId: string, identityId: string) => {
+    setBusyId(bookingId);
+    setError(null);
+    try {
+      const response = await fetch('/api/auth/claim/generate-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identityId }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || labels['admin.bookings.error_generic']);
+      }
+      const url = `${window.location.origin}/auth/claim?token=${data.token}&next=${encodeURIComponent(`/bookings/${bookingId}/home-space`)}`;
+      setGuestLink((prev) => ({ ...prev, [bookingId]: url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const act = async (bookingId: string, path: string, body?: unknown) => {
     setBusyId(bookingId);
@@ -167,7 +194,27 @@ export default function BookingsAdminClient({
                 {labels['admin.bookings.cancel']}
               </Button>
             )}
+            {booking.guestInvited && booking.guestIdentityId && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => generateGuestLink(booking.id, booking.guestIdentityId as string)}
+                isLoading={busyId === booking.id}
+              >
+                {labels['admin.bookings.guest_link']}
+              </Button>
+            )}
           </div>
+          {guestLink[booking.id] && (
+            <div className="w-full mt-8 bg-surface-ivory border border-border-line rounded-sm p-12">
+              <p className="text-small text-text-secondary mb-4">
+                {labels['admin.bookings.guest_link_hint']}
+              </p>
+              <code className="text-small text-text-ink break-all select-all">
+                {guestLink[booking.id]}
+              </code>
+            </div>
+          )}
         </div>
       ))}
     </div>

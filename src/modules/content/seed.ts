@@ -1352,6 +1352,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'notify.stay_request_declined.title', namespace: 'notify', description: 'Notification: booking request declined (guest)', en: 'Booking request declined', ru: 'Заявка на бронирование отклонена', status: NR },
   { key: 'notify.stay_request_declined.body', namespace: 'notify', description: 'Notification body: booking request declined (guest)', en: 'Your request for {unit_name} ({start_date} — {end_date}) was declined. No charge was made.', ru: 'Ваша заявка на {unit_name} ({start_date} — {end_date}) отклонена. Оплата не производилась.', status: NR },
   { key: 'email.stay_confirmed.subject', namespace: 'email', description: 'Email subject: booking confirmation', en: 'Your stay is confirmed — {unit_name}', ru: 'Ваше бронирование подтверждено — {unit_name}', status: NR },
+  { key: 'email.guest_access.subject', namespace: 'email', description: 'Email subject: guest access link', en: 'Your stay at {project_name} — your access link', ru: 'Ваше проживание в {project_name} — ссылка для входа', status: NR },
+  { key: 'email.guest_access.body', namespace: 'email', description: 'Email body: guest access link', en: 'Hello!\n\nHere is your personal link to open your stay space at {project_name}:\n\n{link}\n\nIf you did not request this, simply ignore this email.\n\nmyUNO — serviced living in Phuket', ru: 'Здравствуйте!\n\nВаша персональная ссылка в пространство проживания в {project_name}:\n\n{link}\n\nЕсли вы не запрашивали её — просто проигнорируйте это письмо.\n\nmyUNO — обслуживаемое проживание на Пхукете', status: NR },
   { key: 'email.stay_confirmed.body', namespace: 'email', description: 'Email body: booking confirmation', en: 'Hi {first_name},\n\nYour booking at {unit_name} is confirmed.\n\nCheck-in: {start_date}\nCheck-out: {end_date}\nTotal: ฿{total_thb}\n\nSee your trip and prepare for arrival: {trips_url}\n\nmyUNO — serviced living in Phuket', ru: 'Здравствуйте, {first_name}!\n\nВаше бронирование {unit_name} подтверждено.\n\nЗаезд: {start_date}\nВыезд: {end_date}\nИтого: ฿{total_thb}\n\nДетали поездки и подготовка к заезду: {trips_url}\n\nmyUNO — обслуживаемое проживание на Пхукете', status: NR },
 
   // Shell states
@@ -1418,6 +1420,28 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Auth: password reset
   { key: 'auth.reset.title', namespace: 'auth', description: 'Password reset page title', en: 'Reset your password', ru: 'Сброс пароля', status: NR },
+  { key: 'admin.bookings.guest_link', namespace: 'admin', description: 'Admin bookings: generate guest link button', en: 'Guest link', ru: 'Ссылка для гостя', status: NR },
+  { key: 'admin.bookings.guest_link_hint', namespace: 'admin', description: 'Admin bookings: guest link hint', en: 'Copy and send this activation link to the guest:', ru: 'Скопируйте и отправьте гостю эту ссылку активации:', status: NR },
+  { key: 'auth.claim.title', namespace: 'auth', description: 'Claim page title', en: 'Activate your account', ru: 'Активируйте аккаунт', zh: '激活您的账户', status: NR },
+  { key: 'auth.claim.subtitle', namespace: 'auth', description: 'Claim page subtitle', en: 'Set a password to open your stay space.', ru: 'Задайте пароль, чтобы открыть пространство вашего проживания.', zh: '设置密码以打开您的入住空间。', status: NR },
+  { key: 'auth.claim.claiming_for', namespace: 'auth', description: 'Claim page: account label', en: 'Account:', ru: 'Аккаунт:', zh: '账户：', status: NR },
+  { key: 'auth.claim.password', namespace: 'auth', description: 'Claim page: password field', en: 'Password (8+ characters)', ru: 'Пароль (от 8 символов)', zh: '密码（8个字符以上）', status: NR },
+  { key: 'auth.claim.password_confirm', namespace: 'auth', description: 'Claim page: confirm field', en: 'Repeat password', ru: 'Повторите пароль', zh: '重复密码', status: NR },
+  { key: 'auth.claim.submit', namespace: 'auth', description: 'Claim page: submit', en: 'Activate & sign in', ru: 'Активировать и войти', zh: '激活并登录', status: NR },
+  { key: 'auth.claim.submitting', namespace: 'auth', description: 'Claim page: submitting', en: 'Activating…', ru: 'Активируем…', zh: '正在激活…', status: NR },
+  { key: 'auth.claim.error_mismatch', namespace: 'auth', description: 'Claim page: password mismatch', en: 'Passwords do not match.', ru: 'Пароли не совпадают.', zh: '两次输入的密码不一致。', status: NR },
+  { key: 'auth.claim.error_generic', namespace: 'auth', description: 'Claim page: generic error', en: 'Could not activate the account. Please try again.', ru: 'Не удалось активировать аккаунт. Попробуйте ещё раз.', zh: '无法激活账户，请重试。', status: NR },
+  { key: 'auth.claim.error_invalid', namespace: 'auth', description: 'Claim page: invalid link', en: 'This link is invalid or has expired. Ask us for a new one.', ru: 'Ссылка недействительна или устарела. Запросите новую.', zh: '此链接无效或已过期，请向我们索取新链接。', status: NR },
+  { key: 'auth.claim.loading', namespace: 'auth', description: 'Claim page: validating', en: 'Checking your link…', ru: 'Проверяем ссылку…', zh: '正在检查您的链接…', status: NR },
+  { key: 'guests.access.title', namespace: 'guests', description: 'Guest access: title', en: 'Open your stay', ru: 'Откройте своё проживание', zh: '打开您的入住', status: NR },
+  { key: 'guests.access.subtitle', namespace: 'guests', description: 'Guest access: subtitle', en: 'Enter your booking reference and the email you booked with — we will send you a personal link.', ru: 'Введите номер брони и почту, на которую бронировали, — мы пришлём персональную ссылку.', zh: '输入您的预订编号和预订时使用的邮箱，我们将发送专属链接。', status: NR },
+  { key: 'guests.access.booking_ref', namespace: 'guests', description: 'Guest access: booking ref field', en: 'Booking reference', ru: 'Номер брони', zh: '预订编号', status: NR },
+  { key: 'guests.access.booking_ref_hint', namespace: 'guests', description: 'Guest access: booking ref hint', en: 'It is in your confirmation message.', ru: 'Он указан в подтверждении бронирования.', zh: '在您的确认信息中。', status: NR },
+  { key: 'guests.access.email', namespace: 'guests', description: 'Guest access: email field', en: 'Email', ru: 'Почта', zh: '邮箱', status: NR },
+  { key: 'guests.access.submit', namespace: 'guests', description: 'Guest access: submit', en: 'Send me the link', ru: 'Прислать ссылку', zh: '发送链接', status: NR },
+  { key: 'guests.access.submitting', namespace: 'guests', description: 'Guest access: submitting', en: 'Sending…', ru: 'Отправляем…', zh: '发送中…', status: NR },
+  { key: 'guests.access.sent', namespace: 'guests', description: 'Guest access: uniform confirmation', en: 'If the details match a booking, the link is on its way to your inbox.', ru: 'Если данные совпали с бронированием, ссылка уже летит на вашу почту.', zh: '如果信息与预订匹配，链接已发送至您的邮箱。', status: NR },
+  { key: 'guests.access.error_generic', namespace: 'guests', description: 'Guest access: generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', zh: '出错了，请重试。', status: NR },
   { key: 'auth.reset.request_subtitle', namespace: 'auth', description: 'Password reset request subtitle', en: "Enter your email and we'll send you a reset link.", ru: 'Укажите почту — мы отправим ссылку для сброса.', status: NR },
   { key: 'auth.reset.confirm_subtitle', namespace: 'auth', description: 'Password reset confirm subtitle', en: 'Choose a new password for your account.', ru: 'Придумайте новый пароль для аккаунта.', status: NR },
   { key: 'auth.reset.email', namespace: 'auth', description: 'Password reset field: email', en: 'Email', ru: 'Эл. почта', status: NR },
@@ -1936,6 +1960,8 @@ const HOME_KEYS: KeyDef[] = [
   { key: 'home.handbook.view_button', namespace: 'home', description: 'View handbook button text', en: 'View Handbook', ru: 'Просмотреть Справочник', status: NR },
   { key: 'home.help_text', namespace: 'home', description: 'Footer help text', en: 'Need help? Contact the host or raise an issue above.', ru: 'Нужна помощь? Свяжитесь с хозяином или сообщите о проблеме выше.', status: NR },
   { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
+  { key: 'home.concierge_whatsapp', namespace: 'home', description: 'Home space: concierge WhatsApp CTA', en: 'Message the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过WhatsApp联系礼宾', status: NR },
+  { key: 'home.shuttle.title', namespace: 'home', description: 'Home space: shuttle schedule title', en: 'Beach shuttle schedule', ru: 'Расписание шаттла до пляжа', zh: '海滩班车时刻表', status: NR },
 ];
 
 const ADMIN_S3_KEYS: KeyDef[] = [

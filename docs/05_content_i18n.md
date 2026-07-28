@@ -42,6 +42,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `trust.*` | Trust pages: how-it-works, verification, the Ombudsman credential (`trust.ombudsman.*` — reserved, ⚠ Q15), dispute handling. |
 | `legal.*` | Terms, privacy, PDPA notices, entity/contact details (Q16 facts seeded — see doc 08). |
 | `auth.*` | Register, login, verify, reset, claim-account flows. |
+| `guests.*` | The guest access-request page (`/guests/access`, LY-7): booking-ref + email form, the uniform confirmation. |
 | `search.*` | Search & discovery UI (filters, availability, results, map). |
 | `listing.*` | Unit/listing detail page (amenities heading, policies block, house rules). |
 | `booking.*` | The stay flow end-to-end: widget, review step, payment, confirmation, holds, request-to-book, modification, cancellation dialogs (incl. every unhappy-path message: `booking.error.payment_failed`, `booking.error.dates_taken`, `booking.hold.expired` …). |

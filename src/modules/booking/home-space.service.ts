@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 
 export interface InStayHomeSpaceData {
   booking: {
@@ -14,11 +15,14 @@ export interface InStayHomeSpaceData {
       project: {
         id: string;
         name: string;
+        slug: string;
         handbookKey: string | null;
       };
     };
     guest: { id: string; nationality: string | null } | null;
   };
+  /** wa.me concierge deep link from project config (null = CTA hidden). */
+  conciergeWhatsappUrl: string | null;
   activeOrders: Array<{
     id: string;
     serviceId: string;
@@ -57,6 +61,7 @@ export async function getInStayHomeSpace(
             select: {
               id: true,
               name: true,
+              slug: true,
               handbookKey: true,
             },
           },
@@ -122,7 +127,16 @@ export async function getInStayHomeSpace(
     take: 5,
   });
 
+  // Concierge deep link from project config (LY-7); empty = hidden
+  const whatsappNumber = await getConfig(db, 'comms.whatsapp_number', {
+    projectId: booking.unit.projectId,
+  });
+  const conciergeWhatsappUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
+    : null;
+
   return {
+    conciergeWhatsappUrl,
     booking: {
       id: booking.id,
       startDate: booking.startDate.toISOString(),

@@ -55,6 +55,8 @@ interface InStayHomeSpaceClientProps {
   booking: Booking;
   activeOrders: ActiveOrder[];
   announcements: Announcement[];
+  conciergeWhatsappUrl?: string | null;
+  shuttleText?: string;
   labels: Record<string, string>;
 }
 
@@ -62,6 +64,8 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   booking,
   activeOrders,
   announcements,
+  conciergeWhatsappUrl,
+  shuttleText,
   labels,
 }) => {
   const router = useRouter();
@@ -126,6 +130,30 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
           onRaiseIssue={handleRaiseIssue}
           onExtendStay={handleExtendStay}
         />
+
+        {/* Concierge WhatsApp (config-driven; hidden without a number) */}
+        {conciergeWhatsappUrl ? (
+          <div className="mb-24">
+            <a
+              href={conciergeWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center bg-brand-andaman text-surface-ivory rounded-md py-16 font-semibold hover:opacity-90 transition"
+            >
+              {labels['home.concierge_whatsapp']}
+            </a>
+          </div>
+        ) : null}
+
+        {/* Shuttle schedule (project content key; hidden until supplied) */}
+        {shuttleText ? (
+          <div className="bg-surface-paper border border-border-line rounded-md p-32 mb-24">
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              {labels['home.shuttle.title']}
+            </h2>
+            <p className="text-body text-text-secondary whitespace-pre-line">{shuttleText}</p>
+          </div>
+        ) : null}
 
         {/* Announcements section */}
         <AnnouncementsSection announcements={announcements} />

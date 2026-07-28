@@ -8,7 +8,7 @@ export default async function AdminBookingsPage() {
   const bookings = await prisma.booking.findMany({
     include: {
       unit: { select: { name: true } },
-      guestIdentity: { select: { firstName: true, lastName: true } },
+      guestIdentity: { select: { id: true, firstName: true, lastName: true, status: true } },
       payments: {
         where: { status: 'succeeded', purpose: 'stay' },
         select: { id: true, method: true, receiptRef: true },
@@ -29,6 +29,8 @@ export default async function AdminBookingsPage() {
     'admin.bookings.decline': 'Decline request',
     'admin.bookings.cancel_confirm': 'Cancel this booking (policy refund applies)?',
     'admin.bookings.error_generic': 'Action failed. Please try again.',
+    'admin.bookings.guest_link': 'Guest link',
+    'admin.bookings.guest_link_hint': 'Copy and send this activation link to the guest:',
   });
 
   return (
@@ -49,6 +51,8 @@ export default async function AdminBookingsPage() {
             : '—',
           paid: b.payments.length > 0,
           receiptRef: b.payments[0]?.receiptRef || null,
+          guestIdentityId: b.guestIdentity?.id || null,
+          guestInvited: b.guestIdentity?.status === 'invited',
         }))}
         labels={labels}
       />

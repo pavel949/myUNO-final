@@ -135,7 +135,7 @@ export interface OtherConfig {
   'auth.token_ttl_minutes.password_reset': number;
   'auth.token_ttl_minutes.email_verify': number;
   'auth.token_ttl_minutes.account_claim': number;
-  'i18n.default_locale': 'ru' | 'en' | 'th';
+  'i18n.default_locale': 'ru' | 'en' | 'th' | 'zh';
   'analytics.buyer_signal.repeat_stay_threshold': number;
   'analytics.buyer_signal.long_stay_nights': number;
   'comms.whatsapp_number': string;

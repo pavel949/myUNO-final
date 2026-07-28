@@ -15,6 +15,7 @@ interface KeyDef {
   ru: string;
   en: string;
   th?: string; // omitted → falls back to en via the locale chain until translated
+  zh?: string; // omitted → falls back to en via the locale chain until translated (Q23)
   status?: 'ok' | 'needs_review'; // agent-drafted copy ships as needs_review (doc 05 §1)
 }
 
@@ -2219,7 +2220,7 @@ export async function seedContent(
     );
 
     // Set translations for all provided locales
-    const locales: Locale[] = ['ru', 'en', 'th'];
+    const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
     for (const locale of locales) {
       const value = keyDef[locale];
       if (value === undefined) continue;

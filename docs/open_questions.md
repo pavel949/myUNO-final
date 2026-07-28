@@ -112,10 +112,10 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Blocks:** nothing in loop one (THB payouts to the Krungsri account cover it).
 - **Needs from founder:** the intended rails for paying owners abroad, resolved with counsel — always FX-routing-to-a-licensed-exchanger, never operated in-house (AMLO).
 
-### Q23. Chinese (中文) locale — OPEN
-- **Source:** the founder's landing v3 (myunolandingv3.html) ships full EN/RU/**ZH** copy, but the platform's locale enum (doc 05, schema `Locale`) is ru/en/th only.
-- **Blocks:** nothing — the ZH copy is preserved in the landing file; the platform pages adopted its EN + RU.
-- **Needs from founder:** whether 中文 becomes a fourth platform locale (schema enum change + fallback-chain position), or stays a marketing-site-only language.
+### Q23. Chinese (中文) locale — ANSWERED (2026-07, Layantara onboarding)
+- **Source:** the founder's landing v3 ships full EN/RU/**ZH** copy; the Layantara brief demands EN/RU/中文 from day one.
+- **Answer:** 中文 is a **full fourth platform locale** (founder decision 2026-07-28, LY-3). Fallback `zh → en → ru → th`; the switcher, content editor, and CSV all carry zh. Policy (doc 05 §2): public guest-facing namespaces get zh drafts (`needs_review` until edited); admin/ops surfaces intentionally serve EN via fallback.
+- **Still needed:** editorial review of the machine-drafted zh strings; zh brand renderings (myUNO, Layantara, Ignatev Estate in 中文) — LY-4 open item.
 
 ### Q24. Landing v3 marketing elements — OPEN
 - **Source:** landing v3 contains lead-gen machinery (early-access form, founding terms, call-with-Pavel CTA, owner-record mockup, earnings-calculator teaser) that belongs to the marketing site, not the product app. Its owners/developers narrative copy **was** adopted into the audience pages (T1-AUD).

@@ -591,7 +591,7 @@ export async function seedConfig(db: PrismaClient) {
         key: 'i18n.default_locale',
         valueType: 'enum',
         defaultValue: 'ru',
-        enumOptions: ['ru', 'en', 'th'],
+        enumOptions: ['ru', 'en', 'th', 'zh'],
         scopeableTo: 'global',
         groupKey: 'i18n',
         description: 'New-visitor default language',

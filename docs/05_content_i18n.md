@@ -15,6 +15,7 @@ What is **content** (keys) vs **data** (rows): platform copy is content; things 
 - **`ru` — Russian.** The clientele's language and the platform default (`i18n.default_locale`, ⚠ Q19).
 - **`en` — English.** Complete at launch; the fallback language.
 - **`th` — Thai.** Required from day one for staff/provider/juristic surfaces and public trust; may lag editorially (Q19 — who translates).
+- **`zh` — Chinese (中文).** Fourth platform locale (Q23, answered 2026-07 with the Layantara onboarding). Policy: **public guest-facing namespaces** carry zh drafts (`needs_review` machine drafts until edited); admin/ops/staff surfaces intentionally serve EN via the fallback chain — no zh keys are required there. zh falls back `zh → en → ru → th`.
 
 **Fallback chain per key:** requested locale → `en` → `ru` → the key name rendered in a visible warning style (dev/staging) or the `en` empty-state dash (production) — a missing translation must be *findable*, never silently blank. The user's locale comes from `Identity.preferred_locale`; anonymous visitors get the default with a language switcher in the header (doc 06).
 

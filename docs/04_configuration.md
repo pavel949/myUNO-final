@@ -109,7 +109,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `notify.channel.telegram.enabled` | boolean | global | `false` ⚠ Q9 | Off until the bot exists. |
 | `comms.whatsapp_number` | string | project | `""` | WhatsApp number for `wa.me` concierge deep links (E.164, no spaces). Empty = WhatsApp CTAs hidden. Distinct from the WABA channel switch above — this is a plain link, not an API integration. |
 | `auth.token_ttl_minutes.password_reset` / `.email_verify` / `.account_claim` | int | global | `60` / `1440` / `10080` | One-time token validity. |
-| `i18n.default_locale` | enum `ru,en,th` | global | `ru` ⚠ Q19 | New-visitor default language. |
+| `i18n.default_locale` | enum `ru,en,th,zh` | global | `ru` ⚠ Q19 | New-visitor default language (zh added with Q23 — LY-3). |
 | `analytics.buyer_signal.repeat_stay_threshold` | int | global | `2` | Completed stays after which a `repeat_stay` signal fires (doc 13 §4). |
 | `analytics.buyer_signal.long_stay_nights` | int | global | `28` | Nights that make a stay a `long_stay` signal. |
 

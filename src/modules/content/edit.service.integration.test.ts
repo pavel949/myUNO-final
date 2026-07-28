@@ -357,5 +357,22 @@ describe('Content edit service', () => {
       const keys = await listContentKeys(prisma, 'test');
       expect(keys).toHaveLength(2);
     });
+
+    it('round-trips the zh column through export and import (LY-3)', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+
+      const csv = `"key","description","ru","en","th","zh"
+"test.zh1","With Chinese","Текст","Text","ข้อความ","中文文本"`;
+
+      const imported = await importFromCSV(prisma, 'test', csv, admin.id);
+      expect(imported.created).toBe(1);
+      expect(imported.errors).toHaveLength(0);
+
+      const exported = await exportToCSV(prisma, 'test');
+      const header = exported.split('\n')[0];
+      expect(header).toContain('"zh"');
+      expect(header).toContain('"status_zh"');
+      expect(exported).toContain('中文文本');
+    });
   });
 });

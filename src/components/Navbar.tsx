@@ -129,6 +129,7 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
             <option value="en">EN</option>
             <option value="ru">RU</option>
             <option value="th">TH</option>
+            <option value="zh">中文</option>
           </select>
           {user ? (
             <>

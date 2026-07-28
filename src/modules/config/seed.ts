@@ -209,6 +209,24 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Season calendar with named price periods',
       },
       {
+        key: 'pricing.category_rates',
+        valueType: 'schedule',
+        defaultValue: {},
+        scopeableTo: 'project',
+        groupKey: 'pricing',
+        description:
+          'Absolute per-category rates (satang) keyed by season name: {category: {nightly: {season: satang}, monthly: {season: satang}}}. Empty = category pricing off; nights fall back to base × season markup',
+      },
+      {
+        key: 'pricing.early_bird',
+        valueType: 'json',
+        defaultValue: { min_days_before: null, pct: 0 },
+        scopeableTo: 'project',
+        groupKey: 'pricing',
+        description:
+          'Early-bird discount: pct off the nightly subtotal when booked at least min_days_before days ahead. min_days_before null = disabled',
+      },
+      {
         key: 'pricing.los_discount.weekly_pct',
         valueType: 'percent',
         defaultValue: 5,
@@ -537,6 +555,15 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Telegram channel enabled',
       },
       {
+        key: 'comms.whatsapp_number',
+        valueType: 'string',
+        defaultValue: '',
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description:
+          'WhatsApp number for wa.me concierge deep links (E.164, no spaces). Empty = WhatsApp CTAs hidden',
+      },
+      {
         key: 'auth.token_ttl_minutes.password_reset',
         valueType: 'int',
         defaultValue: 60,
@@ -676,6 +703,15 @@ export async function seedConfig(db: PrismaClient) {
         scopeableTo: 'global',
         groupKey: 'catalogs',
         description: 'Unit types catalog',
+      },
+      {
+        key: 'catalog.unit_categories',
+        valueType: 'json',
+        defaultValue: [],
+        scopeableTo: 'project',
+        groupKey: 'catalogs',
+        description:
+          'Unit categories (sellable classes like "Superior 2BR") per project: {key, style_key, bedrooms}. Empty = project sells individual units only',
       },
       {
         key: 'catalog.cancellation_policies',

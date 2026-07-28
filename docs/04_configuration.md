@@ -52,6 +52,8 @@ The season calendar is a `schedule` parameter edited with a dedicated calendar e
 | Key | Type | Scope | Default | Meaning |
 |---|---|---|---|---|
 | `pricing.season.calendar` | schedule | project, unit | see below | **A fully flexible list of named price periods** — any number of them, each `{name, from (MM-DD), to (MM-DD), markup_pct}`. Per Q13 there is **no fixed set of seasons**: the founder adds/removes periods (peak, high, shoulder, low, an event week — anything) and edits every date and percentage in the admin panel. `markup_pct` may be negative (a discount). More specific (shorter) ranges win where periods overlap. |
+| `pricing.category_rates` | schedule | project | `{}` | **Absolute per-category rates** (satang), keyed by season *name* from the same project's `pricing.season.calendar`: `{category: {nightly: {season: satang}, monthly: {season: satang}}}`. Where an entry exists it replaces `base × markup` for units carrying that `category_key`; where it doesn't, the night falls through to the markup path. `monthly` is the flat month price used for stays ≥ 28 nights (LY-2). Empty = category pricing off (every existing project). |
+| `pricing.early_bird` | json | project | `{min_days_before: null, pct: 0}` | Early-bird discount: `pct` off the nightly subtotal when the booking is created at least `min_days_before` days before check-in. `null` = disabled (the global default — projects opt in). |
 | `pricing.los_discount.weekly_pct` | percent | unit | `5` | Length-of-stay discount, ≥ 7 nights. |
 | `pricing.los_discount.monthly_pct` | percent | unit | `20` | Length-of-stay discount, ≥ 28 nights (beats weekly). |
 | `pricing.cleaning_fee_thb` | money_thb | unit | `0` | Per-stay cleaning fee added to the breakdown (0 = folded into rate). |
@@ -59,7 +61,7 @@ The season calendar is a `schedule` parameter edited with a dedicated calendar e
 
 **Default `pricing.season.calendar`** (an editable *starting example* for The Title Legendary — Phuket-conventional, not a constraint): `[{name:"peak", from:"12-15", to:"01-15", markup_pct:60}, {name:"high", from:"11-01", to:"04-30", markup_pct:25}, {name:"shoulder", from:"05-01", to:"06-30", markup_pct:10}, {name:"low", from:"07-01", to:"10-31", markup_pct:0}]`. The founder reshapes this freely.
 
-Night price resolution (doc 02 §3.4): `PricingRule` → `base_nightly_thb × (1 + season markup)` → `base_nightly_thb`.
+Night price resolution (doc 02 §3.4, extended LY-1/LY-2): `PricingRule` → **category seasonal rate** (`pricing.category_rates[unit.category_key].nightly[season]`) → `base_nightly_thb × (1 + season markup)` → `base_nightly_thb`. Every step reads through `config.get()` with the unit's scope, so per-project and per-unit overrides of the calendar, rates, and fees always apply.
 
 ## 5. Group `cancellation` — the policies
 
@@ -105,6 +107,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `notify.channel.email.enabled` | boolean | global | `true` | Master switches for the channel seam (doc 11). |
 | `notify.channel.whatsapp.enabled` | boolean | global | `false` ⚠ Q9 | Off until a WABA number exists. |
 | `notify.channel.telegram.enabled` | boolean | global | `false` ⚠ Q9 | Off until the bot exists. |
+| `comms.whatsapp_number` | string | project | `""` | WhatsApp number for `wa.me` concierge deep links (E.164, no spaces). Empty = WhatsApp CTAs hidden. Distinct from the WABA channel switch above — this is a plain link, not an API integration. |
 | `auth.token_ttl_minutes.password_reset` / `.email_verify` / `.account_claim` | int | global | `60` / `1440` / `10080` | One-time token validity. |
 | `i18n.default_locale` | enum `ru,en,th` | global | `ru` ⚠ Q19 | New-visitor default language. |
 | `analytics.buyer_signal.repeat_stay_threshold` | int | global | `2` | Completed stays after which a `repeat_stay` signal fires (doc 13 §4). |
@@ -120,6 +123,7 @@ These are list-shaped configuration: each catalog is a `json` parameter holding 
 | `catalog.service_categories` | `transfer, car_hire, cleaning, chef, tours, yacht, flowers, water_delivery, laundry, babysitting, massage_spa, repairs, emergency_medical` |
 | `catalog.ticket_categories` | `maintenance, housekeeping, complaint, billing_question, access, noise, common_area, other` |
 | `catalog.unit_types` | `villa, condo, townhouse` (mirrors the enum; labels editable) |
+| `catalog.unit_categories` | *(empty by default; project-scoped)* — sellable classes of identical homes (e.g. `superior_2br`), entries `{key, style_key, bedrooms}`. A unit's `category_key` (doc 02 §2.2) must be a key of its project's catalog. `style_key` groups categories into architectural styles; labels for both live in the content layer. |
 | `catalog.cancellation_policies` | `flexible, moderate, strict` (names shown to guests; schedules in §5) |
 
 ## 9. Rules that are **not** configuration (on purpose)

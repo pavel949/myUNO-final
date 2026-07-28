@@ -15,6 +15,7 @@ export type CatalogName =
   | 'catalog.service_categories'
   | 'catalog.ticket_categories'
   | 'catalog.unit_types'
+  | 'catalog.unit_categories'
   | 'catalog.cancellation_policies';
 
 export async function getCatalogKeys(

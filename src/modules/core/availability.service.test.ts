@@ -40,8 +40,12 @@ describe('Availability & Pricing Service', () => {
       const decemberDate = new Date('2024-12-20');
       const januaryDate = new Date('2025-01-10');
 
-      const decMarkedup = await getApplicableSeasonMarkup(prisma, decemberDate, project.id);
-      const janMarkup = await getApplicableSeasonMarkup(prisma, januaryDate, project.id);
+      const decMarkedup = await getApplicableSeasonMarkup(prisma, decemberDate, {
+        projectId: project.id,
+      });
+      const janMarkup = await getApplicableSeasonMarkup(prisma, januaryDate, {
+        projectId: project.id,
+      });
 
       expect(typeof decMarkedup).toBe('number');
       expect(typeof janMarkup).toBe('number');
@@ -457,6 +461,180 @@ describe('Availability & Pricing Service', () => {
         breakdown.service_fee_thb +
         breakdown.occupancy_tax_thb;
       expect(breakdown.total_thb).toBe(expectedTotal);
+    });
+  });
+
+  describe('scope-aware pricing config (LY-1)', () => {
+    async function seedSeasonCalendarParam(defaultSeasons: unknown) {
+      await prisma.configParameter.upsert({
+        where: { key: 'pricing.season.calendar' },
+        create: {
+          key: 'pricing.season.calendar',
+          valueType: 'schedule',
+          defaultValue: defaultSeasons as any,
+          scopeableTo: 'project,unit',
+          groupKey: 'pricing',
+          description: 'Season calendar',
+        },
+        update: { defaultValue: defaultSeasons as any },
+      });
+    }
+
+    it('a project season-calendar override changes only that project prices', async () => {
+      const projectA = await createProject();
+      const projectB = await createProject();
+      const unitA = await createUnit({ projectId: projectA.id, baseNightlyThb: 1000 });
+      const unitB = await createUnit({ projectId: projectB.id, baseNightlyThb: 1000 });
+
+      await seedSeasonCalendarParam([
+        { name: 'high', from: '11-01', to: '04-30', markup_pct: 25 },
+      ]);
+      // Project A runs its own calendar: same window, 50% markup
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.season.calendar',
+          scopeType: 'project',
+          scopeId: projectA.id,
+          value: [{ name: 'high', from: '11-01', to: '04-30', markup_pct: 50 }] as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+
+      const date = new Date('2025-12-01');
+      const priceA = await getApplicableNightlyPrice(prisma, date, unitA.id);
+      const priceB = await getApplicableNightlyPrice(prisma, date, unitB.id);
+      const globalMarkup = await getApplicableSeasonMarkup(prisma, date);
+
+      expect(priceA).toBe(1500); // project override 50%
+      expect(priceB).toBe(1250); // global default 25%
+      expect(globalMarkup).toBe(25);
+    });
+
+    it('project and unit fee overrides resolve unit → project → default', async () => {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+      const otherUnit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+
+      await prisma.configParameter.upsert({
+        where: { key: 'pricing.cleaning_fee_thb' },
+        create: {
+          key: 'pricing.cleaning_fee_thb',
+          valueType: 'money_thb',
+          defaultValue: 0,
+          scopeableTo: 'unit',
+          groupKey: 'pricing',
+          description: 'Cleaning fee',
+        },
+        update: { defaultValue: 0 },
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.cleaning_fee_thb',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: 500 as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.cleaning_fee_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 700 as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+
+      const withUnitOverride = await computePriceBreakdown(
+        prisma,
+        unit.id,
+        new Date('2025-06-15'),
+        new Date('2025-06-18'),
+        2
+      );
+      const withProjectOverride = await computePriceBreakdown(
+        prisma,
+        otherUnit.id,
+        new Date('2025-06-15'),
+        new Date('2025-06-18'),
+        2
+      );
+
+      expect(withUnitOverride.cleaning_fee_thb).toBe(700); // unit beats project
+      expect(withProjectOverride.cleaning_fee_thb).toBe(500); // project beats default
+    });
+
+    it('a project with no overrides prices exactly as the global default (invariance)', async () => {
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, baseNightlyThb: 1000 });
+
+      await seedSeasonCalendarParam([
+        { name: 'peak', from: '12-15', to: '01-15', markup_pct: 60 },
+        { name: 'high', from: '11-01', to: '04-30', markup_pct: 25 },
+      ]);
+
+      // Peak (shorter window) wins inside high; high applies outside peak
+      const peakPrice = await getApplicableNightlyPrice(
+        prisma,
+        new Date('2025-12-25'),
+        unit.id
+      );
+      const highPrice = await getApplicableNightlyPrice(
+        prisma,
+        new Date('2025-11-10'),
+        unit.id
+      );
+
+      expect(peakPrice).toBe(1600);
+      expect(highPrice).toBe(1250);
+    });
+
+    it('breakdown lines record where each night price came from', async () => {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+
+      await seedSeasonCalendarParam([
+        { name: 'high', from: '06-16', to: '06-16', markup_pct: 25 },
+      ]);
+      await prisma.pricingRule.create({
+        data: {
+          unitId: unit.id,
+          startDate: new Date('2025-06-15'),
+          endDate: new Date('2025-06-16'),
+          nightlyThb: 2000,
+        },
+      });
+
+      const breakdown = await computePriceBreakdown(
+        prisma,
+        unit.id,
+        new Date('2025-06-15'),
+        new Date('2025-06-18'), // rule night, season night, base night
+        2
+      );
+
+      expect(breakdown.lines.map((l) => l.applied_from)).toEqual([
+        'rule',
+        'season',
+        'base',
+      ]);
+      expect(breakdown.lines.map((l) => l.nightly_thb)).toEqual([2000, 1250, 1000]);
     });
   });
 

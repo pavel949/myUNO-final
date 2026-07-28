@@ -119,6 +119,7 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform**. Nullable while a unit is being set up before its owner has an identity. |
 | `name` | text | Display name/number ("Villa A-3", "B-707"). Unique within project. |
 | `unit_type` | enum `villa, condo, townhouse` | Physical type. |
+| `category_key` | string, nullable | Sellable class inside the project (e.g. `superior_2br`), validated against the project's `catalog.unit_categories` config (doc 04 §8). Null = the unit is sold individually, not as part of a category. Indexed with `project_id` for category availability queries. |
 | `bedrooms`, `bathrooms` | int | Capacity description. |
 | `max_guests` | int | Hard party-size cap enforced at booking. |
 | `size_sqm` | int, nullable | Area. |

@@ -20,4 +20,7 @@ export type {
   CatalogConfig,
   SeasonPeriod,
   CancellationStep,
+  CategoryRates,
+  EarlyBirdConfig,
+  UnitCategoryEntry,
 } from './types';

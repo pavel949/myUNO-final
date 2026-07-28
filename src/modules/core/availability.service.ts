@@ -1,10 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Unit } from '@prisma/client';
+import { getConfig, type SeasonPeriod } from '@/modules/config';
 
-interface SeasonPeriod {
-  name: string;
-  from: string; // MM-DD
-  to: string; // MM-DD
-  markup_pct: number;
+/**
+ * Scope for pricing config resolution. Every pricing read goes through
+ * config.get() so per-project / per-unit overrides apply (doc 04) — a second
+ * project with its own season calendar or fees must never see another
+ * project's numbers.
+ */
+export interface PricingScope {
+  projectId?: string;
+  unitId?: string;
 }
 
 export interface PriceBreakdownLine {
@@ -51,62 +56,57 @@ function getDaysBetween(startDate: Date, endDate: Date): number {
 }
 
 /**
- * Find which season applies to a given night.
+ * Approximate duration of a season window in days, used only to rank
+ * overlapping seasons (shortest = most specific wins). The year-boundary
+ * branch is a rough approximation — it orders a short carve-out (peak inside
+ * high) correctly, but do not rely on it for exotic overlapping shapes.
+ */
+function seasonDuration(date: Date, season: SeasonPeriod): number {
+  if (season.from > season.to) {
+    const part1Start = new Date(date.getFullYear(), 0, 1);
+    const part1End = new Date(date.getFullYear(), 11, 31);
+    const part1Days = getDaysBetween(part1Start, part1End);
+
+    const toMonth = parseInt(season.to.split('-')[0]) - 1;
+    const toDay = parseInt(season.to.split('-')[1]);
+    const part2End = new Date(date.getFullYear(), toMonth, toDay);
+    const part2Days = getDaysBetween(part1End, part2End);
+
+    return part1Days + part2Days;
+  }
+
+  const fromMonth = parseInt(season.from.split('-')[0]) - 1;
+  const fromDay = parseInt(season.from.split('-')[1]);
+  const toMonth = parseInt(season.to.split('-')[0]) - 1;
+  const toDay = parseInt(season.to.split('-')[1]);
+
+  const start = new Date(date.getFullYear(), fromMonth, fromDay);
+  const end = new Date(date.getFullYear(), toMonth, toDay);
+  return getDaysBetween(start, end);
+}
+
+/**
+ * Find which season applies to a given night, resolving the calendar through
+ * config.get() so project/unit overrides win over the global default.
  * More specific (shorter) ranges win on overlap.
  */
-export async function getApplicableSeasonMarkup(
+export async function getApplicableSeason(
   db: PrismaClient,
-  date: Date
-): Promise<number> {
-  // Fetch season calendar from config
-  const config = await db.configParameter.findUnique({
-    where: { key: 'pricing.season.calendar' },
-  });
+  date: Date,
+  scope?: PricingScope
+): Promise<SeasonPeriod | null> {
+  const seasons = await getConfig(db, 'pricing.season.calendar', scope);
 
-  if (!config || !config.defaultValue) {
-    return 0;
-  }
-
-  const seasons = config.defaultValue as unknown as SeasonPeriod[];
   if (!Array.isArray(seasons) || seasons.length === 0) {
-    return 0;
+    return null;
   }
 
-  // Find all matching seasons and pick the most specific (shortest range)
   let bestMatch: SeasonPeriod | null = null;
   let bestDuration = Infinity;
 
   for (const season of seasons) {
     if (isDateInSeason(date, season)) {
-      // Calculate range duration for specificity
-      let duration: number;
-
-      if (season.from > season.to) {
-        // Year-boundary season: calculate as if it wraps
-        // Rough approximation: split and sum
-        const part1Start = new Date(date.getFullYear(), 0, 1);
-        const part1End = new Date(date.getFullYear(), 11, 31);
-        const part1Days = getDaysBetween(part1Start, part1End);
-
-        const toMonth = parseInt(season.to.split('-')[0]) - 1;
-        const toDay = parseInt(season.to.split('-')[1]);
-        const part2End = new Date(date.getFullYear(), toMonth, toDay);
-        const part2Days = getDaysBetween(part1End, part2End);
-
-        duration = part1Days + part2Days;
-      } else {
-        // Normal season
-        const fromMonth = parseInt(season.from.split('-')[0]) - 1;
-        const fromDay = parseInt(season.from.split('-')[1]);
-        const toMonth = parseInt(season.to.split('-')[0]) - 1;
-        const toDay = parseInt(season.to.split('-')[1]);
-
-        const start = new Date(date.getFullYear(), fromMonth, fromDay);
-        const end = new Date(date.getFullYear(), toMonth, toDay);
-        duration = getDaysBetween(start, end);
-      }
-
-      // Pick the most specific match
+      const duration = seasonDuration(date, season);
       if (duration < bestDuration) {
         bestMatch = season;
         bestDuration = duration;
@@ -114,7 +114,53 @@ export async function getApplicableSeasonMarkup(
     }
   }
 
-  return bestMatch ? bestMatch.markup_pct : 0;
+  return bestMatch;
+}
+
+/**
+ * Season markup percentage for a given night (0 when no season matches).
+ */
+export async function getApplicableSeasonMarkup(
+  db: PrismaClient,
+  date: Date,
+  scope?: PricingScope
+): Promise<number> {
+  const season = await getApplicableSeason(db, date, scope);
+  return season ? season.markup_pct : 0;
+}
+
+/**
+ * Internal single-night resolver over a pre-loaded unit.
+ * Resolution order: PricingRule → base × season markup → base.
+ */
+async function resolveNightlyPrice(
+  db: PrismaClient,
+  date: Date,
+  unit: Unit
+): Promise<{ price: number; appliedFrom: PriceBreakdownLine['applied_from'] }> {
+  // Check for PricingRule covering this night
+  const rule = await db.pricingRule.findFirst({
+    where: {
+      unitId: unit.id,
+      startDate: { lte: date },
+      endDate: { gt: date }, // end is exclusive
+    },
+  });
+
+  if (rule) {
+    return { price: rule.nightlyThb, appliedFrom: 'rule' };
+  }
+
+  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
+  const season = await getApplicableSeason(db, date, scope);
+  if (season && season.markup_pct !== 0) {
+    return {
+      price: Math.round(unit.baseNightlyThb * (1 + season.markup_pct / 100)),
+      appliedFrom: 'season',
+    };
+  }
+
+  return { price: unit.baseNightlyThb, appliedFrom: 'base' };
 }
 
 /**
@@ -131,27 +177,14 @@ export async function getApplicableNightlyPrice(
     throw new Error(`Unit ${unitId} not found`);
   }
 
-  // Check for PricingRule covering this night
-  const rule = await db.pricingRule.findFirst({
-    where: {
-      unitId,
-      startDate: { lte: date },
-      endDate: { gt: date }, // end is exclusive
-    },
-  });
-
-  if (rule) {
-    return rule.nightlyThb;
-  }
-
-  // Check season markup
-  const markup = await getApplicableSeasonMarkup(db, date);
-  const withMarkup = Math.round(unit.baseNightlyThb * (1 + markup / 100));
-  return withMarkup;
+  const { price } = await resolveNightlyPrice(db, date, unit);
+  return price;
 }
 
 /**
  * Compute the full price breakdown for a booking.
+ * Every rate/fee/discount is read through config.get() with the unit's scope,
+ * so per-project and per-unit overrides apply (doc 04).
  */
 export async function computePriceBreakdown(
   db: PrismaClient,
@@ -164,6 +197,8 @@ export async function computePriceBreakdown(
   if (!unit) {
     throw new Error(`Unit ${unitId} not found`);
   }
+
+  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
 
   // Validate party size
   if (guestCount > unit.maxGuests) {
@@ -183,54 +218,39 @@ export async function computePriceBreakdown(
   const currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const nightlyPrice = await getApplicableNightlyPrice(db, currentDate, unitId);
+    const { price, appliedFrom } = await resolveNightlyPrice(db, currentDate, unit);
     lines.push({
       date: currentDate.toISOString().split('T')[0],
-      nightly_thb: nightlyPrice,
-      applied_from: 'base', // Simplified — would track rule vs season vs base
+      nightly_thb: price,
+      applied_from: appliedFrom,
     });
-    subtotal += nightlyPrice;
+    subtotal += price;
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Calculate LOS discount
+  // Length-of-stay discount (monthly beats weekly)
   let losDiscountPct = 0;
   if (nights >= 28) {
-    // Fetch monthly discount from config
-    const monthlyConfig = await db.configParameter.findUnique({
-      where: { key: 'pricing.los_discount.monthly_pct' },
-    });
-    losDiscountPct = monthlyConfig?.defaultValue as number || 20;
+    losDiscountPct =
+      (await getConfig(db, 'pricing.los_discount.monthly_pct', scope)) ?? 20;
   } else if (nights >= 7) {
-    // Fetch weekly discount from config
-    const weeklyConfig = await db.configParameter.findUnique({
-      where: { key: 'pricing.los_discount.weekly_pct' },
-    });
-    losDiscountPct = weeklyConfig?.defaultValue as number || 5;
+    losDiscountPct =
+      (await getConfig(db, 'pricing.los_discount.weekly_pct', scope)) ?? 5;
   }
 
   const losDiscount = Math.round(subtotal * (losDiscountPct / 100));
 
-  // Fetch cleaning fee from config (or use unit's base if config exists)
-  const cleaningConfig = await db.configParameter.findUnique({
-    where: { key: 'pricing.cleaning_fee_thb' },
-  });
-  const cleaningFee = cleaningConfig?.defaultValue as number || 0;
+  const cleaningFee =
+    (await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0;
 
-  // Fetch service fee from config
-  const serviceFeeConfig = await db.configParameter.findUnique({
-    where: { key: 'pricing.guest_service_fee_pct' },
-  });
-  const serviceFeePercent = serviceFeeConfig?.defaultValue as number || 0;
+  const serviceFeePercent =
+    (await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0;
 
   const subtotalAfterDiscount = subtotal - losDiscount;
   const serviceFee = Math.round(subtotalAfterDiscount * (serviceFeePercent / 100));
 
-  // Fetch occupancy tax from config
-  const taxConfig = await db.configParameter.findUnique({
-    where: { key: 'finance.occupancy_tax_pct' },
-  });
-  const taxPercent = taxConfig?.defaultValue as number || 0;
+  const taxPercent =
+    (await getConfig(db, 'finance.occupancy_tax_pct', scope)) ?? 0;
 
   const occupancyTax = Math.round(
     (subtotalAfterDiscount + cleaningFee + serviceFee) * (taxPercent / 100)

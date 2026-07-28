@@ -53,8 +53,32 @@ export interface SeasonPeriod {
   markup_pct: number;
 }
 
+/**
+ * Absolute per-category rates keyed by season name from the same project's
+ * `pricing.season.calendar`. All amounts are satang integers. `nightly` is
+ * the per-night retail rate; `monthly` is the flat month price for long
+ * stays (≥ 28 nights). A category/season without an entry falls back to
+ * base × season markup.
+ */
+export interface CategoryRates {
+  [categoryKey: string]: {
+    nightly?: Record<string, number>;
+    monthly?: Record<string, number>;
+  };
+}
+
+/** Early-bird discount: pct off the nightly subtotal when the booking is
+ *  created at least min_days_before days ahead of check-in. min_days_before
+ *  null = disabled. */
+export interface EarlyBirdConfig {
+  min_days_before: number | null;
+  pct: number;
+}
+
 export interface PricingConfig {
   'pricing.season.calendar': SeasonPeriod[];
+  'pricing.category_rates': CategoryRates;
+  'pricing.early_bird': EarlyBirdConfig;
   'pricing.los_discount.weekly_pct': number;
   'pricing.los_discount.monthly_pct': number;
   'pricing.cleaning_fee_thb': number;
@@ -114,6 +138,7 @@ export interface OtherConfig {
   'i18n.default_locale': 'ru' | 'en' | 'th';
   'analytics.buyer_signal.repeat_stay_threshold': number;
   'analytics.buyer_signal.long_stay_nights': number;
+  'comms.whatsapp_number': string;
 }
 
 // Catalogs — taxonomies (doc 04 §8)
@@ -122,11 +147,20 @@ export interface CatalogEntry {
   icon?: string;
 }
 
+/** A unit category ("Superior 2BR") inside a project: sellable class of
+ *  identical homes. style_key groups categories into architectural styles
+ *  (labels live in the content layer, doc 05 §4). */
+export interface UnitCategoryEntry extends CatalogEntry {
+  style_key?: string;
+  bedrooms?: number;
+}
+
 export interface CatalogConfig {
   'catalog.amenities': CatalogEntry[];
   'catalog.service_categories': CatalogEntry[];
   'catalog.ticket_categories': CatalogEntry[];
   'catalog.unit_types': CatalogEntry[];
+  'catalog.unit_categories': UnitCategoryEntry[];
   'catalog.cancellation_policies': CatalogEntry[];
 }
 

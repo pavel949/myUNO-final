@@ -705,6 +705,7 @@ model Unit {
   ownerIdentityId String? @map("owner_identity_id")
   name String
   unitType UnitType @map("unit_type")
+  categoryKey String? @map("category_key")
   bedrooms Int
   bathrooms Int
   maxGuests Int @map("max_guests")
@@ -743,6 +744,7 @@ model Unit {
   integrationAccounts IntegrationAccount[]
 
   @@unique([projectId, name])
+  @@index([projectId, categoryKey])
   @@map("unit")
 }
 

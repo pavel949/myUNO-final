@@ -1424,6 +1424,17 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Auth: password reset
   { key: 'auth.reset.title', namespace: 'auth', description: 'Password reset page title', en: 'Reset your password', ru: 'Сброс пароля', status: NR },
+  { key: 'admin.dashboard.reports_title', namespace: 'admin', description: 'Admin dashboard: project reports title', en: 'Project reports (last 30 days)', ru: 'Отчёты по проектам (последние 30 дней)', status: NR },
+  { key: 'admin.dashboard.reports.category', namespace: 'admin', description: 'Reports: category column', en: 'Category', ru: 'Категория', status: NR },
+  { key: 'admin.dashboard.reports.villas', namespace: 'admin', description: 'Reports: villas column', en: 'Villas', ru: 'Виллы', status: NR },
+  { key: 'admin.dashboard.reports.booked_nights', namespace: 'admin', description: 'Reports: booked nights column', en: 'Booked nights', ru: 'Занятые ночи', status: NR },
+  { key: 'admin.dashboard.reports.occupancy', namespace: 'admin', description: 'Reports: occupancy column', en: 'Occupancy %', ru: 'Загрузка %', status: NR },
+  { key: 'admin.dashboard.reports.channel', namespace: 'admin', description: 'Reports: channel column', en: 'Channel', ru: 'Канал', status: NR },
+  { key: 'admin.dashboard.reports.revenue', namespace: 'admin', description: 'Reports: revenue column', en: 'Revenue', ru: 'Выручка', status: NR },
+  { key: 'admin.dashboard.reports.bookings', namespace: 'admin', description: 'Reports: bookings column', en: 'Bookings', ru: 'Брони', status: NR },
+  { key: 'admin.dashboard.reports.rental', namespace: 'admin', description: 'Reports: rental revenue tile', en: 'Rental revenue', ru: 'Выручка от аренды', status: NR },
+  { key: 'admin.dashboard.reports.ancillary', namespace: 'admin', description: 'Reports: ancillary revenue tile', en: 'Ancillary revenue (services)', ru: 'Дополнительная выручка (услуги)', status: NR },
+  { key: 'admin.dashboard.reports.empty', namespace: 'admin', description: 'Reports: empty state', en: 'No data in the period yet.', ru: 'Данных за период пока нет.', status: NR },
   { key: 'admin.nav.projects', namespace: 'admin', description: 'Admin nav: projects', en: 'Projects', ru: 'Проекты', status: NR },
   { key: 'admin.nav.config', namespace: 'admin', description: 'Admin nav: pricing & config', en: 'Pricing & Config', ru: 'Цены и настройки', status: NR },
   { key: 'admin.projects.title', namespace: 'admin', description: 'Admin projects: title', en: 'Projects', ru: 'Проекты', status: NR },

@@ -14,6 +14,16 @@ export {
   createDirectInquiry,
 } from './signals';
 export { getAdminDashboardStats } from './dashboard.service';
+export {
+  occupancyByCategory,
+  revenueByChannel,
+  revenueSplit,
+} from './reports.service';
+export type {
+  CategoryOccupancyRow,
+  ChannelRevenueRow,
+  RevenueSplit,
+} from './reports.service';
 export type { AdminDashboardStats } from './dashboard.service';
 export {
   getKpiSummary,

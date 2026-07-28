@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
+import { getApplicableNightlyPrice } from '@/modules/core';
+import { t, type Locale } from '@/modules/content';
+import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
 
 /**
  * GET /api/search/units
@@ -15,6 +18,12 @@ import { track } from '@/modules/analytics';
  * - maxPrice?: number (THB)
  * - amenities?: comma-separated amenity keys
  * - unitTypes?: comma-separated unit type keys
+ * - bedrooms?: number (exact)
+ * - categoryKey?: string (unit category, LY-6)
+ * - groupBy=category: return per-category availability instead of a unit
+ *   list — {categories: [{category_key, available_count, from_nightly_thb}]}.
+ *   from_nightly_thb is the first-night price when dates are given (the
+ *   category seasonal rate via the pricing engine), else the cheapest base.
  * - limit?: number (default 50)
  * - offset?: number (default 0)
  */
@@ -38,6 +47,11 @@ export async function GET(req: NextRequest) {
       ? parseInt(searchParams.get('maxPrice')!)
       : undefined;
     const unitTypesStr = searchParams.get('unitTypes');
+    const bedrooms = searchParams.get('bedrooms')
+      ? parseInt(searchParams.get('bedrooms')!)
+      : undefined;
+    const categoryKey = searchParams.get('categoryKey') || undefined;
+    const groupBy = searchParams.get('groupBy') || undefined;
     const limit = Math.min(
       parseInt(searchParams.get('limit') || '50'),
       100
@@ -75,6 +89,8 @@ export async function GET(req: NextRequest) {
       ...(maxPrice !== undefined && { baseNightlyThb: { lte: maxPrice } }),
       ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
+      ...(bedrooms !== undefined && { bedrooms }),
+      ...(categoryKey && { categoryKey }),
     };
 
     // If date range provided, exclude units with overlapping bookings or blocks
@@ -111,6 +127,57 @@ export async function GET(req: NextRequest) {
       if (unavailableUnitIds.size > 0) {
         where.id = { notIn: Array.from(unavailableUnitIds) };
       }
+    }
+
+    // Category rollup (LY-6): one card per sellable category instead of a
+    // flat unit list. Uses the same availability-filtered where clause.
+    if (groupBy === 'category') {
+      const categoryUnits = await prisma.unit.findMany({
+        where: { ...where, categoryKey: categoryKey ?? { not: null } },
+        select: { id: true, categoryKey: true, baseNightlyThb: true },
+        orderBy: { baseNightlyThb: 'asc' },
+      });
+
+      const grouped = new Map<string, { count: number; cheapestUnitId: string; minBase: number }>();
+      for (const unit of categoryUnits) {
+        const key = unit.categoryKey as string;
+        const entry = grouped.get(key);
+        if (!entry) {
+          grouped.set(key, { count: 1, cheapestUnitId: unit.id, minBase: unit.baseNightlyThb });
+        } else {
+          entry.count += 1;
+        }
+      }
+
+      const cookieLocale = req.cookies.get('locale')?.value as Locale | undefined;
+      const locale =
+        cookieLocale && LOCALES.includes(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+
+      const categories = await Promise.all(
+        Array.from(grouped.entries()).map(async ([key, entry]) => {
+          const labelKey = `catalog.unit_categories.${key}.label`;
+          const label = await t(prisma, labelKey, undefined, locale).catch(() => key);
+          return {
+            category_key: key,
+            label: label && label !== labelKey && label !== '—' ? label : key,
+            available_count: entry.count,
+            from_nightly_thb: startDate
+              ? await getApplicableNightlyPrice(prisma, startDate, entry.cheapestUnitId)
+              : entry.minBase,
+          };
+        })
+      );
+      categories.sort((a, b) => a.from_nightly_thb - b.from_nightly_thb);
+
+      await track(prisma, categories.length > 0 ? 'search_performed' : 'search_no_results', {
+        projectId,
+        groupBy: 'category',
+        resultsCount: categories.length,
+        hasDates: Boolean(startDate && endDate),
+        guests: totalGuests,
+      });
+
+      return NextResponse.json({ categories }, { status: 200 });
     }
 
     // Fetch units

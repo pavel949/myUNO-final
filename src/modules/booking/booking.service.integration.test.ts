@@ -12,6 +12,70 @@ describe('booking.service — integration tests', () => {
     await resetDb();
   });
 
+  describe('resolveUnitForCategory (LY-6)', () => {
+    const RANGE = { start: new Date('2026-08-10'), end: new Date('2026-08-14') };
+
+    it('assigns the first free live villa of the category, by stable name order', async () => {
+      const project = await createProject();
+      const guest = await createIdentity();
+      const unitB = await createUnit({
+        projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      // A-01 taken → B-02 must be assigned
+      await bookingService.createBooking(db, {
+        unitId: unitA.id, projectId: project.id, guestIdentityId: guest.id,
+        bookingType: 'guest_stay', channel: 'direct',
+        startDate: RANGE.start, endDate: RANGE.end,
+        adults: 2, children: 0, totalThb: 1000, instantBook: false,
+      });
+      // requested does NOT block by default → force a blocking status
+      await db.booking.updateMany({
+        where: { unitId: unitA.id },
+        data: { status: 'confirmed' },
+      });
+
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'superior_2br', RANGE.start, RANGE.end
+      );
+      expect(assigned?.id).toBe(unitB.id);
+      expect(assigned?.instantBook).toBe(false);
+    });
+
+    it('skips villas with blocked dates and non-live villas', async () => {
+      const project = await createProject();
+      const blockedUnit = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live',
+      });
+      await createUnit({
+        projectId: project.id, name: 'A-02', categoryKey: 'superior_2br', status: 'paused',
+      });
+      await db.blockedDate.create({
+        data: {
+          unitId: blockedUnit.id,
+          startDate: RANGE.start,
+          endDate: RANGE.end,
+          reason: 'maintenance',
+        },
+      });
+
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'superior_2br', RANGE.start, RANGE.end
+      );
+      expect(assigned).toBeNull();
+    });
+
+    it('returns null for a category with no units at all', async () => {
+      const project = await createProject();
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'grand_deluxe_3br', RANGE.start, RANGE.end
+      );
+      expect(assigned).toBeNull();
+    });
+  });
+
   describe('createBooking', () => {
     it('creates an instant booking in pending_payment status', async () => {
       const project = await createProject();

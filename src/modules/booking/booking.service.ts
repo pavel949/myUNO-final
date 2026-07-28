@@ -56,6 +56,58 @@ export const SAFE_IDENTITY_SELECT = {
  * Create a new booking.
  * Instant bookings go to pending_payment; request-to-book go to requested.
  */
+/**
+ * Category-first booking (LY-6): pick the first available live unit of a
+ * sellable category for the requested dates — hotel-style auto-assignment.
+ * Stable order (by name) keeps assignment deterministic; the double-booking
+ * guard inside createBooking stays the race-safety net.
+ * Returns null when the category has no free unit for the range.
+ */
+export async function resolveUnitForCategory(
+  db: PrismaClient,
+  projectId: string,
+  categoryKey: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ id: string; instantBook: boolean } | null> {
+  const now = new Date();
+  const units = await db.unit.findMany({
+    where: { projectId, categoryKey, status: 'live' },
+    orderBy: { name: 'asc' },
+    select: { id: true, instantBook: true },
+  });
+
+  for (const unit of units) {
+    const conflictingBooking = await db.booking.findFirst({
+      where: {
+        unitId: unit.id,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: now } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (conflictingBooking) continue;
+
+    const blocked = await db.blockedDate.findFirst({
+      where: {
+        unitId: unit.id,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+      },
+      select: { id: true },
+    });
+    if (blocked) continue;
+
+    return unit;
+  }
+
+  return null;
+}
+
 export async function createBooking(
   db: PrismaClient,
   input: CreateBookingInput

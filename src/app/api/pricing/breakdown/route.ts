@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
         nightlyRate: nights > 0 ? Math.round(engine.subtotal_thb / nights) : 0,
         subtotal: engine.subtotal_thb,
         lengthOfStayDiscount: engine.los_discount_thb,
+        earlyBirdDiscount: engine.early_bird_discount_thb,
         cleaningFee: engine.cleaning_fee_thb,
         serviceFee: engine.service_fee_thb,
         occupancyTax: engine.occupancy_tax_thb,

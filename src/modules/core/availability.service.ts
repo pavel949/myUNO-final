@@ -1,5 +1,9 @@
 import { PrismaClient, Unit } from '@prisma/client';
-import { getConfig, type SeasonPeriod } from '@/modules/config';
+import {
+  getConfig,
+  type SeasonPeriod,
+  type CategoryRates,
+} from '@/modules/config';
 
 /**
  * Scope for pricing config resolution. Every pricing read goes through
@@ -15,7 +19,7 @@ export interface PricingScope {
 export interface PriceBreakdownLine {
   date: string; // ISO date
   nightly_thb: number;
-  applied_from: 'rule' | 'season' | 'base';
+  applied_from: 'rule' | 'category_season' | 'category_monthly' | 'season' | 'base';
 }
 
 export interface PriceBreakdown {
@@ -23,6 +27,7 @@ export interface PriceBreakdown {
   subtotal_thb: number;
   cleaning_fee_thb: number;
   los_discount_thb: number;
+  early_bird_discount_thb: number;
   service_fee_thb: number;
   occupancy_tax_thb: number;
   total_thb: number;
@@ -129,15 +134,26 @@ export async function getApplicableSeasonMarkup(
   return season ? season.markup_pct : 0;
 }
 
+interface NightResolution {
+  price: number;
+  appliedFrom: PriceBreakdownLine['applied_from'];
+  /** Flat month price (satang) for this night's season, when the unit's
+   *  category defines one — the long-stay path (≥ 28 nights) uses it. */
+  monthlyRate: number | null;
+}
+
 /**
  * Internal single-night resolver over a pre-loaded unit.
- * Resolution order: PricingRule → base × season markup → base.
+ * Resolution order: PricingRule → category seasonal rate → base × season
+ * markup → base (doc 04 §4). Category rates are absolute satang amounts
+ * keyed by the season *name* from the same project's calendar.
  */
 async function resolveNightlyPrice(
   db: PrismaClient,
   date: Date,
-  unit: Unit
-): Promise<{ price: number; appliedFrom: PriceBreakdownLine['applied_from'] }> {
+  unit: Unit,
+  categoryRates: CategoryRates | undefined
+): Promise<NightResolution> {
   // Check for PricingRule covering this night
   const rule = await db.pricingRule.findFirst({
     where: {
@@ -147,25 +163,49 @@ async function resolveNightlyPrice(
     },
   });
 
-  if (rule) {
-    return { price: rule.nightlyThb, appliedFrom: 'rule' };
-  }
-
   const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
   const season = await getApplicableSeason(db, date, scope);
+
+  const categoryEntry =
+    unit.categoryKey && categoryRates ? categoryRates[unit.categoryKey] : undefined;
+  const monthlyRate =
+    (season && categoryEntry?.monthly?.[season.name]) ?? null;
+
+  if (rule) {
+    return { price: rule.nightlyThb, appliedFrom: 'rule', monthlyRate };
+  }
+
+  const categoryNightly = season && categoryEntry?.nightly?.[season.name];
+  if (typeof categoryNightly === 'number') {
+    return { price: categoryNightly, appliedFrom: 'category_season', monthlyRate };
+  }
+
   if (season && season.markup_pct !== 0) {
     return {
       price: Math.round(unit.baseNightlyThb * (1 + season.markup_pct / 100)),
       appliedFrom: 'season',
+      monthlyRate,
     };
   }
 
-  return { price: unit.baseNightlyThb, appliedFrom: 'base' };
+  return { price: unit.baseNightlyThb, appliedFrom: 'base', monthlyRate };
+}
+
+async function getCategoryRatesForUnit(
+  db: PrismaClient,
+  unit: Unit
+): Promise<CategoryRates | undefined> {
+  if (!unit.categoryKey) return undefined;
+  return await getConfig(db, 'pricing.category_rates', {
+    unitId: unit.id,
+    projectId: unit.projectId,
+  });
 }
 
 /**
  * Resolve the per-night price for a single night.
- * Resolution order: PricingRule → base × season markup → base
+ * Resolution order: PricingRule → category seasonal rate → base × season
+ * markup → base
  */
 export async function getApplicableNightlyPrice(
   db: PrismaClient,
@@ -177,7 +217,8 @@ export async function getApplicableNightlyPrice(
     throw new Error(`Unit ${unitId} not found`);
   }
 
-  const { price } = await resolveNightlyPrice(db, date, unit);
+  const categoryRates = await getCategoryRatesForUnit(db, unit);
+  const { price } = await resolveNightlyPrice(db, date, unit, categoryRates);
   return price;
 }
 
@@ -191,7 +232,8 @@ export async function computePriceBreakdown(
   unitId: string,
   checkInDate: Date,
   checkOutDate: Date,
-  guestCount: number
+  guestCount: number,
+  bookingDate: Date = new Date()
 ): Promise<PriceBreakdown> {
   const unit = await db.unit.findUnique({ where: { id: unitId } });
   if (!unit) {
@@ -213,32 +255,81 @@ export async function computePriceBreakdown(
   }
 
   // Generate nightly breakdown
+  const categoryRates = await getCategoryRatesForUnit(db, unit);
   const lines: PriceBreakdownLine[] = [];
+  const nightMonthlyRates: (number | null)[] = [];
   let subtotal = 0;
   const currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const { price, appliedFrom } = await resolveNightlyPrice(db, currentDate, unit);
+    const { price, appliedFrom, monthlyRate } = await resolveNightlyPrice(
+      db,
+      currentDate,
+      unit,
+      categoryRates
+    );
     lines.push({
       date: currentDate.toISOString().split('T')[0],
       nightly_thb: price,
       applied_from: appliedFrom,
     });
+    nightMonthlyRates.push(monthlyRate);
     subtotal += price;
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Length-of-stay discount (monthly beats weekly)
+  // Long-stay monthly path: for ≥ 28 nights, when the unit's category
+  // defines a flat month price for EVERY covered season, each night becomes
+  // round(monthly/30) and REPLACES the LOS discount (no stacking — provisional
+  // rule, open_questions). Any season without a monthly rate falls the whole
+  // stay back to the nightly + LOS-discount path.
+  let monthlyApplied = false;
+  if (nights >= 28 && nightMonthlyRates.every((m) => typeof m === 'number')) {
+    monthlyApplied = true;
+    subtotal = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const nightly = Math.round((nightMonthlyRates[i] as number) / 30);
+      lines[i] = {
+        ...lines[i],
+        nightly_thb: nightly,
+        applied_from: 'category_monthly',
+      };
+      subtotal += nightly;
+    }
+  }
+
+  // Length-of-stay discount (monthly beats weekly); replaced by the
+  // category monthly rate when that path applied.
   let losDiscountPct = 0;
-  if (nights >= 28) {
-    losDiscountPct =
-      (await getConfig(db, 'pricing.los_discount.monthly_pct', scope)) ?? 20;
-  } else if (nights >= 7) {
-    losDiscountPct =
-      (await getConfig(db, 'pricing.los_discount.weekly_pct', scope)) ?? 5;
+  if (!monthlyApplied) {
+    if (nights >= 28) {
+      losDiscountPct =
+        (await getConfig(db, 'pricing.los_discount.monthly_pct', scope)) ?? 20;
+    } else if (nights >= 7) {
+      losDiscountPct =
+        (await getConfig(db, 'pricing.los_discount.weekly_pct', scope)) ?? 5;
+    }
   }
 
   const losDiscount = Math.round(subtotal * (losDiscountPct / 100));
+
+  // Early-bird discount: pct off the nightly subtotal (after LOS) when the
+  // booking is made far enough ahead. Never stacks with the monthly path
+  // (provisional rule, open_questions).
+  let earlyBirdDiscount = 0;
+  if (!monthlyApplied) {
+    const earlyBird = await getConfig(db, 'pricing.early_bird', scope);
+    if (
+      earlyBird &&
+      earlyBird.min_days_before !== null &&
+      earlyBird.pct > 0 &&
+      getDaysBetween(bookingDate, checkInDate) >= earlyBird.min_days_before
+    ) {
+      earlyBirdDiscount = Math.round(
+        (subtotal - losDiscount) * (earlyBird.pct / 100)
+      );
+    }
+  }
 
   const cleaningFee =
     (await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0;
@@ -246,7 +337,7 @@ export async function computePriceBreakdown(
   const serviceFeePercent =
     (await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0;
 
-  const subtotalAfterDiscount = subtotal - losDiscount;
+  const subtotalAfterDiscount = subtotal - losDiscount - earlyBirdDiscount;
   const serviceFee = Math.round(subtotalAfterDiscount * (serviceFeePercent / 100));
 
   const taxPercent =
@@ -263,6 +354,7 @@ export async function computePriceBreakdown(
     subtotal_thb: subtotal,
     cleaning_fee_thb: cleaningFee,
     los_discount_thb: losDiscount,
+    early_bird_discount_thb: earlyBirdDiscount,
     service_fee_thb: serviceFee,
     occupancy_tax_thb: occupancyTax,
     total_thb: total,

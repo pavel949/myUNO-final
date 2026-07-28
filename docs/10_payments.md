@@ -18,6 +18,8 @@ There are **two settlement rails** (Q8), both writing the same `Payment`/`Refund
 
 Both rails: all amounts **server-computed**; **client-sent amounts are never trusted** (anti-tamper posture, doc 02 price breakdowns).
 
+**Stay breakdown lines (LY-2).** A stay's `price_breakdown` carries per-night lines (`applied_from`: `rule` / `category_season` / `category_monthly` / `season` / `base`) plus: `los_discount_thb` (length-of-stay), `early_bird_discount_thb` (`pricing.early_bird`, applied to the subtotal after the LOS discount), `cleaning_fee_thb`, `service_fee_thb`, `occupancy_tax_thb`. For ≥ 28-night stays where the unit's category defines a flat month price for every covered season (`pricing.category_rates[…].monthly`), each night becomes `round(monthly/30)` and this **replaces** both the LOS and early-bird discounts (no stacking — provisional, open_questions Q28).
+
 ## 2. Charge types
 
 | Purpose | When | Amount source |

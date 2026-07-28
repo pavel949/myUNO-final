@@ -638,6 +638,249 @@ describe('Availability & Pricing Service', () => {
     });
   });
 
+  describe('category rates, early-bird, long-stay monthly (LY-2)', () => {
+    // The Layantara season calendar: absolute category rates carry the
+    // numbers, so every markup is 0. Peak (short) wins inside high.
+    const LAYANTARA_CALENDAR = [
+      { name: 'shoulder_apr', from: '04-01', to: '04-30', markup_pct: 0 },
+      { name: 'low', from: '05-01', to: '09-30', markup_pct: 0 },
+      { name: 'shoulder_oct', from: '10-01', to: '10-31', markup_pct: 0 },
+      { name: 'high', from: '11-01', to: '03-31', markup_pct: 0 },
+      { name: 'peak', from: '12-21', to: '01-10', markup_pct: 0 },
+    ];
+
+    // The real Layantara retail grid, satang (THB × 100)
+    const GRID: Record<string, Record<string, number>> = {
+      standard_2br: { shoulder_apr: 629400, low: 547900, shoulder_oct: 566400, high: 758600, peak: 986300 },
+      superior_2br: { shoulder_apr: 719300, low: 626100, shoulder_oct: 647300, high: 867000, peak: 1127200 },
+      standard_3br: { shoulder_apr: 899100, low: 782700, shoulder_oct: 809200, high: 1083900, peak: 1408900 },
+      superior_3br: { shoulder_apr: 989100, low: 860900, shoulder_oct: 890100, high: 1192200, peak: 1549900 },
+      grand_deluxe_3br: { shoulder_apr: 1079000, low: 939300, shoulder_oct: 971100, high: 1300600, peak: 1690800 },
+    };
+
+    async function seedLayantaraPricing(projectId: string, monthly?: Record<string, Record<string, number>>) {
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.season.calendar',
+          scopeType: 'project',
+          scopeId: projectId,
+          value: LAYANTARA_CALENDAR as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+      const rates: Record<string, unknown> = {};
+      for (const [cat, nightly] of Object.entries(GRID)) {
+        rates[cat] = { nightly, ...(monthly?.[cat] ? { monthly: monthly[cat] } : {}) };
+      }
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.category_rates',
+          scopeType: 'project',
+          scopeId: projectId,
+          value: rates as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+    }
+
+    it('reproduces the exact retail grid for every category and season', async () => {
+      const project = await createProject();
+      await seedLayantaraPricing(project.id);
+
+      const SEASON_DATES: Record<string, string> = {
+        shoulder_apr: '2026-04-15',
+        low: '2026-07-15',
+        shoulder_oct: '2026-10-15',
+        high: '2026-11-10',
+        peak: '2026-12-25', // inside high's window — peak must win
+      };
+
+      for (const [categoryKey, seasons] of Object.entries(GRID)) {
+        const unit = await createUnit({
+          projectId: project.id,
+          categoryKey,
+          baseNightlyThb: 100, // deliberately wrong so any fallback is caught
+        });
+        for (const [season, expected] of Object.entries(seasons)) {
+          const price = await getApplicableNightlyPrice(
+            prisma,
+            new Date(SEASON_DATES[season]),
+            unit.id
+          );
+          expect(price, `${categoryKey} on ${SEASON_DATES[season]} (${season})`).toBe(expected);
+        }
+      }
+    });
+
+    it('applies the high rate on the January side of the year boundary, outside peak', async () => {
+      const project = await createProject();
+      await seedLayantaraPricing(project.id);
+      const unit = await createUnit({
+        projectId: project.id,
+        categoryKey: 'standard_2br',
+        baseNightlyThb: 100,
+      });
+
+      // 2027-02-01 is inside high (11-01 → 03-31, wraps the year), past peak
+      const price = await getApplicableNightlyPrice(prisma, new Date('2027-02-01'), unit.id);
+      expect(price).toBe(758600);
+
+      // 2027-01-05 is still peak (12-21 → 01-10)
+      const peakPrice = await getApplicableNightlyPrice(prisma, new Date('2027-01-05'), unit.id);
+      expect(peakPrice).toBe(986300);
+    });
+
+    it('falls back to base × markup for a season the category has no rate for', async () => {
+      const project = await createProject();
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.season.calendar',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: [
+            { name: 'low', from: '05-01', to: '09-30', markup_pct: 10 },
+          ] as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.category_rates',
+          scopeType: 'project',
+          scopeId: project.id,
+          // rates exist only for 'high' — 'low' nights must fall through
+          value: { standard_2br: { nightly: { high: 758600 } } } as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+      const unit = await createUnit({
+        projectId: project.id,
+        categoryKey: 'standard_2br',
+        baseNightlyThb: 1000,
+      });
+
+      const price = await getApplicableNightlyPrice(prisma, new Date('2026-07-15'), unit.id);
+      expect(price).toBe(1100); // base 1000 × 1.10
+    });
+
+    it('early-bird applies at exactly min_days_before and not a day later booking', async () => {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.early_bird',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: { min_days_before: 60, pct: 8 } as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+
+      const checkIn = new Date('2026-06-01');
+      const checkOut = new Date('2026-06-04'); // 3 nights, subtotal 3000
+
+      const exactly60 = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-02')
+      );
+      expect(exactly60.early_bird_discount_thb).toBe(240); // 8% of 3000
+      expect(exactly60.total_thb).toBe(2760);
+
+      const only59 = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-03')
+      );
+      expect(only59.early_bird_discount_thb).toBe(0);
+      expect(only59.total_thb).toBe(3000);
+    });
+
+    it('long stay ≥28 nights uses the flat monthly rate and replaces the LOS discount', async () => {
+      const project = await createProject();
+      await seedLayantaraPricing(project.id, {
+        standard_2br: { low: 7200000 }, // ฿72,000/month, satang
+      });
+      // Early-bird is configured but must NOT stack with the monthly path
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.early_bird',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: { min_days_before: 30, pct: 8 } as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+      const unit = await createUnit({
+        projectId: project.id,
+        categoryKey: 'standard_2br',
+        baseNightlyThb: 100,
+        minNights: 1,
+        maxGuests: 2,
+      });
+
+      const breakdown = await computePriceBreakdown(
+        prisma,
+        unit.id,
+        new Date('2026-06-01'),
+        new Date('2026-07-01'), // 30 nights, all low season
+        2,
+        new Date('2026-01-01')
+      );
+
+      const nightly = Math.round(7200000 / 30); // 240000
+      expect(breakdown.lines.every((l) => l.applied_from === 'category_monthly')).toBe(true);
+      expect(breakdown.lines.every((l) => l.nightly_thb === nightly)).toBe(true);
+      expect(breakdown.subtotal_thb).toBe(nightly * 30);
+      expect(breakdown.los_discount_thb).toBe(0);
+      expect(breakdown.early_bird_discount_thb).toBe(0);
+      expect(breakdown.total_thb).toBe(nightly * 30);
+    });
+
+    it('long stay without full monthly coverage falls back to nightly + LOS discount', async () => {
+      const project = await createProject();
+      // Monthly defined only for low — a stay crossing into shoulder_oct
+      // must fall back to the nightly path for the whole stay
+      await seedLayantaraPricing(project.id, {
+        standard_2br: { low: 7200000 },
+      });
+      const unit = await createUnit({
+        projectId: project.id,
+        categoryKey: 'standard_2br',
+        baseNightlyThb: 100,
+        minNights: 1,
+        maxGuests: 2,
+      });
+      await prisma.configParameter.upsert({
+        where: { key: 'pricing.los_discount.monthly_pct' },
+        create: {
+          key: 'pricing.los_discount.monthly_pct',
+          valueType: 'percent',
+          defaultValue: 20,
+          scopeableTo: 'unit',
+          groupKey: 'pricing',
+          description: 'Monthly LOS discount',
+        },
+        update: { defaultValue: 20 },
+      });
+
+      const breakdown = await computePriceBreakdown(
+        prisma,
+        unit.id,
+        new Date('2026-09-15'),
+        new Date('2026-10-13'), // 28 nights: 16 low (Sep 15–30) + 12 shoulder_oct (Oct 1–12)
+        2,
+        new Date('2026-09-01')
+      );
+
+      const subtotal = 16 * 547900 + 12 * 566400;
+      expect(breakdown.subtotal_thb).toBe(subtotal);
+      expect(breakdown.los_discount_thb).toBe(Math.round(subtotal * 0.2));
+      expect(breakdown.lines.some((l) => l.applied_from === 'category_monthly')).toBe(false);
+    });
+  });
+
   describe('isActiveHold', () => {
     it('returns false when hold_expires_at is null', () => {
       const result = isActiveHold(null, new Date());

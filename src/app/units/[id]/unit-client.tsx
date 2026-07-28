@@ -27,6 +27,7 @@ interface PriceBreakdown {
   nightlyRate: number;
   subtotal: number;
   lengthOfStayDiscount: number;
+  earlyBirdDiscount: number;
   cleaningFee: number;
   subtotalAfterFees: number;
   serviceFee: number;
@@ -50,6 +51,7 @@ export interface UnitDetailLabels {
   perNight: string;
   priceNights: string;
   discountLongStay: string;
+  discountEarlyBird: string;
   cleaningFee: string;
   occupancyTax: string;
   total: string;
@@ -363,6 +365,14 @@ export default function UnitDetailClient({
                       <span className="text-text-secondary">{labels.discountLongStay}</span>
                       <span className="text-state-success font-semibold">
                         -฿{breakdown.lengthOfStayDiscount?.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {breakdown.earlyBirdDiscount > 0 && (
+                    <div className="flex justify-between text-small">
+                      <span className="text-text-secondary">{labels.discountEarlyBird}</span>
+                      <span className="text-state-success font-semibold">
+                        -฿{breakdown.earlyBirdDiscount?.toLocaleString()}
                       </span>
                     </div>
                   )}

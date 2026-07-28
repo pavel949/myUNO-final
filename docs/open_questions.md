@@ -137,4 +137,9 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Blocks:** nothing in loop one.
 - **Needs from founder:** which of these become real features in loop two (OAuth login, provider service areas, service galleries, ticket photos, project gallery uploads) and which get removed from the schema. Also two spec'd shapes that still need building decisions: `MessageMedia` (message photo attachments, doc 02 §7.1) and quote-model service orders (no `quote_requested` lifecycle state exists — doc 02 §4.3).
 
+### Q28. Layantara tariff edges — discount stacking & monthly rates beyond low season — OPEN (provisional defaults in place)
+- **Source:** the Layantara onboarding brief (LY-2). The brief gives three tariffs (standard / early-bird 60+ days −8% / long-stay monthly) and monthly prices only "from low season" (2BR 72,000 · 3BR 115,000 · Grand Deluxe 140,000 THB/mo).
+- **Provisional rules built:** (1) the flat monthly rate applies to stays ≥ 28 nights when **every** covered season has a monthly price, and it **replaces** the LOS discount and early-bird (no stacking); (2) early-bird **does** stack with the weekly LOS discount (sequential: LOS first, then early-bird on the remainder); (3) a long stay crossing a season without a monthly price falls back entirely to the nightly + LOS path.
+- **Needs from founder:** monthly prices for shoulder/high/peak (or the rule for stays crossing them); confirm the no-stacking rules; confirm 14+ nights long-stay tier from the brief (built: weekly ≥ 7 / monthly ≥ 28 — is a separate 14+ tier needed?).
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

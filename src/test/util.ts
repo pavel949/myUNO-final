@@ -129,6 +129,8 @@ export interface UnitFactoryOpts {
   maxGuests?: number;
   minNights?: number;
   instantBook?: boolean;
+  categoryKey?: string;
+  bedrooms?: number;
 }
 
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
@@ -147,7 +149,8 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
       ownerIdentityId: opts.ownerIdentityId,
       name: opts.name || `Unit-${uuid().slice(0, 8)}`,
       unitType: 'villa',
-      bedrooms: 2,
+      categoryKey: opts.categoryKey ?? null,
+      bedrooms: opts.bedrooms ?? 2,
       bathrooms: 1,
       maxGuests: opts.maxGuests ?? 4,
       addressSupplement: '101',

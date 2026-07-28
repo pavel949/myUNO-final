@@ -1467,6 +1467,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'listing.per_night', namespace: 'listing', description: 'Price unit suffix', en: '/ night', ru: '/ ночь', status: NR },
   { key: 'listing.price_nights', namespace: 'listing', description: 'Price line: nights multiplier', en: '× {nights} nights', ru: '× {nights} ноч.', status: NR },
   { key: 'listing.discount_long_stay', namespace: 'listing', description: 'Price line: long-stay discount', en: 'Long stay discount', ru: 'Скидка за длительное проживание', status: NR },
+  { key: 'listing.discount_early_bird', namespace: 'listing', description: 'Price line: early-bird discount', en: 'Early bird discount', ru: 'Скидка за раннее бронирование', status: NR },
   { key: 'listing.cleaning_fee', namespace: 'listing', description: 'Price line: cleaning fee', en: 'Cleaning fee', ru: 'Уборка', status: NR },
   { key: 'listing.occupancy_tax', namespace: 'listing', description: 'Price line: occupancy tax', en: 'Occupancy tax', ru: 'Туристический налог', status: NR },
   { key: 'listing.total', namespace: 'listing', description: 'Price line: total', en: 'Total', ru: 'Итого', status: NR },

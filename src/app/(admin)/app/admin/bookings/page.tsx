@@ -31,6 +31,10 @@ export default async function AdminBookingsPage() {
     'admin.bookings.error_generic': 'Action failed. Please try again.',
     'admin.bookings.guest_link': 'Guest link',
     'admin.bookings.guest_link_hint': 'Copy and send this activation link to the guest:',
+    'admin.bookings.channel_all': 'All channels',
+    'admin.bookings.guest_note': 'Guest note',
+    'admin.bookings.internal_note': 'Internal note',
+    'admin.bookings.internal_note_save': 'Save note',
   });
 
   return (
@@ -53,6 +57,9 @@ export default async function AdminBookingsPage() {
           receiptRef: b.payments[0]?.receiptRef || null,
           guestIdentityId: b.guestIdentity?.id || null,
           guestInvited: b.guestIdentity?.status === 'invited',
+          channel: b.channel,
+          guestNote: b.guestNote,
+          internalNote: b.internalNote,
         }))}
         labels={labels}
       />

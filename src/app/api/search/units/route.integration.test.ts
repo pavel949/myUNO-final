@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { db, resetDb, createProject, createUnit, createIdentity, createBooking } from '@/test/util';
+import { resetDb, createProject, createUnit, createIdentity, createBooking } from '@/test/util';
 import { vi } from 'vitest';
 
 vi.mock('@/lib/prisma', async () => {

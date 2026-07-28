@@ -16,6 +16,9 @@ interface AdminBooking {
   receiptRef: string | null;
   guestIdentityId: string | null;
   guestInvited: boolean;
+  channel: string;
+  guestNote: string | null;
+  internalNote: string | null;
 }
 
 type Labels = Record<string, string>;
@@ -41,6 +44,34 @@ export default function BookingsAdminClient({
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [guestLink, setGuestLink] = useState<Record<string, string>>({});
+  const [channelFilter, setChannelFilter] = useState<string>('');
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const channels = [...new Set(bookings.map((b) => b.channel))].sort();
+  const visible = channelFilter
+    ? bookings.filter((b) => b.channel === channelFilter)
+    : bookings;
+
+  const saveInternalNote = async (bookingId: string) => {
+    setBusyId(bookingId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/internal-note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internalNote: notes[bookingId] ?? '' }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || labels['admin.bookings.error_generic']);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   // Mint an account-claim link for an invited guest (LY-7). The admin sends
   // it over whichever channel the guest actually reads (WhatsApp, email).
@@ -102,7 +133,21 @@ export default function BookingsAdminClient({
           <p className="text-body text-state-error">{error}</p>
         </div>
       )}
-      {bookings.map((booking) => (
+      <div className="mb-16">
+        <select
+          className="h-40 px-12 rounded-sm bg-surface-background border border-border-line text-small text-text-ink"
+          value={channelFilter}
+          onChange={(e) => setChannelFilter(e.target.value)}
+        >
+          <option value="">{labels['admin.bookings.channel_all']}</option>
+          {channels.map((c) => (
+            <option key={c} value={c}>
+              {c.replace(/_/g, ' ')}
+            </option>
+          ))}
+        </select>
+      </div>
+      {visible.map((booking) => (
         <div
           key={booking.id}
           className="flex flex-col lg:flex-row lg:items-center gap-12 py-16 border-b border-border-line last:border-b-0"
@@ -111,7 +156,37 @@ export default function BookingsAdminClient({
             <p className="text-body font-semibold text-text-ink">
               {booking.guestName}
               <span className="text-text-secondary font-normal"> · {booking.unitName}</span>
+              <span className="ml-8 px-8 py-2 rounded-full text-small bg-surface-ivory text-text-secondary align-middle">
+                {booking.channel.replace(/_/g, ' ')}
+              </span>
             </p>
+            {booking.guestNote ? (
+              <p className="text-small text-text-secondary italic">
+                {labels['admin.bookings.guest_note']}: {booking.guestNote}
+              </p>
+            ) : null}
+            <div className="flex items-center gap-8 mt-4">
+              <input
+                type="text"
+                defaultValue={booking.internalNote ?? ''}
+                placeholder={labels['admin.bookings.internal_note']}
+                onChange={(e) =>
+                  setNotes((prev) => ({ ...prev, [booking.id]: e.target.value }))
+                }
+                className="h-32 px-8 rounded-sm bg-surface-background border border-border-line text-small text-text-ink flex-1 max-w-md"
+              />
+              {notes[booking.id] !== undefined &&
+              notes[booking.id] !== (booking.internalNote ?? '') ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => saveInternalNote(booking.id)}
+                  isLoading={busyId === booking.id}
+                >
+                  {labels['admin.bookings.internal_note_save']}
+                </Button>
+              ) : null}
+            </div>
             <p className="text-small text-text-secondary">
               {new Date(booking.startDate).toLocaleDateString()} —{' '}
               {new Date(booking.endDate).toLocaleDateString()} · ฿

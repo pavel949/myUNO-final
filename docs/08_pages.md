@@ -69,11 +69,11 @@ S2 composition: hero (project cover, name, `area_label_key`, the endorsed lockup
 S14 composition, admin-only (doc 03). Sections:
 
 1. **Dashboard** — platform `StatTile`s (occupancy, revenue MTD, bookings, open tickets, TM30 at-risk count, signals new), recent activity feed.
-2. **Projects & Units** — CRUD projects; unit list with status/mobilization progress; unit detail tabs (listing, calendar, pricing, engagement, compliance, condition, ledger). Go-live gate visible as a checklist.
+2. **Projects & Units** — CRUD projects; unit list with status/mobilization progress; unit detail tabs (listing, calendar, pricing, engagement, compliance, condition, ledger). Go-live gate visible as a checklist. *(Built LY-9: `/app/admin/projects` — list, inline edit (name/address/status), create with slug-derived content keys + coordinates, link into the config editor.)*
 3. **Content** — the three-column RU/EN/TH editor (doc 05 §5): namespace tree, search, status filters, placeholder validation, CSV round-trip.
-4. **Configuration** — the registry editor (doc 04 §1): groups, per-project/per-unit override tables, schedule editors (season calendar, cancellation policies), change history per parameter.
+4. **Configuration** — the registry editor (doc 04 §1): groups, per-project/per-unit override tables, schedule editors (season calendar, cancellation policies), change history per parameter. *(Built LY-9, minimal: `/app/admin/config` — project-scope editor for the season calendar, category tariff grid, early-bird, unit-categories catalog, and concierge WhatsApp, with server-side shape validators incl. the satang guard.)*
 5. **People & Roles** — identity search; role grant/revoke with scope pickers; org management (MCs, juristic persons); blocked identities.
-6. **Bookings** — all bookings with filters; manual booking creation (agent/phone bookings); request queue oversight.
+6. **Bookings** — all bookings with filters; manual booking creation (agent/phone bookings); request queue oversight. *(LY-9: channel badge + channel filter (direct/agent/OTA), guest note display, editable staff internal note (`POST /api/bookings/[id]/internal-note`), guest-link minting for invited identities.)*
 7. **Services & Providers** — provider vetting queue (F-PROV-1), service approval (`services.require_admin_approval`), order oversight, no-show offender view.
 8. **Finance** — ledger browser (filters by unit/type/period), statement queue (draft → publish sign-off, F-FIN-1), payouts recording, reconciliation board (F-FIN-2), refund failures.
 9. **Tickets & Announcements** — cross-project ticket board; announcement composer (posted-as myUNO) + org posts oversight.

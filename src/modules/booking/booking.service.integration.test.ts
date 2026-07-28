@@ -76,6 +76,72 @@ describe('booking.service — integration tests', () => {
     });
   });
 
+  describe('approveBookingRequest availability re-check (LY-6 guard)', () => {
+    const RANGE = { start: new Date('2026-09-01'), end: new Date('2026-09-05') };
+
+    // Requests never block the calendar, so several can target the same
+    // villa; the approval is where the conflict must be caught.
+    async function makeRequest(projectId: string, unitId: string) {
+      const guest = await createIdentity();
+      return bookingService.createBooking(db, {
+        unitId, projectId, guestIdentityId: guest.id,
+        bookingType: 'guest_stay', channel: 'direct',
+        startDate: RANGE.start, endDate: RANGE.end,
+        adults: 2, children: 0, totalThb: 1000, instantBook: false,
+      });
+    }
+
+    it('reassigns a category request within the category when the villa got taken', async () => {
+      const project = await createProject();
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const unitB = await createUnit({
+        projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unitA.id);
+      const second = await makeRequest(project.id, unitA.id);
+
+      const approvedFirst = await bookingService.approveBookingRequest(db, { bookingId: first.id });
+      expect(approvedFirst.status).toBe('pending_payment');
+      expect(approvedFirst.unitId).toBe(unitA.id);
+
+      const approvedSecond = await bookingService.approveBookingRequest(db, { bookingId: second.id });
+      expect(approvedSecond.status).toBe('pending_payment');
+      expect(approvedSecond.unitId).toBe(unitB.id);
+    });
+
+    it('refuses approval when the whole category is exhausted', async () => {
+      const project = await createProject();
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unitA.id);
+      const second = await makeRequest(project.id, unitA.id);
+      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+
+      await expect(
+        bookingService.approveBookingRequest(db, { bookingId: second.id })
+      ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+      const stillRequested = await db.booking.findUnique({ where: { id: second.id } });
+      expect(stillRequested?.status).toBe('requested');
+    });
+
+    it('refuses approval for an uncategorized unit whose dates got taken', async () => {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id, name: 'C-01', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unit.id);
+      const second = await makeRequest(project.id, unit.id);
+      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+
+      await expect(
+        bookingService.approveBookingRequest(db, { bookingId: second.id })
+      ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    });
+  });
+
   describe('createBooking', () => {
     it('creates an instant booking in pending_payment status', async () => {
       const project = await createProject();

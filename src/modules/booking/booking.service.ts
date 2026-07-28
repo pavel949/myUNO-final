@@ -57,6 +57,34 @@ export const SAFE_IDENTITY_SELECT = {
  * Instant bookings go to pending_payment; request-to-book go to requested.
  */
 /**
+ * Overlapping booking that actually blocks the dates: confirmed/checked_in,
+ * or an unpaid hold that is still live. `requested` never blocks — a request
+ * is non-binding until approved.
+ */
+async function findBlockingConflict(
+  db: PrismaClient,
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+  excludeBookingId?: string
+) {
+  const now = new Date();
+  return db.booking.findFirst({
+    where: {
+      unitId,
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      startDate: { lt: endDate },
+      endDate: { gt: startDate },
+      OR: [
+        { status: { in: ['confirmed', 'checked_in'] } },
+        { status: 'pending_payment', holdExpiresAt: { gt: now } },
+      ],
+    },
+    select: { id: true },
+  });
+}
+
+/**
  * Category-first booking (LY-6): pick the first available live unit of a
  * sellable category for the requested dates — hotel-style auto-assignment.
  * Stable order (by name) keeps assignment deterministic; the double-booking
@@ -70,7 +98,6 @@ export async function resolveUnitForCategory(
   startDate: Date,
   endDate: Date
 ): Promise<{ id: string; instantBook: boolean } | null> {
-  const now = new Date();
   const units = await db.unit.findMany({
     where: { projectId, categoryKey, status: 'live' },
     orderBy: { name: 'asc' },
@@ -78,18 +105,12 @@ export async function resolveUnitForCategory(
   });
 
   for (const unit of units) {
-    const conflictingBooking = await db.booking.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lt: endDate },
-        endDate: { gt: startDate },
-        OR: [
-          { status: { in: ['confirmed', 'checked_in'] } },
-          { status: 'pending_payment', holdExpiresAt: { gt: now } },
-        ],
-      },
-      select: { id: true },
-    });
+    const conflictingBooking = await findBlockingConflict(
+      db,
+      unit.id,
+      startDate,
+      endDate
+    );
     if (conflictingBooking) continue;
 
     const blocked = await db.blockedDate.findFirst({
@@ -133,18 +154,7 @@ export async function createBooking(
 
   // Check for double-booking (race condition). An unpaid hold only blocks
   // while it is still live — an abandoned checkout must not poison the dates.
-  const now0 = new Date();
-  const conflicting = await db.booking.findFirst({
-    where: {
-      unitId,
-      startDate: { lt: endDate },
-      endDate: { gt: startDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: now0 } },
-      ],
-    },
-  });
+  const conflicting = await findBlockingConflict(db, unitId, startDate, endDate);
 
   if (conflicting) {
     const err = new Error('Dates unavailable — booking already exists');
@@ -214,14 +224,52 @@ export async function approveBookingRequest(
     throw new Error(`Cannot approve booking with status ${booking.status}`);
   }
 
+  // A request never blocked the calendar, so re-check the dates now —
+  // another approval or an instant booking may have taken the villa since.
+  const conflict = await findBlockingConflict(
+    db,
+    booking.unitId,
+    booking.startDate,
+    booking.endDate,
+    booking.id
+  );
+  let unitId = booking.unitId;
+  if (conflict) {
+    // A category-booked villa is the operator's choice (LY-6): reassign
+    // within the same category when another villa is free — the tariff is
+    // category-level, so the approved total stays valid. No category, or
+    // none free → refuse; the request stays open for other dates.
+    const unit = await db.unit.findUnique({
+      where: { id: booking.unitId },
+      select: { categoryKey: true },
+    });
+    const replacement = unit?.categoryKey
+      ? await resolveUnitForCategory(
+          db,
+          booking.projectId,
+          unit.categoryKey,
+          booking.startDate,
+          booking.endDate
+        )
+      : null;
+    if (!replacement) {
+      const err = new Error('Dates unavailable — booking already exists');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+    unitId = replacement.id;
+  }
+
   const now = new Date();
   return db.booking.update({
     where: { id: bookingId },
     data: {
+      unitId,
       status: 'pending_payment',
       holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
       requestExpiresAt: null,
     },
+    include: { unit: { select: { name: true } } },
   });
 }
 

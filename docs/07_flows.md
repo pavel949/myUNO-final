@@ -43,6 +43,7 @@ Screen S4. `BookingWidget` recomputes `PriceBreakdown` on every change via the p
 
 ### F-GUEST-4 · Request to book (non-instant)
 Same review screen; CTA creates `Booking(status=requested, requested_expires_at=now+[cfg] booking.request_hours)` — **no payment yet**. Host/ops respond (F-OPS-5). Approve → `pending_payment` + notification N-05 with pay link (hold clock starts); decline or timeout → `declined` + N-06 (auto-decline by the scheduler).
+**Approval re-checks the calendar** (a request never blocks it): if the assigned villa was taken meanwhile, a **category-booked** request is silently reassigned to the next free villa of the same category (same tariff — the approved total stays valid; N-05 carries the final villa); a specific-villa request, or an exhausted category, refuses approval with a conflict error and the request stays open.
 ⚠ Guest tries to pay after expiry → expired state screen, re-request CTA.
 
 ### F-GUEST-5 · Pre-arrival & verification

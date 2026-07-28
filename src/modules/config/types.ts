@@ -139,6 +139,8 @@ export interface OtherConfig {
   'analytics.buyer_signal.repeat_stay_threshold': number;
   'analytics.buyer_signal.long_stay_nights': number;
   'comms.whatsapp_number': string;
+  'notify.prearrival_days_before': number;
+  'notify.review_prompt_days_after': number;
 }
 
 // Catalogs — taxonomies (doc 04 §8)

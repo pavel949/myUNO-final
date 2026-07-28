@@ -282,6 +282,7 @@ export interface BookingFactoryOpts {
   adults?: number;
   children?: number;
   holdExpiresAt?: Date | null;
+  checkedOutAt?: Date | null;
   cancellationPolicySnapshot?: Record<string, unknown>;
 }
 
@@ -304,6 +305,7 @@ export async function createBooking(opts: BookingFactoryOpts) {
       status: opts.status || 'confirmed',
       verificationStatus: opts.verificationStatus || 'not_required',
       ...(opts.holdExpiresAt !== undefined && { holdExpiresAt: opts.holdExpiresAt }),
+      ...(opts.checkedOutAt !== undefined && { checkedOutAt: opts.checkedOutAt }),
       ...(opts.cancellationPolicySnapshot && {
         cancellationPolicySnapshot: opts.cancellationPolicySnapshot as any,
       }),

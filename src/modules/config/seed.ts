@@ -555,6 +555,22 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Telegram channel enabled',
       },
       {
+        key: 'notify.prearrival_days_before',
+        valueType: 'int',
+        defaultValue: 5,
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description: 'Days before check-in the pre-arrival reminder (passports + home space link) is sent',
+      },
+      {
+        key: 'notify.review_prompt_days_after',
+        valueType: 'int',
+        defaultValue: 1,
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description: 'Days after check-out the review prompt (with the green-season offer) is sent',
+      },
+      {
         key: 'comms.whatsapp_number',
         valueType: 'string',
         defaultValue: '',

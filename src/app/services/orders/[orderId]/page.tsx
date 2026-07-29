@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
+import { buildOrderTimeline } from './order-timeline';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,6 +150,14 @@ export default async function ServiceOrderDetailPage({
     cancelled: labels['service-order.detail.cancelled'],
   };
 
+  const timeline = buildOrderTimeline(order.status);
+  const timelineLabel: Record<string, string> = {
+    placed: labels['service-order.detail.placed'],
+    paid: labels['service-order.detail.paid'],
+    accepted: labels['service-order.detail.accepted'],
+    fulfilled: labels['service-order.detail.fulfilled'],
+  };
+
   const isPaymentRequired =
     order.status === 'placed' && order.totalThb > 0;
   const isPaid =
@@ -196,6 +205,35 @@ export default async function ServiceOrderDetailPage({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* SA-4: status journey — placed → paid → accepted → fulfilled */}
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <ol className="flex flex-wrap items-center gap-8">
+            {timeline.steps.map((step, i) => (
+              <li key={step.key} className="flex items-center gap-8">
+                {i > 0 && <span className="w-16 h-px bg-border-line" aria-hidden="true" />}
+                <span
+                  className={`inline-flex items-center gap-6 px-12 py-6 rounded-full text-small font-medium ${
+                    step.current
+                      ? 'bg-brand-andaman text-surface-ivory'
+                      : step.done
+                        ? 'bg-state-success-soft text-state-success'
+                        : 'bg-surface-ivory text-text-secondary'
+                  }`}
+                >
+                  {step.done ? '✓ ' : ''}
+                  {timelineLabel[step.key]}
+                </span>
+              </li>
+            ))}
+          </ol>
+          {timeline.terminal && (
+            <p className="text-small text-text-secondary mt-12">
+              {statusLabel[timeline.terminal] || timeline.terminal}
+              {order.cancellationReason ? ` — ${order.cancellationReason}` : ''}
+            </p>
+          )}
         </div>
 
         {/* Service Details */}

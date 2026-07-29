@@ -58,7 +58,7 @@ S2 composition: hero (project cover, name, `area_label_key`, the endorsed lockup
 | `/app/portfolio`, `/app/units/{id}` | Owner surfaces | S7/S8 |
 | `/app/messages`, `/app/messages/{threadId}` | Inbox/thread | S9 |
 | `/app/tickets`, `/app/tickets/{id}` | Tickets | S10 |
-| `/app/services`, `/app/services/{id}`, `/app/orders` | Marketplace + orders. *(SA-1, as built at `/services`: super-app facade — category icon grid from `catalog.service_categories` with tap-to-filter + `?category` deep link, and a stay-context banner when entered from the home space with `bookingId`. SA-2: the service page carries the order wizard — refine → place → pay (card / cash-on-fulfilment) → confirmation banner on the order detail; quote-priced services route to the concierge.)* | S11 |
+| `/app/services`, `/app/services/{id}`, `/app/orders` | Marketplace + orders. *(SA-1, as built at `/services`: super-app facade — category icon grid from `catalog.service_categories` with tap-to-filter + `?category` deep link, and a stay-context banner when entered from the home space with `bookingId`. SA-2: the service page carries the order wizard — refine → place → pay (card / cash-on-fulfilment) → confirmation banner on the order detail; quote-priced services route to the concierge. SA-4: the order detail shows the status journey placed → paid → accepted → fulfilled, terminal branches called out.)* | S11 |
 | `/app/ops/*` | Staff board: arrivals, departures, tm30, tickets, calendar, costs, mobilization | S12 |
 | `/app/provider/*` | Provider portal: orders, services, remittances | S13 |
 | `/app/mc/*` | MC portal | F-MC-2 |

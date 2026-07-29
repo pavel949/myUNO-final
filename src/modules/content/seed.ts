@@ -1996,6 +1996,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.category.massage_spa', namespace: 'services', description: 'Service category: massage & spa', en: 'Massage & spa', ru: 'Массаж и СПА', status: NR },
   { key: 'services.category.repairs', namespace: 'services', description: 'Service category: repairs & handyman', en: 'Repairs', ru: 'Ремонт', status: NR },
   { key: 'services.category.emergency_medical', namespace: 'services', description: 'Service category: emergency medical assistance', en: 'Emergency medical', ru: 'Экстренная медицина', status: NR },
+
+  // Super-app facade (SA-1): category grid, filter, stay-context banner
+  { key: 'services.browse.categories_title', namespace: 'services', description: 'Services facade: category grid heading', en: 'What do you need?', ru: 'Что вам нужно?', zh: '您需要什么？', status: NR },
+  { key: 'services.browse.show_all', namespace: 'services', description: 'Services facade: clear category filter', en: 'Show all services', ru: 'Показать все услуги', zh: '显示全部服务', status: NR },
+  { key: 'services.browse.category_empty', namespace: 'services', description: 'Services facade: empty category state', en: 'Nothing in this category yet — try another one.', ru: 'В этой категории пока пусто — загляните в другую.', zh: '该类别暂无服务，请尝试其他类别。', status: NR },
+  { key: 'services.browse.stay_banner', namespace: 'services', description: 'Services facade: stay-context banner ({unit}, {project})', en: 'Ordering for your stay at {unit}, {project}', ru: 'Заказ к вашему проживанию — {unit}, {project}', zh: '为您在 {project} {unit} 的住宿下单', status: NR },
+  { key: 'services.browse.stay_banner_link', namespace: 'services', description: 'Services facade: back to home space link', en: 'Back to your home space', ru: 'Вернуться в домашнее пространство', zh: '返回您的住宿空间', status: NR },
 ];
 
 const HOME_KEYS: KeyDef[] = [

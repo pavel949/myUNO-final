@@ -70,6 +70,7 @@ Display **Outfit**, body **Manrope** (self-hosted, `font-display: swap`; both co
 - **Elevation:** flat-by-default. `shadow.card` `0 1px 2px rgba(22,33,31,.06)` + 1px `border.line`; `shadow.float` `0 8px 24px rgba(14,79,75,.16)` for modals/popovers only. Depth comes from warm borders, not heavy shadows.
 - **Motion:** 150ms ease-out micro (hover, press), 250ms ease-in-out structural (modals, drawers, accordion). Skeletons pulse at 1.2s. Nothing bounces; calm confidence.
 - **Iconography:** one outline icon set (Lucide), 1.5px stroke, 20px default, `text.stone` at rest / `brand.andaman` active. The ring-and-point mark is reserved for brand moments (logo, favicon, loading) — never used as a generic icon.
+  - **Service-category icons (SA-1, as built):** `ServiceCategoryIcon` (`src/components/ServiceCategoryIcon.tsx`) — an in-house 24px outline set (1.6px stroke, `currentColor`) keyed by the icon names in `catalog.service_categories` (car, broom, chef, map, ship, flower, droplet, shirt, children, spa, wrench, plus). Unknown names render a generic fallback so admin-added categories never break the grid. Drives the super-app category tiles on `/services`.
 
 ### 2.4 The wordmark & mark in product
 

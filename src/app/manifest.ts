@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Serviced living in Phuket — stays, services, and your home space.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#0f4c5c',
+    background_color: '#F5EFE4',
+    theme_color: '#0E4F4B',
     icons: [
       {
         src: '/icon.svg',

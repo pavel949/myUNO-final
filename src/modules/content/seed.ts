@@ -2003,6 +2003,28 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.browse.category_empty', namespace: 'services', description: 'Services facade: empty category state', en: 'Nothing in this category yet — try another one.', ru: 'В этой категории пока пусто — загляните в другую.', zh: '该类别暂无服务，请尝试其他类别。', status: NR },
   { key: 'services.browse.stay_banner', namespace: 'services', description: 'Services facade: stay-context banner ({unit}, {project})', en: 'Ordering for your stay at {unit}, {project}', ru: 'Заказ к вашему проживанию — {unit}, {project}', zh: '为您在 {project} {unit} 的住宿下单', status: NR },
   { key: 'services.browse.stay_banner_link', namespace: 'services', description: 'Services facade: back to home space link', en: 'Back to your home space', ru: 'Вернуться в домашнее пространство', zh: '返回您的住宿空间', status: NR },
+
+  // Order wizard (SA-2): refine → place → pay → confirm on the service page
+  { key: 'services.detail.back', namespace: 'services', description: 'Service page: back to catalog link', en: 'Back to services', ru: 'Назад к услугам', zh: '返回服务列表', status: NR },
+  { key: 'services.wizard.title', namespace: 'services', description: 'Wizard: order card heading', en: 'Your order', ru: 'Ваш заказ', zh: '您的订单', status: NR },
+  { key: 'services.wizard.when', namespace: 'services', description: 'Wizard: date/time field', en: 'When', ru: 'Когда', zh: '时间', status: NR },
+  { key: 'services.wizard.quantity', namespace: 'services', description: 'Wizard: quantity field', en: 'Quantity', ru: 'Количество', zh: '数量', status: NR },
+  { key: 'services.wizard.note', namespace: 'services', description: 'Wizard: note field', en: 'Note to provider (optional)', ru: 'Пожелание исполнителю (необязательно)', zh: '给服务商的备注（可选）', status: NR },
+  { key: 'services.wizard.total_preview', namespace: 'services', description: 'Wizard: total row label (server recomputes)', en: 'Total', ru: 'Итого', zh: '合计', status: NR },
+  { key: 'services.wizard.place', namespace: 'services', description: 'Wizard: place order CTA with total ({total})', en: 'Order — ฿{total}', ru: 'Заказать — ฿{total}', zh: '下单 — ฿{total}', status: NR },
+  { key: 'services.wizard.place_no_total', namespace: 'services', description: 'Wizard: place order CTA without total', en: 'Place order', ru: 'Оформить заказ', zh: '提交订单', status: NR },
+  { key: 'services.wizard.pay_title', namespace: 'services', description: 'Wizard: payment step heading', en: 'Order placed — choose how to pay', ru: 'Заказ оформлен — выберите способ оплаты', zh: '订单已提交 — 请选择支付方式', status: NR },
+  { key: 'services.wizard.pay_subtitle', namespace: 'services', description: 'Wizard: payment step subtitle', en: 'Pay now by card, or in cash when the service is delivered.', ru: 'Оплатите картой сейчас или наличными при выполнении услуги.', zh: '现在用银行卡支付，或在服务完成时用现金支付。', status: NR },
+  { key: 'services.wizard.pay_card', namespace: 'services', description: 'Wizard: pay by card CTA', en: 'Pay by card', ru: 'Оплатить картой', zh: '银行卡支付', status: NR },
+  { key: 'services.wizard.pay_cash', namespace: 'services', description: 'Wizard: cash on fulfilment CTA', en: 'Cash on fulfilment', ru: 'Наличными при выполнении', zh: '服务时现金支付', status: NR },
+  { key: 'services.wizard.pay_cash_note', namespace: 'services', description: 'Wizard: cash note', en: 'Cash payments are recorded by our staff with a receipt number.', ru: 'Наличную оплату фиксирует наш сотрудник с номером чека.', zh: '现金付款由我们的员工登记并提供收据编号。', status: NR },
+  { key: 'services.wizard.quote_title', namespace: 'services', description: 'Wizard: quote-priced heading', en: 'Priced individually', ru: 'Цена по запросу', zh: '单独报价', status: NR },
+  { key: 'services.wizard.quote_body', namespace: 'services', description: 'Wizard: quote-priced explainer', en: 'This service is quoted for your dates and party — the concierge will confirm the price with you directly.', ru: 'Эта услуга рассчитывается под ваши даты и состав — консьерж согласует цену с вами напрямую.', zh: '此服务按您的日期和人数单独报价 — 礼宾部将直接与您确认价格。', status: NR },
+  { key: 'services.wizard.quote_whatsapp', namespace: 'services', description: 'Wizard: quote WhatsApp CTA', en: 'Ask the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过 WhatsApp 咨询礼宾部', status: NR },
+  { key: 'services.wizard.quote_messages', namespace: 'services', description: 'Wizard: quote in-app messages CTA', en: 'Message us', ru: 'Написать нам', zh: '给我们留言', status: NR },
+  { key: 'services.wizard.error_generic', namespace: 'services', description: 'Wizard: generic error', en: 'Could not place the order. Please try again.', ru: 'Не удалось оформить заказ. Попробуйте ещё раз.', zh: '无法提交订单，请重试。', status: NR },
+  { key: 'service-order.detail.confirmed_paid', namespace: 'service-order', description: 'Order confirmation banner: paid by card', en: 'Payment received — your order is confirmed. The provider will be in touch.', ru: 'Оплата получена — заказ подтверждён. Исполнитель свяжется с вами.', zh: '已收到付款 — 订单已确认，服务商将与您联系。', status: NR },
+  { key: 'service-order.detail.confirmed_cash', namespace: 'service-order', description: 'Order confirmation banner: cash on fulfilment', en: 'Order placed — pay in cash when the service is delivered. Our staff will record the receipt.', ru: 'Заказ оформлен — оплатите наличными при выполнении услуги. Наш сотрудник зафиксирует чек.', zh: '订单已提交 — 请在服务完成时以现金支付，我们的员工会登记收据。', status: NR },
 ];
 
 const HOME_KEYS: KeyDef[] = [

@@ -150,6 +150,7 @@ Requests inbox: party, dates, guest history chip, breakdown → Approve / Declin
 ### F-SVC-2 · Order & pay
 `OrderSlotPicker` (honors `advance_notice_hours`) + quantity + unit/address context (auto from role: guest → their stay's unit; owner → their unit picker; MC → common area free-text) + note. Review → breakdown (base × qty, take-rate embedded — orderer sees the total) → pay via seam → `ServiceOrder(paid)` → provider N-26.
 `quote` model: request → provider quotes in-thread → orderer accepts → pay against the quote.
+**As built (SA-2, super-app rail):** the service page is the single ordering surface — details → when/quantity/note with a previewed total (server recomputes, doc 10) → place → payment step **immediately** (card → checkout seam; or cash-on-fulfilment) → the order's confirmation view (`/services/orders/{id}` with a confirmation banner). Quote-priced services skip the form and hand the guest to the concierge (project WhatsApp from `comms.whatsapp_number`, else in-app messages) — the in-thread quote→accept→pay loop stays the next step (SA-3).
 ⚠ Payment fails → order `expired` after hold window, slot freed. ⚠ Slot taken meanwhile → re-pick screen, nothing charged.
 
 ### F-SVC-3 · Modify / cancel order

@@ -1,6 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import PayOrderButton from './pay-order-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,8 +62,10 @@ interface ServiceOrderDetail {
 
 export default async function ServiceOrderDetailPage({
   params,
+  searchParams,
 }: {
   params: { orderId: string };
+  searchParams: { paid?: string; placed?: string };
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -71,10 +76,13 @@ export default async function ServiceOrderDetailPage({
 
   let order: ServiceOrderDetail | null = null;
   try {
+    // Forward the caller's cookies — the detail API authenticates with them;
+    // a bare server-side fetch would always 401 and soft-404 this page.
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/service-orders/${orderId}/detail`,
       {
         cache: 'no-store',
+        headers: { cookie: cookies().toString() },
       }
     );
     if (res.ok) {
@@ -117,7 +125,21 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.cancellation_reason': 'Cancellation Reason',
     'service-order.detail.cancel_order': 'Cancel Order',
     'service-order.detail.confirm_cancellation': 'Confirm Cancellation',
+    'service-order.detail.confirmed_paid': 'Payment received — your order is confirmed. The provider will be in touch.',
+    'service-order.detail.confirmed_cash': 'Order placed — pay in cash when the service is delivered. Our staff will record the receipt.',
+    'services.detail.back': 'Back to services',
+    'services.order.pay': 'Pay',
+    'services.wizard.error_generic': 'Could not place the order. Please try again.',
   });
+
+  // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
+  // cash-on-fulfilment choice (?placed=cash) shows the confirmation banner.
+  const confirmationNote =
+    searchParams.paid === '1'
+      ? labels['service-order.detail.confirmed_paid']
+      : searchParams.placed === 'cash'
+        ? labels['service-order.detail.confirmed_cash']
+        : null;
 
   const statusLabel: Record<string, string> = {
     placed: labels['service-order.detail.placed'],
@@ -136,6 +158,11 @@ export default async function ServiceOrderDetailPage({
   return (
     <main className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
+        {confirmationNote && (
+          <div className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-24">
+            <p className="text-body text-state-success">{confirmationNote}</p>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-24">
           <h1 className="text-heading-1 font-bold text-text-ink mb-8">
@@ -383,17 +410,19 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {/* Actions */}
-        <div className="mt-32 flex gap-12">
-          <button
-            onClick={() => window.history.back()}
+        <div className="mt-32 flex items-start gap-12">
+          <Link
+            href="/services"
             className="px-24 py-12 border border-border-line rounded-lg text-body font-semibold text-text-ink hover:bg-surface-paper transition-colors"
           >
-            Go back
-          </button>
+            ← {labels['services.detail.back']}
+          </Link>
           {isPaymentRequired && (
-            <button className="flex-1 px-24 py-12 bg-brand-deep text-on-dark-text rounded-lg text-body font-semibold hover:opacity-90 transition-opacity">
-              Complete Payment
-            </button>
+            <PayOrderButton
+              orderId={order.id}
+              label={labels['services.order.pay']}
+              errorLabel={labels['services.wizard.error_generic']}
+            />
           )}
         </div>
       </div>

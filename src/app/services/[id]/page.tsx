@@ -1,5 +1,9 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { prisma } from '@/lib/prisma';
+import { getConfig } from '@/modules/config';
+import OrderWizard from './order-wizard';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +27,15 @@ interface ServiceDetail {
   };
 }
 
-export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
+export default async function ServiceDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { bookingId?: string };
+}) {
   const { id } = params;
+  const bookingId = searchParams.bookingId || null;
 
   let service: ServiceDetail | null = null;
   try {
@@ -58,7 +69,43 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     'services.detail.advance_notice_none': 'None',
     'services.detail.about_provider': 'About the provider',
     'services.detail.order': 'Order this service',
+    'services.detail.back': 'Back to services',
+    'services.wizard.title': 'Your order',
+    'services.wizard.when': 'When',
+    'services.wizard.quantity': 'Quantity',
+    'services.wizard.note': 'Note to provider (optional)',
+    'services.wizard.total_preview': 'Total',
+    'services.wizard.place': 'Order — ฿{total}',
+    'services.wizard.place_no_total': 'Place order',
+    'services.wizard.pay_title': 'Order placed — choose how to pay',
+    'services.wizard.pay_subtitle': 'Pay now by card, or in cash when the service is delivered.',
+    'services.wizard.pay_card': 'Pay by card',
+    'services.wizard.pay_cash': 'Cash on fulfilment',
+    'services.wizard.pay_cash_note': 'Cash payments are recorded by our staff with a receipt number.',
+    'services.wizard.quote_title': 'Priced individually',
+    'services.wizard.quote_body': 'This service is quoted for your dates and party — the concierge will confirm the price with you directly.',
+    'services.wizard.quote_whatsapp': 'Ask the concierge on WhatsApp',
+    'services.wizard.quote_messages': 'Message us',
+    'services.wizard.error_generic': 'Could not place the order. Please try again.',
   });
+
+  // Quote CTA: the concierge WhatsApp is a project-scoped parameter — when
+  // the guest arrives from a stay, resolve it through their booking's project.
+  let whatsappNumber: string | null = null;
+  try {
+    let projectId: string | undefined;
+    if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { projectId: true },
+      });
+      projectId = booking?.projectId ?? undefined;
+    }
+    const value = await getConfig(prisma, 'comms.whatsapp_number', projectId ? { projectId } : undefined);
+    whatsappNumber = typeof value === 'string' && value.trim() ? value.trim() : null;
+  } catch {
+    whatsappNumber = null;
+  }
 
   const priceModelLabel: Record<string, string> = {
     fixed: labels['services.detail.fixed'],
@@ -165,19 +212,27 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mt-32 flex gap-12">
-          <button
-            onClick={() => window.history.back()}
-            className="px-24 py-12 border border-border-line rounded-lg text-body font-semibold text-text-ink hover:bg-surface-paper transition-colors"
-          >
-            Go back
-          </button>
-          <button
-            className="flex-1 px-24 py-12 bg-brand-deep text-on-dark-text rounded-lg text-body font-semibold hover:opacity-90 transition-opacity"
-          >
-            {labels['services.detail.order']}
-          </button>
+        {/* SA-2: the ordering surface — refine → place → pay → confirm */}
+        <div className="mt-32">
+          <OrderWizard
+            service={{
+              id: service.id,
+              title: service.title,
+              priceModel: service.priceModel,
+              basePriceThb: service.basePriceThb,
+            }}
+            bookingId={bookingId}
+            whatsappNumber={whatsappNumber}
+            labels={labels}
+          />
+          <div className="mt-16">
+            <Link
+              href={bookingId ? `/services?bookingId=${bookingId}` : '/services'}
+              className="text-small font-semibold text-brand-andaman hover:underline"
+            >
+              ← {labels['services.detail.back']}
+            </Link>
+          </div>
         </div>
       </div>
     </main>

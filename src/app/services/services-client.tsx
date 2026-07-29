@@ -323,7 +323,12 @@ export default function ServicesClient({
                 <div className="p-16">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-subtitle font-semibold text-text-ink">
-                      {service.title}
+                      <Link
+                        href={`/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`}
+                        className="hover:text-brand-andaman hover:underline"
+                      >
+                        {service.title}
+                      </Link>
                     </h2>
                     {service.providerVetted && (
                       <span className="text-small text-state-success font-semibold">

@@ -79,12 +79,12 @@ export default function CheckoutClient({
       if (result.confirmed || result.payment?.status === 'succeeded') {
         setSuccess(true);
         const bookingId = result.payment?.bookingId || session?.booking?.id;
-        const isServiceOrder = Boolean(
-          result.payment?.serviceOrderId || session?.serviceOrder?.id
-        );
+        const serviceOrderId =
+          result.payment?.serviceOrderId || session?.serviceOrder?.id;
         setTimeout(() => {
-          if (isServiceOrder) {
-            router.push('/services');
+          if (serviceOrderId) {
+            // SA-2: land on the order's confirmation view, not the catalog
+            router.push(`/services/orders/${serviceOrderId}?paid=1`);
           } else {
             router.push(bookingId ? `/trips/${bookingId}` : '/trips');
           }

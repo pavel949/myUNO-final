@@ -404,3 +404,61 @@ export async function refund(
 
   return refund;
 }
+
+/**
+ * Mark a payment as failed and track the event.
+ */
+export async function markPaymentFailed(
+  db: PrismaClient,
+  paymentId: string,
+  failureReason?: string
+) {
+  const payment = await db.payment.findUnique({
+    where: { id: paymentId },
+  });
+  if (!payment) {
+    throw new Error(`Payment ${paymentId} not found`);
+  }
+
+  const failed = await db.payment.update({
+    where: { id: paymentId },
+    data: {
+      status: 'failed',
+    },
+  });
+
+  // Track analytics event for booking payment failures
+  if (failed.bookingId) {
+    const booking = await db.booking.findUnique({
+      where: { id: failed.bookingId },
+      select: {
+        unitId: true,
+        projectId: true,
+        guestIdentityId: true,
+        startDate: true,
+        endDate: true,
+        totalThb: true,
+      },
+    });
+
+    if (booking) {
+      const nights = Math.ceil(
+        (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      await track(db, 'stay_payment_failed', {
+        bookingId: failed.bookingId,
+        unitId: booking.unitId,
+        projectId: booking.projectId,
+        identityId: booking.guestIdentityId,
+        paymentId: failed.id,
+        amountThb: failed.amountThb,
+        method: failed.method,
+        provider: failed.provider,
+        failureReason: failureReason || 'unknown',
+        nights,
+      }).catch(() => null);
+    }
+  }
+
+  return failed;
+}

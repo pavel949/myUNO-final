@@ -12,6 +12,8 @@ export {
   checkInBooking,
   checkOutBooking,
   completeBooking,
+  requestExtension,
+  markNoShow,
   expireHolds,
   autoDeclineRequests,
   getBooking,

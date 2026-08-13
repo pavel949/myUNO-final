@@ -201,7 +201,20 @@ export async function createBooking(
     bookingType,
     nights,
     totalThb,
-  });
+  }).catch(() => null);
+
+  // Track request event if this is a request-to-book
+  if (!instantBook) {
+    await track(db, 'stay_booking_requested', {
+      bookingId: booking.id,
+      unitId,
+      projectId,
+      identityId: guestIdentityId,
+      channel,
+      nights,
+      totalThb,
+    }).catch(() => null);
+  }
 
   return booking;
 }
@@ -341,7 +354,7 @@ export async function confirmBooking(
     channel: updated.channel,
     nights,
     totalThb: updated.totalThb,
-  });
+  }).catch(() => null);
 
   return updated;
 }
@@ -391,7 +404,7 @@ export async function cancelBooking(
     nights,
     reason,
     refundThb: refundAmountThb,
-  });
+  }).catch(() => null);
 
   return cancelled;
 }
@@ -426,7 +439,7 @@ export async function checkInBooking(
     unitId: checkedIn.unitId,
     projectId: checkedIn.projectId,
     identityId: checkedIn.guestIdentityId,
-  });
+  }).catch(() => null);
 
   return checkedIn;
 }
@@ -461,7 +474,7 @@ export async function checkOutBooking(
     unitId: checkedOut.unitId,
     projectId: checkedOut.projectId,
     identityId: checkedOut.guestIdentityId,
-  });
+  }).catch(() => null);
 
   return checkedOut;
 }
@@ -482,18 +495,113 @@ export async function completeBooking(
     throw new Error(`Cannot complete booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const completed = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'completed',
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (completed.endDate.getTime() - completed.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_completed', {
+    bookingId: completed.id,
+    unitId: completed.unitId,
+    projectId: completed.projectId,
+    identityId: completed.guestIdentityId,
+    nights,
+  }).catch(() => null);
+
+  return completed;
+}
+
+/**
+ * Request a booking extension (extend endDate).
+ */
+export async function requestExtension(
+  db: PrismaClient,
+  bookingId: string,
+  newEndDate: Date
+) {
+  const booking = await db.booking.findUnique({ where: { id: bookingId } });
+  if (!booking) {
+    throw new Error(`Booking ${bookingId} not found`);
+  }
+
+  if (booking.status !== 'checked_in') {
+    throw new Error(`Cannot request extension for booking with status ${booking.status}`);
+  }
+
+  if (newEndDate <= booking.endDate) {
+    throw new Error('New end date must be after current end date');
+  }
+
+  const additionalNights = Math.ceil(
+    (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Track analytics event
+  await track(db, 'stay_extension_requested', {
+    bookingId,
+    unitId: booking.unitId,
+    projectId: booking.projectId,
+    identityId: booking.guestIdentityId,
+    addedNights: additionalNights,
+  }).catch(() => null);
+
+  // For now, just return the request info. Actual extension logic would follow.
+  return {
+    bookingId,
+    currentEndDate: booking.endDate,
+    newEndDate,
+    additionalNights,
+  };
+}
+
+/**
+ * Mark a booking as no-show (tracking event; status remains checked_out until resolved).
+ */
+export async function markNoShow(
+  db: PrismaClient,
+  bookingId: string
+) {
+  const booking = await db.booking.findUnique({ where: { id: bookingId } });
+  if (!booking) {
+    throw new Error(`Booking ${bookingId} not found`);
+  }
+
+  if (booking.status !== 'checked_out' && booking.status !== 'completed') {
+    throw new Error(`Cannot mark no-show for booking with status ${booking.status}`);
+  }
+
+  // Track analytics event (doc 13: no-show is a behavioral marker, not a status)
+  const nights = Math.ceil(
+    (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_no_show', {
+    bookingId: booking.id,
+    unitId: booking.unitId,
+    projectId: booking.projectId,
+    identityId: booking.guestIdentityId,
+    nights,
+  }).catch(() => null);
+
+  return booking;
 }
 
 /**
  * Expire pending_payment holds (scheduler job).
  */
 export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
+  const expiredBookings = await db.booking.findMany({
+    where: {
+      status: 'pending_payment',
+      holdExpiresAt: { lte: now },
+    },
+  });
+
   const expired = await db.booking.updateMany({
     where: {
       status: 'pending_payment',
@@ -504,6 +612,21 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
       holdExpiresAt: null,
     },
   });
+
+  // Track analytics events for each expired booking
+  for (const booking of expiredBookings) {
+    const nights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(db, 'stay_hold_expired', {
+      bookingId: booking.id,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      identityId: booking.guestIdentityId,
+      nights,
+      totalThb: booking.totalThb,
+    }).catch(() => null);
+  }
 
   return expired.count;
 }

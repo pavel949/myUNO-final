@@ -14,19 +14,19 @@ interface StatusChangeRequest {
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { unitId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const currentUser = await getCurrentUser()
 
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'founder')) {
+    if (!currentUser || !currentUser.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin access required.' },
         { status: 401 }
       )
     }
 
-    const unitId = params.unitId
+    const unitId = params.id
     const body: StatusChangeRequest = await req.json()
 
     if (!body.status || !body.reason) {
@@ -62,9 +62,9 @@ export async function PUT(
     const updatedUnit = await prismadb.unit.update({
       where: { id: unitId },
       data: {
-        asset_status: body.status,
-        asset_status_changed_at: new Date(),
-        asset_status_reason: body.reason,
+        assetStatus: body.status,
+        assetStatusChangedAt: new Date(),
+        assetStatusReason: body.reason,
       },
     })
 
@@ -72,7 +72,7 @@ export async function PUT(
       success: true,
       unit: updatedUnit,
       message: `Asset status changed to ${body.status}`,
-      previousStatus: unit.asset_status || 'unknown',
+      previousStatus: unit.assetStatus || 'unknown',
     })
   } catch (error) {
     console.error('[UNIT STATUS]', error)

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-imports */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { POST } from '../[profileId]/transition/route'
 import prismadb from '@/app/libs/prismadb'

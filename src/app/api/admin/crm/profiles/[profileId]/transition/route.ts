@@ -30,7 +30,7 @@ export async function POST(
   try {
     const currentUser = await getCurrentUser()
 
-    if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'founder') {
+    if (!currentUser || !currentUser.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin access required.' },
         { status: 401 }
@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Fetch current profile
-    const profile = await prismadb.crm_profile.findUnique({
+    const profile = await prismadb.crmProfile.findUnique({
       where: { id: profileId },
     })
 
@@ -59,7 +59,7 @@ export async function POST(
       )
     }
 
-    const currentStage = profile.lifecycle_stage as LifecycleStage
+    const currentStage = profile.lifecycleStage as LifecycleStage
 
     // Validate transition
     if (!VALID_TRANSITIONS[currentStage]?.includes(body.to_stage)) {
@@ -73,7 +73,7 @@ export async function POST(
     }
 
     // Require account owner for certain transitions
-    if ((body.to_stage === 'qualified_buyer' || body.to_stage === 'owner' || body.to_stage === 'managed_owner') && !currentUser.id) {
+    if ((body.to_stage === 'qualified_buyer' || body.to_stage === 'owner' || body.to_stage === 'managed_owner') && !currentUser.identityId) {
       return NextResponse.json(
         { error: 'Account owner required for this transition' },
         { status: 400 }
@@ -81,30 +81,29 @@ export async function POST(
     }
 
     // Update profile with new stage
-    const updatedProfile = await prismadb.crm_profile.update({
+    const updatedProfile = await prismadb.crmProfile.update({
       where: { id: profileId },
       data: {
-        lifecycle_stage: body.to_stage,
-        lifecycle_changed_at: new Date(),
-        lifecycle_change_reason: body.reason,
-        lifecycle_change_approved_by_identity_id: currentUser.id,
-        account_owner_identity_id:
+        lifecycleStage: body.to_stage,
+        lifecycleChangedAt: new Date(),
+        lifecycleChangeReason: body.reason,
+        lifecycleChangeApprovedByIdentityId: currentUser.identityId,
+        accountOwnerIdentityId:
           (body.to_stage === 'qualified_buyer' || body.to_stage === 'owner' || body.to_stage === 'managed_owner')
-            ? currentUser.id
-            : profile.account_owner_identity_id,
+            ? currentUser.identityId
+            : profile.accountOwnerIdentityId,
       },
     })
 
     // Create audit log entry
-    // @ts-ignore - TypeScript doesn't know about the new table yet
-    await prismadb.crm_lifecycle_transition.create({
+    await prismadb.crmLifecycleTransition.create({
       data: {
-        profile_id: profileId,
-        from_stage: currentStage,
-        to_stage: body.to_stage,
+        profileId,
+        fromStage: currentStage,
+        toStage: body.to_stage,
         reason: body.reason,
-        approved_by_identity_id: currentUser.id,
-        notes: body.notes || {},
+        approvedByIdentityId: currentUser.identityId,
+        notes: (body.notes || {}) as any,
       },
     })
 

@@ -51,6 +51,13 @@ enum UnitStatus {
   offboarded
 }
 
+enum UnitAssetStatus {
+  managed
+  verified_partner
+  one_off_sourced
+  suspended
+}
+
 enum UnitEngagementType {
   direct_managed
   via_management_company
@@ -216,6 +223,18 @@ enum OwnerStatementStatus {
   draft
   published
   superseded
+  pending_owner_review
+  signed_off
+  distributed
+}
+
+enum LineItemCategory {
+  booking_revenue
+  refund
+  service_fee
+  operating_expense
+  tax
+  performance_fee
 }
 
 enum PayoutPayeeType {
@@ -621,6 +640,10 @@ model Identity {
   analyticsEventsAsActor AnalyticsEvent[] @relation("analyticsEventActor")
   buyerSignals BuyerSignal[]
   buyerSignalsReviewed BuyerSignal[] @relation("buyerSignalReviewer")
+  crmProfile CrmProfile?
+  crmProfilesAsAccountOwner CrmProfile[] @relation("crmProfileAccountOwner")
+  crmProfilesAsApprover CrmProfile[] @relation("crmProfileLifecycleApprover")
+  crmTransitionsApproved CrmLifecycleTransition[]
 
   @@map("identity")
 }
@@ -719,6 +742,9 @@ model Unit {
   instantBook Boolean @default(true) @map("instant_book")
   cancellationPolicyKey String? @map("cancellation_policy_key")
   status UnitStatus @default(draft)
+  assetStatus UnitAssetStatus @default(managed) @map("asset_status")
+  assetStatusChangedAt DateTime? @map("asset_status_changed_at")
+  assetStatusReason String? @map("asset_status_reason")
   permittedUseConfirmedAt DateTime? @map("permitted_use_confirmed_at")
   coverMediaId String? @map("cover_media_id")
 
@@ -834,6 +860,7 @@ model Booking {
   conditionReports ConditionReport[]
   depositClaims DepositClaim[]
   analyticsEvents AnalyticsEvent[]
+  statementLineItems StatementLineItem[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -993,13 +1020,31 @@ model OwnerStatement {
   engagementId String @map("engagement_id")
   periodStart DateTime @map("period_start")
   periodEnd DateTime @map("period_end")
+
+  // Payout calculation fields (existing)
   grossRevenueTh Int @map("gross_revenue_thb")
   totalCostsTh Int @map("total_costs_thb")
   noiTh Int @map("noi_thb")
   ownerShareTh Int @map("owner_share_thb")
   estateShareTh Int @map("estate_share_thb")
   capApplied Boolean @default(false) @map("cap_applied")
+
+  // Transparency fields (Corporate Bible)
+  grossBookingsAmountThb Int? @map("gross_bookings_amount_thb")
+  guestPaymentsReceivedThb Int? @map("guest_payments_received_thb")
+  serviceFeesAmountThb Int? @map("service_fees_amount_thb")
+  operatingExpensesAmountThb Int? @map("operating_expenses_amount_thb")
+  taxesAmountThb Int? @map("taxes_amount_thb")
+  adjustedNoiThb Int? @map("adjusted_noi_thb")
+  distributableCashThb Int? @map("distributable_cash_thb")
+  performanceFeeAmountThb Int? @map("performance_fee_amount_thb")
+  performanceFeeBasisText String? @map("performance_fee_basis_text")
+
+  // Review & sign-off
   status OwnerStatementStatus @default(draft)
+  signedOffByOwnerAt DateTime? @map("signed_off_by_owner_at")
+  signedOffByOperatorAt DateTime? @map("signed_off_by_operator_at")
+  approvedAt DateTime? @map("approved_at")
   publishedAt DateTime? @map("published_at")
   publishedByIdentityId String? @map("published_by_identity_id")
   pdfMediaId String? @map("pdf_media_id")
@@ -1010,6 +1055,7 @@ model OwnerStatement {
   engagement UnitEngagement @relation(fields: [engagementId], references: [id])
   publishedBy Identity? @relation(name: "statementPublishedBy", fields: [publishedByIdentityId], references: [id])
   pdfMedia MediaAsset? @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
+  lineItems StatementLineItem[]
   ledgerEntries LedgerEntry[]
   payouts Payout[]
 
@@ -1017,6 +1063,27 @@ model OwnerStatement {
   @@index([ownerIdentityId, status])
   @@index([status, publishedAt])
   @@map("owner_statement")
+}
+
+model StatementLineItem {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  statementId String @map("statement_id")
+  category LineItemCategory
+  description String
+  amountThb Int @map("amount_thb")
+  bookingId String? @map("booking_id")
+  supportingDocumentId String? @map("supporting_document_id")
+
+  // Relations
+  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([statementId, category])
+  @@index([bookingId])
+  @@map("statement_line_item")
 }
 
 model Payout {
@@ -1966,5 +2033,55 @@ model IntegrationAccount {
   @@index([scopeType, unitId])
   @@index([status, lastSyncAt])
   @@map("integration_account")
+}
+
+// --- CRM and Customer Lifecycle ---
+
+model CrmProfile {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String @unique @map("identity_id")
+  lifecycleStage String @map("lifecycle_stage")
+  leadScore Int @default(0) @map("lead_score")
+  accountOwnerIdentityId String? @map("account_owner_identity_id")
+  nextStepAt DateTime? @map("next_step_at")
+  lifecycleChangedAt DateTime? @map("lifecycle_changed_at")
+  lifecycleChangeReason String? @map("lifecycle_change_reason")
+  lifecycleChangeApprovedByIdentityId String? @map("lifecycle_change_approved_by_identity_id")
+
+  // Relations
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  accountOwner Identity? @relation(name: "crmProfileAccountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
+  lifecycleChangeApprovedBy Identity? @relation(name: "crmProfileLifecycleApprover", fields: [lifecycleChangeApprovedByIdentityId], references: [id], onDelete: SetNull)
+  transitions CrmLifecycleTransition[]
+
+  @@index([lifecycleStage])
+  @@index([accountOwnerIdentityId, lifecycleStage])
+  @@index([nextStepAt, lifecycleStage])
+  @@index([lifecycleChangedAt])
+  @@map("crm_profile")
+}
+
+model CrmLifecycleTransition {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profileId String @map("profile_id")
+  fromStage String @map("from_stage")
+  toStage String @map("to_stage")
+  reason String
+  approvedByIdentityId String? @map("approved_by_identity_id")
+  notes Json @default("{}") @db.JsonB
+
+  // Relations
+  profile CrmProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  approvedBy Identity? @relation(fields: [approvedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, createdAt])
+  @@index([approvedByIdentityId])
+  @@map("crm_lifecycle_transition")
 }
 

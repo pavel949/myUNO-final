@@ -1,5 +1,6 @@
+/* eslint-disable no-restricted-imports */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { PUT } from '../[unitId]/status/route'
+import { PUT } from '../[id]/status/route'
 import prismadb from '@/app/libs/prismadb'
 import { NextRequest } from 'next/server'
 
@@ -65,7 +66,7 @@ describe('Unit Asset Status API', () => {
       }),
     })
 
-    const res = await PUT(req, { params: { unitId: testUnit.id } })
+    const res = await PUT(req, { params: { id: testUnit.id } })
     expect(res.status).toBe(400)
   })
 
@@ -78,7 +79,7 @@ describe('Unit Asset Status API', () => {
       }),
     })
 
-    const res = await PUT(req, { params: { unitId: testUnit.id } })
+    const res = await PUT(req, { params: { id: testUnit.id } })
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toContain('Invalid status')
@@ -93,7 +94,7 @@ describe('Unit Asset Status API', () => {
       }),
     })
 
-    const res = await PUT(req, { params: { unitId: testUnit.id } })
+    const res = await PUT(req, { params: { id: testUnit.id } })
     expect(res.status).toBe(200)
 
     const data = await res.json()
@@ -110,7 +111,7 @@ describe('Unit Asset Status API', () => {
       }),
     })
 
-    const res = await PUT(req, { params: { unitId: testUnit.id } })
+    const res = await PUT(req, { params: { id: testUnit.id } })
     expect(res.status).toBe(200)
 
     const data = await res.json()

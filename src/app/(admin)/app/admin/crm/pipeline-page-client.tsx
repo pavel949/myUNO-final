@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Container from '@/app/components/Container'
-import Heading from '@/app/components/Heading'
+import { useState, useEffect, useMemo } from 'react'
 
 type LifecycleStage = 'contact' | 'guest' | 'repeat_guest' | 'investment_interest' | 'qualified_buyer' | 'purchaser' | 'owner' | 'managed_owner'
 
@@ -28,7 +26,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const stageOrder: LifecycleStage[] = [
+  const stageOrder: LifecycleStage[] = useMemo(() => [
     'contact',
     'guest',
     'repeat_guest',
@@ -37,9 +35,9 @@ export default function PipelinePage() {
     'purchaser',
     'owner',
     'managed_owner',
-  ]
+  ], [])
 
-  const stageLabels: Record<LifecycleStage, string> = {
+  const stageLabels: Record<LifecycleStage, string> = useMemo(() => ({
     contact: 'Contact',
     guest: 'Guest',
     repeat_guest: 'Repeat Guest',
@@ -48,7 +46,7 @@ export default function PipelinePage() {
     purchaser: 'Purchaser',
     owner: 'Owner',
     managed_owner: 'Managed Owner',
-  }
+  }), [])
 
   useEffect(() => {
     const fetchPipeline = async () => {
@@ -71,11 +69,14 @@ export default function PipelinePage() {
     }
 
     fetchPipeline()
-  }, [])
+  }, [stageOrder, stageLabels])
 
   return (
-    <Container>
-      <Heading title="Customer Lifecycle Pipeline" subtitle="Drag to transition. Click to edit." />
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Customer Lifecycle Pipeline</h1>
+        <p className="text-gray-600 mt-2">Drag to transition. Click to edit.</p>
+      </div>
 
       {error && (
         <div className="mb-8 rounded-md bg-red-50 p-4 text-red-800">
@@ -137,6 +138,6 @@ export default function PipelinePage() {
       <div className="mt-8 text-sm text-gray-600">
         <p>🏗️ Pipeline UI is coming soon. Drag-and-drop transitions will be available in the next release.</p>
       </div>
-    </Container>
+    </div>
   )
 }

@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { rateServiceOrder } from '@/modules/services';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { track } from '@/modules/analytics';
 
 /**
  * POST /api/service-orders/[id]/rate — guest/orderer rates a fulfilled service order.
@@ -33,12 +32,6 @@ export async function POST(
       rating,
       comment
     );
-
-    // Track review submission
-    await track(prisma, 'review_submitted', {
-      identityId: user.identityId,
-      serviceOrderId: params.id,
-    }).catch(() => null);
 
     return NextResponse.json({ ok: true, reviewId: review.id });
   } catch (error) {

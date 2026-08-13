@@ -76,7 +76,7 @@ analytics.track(eventKey, dims)                                    // doc 13
 
 | Truth | Owner module | External copies (channels, never sources) |
 |---|---|---|
-| People & roles | `core` | CRM (HubSpot) gets lead copies |
+| People & roles | `core` + `crm` | Purpose-limited exports only; no external CRM is authoritative |
 | Projects & units | `core` | OTA listings mirror unit data |
 | Calendar & bookings | `booking` | OTA calendars via iCal export; imports become records here |
 | Services & orders | `services` | — |
@@ -95,7 +95,7 @@ analytics.track(eventKey, dims)                                    // doc 13
 | **OTA calendars** | Per-unit iCal: export URL (our bookings+blocks) + import poller (job, 15-min) creating `BlockedDate(reason=ota_import)` or external bookings; conflict → N-25 (doc 01 D8) |
 | **WhatsApp Business / Telegram bot** (⚠ Q9) | `deliver()` channel adapters, config-disabled until provisioned |
 | **Resend (email)** | Adapter + console fallback |
-| **HubSpot CRM** | Outbound lead push (audience forms) — phase 2, seam reserved |
+| **Commercial exports** | Optional purpose-limited outbound adapter only; the native `crm` module remains authoritative |
 | **Licensed FX partner** | **Information/routing only** — a content block, never an API that moves money |
 | **TM30 portal** | No integration (Q10): deep link + receipt upload |
 

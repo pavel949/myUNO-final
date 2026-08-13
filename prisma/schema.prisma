@@ -51,13 +51,6 @@ enum UnitStatus {
   offboarded
 }
 
-enum UnitAssetStatus {
-  managed
-  verified_partner
-  one_off_sourced
-  suspended
-}
-
 enum UnitEngagementType {
   direct_managed
   via_management_company
@@ -217,25 +210,12 @@ enum LedgerEntryType {
   payout_provider
   refund_out
   adjustment
-  damage_claim_capture
 }
 
 enum OwnerStatementStatus {
   draft
   published
   superseded
-  pending_owner_review
-  signed_off
-  distributed
-}
-
-enum LineItemCategory {
-  booking_revenue
-  refund
-  service_fee
-  operating_expense
-  tax
-  performance_fee
 }
 
 enum PayoutPayeeType {
@@ -332,7 +312,6 @@ enum NotificationDeliveryStatus {
 
 enum ThreadContextType {
   booking
-  booking_dispute
   service_order
   ticket
   unit
@@ -510,7 +489,6 @@ enum AnalyticsEventKey {
   service_order_cancelled
   service_order_no_show
   review_submitted
-  review_replied
   message_thread_started
   ticket_raised
   ticket_resolved
@@ -568,97 +546,168 @@ enum IntegrationStatus {
   disabled
 }
 
+enum CrmLifecycleStage {
+  contact
+  guest
+  prospect
+  buyer
+  owner
+  seller
+  former_client
+}
+
+enum CrmOpportunityType {
+  rental
+  purchase
+  sale
+  management
+  developer_advisory
+  capex
+  compliance
+}
+
+enum CrmOpportunityStage {
+  new
+  qualified
+  discovery
+  proposal
+  negotiation
+  won
+  lost
+  nurture
+}
+
+enum CrmActivityType {
+  note
+  task
+  call
+  meeting
+  email
+  whatsapp
+  telegram
+  system
+}
+
+enum CrmActivityStatus {
+  open
+  completed
+  cancelled
+}
+
+enum CrmConsentPurpose {
+  service
+  marketing
+  property_matching
+  analytics
+}
+
+enum CrmConsentStatus {
+  granted
+  withdrawn
+  denied
+}
+
+enum CrmTouchType {
+  first_touch
+  lead_creation
+  conversion
+  assisted
+}
+
 // --- The spine ---
 
 model Identity {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  firstName String @map("first_name")
-  lastName String @map("last_name")
-  latinFirstName String? @map("latin_first_name")
-  latinLastName String? @map("latin_last_name")
-  email String? @unique @db.Citext
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  phone String? @unique
-  phoneVerifiedAt DateTime? @map("phone_verified_at")
-  hashedPassword String? @map("hashed_password")
-  preferredLocale String @default("en") @map("preferred_locale")
-  avatarMediaId String? @map("avatar_media_id")
-  status IdentityStatus @default(active)
-  isAdmin Boolean @default(false) @map("is_admin")
-  notesInternal String? @map("notes_internal")
-  mergedIntoId String? @map("merged_into_id")
+  firstName       String         @map("first_name")
+  lastName        String         @map("last_name")
+  latinFirstName  String?        @map("latin_first_name")
+  latinLastName   String?        @map("latin_last_name")
+  email           String?        @unique @db.Citext
+  emailVerifiedAt DateTime?      @map("email_verified_at")
+  phone           String?        @unique
+  phoneVerifiedAt DateTime?      @map("phone_verified_at")
+  hashedPassword  String?        @map("hashed_password")
+  preferredLocale String         @default("en") @map("preferred_locale")
+  avatarMediaId   String?        @map("avatar_media_id")
+  status          IdentityStatus @default(active)
+  isAdmin         Boolean        @default(false) @map("is_admin")
+  notesInternal   String?        @map("notes_internal")
+  mergedIntoId    String?        @map("merged_into_id")
 
   // Relations
   avatarMedia MediaAsset? @relation(name: "identityAvatar", fields: [avatarMediaId], references: [id])
-  mergedInto Identity? @relation(name: "identityMerge", fields: [mergedIntoId], references: [id])
-  mergedFrom Identity[] @relation(name: "identityMerge")
+  mergedInto  Identity?   @relation(name: "identityMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom  Identity[]  @relation(name: "identityMerge")
 
-  authAccounts AuthAccount[]
-  oneTimeTokens OneTimeToken[]
-  ownedUnits Unit[] @relation("unitOwner")
-  roleAssignments RoleAssignment[] @relation("roleAssignmentIdentity")
-  grantedRoles RoleAssignment[] @relation("grantedRoles")
-  mediaAssets MediaAsset[] @relation("uploadedBy")
-  auditLogs AuditLog[] @relation("actor")
-  contentKeyUpdates Translation[] @relation("updatedBy")
-  configChanges ConfigChange[] @relation("changedBy")
-  unitEngagements UnitEngagement[] @relation("engagementOwner")
-  createdBlockedDates BlockedDate[] @relation("blockedDateCreator")
-  bookingsAsGuest Booking[] @relation("bookingGuest")
-  bookingsCancelled Booking[] @relation("bookingCancelledBy")
-  bookingGuestsAs BookingGuest[]
-  bookingChanges BookingChange[]
-  paymentsPayer Payment[] @relation("paymentPayer")
-  paymentsReceivedBy Payment[] @relation("paymentReceivedBy")
-  refundsPaidBy Refund[] @relation("refundPaidBy")
-  refundsInitiatedBy Refund[] @relation("refundInitiatedBy")
-  ledgerEntriesCreated LedgerEntry[] @relation("ledgerEntryCreator")
-  notifications Notification[]
-  notificationPreferences NotificationPreference[]
-  threadParticipants ThreadParticipant[]
-  sentMessages Message[]
-  ticketsRaised Ticket[] @relation("ticketRaisedBy")
-  ticketsAssigned Ticket[] @relation("ticketAssignee")
-  ticketEvents TicketEvent[]
-  serviceOrdersPlaced ServiceOrder[] @relation("serviceOrderOrderer")
-  serviceOrdersCancelled ServiceOrder[] @relation("serviceOrderCancelledBy")
-  reviewsWritten Review[]
-  reviewsReplied Review[] @relation("reviewRepliedBy")
-  announcementsCreated Announcement[]
-  announcementReads AnnouncementRead[]
-  vettedProviders Provider[] @relation("providerVettedBy")
-  providerApplications Provider[] @relation("providerApplicant")
-  tm30FilingsFiled Tm30Filing[] @relation("tm30FilingFiled")
-  conditionReportsCreated ConditionReport[]
-  complianceRecordsVerified ComplianceRecord[] @relation("complianceVerifier")
-  mobilizationCompletions MobilizationChecklistItem[] @relation("mobilizationCompletedBy")
-  statementsOwned OwnerStatement[] @relation("statementOwner")
-  statementsPublished OwnerStatement[] @relation("statementPublishedBy")
-  payoutsRecorded Payout[]
-  depositClaimsFiled DepositClaim[] @relation("depositClaimFiled")
-  analyticsEventsAsIdentity AnalyticsEvent[] @relation("analyticsEventIdentity")
-  analyticsEventsAsActor AnalyticsEvent[] @relation("analyticsEventActor")
-  buyerSignals BuyerSignal[]
-  buyerSignalsReviewed BuyerSignal[] @relation("buyerSignalReviewer")
-  crmProfile CrmProfile?
-  crmProfilesAsAccountOwner CrmProfile[] @relation("crmProfileAccountOwner")
-  crmProfilesAsApprover CrmProfile[] @relation("crmProfileLifecycleApprover")
-  crmTransitionsApproved CrmLifecycleTransition[]
+  authAccounts              AuthAccount[]
+  oneTimeTokens             OneTimeToken[]
+  ownedUnits                Unit[]                      @relation("unitOwner")
+  roleAssignments           RoleAssignment[]            @relation("roleAssignmentIdentity")
+  grantedRoles              RoleAssignment[]            @relation("grantedRoles")
+  mediaAssets               MediaAsset[]                @relation("uploadedBy")
+  auditLogs                 AuditLog[]                  @relation("actor")
+  contentKeyUpdates         Translation[]               @relation("updatedBy")
+  configChanges             ConfigChange[]              @relation("changedBy")
+  unitEngagements           UnitEngagement[]            @relation("engagementOwner")
+  createdBlockedDates       BlockedDate[]               @relation("blockedDateCreator")
+  bookingsAsGuest           Booking[]                   @relation("bookingGuest")
+  bookingsCancelled         Booking[]                   @relation("bookingCancelledBy")
+  bookingGuestsAs           BookingGuest[]
+  bookingChanges            BookingChange[]
+  paymentsPayer             Payment[]                   @relation("paymentPayer")
+  paymentsReceivedBy        Payment[]                   @relation("paymentReceivedBy")
+  refundsPaidBy             Refund[]                    @relation("refundPaidBy")
+  refundsInitiatedBy        Refund[]                    @relation("refundInitiatedBy")
+  ledgerEntriesCreated      LedgerEntry[]               @relation("ledgerEntryCreator")
+  notifications             Notification[]
+  notificationPreferences   NotificationPreference[]
+  threadParticipants        ThreadParticipant[]
+  sentMessages              Message[]
+  ticketsRaised             Ticket[]                    @relation("ticketRaisedBy")
+  ticketsAssigned           Ticket[]                    @relation("ticketAssignee")
+  ticketEvents              TicketEvent[]
+  serviceOrdersPlaced       ServiceOrder[]              @relation("serviceOrderOrderer")
+  serviceOrdersCancelled    ServiceOrder[]              @relation("serviceOrderCancelledBy")
+  reviewsWritten            Review[]
+  reviewsReplied            Review[]                    @relation("reviewRepliedBy")
+  announcementsCreated      Announcement[]
+  announcementReads         AnnouncementRead[]
+  vettedProviders           Provider[]                  @relation("providerVettedBy")
+  providerApplications      Provider[]                  @relation("providerApplicant")
+  tm30FilingsFiled          Tm30Filing[]                @relation("tm30FilingFiled")
+  conditionReportsCreated   ConditionReport[]
+  complianceRecordsVerified ComplianceRecord[]          @relation("complianceVerifier")
+  mobilizationCompletions   MobilizationChecklistItem[] @relation("mobilizationCompletedBy")
+  statementsOwned           OwnerStatement[]            @relation("statementOwner")
+  statementsPublished       OwnerStatement[]            @relation("statementPublishedBy")
+  payoutsRecorded           Payout[]
+  depositClaimsFiled        DepositClaim[]              @relation("depositClaimFiled")
+  analyticsEventsAsIdentity AnalyticsEvent[]            @relation("analyticsEventIdentity")
+  analyticsEventsAsActor    AnalyticsEvent[]            @relation("analyticsEventActor")
+  buyerSignals              BuyerSignal[]
+  buyerSignalsReviewed      BuyerSignal[]               @relation("buyerSignalReviewer")
+  crmProfile                CrmProfile?
+  crmOpportunities          CrmOpportunity[]            @relation("crmOpportunityContact")
+  crmOpportunitiesAssigned  CrmOpportunity[]            @relation("crmOpportunityAssignee")
+  crmActivities             CrmActivity[]               @relation("crmActivityContact")
+  crmActivitiesCreated      CrmActivity[]               @relation("crmActivityCreator")
+  crmConsents               CrmConsent[]
+  crmAttributionTouches     CrmAttributionTouch[]
 
   @@map("identity")
 }
 
 model AuthAccount {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId String @map("identity_id")
-  provider AuthProvider
-  providerAccountId String @map("provider_account_id")
+  identityId        String       @map("identity_id")
+  provider          AuthProvider
+  providerAccountId String       @map("provider_account_id")
 
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
@@ -667,15 +716,15 @@ model AuthAccount {
 }
 
 model OneTimeToken {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId String @map("identity_id")
-  purpose OneTimeTokenPurpose
-  tokenHash String @map("token_hash")
-  expiresAt DateTime @map("expires_at")
-  consumedAt DateTime? @map("consumed_at")
+  identityId String              @map("identity_id")
+  purpose    OneTimeTokenPurpose
+  tokenHash  String              @map("token_hash")
+  expiresAt  DateTime            @map("expires_at")
+  consumedAt DateTime?           @map("consumed_at")
 
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
@@ -683,94 +732,93 @@ model OneTimeToken {
 }
 
 model Project {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  slug String @unique
-  name String
-  areaLabelKey String @map("area_label_key")
-  descriptionKey String @map("description_key")
-  latitude Decimal @db.Decimal(9, 6)
-  longitude Decimal @db.Decimal(9, 6)
-  address String
-  timezone String @default("Asia/Bangkok")
-  coverMediaId String? @map("cover_media_id")
-  amenityKeys String[] @default([]) @map("amenity_keys")
-  handbookKey String @map("handbook_key")
-  status ProjectStatus @default(draft)
-  defaultCurrency String @default("THB") @map("default_currency")
+  slug            String        @unique
+  name            String
+  areaLabelKey    String        @map("area_label_key")
+  descriptionKey  String        @map("description_key")
+  latitude        Decimal       @db.Decimal(9, 6)
+  longitude       Decimal       @db.Decimal(9, 6)
+  address         String
+  timezone        String        @default("Asia/Bangkok")
+  coverMediaId    String?       @map("cover_media_id")
+  amenityKeys     String[]      @default([]) @map("amenity_keys")
+  handbookKey     String        @map("handbook_key")
+  status          ProjectStatus @default(draft)
+  defaultCurrency String        @default("THB") @map("default_currency")
 
   // Relations
-  coverMedia MediaAsset? @relation(name: "projectCover", fields: [coverMediaId], references: [id])
-  units Unit[]
-  roleAssignments RoleAssignment[] @relation("projectScope")
-  galleryMedia ProjectMedia[]
-  organizations Organization[]
-  bookings Booking[]
-  ledgerEntries LedgerEntry[]
-  threads Thread[]
-  tickets Ticket[]
-  announcements Announcement[]
+  coverMedia           MediaAsset?          @relation(name: "projectCover", fields: [coverMediaId], references: [id])
+  units                Unit[]
+  roleAssignments      RoleAssignment[]     @relation("projectScope")
+  galleryMedia         ProjectMedia[]
+  organizations        Organization[]
+  bookings             Booking[]
+  ledgerEntries        LedgerEntry[]
+  threads              Thread[]
+  tickets              Ticket[]
+  announcements        Announcement[]
   providerServiceAreas ProviderProject[]
-  serviceProjects ServiceProject[]
-  serviceOrders ServiceOrder[]
-  analyticsEvents AnalyticsEvent[]
-  metricsDaily MetricDaily[]
-  integrationAccounts IntegrationAccount[]
+  serviceProjects      ServiceProject[]
+  serviceOrders        ServiceOrder[]
+  analyticsEvents      AnalyticsEvent[]
+  metricsDaily         MetricDaily[]
+  integrationAccounts  IntegrationAccount[]
+  crmOpportunities     CrmOpportunity[]
 
   @@map("project")
 }
 
 model Unit {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId String @map("project_id")
-  ownerIdentityId String? @map("owner_identity_id")
-  name String
-  unitType UnitType @map("unit_type")
-  categoryKey String? @map("category_key")
-  bedrooms Int
-  bathrooms Int
-  maxGuests Int @map("max_guests")
-  sizeSqm Int? @map("size_sqm")
-  floor String?
-  addressSupplement String @map("address_supplement")
-  descriptionKey String? @map("description_key")
-  amenityKeys String[] @default([]) @map("amenity_keys")
-  baseNightlyThb Int @map("base_nightly_thb")
-  minNights Int @map("min_nights")
-  instantBook Boolean @default(true) @map("instant_book")
-  cancellationPolicyKey String? @map("cancellation_policy_key")
-  status UnitStatus @default(draft)
-  assetStatus UnitAssetStatus @default(managed) @map("asset_status")
-  assetStatusChangedAt DateTime? @map("asset_status_changed_at")
-  assetStatusReason String? @map("asset_status_reason")
-  permittedUseConfirmedAt DateTime? @map("permitted_use_confirmed_at")
-  coverMediaId String? @map("cover_media_id")
+  projectId               String     @map("project_id")
+  ownerIdentityId         String?    @map("owner_identity_id")
+  name                    String
+  unitType                UnitType   @map("unit_type")
+  categoryKey             String?    @map("category_key")
+  bedrooms                Int
+  bathrooms               Int
+  maxGuests               Int        @map("max_guests")
+  sizeSqm                 Int?       @map("size_sqm")
+  floor                   String?
+  addressSupplement       String     @map("address_supplement")
+  descriptionKey          String?    @map("description_key")
+  amenityKeys             String[]   @default([]) @map("amenity_keys")
+  baseNightlyThb          Int        @map("base_nightly_thb")
+  minNights               Int        @map("min_nights")
+  instantBook             Boolean    @default(true) @map("instant_book")
+  cancellationPolicyKey   String?    @map("cancellation_policy_key")
+  status                  UnitStatus @default(draft)
+  permittedUseConfirmedAt DateTime?  @map("permitted_use_confirmed_at")
+  coverMediaId            String?    @map("cover_media_id")
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  owner Identity? @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
-  coverMedia MediaAsset? @relation(name: "unitCover", fields: [coverMediaId], references: [id])
-  media UnitMedia[]
-  engagements UnitEngagement[]
-  roleAssignments RoleAssignment[] @relation("unitScope")
-  blockedDates BlockedDate[]
-  pricingRules PricingRule[]
-  bookings Booking[]
-  ledgerEntries LedgerEntry[]
-  tickets Ticket[]
-  serviceOrders ServiceOrder[]
-  conditionReports ConditionReport[]
-  complianceRecords ComplianceRecord[]
+  project               Project                     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner                 Identity?                   @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
+  coverMedia            MediaAsset?                 @relation(name: "unitCover", fields: [coverMediaId], references: [id])
+  media                 UnitMedia[]
+  engagements           UnitEngagement[]
+  roleAssignments       RoleAssignment[]            @relation("unitScope")
+  blockedDates          BlockedDate[]
+  pricingRules          PricingRule[]
+  bookings              Booking[]
+  ledgerEntries         LedgerEntry[]
+  tickets               Ticket[]
+  serviceOrders         ServiceOrder[]
+  conditionReports      ConditionReport[]
+  complianceRecords     ComplianceRecord[]
   mobilizationChecklist MobilizationChecklistItem[]
-  statements OwnerStatement[]
-  analyticsEvents AnalyticsEvent[]
-  metricsDaily MetricDaily[]
-  integrationAccounts IntegrationAccount[]
+  statements            OwnerStatement[]
+  analyticsEvents       AnalyticsEvent[]
+  metricsDaily          MetricDaily[]
+  integrationAccounts   IntegrationAccount[]
+  crmOpportunities      CrmOpportunity[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -778,20 +826,20 @@ model Unit {
 }
 
 model BlockedDate {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  startDate DateTime @map("start_date") @db.Date
-  endDate DateTime @map("end_date") @db.Date
-  reason BlockedDateReason
-  note String?
-  createdByIdentityId String? @map("created_by_identity_id")
-  externalRef String? @map("external_ref")
+  unitId              String            @map("unit_id")
+  startDate           DateTime          @map("start_date") @db.Date
+  endDate             DateTime          @map("end_date") @db.Date
+  reason              BlockedDateReason
+  note                String?
+  createdByIdentityId String?           @map("created_by_identity_id")
+  externalRef         String?           @map("external_ref")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
 
   @@index([unitId, startDate, endDate])
@@ -799,16 +847,16 @@ model BlockedDate {
 }
 
 model PricingRule {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  startDate DateTime @map("start_date") @db.Date
-  endDate DateTime @map("end_date") @db.Date
-  nightlyThb Int @map("nightly_thb")
-  label String?
-  minNightsOverride Int? @map("min_nights_override")
+  unitId            String   @map("unit_id")
+  startDate         DateTime @map("start_date") @db.Date
+  endDate           DateTime @map("end_date") @db.Date
+  nightlyThb        Int      @map("nightly_thb")
+  label             String?
+  minNightsOverride Int?     @map("min_nights_override")
 
   // Relations
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
@@ -818,52 +866,51 @@ model PricingRule {
 }
 
 model Booking {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  projectId String @map("project_id")
-  guestIdentityId String @map("guest_identity_id")
-  bookingType BookingType @map("booking_type")
-  channel BookingChannel
-  externalRef String? @map("external_ref")
-  status BookingStatus @default(pending_payment)
-  startDate DateTime @map("start_date") @db.Date
-  endDate DateTime @map("end_date") @db.Date
-  adults Int
-  children Int
-  priceBreakdown Json? @map("price_breakdown") @db.JsonB
-  totalThb Int @map("total_thb")
-  balanceDueThb Int @default(0) @map("balance_due_thb")
-  refundAccruedThb Int @default(0) @map("refund_accrued_thb")
-  cancellationPolicySnapshot Json? @map("cancellation_policy_snapshot") @db.JsonB
-  holdExpiresAt DateTime? @map("hold_expires_at")
-  requestExpiresAt DateTime? @map("requested_expires_at")
-  verificationStatus VerificationStatus @default(not_required) @map("verification_status")
-  checkedInAt DateTime? @map("checked_in_at")
-  checkedOutAt DateTime? @map("checked_out_at")
-  cancelledAt DateTime? @map("cancelled_at")
-  cancelledByIdentityId String? @map("cancelled_by_identity_id")
-  cancellationReason String? @map("cancellation_reason")
-  guestNote String? @map("guest_note")
-  internalNote String? @map("internal_note")
+  unitId                     String             @map("unit_id")
+  projectId                  String             @map("project_id")
+  guestIdentityId            String             @map("guest_identity_id")
+  bookingType                BookingType        @map("booking_type")
+  channel                    BookingChannel
+  externalRef                String?            @map("external_ref")
+  status                     BookingStatus      @default(pending_payment)
+  startDate                  DateTime           @map("start_date") @db.Date
+  endDate                    DateTime           @map("end_date") @db.Date
+  adults                     Int
+  children                   Int
+  priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
+  totalThb                   Int                @map("total_thb")
+  balanceDueThb              Int                @default(0) @map("balance_due_thb")
+  refundAccruedThb           Int                @default(0) @map("refund_accrued_thb")
+  cancellationPolicySnapshot Json?              @map("cancellation_policy_snapshot") @db.JsonB
+  holdExpiresAt              DateTime?          @map("hold_expires_at")
+  requestExpiresAt           DateTime?          @map("requested_expires_at")
+  verificationStatus         VerificationStatus @default(not_required) @map("verification_status")
+  checkedInAt                DateTime?          @map("checked_in_at")
+  checkedOutAt               DateTime?          @map("checked_out_at")
+  cancelledAt                DateTime?          @map("cancelled_at")
+  cancelledByIdentityId      String?            @map("cancelled_by_identity_id")
+  cancellationReason         String?            @map("cancellation_reason")
+  guestNote                  String?            @map("guest_note")
+  internalNote               String?            @map("internal_note")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  guestIdentity Identity @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
-  cancelledBy Identity? @relation(name: "bookingCancelledBy", fields: [cancelledByIdentityId], references: [id], onDelete: SetNull)
-  guests BookingGuest[]
-  changes BookingChange[]
-  payments Payment[]
-  ledgerEntries LedgerEntry[]
-  serviceOrders ServiceOrder[]
-  tm30Filings Tm30Filing[]
+  unit             Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  guestIdentity    Identity          @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
+  cancelledBy      Identity?         @relation(name: "bookingCancelledBy", fields: [cancelledByIdentityId], references: [id], onDelete: SetNull)
+  guests           BookingGuest[]
+  changes          BookingChange[]
+  payments         Payment[]
+  ledgerEntries    LedgerEntry[]
+  serviceOrders    ServiceOrder[]
+  tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
-  depositClaims DepositClaim[]
-  analyticsEvents AnalyticsEvent[]
-  statementLineItems StatementLineItem[]
+  depositClaims    DepositClaim[]
+  analyticsEvents  AnalyticsEvent[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -874,104 +921,104 @@ model Booking {
 }
 
 model BookingGuest {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  bookingId String @map("booking_id")
-  identityId String? @map("identity_id")
+  bookingId       String  @map("booking_id")
+  identityId      String? @map("identity_id")
   // 🔒 fullName, passportNumber, and dateOfBirth hold AES-256-GCM ciphertext
   // (ops/guest-pii seam). nationality stays plaintext: the TM30 obligation
   // filters on it in SQL (doc 02 §3.2 note).
-  fullName String @map("full_name")
-  nationality String
-  passportNumber String @map("passport_number")
-  dateOfBirth String? @map("date_of_birth")
+  fullName        String  @map("full_name")
+  nationality     String
+  passportNumber  String  @map("passport_number")
+  dateOfBirth     String? @map("date_of_birth")
   passportMediaId String? @map("passport_media_id")
-  isLead Boolean @default(false)
+  isLead          Boolean @default(false)
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  identity Identity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  booking       Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  identity      Identity?   @relation(fields: [identityId], references: [id], onDelete: SetNull)
   passportMedia MediaAsset? @relation(fields: [passportMediaId], references: [id], onDelete: SetNull)
-  tm30Filing Tm30Filing?
+  tm30Filing    Tm30Filing?
 
   @@index([bookingId])
   @@map("booking_guest")
 }
 
 model BookingChange {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  bookingId String @map("booking_id")
-  changeType BookingChangeType @map("change_type")
-  oldValue Json? @map("old_value") @db.JsonB
-  newValue Json? @map("new_value") @db.JsonB
-  priceDeltaThb Int @default(0) @map("price_delta_thb")
-  actorIdentityId String @map("actor_identity_id")
+  bookingId       String            @map("booking_id")
+  changeType      BookingChangeType @map("change_type")
+  oldValue        Json?             @map("old_value") @db.JsonB
+  newValue        Json?             @map("new_value") @db.JsonB
+  priceDeltaThb   Int               @default(0) @map("price_delta_thb")
+  actorIdentityId String            @map("actor_identity_id")
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  actor Identity @relation(fields: [actorIdentityId], references: [id])
+  booking Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   Identity @relation(fields: [actorIdentityId], references: [id])
 
   @@index([bookingId])
   @@map("booking_change")
 }
 
 model Payment {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  purpose PaymentPurpose
-  bookingId String? @map("booking_id")
-  serviceOrderId String? @map("service_order_id")
-  payerIdentityId String @map("payer_identity_id")
-  method PaymentMethod
-  provider PaymentProvider
-  providerSessionId String? @map("provider_session_id")
-  amountThb Int @map("amount_thb")
-  receivedByIdentityId String? @map("received_by_identity_id")
-  receivedAt DateTime? @map("received_at")
-  receiptRef String? @map("receipt_ref")
-  receiptMediaId String? @map("receipt_media_id")
-  status PaymentStatus @default(created)
-  succeededAt DateTime? @map("succeeded_at")
-  failureReason String? @map("failure_reason")
+  purpose              PaymentPurpose
+  bookingId            String?         @map("booking_id")
+  serviceOrderId       String?         @map("service_order_id")
+  payerIdentityId      String          @map("payer_identity_id")
+  method               PaymentMethod
+  provider             PaymentProvider
+  providerSessionId    String?         @map("provider_session_id")
+  amountThb            Int             @map("amount_thb")
+  receivedByIdentityId String?         @map("received_by_identity_id")
+  receivedAt           DateTime?       @map("received_at")
+  receiptRef           String?         @map("receipt_ref")
+  receiptMediaId       String?         @map("receipt_media_id")
+  status               PaymentStatus   @default(created)
+  succeededAt          DateTime?       @map("succeeded_at")
+  failureReason        String?         @map("failure_reason")
 
   // Relations
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
-  payer Identity @relation(name: "paymentPayer", fields: [payerIdentityId], references: [id])
-  receivedBy Identity? @relation(name: "paymentReceivedBy", fields: [receivedByIdentityId], references: [id])
-  receiptMedia MediaAsset? @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
-  refunds Refund[]
+  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceOrder  ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  payer         Identity      @relation(name: "paymentPayer", fields: [payerIdentityId], references: [id])
+  receivedBy    Identity?     @relation(name: "paymentReceivedBy", fields: [receivedByIdentityId], references: [id])
+  receiptMedia  MediaAsset?   @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
+  refunds       Refund[]
   ledgerEntries LedgerEntry[]
 
+  @@unique([providerSessionId, provider])
   @@index([bookingId])
   @@index([payerIdentityId])
   @@index([status])
-  @@unique([providerSessionId, provider])
   @@map("payment")
 }
 
 model Refund {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  paymentId String @map("payment_id")
-  method RefundMethod
-  amountThb Int @map("amount_thb")
-  reason RefundReason
-  status RefundStatus @default(requested)
-  providerRefundId String? @map("provider_refund_id")
-  paidBackByIdentityId String? @map("paid_back_by_identity_id")
-  initiatedByIdentityId String @map("initiated_by_identity_id")
+  paymentId             String       @map("payment_id")
+  method                RefundMethod
+  amountThb             Int          @map("amount_thb")
+  reason                RefundReason
+  status                RefundStatus @default(requested)
+  providerRefundId      String?      @map("provider_refund_id")
+  paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
+  initiatedByIdentityId String       @map("initiated_by_identity_id")
 
   // Relations
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  paidBackBy Identity? @relation(name: "refundPaidBy", fields: [paidBackByIdentityId], references: [id])
-  initiatedBy Identity @relation(name: "refundInitiatedBy", fields: [initiatedByIdentityId], references: [id])
+  payment       Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paidBackBy    Identity?     @relation(name: "refundPaidBy", fields: [paidBackByIdentityId], references: [id])
+  initiatedBy   Identity      @relation(name: "refundInitiatedBy", fields: [initiatedByIdentityId], references: [id])
   ledgerEntries LedgerEntry[]
 
   @@index([paymentId])
@@ -980,30 +1027,30 @@ model Refund {
 }
 
 model LedgerEntry {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  entryType LedgerEntryType @map("entry_type")
-  amountThb Int @map("amount_thb")
-  unitId String? @map("unit_id")
-  projectId String? @map("project_id")
-  bookingId String? @map("booking_id")
-  serviceOrderId String? @map("service_order_id")
-  paymentId String? @map("payment_id")
-  refundId String? @map("refund_id")
-  statementId String? @map("statement_id")
-  occurredOn DateTime @map("occurred_on")
-  description String
-  createdByIdentityId String? @map("created_by_identity_id")
+  entryType           LedgerEntryType @map("entry_type")
+  amountThb           Int             @map("amount_thb")
+  unitId              String?         @map("unit_id")
+  projectId           String?         @map("project_id")
+  bookingId           String?         @map("booking_id")
+  serviceOrderId      String?         @map("service_order_id")
+  paymentId           String?         @map("payment_id")
+  refundId            String?         @map("refund_id")
+  statementId         String?         @map("statement_id")
+  occurredOn          DateTime        @map("occurred_on")
+  description         String
+  createdByIdentityId String?         @map("created_by_identity_id")
 
   // Relations
-  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  refund Refund? @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  unit      Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payment   Payment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  refund    Refund?         @relation(fields: [refundId], references: [id], onDelete: SetNull)
   statement OwnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
-  createdBy Identity? @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
+  createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
 
   @@index([unitId, occurredOn])
   @@index([projectId, occurredOn])
@@ -1014,53 +1061,34 @@ model LedgerEntry {
 }
 
 model OwnerStatement {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  ownerIdentityId String @map("owner_identity_id")
-  engagementId String @map("engagement_id")
-  periodStart DateTime @map("period_start")
-  periodEnd DateTime @map("period_end")
-
-  // Payout calculation fields (existing)
-  grossRevenueTh Int @map("gross_revenue_thb")
-  totalCostsTh Int @map("total_costs_thb")
-  noiTh Int @map("noi_thb")
-  ownerShareTh Int @map("owner_share_thb")
-  estateShareTh Int @map("estate_share_thb")
-  capApplied Boolean @default(false) @map("cap_applied")
-
-  // Transparency fields (Corporate Bible)
-  grossBookingsAmountThb Int? @map("gross_bookings_amount_thb")
-  guestPaymentsReceivedThb Int? @map("guest_payments_received_thb")
-  serviceFeesAmountThb Int? @map("service_fees_amount_thb")
-  operatingExpensesAmountThb Int? @map("operating_expenses_amount_thb")
-  taxesAmountThb Int? @map("taxes_amount_thb")
-  adjustedNoiThb Int? @map("adjusted_noi_thb")
-  distributableCashThb Int? @map("distributable_cash_thb")
-  performanceFeeAmountThb Int? @map("performance_fee_amount_thb")
-  performanceFeeBasisText String? @map("performance_fee_basis_text")
-
-  // Review & sign-off
-  status OwnerStatementStatus @default(draft)
-  signedOffByOwnerAt DateTime? @map("signed_off_by_owner_at")
-  signedOffByOperatorAt DateTime? @map("signed_off_by_operator_at")
-  approvedAt DateTime? @map("approved_at")
-  publishedAt DateTime? @map("published_at")
-  publishedByIdentityId String? @map("published_by_identity_id")
-  pdfMediaId String? @map("pdf_media_id")
+  unitId                String               @map("unit_id")
+  ownerIdentityId       String               @map("owner_identity_id")
+  engagementId          String               @map("engagement_id")
+  periodStart           DateTime             @map("period_start")
+  periodEnd             DateTime             @map("period_end")
+  grossRevenueTh        Int                  @map("gross_revenue_thb")
+  totalCostsTh          Int                  @map("total_costs_thb")
+  noiTh                 Int                  @map("noi_thb")
+  ownerShareTh          Int                  @map("owner_share_thb")
+  estateShareTh         Int                  @map("estate_share_thb")
+  capApplied            Boolean              @default(false) @map("cap_applied")
+  status                OwnerStatementStatus @default(draft)
+  publishedAt           DateTime?            @map("published_at")
+  publishedByIdentityId String?              @map("published_by_identity_id")
+  pdfMediaId            String?              @map("pdf_media_id")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  owner Identity @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
-  engagement UnitEngagement @relation(fields: [engagementId], references: [id])
-  publishedBy Identity? @relation(name: "statementPublishedBy", fields: [publishedByIdentityId], references: [id])
-  pdfMedia MediaAsset? @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
-  lineItems StatementLineItem[]
+  unit          Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner         Identity       @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
+  engagement    UnitEngagement @relation(fields: [engagementId], references: [id])
+  publishedBy   Identity?      @relation(name: "statementPublishedBy", fields: [publishedByIdentityId], references: [id])
+  pdfMedia      MediaAsset?    @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
   ledgerEntries LedgerEntry[]
-  payouts Payout[]
+  payouts       Payout[]
 
   @@index([unitId, periodStart, periodEnd])
   @@index([ownerIdentityId, status])
@@ -1068,47 +1096,26 @@ model OwnerStatement {
   @@map("owner_statement")
 }
 
-model StatementLineItem {
-  id String @id @default(uuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  statementId String @map("statement_id")
-  category LineItemCategory
-  description String
-  amountThb Int @map("amount_thb")
-  bookingId String? @map("booking_id")
-  supportingDocumentId String? @map("supporting_document_id")
-
-  // Relations
-  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-
-  @@index([statementId, category])
-  @@index([bookingId])
-  @@map("statement_line_item")
-}
-
 model Payout {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  payeeType PayoutPayeeType @map("payee_type")
-  ownerStatementId String? @map("owner_statement_id")
-  providerId String? @map("provider_id")
-  periodStart DateTime? @map("period_start")
-  periodEnd DateTime? @map("period_end")
-  amountThb Int @map("amount_thb")
-  method PayoutMethod
-  reference String
-  executedOn DateTime @map("executed_on") @db.Date
-  recordedByIdentityId String @map("recorded_by_identity_id")
-  status PayoutStatus @default(recorded)
+  payeeType            PayoutPayeeType @map("payee_type")
+  ownerStatementId     String?         @map("owner_statement_id")
+  providerId           String?         @map("provider_id")
+  periodStart          DateTime?       @map("period_start")
+  periodEnd            DateTime?       @map("period_end")
+  amountThb            Int             @map("amount_thb")
+  method               PayoutMethod
+  reference            String
+  executedOn           DateTime        @map("executed_on") @db.Date
+  recordedByIdentityId String          @map("recorded_by_identity_id")
+  status               PayoutStatus    @default(recorded)
 
   // Relations
   ownerStatement OwnerStatement? @relation(fields: [ownerStatementId], references: [id], onDelete: SetNull)
-  provider Provider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
-  recordedBy Identity @relation(fields: [recordedByIdentityId], references: [id])
+  provider       Provider?       @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  recordedBy     Identity        @relation(fields: [recordedByIdentityId], references: [id])
 
   @@index([payeeType, status])
   @@index([ownerStatementId])
@@ -1118,23 +1125,23 @@ model Payout {
 }
 
 model DepositClaim {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  bookingId String @map("booking_id")
-  claimantIdentityId String @map("claimant_identity_id")
-  description String
-  claimedAmountThb Int @map("claimed_amount_thb")
-  status DepositClaimStatus @default(filed)
-  evidenceMediaIds String[] @default([]) @map("evidence_media_ids")
-  filedAt DateTime @map("filed_at")
-  resolutionAt DateTime? @map("resolution_at")
-  resolutionNote String?
+  bookingId          String             @map("booking_id")
+  claimantIdentityId String             @map("claimant_identity_id")
+  description        String
+  claimedAmountThb   Int                @map("claimed_amount_thb")
+  status             DepositClaimStatus @default(filed)
+  evidenceMediaIds   String[]           @default([]) @map("evidence_media_ids")
+  filedAt            DateTime           @map("filed_at")
+  resolutionAt       DateTime?          @map("resolution_at")
+  resolutionNote     String?
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  claimant Identity @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
+  booking       Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  claimant      Identity     @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
   evidenceMedia MediaAsset[] @relation(name: "claimEvidence")
 
   @@index([bookingId, status])
@@ -1143,82 +1150,82 @@ model DepositClaim {
 }
 
 model UnitEngagement {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  engagementType UnitEngagementType @map("engagement_type")
-  ownerIdentityId String @map("owner_identity_id")
-  managementOrgId String? @map("management_org_id")
-  noiCapAnnualThb Int? @map("noi_cap_annual_thb")
-  feeOverridePct Decimal? @map("fee_override_pct") @db.Decimal(5, 2)
-  setupFeeThb Int? @map("setup_fee_thb")
-  mandateMediaId String? @map("mandate_media_id")
-  startsOn DateTime? @map("starts_on")
-  endsOn DateTime? @map("ends_on")
-  status UnitEngagementStatus @default(draft)
+  unitId          String               @map("unit_id")
+  engagementType  UnitEngagementType   @map("engagement_type")
+  ownerIdentityId String               @map("owner_identity_id")
+  managementOrgId String?              @map("management_org_id")
+  noiCapAnnualThb Int?                 @map("noi_cap_annual_thb")
+  feeOverridePct  Decimal?             @map("fee_override_pct") @db.Decimal(5, 2)
+  setupFeeThb     Int?                 @map("setup_fee_thb")
+  mandateMediaId  String?              @map("mandate_media_id")
+  startsOn        DateTime?            @map("starts_on")
+  endsOn          DateTime?            @map("ends_on")
+  status          UnitEngagementStatus @default(draft)
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  owner Identity @relation(name: "engagementOwner", fields: [ownerIdentityId], references: [id])
-  managementOrg Organization? @relation(fields: [managementOrgId], references: [id])
-  mandateMedia MediaAsset? @relation(name: "engagementMandate", fields: [mandateMediaId], references: [id])
-  statements OwnerStatement[]
+  unit          Unit             @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner         Identity         @relation(name: "engagementOwner", fields: [ownerIdentityId], references: [id])
+  managementOrg Organization?    @relation(fields: [managementOrgId], references: [id])
+  mandateMedia  MediaAsset?      @relation(name: "engagementMandate", fields: [mandateMediaId], references: [id])
+  statements    OwnerStatement[]
 
   @@index([unitId, status])
   @@map("unit_engagement")
 }
 
 model Organization {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name String
-  orgType OrganizationType @map("org_type")
-  projectId String? @map("project_id")
-  contactEmail String @map("contact_email")
-  contactPhone String @map("contact_phone")
-  status OrganizationStatus @default(active)
+  name         String
+  orgType      OrganizationType   @map("org_type")
+  projectId    String?            @map("project_id")
+  contactEmail String             @map("contact_email")
+  contactPhone String             @map("contact_phone")
+  status       OrganizationStatus @default(active)
 
   // Relations
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  engagements UnitEngagement[]
+  project         Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  engagements     UnitEngagement[]
   roleAssignments RoleAssignment[]
-  announcements Announcement[]
+  announcements   Announcement[]
 
   @@map("organization")
 }
 
 model Provider {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name String
-  description String?
-  contactEmail String @map("contact_email")
-  contactPhone String @map("contact_phone")
-  categoryKeys String[] @default([]) @map("category_keys")
-  status ProviderStatus @default(applied)
-  vetted_at DateTime? @map("vetted_at")
-  vetted_by_identity_id String? @map("vetted_by_identity_id")
+  name                  String
+  description           String?
+  contactEmail          String         @map("contact_email")
+  contactPhone          String         @map("contact_phone")
+  categoryKeys          String[]       @default([]) @map("category_keys")
+  status                ProviderStatus @default(applied)
+  vetted_at             DateTime?      @map("vetted_at")
+  vetted_by_identity_id String?        @map("vetted_by_identity_id")
   // The identity that submitted the application — receives the
   // provider_member role and the N-18/N-19 vetting outcome (F-PROV-1).
-  applicant_identity_id String? @map("applicant_identity_id")
-  payoutMethod Json? @map("payout_method") @db.JsonB
-  logoMediaId String? @map("logo_media_id")
+  applicant_identity_id String?        @map("applicant_identity_id")
+  payoutMethod          Json?          @map("payout_method") @db.JsonB
+  logoMediaId           String?        @map("logo_media_id")
 
   // Relations
-  vetted_by Identity? @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)
-  applicant Identity? @relation("providerApplicant", fields: [applicant_identity_id], references: [id], onDelete: SetNull)
-  logoMedia MediaAsset? @relation("providerLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  vetted_by       Identity?         @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)
+  applicant       Identity?         @relation("providerApplicant", fields: [applicant_identity_id], references: [id], onDelete: SetNull)
+  logoMedia       MediaAsset?       @relation("providerLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
   roleAssignments RoleAssignment[]
-  services Service[]
-  serviceAreas ProviderProject[]
-  serviceOrders ServiceOrder[]
-  payouts Payout[]
+  services        Service[]
+  serviceAreas    ProviderProject[]
+  serviceOrders   ServiceOrder[]
+  payouts         Payout[]
 
   @@index([status, vetted_at])
   @@map("provider")
@@ -1226,45 +1233,44 @@ model Provider {
 
 model ProviderProject {
   provider_id String @map("provider_id")
-  project_id String @map("project_id")
+  project_id  String @map("project_id")
 
   provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project  Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@id([provider_id, project_id])
   @@map("provider_project")
 }
 
-
 model Service {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  provider_id String @map("provider_id")
-  categoryKey String @map("category_key")
-  title String
-  description String?
-  titleRu String? @map("title_ru")
-  titleEn String? @map("title_en")
-  titleTh String? @map("title_th")
-  descriptionRu String? @map("description_ru")
-  descriptionEn String? @map("description_en")
-  descriptionTh String? @map("description_th")
-  priceModel PriceModel @map("price_model")
-  basePriceThb Int? @map("base_price_thb")
-  durationMin Int? @map("duration_min")
-  fulfilmentMode FulfilmentMode @default(referred) @map("fulfilment_mode")
-  advanceNoticeHours Int @default(0) @map("advance_notice_hours")
-  status ServiceStatus @default(draft)
-  coverMediaId String? @map("cover_media_id")
+  provider_id        String         @map("provider_id")
+  categoryKey        String         @map("category_key")
+  title              String
+  description        String?
+  titleRu            String?        @map("title_ru")
+  titleEn            String?        @map("title_en")
+  titleTh            String?        @map("title_th")
+  descriptionRu      String?        @map("description_ru")
+  descriptionEn      String?        @map("description_en")
+  descriptionTh      String?        @map("description_th")
+  priceModel         PriceModel     @map("price_model")
+  basePriceThb       Int?           @map("base_price_thb")
+  durationMin        Int?           @map("duration_min")
+  fulfilmentMode     FulfilmentMode @default(referred) @map("fulfilment_mode")
+  advanceNoticeHours Int            @default(0) @map("advance_notice_hours")
+  status             ServiceStatus  @default(draft)
+  coverMediaId       String?        @map("cover_media_id")
 
   // Relations
-  provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  coverMedia MediaAsset? @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
-  media ServiceMedia[] @relation("serviceMediaList")
+  provider          Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  coverMedia        MediaAsset?      @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  media             ServiceMedia[]   @relation("serviceMediaList")
   availableProjects ServiceProject[]
-  serviceOrders ServiceOrder[]
+  serviceOrders     ServiceOrder[]
 
   @@index([provider_id, status])
   @@index([categoryKey])
@@ -1273,11 +1279,11 @@ model Service {
 
 model ServiceMedia {
   service_id String @map("service_id")
-  media_id String @map("media_id")
-  position Int @default(0)
+  media_id   String @map("media_id")
+  position   Int    @default(0)
 
-  service Service @relation("serviceMediaList", fields: [service_id], references: [id], onDelete: Cascade)
-  media MediaAsset @relation("serviceImage", fields: [media_id], references: [id], onDelete: Cascade)
+  service Service    @relation("serviceMediaList", fields: [service_id], references: [id], onDelete: Cascade)
+  media   MediaAsset @relation("serviceImage", fields: [media_id], references: [id], onDelete: Cascade)
 
   @@id([service_id, media_id])
   @@map("service_media")
@@ -1295,52 +1301,52 @@ model ServiceProject {
 }
 
 model ServiceOrder {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // What and where
-  service_id String @map("service_id")
-  provider_id String @map("provider_id")
-  project_id String @map("project_id")
-  unit_id String? @map("unit_id")
-  booking_id String? @map("booking_id")
+  service_id  String  @map("service_id")
+  provider_id String  @map("provider_id")
+  project_id  String  @map("project_id")
+  unit_id     String? @map("unit_id")
+  booking_id  String? @map("booking_id")
 
   // Who ordered
-  orderer_identity_id String @map("orderer_identity_id")
-  orderer_role RoleType @map("orderer_role")
+  orderer_identity_id String   @map("orderer_identity_id")
+  orderer_role        RoleType @map("orderer_role")
 
   // Slot and quantity
   scheduled_start DateTime @map("scheduled_start")
-  scheduled_end DateTime @map("scheduled_end")
-  quantity Int @default(1)
+  scheduled_end   DateTime @map("scheduled_end")
+  quantity        Int      @default(1)
 
   // Pricing
-  price_breakdown Json @db.JsonB @map("price_breakdown")
-  total_thb Int @map("total_thb")
+  price_breakdown        Json    @map("price_breakdown") @db.JsonB
+  total_thb              Int     @map("total_thb")
   take_rate_pct_snapshot Decimal @map("take_rate_pct_snapshot")
 
   // Status and lifecycle
-  status ServiceOrderStatus @default(placed)
-  cancelled_at DateTime? @map("cancelled_at")
-  cancelled_by_identity_id String? @map("cancelled_by_identity_id")
-  cancellation_reason String? @map("cancellation_reason")
-  expired_at DateTime? @map("expired_at")
-  refund_accrued_thb Int @default(0) @map("refund_accrued_thb")
+  status                   ServiceOrderStatus @default(placed)
+  cancelled_at             DateTime?          @map("cancelled_at")
+  cancelled_by_identity_id String?            @map("cancelled_by_identity_id")
+  cancellation_reason      String?            @map("cancellation_reason")
+  expired_at               DateTime?          @map("expired_at")
+  refund_accrued_thb       Int                @default(0) @map("refund_accrued_thb")
 
   // Notes
   note_to_provider String? @map("note_to_provider")
-  address_note String? @map("address_note")
+  address_note     String? @map("address_note")
 
   // Relations
-  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
-  provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  unit Unit? @relation(fields: [unit_id], references: [id], onDelete: SetNull)
-  booking Booking? @relation(fields: [booking_id], references: [id], onDelete: SetNull)
-  orderer Identity @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
-  cancelledBy Identity? @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
-  payments Payment[]
+  service         Service          @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  provider        Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  project         Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  unit            Unit?            @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  booking         Booking?         @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  orderer         Identity         @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
+  cancelledBy     Identity?        @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  payments        Payment[]
   analyticsEvents AnalyticsEvent[]
 
   @@index([project_id, status, createdAt])
@@ -1350,25 +1356,25 @@ model ServiceOrder {
 }
 
 model Review {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  target_type ReviewTargetType @map("target_type")
-  target_id String @map("target_id")
-  author_identity_id String @map("author_identity_id")
+  target_type        ReviewTargetType @map("target_type")
+  target_id          String           @map("target_id")
+  author_identity_id String           @map("author_identity_id")
 
-  rating Int // 1-5
+  rating  Int // 1-5
   comment String?
 
-  reply String?
-  replied_at DateTime? @map("replied_at")
-  replier_identity_id String? @map("replier_identity_id")
+  reply               String?
+  replied_at          DateTime? @map("replied_at")
+  replier_identity_id String?   @map("replier_identity_id")
 
   status String @default("published") // "published" or "hidden"
 
   // Relations — polymorphic pattern (target_type determines what target_id references)
-  author Identity @relation(fields: [author_identity_id], references: [id], onDelete: Cascade)
+  author  Identity  @relation(fields: [author_identity_id], references: [id], onDelete: Cascade)
   replier Identity? @relation(name: "reviewRepliedBy", fields: [replier_identity_id], references: [id], onDelete: SetNull)
 
   @@unique([target_type, target_id, author_identity_id])
@@ -1378,79 +1384,79 @@ model Review {
 }
 
 model RoleAssignment {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId String @map("identity_id")
-  role RoleType
-  scopeType RoleScopeType @map("scope_type")
-  projectId String? @map("project_id")
-  unitId String? @map("unit_id")
-  organizationId String? @map("organization_id")
-  providerId String? @map("provider_id")
-  status RoleStatus @default(active)
-  grantedByIdentityId String? @map("granted_by_identity_id")
+  identityId          String        @map("identity_id")
+  role                RoleType
+  scopeType           RoleScopeType @map("scope_type")
+  projectId           String?       @map("project_id")
+  unitId              String?       @map("unit_id")
+  organizationId      String?       @map("organization_id")
+  providerId          String?       @map("provider_id")
+  status              RoleStatus    @default(active)
+  grantedByIdentityId String?       @map("granted_by_identity_id")
 
   // Relations
-  identity Identity @relation(name: "roleAssignmentIdentity", fields: [identityId], references: [id], onDelete: Cascade)
-  project Project? @relation(name: "projectScope", fields: [projectId], references: [id], onDelete: Cascade)
-  unit Unit? @relation(name: "unitScope", fields: [unitId], references: [id], onDelete: Cascade)
+  identity     Identity      @relation(name: "roleAssignmentIdentity", fields: [identityId], references: [id], onDelete: Cascade)
+  project      Project?      @relation(name: "projectScope", fields: [projectId], references: [id], onDelete: Cascade)
+  unit         Unit?         @relation(name: "unitScope", fields: [unitId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  provider Provider? @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  grantedBy Identity? @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
+  provider     Provider?     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  grantedBy    Identity?     @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
 
   @@index([identityId, status])
   @@map("role_assignment")
 }
 
 model MediaAsset {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  storageKey String @unique @map("storage_key")
-  kind MediaAssetKind
-  mimeType String @map("mime_type")
-  sizeBytes Int @map("size_bytes")
-  uploadedByIdentityId String @map("uploaded_by_identity_id")
-  encrypted Boolean @default(false)
-  deleteAfter DateTime? @map("delete_after")
+  storageKey           String         @unique @map("storage_key")
+  kind                 MediaAssetKind
+  mimeType             String         @map("mime_type")
+  sizeBytes            Int            @map("size_bytes")
+  uploadedByIdentityId String         @map("uploaded_by_identity_id")
+  encrypted            Boolean        @default(false)
+  deleteAfter          DateTime?      @map("delete_after")
 
   // Relations
-  uploadedBy Identity @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
-  identityAvatars Identity[] @relation("identityAvatar")
-  projectCovers Project[] @relation("projectCover")
-  unitCovers Unit[] @relation("unitCover")
-  unitMedia UnitMedia[]
-  projectMedia ProjectMedia[]
-  engagementMandates UnitEngagement[] @relation("engagementMandate")
+  uploadedBy            Identity               @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
+  identityAvatars       Identity[]             @relation("identityAvatar")
+  projectCovers         Project[]              @relation("projectCover")
+  unitCovers            Unit[]                 @relation("unitCover")
+  unitMedia             UnitMedia[]
+  projectMedia          ProjectMedia[]
+  engagementMandates    UnitEngagement[]       @relation("engagementMandate")
   bookingGuestPassports BookingGuest[]
-  paymentReceipts Payment[] @relation("paymentReceipt")
-  ticketMedias TicketMedia[]
-  providerLogos Provider[] @relation("providerLogo")
-  serviceCoverMedia Service[] @relation("serviceCover")
-  serviceMedia ServiceMedia[] @relation("serviceImage")
-  tm30Receipts Tm30Filing[] @relation("tm30Receipt")
+  paymentReceipts       Payment[]              @relation("paymentReceipt")
+  ticketMedias          TicketMedia[]
+  providerLogos         Provider[]             @relation("providerLogo")
+  serviceCoverMedia     Service[]              @relation("serviceCover")
+  serviceMedia          ServiceMedia[]         @relation("serviceImage")
+  tm30Receipts          Tm30Filing[]           @relation("tm30Receipt")
   conditionReportPhotos ConditionReportMedia[] @relation("conditionReportPhoto")
-  complianceRecordDocs ComplianceRecord[] @relation("complianceRecordDoc")
-  statementPdfs OwnerStatement[] @relation("statementPdf")
-  claimEvidence DepositClaim[] @relation("claimEvidence")
+  complianceRecordDocs  ComplianceRecord[]     @relation("complianceRecordDoc")
+  statementPdfs         OwnerStatement[]       @relation("statementPdf")
+  claimEvidence         DepositClaim[]         @relation("claimEvidence")
 
   @@index([deleteAfter])
   @@map("media_asset")
 }
 
 model AuditLog {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  actorIdentityId String? @map("actor_identity_id")
-  action String
-  entityType String @map("entity_type")
-  entityId String @map("entity_id")
-  data Json? @db.JsonB
-  at DateTime @default(now())
+  actorIdentityId String?  @map("actor_identity_id")
+  action          String
+  entityType      String   @map("entity_type")
+  entityId        String   @map("entity_id")
+  data            Json?    @db.JsonB
+  at              DateTime @default(now())
 
   // Relations
   actor Identity? @relation(name: "actor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
@@ -1463,11 +1469,11 @@ model AuditLog {
 // --- Join tables for many-to-many relationships ---
 
 model UnitMedia {
-  unitId String @map("unit_id")
+  unitId  String @map("unit_id")
   mediaId String @map("media_id")
-  sort Int @default(0)
+  sort    Int    @default(0)
 
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit  Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
   media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@id([unitId, mediaId])
@@ -1476,11 +1482,11 @@ model UnitMedia {
 
 model ProjectMedia {
   projectId String @map("project_id")
-  mediaId String @map("media_id")
-  sort Int @default(0)
+  mediaId   String @map("media_id")
+  sort      Int    @default(0)
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media   MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@id([projectId, mediaId])
   @@map("project_media")
@@ -1489,31 +1495,31 @@ model ProjectMedia {
 // --- Configuration & content (minimal stubs for T-002, full schema in T-003/T-004) ---
 
 model ConfigParameter {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  key String @unique
-  valueType String @map("value_type")
-  defaultValue Json? @map("default_value") @db.JsonB
-  enumOptions Json? @map("enum_options") @db.JsonB
-  jsonSchema Json? @map("json_schema") @db.JsonB
-  scopeableTo String @map("scopeable_to")
-  groupKey String @map("group_key")
-  description String
+  key          String @unique
+  valueType    String @map("value_type")
+  defaultValue Json?  @map("default_value") @db.JsonB
+  enumOptions  Json?  @map("enum_options") @db.JsonB
+  jsonSchema   Json?  @map("json_schema") @db.JsonB
+  scopeableTo  String @map("scopeable_to")
+  groupKey     String @map("group_key")
+  description  String
 
   @@map("config_parameter")
 }
 
 model ConfigOverride {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  parameterKey String @map("parameter_key")
-  scopeType String @map("scope_type")
-  scopeId String @map("scope_id")
-  value Json @db.JsonB
+  parameterKey        String @map("parameter_key")
+  scopeType           String @map("scope_type")
+  scopeId             String @map("scope_id")
+  value               Json   @db.JsonB
   updatedByIdentityId String @map("updated_by_identity_id")
 
   @@unique([parameterKey, scopeType, scopeId])
@@ -1521,15 +1527,15 @@ model ConfigOverride {
 }
 
 model ConfigChange {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  parameterKey String @map("parameter_key")
-  scopeType String? @map("scope_type")
-  scopeId String? @map("scope_id")
-  oldValue Json? @map("old_value") @db.JsonB
-  newValue Json? @map("new_value") @db.JsonB
-  changedByIdentityId String @map("changed_by_identity_id")
+  parameterKey        String  @map("parameter_key")
+  scopeType           String? @map("scope_type")
+  scopeId             String? @map("scope_id")
+  oldValue            Json?   @map("old_value") @db.JsonB
+  newValue            Json?   @map("new_value") @db.JsonB
+  changedByIdentityId String  @map("changed_by_identity_id")
 
   changedBy Identity @relation(name: "changedBy", fields: [changedByIdentityId], references: [id])
 
@@ -1538,13 +1544,13 @@ model ConfigChange {
 }
 
 model ContentKey {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  key String @unique
-  namespace String
-  description String
+  key          String  @unique
+  namespace    String
+  description  String
   supportsRich Boolean @default(false) @map("supports_rich")
 
   translations Translation[]
@@ -1554,18 +1560,18 @@ model ContentKey {
 }
 
 model Translation {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  contentKeyId String @map("content_key_id")
-  locale String
-  value String
-  status String @default("ok")
+  contentKeyId        String @map("content_key_id")
+  locale              String
+  value               String
+  status              String @default("ok")
   updatedByIdentityId String @map("updated_by_identity_id")
 
   contentKey ContentKey @relation(fields: [contentKeyId], references: [id], onDelete: Cascade)
-  updatedBy Identity @relation(name: "updatedBy", fields: [updatedByIdentityId], references: [id])
+  updatedBy  Identity   @relation(name: "updatedBy", fields: [updatedByIdentityId], references: [id])
 
   @@unique([contentKeyId, locale])
   @@map("translation")
@@ -1574,17 +1580,17 @@ model Translation {
 // --- Notifications & messaging ---
 
 model Notification {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  identityId String @map("identity_id")
-  type NotificationType
-  params Json @db.JsonB
-  titleKey String @map("title_key")
-  bodyKey String @map("body_key")
-  readAt DateTime? @map("read_at")
+  identityId String           @map("identity_id")
+  type       NotificationType
+  params     Json             @db.JsonB
+  titleKey   String           @map("title_key")
+  bodyKey    String           @map("body_key")
+  readAt     DateTime?        @map("read_at")
 
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  identity   Identity               @relation(fields: [identityId], references: [id], onDelete: Cascade)
   deliveries NotificationDelivery[]
 
   @@index([identityId, createdAt])
@@ -1592,16 +1598,16 @@ model Notification {
 }
 
 model NotificationDelivery {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  notificationId String @map("notification_id")
-  channel NotificationChannel
-  status NotificationDeliveryStatus @default(pending)
-  sentAt DateTime? @map("sent_at")
-  failureReason String? @map("failure_reason")
-  externalRef String? @map("external_ref")
+  notificationId String                     @map("notification_id")
+  channel        NotificationChannel
+  status         NotificationDeliveryStatus @default(pending)
+  sentAt         DateTime?                  @map("sent_at")
+  failureReason  String?                    @map("failure_reason")
+  externalRef    String?                    @map("external_ref")
 
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
@@ -1610,14 +1616,14 @@ model NotificationDelivery {
 }
 
 model NotificationPreference {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId String @map("identity_id")
-  type NotificationType
-  channel NotificationChannel
-  muted Boolean @default(false)
+  identityId String              @map("identity_id")
+  type       NotificationType
+  channel    NotificationChannel
+  muted      Boolean             @default(false)
 
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
@@ -1628,20 +1634,20 @@ model NotificationPreference {
 // --- Messaging ---
 
 model Thread {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  contextType ThreadContextType @map("context_type")
-  contextId String? @map("context_id")
-  projectId String? @map("project_id")
-  lastMessageAt DateTime? @map("last_message_at")
+  contextType   ThreadContextType @map("context_type")
+  contextId     String?           @map("context_id")
+  projectId     String?           @map("project_id")
+  lastMessageAt DateTime?         @map("last_message_at")
 
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   participants ThreadParticipant[]
-  messages Message[]
-  tickets Ticket[]
+  messages     Message[]
+  tickets      Ticket[]
 
   @@index([projectId, lastMessageAt])
   @@index([contextType, contextId])
@@ -1649,17 +1655,17 @@ model Thread {
 }
 
 model ThreadParticipant {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  threadId String @map("thread_id")
-  identityId String @map("identity_id")
-  participantRole String @map("participant_role")
-  lastReadAt DateTime? @map("last_read_at")
-  muted Boolean @default(false)
+  threadId        String    @map("thread_id")
+  identityId      String    @map("identity_id")
+  participantRole String    @map("participant_role")
+  lastReadAt      DateTime? @map("last_read_at")
+  muted           Boolean   @default(false)
 
-  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  thread   Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
   @@unique([threadId, identityId])
@@ -1668,15 +1674,15 @@ model ThreadParticipant {
 }
 
 model Message {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  threadId String @map("thread_id")
-  senderIdentityId String? @map("sender_identity_id")
-  body String?
-  messageKind MessageKind @default(user) @map("message_kind")
+  threadId         String      @map("thread_id")
+  senderIdentityId String?     @map("sender_identity_id")
+  body             String?
+  messageKind      MessageKind @default(user) @map("message_kind")
 
-  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  thread Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sender Identity? @relation(fields: [senderIdentityId], references: [id], onDelete: SetNull)
 
   @@index([threadId, createdAt])
@@ -1684,36 +1690,36 @@ model Message {
 }
 
 model Ticket {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId String @map("project_id")
-  unitId String? @map("unit_id")
-  raisedByIdentityId String @map("raised_by_identity_id")
-  raisedByRole RoleType @map("raised_by_role")
-  assigneeIdentityId String? @map("assignee_identity_id")
+  projectId          String   @map("project_id")
+  unitId             String?  @map("unit_id")
+  raisedByIdentityId String   @map("raised_by_identity_id")
+  raisedByRole       RoleType @map("raised_by_role")
+  assigneeIdentityId String?  @map("assignee_identity_id")
 
-  categoryKey String @map("category_key")
-  title String
+  categoryKey String         @map("category_key")
+  title       String
   description String?
-  priority TicketPriority @default(normal)
-  status TicketStatus @default(open)
+  priority    TicketPriority @default(normal)
+  status      TicketStatus   @default(open)
 
-  slaDueAt DateTime? @map("sla_due_at")
-  resolvedAt DateTime? @map("resolved_at")
-  resolutionNote String? @map("resolution_note")
+  slaDueAt       DateTime? @map("sla_due_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  resolutionNote String?   @map("resolution_note")
 
   threadId String? @map("thread_id")
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  raisedBy Identity @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
-  assignee Identity? @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
-  thread Thread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
-  events TicketEvent[]
-  media TicketMedia[]
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit     Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  raisedBy Identity      @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
+  assignee Identity?     @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
+  thread   Thread?       @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  events   TicketEvent[]
+  media    TicketMedia[]
 
   @@index([projectId, status])
   @@index([assigneeIdentityId, slaDueAt])
@@ -1721,33 +1727,33 @@ model Ticket {
 }
 
 model TicketEvent {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  ticketId String @map("ticket_id")
-  eventType TicketEventType @map("event_type")
-  actorIdentityId String? @map("actor_identity_id")
-  data Json?
+  ticketId        String          @map("ticket_id")
+  eventType       TicketEventType @map("event_type")
+  actorIdentityId String?         @map("actor_identity_id")
+  data            Json?
 
   // Relations
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  actor Identity? @relation(fields: [actorIdentityId], references: [id], onDelete: SetNull)
+  ticket Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  Identity? @relation(fields: [actorIdentityId], references: [id], onDelete: SetNull)
 
   @@index([ticketId, createdAt])
   @@map("ticket_event")
 }
 
 model TicketMedia {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
   ticketId String @map("ticket_id")
-  mediaId String @map("media_id")
-  position Int @default(0)
+  mediaId  String @map("media_id")
+  position Int    @default(0)
 
   // Relations
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  ticket Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  media  MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
 
   @@unique([ticketId, mediaId])
   @@index([ticketId, position])
@@ -1755,28 +1761,28 @@ model TicketMedia {
 }
 
 model Announcement {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId String @map("project_id")
-  createdByIdentityId String @map("created_by_identity_id")
-  organizationId String? @map("organization_id")
+  projectId           String  @map("project_id")
+  createdByIdentityId String  @map("created_by_identity_id")
+  organizationId      String? @map("organization_id")
 
-  title String
-  body String
-  audience AnnouncementAudience
-  postedAs AnnouncementPostedAs @map("posted_as")
-  status AnnouncementStatus @default(draft)
-  isPinned Boolean @default(false) @map("is_pinned")
-  isImportant Boolean @default(false) @map("is_important")
-  expiresAt DateTime? @map("expires_at")
+  title       String
+  body        String
+  audience    AnnouncementAudience
+  postedAs    AnnouncementPostedAs @map("posted_as")
+  status      AnnouncementStatus   @default(draft)
+  isPinned    Boolean              @default(false) @map("is_pinned")
+  isImportant Boolean              @default(false) @map("is_important")
+  expiresAt   DateTime?            @map("expires_at")
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  reads AnnouncementRead[]
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    Identity           @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+  organization Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  reads        AnnouncementRead[]
 
   @@index([projectId, status, createdAt])
   @@index([postedAs, organizationId])
@@ -1784,15 +1790,15 @@ model Announcement {
 }
 
 model AnnouncementRead {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
   announcementId String @map("announcement_id")
-  identityId String @map("identity_id")
+  identityId     String @map("identity_id")
 
   // Relations
   announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  identity     Identity     @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
   @@unique([announcementId, identityId])
   @@index([identityId, createdAt])
@@ -1802,26 +1808,26 @@ model AnnouncementRead {
 // --- Operations (TM30, condition reports, compliance) ---
 
 model Tm30Filing {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  bookingId String @map("booking_id")
-  bookingGuestId String @unique @map("booking_guest_id")
-  dueAt DateTime @map("due_at")
-  status Tm30FilingStatus @default(pending)
+  bookingId      String           @map("booking_id")
+  bookingGuestId String           @unique @map("booking_guest_id")
+  dueAt          DateTime         @map("due_at")
+  status         Tm30FilingStatus @default(pending)
 
-  filedAt DateTime? @map("filed_at")
-  filedByIdentityId String? @map("filed_by_identity_id")
-  receiptMediaId String? @map("receipt_media_id")
-  failureNote String? @map("failure_note")
-  escalatedAt DateTime? @map("escalated_at")
+  filedAt           DateTime? @map("filed_at")
+  filedByIdentityId String?   @map("filed_by_identity_id")
+  receiptMediaId    String?   @map("receipt_media_id")
+  failureNote       String?   @map("failure_note")
+  escalatedAt       DateTime? @map("escalated_at")
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingGuest BookingGuest @relation(fields: [bookingGuestId], references: [id], onDelete: Cascade)
-  filedBy Identity? @relation(name: "tm30FilingFiled", fields: [filedByIdentityId], references: [id], onDelete: SetNull)
-  receiptMedia MediaAsset? @relation(name: "tm30Receipt", fields: [receiptMediaId], references: [id], onDelete: SetNull)
+  filedBy      Identity?    @relation(name: "tm30FilingFiled", fields: [filedByIdentityId], references: [id], onDelete: SetNull)
+  receiptMedia MediaAsset?  @relation(name: "tm30Receipt", fields: [receiptMediaId], references: [id], onDelete: SetNull)
 
   @@index([bookingId, status])
   @@index([dueAt, status])
@@ -1830,21 +1836,21 @@ model Tm30Filing {
 }
 
 model ConditionReport {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  bookingId String? @map("booking_id")
-  reportType ConditionReportType @map("report_type")
-  notes String?
-  createdByIdentityId String @map("created_by_identity_id")
+  unitId              String              @map("unit_id")
+  bookingId           String?             @map("booking_id")
+  reportType          ConditionReportType @map("report_type")
+  notes               String?
+  createdByIdentityId String              @map("created_by_identity_id")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  createdBy Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
-  media ConditionReportMedia[]
+  unit      Unit                   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  booking   Booking?               @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdBy Identity               @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+  media     ConditionReportMedia[]
 
   @@index([unitId, reportType, createdAt])
   @@index([bookingId])
@@ -1852,17 +1858,17 @@ model ConditionReport {
 }
 
 model ConditionReportMedia {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
-  reportId String @map("report_id")
-  mediaId String @map("media_id")
-  sort Int @default(0)
-  caption String?
+  reportId String  @map("report_id")
+  mediaId  String  @map("media_id")
+  sort     Int     @default(0)
+  caption  String?
 
   // Relations
   report ConditionReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  media MediaAsset @relation(name: "conditionReportPhoto", fields: [mediaId], references: [id], onDelete: Restrict)
+  media  MediaAsset      @relation(name: "conditionReportPhoto", fields: [mediaId], references: [id], onDelete: Restrict)
 
   @@unique([reportId, mediaId])
   @@index([reportId, sort])
@@ -1870,25 +1876,25 @@ model ConditionReportMedia {
 }
 
 model ComplianceRecord {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  recordType ComplianceRecordType @map("record_type")
-  status ComplianceRecordStatus @default(pending)
+  unitId     String                 @map("unit_id")
+  recordType ComplianceRecordType   @map("record_type")
+  status     ComplianceRecordStatus @default(pending)
 
-  label String?
-  expiresOn DateTime? @map("expires_on") @db.Date
-  mediaId String? @map("media_id")
-  notes String?
-  verifiedAt DateTime? @map("verified_at")
-  verifiedByIdentityId String? @map("verified_by_identity_id")
+  label                String?
+  expiresOn            DateTime? @map("expires_on") @db.Date
+  mediaId              String?   @map("media_id")
+  notes                String?
+  verifiedAt           DateTime? @map("verified_at")
+  verifiedByIdentityId String?   @map("verified_by_identity_id")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  media MediaAsset? @relation(name: "complianceRecordDoc", fields: [mediaId], references: [id], onDelete: SetNull)
-  verifiedBy Identity? @relation(name: "complianceVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
+  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  media      MediaAsset? @relation(name: "complianceRecordDoc", fields: [mediaId], references: [id], onDelete: SetNull)
+  verifiedBy Identity?   @relation(name: "complianceVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
 
   @@index([unitId, status])
   @@index([unitId, recordType])
@@ -1896,21 +1902,21 @@ model ComplianceRecord {
 }
 
 model MobilizationChecklistItem {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  unitId String @map("unit_id")
-  step MobilizationChecklistItemStep
+  unitId String                          @map("unit_id")
+  step   MobilizationChecklistItemStep
   status MobilizationChecklistItemStatus @default(pending)
 
-  completedAt DateTime? @map("completed_at")
-  completedByIdentityId String? @map("completed_by_identity_id")
-  notes String?
-  requirementLabel String? @map("requirement_label")
+  completedAt           DateTime? @map("completed_at")
+  completedByIdentityId String?   @map("completed_by_identity_id")
+  notes                 String?
+  requirementLabel      String?   @map("requirement_label")
 
   // Relations
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit        Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   completedBy Identity? @relation(name: "mobilizationCompletedBy", fields: [completedByIdentityId], references: [id], onDelete: SetNull)
 
   @@unique([unitId, step])
@@ -1921,27 +1927,27 @@ model MobilizationChecklistItem {
 // --- Analytics & signals ---
 
 model AnalyticsEvent {
-  id String @id @default(uuid())
+  id         String   @id @default(uuid())
   occurredAt DateTime @default(now()) @map("occurred_at")
 
-  eventKey AnalyticsEventKey @map("event_key")
-  projectId String? @map("project_id")
-  unitId String? @map("unit_id")
-  bookingId String? @map("booking_id")
-  serviceOrderId String? @map("service_order_id")
-  identityId String? @map("identity_id")
-  actorIdentityId String? @map("actor_identity_id")
+  eventKey        AnalyticsEventKey @map("event_key")
+  projectId       String?           @map("project_id")
+  unitId          String?           @map("unit_id")
+  bookingId       String?           @map("booking_id")
+  serviceOrderId  String?           @map("service_order_id")
+  identityId      String?           @map("identity_id")
+  actorIdentityId String?           @map("actor_identity_id")
 
   // JSON payload for event-specific dimensions (no PII per doc 12)
   dimensions Json @default("{}")
 
   // Relations
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
-  identity Identity? @relation(name: "analyticsEventIdentity", fields: [identityId], references: [id], onDelete: SetNull)
-  actorIdentity Identity? @relation(name: "analyticsEventActor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  unit          Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceOrder  ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  identity      Identity?     @relation(name: "analyticsEventIdentity", fields: [identityId], references: [id], onDelete: SetNull)
+  actorIdentity Identity?     @relation(name: "analyticsEventActor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
 
   @@index([eventKey, occurredAt])
   @@index([projectId, occurredAt])
@@ -1951,28 +1957,28 @@ model AnalyticsEvent {
 }
 
 model MetricDaily {
-  id String @id @default(uuid())
-  date DateTime @db.Date @map("date")
+  id   String   @id @default(uuid())
+  date DateTime @map("date") @db.Date
 
   projectId String @map("project_id")
-  unitId String @map("unit_id")
+  unitId    String @map("unit_id")
 
   // Core metrics
-  nightsAvailable Int @default(0) @map("nights_available")
-  nightsOccupied Int @default(0) @map("nights_occupied")
-  ownerStayNights Int @default(0) @map("owner_stay_nights")
-  rentalRevenueCents Int @default(0) @map("rental_revenue_cents")
-  serviceOrderCount Int @default(0) @map("service_order_count")
+  nightsAvailable          Int @default(0) @map("nights_available")
+  nightsOccupied           Int @default(0) @map("nights_occupied")
+  ownerStayNights          Int @default(0) @map("owner_stay_nights")
+  rentalRevenueCents       Int @default(0) @map("rental_revenue_cents")
+  serviceOrderCount        Int @default(0) @map("service_order_count")
   serviceOrderRevenueCents Int @default(0) @map("service_order_revenue_cents")
 
   // Derived metrics (computed on read)
   occupancyPct Float? @map("occupancy_pct")
-  adrCents Int? @map("adr_cents")
-  revpanCents Int? @map("revpan_cents")
+  adrCents     Int?   @map("adr_cents")
+  revpanCents  Int?   @map("revpan_cents")
 
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit    Unit    @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
   @@unique([unitId, date])
   @@index([projectId, date])
@@ -1981,22 +1987,22 @@ model MetricDaily {
 }
 
 model BuyerSignal {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId String @map("identity_id")
-  signalKey BuyerSignalKey @map("signal_key")
-  status BuyerSignalStatus @default(open)
-  strength Int @default(1)
+  identityId String            @map("identity_id")
+  signalKey  BuyerSignalKey    @map("signal_key")
+  status     BuyerSignalStatus @default(open)
+  strength   Int               @default(1)
 
   // Dedup: only one open signal per identity+key at a time
-  closedAt DateTime? @map("closed_at")
-  notes String?
-  reviewedByIdentityId String? @map("reviewed_by_identity_id")
+  closedAt             DateTime? @map("closed_at")
+  notes                String?
+  reviewedByIdentityId String?   @map("reviewed_by_identity_id")
 
   // Relations
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  identity   Identity  @relation(fields: [identityId], references: [id], onDelete: Cascade)
   reviewedBy Identity? @relation(name: "buyerSignalReviewer", fields: [reviewedByIdentityId], references: [id], onDelete: SetNull)
 
   @@unique([identityId, signalKey])
@@ -2005,31 +2011,163 @@ model BuyerSignal {
   @@map("buyer_signal")
 }
 
-// --- Integrations (iCal, payment providers, messaging, CRM) ---
+// --- CRM: one commercial memory around the same Identity used by Stay and Own ---
+
+model CrmProfile {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId        String            @unique @map("identity_id")
+  lifecycleStage    CrmLifecycleStage @default(contact) @map("lifecycle_stage")
+  leadScore         Int               @default(0) @map("lead_score")
+  tags              String[]          @default([])
+  preferredChannel  String?           @map("preferred_channel")
+  firstSource       String?           @map("first_source")
+  lastSource        String?           @map("last_source")
+  lastInteractionAt DateTime?         @map("last_interaction_at")
+  nextActionAt      DateTime?         @map("next_action_at")
+  ownerSince        DateTime?         @map("owner_since")
+  guestSince        DateTime?         @map("guest_since")
+  customFields      Json              @default("{}") @map("custom_fields")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([lifecycleStage, nextActionAt])
+  @@index([leadScore])
+  @@map("crm_profile")
+}
+
+model CrmOpportunity {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId           String              @map("identity_id")
+  assignedToIdentityId String?             @map("assigned_to_identity_id")
+  projectId            String?             @map("project_id")
+  unitId               String?             @map("unit_id")
+  type                 CrmOpportunityType
+  stage                CrmOpportunityStage @default(new)
+  title                String
+  source               String
+  valueThb             Int?                @map("value_thb")
+  probability          Int                 @default(10)
+  requirements         Json                @default("{}")
+  expectedCloseAt      DateTime?           @map("expected_close_at")
+  nextActionAt         DateTime?           @map("next_action_at")
+  wonAt                DateTime?           @map("won_at")
+  lostAt               DateTime?           @map("lost_at")
+  lostReason           String?             @map("lost_reason")
+  externalPartner      String?             @map("external_partner")
+
+  identity   Identity      @relation("crmOpportunityContact", fields: [identityId], references: [id], onDelete: Cascade)
+  assignedTo Identity?     @relation("crmOpportunityAssignee", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
+  project    Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  unit       Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  activities CrmActivity[]
+
+  @@index([stage, nextActionAt])
+  @@index([identityId, createdAt])
+  @@index([assignedToIdentityId, stage])
+  @@index([type, stage])
+  @@map("crm_opportunity")
+}
+
+model CrmActivity {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId          String            @map("identity_id")
+  opportunityId       String?           @map("opportunity_id")
+  createdByIdentityId String?           @map("created_by_identity_id")
+  type                CrmActivityType
+  status              CrmActivityStatus @default(open)
+  subject             String
+  body                String?
+  dueAt               DateTime?         @map("due_at")
+  completedAt         DateTime?         @map("completed_at")
+  channelReference    String?           @map("channel_reference")
+  metadata            Json              @default("{}")
+
+  identity    Identity        @relation("crmActivityContact", fields: [identityId], references: [id], onDelete: Cascade)
+  opportunity CrmOpportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdBy   Identity?       @relation("crmActivityCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([status, dueAt])
+  @@index([identityId, createdAt])
+  @@index([opportunityId, createdAt])
+  @@map("crm_activity")
+}
+
+model CrmConsent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId String            @map("identity_id")
+  purpose    CrmConsentPurpose
+  status     CrmConsentStatus
+  channel    String
+  capturedAt DateTime          @default(now()) @map("captured_at")
+  expiresAt  DateTime?         @map("expires_at")
+  evidence   Json              @default("{}")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, purpose, capturedAt])
+  @@index([status, expiresAt])
+  @@map("crm_consent")
+}
+
+model CrmAttributionTouch {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  identityId  String       @map("identity_id")
+  touchType   CrmTouchType @map("touch_type")
+  source      String
+  medium      String?
+  campaign    String?
+  content     String?
+  landingPage String?      @map("landing_page")
+  referrer    String?
+  occurredAt  DateTime     @default(now()) @map("occurred_at")
+  metadata    Json         @default("{}")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, occurredAt])
+  @@index([source, campaign, occurredAt])
+  @@map("crm_attribution_touch")
+}
+
+// --- Integrations (iCal, payment providers, messaging, controlled exports) ---
 
 model IntegrationAccount {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // What integration and where it's scoped
-  integrationKey IntegrationKey @map("integration_key")
-  scopeType IntegrationScopeType @map("scope_type")
+  integrationKey IntegrationKey       @map("integration_key")
+  scopeType      IntegrationScopeType @map("scope_type")
 
   // Scope IDs: only one of these is populated based on scopeType
   platformId String? @map("platform_id")
-  projectId String? @map("project_id")
-  unitId String? @map("unit_id")
+  projectId  String? @map("project_id")
+  unitId     String? @map("unit_id")
 
   // Integration state & secrets
-  config Json @default("{}") // contains provider_account, auth tokens, etc. — encrypted per doc 12
-  status IntegrationStatus @default(active)
-  lastSyncAt DateTime? @map("last_sync_at")
-  lastError String? @map("last_error")
+  config     Json              @default("{}") // contains provider_account, auth tokens, etc. — encrypted per doc 12
+  status     IntegrationStatus @default(active)
+  lastSyncAt DateTime?         @map("last_sync_at")
+  lastError  String?           @map("last_error")
 
   // Relations
   project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  unit Unit? @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit    Unit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
   @@unique([integrationKey, scopeType, projectId, unitId])
   @@index([scopeType, projectId])
@@ -2037,54 +2175,3 @@ model IntegrationAccount {
   @@index([status, lastSyncAt])
   @@map("integration_account")
 }
-
-// --- CRM and Customer Lifecycle ---
-
-model CrmProfile {
-  id String @id @default(uuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  identityId String @unique @map("identity_id")
-  lifecycleStage String @map("lifecycle_stage")
-  leadScore Int @default(0) @map("lead_score")
-  accountOwnerIdentityId String? @map("account_owner_identity_id")
-  nextStepAt DateTime? @map("next_step_at")
-  lifecycleChangedAt DateTime? @map("lifecycle_changed_at")
-  lifecycleChangeReason String? @map("lifecycle_change_reason")
-  lifecycleChangeApprovedByIdentityId String? @map("lifecycle_change_approved_by_identity_id")
-
-  // Relations
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-  accountOwner Identity? @relation(name: "crmProfileAccountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
-  lifecycleChangeApprovedBy Identity? @relation(name: "crmProfileLifecycleApprover", fields: [lifecycleChangeApprovedByIdentityId], references: [id], onDelete: SetNull)
-  transitions CrmLifecycleTransition[]
-
-  @@index([lifecycleStage])
-  @@index([accountOwnerIdentityId, lifecycleStage])
-  @@index([nextStepAt, lifecycleStage])
-  @@index([lifecycleChangedAt])
-  @@map("crm_profile")
-}
-
-model CrmLifecycleTransition {
-  id String @id @default(uuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  profileId String @map("profile_id")
-  fromStage String @map("from_stage")
-  toStage String @map("to_stage")
-  reason String
-  approvedByIdentityId String? @map("approved_by_identity_id")
-  notes Json @default("{}") @db.JsonB
-
-  // Relations
-  profile CrmProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  approvedBy Identity? @relation(fields: [approvedByIdentityId], references: [id], onDelete: SetNull)
-
-  @@index([profileId, createdAt])
-  @@index([approvedByIdentityId])
-  @@map("crm_lifecycle_transition")
-}
-

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
+import { track } from '@/modules/analytics';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +44,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (!service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
       return NextResponse.json({ error: 'Service not available' }, { status: 404 });
     }
+
+    // Track analytics event
+    const viewer = await getCurrentUser().catch(() => null);
+    await track(prisma, 'service_service_viewed', {
+      serviceId: service.id,
+      identityId: viewer?.identityId,
+      categoryKey: service.categoryKey,
+    }).catch(() => null);
 
     return NextResponse.json({
       id: service.id,

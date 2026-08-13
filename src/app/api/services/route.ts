@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
+import { track } from '@/modules/analytics';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 // This GET uses no dynamic request API, so without this Next.js would cache
 // its response at build time — the catalog would never reflect DB changes.
@@ -22,6 +24,13 @@ export async function GET(_req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
+
+    // Track analytics event
+    const viewer = await getCurrentUser().catch(() => null);
+    await track(prisma, 'service_catalog_viewed', {
+      identityId: viewer?.identityId,
+      serviceCount: services.length,
+    }).catch(() => null);
 
     return NextResponse.json({
       services: services.map((s) => ({

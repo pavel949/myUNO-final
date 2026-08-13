@@ -8,6 +8,7 @@ export {
   createCheckout,
   verifyAndConfirm,
   refund,
+  markPaymentFailed,
   type RecordCashPaymentInput,
   type RecordCashRefundInput,
   type CreateCheckoutInput,

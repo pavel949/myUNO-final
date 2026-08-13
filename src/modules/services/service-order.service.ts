@@ -545,41 +545,6 @@ export async function rateServiceOrder(
 }
 
 /**
- * Reply to a service order review (provider or operator).
- */
-export async function replyToReview(
-  db: PrismaClient,
-  reviewId: string,
-  replierIdentityId: string,
-  reply: string
-): Promise<{ id: string }> {
-  // Validate review exists
-  const review = await db.review.findUnique({
-    where: { id: reviewId },
-  });
-
-  if (!review) {
-    throw new Error(`Review ${reviewId} not found`);
-  }
-
-  if (!reply || reply.trim().length === 0) {
-    throw new Error('Reply cannot be empty');
-  }
-
-  // Update the review with the reply
-  const updatedReview = await db.review.update({
-    where: { id: reviewId },
-    data: {
-      reply,
-      replied_at: new Date(),
-      replier_identity_id: replierIdentityId,
-    },
-  });
-
-  return { id: updatedReview.id };
-}
-
-/**
  * Cron: expire service orders past the SLA (placed/paid status).
  * Marks them expired and refunds any payment collected.
  */
@@ -622,15 +587,6 @@ export async function expireStaleServiceOrders(
       });
       refunded++;
     }
-
-    // Track service order no-show/timeout event
-    await track(db, 'service_order_no_show', {
-      serviceOrderId: order.id,
-      projectId: order.project_id,
-      unitId: order.unit_id ?? undefined,
-      identityId: order.orderer_identity_id,
-      totalThb: order.total_thb,
-    }).catch(() => null);
 
     // Note: order expired due to no response; provider sees it in queue (status=expired)
   }

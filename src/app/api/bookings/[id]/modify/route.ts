@@ -170,22 +170,18 @@ export async function POST(
     });
 
     // Track analytics event
-    const oldNights = Math.ceil(
-      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const newNights = Math.ceil(
+    const nights = Math.ceil(
       (newEndDate.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     await track(prisma, 'stay_modified', {
       bookingId: updated.id,
       unitId: updated.unitId,
       projectId: updated.projectId,
-      identityId: updated.guestIdentityId,
-      oldNights,
-      newNights,
+      identityId: booking.guestIdentityId,
+      nights,
+      priceDeltaThb: balanceThb,
       oldTotalThb,
       newTotalThb,
-      balanceThb,
     }).catch(() => null);
 
     return NextResponse.json(

@@ -217,6 +217,7 @@ enum LedgerEntryType {
   payout_provider
   refund_out
   adjustment
+  damage_claim_capture
 }
 
 enum OwnerStatementStatus {
@@ -331,6 +332,7 @@ enum NotificationDeliveryStatus {
 
 enum ThreadContextType {
   booking
+  booking_dispute
   service_order
   ticket
   unit

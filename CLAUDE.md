@@ -40,6 +40,12 @@ Roles: owner, guest, resident, buyer, provider member, MC member, juristic membe
 
 Threads, tickets, announcements, and notifications are the **shared `comms` layer** (doc 09), never rebuilt inside a feature. Any owner or resident can raise a ticket and **see its status and history** — transparency for remote owners. The services marketplace serves **any role**; orders attach to the identity **and its role**. Booking is first-class for both stays and services, and so are **cancellation, refund, and modification** — with every unhappy path (payment fails, verification fails, TM30 can't file, provider no-show) specified in doc 07 and built.
 
+## CRM & commercial system (docs 17–18)
+
+**Native CRM** — no external system (HubSpot, Salesforce). All contacts, deals, and activities live in the platform as a first-class module (`src/modules/crm/`). **Identity is shared**: every CRM contact is an `identity`, and every identity can have a profile (lifecycle stage, lead score), opportunities (rental, purchase, sale, management, dev advisory, capex, compliance), activities (calls, emails, meetings, tasks, notes via WhatsApp/Telegram), and consent records (PDPA audit trail). Deals attach to projects/units or remain unbound. No silos — a guest becomes a prospect becomes a buyer on the same identity record. Admin pipeline UI (drag-to-transition) sits at `/app/admin/crm`. Lead ingestion from external sources via `POST /api/leads` (becomes a `crm_profile` + lead activity). Attribution tracking (source, medium, campaign) for marketing mix modeling.
+
+**Lifecycle management** — See `docs/corporate_bible_integration.md` for phased roadmap. The CRM foundation (just shipped via CRM-1 patch) will be extended to track explicit customer lifecycle stages (Contact → Guest → Repeat → Investor → Buyer → Owner → Managed), account ownership, and transition audit logs. This is Phase 1 of a six-phase integration plan that aligns the platform with Ignatev Estate's business model and brand architecture.
+
 ## Money rules (doc 10)
 
 Charging is **cash-first in loop one** — a recorded cash payment captures who took it, when, and the receipt/чек number (the primary rail for the RU clientele) — with the provider **payment seam** behind it (mock adapter; default provider **Opn/Omise**; cards and Thai methods switched on later — Q8). **Crypto is not accepted** (SEC/BOT-licensed activity — Q21). Amounts are **server-computed, client-sent totals never trusted**; THB only (satang integers); deposits are provider pre-authorizations only, **never held in cash**; the **ledger is append-only** and every statement number links to its source rows; statements gate on admin sign-off; a direct-managed unit without its NOI cap refuses statement generation — no guessing.
@@ -72,6 +78,17 @@ The founder's old repos (sibling folders, see `legacy/README.md`) are a **parts 
 ## Where things are
 
 - `docs/business/` — model, positioning, journey audit. `docs/brand/` — brand and art direction.
-- The suite: `docs/00_legacy_audit` · `01_architecture_decisions` (locked D1–D10) · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` · `15_deployment` · `16_build_plan` · `open_questions` (maintained — the founder's question queue).
+- The suite: `docs/00_legacy_audit` · `01_architecture_decisions` (locked D1–D10) · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` · `15_deployment` · `16_build_plan` · `17_crm_and_commercial_system` · `18_platform_architecture` · `corporate_bible_integration` (implementation roadmap, six phases) · `open_questions` (maintained — the founder's question queue).
 
-*Maintained by Fable. Keep this file current as the architecture solidifies.*
+## Business Model & Brand Architecture
+
+myUNO operates within Ignatev Estate's owner-side model, which manages real estate economics from acquisition through operation to exit. **Three brand layers:**
+- **Ignatev** — Owner-side representation, mandate decisions, founder judgment.
+- **ClearView** — Underwriting, risk assessment, proof of asset quality.
+- **myUNO** — Operational standard, systems, guest/resident experience, direct booking.
+
+Each layer serves a distinct purpose and audience. See `docs/corporate_bible_integration.md` Phase 6 (documentation) for detailed brand positioning guidelines.
+
+**Unified customer model:** One identity record spans multiple roles over time (guest → repeat → owner). Revenue comes from management fees, performance fees (exceeding baseline NOI), transaction fees (sale/purchase), and distribution partner commissions. All fees are transparent and audit-logged. Owner reporting is monthly with line-item traceability. See `docs/corporate_bible_integration.md` Phases 2–5 for implementation roadmap.
+
+*Maintained by Core Platform Team. Keep this file current as the architecture solidifies.*

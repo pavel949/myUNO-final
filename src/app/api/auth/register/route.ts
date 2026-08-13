@@ -6,6 +6,8 @@ import {
   SESSION_COOKIE_NAME,
 } from '@/modules/auth';
 import { checkRateLimit } from '@/app/libs/rateLimit';
+import { prisma } from '@/lib/prisma';
+import { track } from '@/modules/analytics';
 
 
 function clientIp(request: NextRequest): string {
@@ -44,6 +46,11 @@ export async function POST(request: NextRequest) {
       password,
       locale,
     });
+
+    // Track auth registration
+    await track(prisma, 'auth_registered', {
+      identityId: identity.id,
+    }).catch(() => null);
 
     const response = NextResponse.json(
       {

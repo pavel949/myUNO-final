@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { rateServiceOrder } from '@/modules/services';
+import { replyToReview } from '@/modules/services';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 
 /**
- * POST /api/service-orders/[id]/rate — guest/orderer rates a fulfilled service order.
- * Body: { rating: 1-5, comment?: string }
+ * POST /api/service-orders/[id]/rate/[reviewId] — provider/operator replies to a review.
+ * Body: { reply: string }
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; reviewId: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -20,27 +20,26 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { rating, comment } = body;
+    const { reply } = body;
 
-    if (!rating || rating < 1 || rating > 5) {
-      throw createPublicError('Rating must be 1-5', 400);
+    if (!reply || reply.trim().length === 0) {
+      throw createPublicError('Reply cannot be empty', 400);
     }
 
-    const review = await rateServiceOrder(
+    const result = await replyToReview(
       prisma,
-      params.id,
+      params.reviewId,
       user.identityId,
-      rating,
-      comment
+      reply
     );
 
-    // Track review submission
-    await track(prisma, 'review_submitted', {
+    // Track review reply
+    await track(prisma, 'review_replied', {
       identityId: user.identityId,
       serviceOrderId: params.id,
     }).catch(() => null);
 
-    return NextResponse.json({ ok: true, reviewId: review.id });
+    return NextResponse.json({ ok: true, reviewId: result.id });
   } catch (error) {
     return handleError(error);
   }

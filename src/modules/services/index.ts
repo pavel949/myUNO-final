@@ -21,6 +21,7 @@ export {
   fulfillServiceOrder,
   cancelServiceOrder,
   rateServiceOrder,
+  replyToReview,
   getServiceOrder,
   getServiceOrdersByProvider,
   expireStaleServiceOrders,

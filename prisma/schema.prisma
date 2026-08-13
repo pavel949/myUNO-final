@@ -510,6 +510,7 @@ enum AnalyticsEventKey {
   service_order_cancelled
   service_order_no_show
   review_submitted
+  review_replied
   message_thread_started
   ticket_raised
   ticket_resolved

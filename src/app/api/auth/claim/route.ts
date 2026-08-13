@@ -2,6 +2,7 @@ import { people } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { track } from '@/modules/analytics';
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
       tokenHash,
       password,
     });
+
+    // Track auth claim
+    await track(prisma, 'auth_claimed', {
+      identityId: identity.id,
+    }).catch(() => null);
 
     return NextResponse.json({
       success: true,

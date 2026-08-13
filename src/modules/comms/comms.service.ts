@@ -1,5 +1,6 @@
 import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/client';
 import { sendEmail, buildNotificationEmail } from './email.seam';
+import { track } from '@/modules/analytics';
 
 export interface CreateNotificationInput {
   identityId: string;
@@ -102,9 +103,22 @@ export async function createNotification(
       }
     }
 
+    // Track successful notification delivery
+    await track(db, 'notify_delivered', {
+      identityId,
+      notificationType: type,
+    }).catch(() => null);
+
     return notification.id;
   } catch (error) {
     console.error('Failed to create notification:', error);
+
+    // Track notification failure
+    await track(db, 'notify_failed', {
+      identityId: input.identityId,
+      notificationType: input.type,
+    }).catch(() => null);
+
     return null;
   }
 }

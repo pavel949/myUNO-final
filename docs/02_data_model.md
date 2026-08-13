@@ -620,6 +620,20 @@ Append-only event stream (catalog in doc 13).
 | `status` | enum `new, reviewed, handed_to_capital, dismissed` | The human funnel (Q1: transaction itself is off-platform). |
 | `reviewed_by_identity_id`, `note` | | Follow-up record. |
 
+### 9.3 Native CRM — one commercial memory around `Identity`
+
+The CRM is part of the platform, not an external integration. `Identity` remains the canonical Party ID; lifecycle is a commercial summary and does not replace simultaneous scoped roles.
+
+| Table | Meaning |
+|---|---|
+| `CrmProfile` | Lifecycle, score, tags, preferred channel, first/last source and next action. Exactly one per Identity. |
+| `CrmOpportunity` | Rental, purchase, sale, management, developer advisory, capex or compliance revenue opportunity. May point to a managed unit or name an approved external partner. |
+| `CrmActivity` | Note, task, call, meeting or channel interaction linked to the Party and optionally an opportunity. |
+| `CrmConsent` | Append-only purpose, status, capture channel, expiry and evidence for service, marketing, matching or analytics. |
+| `CrmAttributionTouch` | First-touch, lead-creation, assisted and conversion evidence without overwriting prior sources. |
+
+An inbound owner form creates a `prospect`, not a verified owner. Winning a management or purchase opportunity promotes the lifecycle to `owner`; winning a rental promotes it to `guest`. Partner-supplied rentals keep `unit_id = null` until a managed unit is actually involved and must never enter managed-asset reporting.
+
 ---
 
 ## 10. Shared infrastructure
@@ -643,7 +657,7 @@ Every privileged mutation (admin config/content edits, role grants, statement pu
 
 | Field | Type | Meaning |
 |---|---|---|
-| `integration_key` | enum `ical_airbnb, ical_booking, payment_provider, whatsapp, telegram, crm_hubspot` | Which channel. |
+| `integration_key` | enum `ical_airbnb, ical_booking, payment_provider, whatsapp, telegram, crm_hubspot` | Which channel. `crm_hubspot` is a deprecated legacy enum value and must not be provisioned for the target architecture. |
 | `scope_type/scope_id` | platform / project / unit | Where it applies (an iCal URL is per unit). |
 | `config` | jsonb | Keys/URLs/tokens — secret fields envelope-encrypted. 🔒 |
 | `status` | enum `active, error, disabled` + `last_sync_at`, `last_error` | Health surfaced in admin. |

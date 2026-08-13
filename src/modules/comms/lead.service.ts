@@ -7,7 +7,8 @@ import { createNotification } from './comms.service';
  * owners / developers / buyers / management companies. A lead becomes a
  * `general` thread whose participants are the admins, with the visitor's
  * details in the opening system message, plus an N-29 `lead.received`
- * alert to every admin. No CRM dependency in loop one.
+ * alert to every admin. The public route then enriches the accepted inquiry
+ * into the native CRM; the raw thread remains the operational evidence.
  */
 
 export const LEAD_AUDIENCES = ['owners', 'developers', 'buyers', 'mc'] as const;

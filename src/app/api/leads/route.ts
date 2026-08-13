@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { submitLead, LEAD_AUDIENCES, type LeadAudience } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { capturePublicLead } from '@/modules/crm';
 
 /**
  * POST /api/leads — public lead form on the audience pages (doc 08 §3).
@@ -49,6 +50,16 @@ export async function POST(req: NextRequest) {
       message: typeof message === 'string' ? message : undefined,
       consent,
     });
+
+    // The thread preserves the raw inquiry for operations; CRM creates the
+    // canonical Party and commercial opportunity. A CRM outage must not lose
+    // an already accepted inquiry, so this enrichment is best-effort.
+    await capturePublicLead(prisma, {
+      audience: audience as LeadAudience,
+      name,
+      contact,
+      message: typeof message === 'string' ? message : undefined,
+    }).catch((error) => console.error('[CRM lead enrichment]', error));
 
     return NextResponse.json({ ok: true });
   } catch (error) {

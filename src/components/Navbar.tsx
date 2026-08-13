@@ -14,6 +14,7 @@ export interface NavbarUser {
 
 export interface NavbarLabels {
   findStay: string;
+  residences: string;
   services: string;
   trust: string;
   login: string;
@@ -94,6 +95,12 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
               {labels.findStay}
             </Link>
             <Link
+              href="/projects"
+              className="text-body text-text-ink hover:text-brand-andaman transition-colors"
+            >
+              {labels.residences}
+            </Link>
+            <Link
               href="/services"
               className="text-body text-text-ink hover:text-brand-andaman transition-colors"
             >
@@ -122,6 +129,7 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
             <option value="en">EN</option>
             <option value="ru">RU</option>
             <option value="th">TH</option>
+            <option value="zh">中文</option>
           </select>
           {user ? (
             <>
@@ -192,6 +200,9 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
         <div className="md:hidden border-t border-border-line bg-surface-paper px-24 py-16 flex flex-col gap-16">
           <Link href="/search" className="text-body text-text-ink py-8" onClick={closeMenu}>
             {labels.findStay}
+          </Link>
+          <Link href="/projects" className="text-body text-text-ink py-8" onClick={closeMenu}>
+            {labels.residences}
           </Link>
           <Link href="/services" className="text-body text-text-ink py-8" onClick={closeMenu}>
             {labels.services}

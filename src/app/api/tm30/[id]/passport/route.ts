@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { logTm30PassportAccess, decryptPassportNumber } from '@/modules/ops';
+import { logTm30PassportAccess, decryptPassportNumber, safeDecrypt } from '@/modules/ops';
 
 export async function GET(
   _req: NextRequest,
@@ -73,10 +73,10 @@ export async function GET(
     return NextResponse.json(
       {
         id: filing.id,
-        guestName: filing.bookingGuest?.fullName,
+        guestName: safeDecrypt(filing.bookingGuest?.fullName),
         nationality: filing.bookingGuest?.nationality,
         passportNumber: decryptedPassport,
-        dateOfBirth: filing.bookingGuest?.dateOfBirth,
+        dateOfBirth: safeDecrypt(filing.bookingGuest?.dateOfBirth),
         unit: filing.booking.unit,
         address: 'Ready to copy to immigration portal',
       },

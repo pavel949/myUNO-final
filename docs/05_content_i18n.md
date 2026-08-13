@@ -15,6 +15,7 @@ What is **content** (keys) vs **data** (rows): platform copy is content; things 
 - **`ru` — Russian.** The clientele's language and the platform default (`i18n.default_locale`, ⚠ Q19).
 - **`en` — English.** Complete at launch; the fallback language.
 - **`th` — Thai.** Required from day one for staff/provider/juristic surfaces and public trust; may lag editorially (Q19 — who translates).
+- **`zh` — Chinese (中文).** Fourth platform locale (Q23, answered 2026-07 with the Layantara onboarding). Policy: **public guest-facing namespaces** carry zh drafts (`needs_review` machine drafts until edited); admin/ops/staff surfaces intentionally serve EN via the fallback chain — no zh keys are required there. zh falls back `zh → en → ru → th`.
 
 **Fallback chain per key:** requested locale → `en` → `ru` → the key name rendered in a visible warning style (dev/staging) or the `en` empty-state dash (production) — a missing translation must be *findable*, never silently blank. The user's locale comes from `Identity.preferred_locale`; anonymous visitors get the default with a language switcher in the header (doc 06).
 
@@ -37,9 +38,11 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `landing.*` | The master landing page sections (doc 08 §2). |
 | `audience.*` | The audience pages: `audience.owners.*`, `audience.guests.*`, `audience.developers.*`, `audience.buyers.*`, `audience.mc.*`, `audience.providers.*`. |
 | `project_page.*` | The per-project public landing template ("{Project} on myUNO"). |
+| `projects.*` | The public projects hub `/projects` (list of live residences: cards, empty state, SEO title/description). |
 | `trust.*` | Trust pages: how-it-works, verification, the Ombudsman credential (`trust.ombudsman.*` — reserved, ⚠ Q15), dispute handling. |
 | `legal.*` | Terms, privacy, PDPA notices, entity/contact details (Q16 facts seeded — see doc 08). |
 | `auth.*` | Register, login, verify, reset, claim-account flows. |
+| `guests.*` | The guest access-request page (`/guests/access`, LY-7): booking-ref + email form, the uniform confirmation. |
 | `search.*` | Search & discovery UI (filters, availability, results, map). |
 | `listing.*` | Unit/listing detail page (amenities heading, policies block, house rules). |
 | `booking.*` | The stay flow end-to-end: widget, review step, payment, confirmation, holds, request-to-book, modification, cancellation dialogs (incl. every unhappy-path message: `booking.error.payment_failed`, `booking.error.dates_taken`, `booking.hold.expired` …). |

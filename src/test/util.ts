@@ -129,6 +129,8 @@ export interface UnitFactoryOpts {
   maxGuests?: number;
   minNights?: number;
   instantBook?: boolean;
+  categoryKey?: string;
+  bedrooms?: number;
 }
 
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
@@ -147,7 +149,8 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
       ownerIdentityId: opts.ownerIdentityId,
       name: opts.name || `Unit-${uuid().slice(0, 8)}`,
       unitType: 'villa',
-      bedrooms: 2,
+      categoryKey: opts.categoryKey ?? null,
+      bedrooms: opts.bedrooms ?? 2,
       bathrooms: 1,
       maxGuests: opts.maxGuests ?? 4,
       addressSupplement: '101',
@@ -279,6 +282,7 @@ export interface BookingFactoryOpts {
   adults?: number;
   children?: number;
   holdExpiresAt?: Date | null;
+  checkedOutAt?: Date | null;
   cancellationPolicySnapshot?: Record<string, unknown>;
 }
 
@@ -301,6 +305,7 @@ export async function createBooking(opts: BookingFactoryOpts) {
       status: opts.status || 'confirmed',
       verificationStatus: opts.verificationStatus || 'not_required',
       ...(opts.holdExpiresAt !== undefined && { holdExpiresAt: opts.holdExpiresAt }),
+      ...(opts.checkedOutAt !== undefined && { checkedOutAt: opts.checkedOutAt }),
       ...(opts.cancellationPolicySnapshot && {
         cancellationPolicySnapshot: opts.cancellationPolicySnapshot as any,
       }),
@@ -313,7 +318,7 @@ export interface BookingGuestFactoryOpts {
   fullName: string;
   nationality: string;
   passportNumber: string;
-  dateOfBirth?: Date;
+  dateOfBirth?: string;
   isLead?: boolean;
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import * as bookingService from './booking.service';
+import { getInStayHomeSpace } from './home-space.service';
 
 describe('booking.service — integration tests', () => {
   beforeEach(async () => {
@@ -9,6 +10,136 @@ describe('booking.service — integration tests', () => {
 
   afterEach(async () => {
     await resetDb();
+  });
+
+  describe('resolveUnitForCategory (LY-6)', () => {
+    const RANGE = { start: new Date('2026-08-10'), end: new Date('2026-08-14') };
+
+    it('assigns the first free live villa of the category, by stable name order', async () => {
+      const project = await createProject();
+      const guest = await createIdentity();
+      const unitB = await createUnit({
+        projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      // A-01 taken → B-02 must be assigned
+      await bookingService.createBooking(db, {
+        unitId: unitA.id, projectId: project.id, guestIdentityId: guest.id,
+        bookingType: 'guest_stay', channel: 'direct',
+        startDate: RANGE.start, endDate: RANGE.end,
+        adults: 2, children: 0, totalThb: 1000, instantBook: false,
+      });
+      // requested does NOT block by default → force a blocking status
+      await db.booking.updateMany({
+        where: { unitId: unitA.id },
+        data: { status: 'confirmed' },
+      });
+
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'superior_2br', RANGE.start, RANGE.end
+      );
+      expect(assigned?.id).toBe(unitB.id);
+      expect(assigned?.instantBook).toBe(false);
+    });
+
+    it('skips villas with blocked dates and non-live villas', async () => {
+      const project = await createProject();
+      const blockedUnit = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live',
+      });
+      await createUnit({
+        projectId: project.id, name: 'A-02', categoryKey: 'superior_2br', status: 'paused',
+      });
+      await db.blockedDate.create({
+        data: {
+          unitId: blockedUnit.id,
+          startDate: RANGE.start,
+          endDate: RANGE.end,
+          reason: 'maintenance',
+        },
+      });
+
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'superior_2br', RANGE.start, RANGE.end
+      );
+      expect(assigned).toBeNull();
+    });
+
+    it('returns null for a category with no units at all', async () => {
+      const project = await createProject();
+      const assigned = await bookingService.resolveUnitForCategory(
+        db, project.id, 'grand_deluxe_3br', RANGE.start, RANGE.end
+      );
+      expect(assigned).toBeNull();
+    });
+  });
+
+  describe('approveBookingRequest availability re-check (LY-6 guard)', () => {
+    const RANGE = { start: new Date('2026-09-01'), end: new Date('2026-09-05') };
+
+    // Requests never block the calendar, so several can target the same
+    // villa; the approval is where the conflict must be caught.
+    async function makeRequest(projectId: string, unitId: string) {
+      const guest = await createIdentity();
+      return bookingService.createBooking(db, {
+        unitId, projectId, guestIdentityId: guest.id,
+        bookingType: 'guest_stay', channel: 'direct',
+        startDate: RANGE.start, endDate: RANGE.end,
+        adults: 2, children: 0, totalThb: 1000, instantBook: false,
+      });
+    }
+
+    it('reassigns a category request within the category when the villa got taken', async () => {
+      const project = await createProject();
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const unitB = await createUnit({
+        projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unitA.id);
+      const second = await makeRequest(project.id, unitA.id);
+
+      const approvedFirst = await bookingService.approveBookingRequest(db, { bookingId: first.id });
+      expect(approvedFirst.status).toBe('pending_payment');
+      expect(approvedFirst.unitId).toBe(unitA.id);
+
+      const approvedSecond = await bookingService.approveBookingRequest(db, { bookingId: second.id });
+      expect(approvedSecond.status).toBe('pending_payment');
+      expect(approvedSecond.unitId).toBe(unitB.id);
+    });
+
+    it('refuses approval when the whole category is exhausted', async () => {
+      const project = await createProject();
+      const unitA = await createUnit({
+        projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unitA.id);
+      const second = await makeRequest(project.id, unitA.id);
+      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+
+      await expect(
+        bookingService.approveBookingRequest(db, { bookingId: second.id })
+      ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+      const stillRequested = await db.booking.findUnique({ where: { id: second.id } });
+      expect(stillRequested?.status).toBe('requested');
+    });
+
+    it('refuses approval for an uncategorized unit whose dates got taken', async () => {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id, name: 'C-01', status: 'live', instantBook: false,
+      });
+      const first = await makeRequest(project.id, unit.id);
+      const second = await makeRequest(project.id, unit.id);
+      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+
+      await expect(
+        bookingService.approveBookingRequest(db, { bookingId: second.id })
+      ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    });
   });
 
   describe('createBooking', () => {
@@ -1152,6 +1283,64 @@ describe('booking.service — integration tests', () => {
 
       expect(bookings).toHaveLength(2);
       expect(bookings[0].startDate > bookings[1].startDate).toBe(true);
+    });
+  });
+
+  describe('getInStayHomeSpace (D1)', () => {
+    it('returns booking details, active orders, and announcements for an authorized guest', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.booking.id).toBe(booking.id);
+      expect(data.booking.startDate).toBe(booking.startDate.toISOString());
+      expect(data.booking.endDate).toBe(booking.endDate.toISOString());
+      expect(data.activeOrders).toEqual([]);
+      expect(data.announcements).toEqual([]);
+    });
+
+    it('rejects access when guestIdentityId does not match the booking guest', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest1 = await createIdentity();
+      const guest2 = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest1.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      await expect(getInStayHomeSpace(db, booking.id, guest2.id)).rejects.toThrow('Access denied');
+    });
+
+    it('throws when booking is not found', async () => {
+      const guest = await createIdentity();
+      await expect(getInStayHomeSpace(db, 'nonexistent-id', guest.id)).rejects.toThrow('Booking not found');
     });
   });
 });

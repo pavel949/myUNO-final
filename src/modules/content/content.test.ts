@@ -75,6 +75,21 @@ describe('T-004 · Content module', () => {
       expect(result).toBe('Только русский');
     });
 
+    it('zh falls back to en first, then ru (LY-3, Q23)', async () => {
+      clearTranslationCache();
+      await ensureContentKey(db, 'test.fallback.zh_chain', 'test', 'Test key');
+      await setTranslation(db, 'test.fallback.zh_chain', 'en', 'English', 'ok', authorId);
+      await setTranslation(db, 'test.fallback.zh_chain', 'ru', 'Русский', 'ok', authorId);
+
+      // en present → zh serves en
+      expect(await t(db, 'test.fallback.zh_chain', {}, 'zh')).toBe('English');
+
+      // a real zh translation wins outright
+      clearTranslationCache();
+      await setTranslation(db, 'test.fallback.zh_chain', 'zh', '中文文本', 'ok', authorId);
+      expect(await t(db, 'test.fallback.zh_chain', {}, 'zh')).toBe('中文文本');
+    });
+
     it('returns key name in dev mode when all translations missing', async () => {
       clearTranslationCache();
       const originalEnv = process.env.NODE_ENV;

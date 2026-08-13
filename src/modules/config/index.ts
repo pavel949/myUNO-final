@@ -6,6 +6,7 @@
 
 export { getConfig, setConfigOverride, clearConfigCache } from './config.service';
 export { seedConfig } from './seed';
+export { assertCatalogKeys, getCatalogKeys, type CatalogName } from './catalog';
 export type {
   ConfigKey,
   AllConfig,
@@ -19,4 +20,7 @@ export type {
   CatalogConfig,
   SeasonPeriod,
   CancellationStep,
+  CategoryRates,
+  EarlyBirdConfig,
+  UnitCategoryEntry,
 } from './types';

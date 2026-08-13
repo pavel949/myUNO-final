@@ -11,7 +11,7 @@ interface KeyRow {
 
 type Labels = Record<string, string>;
 
-const LOCALES = ['ru', 'en', 'th'] as const;
+const LOCALES = ['ru', 'en', 'th', 'zh'] as const;
 
 export default function ContentAdminClient({
   keys,

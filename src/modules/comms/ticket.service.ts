@@ -1,4 +1,5 @@
 import { PrismaClient, TicketStatus, TicketPriority, TicketEventType, RoleType } from '@prisma/client';
+import { assertCatalogKeys } from '@/modules/config';
 import { publishMessage } from './thread.bus';
 
 export interface RaiseTicketInput {
@@ -33,6 +34,9 @@ export async function raiseTicket(
 
   // In a full implementation, fetch config for default assignee and SLA hours
   // For now, leave assignee null and slaEmaAt null (will be implemented with config service in next phase)
+
+  // Category must exist in the doc 04 §8 catalog (DM-3)
+  await assertCatalogKeys(db, 'catalog.ticket_categories', categoryKey, { projectId });
 
   const ticket = await db.ticket.create({
     data: {

@@ -7,6 +7,90 @@ describe('Config edit service', () => {
     await resetDb();
   });
 
+  describe('LY-9 validators — tariff & catalog shapes', () => {
+    it('accepts a well-formed satang rate grid and rejects raw-THB pastes', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+
+      await updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'pricing.category_rates',
+        newValue: { superior_2br: { nightly: { low: 626100 }, monthly: { low: 7200000 } } },
+      });
+
+      // 6261 THB pasted raw (not satang) must be rejected loudly
+      await expect(
+        updateConfigParameter(prisma, {
+          identityId: admin.id,
+          paramKey: 'pricing.category_rates',
+          newValue: { superior_2br: { nightly: { low: 6261 } } },
+        })
+      ).rejects.toThrow(/satang/);
+    });
+
+    it('rejects a negative or >100 early-bird pct and a zero min_days_before', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+
+      await updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'pricing.early_bird',
+        newValue: { min_days_before: 60, pct: 8 },
+      });
+      await expect(
+        updateConfigParameter(prisma, {
+          identityId: admin.id,
+          paramKey: 'pricing.early_bird',
+          newValue: { min_days_before: 0, pct: 8 },
+        })
+      ).rejects.toThrow(/positive integer/);
+      await expect(
+        updateConfigParameter(prisma, {
+          identityId: admin.id,
+          paramKey: 'pricing.early_bird',
+          newValue: { min_days_before: 60, pct: 120 },
+        })
+      ).rejects.toThrow(/between 0 and 100/);
+    });
+
+    it('rejects unit categories without snake_case keys', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+
+      await updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'catalog.unit_categories',
+        newValue: [{ key: 'superior_2br', style_key: 'phase_2_minimal', bedrooms: 2 }],
+      });
+      await expect(
+        updateConfigParameter(prisma, {
+          identityId: admin.id,
+          paramKey: 'catalog.unit_categories',
+          newValue: [{ key: 'Superior 2BR' }],
+        })
+      ).rejects.toThrow(/snake_case/);
+    });
+
+    it('rejects a malformed whatsapp number and accepts E.164 or empty', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+
+      await updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'comms.whatsapp_number',
+        newValue: '+66922407355',
+      });
+      await updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'comms.whatsapp_number',
+        newValue: '',
+      });
+      await expect(
+        updateConfigParameter(prisma, {
+          identityId: admin.id,
+          paramKey: 'comms.whatsapp_number',
+          newValue: 'call me maybe',
+        })
+      ).rejects.toThrow(/E\.164/);
+    });
+  });
+
   describe('updateConfigParameter', () => {
     it('validates tm30_sla_hours is within 0-24', async () => {
       const admin = await createIdentity({ isAdmin: true });

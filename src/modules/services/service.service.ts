@@ -1,5 +1,5 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
-import { getConfig } from '@/modules/config';
+import { getConfig, assertCatalogKeys } from '@/modules/config';
 
 export interface CreateServiceInput {
   providerId: string;
@@ -60,6 +60,10 @@ export async function createService(
     advanceNoticeHours = 0,
     availableProjectIds = [],
   } = input;
+
+  // Category must exist in the doc 04 §8 catalog — enforced here so every
+  // caller is covered, not only the API route (DM-3)
+  await assertCatalogKeys(db, 'catalog.service_categories', categoryKey);
 
   // Check if admin approval is required
   const requiresApproval = await getConfig(db, 'services.require_admin_approval');
@@ -303,4 +307,46 @@ export async function rejectService(
     where: { id: serviceId },
     data: { status: 'paused' },
   });
+}
+
+/**
+ * Get the average rating for a service across all its fulfilled orders.
+ * Returns { averageRating, reviewCount } or null if no reviews exist.
+ */
+export async function getServiceAverageRating(
+  db: PrismaClient,
+  serviceId: string
+): Promise<{ averageRating: number; reviewCount: number } | null> {
+  // Get all order IDs for this service
+  const orders = await db.serviceOrder.findMany({
+    where: { service_id: serviceId },
+    select: { id: true },
+  });
+
+  if (orders.length === 0) {
+    return null;
+  }
+
+  const orderIds = orders.map((o) => o.id);
+
+  // Get all reviews for these orders (only published)
+  const reviews = await db.review.findMany({
+    where: {
+      target_type: 'service_order',
+      target_id: { in: orderIds },
+      status: 'published',
+    },
+  });
+
+  if (reviews.length === 0) {
+    return null;
+  }
+
+  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+  const averageRating = Math.round((sum / reviews.length) * 10) / 10;
+
+  return {
+    averageRating,
+    reviewCount: reviews.length,
+  };
 }

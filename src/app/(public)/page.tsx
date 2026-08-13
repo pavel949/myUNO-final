@@ -1,12 +1,14 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { siteUrl } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
 
 export const metadata: Metadata = {
   title: 'myUNO | Serviced Living in Phuket',
   description:
     'Invest with confidence. Live worry-free. One platform for owners, guests, and providers.',
+  alternates: { canonical: '/' },
 };
 
 export const dynamic = 'force-dynamic';
@@ -120,8 +122,22 @@ export default async function LandingPage() {
     },
   ];
 
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'myUNO',
+    legalName: 'Ignatev Estate Co., Ltd',
+    url: siteUrl(),
+    email: 'pavel@ignatevestate.com',
+    areaServed: 'Phuket, Thailand',
+  };
+
   return (
     <main className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       {/* Hero + search */}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">

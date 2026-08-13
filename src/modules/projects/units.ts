@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
+import { assertCatalogKeys } from '@/modules/config';
 import { UnitStatus, UnitType } from '@prisma/client';
 
 interface CreateUnitInput {
@@ -7,6 +8,7 @@ interface CreateUnitInput {
   ownerIdentityId?: string;
   name: string;
   unitType: UnitType;
+  categoryKey?: string;
   bedrooms: number;
   bathrooms: number;
   maxGuests: number;
@@ -27,6 +29,7 @@ interface UpdateUnitInput {
   unitId: string;
   name?: string;
   unitType?: UnitType;
+  categoryKey?: string | null;
   bedrooms?: number;
   bathrooms?: number;
   maxGuests?: number;
@@ -54,6 +57,7 @@ export async function createUnit(input: CreateUnitInput) {
     ownerIdentityId,
     name,
     unitType,
+    categoryKey,
     bedrooms,
     bathrooms,
     maxGuests,
@@ -88,12 +92,19 @@ export async function createUnit(input: CreateUnitInput) {
     throw new Error(`Unit with name "${name}" already exists in this project`);
   }
 
+  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3).
+  // Unit categories are a project-scoped catalog, so pass the project scope.
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
+  await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, { projectId });
+
   const unit = await prisma.unit.create({
     data: {
       projectId,
       ownerIdentityId: ownerIdentityId || null,
       name,
       unitType,
+      categoryKey: categoryKey || null,
       bedrooms,
       bathrooms,
       maxGuests,
@@ -157,6 +168,7 @@ export async function updateUnit(input: UpdateUnitInput) {
     unitId,
     name,
     unitType,
+    categoryKey,
     bedrooms,
     bathrooms,
     maxGuests,
@@ -211,11 +223,20 @@ export async function updateUnit(input: UpdateUnitInput) {
     }
   }
 
+  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3).
+  // Unit categories are a project-scoped catalog, so pass the project scope.
+  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
+  await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, {
+    projectId: unit.projectId,
+  });
+
   const updated = await prisma.unit.update({
     where: { id: unitId },
     data: {
       ...(name !== undefined && { name }),
       ...(unitType !== undefined && { unitType }),
+      ...(categoryKey !== undefined && { categoryKey }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(bathrooms !== undefined && { bathrooms }),
       ...(maxGuests !== undefined && { maxGuests }),

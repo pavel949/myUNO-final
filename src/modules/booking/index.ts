@@ -4,6 +4,7 @@
 
 export {
   createBooking,
+  resolveUnitForCategory,
   approveBookingRequest,
   declineBookingRequest,
   confirmBooking,
@@ -27,6 +28,17 @@ export {
   computeRefundPercentage,
   computeRefundAmount,
   DEFAULT_POLICIES,
+  resolveCancellationPolicy,
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';
+
+export {
+  getInStayHomeSpace,
+  type InStayHomeSpaceData,
+} from './home-space.service';
+
+export {
+  sendPrearrivalReminders,
+  sendPostStayPrompts,
+} from './lifecycle.jobs';

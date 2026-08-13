@@ -21,6 +21,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'listing.per_night': '/ night',
     'listing.price_nights': '× {nights} nights',
     'listing.discount_long_stay': 'Long stay discount',
+    'listing.discount_early_bird': 'Early bird discount',
     'listing.cleaning_fee': 'Cleaning fee',
     'listing.occupancy_tax': 'Occupancy tax',
     'listing.total': 'Total',
@@ -44,6 +45,15 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'catalog.amenities.gym.label': 'Gym',
     'catalog.amenities.parking.label': 'Parking',
     'catalog.amenities.aircon.label': 'Air conditioning',
+    'catalog.amenities.sea_view.label': 'Sea view',
+    'catalog.amenities.washer.label': 'Washer',
+    'catalog.amenities.workspace.label': 'Workspace',
+    'catalog.amenities.kids_friendly.label': 'Kids friendly',
+    'catalog.amenities.pets_allowed.label': 'Pets allowed',
+    'catalog.amenities.security_24h.label': '24h security',
+    'catalog.cancellation_policies.flexible.label': 'Flexible',
+    'catalog.cancellation_policies.moderate.label': 'Moderate',
+    'catalog.cancellation_policies.strict.label': 'Strict',
   });
 
   return (
@@ -66,6 +76,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           perNight: labels['listing.per_night'],
           priceNights: labels['listing.price_nights'],
           discountLongStay: labels['listing.discount_long_stay'],
+          discountEarlyBird: labels['listing.discount_early_bird'],
           cleaningFee: labels['listing.cleaning_fee'],
           occupancyTax: labels['listing.occupancy_tax'],
           total: labels['listing.total'],
@@ -90,6 +101,17 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
             gym: labels['catalog.amenities.gym.label'],
             parking: labels['catalog.amenities.parking.label'],
             aircon: labels['catalog.amenities.aircon.label'],
+            sea_view: labels['catalog.amenities.sea_view.label'],
+            washer: labels['catalog.amenities.washer.label'],
+            workspace: labels['catalog.amenities.workspace.label'],
+            kids_friendly: labels['catalog.amenities.kids_friendly.label'],
+            pets_allowed: labels['catalog.amenities.pets_allowed.label'],
+            security_24h: labels['catalog.amenities.security_24h.label'],
+          },
+          policyLabels: {
+            flexible: labels['catalog.cancellation_policies.flexible.label'],
+            moderate: labels['catalog.cancellation_policies.moderate.label'],
+            strict: labels['catalog.cancellation_policies.strict.label'],
           },
         }}
       />

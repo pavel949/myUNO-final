@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Button,
   StatTile,
@@ -13,6 +14,8 @@ import {
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
+import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
+import type { OwnerStatement } from '@prisma/client';
 
 interface UnitData {
   id: string;
@@ -70,6 +73,9 @@ interface OwnerDashboardClientProps {
   projects: Project[];
   bookings: Booking[];
   trends: OwnerTrends;
+  alerts: OwnerAlert[];
+  complianceSummary: OwnerComplianceStatus[];
+  statements: OwnerStatement[];
   labels: Record<string, string>;
 }
 
@@ -93,6 +99,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   projects,
   bookings,
   trends,
+  alerts,
+  complianceSummary,
+  statements,
   labels,
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
@@ -182,6 +191,44 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           </div>
         )}
 
+        {/* Alerts Section (D2) */}
+        {alerts.length > 0 && (
+          <div className="mb-40">
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              {labels['owner.alerts.title']}
+            </h2>
+            <div className="space-y-12">
+              {alerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`bg-surface-paper border rounded-md p-16 ${
+                    alert.severity === 'critical'
+                      ? 'border-state-error bg-state-error-soft'
+                      : 'border-state-warning bg-state-warning-soft'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-12">
+                    <div>
+                      <h3 className="text-body font-semibold text-text-ink mb-4">
+                        {alert.title}
+                      </h3>
+                      <p className="text-body text-text-secondary">{alert.description}</p>
+                      <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
+                    </div>
+                    {alert.actionUrl && (
+                      <Link href={alert.actionUrl}>
+                        <Button variant="secondary" size="sm">
+                          View
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Stat Tiles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-20 mb-40">
           <StatTile
@@ -250,6 +297,129 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Compliance Summary (D2) */}
+        {complianceSummary.length > 0 && (
+          <div className="mb-40">
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              {labels['owner.compliance.title']}
+            </h2>
+            <p className="text-body text-text-secondary mb-16">
+              {labels['owner.compliance.subtitle']}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
+              {complianceSummary.map((status) => (
+                <div
+                  key={status.unitId}
+                  className="bg-surface-paper border border-border-line rounded-md p-24"
+                >
+                  <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                    {status.unitName}
+                  </h3>
+                  <div className="space-y-12">
+                    <div className="flex justify-between items-center">
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.compliance.permitted_use']}
+                      </span>
+                      <span className={`text-body font-medium ${
+                        status.permittedUseConfirmedAt
+                          ? 'text-state-success'
+                          : 'text-state-warning'
+                      }`}>
+                        {status.permittedUseConfirmedAt ? '✓' : '⚠'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.compliance.tm30_ontime']}
+                      </span>
+                      <span className="text-body font-medium text-text-ink">
+                        {status.tm30OnTimePercent}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.compliance.records']}
+                      </span>
+                      <span className="text-body font-medium text-text-ink">
+                        {status.complianceRecordsCount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-body text-text-secondary">
+                        {labels['owner.compliance.mobilization']}
+                      </span>
+                      <span className="text-body font-medium text-text-ink">
+                        {Math.round((status.mobilizationProgress.completed / status.mobilizationProgress.total) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Statements (D2) */}
+        {statements.length > 0 && (
+          <div className="mb-40">
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              {labels['owner.statement.title']}
+            </h2>
+            <div className="space-y-16">
+              {statements.map((statement) => (
+                <div
+                  key={statement.id}
+                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
+                >
+                  <div className="flex items-start justify-between gap-12">
+                    <div className="flex-1">
+                      <h3 className="text-body font-semibold text-text-ink mb-4">
+                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                        })} – {new Date(statement.periodEnd).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                        })}
+                      </h3>
+                      <p className="text-sm text-text-secondary mb-12">
+                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <div className="space-y-8">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-text-secondary">
+                            {labels['owner.statement.noi']}
+                          </span>
+                          <span className="text-sm font-medium text-text-ink">
+                            {formatCurrency(statement.noiTh || 0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-text-secondary">
+                            {labels['owner.statement.your_share']}
+                          </span>
+                          <span className="text-sm font-medium text-text-ink">
+                            {formatCurrency(statement.ownerShareTh || 0)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link href={`/owner/statements/${statement.id}`}>
+                      <Button variant="secondary" size="sm">
+                        {labels['owner.statement.view']}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Unit Cards Grid or Single Unit View */}
         {isSingleUnit ? (

@@ -20,11 +20,11 @@ None of these change the model; they are the gaps a build hits on day three if u
 
 The system of record — projects, units, identities, roles, bookings, orders, money, compliance, content, configuration — is **built by us and owned by us**. Commodity tools connect *on top* as channels, never as the source of truth:
 
-- **A sales CRM (e.g. HubSpot)** may receive owner/buyer leads and nurture sequences — but the identity graph lives in our core; the CRM gets a copy, never the pen.
+- **The sales CRM is a native module of this platform.** Owner, guest, buyer, seller and partner journeys use the same identity graph, consent history, attribution and opportunity record. A future external export may receive a controlled copy for a specific purpose, but it can never become the commercial system of record.
 - **OTA calendar-sync** (Airbnb/Booking via iCal first, channel manager later) publishes *our* availability and imports *their* bookings into *our* booking table. The calendar of record is ours.
 - **Telegram/WhatsApp** are notification and publishing channels onto our record.
 
-**Why locked:** the whole moat (continuity, the operating dataset, the arbiter role) exists only if one system holds the truth. Renting the core would rent the moat. This also settles v3 §20 concretely: the "CRM," "channel system," "ledger," and "compliance system" are **modules of one application**, not products we buy.
+**Why locked:** the whole moat (continuity, the operating dataset, the arbiter role) exists only if one system holds the truth. Renting the core would rent the moat. This also settles v3 §20 concretely: the CRM, channel system, ledger, and compliance system are **modules of one application**, not products we buy.
 
 ## 3. D2 — Modular monolith on a proven stack: Next.js + TypeScript + PostgreSQL + Prisma
 

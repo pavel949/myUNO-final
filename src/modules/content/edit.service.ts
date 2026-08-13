@@ -243,8 +243,8 @@ export async function listNamespaces(db: PrismaClient): Promise<string[]> {
 export async function exportToCSV(db: PrismaClient, namespace: string): Promise<string> {
   const keys = await listContentKeys(db, namespace);
 
-  // CSV header: key, description, ru, en, th, status_ru, status_en, status_th
-  const rows = [['key', 'description', 'ru', 'en', 'th', 'status_ru', 'status_en', 'status_th']];
+  // CSV header: key, description, ru, en, th, zh, status_ru, status_en, status_th, status_zh
+  const rows = [['key', 'description', 'ru', 'en', 'th', 'zh', 'status_ru', 'status_en', 'status_th', 'status_zh']];
 
   for (const key of keys as any) {
     const translations: Record<string, any> = {};
@@ -261,9 +261,11 @@ export async function exportToCSV(db: PrismaClient, namespace: string): Promise<
       translations['ru'] || '',
       translations['en'] || '',
       translations['th'] || '',
+      translations['zh'] || '',
       statuses['ru'] || 'missing',
       statuses['en'] || 'missing',
       statuses['th'] || 'missing',
+      statuses['zh'] || 'missing',
     ]);
   }
 
@@ -296,6 +298,7 @@ export async function importFromCSV(
   const ruIndex = header.indexOf('ru');
   const enIndex = header.indexOf('en');
   const thIndex = header.indexOf('th');
+  const zhIndex = header.indexOf('zh');
 
   if (keyIndex === -1 || descIndex === -1) {
     throw new Error('CSV must have "key" and "description" columns');
@@ -311,6 +314,7 @@ export async function importFromCSV(
     const ru = ruIndex >= 0 ? cells[ruIndex] : '';
     const en = enIndex >= 0 ? cells[enIndex] : '';
     const th = thIndex >= 0 ? cells[thIndex] : '';
+    const zh = zhIndex >= 0 ? cells[zhIndex] : '';
 
     if (!key || !description) continue;
 
@@ -320,7 +324,7 @@ export async function importFromCSV(
 
       if (existing) {
         // Update translations only
-        for (const [locale, value] of Object.entries({ ru, en, th })) {
+        for (const [locale, value] of Object.entries({ ru, en, th, zh })) {
           if (value) {
             await updateTranslation(db, {
               contentKeyId: existing.id,
@@ -337,7 +341,7 @@ export async function importFromCSV(
           key,
           namespace,
           description,
-          initialTranslations: { ru, en, th },
+          initialTranslations: { ru, en, th, zh },
           identityId,
         });
         created++;

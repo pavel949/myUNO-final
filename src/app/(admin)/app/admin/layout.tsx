@@ -18,8 +18,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const labels = await getLabels({
     'admin.nav.title': 'myUNO Admin',
     'admin.nav.dashboard': 'Dashboard',
+    'admin.nav.crm': 'CRM & Pipeline',
     'admin.nav.units': 'Projects & Units',
+    'admin.nav.projects': 'Projects',
+    'admin.nav.config': 'Pricing & Config',
     'admin.nav.bookings': 'Bookings',
+    'admin.nav.providers': 'Provider Vetting',
+    'admin.nav.services': 'Service Submissions',
     'admin.nav.content': 'Content',
     'admin.nav.signals': 'Signals',
     'admin.nav.integrations': 'Integrations',
@@ -28,8 +33,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const items = [
     { href: '/app/admin', label: labels['admin.nav.dashboard'] },
+    { href: '/app/admin/crm', label: labels['admin.nav.crm'] },
+    { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
     { href: '/app/admin/units', label: labels['admin.nav.units'] },
+    { href: '/app/admin/config', label: labels['admin.nav.config'] },
     { href: '/app/admin/bookings', label: labels['admin.nav.bookings'] },
+    { href: '/app/admin/providers', label: labels['admin.nav.providers'] },
+    { href: '/app/admin/services', label: labels['admin.nav.services'] },
     { href: '/app/admin/content', label: labels['admin.nav.content'] },
     { href: '/app/admin/signals', label: labels['admin.nav.signals'] },
     { href: '/app/admin/integrations', label: labels['admin.nav.integrations'] },

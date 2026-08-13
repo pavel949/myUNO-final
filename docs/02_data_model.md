@@ -69,7 +69,7 @@ One row per human, forever, across every role change. This is the "identity grap
 | `hashed_password` | text, nullable | bcrypt. Nullable for OAuth-only or channel-created identities (they set one on claim). Never serialized to the client — the `toSafe` rule from the legacy audit applies. 🔒 |
 | `preferred_locale` | enum `ru,en,th` | UI + notification language. Default from config `i18n.default_locale`. |
 | `avatar_media_id` | FK→MediaAsset, nullable | Profile photo. |
-| `status` | enum `active, invited, blocked, merged` | `invited` = created by staff/channel, not yet claimed. `merged` = duplicate folded into another identity (`merged_into_id` FK→Identity, nullable). |
+| `status` | enum `active, invited, blocked, merged, deletion_requested` | `invited` = created by staff/channel, not yet claimed. `merged` = duplicate folded into another identity (`merged_into_id` FK→Identity, nullable). `deletion_requested` = PDPA erasure requested; anonymized by the retention job after the grace period (never conflated with `merged`). |
 | `is_admin` | boolean, default false | Platform admin (founder). Kept on the identity, not a role row, so it can never be scoped away accidentally. |
 | `notes_internal` | text, nullable | Staff-only notes (visible per doc 03 matrix). |
 
@@ -119,6 +119,7 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform**. Nullable while a unit is being set up before its owner has an identity. |
 | `name` | text | Display name/number ("Villa A-3", "B-707"). Unique within project. |
 | `unit_type` | enum `villa, condo, townhouse` | Physical type. |
+| `category_key` | string, nullable | Sellable class inside the project (e.g. `superior_2br`), validated against the project's `catalog.unit_categories` config (doc 04 §8). Null = the unit is sold individually, not as part of a category. Indexed with `project_id` for category availability queries. |
 | `bedrooms`, `bathrooms` | int | Capacity description. |
 | `max_guests` | int | Hard party-size cap enforced at booking. |
 | `size_sqm` | int, nullable | Area. |
@@ -234,10 +235,10 @@ One row per person in the party (the lead guest included).
 |---|---|---|
 | `booking_id` | FK→Booking | The stay. |
 | `identity_id` | FK→Identity, nullable | Linked when the party member has an identity (lead guest always). |
-| `full_name` | text | As in passport. 🔒 |
-| `nationality` | text (ISO alpha-2) | Passport country. 🔒 |
+| `full_name` | text, encrypted | As in passport. 🔒 AES-256-GCM ciphertext (ops guest-PII seam). |
+| `nationality` | text (ISO alpha-2) | Passport country. Plaintext by decision: the TM30 obligation and foreign-guest KPIs filter on it in SQL, which ciphertext would break; it is a country code, not an identifier. |
 | `passport_number` | text, encrypted | 🔒 Field-level encrypted (doc 12). |
-| `date_of_birth` | date, nullable | 🔒 |
+| `date_of_birth` | text, nullable, encrypted | 🔒 Stored as ciphertext (hence text, not date). |
 | `passport_media_id` | FK→MediaAsset, nullable | Passport photo/scan, stored encrypted, auto-deleted per retention config (doc 12). 🔒 |
 | `is_lead` | boolean | The booker. |
 
@@ -619,6 +620,20 @@ Append-only event stream (catalog in doc 13).
 | `status` | enum `new, reviewed, handed_to_capital, dismissed` | The human funnel (Q1: transaction itself is off-platform). |
 | `reviewed_by_identity_id`, `note` | | Follow-up record. |
 
+### 9.3 Native CRM — one commercial memory around `Identity`
+
+The CRM is part of the platform, not an external integration. `Identity` remains the canonical Party ID; lifecycle is a commercial summary and does not replace simultaneous scoped roles.
+
+| Table | Meaning |
+|---|---|
+| `CrmProfile` | Lifecycle, score, tags, preferred channel, first/last source and next action. Exactly one per Identity. |
+| `CrmOpportunity` | Rental, purchase, sale, management, developer advisory, capex or compliance revenue opportunity. May point to a managed unit or name an approved external partner. |
+| `CrmActivity` | Note, task, call, meeting or channel interaction linked to the Party and optionally an opportunity. |
+| `CrmConsent` | Append-only purpose, status, capture channel, expiry and evidence for service, marketing, matching or analytics. |
+| `CrmAttributionTouch` | First-touch, lead-creation, assisted and conversion evidence without overwriting prior sources. |
+
+An inbound owner form creates a `prospect`, not a verified owner. Winning a management or purchase opportunity promotes the lifecycle to `owner`; winning a rental promotes it to `guest`. Partner-supplied rentals keep `unit_id = null` until a managed unit is actually involved and must never enter managed-asset reporting.
+
 ---
 
 ## 10. Shared infrastructure
@@ -642,12 +657,22 @@ Every privileged mutation (admin config/content edits, role grants, statement pu
 
 | Field | Type | Meaning |
 |---|---|---|
-| `integration_key` | enum `ical_airbnb, ical_booking, payment_provider, whatsapp, telegram, crm_hubspot` | Which channel. |
+| `integration_key` | enum `ical_airbnb, ical_booking, payment_provider, whatsapp, telegram, crm_hubspot` | Which channel. `crm_hubspot` is a deprecated legacy enum value and must not be provisioned for the target architecture. |
 | `scope_type/scope_id` | platform / project / unit | Where it applies (an iCal URL is per unit). |
 | `config` | jsonb | Keys/URLs/tokens — secret fields envelope-encrypted. 🔒 |
 | `status` | enum `active, error, disabled` + `last_sync_at`, `last_error` | Health surfaced in admin. |
 
 ---
+
+## 10a. Build additions (implemented, back-filled into this doc)
+
+Two tables were added during the build and are now part of the model of record:
+
+### `DepositClaim` — damage claim against a deposit pre-authorization
+One row per claim on a booking's deposit pre-auth (doc 10 Q6 — deposits are provider pre-authorizations only). Fields: `booking_id` FK→Booking · `amount_thb` · `reason` text · `status` enum `filed, approved, rejected, disputed` · `evidence_media_ids` (media references) · filed/decided actor+timestamps. Claims settle through the payment provider's capture, never cash.
+
+### `MetricDaily` — the analytics rollup (doc 13 §2)
+Derived table, one row per unit × day, materialized nightly by the rollup cron: `nights_available`, `nights_occupied`, `owner_stay_nights`, `rental_revenue_cents`, plus project/unit FKs. Rebuildable from source tables at any time; never a source of truth.
 
 ## 11. What deliberately does NOT exist in loop one
 

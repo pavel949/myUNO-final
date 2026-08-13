@@ -112,15 +112,42 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Blocks:** nothing in loop one (THB payouts to the Krungsri account cover it).
 - **Needs from founder:** the intended rails for paying owners abroad, resolved with counsel — always FX-routing-to-a-licensed-exchanger, never operated in-house (AMLO).
 
-### Q23. Chinese (中文) locale — OPEN
-- **Source:** the founder's landing v3 (myunolandingv3.html) ships full EN/RU/**ZH** copy, but the platform's locale enum (doc 05, schema `Locale`) is ru/en/th only.
-- **Blocks:** nothing — the ZH copy is preserved in the landing file; the platform pages adopted its EN + RU.
-- **Needs from founder:** whether 中文 becomes a fourth platform locale (schema enum change + fallback-chain position), or stays a marketing-site-only language.
+### Q23. Chinese (中文) locale — ANSWERED (2026-07, Layantara onboarding)
+- **Source:** the founder's landing v3 ships full EN/RU/**ZH** copy; the Layantara brief demands EN/RU/中文 from day one.
+- **Answer:** 中文 is a **full fourth platform locale** (founder decision 2026-07-28, LY-3). Fallback `zh → en → ru → th`; the switcher, content editor, and CSV all carry zh. Policy (doc 05 §2): public guest-facing namespaces get zh drafts (`needs_review` until edited); admin/ops surfaces intentionally serve EN via fallback.
+- **Still needed:** editorial review of the machine-drafted zh strings; zh brand renderings (myUNO, Layantara, Ignatev Estate in 中文) — LY-4 open item.
 
 ### Q24. Landing v3 marketing elements — OPEN
 - **Source:** landing v3 contains lead-gen machinery (early-access form, founding terms, call-with-Pavel CTA, owner-record mockup, earnings-calculator teaser) that belongs to the marketing site, not the product app. Its owners/developers narrative copy **was** adopted into the audience pages (T1-AUD).
 - **Needs from founder:** where the marketing site lives (separate static page vs routes in the app), and whether the "What could my unit earn?" calculator becomes a product feature.
 
+### Q25. Project landing FAQ content — OPEN
+- **Source:** doc 08 §4 (S2) lists a FAQ section on the per-project landing `/projects/{slug}`. The page is built (L1) with hero, availability, units grid, story, amenities, services, location, handbook teaser, and trust band — but FAQ questions and answers are project-specific content that doesn't exist yet.
+- **Blocks:** nothing — the page ships without the FAQ section; it appears once content exists.
+- **Needs from founder:** the actual FAQ entries for the first project (or a shared template set), supplied as `project_page.faq.*` keys in the content editor. Ties into Q20 (real content for the first project).
+
+### Q26. Locale-in-URL routing (hreflang) — OPEN
+- **Source:** doc 08 §7 asks for canonical + `hreflang` triplets. The platform's locale is a **cookie**, not a URL segment, so every locale serves the same URL — `hreflang` is meaningless until locale-prefixed routes (`/ru/…`, `/en/…`, `/th/…`) exist. The L2 SEO layer shipped canonical tags, sitemap, robots.txt, llms.txt, and JSON-LD (Organization on home, LodgingBusiness per project); `hreflang` is the one §7 item that needs this structural decision. Unit-page `Product`+`Offer` JSON-LD also waits — the unit detail renders client-side today.
+- **Needs from founder:** whether to move to locale-prefixed URLs (an SEO win for RU/EN/TH search, but every link and redirect changes) — and if so, when.
+
 ---
+
+### Q27. Dead data-model surface — build or remove? — OPEN
+- **Source:** the data-model audit (DM vertical). Several schema tables have no working feature behind them: `AuthAccount` (Google/Apple login never wired), `ProviderProject` (provider service-area scoping), `ServiceMedia` (service photo galleries), and `TicketMedia`/`ProjectMedia` have read paths but no upload paths (ticket photo evidence and project galleries cannot be created). Passport *image* upload also doesn't exist yet — when it is built, the file bytes must be encrypted and `MediaAsset.encrypted` set (the field-level encryption of passport numbers/names/DOB landed in DM-1).
+- **Blocks:** nothing in loop one.
+- **Needs from founder:** which of these become real features in loop two (OAuth login, provider service areas, service galleries, ticket photos, project gallery uploads) and which get removed from the schema. Also two spec'd shapes that still need building decisions: `MessageMedia` (message photo attachments, doc 02 §7.1) and quote-model service orders (no `quote_requested` lifecycle state exists — doc 02 §4.3).
+
+### Q28. Layantara tariff edges — discount stacking & monthly rates beyond low season — OPEN (provisional defaults in place)
+- **Source:** the Layantara onboarding brief (LY-2). The brief gives three tariffs (standard / early-bird 60+ days −8% / long-stay monthly) and monthly prices only "from low season" (2BR 72,000 · 3BR 115,000 · Grand Deluxe 140,000 THB/mo).
+- **Provisional rules built:** (1) the flat monthly rate applies to stays ≥ 28 nights when **every** covered season has a monthly price, and it **replaces** the LOS discount and early-bird (no stacking); (2) early-bird **does** stack with the weekly LOS discount (sequential: LOS first, then early-bird on the remainder); (3) a long stay crossing a season without a monthly price falls back entirely to the nightly + LOS path.
+- **Needs from founder:** monthly prices for shoulder/high/peak (or the rule for stays crossing them); confirm the no-stacking rules; confirm 14+ nights long-stay tier from the brief (built: weekly ≥ 7 / monthly ≥ 28 — is a separate 14+ tier needed?).
+
+### Q29. Layantara — real-world facts for the seeded structure — OPEN
+- **Source:** the Layantara onboarding brief (LY-4). The structure, categories, and the full tariff grid are seeded; these facts are placeholders until supplied:
+- **Needs from founder:** (1) real villa numbers/names for the 39 villas (seeded as `P1-01…07`, `P2-01…24`, `G-01…08` — editable per unit in the admin panel); (2) the **hotel licence number** for the public trust block (`project.layantara.licence` shows the claim without the number; `permittedUseConfirmedAt` was set at seed on the strength of the stated licence); (3) the exact map pin (seeded ≈ Layan Beach 8.0106, 98.2965); (4) photography (upload via admin → units / project cover); (5) concierge service prices & terms (floating breakfast, yacht, transfer, shuttle, grocery pack — seeded on the quote model, never charging a number until priced); (6) the beach-shuttle schedule (content key, LY-7); (7) villa bathroom counts / max guests per category (seeded 2BR→2BA/4 guests, 3BR→3BA/6 guests); (8) zh (中文) brand renderings for myUNO / Layantara / Ignatev Estate.
+
+### Q30. Quote-priced service orders — the in-thread quote flow (SA-3) — OPEN
+- **Source:** the super-app services vertical (SA-2). Today a quote-priced service (yacht, chef, grocery pack) hands the guest to the concierge (project WhatsApp / in-app messages); the order API refuses quote orders by design. Doc 07 F-SVC-2 specifies the full loop: request → provider quotes in-thread → orderer accepts → pays against the quote.
+- **Needs from founder:** (1) should the quote live as an order status (`quote_requested → quoted → accepted`, a small schema change) or as a thread message the admin converts to a priced order manually (no schema change, loop-one style)? (2) who sets the price — the provider in their portal, or only admin/concierge? (3) does a quoted price expire (hours/days)? Until ruled, the concierge hand-off stands.
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

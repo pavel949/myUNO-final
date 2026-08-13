@@ -18,7 +18,7 @@ export default async function OpsBoardPage() {
     redirect('/');
   }
 
-  const { arrivals, departures, pendingPayment, pendingServiceOrders } = await getOpsBoard(prisma);
+  const { arrivals, departures, pendingPayment, pendingServiceOrders, slaMetrics } = await getOpsBoard(prisma);
 
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',
@@ -42,6 +42,9 @@ export default async function OpsBoardPage() {
     'staff.ops.confirm_cash': 'Confirm ฿{amount} received',
     'staff.ops.error_generic': 'Action failed. Please try again.',
     'staff.ops.service_pending_cash': 'Service orders awaiting cash',
+    'staff.ops.sla_title': 'SLA health (last 7 days)',
+    'staff.ops.tm30_on_time': 'TM30 on-time %',
+    'staff.ops.tickets_past_sla': 'Tickets past SLA',
   });
 
   const serialize = (list: typeof arrivals) =>
@@ -74,6 +77,24 @@ export default async function OpsBoardPage() {
             {labels['staff.ops.tm30_link']}
           </Link>
         </div>
+
+        {/* SLA health tiles */}
+        <div className="mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+            {labels['staff.ops.sla_title']}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <p className="text-small text-text-secondary mb-8">{labels['staff.ops.tm30_on_time']}</p>
+              <p className="text-heading-2 font-semibold text-text-ink">{slaMetrics.tm30OnTimeRate7d}%</p>
+            </div>
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <p className="text-small text-text-secondary mb-8">{labels['staff.ops.tickets_past_sla']}</p>
+              <p className="text-heading-2 font-semibold text-text-ink">{slaMetrics.ticketsWithOpenSLA}</p>
+            </div>
+          </div>
+        </div>
+
         <OpsBoardClient
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}

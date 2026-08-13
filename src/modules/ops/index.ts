@@ -27,3 +27,11 @@ export {
 
 export { getOpsBoard } from './ops-board.service';
 export type { OpsBoardData } from './ops-board.service';
+
+export {
+  encryptGuestPii,
+  encryptPii,
+  safeDecrypt,
+  isEncrypted,
+  type GuestPiiInput,
+} from './guest-pii';

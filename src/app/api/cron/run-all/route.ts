@@ -3,7 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { checkVerificationDeadlines } from '@/modules/ops';
 import { runRetentionJobs } from '@/modules/core';
 import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
-import { expireHolds, autoDeclineRequests } from '@/modules/booking';
+import {
+  expireHolds,
+  autoDeclineRequests,
+  sendPrearrivalReminders,
+  sendPostStayPrompts,
+} from '@/modules/booking';
+import { expireStaleServiceOrders } from '@/modules/services';
+import { getConfig } from '@/modules/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +64,24 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[Cron run-all] metric rollup failed:', error);
     results.rollup = 'failed';
+  }
+
+  try {
+    const prearrival = await sendPrearrivalReminders(prisma);
+    const postStay = await sendPostStayPrompts(prisma);
+    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${postStay} post-stay)`;
+  } catch (error) {
+    console.error('[Cron run-all] guest lifecycle sends failed:', error);
+    results.guestLifecycle = 'failed';
+  }
+
+  try {
+    const slaHours = (await getConfig(prisma, 'service.accept_sla_hours')) as number | null;
+    const result = await expireStaleServiceOrders(prisma, slaHours ?? 12);
+    results.serviceOrderExpiry = `ok (${result.expired} expired, ${result.refunded} refunded)`;
+  } catch (error) {
+    console.error('[Cron run-all] service order expiry failed:', error);
+    results.serviceOrderExpiry = 'failed';
   }
 
   const failed = Object.values(results).includes('failed');

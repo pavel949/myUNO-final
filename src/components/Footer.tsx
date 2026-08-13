@@ -3,6 +3,7 @@ import Link from 'next/link';
 export interface FooterLabels {
   brandColumn: string;
   home: string;
+  residences: string;
   trust: string;
   audienceColumn: string;
   owners: string;
@@ -29,6 +30,7 @@ export function Footer({ labels }: FooterProps) {
       title: labels.brandColumn,
       links: [
         { href: '/', label: labels.home },
+        { href: '/projects', label: labels.residences },
         { href: '/trust', label: labels.trust },
       ],
     },

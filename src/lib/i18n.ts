@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { t } from '@/modules/content';
 import type { Locale } from '@/modules/content';
 
-const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th'];
+const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
 
 // RU-first: the clientele is Russian-speaking (doc 05, Q19). Default to RU when
 // the visitor hasn't chosen a locale; the navbar switcher sets the cookie.

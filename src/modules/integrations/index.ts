@@ -1,10 +1,11 @@
 // module: integrations — public interface (see docs/14_tech_spec.md §3)
-// Owns: Integration accounts, channel adapters (OTA, messenger, CRM, payment)
+// Owns: Integration accounts and channel adapters (OTA, messenger, payment, exports)
 // Depends on: core, booking, comms, finance
 
 export {
   registerIntegrationAccount,
   getIntegrationAccount,
+  getDecryptedConfig,
   updateIntegrationStatus,
   recordIntegrationSync,
   disableIntegrationAccount,
@@ -29,13 +30,3 @@ export {
   MessengerChannel,
   type MessengerConfig,
 } from './messenger';
-
-export {
-  registerHubSpotCrm,
-  syncIdentityToCrm,
-  syncBookingToCrm,
-  handleCrmWebhook,
-  getCrmStatus,
-  type CrmConfig,
-  type CrmContact,
-} from './crm';

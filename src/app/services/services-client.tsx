@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
+import { ServiceCategoryIcon } from '@/components/ServiceCategoryIcon';
 
 interface MarketService {
   id: string;
@@ -26,6 +29,17 @@ interface MyOrder {
   serviceTitle: string | null;
 }
 
+export interface ServiceCategoryTile {
+  key: string;
+  icon: string;
+  label: string;
+}
+
+interface StayContext {
+  unitName: string | null;
+  projectName: string | null;
+}
+
 /** Order states from which the customer may still cancel (F-SVC-3). */
 const CANCELLABLE = new Set(['placed', 'paid', 'accepted']);
 
@@ -39,7 +53,13 @@ function fill(template: string, params: Record<string, string | number>): string
   return result;
 }
 
-export default function ServicesClient({ labels }: { labels: Labels }) {
+export default function ServicesClient({
+  labels,
+  categories,
+}: {
+  labels: Labels;
+  categories: ServiceCategoryTile[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('bookingId');
@@ -47,6 +67,10 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
   const [services, setServices] = useState<MarketService[]>([]);
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [loggedIn, setLoggedIn] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    searchParams.get('category')
+  );
+  const [stay, setStay] = useState<StayContext | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [when, setWhen] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -75,6 +99,43 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Stay context (SA-1): entered from the home space → show which stay the
+  // order attaches to. Best-effort — a failed fetch just hides the banner.
+  useEffect(() => {
+    if (!bookingId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setStay({
+            unitName: data?.unit?.name ?? null,
+            projectName: data?.project?.name ?? null,
+          });
+        }
+      } catch {
+        // banner is optional
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
+  const selectCategory = (key: string | null) => {
+    setSelectedCategory(key);
+    const params = new URLSearchParams(searchParams.toString());
+    if (key) params.set('category', key);
+    else params.delete('category');
+    router.replace(`/services${params.size ? `?${params}` : ''}`, { scroll: false });
+  };
+
+  const visibleServices = selectedCategory
+    ? services.filter((s) => s.categoryKey === selectedCategory)
+    : services;
 
   const payOrder = async (order: MyOrder) => {
     setBusy(true);
@@ -171,21 +232,82 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
           {labels['services.browse.subtitle']}
         </p>
 
+        {bookingId && stay && (stay.unitName || stay.projectName) && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
+            <p className="text-body text-text-ink">
+              {fill(labels['services.browse.stay_banner'], {
+                unit: stay.unitName ?? '—',
+                project: stay.projectName ?? '—',
+              })}
+            </p>
+            <Link
+              href={`/bookings/${bookingId}/home-space`}
+              className="text-small font-semibold text-brand-andaman hover:underline"
+            >
+              {labels['services.browse.stay_banner_link']}
+            </Link>
+          </div>
+        )}
+
+        {/* Super-app facade (SA-1): category tiles from the catalog */}
+        {categories.length > 0 && (
+          <section className="mb-32">
+            <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+              {labels['services.browse.categories_title']}
+            </h2>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-12">
+              {categories.map((category) => {
+                const active = selectedCategory === category.key;
+                return (
+                  <button
+                    key={category.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => selectCategory(active ? null : category.key)}
+                    className={`flex flex-col items-center gap-8 rounded-lg border p-12 transition-colors duration-micro ${
+                      active
+                        ? 'border-brand-andaman bg-brand-andaman text-surface-ivory'
+                        : 'border-border-line bg-surface-paper text-text-ink hover:border-brand-andaman'
+                    }`}
+                  >
+                    <ServiceCategoryIcon
+                      name={category.icon}
+                      className={active ? 'text-surface-ivory' : 'text-brand-andaman'}
+                    />
+                    <span className="text-small font-medium text-center leading-tight">
+                      {category.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedCategory && (
+              <div className="mt-16">
+                <Chip variant="filter" isSelectable onClick={() => selectCategory(null)}>
+                  {labels['services.browse.show_all']}
+                </Chip>
+              </div>
+            )}
+          </section>
+        )}
+
         {flash && (
           <div className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-24">
             <p className="text-body text-state-success">{flash}</p>
           </div>
         )}
 
-        {services.length === 0 ? (
+        {visibleServices.length === 0 ? (
           <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center mb-32">
             <p className="text-body text-text-secondary">
-              {labels['services.browse.empty']}
+              {selectedCategory && services.length > 0
+                ? labels['services.browse.category_empty']
+                : labels['services.browse.empty']}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
-            {services.map((service) => (
+            {visibleServices.map((service) => (
               <div
                 key={service.id}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden"
@@ -201,7 +323,12 @@ export default function ServicesClient({ labels }: { labels: Labels }) {
                 <div className="p-16">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-subtitle font-semibold text-text-ink">
-                      {service.title}
+                      <Link
+                        href={`/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`}
+                        className="hover:text-brand-andaman hover:underline"
+                      >
+                        {service.title}
+                      </Link>
                     </h2>
                     {service.providerVetted && (
                       <span className="text-small text-state-success font-semibold">

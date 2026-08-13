@@ -1,14 +1,45 @@
 import { Suspense } from 'react';
 import { getLabels } from '@/lib/i18n';
+import { prisma } from '@/lib/prisma';
+import { getConfig } from '@/modules/config';
 import ServicesClient from './services-client';
 
 export const dynamic = 'force-dynamic';
 
+interface CatalogCategory {
+  key: string;
+  icon?: string;
+}
+
 export default async function ServicesPage() {
+  // The super-app facade (SA-1): category tiles come from the catalog —
+  // config-not-code, so a new category appears without a deploy.
+  let catalog: CatalogCategory[] = [];
+  try {
+    const raw = await getConfig(prisma, 'catalog.service_categories');
+    if (Array.isArray(raw)) {
+      catalog = (raw as CatalogCategory[]).filter((c) => typeof c?.key === 'string');
+    }
+  } catch {
+    catalog = [];
+  }
+
+  const categoryLabelKeys = Object.fromEntries(
+    catalog.map((c) => [
+      `services.category.${c.key}`,
+      c.key.replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()),
+    ])
+  );
+
   const labels = await getLabels({
     'services.browse.title': 'Services',
     'services.browse.subtitle':
       'Cleaning, repairs, deliveries — every provider vetted, every order on the record.',
+    'services.browse.categories_title': 'What do you need?',
+    'services.browse.show_all': 'Show all services',
+    'services.browse.category_empty': 'Nothing in this category yet — try another one.',
+    'services.browse.stay_banner': 'Ordering for your stay at {unit}, {project}',
+    'services.browse.stay_banner_link': 'Back to your home space',
     'services.browse.empty': 'No services available yet — check back soon.',
     'services.browse.vetted': 'Vetted',
     'services.browse.from': 'from',
@@ -36,11 +67,19 @@ export default async function ServicesPage() {
     'services.order_status.fulfilled': 'Fulfilled',
     'services.order_status.cancelled': 'Cancelled',
     'services.order_status.closed': 'Closed',
+    ...categoryLabelKeys,
   });
+
+  const allLabels = labels as Record<string, string>;
+  const categories = catalog.map((c) => ({
+    key: c.key,
+    icon: c.icon || '',
+    label: allLabels[`services.category.${c.key}`] ?? c.key,
+  }));
 
   return (
     <Suspense>
-      <ServicesClient labels={labels} />
+      <ServicesClient labels={labels} categories={categories} />
     </Suspense>
   );
 }

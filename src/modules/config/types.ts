@@ -53,8 +53,32 @@ export interface SeasonPeriod {
   markup_pct: number;
 }
 
+/**
+ * Absolute per-category rates keyed by season name from the same project's
+ * `pricing.season.calendar`. All amounts are satang integers. `nightly` is
+ * the per-night retail rate; `monthly` is the flat month price for long
+ * stays (≥ 28 nights). A category/season without an entry falls back to
+ * base × season markup.
+ */
+export interface CategoryRates {
+  [categoryKey: string]: {
+    nightly?: Record<string, number>;
+    monthly?: Record<string, number>;
+  };
+}
+
+/** Early-bird discount: pct off the nightly subtotal when the booking is
+ *  created at least min_days_before days ahead of check-in. min_days_before
+ *  null = disabled. */
+export interface EarlyBirdConfig {
+  min_days_before: number | null;
+  pct: number;
+}
+
 export interface PricingConfig {
   'pricing.season.calendar': SeasonPeriod[];
+  'pricing.category_rates': CategoryRates;
+  'pricing.early_bird': EarlyBirdConfig;
   'pricing.los_discount.weekly_pct': number;
   'pricing.los_discount.monthly_pct': number;
   'pricing.cleaning_fee_thb': number;
@@ -103,6 +127,7 @@ export interface OtherConfig {
   'compliance.tm30_sla_hours': number;
   'compliance.tm30_escalation_hours_before': number;
   'compliance.passport_required_hours_before_checkin': number;
+  'compliance.expiry_warning_days': number;
   'retention.passport_media_days_after_checkout': number;
   'notify.channel.email.enabled': boolean;
   'notify.channel.whatsapp.enabled': boolean;
@@ -110,9 +135,12 @@ export interface OtherConfig {
   'auth.token_ttl_minutes.password_reset': number;
   'auth.token_ttl_minutes.email_verify': number;
   'auth.token_ttl_minutes.account_claim': number;
-  'i18n.default_locale': 'ru' | 'en' | 'th';
+  'i18n.default_locale': 'ru' | 'en' | 'th' | 'zh';
   'analytics.buyer_signal.repeat_stay_threshold': number;
   'analytics.buyer_signal.long_stay_nights': number;
+  'comms.whatsapp_number': string;
+  'notify.prearrival_days_before': number;
+  'notify.review_prompt_days_after': number;
 }
 
 // Catalogs — taxonomies (doc 04 §8)
@@ -121,11 +149,20 @@ export interface CatalogEntry {
   icon?: string;
 }
 
+/** A unit category ("Superior 2BR") inside a project: sellable class of
+ *  identical homes. style_key groups categories into architectural styles
+ *  (labels live in the content layer, doc 05 §4). */
+export interface UnitCategoryEntry extends CatalogEntry {
+  style_key?: string;
+  bedrooms?: number;
+}
+
 export interface CatalogConfig {
   'catalog.amenities': CatalogEntry[];
   'catalog.service_categories': CatalogEntry[];
   'catalog.ticket_categories': CatalogEntry[];
   'catalog.unit_types': CatalogEntry[];
+  'catalog.unit_categories': UnitCategoryEntry[];
   'catalog.cancellation_policies': CatalogEntry[];
 }
 

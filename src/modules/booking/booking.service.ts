@@ -56,6 +56,79 @@ export const SAFE_IDENTITY_SELECT = {
  * Create a new booking.
  * Instant bookings go to pending_payment; request-to-book go to requested.
  */
+/**
+ * Overlapping booking that actually blocks the dates: confirmed/checked_in,
+ * or an unpaid hold that is still live. `requested` never blocks — a request
+ * is non-binding until approved.
+ */
+async function findBlockingConflict(
+  db: PrismaClient,
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+  excludeBookingId?: string
+) {
+  const now = new Date();
+  return db.booking.findFirst({
+    where: {
+      unitId,
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      startDate: { lt: endDate },
+      endDate: { gt: startDate },
+      OR: [
+        { status: { in: ['confirmed', 'checked_in'] } },
+        { status: 'pending_payment', holdExpiresAt: { gt: now } },
+      ],
+    },
+    select: { id: true },
+  });
+}
+
+/**
+ * Category-first booking (LY-6): pick the first available live unit of a
+ * sellable category for the requested dates — hotel-style auto-assignment.
+ * Stable order (by name) keeps assignment deterministic; the double-booking
+ * guard inside createBooking stays the race-safety net.
+ * Returns null when the category has no free unit for the range.
+ */
+export async function resolveUnitForCategory(
+  db: PrismaClient,
+  projectId: string,
+  categoryKey: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ id: string; instantBook: boolean } | null> {
+  const units = await db.unit.findMany({
+    where: { projectId, categoryKey, status: 'live' },
+    orderBy: { name: 'asc' },
+    select: { id: true, instantBook: true },
+  });
+
+  for (const unit of units) {
+    const conflictingBooking = await findBlockingConflict(
+      db,
+      unit.id,
+      startDate,
+      endDate
+    );
+    if (conflictingBooking) continue;
+
+    const blocked = await db.blockedDate.findFirst({
+      where: {
+        unitId: unit.id,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+      },
+      select: { id: true },
+    });
+    if (blocked) continue;
+
+    return unit;
+  }
+
+  return null;
+}
+
 export async function createBooking(
   db: PrismaClient,
   input: CreateBookingInput
@@ -81,18 +154,7 @@ export async function createBooking(
 
   // Check for double-booking (race condition). An unpaid hold only blocks
   // while it is still live — an abandoned checkout must not poison the dates.
-  const now0 = new Date();
-  const conflicting = await db.booking.findFirst({
-    where: {
-      unitId,
-      startDate: { lt: endDate },
-      endDate: { gt: startDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: now0 } },
-      ],
-    },
-  });
+  const conflicting = await findBlockingConflict(db, unitId, startDate, endDate);
 
   if (conflicting) {
     const err = new Error('Dates unavailable — booking already exists');
@@ -103,7 +165,7 @@ export async function createBooking(
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
-  return db.booking.create({
+  const booking = await db.booking.create({
     data: {
       unitId,
       projectId,
@@ -127,6 +189,21 @@ export async function createBooking(
       guestIdentity: { select: SAFE_IDENTITY_SELECT },
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  await track(db, 'stay_booking_started', {
+    bookingId: booking.id,
+    unitId,
+    projectId,
+    identityId: guestIdentityId,
+    channel,
+    bookingType,
+    nights,
+    totalThb,
+  });
+
+  return booking;
 }
 
 /**
@@ -147,14 +224,52 @@ export async function approveBookingRequest(
     throw new Error(`Cannot approve booking with status ${booking.status}`);
   }
 
+  // A request never blocked the calendar, so re-check the dates now —
+  // another approval or an instant booking may have taken the villa since.
+  const conflict = await findBlockingConflict(
+    db,
+    booking.unitId,
+    booking.startDate,
+    booking.endDate,
+    booking.id
+  );
+  let unitId = booking.unitId;
+  if (conflict) {
+    // A category-booked villa is the operator's choice (LY-6): reassign
+    // within the same category when another villa is free — the tariff is
+    // category-level, so the approved total stays valid. No category, or
+    // none free → refuse; the request stays open for other dates.
+    const unit = await db.unit.findUnique({
+      where: { id: booking.unitId },
+      select: { categoryKey: true },
+    });
+    const replacement = unit?.categoryKey
+      ? await resolveUnitForCategory(
+          db,
+          booking.projectId,
+          unit.categoryKey,
+          booking.startDate,
+          booking.endDate
+        )
+      : null;
+    if (!replacement) {
+      const err = new Error('Dates unavailable — booking already exists');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+    unitId = replacement.id;
+  }
+
   const now = new Date();
   return db.booking.update({
     where: { id: bookingId },
     data: {
+      unitId,
       status: 'pending_payment',
       holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
       requestExpiresAt: null,
     },
+    include: { unit: { select: { name: true } } },
   });
 }
 

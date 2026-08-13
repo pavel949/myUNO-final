@@ -15,6 +15,7 @@ interface KeyDef {
   ru: string;
   en: string;
   th?: string; // omitted → falls back to en via the locale chain until translated
+  zh?: string; // omitted → falls back to en via the locale chain until translated (Q23)
   status?: 'ok' | 'needs_review'; // agent-drafted copy ships as needs_review (doc 05 §1)
 }
 
@@ -1351,6 +1352,12 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'notify.stay_request_declined.title', namespace: 'notify', description: 'Notification: booking request declined (guest)', en: 'Booking request declined', ru: 'Заявка на бронирование отклонена', status: NR },
   { key: 'notify.stay_request_declined.body', namespace: 'notify', description: 'Notification body: booking request declined (guest)', en: 'Your request for {unit_name} ({start_date} — {end_date}) was declined. No charge was made.', ru: 'Ваша заявка на {unit_name} ({start_date} — {end_date}) отклонена. Оплата не производилась.', status: NR },
   { key: 'email.stay_confirmed.subject', namespace: 'email', description: 'Email subject: booking confirmation', en: 'Your stay is confirmed — {unit_name}', ru: 'Ваше бронирование подтверждено — {unit_name}', status: NR },
+  { key: 'notify.stay_prearrival.title', namespace: 'notify', description: 'Pre-arrival reminder: title', en: 'Your stay at {project_name} is coming up', ru: 'Скоро ваше проживание в {project_name}', zh: '您在{project_name}的入住即将开始', status: NR },
+  { key: 'notify.stay_prearrival.body', namespace: 'notify', description: 'Pre-arrival reminder: body', en: 'Check-in at {unit_name} is on {start_date}. Please add your party\u2019s passports (Thai law requires TM30 filing within 24h of arrival) and see your home space: {home_space_url}', ru: 'Заезд в {unit_name} — {start_date}. Пожалуйста, добавьте паспорта гостей (по законам Таиланда мы подаём TM30 в течение 24 часов после заезда) и загляните в ваше пространство проживания: {home_space_url}', zh: '您将于{start_date}入住{unit_name}。请添加同行人护照（泰国法律要求抵达后24小时内申报TM30），并查看您的入住空间：{home_space_url}', status: NR },
+  { key: 'notify.stay_review_prompt.title', namespace: 'notify', description: 'Post-stay review prompt: title', en: 'How was your stay at {project_name}?', ru: 'Как прошло ваше проживание в {project_name}?', zh: '您在{project_name}的入住体验如何？', status: NR },
+  { key: 'notify.stay_review_prompt.body', namespace: 'notify', description: 'Post-stay review prompt: body (incl. green-season offer)', en: 'Thank you for staying at {unit_name}! We would love your review. And when you plan your next escape: green-season stays (May\u2013September) come with our best rates \u2014 write to the concierge and we will hold your villa.', ru: 'Спасибо, что жили в {unit_name}! Будем рады вашему отзыву. А когда соберётесь снова: проживание в зелёный сезон (май\u2013сентябрь) — по нашим лучшим ценам. Напишите консьержу, и мы придержим вашу виллу.', zh: '感谢您入住{unit_name}！期待您的评价。计划下次出行时：绿季（5\u20139月）入住享最优价格，联系礼宾即可为您保留别墅。', status: NR },
+  { key: 'email.guest_access.subject', namespace: 'email', description: 'Email subject: guest access link', en: 'Your stay at {project_name} — your access link', ru: 'Ваше проживание в {project_name} — ссылка для входа', status: NR },
+  { key: 'email.guest_access.body', namespace: 'email', description: 'Email body: guest access link', en: 'Hello!\n\nHere is your personal link to open your stay space at {project_name}:\n\n{link}\n\nIf you did not request this, simply ignore this email.\n\nmyUNO — serviced living in Phuket', ru: 'Здравствуйте!\n\nВаша персональная ссылка в пространство проживания в {project_name}:\n\n{link}\n\nЕсли вы не запрашивали её — просто проигнорируйте это письмо.\n\nmyUNO — обслуживаемое проживание на Пхукете', status: NR },
   { key: 'email.stay_confirmed.body', namespace: 'email', description: 'Email body: booking confirmation', en: 'Hi {first_name},\n\nYour booking at {unit_name} is confirmed.\n\nCheck-in: {start_date}\nCheck-out: {end_date}\nTotal: ฿{total_thb}\n\nSee your trip and prepare for arrival: {trips_url}\n\nmyUNO — serviced living in Phuket', ru: 'Здравствуйте, {first_name}!\n\nВаше бронирование {unit_name} подтверждено.\n\nЗаезд: {start_date}\nВыезд: {end_date}\nИтого: ฿{total_thb}\n\nДетали поездки и подготовка к заезду: {trips_url}\n\nmyUNO — обслуживаемое проживание на Пхукете', status: NR },
 
   // Shell states
@@ -1360,6 +1367,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Navbar
   { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
+  { key: 'nav.residences', namespace: 'nav', description: 'Navbar link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
   { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', status: NR },
   { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
   { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', status: NR },
@@ -1374,6 +1382,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   // Footer
   { key: 'nav.footer.brand_column', namespace: 'nav', description: 'Footer column title: brand', en: 'myUNO', ru: 'myUNO', status: NR },
   { key: 'nav.footer.home', namespace: 'nav', description: 'Footer link: home', en: 'Home', ru: 'Главная', status: NR },
+  { key: 'nav.footer.residences', namespace: 'nav', description: 'Footer link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
   { key: 'nav.footer.trust', namespace: 'nav', description: 'Footer link: trust', en: 'Trust', ru: 'Доверие', status: NR },
   { key: 'nav.footer.audience_column', namespace: 'nav', description: 'Footer column title: audiences', en: 'For Everyone', ru: 'Для всех', status: NR },
   { key: 'nav.footer.owners', namespace: 'nav', description: 'Footer link: owners', en: 'Owners', ru: 'Владельцы', status: NR },
@@ -1415,6 +1424,70 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Auth: password reset
   { key: 'auth.reset.title', namespace: 'auth', description: 'Password reset page title', en: 'Reset your password', ru: 'Сброс пароля', status: NR },
+  { key: 'admin.dashboard.reports_title', namespace: 'admin', description: 'Admin dashboard: project reports title', en: 'Project reports (last 30 days)', ru: 'Отчёты по проектам (последние 30 дней)', status: NR },
+  { key: 'admin.dashboard.reports.category', namespace: 'admin', description: 'Reports: category column', en: 'Category', ru: 'Категория', status: NR },
+  { key: 'admin.dashboard.reports.villas', namespace: 'admin', description: 'Reports: villas column', en: 'Villas', ru: 'Виллы', status: NR },
+  { key: 'admin.dashboard.reports.booked_nights', namespace: 'admin', description: 'Reports: booked nights column', en: 'Booked nights', ru: 'Занятые ночи', status: NR },
+  { key: 'admin.dashboard.reports.occupancy', namespace: 'admin', description: 'Reports: occupancy column', en: 'Occupancy %', ru: 'Загрузка %', status: NR },
+  { key: 'admin.dashboard.reports.channel', namespace: 'admin', description: 'Reports: channel column', en: 'Channel', ru: 'Канал', status: NR },
+  { key: 'admin.dashboard.reports.revenue', namespace: 'admin', description: 'Reports: revenue column', en: 'Revenue', ru: 'Выручка', status: NR },
+  { key: 'admin.dashboard.reports.bookings', namespace: 'admin', description: 'Reports: bookings column', en: 'Bookings', ru: 'Брони', status: NR },
+  { key: 'admin.dashboard.reports.rental', namespace: 'admin', description: 'Reports: rental revenue tile', en: 'Rental revenue', ru: 'Выручка от аренды', status: NR },
+  { key: 'admin.dashboard.reports.ancillary', namespace: 'admin', description: 'Reports: ancillary revenue tile', en: 'Ancillary revenue (services)', ru: 'Дополнительная выручка (услуги)', status: NR },
+  { key: 'admin.dashboard.reports.empty', namespace: 'admin', description: 'Reports: empty state', en: 'No data in the period yet.', ru: 'Данных за период пока нет.', status: NR },
+  { key: 'admin.nav.projects', namespace: 'admin', description: 'Admin nav: projects', en: 'Projects', ru: 'Проекты', status: NR },
+  { key: 'admin.nav.config', namespace: 'admin', description: 'Admin nav: pricing & config', en: 'Pricing & Config', ru: 'Цены и настройки', status: NR },
+  { key: 'admin.projects.title', namespace: 'admin', description: 'Admin projects: title', en: 'Projects', ru: 'Проекты', status: NR },
+  { key: 'admin.projects.empty', namespace: 'admin', description: 'Admin projects: empty', en: 'No projects yet.', ru: 'Проектов пока нет.', status: NR },
+  { key: 'admin.projects.name', namespace: 'admin', description: 'Admin projects: name field', en: 'Name', ru: 'Название', status: NR },
+  { key: 'admin.projects.slug', namespace: 'admin', description: 'Admin projects: slug field', en: 'Slug', ru: 'Слаг (URL)', status: NR },
+  { key: 'admin.projects.status', namespace: 'admin', description: 'Admin projects: status field', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'admin.projects.address', namespace: 'admin', description: 'Admin projects: address field', en: 'Address', ru: 'Адрес', status: NR },
+  { key: 'admin.projects.save', namespace: 'admin', description: 'Admin projects: save', en: 'Save', ru: 'Сохранить', status: NR },
+  { key: 'admin.projects.edit', namespace: 'admin', description: 'Admin projects: edit', en: 'Edit', ru: 'Изменить', status: NR },
+  { key: 'admin.projects.cancel_edit', namespace: 'admin', description: 'Admin projects: cancel edit', en: 'Cancel', ru: 'Отмена', status: NR },
+  { key: 'admin.projects.create_title', namespace: 'admin', description: 'Admin projects: create section', en: 'New project', ru: 'Новый проект', status: NR },
+  { key: 'admin.projects.create', namespace: 'admin', description: 'Admin projects: create button', en: 'Create project', ru: 'Создать проект', status: NR },
+  { key: 'admin.projects.latitude', namespace: 'admin', description: 'Admin projects: latitude', en: 'Latitude', ru: 'Широта', status: NR },
+  { key: 'admin.projects.longitude', namespace: 'admin', description: 'Admin projects: longitude', en: 'Longitude', ru: 'Долгота', status: NR },
+  { key: 'admin.projects.error_generic', namespace: 'admin', description: 'Admin projects: error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+  { key: 'admin.projects.config_link', namespace: 'admin', description: 'Admin projects: link to config', en: 'Pricing & config →', ru: 'Цены и настройки →', status: NR },
+  { key: 'admin.config.title', namespace: 'admin', description: 'Admin config: title', en: 'Pricing & configuration', ru: 'Цены и конфигурация', status: NR },
+  { key: 'admin.config.subtitle', namespace: 'admin', description: 'Admin config: subtitle', en: 'Per-project business rules: seasons, category tariffs, early-bird, concierge WhatsApp. Amounts are satang (THB × 100).', ru: 'Бизнес-правила по проекту: сезоны, тарифы категорий, early-bird, WhatsApp консьержа. Суммы — в сатангах (батты × 100).', status: NR },
+  { key: 'admin.config.project', namespace: 'admin', description: 'Admin config: project picker', en: 'Project', ru: 'Проект', status: NR },
+  { key: 'admin.config.overridden', namespace: 'admin', description: 'Admin config: override badge', en: 'project override', ru: 'переопределено для проекта', status: NR },
+  { key: 'admin.config.inherited', namespace: 'admin', description: 'Admin config: inherited badge', en: 'global default', ru: 'глобальное значение', status: NR },
+  { key: 'admin.config.save', namespace: 'admin', description: 'Admin config: save', en: 'Save', ru: 'Сохранить', status: NR },
+  { key: 'admin.config.saved', namespace: 'admin', description: 'Admin config: saved', en: 'Saved.', ru: 'Сохранено.', status: NR },
+  { key: 'admin.config.error_json', namespace: 'admin', description: 'Admin config: invalid JSON', en: 'Invalid JSON — fix the syntax and try again.', ru: 'Некорректный JSON — исправьте синтаксис и попробуйте снова.', status: NR },
+  { key: 'admin.config.error_generic', namespace: 'admin', description: 'Admin config: save failed', en: 'Save failed. Please try again.', ru: 'Не удалось сохранить. Попробуйте ещё раз.', status: NR },
+  { key: 'admin.config.no_projects', namespace: 'admin', description: 'Admin config: no projects', en: 'Create a project first.', ru: 'Сначала создайте проект.', status: NR },
+  { key: 'admin.bookings.channel_all', namespace: 'admin', description: 'Admin bookings: channel filter all', en: 'All channels', ru: 'Все каналы', status: NR },
+  { key: 'admin.bookings.guest_note', namespace: 'admin', description: 'Admin bookings: guest note label', en: 'Guest note', ru: 'Комментарий гостя', status: NR },
+  { key: 'admin.bookings.internal_note', namespace: 'admin', description: 'Admin bookings: internal note placeholder', en: 'Internal note', ru: 'Внутренняя заметка', status: NR },
+  { key: 'admin.bookings.internal_note_save', namespace: 'admin', description: 'Admin bookings: save note', en: 'Save note', ru: 'Сохранить заметку', status: NR },
+  { key: 'admin.bookings.guest_link', namespace: 'admin', description: 'Admin bookings: generate guest link button', en: 'Guest link', ru: 'Ссылка для гостя', status: NR },
+  { key: 'admin.bookings.guest_link_hint', namespace: 'admin', description: 'Admin bookings: guest link hint', en: 'Copy and send this activation link to the guest:', ru: 'Скопируйте и отправьте гостю эту ссылку активации:', status: NR },
+  { key: 'auth.claim.title', namespace: 'auth', description: 'Claim page title', en: 'Activate your account', ru: 'Активируйте аккаунт', zh: '激活您的账户', status: NR },
+  { key: 'auth.claim.subtitle', namespace: 'auth', description: 'Claim page subtitle', en: 'Set a password to open your stay space.', ru: 'Задайте пароль, чтобы открыть пространство вашего проживания.', zh: '设置密码以打开您的入住空间。', status: NR },
+  { key: 'auth.claim.claiming_for', namespace: 'auth', description: 'Claim page: account label', en: 'Account:', ru: 'Аккаунт:', zh: '账户：', status: NR },
+  { key: 'auth.claim.password', namespace: 'auth', description: 'Claim page: password field', en: 'Password (8+ characters)', ru: 'Пароль (от 8 символов)', zh: '密码（8个字符以上）', status: NR },
+  { key: 'auth.claim.password_confirm', namespace: 'auth', description: 'Claim page: confirm field', en: 'Repeat password', ru: 'Повторите пароль', zh: '重复密码', status: NR },
+  { key: 'auth.claim.submit', namespace: 'auth', description: 'Claim page: submit', en: 'Activate & sign in', ru: 'Активировать и войти', zh: '激活并登录', status: NR },
+  { key: 'auth.claim.submitting', namespace: 'auth', description: 'Claim page: submitting', en: 'Activating…', ru: 'Активируем…', zh: '正在激活…', status: NR },
+  { key: 'auth.claim.error_mismatch', namespace: 'auth', description: 'Claim page: password mismatch', en: 'Passwords do not match.', ru: 'Пароли не совпадают.', zh: '两次输入的密码不一致。', status: NR },
+  { key: 'auth.claim.error_generic', namespace: 'auth', description: 'Claim page: generic error', en: 'Could not activate the account. Please try again.', ru: 'Не удалось активировать аккаунт. Попробуйте ещё раз.', zh: '无法激活账户，请重试。', status: NR },
+  { key: 'auth.claim.error_invalid', namespace: 'auth', description: 'Claim page: invalid link', en: 'This link is invalid or has expired. Ask us for a new one.', ru: 'Ссылка недействительна или устарела. Запросите новую.', zh: '此链接无效或已过期，请向我们索取新链接。', status: NR },
+  { key: 'auth.claim.loading', namespace: 'auth', description: 'Claim page: validating', en: 'Checking your link…', ru: 'Проверяем ссылку…', zh: '正在检查您的链接…', status: NR },
+  { key: 'guests.access.title', namespace: 'guests', description: 'Guest access: title', en: 'Open your stay', ru: 'Откройте своё проживание', zh: '打开您的入住', status: NR },
+  { key: 'guests.access.subtitle', namespace: 'guests', description: 'Guest access: subtitle', en: 'Enter your booking reference and the email you booked with — we will send you a personal link.', ru: 'Введите номер брони и почту, на которую бронировали, — мы пришлём персональную ссылку.', zh: '输入您的预订编号和预订时使用的邮箱，我们将发送专属链接。', status: NR },
+  { key: 'guests.access.booking_ref', namespace: 'guests', description: 'Guest access: booking ref field', en: 'Booking reference', ru: 'Номер брони', zh: '预订编号', status: NR },
+  { key: 'guests.access.booking_ref_hint', namespace: 'guests', description: 'Guest access: booking ref hint', en: 'It is in your confirmation message.', ru: 'Он указан в подтверждении бронирования.', zh: '在您的确认信息中。', status: NR },
+  { key: 'guests.access.email', namespace: 'guests', description: 'Guest access: email field', en: 'Email', ru: 'Почта', zh: '邮箱', status: NR },
+  { key: 'guests.access.submit', namespace: 'guests', description: 'Guest access: submit', en: 'Send me the link', ru: 'Прислать ссылку', zh: '发送链接', status: NR },
+  { key: 'guests.access.submitting', namespace: 'guests', description: 'Guest access: submitting', en: 'Sending…', ru: 'Отправляем…', zh: '发送中…', status: NR },
+  { key: 'guests.access.sent', namespace: 'guests', description: 'Guest access: uniform confirmation', en: 'If the details match a booking, the link is on its way to your inbox.', ru: 'Если данные совпали с бронированием, ссылка уже летит на вашу почту.', zh: '如果信息与预订匹配，链接已发送至您的邮箱。', status: NR },
+  { key: 'guests.access.error_generic', namespace: 'guests', description: 'Guest access: generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', zh: '出错了，请重试。', status: NR },
   { key: 'auth.reset.request_subtitle', namespace: 'auth', description: 'Password reset request subtitle', en: "Enter your email and we'll send you a reset link.", ru: 'Укажите почту — мы отправим ссылку для сброса.', status: NR },
   { key: 'auth.reset.confirm_subtitle', namespace: 'auth', description: 'Password reset confirm subtitle', en: 'Choose a new password for your account.', ru: 'Придумайте новый пароль для аккаунта.', status: NR },
   { key: 'auth.reset.email', namespace: 'auth', description: 'Password reset field: email', en: 'Email', ru: 'Эл. почта', status: NR },
@@ -1442,6 +1515,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'search.empty', namespace: 'search', description: 'Search empty state', en: 'No homes are available for these dates.', ru: 'На эти даты свободных домов нет.', status: NR },
   { key: 'search.empty_hint', namespace: 'search', description: 'Search empty state hint', en: 'Try different dates or a shorter stay.', ru: 'Попробуйте другие даты или более короткий срок.', status: NR },
   { key: 'search.per_night', namespace: 'search', description: 'Price unit: per night', en: 'per night', ru: 'за ночь', status: NR },
+  { key: 'search.categories.title', namespace: 'search', description: 'Search: category cards section title', en: 'Book by category', ru: 'Бронирование по категории', zh: '按类别预订', status: NR },
+  { key: 'search.categories.available', namespace: 'search', description: 'Category card: availability count', en: '{count} villas available', ru: 'Свободно вилл: {count}', zh: '{count} 栋别墅可订', status: NR },
+  { key: 'search.categories.from', namespace: 'search', description: 'Category card: from price per night', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', zh: '每晚 ฿{price} 起', status: NR },
+  { key: 'search.categories.book', namespace: 'search', description: 'Category card: request CTA', en: 'Request this category', ru: 'Запросить категорию', zh: '申请此类别', status: NR },
+  { key: 'search.categories.booking', namespace: 'search', description: 'Category card: submitting state', en: 'Sending request…', ru: 'Отправляем запрос…', zh: '正在发送申请…', status: NR },
+  { key: 'search.categories.auto_assign', namespace: 'search', description: 'Category card: auto-assignment note', en: 'We assign the best free villa of this category to your dates.', ru: 'Мы сами назначим лучшую свободную виллу этой категории на ваши даты.', zh: '我们将为您的日期安排该类别中最合适的空闲别墅。', status: NR },
+  { key: 'search.error_booking', namespace: 'search', description: 'Search: category booking error', en: 'Could not create the request. Please try again.', ru: 'Не удалось создать запрос. Попробуйте ещё раз.', zh: '无法创建申请，请重试。', status: NR },
   { key: 'search.showing', namespace: 'search', description: 'Search pagination summary', en: 'Showing {shown} of {total} results', ru: 'Показано {shown} из {total}', status: NR },
   { key: 'search.bar_check_in', namespace: 'search', description: 'Search bar: check-in label', en: 'Check-in', ru: 'Заезд', status: NR },
   { key: 'search.bar_check_out', namespace: 'search', description: 'Search bar: check-out label', en: 'Check-out', ru: 'Выезд', status: NR },
@@ -1465,6 +1545,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'listing.per_night', namespace: 'listing', description: 'Price unit suffix', en: '/ night', ru: '/ ночь', status: NR },
   { key: 'listing.price_nights', namespace: 'listing', description: 'Price line: nights multiplier', en: '× {nights} nights', ru: '× {nights} ноч.', status: NR },
   { key: 'listing.discount_long_stay', namespace: 'listing', description: 'Price line: long-stay discount', en: 'Long stay discount', ru: 'Скидка за длительное проживание', status: NR },
+  { key: 'listing.discount_early_bird', namespace: 'listing', description: 'Price line: early-bird discount', en: 'Early bird discount', ru: 'Скидка за раннее бронирование', status: NR },
   { key: 'listing.cleaning_fee', namespace: 'listing', description: 'Price line: cleaning fee', en: 'Cleaning fee', ru: 'Уборка', status: NR },
   { key: 'listing.occupancy_tax', namespace: 'listing', description: 'Price line: occupancy tax', en: 'Occupancy tax', ru: 'Туристический налог', status: NR },
   { key: 'listing.total', namespace: 'listing', description: 'Price line: total', en: 'Total', ru: 'Итого', status: NR },
@@ -1661,6 +1742,29 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.sections.tickets', namespace: 'owner', description: 'Section heading: open tickets', en: 'Open Tickets', ru: 'Открытые заявки', status: NR },
   { key: 'owner.stay.error', namespace: 'owner', description: 'Owner stay booking error', en: 'Failed to book owner stay', ru: 'Не удалось забронировать собственное проживание', status: NR },
 
+  // Owner compliance & alerts (doc 08 D2)
+  { key: 'owner.compliance.title', namespace: 'owner', description: 'Compliance section heading', en: 'Compliance', ru: 'Соответствие требованиям', status: NR },
+  { key: 'owner.compliance.subtitle', namespace: 'owner', description: 'Compliance section subtitle', en: 'Stay compliant with Thai legislation', ru: 'Соблюдайте требования тайского законодательства', status: NR },
+  { key: 'owner.compliance.permitted_use', namespace: 'owner', description: 'Compliance status: permitted use confirmation', en: 'Permitted Use Confirmed', ru: 'Разрешение на использование подтверждено', status: NR },
+  { key: 'owner.compliance.tm30_ontime', namespace: 'owner', description: 'Compliance metric: TM30 on-time %', en: 'TM30 On-Time', ru: 'TM30 в срок', status: NR },
+  { key: 'owner.compliance.records', namespace: 'owner', description: 'Compliance metric: compliance records', en: 'Compliance Records', ru: 'Документы соответствия', status: NR },
+  { key: 'owner.compliance.mobilization', namespace: 'owner', description: 'Compliance metric: mobilization progress', en: 'Mobilization Progress', ru: 'Прогресс подготовки', status: NR },
+
+  { key: 'owner.alerts.title', namespace: 'owner', description: 'Alerts section heading', en: 'Alerts', ru: 'Уведомления', status: NR },
+  { key: 'owner.alerts.empty', namespace: 'owner', description: 'No active alerts', en: 'No active alerts', ru: 'Нет активных уведомлений', status: NR },
+  { key: 'owner.alerts.tm30_overdue', namespace: 'owner', description: 'Alert type: TM30 overdue', en: 'TM30 Filing Overdue', ru: 'Просроченная подача TM30', status: NR },
+  { key: 'owner.alerts.tm30_escalated', namespace: 'owner', description: 'Alert type: TM30 escalated', en: 'TM30 Escalated', ru: 'TM30 эскалирована', status: NR },
+  { key: 'owner.alerts.unit_paused', namespace: 'owner', description: 'Alert type: unit paused', en: 'Unit Paused', ru: 'Юнит приостановлен', status: NR },
+  { key: 'owner.alerts.compliance_expiry', namespace: 'owner', description: 'Alert type: compliance record expiring', en: 'Compliance Document Expiring', ru: 'Документ соответствия истекает', status: NR },
+  { key: 'owner.alerts.ticket_sla', namespace: 'owner', description: 'Alert type: ticket SLA breached', en: 'Ticket SLA Breached', ru: 'Нарушено SLA заявки', status: NR },
+
+  { key: 'owner.statement.title', namespace: 'owner', description: 'Statements section heading', en: 'Financial Statements', ru: 'Финансовые отчёты', status: NR },
+  { key: 'owner.statement.empty', namespace: 'owner', description: 'No published statements', en: 'No statements yet', ru: 'Отчёты ещё не доступны', status: NR },
+  { key: 'owner.statement.period', namespace: 'owner', description: 'Statement table header: period', en: 'Period', ru: 'Период', status: NR },
+  { key: 'owner.statement.noi', namespace: 'owner', description: 'Statement table header: net operating income', en: 'Net Income', ru: 'Чистый доход', status: NR },
+  { key: 'owner.statement.your_share', namespace: 'owner', description: 'Statement table header: owner share', en: 'Your Share', ru: 'Ваша доля', status: NR },
+  { key: 'owner.statement.view', namespace: 'owner', description: 'View statement link', en: 'View', ru: 'Открыть', status: NR },
+
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },
@@ -1723,6 +1827,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'admin.dashboard.last30_revenue_spark', namespace: 'admin', description: 'Sparkline title: revenue per day', en: 'Rental revenue per day, last 30 days', ru: 'Доход от аренды по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_nights_spark', namespace: 'admin', description: 'Sparkline title: occupied nights per day', en: 'Occupied nights per day, last 30 days', ru: 'Занятые ночи по дням за 30 дней', status: NR },
   { key: 'admin.dashboard.last30_empty', namespace: 'admin', description: 'Trend row empty state', en: 'No rollup data yet — trends appear after the first nightly rollup.', ru: 'Данных пока нет — тренды появятся после первого ночного пересчёта.', status: NR },
+  { key: 'admin.dashboard.kpi_title', namespace: 'admin', description: 'KPI row heading', en: 'Key metrics (last 30 days)', ru: 'Ключевые показатели (последние 30 дней)', status: NR },
+  { key: 'admin.dashboard.occupancy', namespace: 'admin', description: 'KPI: occupancy %', en: 'Occupancy %', ru: 'Заполняемость %', status: NR },
+  { key: 'admin.dashboard.adr', namespace: 'admin', description: 'KPI: average daily rate', en: 'ADR (฿)', ru: 'ADR (฿)', status: NR },
+  { key: 'admin.dashboard.revpan', namespace: 'admin', description: 'KPI: revenue per available night', en: 'RevPAN (฿)', ru: 'RevPAN (฿)', status: NR },
+  { key: 'admin.dashboard.attach_rate', namespace: 'admin', description: 'KPI: service attach rate %', en: 'Service attach rate %', ru: 'Процент добавления услуг %', status: NR },
+  { key: 'admin.dashboard.direct_share', namespace: 'admin', description: 'KPI: direct bookings %', en: 'Direct bookings %', ru: 'Прямые бронирования %', status: NR },
+  { key: 'admin.dashboard.repeat_guests', namespace: 'admin', description: 'KPI: repeat guests %', en: 'Repeat guests %', ru: 'Постоянные гости %', status: NR },
 
   // Admin — buyer signals funnel & list
   { key: 'admin.signals.title', namespace: 'admin', description: 'Signals page title', en: 'Buyer Signals', ru: 'Сигналы покупателей', status: NR },
@@ -1820,6 +1931,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.order.cancelled_note', namespace: 'services', description: 'My-orders: flash after successful cancel', en: 'Order cancelled. Any refund due is on its way.', ru: 'Заказ отменён. Если полагается возврат — он уже оформляется.', status: NR },
   { key: 'payments.checkout.service_label', namespace: 'payments', description: 'Mock checkout: service line label (service-order payments)', en: 'Service', ru: 'Услуга', status: NR },
   { key: 'staff.ops.service_pending_cash', namespace: 'staff', description: 'Ops board: service orders awaiting cash section title', en: 'Service orders awaiting cash', ru: 'Заказы услуг: ожидают оплату наличными', status: NR },
+  { key: 'staff.ops.sla_title', namespace: 'staff', description: 'Ops board: SLA health section title', en: 'SLA health (last 7 days)', ru: 'Здоровье SLA (последние 7 дней)', status: NR },
+  { key: 'staff.ops.tm30_on_time', namespace: 'staff', description: 'Ops board: TM30 on-time rate', en: 'TM30 on-time %', ru: 'TM30 вовремя %', status: NR },
+  { key: 'staff.ops.tickets_past_sla', namespace: 'staff', description: 'Ops board: tickets with open SLA past due', en: 'Tickets past SLA', ru: 'Тикеты просроченные SLA', status: NR },
   { key: 'order.cancelled.title', namespace: 'order', description: 'Notification: service order cancelled', en: 'Order Cancelled', ru: 'Заказ отменён', status: NR },
   { key: 'order.cancelled.body', namespace: 'order', description: 'Notification body: service order cancelled (refund amount in satang-free THB)', en: 'Your order for {{service_title}} was cancelled. Refund due: ฿{{refund_thb}}.', ru: 'Ваш заказ на {{service_title}} отменён. Возврат: ฿{{refund_thb}}.', status: NR },
 
@@ -1882,6 +1996,309 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.category.massage_spa', namespace: 'services', description: 'Service category: massage & spa', en: 'Massage & spa', ru: 'Массаж и СПА', status: NR },
   { key: 'services.category.repairs', namespace: 'services', description: 'Service category: repairs & handyman', en: 'Repairs', ru: 'Ремонт', status: NR },
   { key: 'services.category.emergency_medical', namespace: 'services', description: 'Service category: emergency medical assistance', en: 'Emergency medical', ru: 'Экстренная медицина', status: NR },
+
+  // Super-app facade (SA-1): category grid, filter, stay-context banner
+  { key: 'services.browse.categories_title', namespace: 'services', description: 'Services facade: category grid heading', en: 'What do you need?', ru: 'Что вам нужно?', zh: '您需要什么？', status: NR },
+  { key: 'services.browse.show_all', namespace: 'services', description: 'Services facade: clear category filter', en: 'Show all services', ru: 'Показать все услуги', zh: '显示全部服务', status: NR },
+  { key: 'services.browse.category_empty', namespace: 'services', description: 'Services facade: empty category state', en: 'Nothing in this category yet — try another one.', ru: 'В этой категории пока пусто — загляните в другую.', zh: '该类别暂无服务，请尝试其他类别。', status: NR },
+  { key: 'services.browse.stay_banner', namespace: 'services', description: 'Services facade: stay-context banner ({unit}, {project})', en: 'Ordering for your stay at {unit}, {project}', ru: 'Заказ к вашему проживанию — {unit}, {project}', zh: '为您在 {project} {unit} 的住宿下单', status: NR },
+  { key: 'services.browse.stay_banner_link', namespace: 'services', description: 'Services facade: back to home space link', en: 'Back to your home space', ru: 'Вернуться в домашнее пространство', zh: '返回您的住宿空间', status: NR },
+
+  // Order wizard (SA-2): refine → place → pay → confirm on the service page
+  { key: 'services.detail.back', namespace: 'services', description: 'Service page: back to catalog link', en: 'Back to services', ru: 'Назад к услугам', zh: '返回服务列表', status: NR },
+  { key: 'services.wizard.title', namespace: 'services', description: 'Wizard: order card heading', en: 'Your order', ru: 'Ваш заказ', zh: '您的订单', status: NR },
+  { key: 'services.wizard.when', namespace: 'services', description: 'Wizard: date/time field', en: 'When', ru: 'Когда', zh: '时间', status: NR },
+  { key: 'services.wizard.quantity', namespace: 'services', description: 'Wizard: quantity field', en: 'Quantity', ru: 'Количество', zh: '数量', status: NR },
+  { key: 'services.wizard.note', namespace: 'services', description: 'Wizard: note field', en: 'Note to provider (optional)', ru: 'Пожелание исполнителю (необязательно)', zh: '给服务商的备注（可选）', status: NR },
+  { key: 'services.wizard.total_preview', namespace: 'services', description: 'Wizard: total row label (server recomputes)', en: 'Total', ru: 'Итого', zh: '合计', status: NR },
+  { key: 'services.wizard.place', namespace: 'services', description: 'Wizard: place order CTA with total ({total})', en: 'Order — ฿{total}', ru: 'Заказать — ฿{total}', zh: '下单 — ฿{total}', status: NR },
+  { key: 'services.wizard.place_no_total', namespace: 'services', description: 'Wizard: place order CTA without total', en: 'Place order', ru: 'Оформить заказ', zh: '提交订单', status: NR },
+  { key: 'services.wizard.pay_title', namespace: 'services', description: 'Wizard: payment step heading', en: 'Order placed — choose how to pay', ru: 'Заказ оформлен — выберите способ оплаты', zh: '订单已提交 — 请选择支付方式', status: NR },
+  { key: 'services.wizard.pay_subtitle', namespace: 'services', description: 'Wizard: payment step subtitle', en: 'Pay now by card, or in cash when the service is delivered.', ru: 'Оплатите картой сейчас или наличными при выполнении услуги.', zh: '现在用银行卡支付，或在服务完成时用现金支付。', status: NR },
+  { key: 'services.wizard.pay_card', namespace: 'services', description: 'Wizard: pay by card CTA', en: 'Pay by card', ru: 'Оплатить картой', zh: '银行卡支付', status: NR },
+  { key: 'services.wizard.pay_cash', namespace: 'services', description: 'Wizard: cash on fulfilment CTA', en: 'Cash on fulfilment', ru: 'Наличными при выполнении', zh: '服务时现金支付', status: NR },
+  { key: 'services.wizard.pay_cash_note', namespace: 'services', description: 'Wizard: cash note', en: 'Cash payments are recorded by our staff with a receipt number.', ru: 'Наличную оплату фиксирует наш сотрудник с номером чека.', zh: '现金付款由我们的员工登记并提供收据编号。', status: NR },
+  { key: 'services.wizard.quote_title', namespace: 'services', description: 'Wizard: quote-priced heading', en: 'Priced individually', ru: 'Цена по запросу', zh: '单独报价', status: NR },
+  { key: 'services.wizard.quote_body', namespace: 'services', description: 'Wizard: quote-priced explainer', en: 'This service is quoted for your dates and party — the concierge will confirm the price with you directly.', ru: 'Эта услуга рассчитывается под ваши даты и состав — консьерж согласует цену с вами напрямую.', zh: '此服务按您的日期和人数单独报价 — 礼宾部将直接与您确认价格。', status: NR },
+  { key: 'services.wizard.quote_whatsapp', namespace: 'services', description: 'Wizard: quote WhatsApp CTA', en: 'Ask the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过 WhatsApp 咨询礼宾部', status: NR },
+  { key: 'services.wizard.quote_messages', namespace: 'services', description: 'Wizard: quote in-app messages CTA', en: 'Message us', ru: 'Написать нам', zh: '给我们留言', status: NR },
+  { key: 'services.wizard.error_generic', namespace: 'services', description: 'Wizard: generic error', en: 'Could not place the order. Please try again.', ru: 'Не удалось оформить заказ. Попробуйте ещё раз.', zh: '无法提交订单，请重试。', status: NR },
+  { key: 'service-order.detail.confirmed_paid', namespace: 'service-order', description: 'Order confirmation banner: paid by card', en: 'Payment received — your order is confirmed. The provider will be in touch.', ru: 'Оплата получена — заказ подтверждён. Исполнитель свяжется с вами.', zh: '已收到付款 — 订单已确认，服务商将与您联系。', status: NR },
+  { key: 'service-order.detail.confirmed_cash', namespace: 'service-order', description: 'Order confirmation banner: cash on fulfilment', en: 'Order placed — pay in cash when the service is delivered. Our staff will record the receipt.', ru: 'Заказ оформлен — оплатите наличными при выполнении услуги. Наш сотрудник зафиксирует чек.', zh: '订单已提交 — 请在服务完成时以现金支付，我们的员工会登记收据。', status: NR },
+];
+
+const HOME_KEYS: KeyDef[] = [
+  // Home-space (in-stay guest portal)
+  { key: 'home.welcome', namespace: 'home', description: 'Welcome to property heading', en: 'Welcome to', ru: 'Добро пожаловать в', status: NR },
+  { key: 'home.handbook.title', namespace: 'home', description: 'Property handbook section title', en: 'Property Handbook', ru: 'Справочник Имущества', status: NR },
+  { key: 'home.handbook.description', namespace: 'home', description: 'Property handbook description', en: 'Learn about the property amenities, check-out procedures, and local information.', ru: 'Узнайте о удобствах имущества, процедурах выписки и местной информации.', status: NR },
+  { key: 'home.handbook.view_button', namespace: 'home', description: 'View handbook button text', en: 'View Handbook', ru: 'Просмотреть Справочник', status: NR },
+  { key: 'home.help_text', namespace: 'home', description: 'Footer help text', en: 'Need help? Contact the host or raise an issue above.', ru: 'Нужна помощь? Свяжитесь с хозяином или сообщите о проблеме выше.', status: NR },
+  { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
+  { key: 'home.concierge_whatsapp', namespace: 'home', description: 'Home space: concierge WhatsApp CTA', en: 'Message the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过WhatsApp联系礼宾', status: NR },
+  { key: 'home.shuttle.title', namespace: 'home', description: 'Home space: shuttle schedule title', en: 'Beach shuttle schedule', ru: 'Расписание шаттла до пляжа', zh: '海滩班车时刻表', status: NR },
+];
+
+const ADMIN_S3_KEYS: KeyDef[] = [
+  // Admin navigation (S3: services vetting)
+  { key: 'admin.nav.providers', namespace: 'admin', description: 'Admin nav: provider vetting', en: 'Provider Vetting', ru: 'Проверка поставщиков', status: NR },
+  { key: 'admin.nav.services', namespace: 'admin', description: 'Admin nav: service submissions', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+
+  // Provider vetting page
+  { key: 'admin.providers.title', namespace: 'admin', description: 'Provider applications page title', en: 'Provider Applications', ru: 'Заявки от поставщиков', status: NR },
+  { key: 'admin.providers.empty', namespace: 'admin', description: 'Provider list empty state', en: 'No pending applications.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.providers.approve', namespace: 'admin', description: 'Button: approve provider', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.providers.reject', namespace: 'admin', description: 'Button: reject provider', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.providers.status_applied', namespace: 'admin', description: 'Provider status: applied', en: 'Applied', ru: 'Заявка получена', status: NR },
+  { key: 'admin.providers.status_approved', namespace: 'admin', description: 'Provider status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.providers.status_rejected', namespace: 'admin', description: 'Provider status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.providers.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.providers.error_generic', namespace: 'admin', description: 'Provider action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+
+  // Service vetting page
+  { key: 'admin.services.title', namespace: 'admin', description: 'Service submissions page title', en: 'Service Submissions', ru: 'Заявки на услуги', status: NR },
+  { key: 'admin.services.empty', namespace: 'admin', description: 'Service list empty state', en: 'No pending submissions.', ru: 'Нет ожидающих заявок.', status: NR },
+  { key: 'admin.services.approve', namespace: 'admin', description: 'Button: approve service', en: 'Approve', ru: 'Одобрить', status: NR },
+  { key: 'admin.services.reject', namespace: 'admin', description: 'Button: reject service', en: 'Reject', ru: 'Отклонить', status: NR },
+  { key: 'admin.services.status_draft', namespace: 'admin', description: 'Service status: draft/pending', en: 'Draft', ru: 'На рассмотрении', status: NR },
+  { key: 'admin.services.status_vetted', namespace: 'admin', description: 'Service status: approved', en: 'Approved', ru: 'Одобрено', status: NR },
+  { key: 'admin.services.status_rejected', namespace: 'admin', description: 'Service status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
+  { key: 'admin.services.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
+  { key: 'admin.services.error_generic', namespace: 'admin', description: 'Service action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+];
+
+const SERVICE_DETAIL_KEYS: KeyDef[] = [
+  // Service detail page (F-SVC-1)
+  { key: 'services.detail.title', namespace: 'services', description: 'Service detail page title', en: 'Service', ru: 'Услуга', status: NR },
+  { key: 'services.detail.by_provider', namespace: 'services', description: 'Provider attribution (template: {provider})', en: 'By {provider}', ru: 'От {provider}', status: NR },
+  { key: 'services.detail.vetted_badge', namespace: 'services', description: 'Vetted provider badge', en: 'Vetted', ru: 'Проверено', status: NR },
+  { key: 'services.detail.price_model', namespace: 'services', description: 'Section title: price model', en: 'Price model', ru: 'Модель цены', status: NR },
+  { key: 'services.detail.fixed', namespace: 'services', description: 'Price model: fixed', en: 'Fixed price', ru: 'Фиксированная цена', status: NR },
+  { key: 'services.detail.per_hour', namespace: 'services', description: 'Price model: hourly', en: 'Per hour', ru: 'За час', status: NR },
+  { key: 'services.detail.per_person', namespace: 'services', description: 'Price model: per person', en: 'Per person', ru: 'За человека', status: NR },
+  { key: 'services.detail.quote', namespace: 'services', description: 'Price model: quote', en: 'Quote on request', ru: 'По запросу', status: NR },
+  { key: 'services.detail.duration', namespace: 'services', description: 'Section title: typical duration', en: 'Typical duration', ru: 'Типичная продолжительность', status: NR },
+  { key: 'services.detail.duration_hours', namespace: 'services', description: 'Duration template: {minutes}', en: '{minutes} min', ru: '{minutes} мин', status: NR },
+  { key: 'services.detail.advance_notice', namespace: 'services', description: 'Section title: advance notice', en: 'Advance notice required', ru: 'Требуется предварительное уведомление', status: NR },
+  { key: 'services.detail.advance_notice_hours', namespace: 'services', description: 'Advance notice template: {hours}', en: '{hours}h', ru: '{hours}ч', status: NR },
+  { key: 'services.detail.advance_notice_none', namespace: 'services', description: 'Advance notice: none required', en: 'None', ru: 'Не требуется', status: NR },
+  { key: 'services.detail.about_provider', namespace: 'services', description: 'Section title: about the provider', en: 'About the provider', ru: 'О поставщике', status: NR },
+  { key: 'services.detail.order', namespace: 'services', description: 'CTA button: order this service', en: 'Order this service', ru: 'Заказать услугу', status: NR },
+];
+
+const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
+  // Service order detail page (F-SVC-4)
+  { key: 'service-order.detail.title', namespace: 'service-order', description: 'Order detail page title', en: 'Service Order', ru: 'Заказ услуги', status: NR },
+  { key: 'service-order.detail.order_id', namespace: 'service-order', description: 'Field label: order ID', en: 'Order ID', ru: 'ID заказа', status: NR },
+  { key: 'service-order.detail.status', namespace: 'service-order', description: 'Field label: order status', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'service-order.detail.placed', namespace: 'service-order', description: 'Status: order placed', en: 'Placed', ru: 'Размещён', status: NR },
+  { key: 'service-order.detail.accepted', namespace: 'service-order', description: 'Status: order accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'service-order.detail.declined', namespace: 'service-order', description: 'Status: order declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'service-order.detail.fulfilled', namespace: 'service-order', description: 'Status: order fulfilled', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'service-order.detail.cancelled', namespace: 'service-order', description: 'Status: order cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+  { key: 'service-order.detail.scheduled', namespace: 'service-order', description: 'Section title: scheduling', en: 'Scheduled', ru: 'Запланировано', status: NR },
+  { key: 'service-order.detail.scheduled_start', namespace: 'service-order', description: 'Field: start date & time', en: 'Start date & time', ru: 'Дата и время начала', status: NR },
+  { key: 'service-order.detail.scheduled_end', namespace: 'service-order', description: 'Field: end date & time', en: 'End date & time', ru: 'Дата и время окончания', status: NR },
+  { key: 'service-order.detail.quantity', namespace: 'service-order', description: 'Field: order quantity', en: 'Quantity', ru: 'Количество', status: NR },
+  { key: 'service-order.detail.pricing', namespace: 'service-order', description: 'Section title: pricing', en: 'Pricing', ru: 'Цена', status: NR },
+  { key: 'service-order.detail.total_price', namespace: 'service-order', description: 'Field: total price', en: 'Total price', ru: 'Итоговая цена', status: NR },
+  { key: 'service-order.detail.payment_status', namespace: 'service-order', description: 'Field: payment status', en: 'Payment status', ru: 'Статус платежа', status: NR },
+  { key: 'service-order.detail.paid', namespace: 'service-order', description: 'Payment status: paid', en: 'Paid', ru: 'Оплачено', status: NR },
+  { key: 'service-order.detail.unpaid', namespace: 'service-order', description: 'Payment status: unpaid', en: 'Unpaid', ru: 'Не оплачено', status: NR },
+  { key: 'service-order.detail.provider_info', namespace: 'service-order', description: 'Section title: service provider', en: 'Service Provider', ru: 'Поставщик услуг', status: NR },
+  { key: 'service-order.detail.contact_provider', namespace: 'service-order', description: 'Button: contact provider', en: 'Contact Provider', ru: 'Связаться с поставщиком', status: NR },
+  { key: 'service-order.detail.location', namespace: 'service-order', description: 'Section title: location', en: 'Location', ru: 'Местоположение', status: NR },
+  { key: 'service-order.detail.notes', namespace: 'service-order', description: 'Section title: notes', en: 'Notes', ru: 'Примечания', status: NR },
+  { key: 'service-order.detail.note_to_provider', namespace: 'service-order', description: 'Field: note to provider', en: 'Note to Provider', ru: 'Примечание для поставщика', status: NR },
+  { key: 'service-order.detail.address_note', namespace: 'service-order', description: 'Field: special location note', en: 'Special Location Note', ru: 'Специальное примечание о месте', status: NR },
+  { key: 'service-order.detail.cancellation_reason', namespace: 'service-order', description: 'Field: why order was cancelled', en: 'Cancellation Reason', ru: 'Причина отмены', status: NR },
+  { key: 'service-order.detail.cancel_order', namespace: 'service-order', description: 'Button: cancel order', en: 'Cancel Order', ru: 'Отменить заказ', status: NR },
+  { key: 'service-order.detail.confirm_cancellation', namespace: 'service-order', description: 'Button: confirm cancellation', en: 'Confirm Cancellation', ru: 'Подтвердить отмену', status: NR },
+];
+
+const PROJECT_PAGE_KEYS: KeyDef[] = [
+  // Projects hub /projects (doc 08 §4)
+  { key: 'projects.meta.title', namespace: 'projects', description: 'Projects hub: SEO title', en: 'Our residences in Phuket | myUNO', ru: 'Наши резиденции на Пхукете | myUNO', status: NR },
+  { key: 'projects.meta.description', namespace: 'projects', description: 'Projects hub: SEO description', en: 'Explore the residences we operate: serviced homes with verified guests, managed operations, and full owner transparency.', ru: 'Резиденции под нашим управлением: сервисные дома, проверенные гости и полная прозрачность для собственников.', status: NR },
+  { key: 'projects.hub.kicker', namespace: 'projects', description: 'Projects hub: kicker above title', en: 'Where we operate', ru: 'Где мы работаем', status: NR },
+  { key: 'projects.hub.title', namespace: 'projects', description: 'Projects hub: page title', en: 'Our residences', ru: 'Наши резиденции', status: NR },
+  { key: 'projects.hub.subtitle', namespace: 'projects', description: 'Projects hub: subtitle', en: 'Every residence on myUNO runs on one platform: verified guests, managed services, transparent owner reporting.', ru: 'Каждая резиденция на myUNO работает на одной платформе: проверенные гости, сервис под управлением, прозрачная отчётность.', status: NR },
+  { key: 'projects.hub.units_live', namespace: 'projects', description: 'Projects hub: live unit count on a card', en: '{count} homes available', ru: 'Доступно домов: {count}', status: NR },
+  { key: 'projects.hub.from_price', namespace: 'projects', description: 'Projects hub: from-price on a card', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', status: NR },
+  { key: 'projects.hub.view', namespace: 'projects', description: 'Projects hub: card CTA', en: 'Explore the residence →', ru: 'Смотреть резиденцию →', status: NR },
+  { key: 'projects.hub.empty', namespace: 'projects', description: 'Projects hub: empty state title', en: 'Residences are being prepared for launch.', ru: 'Резиденции готовятся к запуску.', status: NR },
+  { key: 'projects.hub.empty_hint', namespace: 'projects', description: 'Projects hub: empty state hint', en: 'Check back soon, or search available stays directly.', ru: 'Загляните позже или сразу поищите доступное жильё.', status: NR },
+  { key: 'projects.hub.search_cta', namespace: 'projects', description: 'Projects hub: empty state search CTA', en: 'Search stays', ru: 'Найти жильё', status: NR },
+
+  // Per-project landing /projects/{slug} (S2, doc 08 §4)
+  { key: 'project_page.availability.title', namespace: 'project_page', description: 'Project landing: availability bar title', en: 'Check availability', ru: 'Проверить доступность', status: NR },
+  { key: 'project_page.units.title', namespace: 'project_page', description: 'Project landing: units grid title', en: 'Homes in this residence', ru: 'Дома в этой резиденции', status: NR },
+  { key: 'project_page.units.bedrooms', namespace: 'project_page', description: 'Project landing: unit card bedrooms', en: '{count} bd', ru: '{count} сп.', status: NR },
+  { key: 'project_page.units.bathrooms', namespace: 'project_page', description: 'Project landing: unit card bathrooms', en: '{count} ba', ru: '{count} ванн.', status: NR },
+  { key: 'project_page.units.guests', namespace: 'project_page', description: 'Project landing: unit card max guests', en: 'up to {count} guests', ru: 'до {count} гостей', status: NR },
+  { key: 'project_page.units.per_night', namespace: 'project_page', description: 'Project landing: unit card nightly price', en: '฿{price} / night', ru: '฿{price} / ночь', status: NR },
+  { key: 'project_page.units.view', namespace: 'project_page', description: 'Project landing: unit card CTA', en: 'View home →', ru: 'Смотреть дом →', status: NR },
+  { key: 'project_page.units.empty', namespace: 'project_page', description: 'Project landing: units grid empty state', en: 'Homes here are being prepared for booking.', ru: 'Дома здесь готовятся к бронированию.', status: NR },
+  { key: 'project_page.story.title', namespace: 'project_page', description: 'Project landing: story section title', en: 'About the residence', ru: 'О резиденции', status: NR },
+  { key: 'project_page.amenities.title', namespace: 'project_page', description: 'Project landing: amenities section title', en: 'Residence amenities', ru: 'Удобства резиденции', status: NR },
+  { key: 'project_page.services.title', namespace: 'project_page', description: 'Project landing: services section title', en: 'Services available here', ru: 'Доступные здесь услуги', status: NR },
+  { key: 'project_page.services.view_all', namespace: 'project_page', description: 'Project landing: browse all services link', en: 'Browse all services →', ru: 'Все услуги →', status: NR },
+  { key: 'project_page.location.title', namespace: 'project_page', description: 'Project landing: location section title', en: 'Location', ru: 'Расположение', status: NR },
+  { key: 'project_page.location.open_map', namespace: 'project_page', description: 'Project landing: open external map link', en: 'Open in maps →', ru: 'Открыть на карте →', status: NR },
+  { key: 'project_page.handbook.title', namespace: 'project_page', description: 'Project landing: handbook teaser title', en: 'Living here', ru: 'Жизнь здесь', status: NR },
+  { key: 'project_page.trust.title', namespace: 'project_page', description: 'Project landing: trust band title', en: 'Trust, made visible', ru: 'Доверие, которое видно', status: NR },
+  { key: 'project_page.styles.title', namespace: 'project_page', description: 'Project landing: architectural styles section title', en: 'Three styles, one resort', ru: 'Три стиля — один резорт', zh: '三种风格，一个度假村', status: NR },
+  { key: 'project_page.categories.title', namespace: 'project_page', description: 'Project landing: villa categories section title', en: 'Villa categories', ru: 'Категории вилл', zh: '别墅类别', status: NR },
+  { key: 'project_page.categories.from_night', namespace: 'project_page', description: 'Category card: from-price per night', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', zh: '每晚 ฿{price} 起', status: NR },
+  { key: 'project_page.categories.villas_count', namespace: 'project_page', description: 'Category card: villa count', en: '{count} villas', ru: 'Вилл: {count}', zh: '{count} 栋别墅', status: NR },
+  { key: 'project_page.longstay.title', namespace: 'project_page', description: 'Project landing: long-stay block title', en: 'Long stays', ru: 'Длительное проживание', zh: '长期入住', status: NR },
+  { key: 'project_page.longstay.body', namespace: 'project_page', description: 'Project landing: long-stay block body', en: 'Stay a month or a season: flat monthly rates for 28+ nights, with housekeeping and concierge included.', ru: 'Живите месяц или сезон: фиксированные месячные тарифы от 28 ночей, уборка и консьерж включены.', zh: '住一个月或一季：28晚以上享固定月租，含客房清洁与礼宾服务。', status: NR },
+  { key: 'project_page.longstay.from_month', namespace: 'project_page', description: 'Long-stay block: from-price per month', en: 'from ฿{price} / month', ru: 'от ฿{price} / месяц', zh: '每月 ฿{price} 起', status: NR },
+  { key: 'project_page.longstay.cta', namespace: 'project_page', description: 'Long-stay block: request CTA', en: 'Request a long stay →', ru: 'Запросить длительное проживание →', zh: '咨询长住 →', status: NR },
+  { key: 'project_page.reviews.title', namespace: 'project_page', description: 'Project landing: reviews section title', en: 'Guest reviews', ru: 'Отзывы гостей', zh: '客人评价', status: NR },
+  { key: 'project_page.reviews.count', namespace: 'project_page', description: 'Reviews section: count label', en: '{count} reviews', ru: 'Отзывов: {count}', zh: '{count} 条评价', status: NR },
+];
+
+const LEAD_FORM_KEYS: KeyDef[] = [
+  // Public lead form on audience pages (doc 08 §3, N-29)
+  { key: 'audience.lead.title', namespace: 'audience', description: 'Lead form: section title', en: 'Leave your contact — we reply within a day', ru: 'Оставьте контакт — ответим в течение дня', status: NR },
+  { key: 'audience.lead.name', namespace: 'audience', description: 'Lead form: name field label', en: 'Your name', ru: 'Ваше имя', status: NR },
+  { key: 'audience.lead.contact', namespace: 'audience', description: 'Lead form: contact field label', en: 'How to reach you', ru: 'Как с вами связаться', status: NR },
+  { key: 'audience.lead.contact_hint', namespace: 'audience', description: 'Lead form: contact field hint', en: 'Phone, WhatsApp, Telegram, or email — whatever suits you.', ru: 'Телефон, WhatsApp, Telegram или почта — как вам удобно.', status: NR },
+  { key: 'audience.lead.message', namespace: 'audience', description: 'Lead form: free-text field label', en: 'Tell us about your situation (optional)', ru: 'Расскажите о вашей ситуации (необязательно)', status: NR },
+  { key: 'audience.lead.consent', namespace: 'audience', description: 'Lead form: PDPA consent line', en: 'I agree that myUNO stores this information to respond to my enquiry.', ru: 'Я согласен(на), что myUNO сохранит эти данные, чтобы ответить на мой запрос.', status: NR },
+  { key: 'audience.lead.consent_required', namespace: 'audience', description: 'Lead form: consent validation message', en: 'Please tick the consent box so we may contact you.', ru: 'Пожалуйста, отметьте согласие, чтобы мы могли с вами связаться.', status: NR },
+  { key: 'audience.lead.submit', namespace: 'audience', description: 'Lead form: submit button', en: 'Send', ru: 'Отправить', status: NR },
+  { key: 'audience.lead.submitting', namespace: 'audience', description: 'Lead form: submit button while sending', en: 'Sending…', ru: 'Отправляем…', status: NR },
+  { key: 'audience.lead.success', namespace: 'audience', description: 'Lead form: success state', en: 'Thank you — we received your message and will reply shortly.', ru: 'Спасибо — мы получили ваше сообщение и скоро ответим.', status: NR },
+  { key: 'audience.lead.error', namespace: 'audience', description: 'Lead form: error state', en: 'Something went wrong. Please try again, or email us directly.', ru: 'Что-то пошло не так. Попробуйте ещё раз или напишите нам напрямую.', status: NR },
+  // N-29 lead.received → admin (doc 11)
+  { key: 'notify.lead_received.title', namespace: 'notify', description: 'N-29 admin alert title: new public lead', en: 'New lead received', ru: 'Новый лид', status: NR },
+  { key: 'notify.lead_received.body', namespace: 'notify', description: 'N-29 admin alert body: new public lead', en: 'A visitor left their contact on the {audience} page. Open your inbox to reply.', ru: 'Посетитель оставил контакт на странице {audience}. Откройте входящие, чтобы ответить.', status: NR },
+];
+
+const AUDIENCE_EXPANSION_KEYS: KeyDef[] = [
+  // Guests audience page (doc 08 §3, copy adapted from model v3 §5.3)
+  { key: 'audience.guests.how.title', namespace: 'audience', description: 'Guests page: how-it-works title', en: 'How it works', ru: 'Как это работает', status: NR },
+  { key: 'audience.guests.how.step1_title', namespace: 'audience', description: 'Guests page: step 1 title', en: 'Find your home', ru: 'Найдите свой дом', status: NR },
+  { key: 'audience.guests.how.step1_body', namespace: 'audience', description: 'Guests page: step 1 body', en: 'Choose dates and browse real homes in residences we operate — villas and apartments, not hotel rooms.', ru: 'Выберите даты и смотрите настоящие дома в резиденциях под нашим управлением — виллы и апартаменты, а не гостиничные номера.', status: NR },
+  { key: 'audience.guests.how.step2_title', namespace: 'audience', description: 'Guests page: step 2 title', en: 'Book and pay your way', ru: 'Бронируйте и платите как удобно', status: NR },
+  { key: 'audience.guests.how.step2_body', namespace: 'audience', description: 'Guests page: step 2 body', en: 'Instant booking or a request to the host. Pay in cash on arrival or by card — clear terms, clear cancellation policy.', ru: 'Мгновенное бронирование или запрос хозяину. Оплата наличными по прибытии или картой — понятные условия и правила отмены.', status: NR },
+  { key: 'audience.guests.how.step3_title', namespace: 'audience', description: 'Guests page: step 3 title', en: 'Arrive to a run residence', ru: 'Приезжайте в работающую резиденцию', status: NR },
+  { key: 'audience.guests.how.step3_body', namespace: 'audience', description: 'Guests page: step 3 body', en: 'Professional check-in, immigration filing handled for you, a host on chat, and help when anything comes up.', ru: 'Профессиональное заселение, миграционные формальности берём на себя, хост на связи в чате — поможем с чем угодно.', status: NR },
+  { key: 'audience.guests.how.step4_title', namespace: 'audience', description: 'Guests page: step 4 title', en: 'Everything around the stay', ru: 'Всё вокруг проживания', status: NR },
+  { key: 'audience.guests.how.step4_body', namespace: 'audience', description: 'Guests page: step 4 body', en: 'Transfers, cleaning, a chef, a car — vetted services ordered from your in-stay home space in a couple of taps.', ru: 'Трансферы, уборка, повар, машина — проверенные услуги заказываются из вашего домашнего пространства в пару касаний.', status: NR },
+  { key: 'audience.guests.value.title', namespace: 'audience', description: 'Guests page: value section title', en: 'Why guests choose myUNO', ru: 'Почему гости выбирают myUNO', status: NR },
+  { key: 'audience.guests.value.point1', namespace: 'audience', description: 'Guests page: value point 1', en: 'Hotel-grade service in a private home: check-in, housekeeping, support — in a villa or apartment.', ru: 'Сервис уровня отеля в частном доме: заселение, уборка, поддержка — на вилле или в апартаментах.', status: NR },
+  { key: 'audience.guests.value.point2', namespace: 'audience', description: 'Guests page: value point 2', en: 'One-stop shop: everything around the stay booked in one place, vetted and dependable.', ru: 'Всё в одном месте: любые услуги вокруг проживания — проверенные и надёжные.', status: NR },
+  { key: 'audience.guests.value.point3', namespace: 'audience', description: 'Guests page: value point 3', en: 'Trust and safety: in a market full of scams — a credentialed operator, secure payment, clear terms.', ru: 'Доверие и безопасность: на рынке, полном обмана, — аккредитованный оператор, защищённая оплата, понятные условия.', status: NR },
+  { key: 'audience.guests.value.point4', namespace: 'audience', description: 'Guests page: value point 4', en: 'A seamless digital experience: booking, check-in, host chat, services, and extensions — all on your phone.', ru: 'Цифровой опыт без швов: бронирование, заселение, чат с хостом, услуги и продление — всё в телефоне.', status: NR },
+  { key: 'audience.guests.value.point5', namespace: 'audience', description: 'Guests page: value point 5', en: 'Continuity: we recognize you when you return — and if you ever want to buy here, there is a path.', ru: 'Преемственность: мы узнаём вас, когда вы возвращаетесь, — а если захотите купить здесь жильё, путь уже есть.', status: NR },
+  { key: 'audience.guests.trust.body', namespace: 'audience', description: 'Guests page: trust band body', en: 'Verified guests, TM30 immigration compliance, and protected personal data — trust is infrastructure here, not a promise.', ru: 'Проверенные гости, миграционный учёт TM30 и защита персональных данных — доверие здесь инфраструктура, а не обещание.', status: NR },
+  { key: 'audience.guests.trust.link', namespace: 'audience', description: 'Guests page: trust band link', en: 'How we build trust →', ru: 'Как мы строим доверие →', status: NR },
+
+  // Providers audience page (doc 08 §3, copy adapted from model v3 §5.4)
+  { key: 'audience.providers.how.title', namespace: 'audience', description: 'Providers page: how-it-works title', en: 'How it works', ru: 'Как это работает', status: NR },
+  { key: 'audience.providers.how.step1_title', namespace: 'audience', description: 'Providers page: step 1 title', en: 'Apply', ru: 'Подайте заявку', status: NR },
+  { key: 'audience.providers.how.step1_body', namespace: 'audience', description: 'Providers page: step 1 body', en: 'Tell us what you do — cleaning, transfers, a chef, maintenance, wellness — and where you work.', ru: 'Расскажите, чем вы занимаетесь — уборка, трансферы, повар, ремонт, велнес — и где работаете.', status: NR },
+  { key: 'audience.providers.how.step2_title', namespace: 'audience', description: 'Providers page: step 2 title', en: 'Get vetted', ru: 'Пройдите проверку', status: NR },
+  { key: 'audience.providers.how.step2_body', namespace: 'audience', description: 'Providers page: step 2 body', en: 'We check every provider before they go live. The vetted badge is itself a mark of reliability in a low-trust market.', ru: 'Мы проверяем каждого поставщика перед запуском. Значок проверки — сам по себе знак надёжности на рынке с низким доверием.', status: NR },
+  { key: 'audience.providers.how.step3_title', namespace: 'audience', description: 'Providers page: step 3 title', en: 'Receive orders', ru: 'Получайте заказы', status: NR },
+  { key: 'audience.providers.how.step3_body', namespace: 'audience', description: 'Providers page: step 3 body', en: 'Guests, residents, and owners order your services from their home space. You accept, fulfil, and chat — all in your provider portal.', ru: 'Гости, резиденты и собственники заказывают ваши услуги из своего домашнего пространства. Принимайте, выполняйте, общайтесь — всё в портале поставщика.', status: NR },
+  { key: 'audience.providers.how.step4_title', namespace: 'audience', description: 'Providers page: step 4 title', en: 'Get paid', ru: 'Получайте оплату', status: NR },
+  { key: 'audience.providers.how.step4_body', namespace: 'audience', description: 'Providers page: step 4 body', en: 'Orders and payment run through the platform, with a clear remittance report for every period.', ru: 'Заказы и оплата идут через платформу, с прозрачным отчётом о выплатах за каждый период.', status: NR },
+  { key: 'audience.providers.value.title', namespace: 'audience', description: 'Providers page: value section title', en: 'Why providers join', ru: 'Почему поставщики присоединяются', status: NR },
+  { key: 'audience.providers.value.point1', namespace: 'audience', description: 'Providers page: value point 1', en: 'A concentrated, high-spend client base — vetted guests and residents clustered in specific residences.', ru: 'Концентрированная платёжеспособная аудитория — проверенные гости и резиденты, собранные в конкретных резиденциях.', status: NR },
+  { key: 'audience.providers.value.point2', namespace: 'audience', description: 'Providers page: value point 2', en: 'Predictable, aggregated demand: plug into the guest flow instead of hunting individual bookings.', ru: 'Предсказуемый агрегированный спрос: подключитесь к потоку гостей вместо охоты за отдельными заказами.', status: NR },
+  { key: 'audience.providers.value.point3', namespace: 'audience', description: 'Providers page: value point 3', en: 'Concentration efficiency: serve many clients in one area on one trip — several villas, one evening, one route.', ru: 'Эффективность концентрации: много клиентов в одном месте за одну поездку — несколько вилл, один вечер, один маршрут.', status: NR },
+  { key: 'audience.providers.value.point4', namespace: 'audience', description: 'Providers page: value point 4', en: 'Streamlined operations: orders, scheduling, communication, and payment in one place.', ru: 'Отлаженные процессы: заказы, расписание, общение и оплата в одном месте.', status: NR },
+  { key: 'audience.providers.trust.body', namespace: 'audience', description: 'Providers page: trust band body', en: 'Your badge tells guests you are vetted — and the platform stands behind every order.', ru: 'Ваш значок говорит гостям, что вы проверены, — а платформа стоит за каждым заказом.', status: NR },
+  { key: 'audience.providers.trust.link', namespace: 'audience', description: 'Providers page: trust band link', en: 'How we build trust →', ru: 'Как мы строим доверие →', status: NR },
+
+  // Buyers audience page (doc 08 §3, copy adapted from model v3 §5.6)
+  { key: 'audience.buyers.how.title', namespace: 'audience', description: 'Buyers page: how-it-works title', en: 'How it works', ru: 'Как это работает', status: NR },
+  { key: 'audience.buyers.how.step1_title', namespace: 'audience', description: 'Buyers page: step 1 title', en: 'Tell us what you are looking for', ru: 'Расскажите, что вы ищете', status: NR },
+  { key: 'audience.buyers.how.step1_body', namespace: 'audience', description: 'Buyers page: step 1 body', en: 'Leave your contact below — a location, a budget, a unit you already have your eye on, or just the intent.', ru: 'Оставьте контакт ниже — локация, бюджет, конкретный юнит или просто намерение.', status: NR },
+  { key: 'audience.buyers.how.step2_title', namespace: 'audience', description: 'Buyers page: step 2 title', en: 'See real operating data', ru: 'Смотрите реальные операционные данные', status: NR },
+  { key: 'audience.buyers.how.step2_body', namespace: 'audience', description: 'Buyers page: step 2 body', en: 'Units in residences we operate come with something no broker holds: actual occupancy, actual revenue, actual costs.', ru: 'Юниты в наших резиденциях приходят с тем, чего нет ни у одного брокера: фактическая загрузка, фактический доход, фактические расходы.', status: NR },
+  { key: 'audience.buyers.how.step3_title', namespace: 'audience', description: 'Buyers page: step 3 title', en: 'Buy with the transaction protected', ru: 'Покупайте с защищённой сделкой', status: NR },
+  { key: 'audience.buyers.how.step3_body', namespace: 'audience', description: 'Buyers page: step 3 body', en: 'Vetted selection, genuine due diligence, and transaction support in a high-fraud market — our Capital team leads the deal.', ru: 'Проверенная подборка, настоящий due diligence и сопровождение сделки на рынке с высоким риском обмана — сделку ведёт наша команда Capital.', status: NR },
+  { key: 'audience.buyers.how.step4_title', namespace: 'audience', description: 'Buyers page: step 4 title', en: 'Earning from day one', ru: 'Доход с первого дня', status: NR },
+  { key: 'audience.buyers.how.step4_body', namespace: 'audience', description: 'Buyers page: step 4 body', en: 'The unit is already managed on the platform — the day you own it, it keeps earning, and your owner dashboard is live.', ru: 'Юнит уже управляется на платформе — в день покупки он продолжает зарабатывать, а ваш кабинет собственника уже работает.', status: NR },
+  { key: 'audience.buyers.value.title', namespace: 'audience', description: 'Buyers page: value section title', en: 'Why buy through myUNO', ru: 'Почему покупать через myUNO', status: NR },
+  { key: 'audience.buyers.value.point1', namespace: 'audience', description: 'Buyers page: value point 1', en: 'Safety in a high-fraud market: a credentialed operator, clear contracts, protected payments.', ru: 'Безопасность на рынке с высоким риском обмана: аккредитованный оператор, понятные договоры, защищённые платежи.', status: NR },
+  { key: 'audience.buyers.value.point2', namespace: 'audience', description: 'Buyers page: value point 2', en: 'Due diligence backed by operating data — not a brochure forecast.', ru: 'Due diligence на основе операционных данных, а не прогноза из брошюры.', status: NR },
+  { key: 'audience.buyers.value.point3', namespace: 'audience', description: 'Buyers page: value point 3', en: 'A managed asset from day one: no scramble to find a rental manager after the purchase.', ru: 'Управляемый актив с первого дня: не нужно искать управляющего после покупки.', status: NR },
+  { key: 'audience.buyers.trust.body', namespace: 'audience', description: 'Buyers page: trust band body', en: 'The same trust infrastructure that runs every stay — verification, compliance, protected data — stands behind every transaction.', ru: 'Та же инфраструктура доверия, что стоит за каждым проживанием — проверка, комплаенс, защита данных, — стоит за каждой сделкой.', status: NR },
+  { key: 'audience.buyers.trust.link', namespace: 'audience', description: 'Buyers page: trust band link', en: 'How we build trust →', ru: 'Как мы строим доверие →', status: NR },
+
+  // Management-companies audience page (doc 08 §3, copy adapted from model v3 §5.5)
+  { key: 'audience.mc.how.title', namespace: 'audience', description: 'MC page: how-it-works title', en: 'How it works', ru: 'Как это работает', status: NR },
+  { key: 'audience.mc.how.step1_title', namespace: 'audience', description: 'MC page: step 1 title', en: 'Talk to us', ru: 'Свяжитесь с нами', status: NR },
+  { key: 'audience.mc.how.step1_body', namespace: 'audience', description: 'MC page: step 1 body', en: 'Leave your contact below — tell us which projects you manage and how you work today.', ru: 'Оставьте контакт ниже — расскажите, какими проектами вы управляете и как работаете сейчас.', status: NR },
+  { key: 'audience.mc.how.step2_title', namespace: 'audience', description: 'MC page: step 2 title', en: 'Plug your units into the platform', ru: 'Подключите свои юниты к платформе', status: NR },
+  { key: 'audience.mc.how.step2_body', namespace: 'audience', description: 'MC page: step 2 body', en: 'Your managed units go live on myUNO with their own engagement terms — your fee structure is configured per unit, not hard-coded.', ru: 'Ваши юниты выходят на myUNO со своими условиями — структура вознаграждения настраивается по каждому юниту, а не зашита в код.', status: NR },
+  { key: 'audience.mc.how.step3_title', namespace: 'audience', description: 'MC page: step 3 title', en: 'Demand arrives, rails included', ru: 'Спрос приходит, рельсы в комплекте', status: NR },
+  { key: 'audience.mc.how.step3_body', namespace: 'audience', description: 'MC page: step 3 body', en: 'Occupancy generated by the platform reach, with booking, payment, compliance, and reporting rails you do not have to build.', ru: 'Загрузка за счёт охвата платформы, а бронирование, оплата, комплаенс и отчётность — готовые рельсы, которые не нужно строить.', status: NR },
+  { key: 'audience.mc.value.title', namespace: 'audience', description: 'MC page: value section title', en: 'What you get', ru: 'Что вы получаете', status: NR },
+  { key: 'audience.mc.value.point1', namespace: 'audience', description: 'MC page: value point 1', en: 'Demand you cannot generate alone: platform-driven bookings flow to your managed units.', ru: 'Спрос, который не создать в одиночку: бронирования платформы идут в ваши юниты.', status: NR },
+  { key: 'audience.mc.value.point2', namespace: 'audience', description: 'MC page: value point 2', en: 'Infrastructure without the build: TM30 filing, payment recording, statements, and a guest home space — ready.', ru: 'Инфраструктура без разработки: TM30, учёт платежей, отчёты и домашнее пространство гостя — готово.', status: NR },
+  { key: 'audience.mc.value.point3', namespace: 'audience', description: 'MC page: value point 3', en: 'Your own portal: managed units, bookings, service orders, and your fee report in one view.', ru: 'Собственный портал: юниты, бронирования, заказы услуг и отчёт по вознаграждению в одном окне.', status: NR },
+  { key: 'audience.mc.trust.body', namespace: 'audience', description: 'MC page: trust band body', en: 'Every stay on the platform is verified and compliant — your managed units inherit the same trust infrastructure.', ru: 'Каждое проживание на платформе проверено и соответствует закону — ваши юниты наследуют ту же инфраструктуру доверия.', status: NR },
+  { key: 'audience.mc.trust.link', namespace: 'audience', description: 'MC page: trust band link', en: 'How we build trust →', ru: 'Как мы строим доверие →', status: NR },
+];
+
+
+const CATALOG_LABEL_KEYS: KeyDef[] = [
+  // Amenity labels — one per catalog.amenities entry (doc 04 §8, doc 05 §4)
+  { key: 'catalog.amenities.wifi.label', namespace: 'catalog', description: 'Amenity label: wifi', en: 'Wi-Fi', ru: 'Wi-Fi', status: NR },
+  { key: 'catalog.amenities.pool.label', namespace: 'catalog', description: 'Amenity label: pool', en: 'Pool', ru: 'Бассейн', status: NR },
+  { key: 'catalog.amenities.kitchen.label', namespace: 'catalog', description: 'Amenity label: kitchen', en: 'Kitchen', ru: 'Кухня', status: NR },
+  { key: 'catalog.amenities.gym.label', namespace: 'catalog', description: 'Amenity label: gym', en: 'Gym', ru: 'Спортзал', status: NR },
+  { key: 'catalog.amenities.parking.label', namespace: 'catalog', description: 'Amenity label: parking', en: 'Parking', ru: 'Парковка', status: NR },
+  { key: 'catalog.amenities.aircon.label', namespace: 'catalog', description: 'Amenity label: aircon', en: 'Air conditioning', ru: 'Кондиционер', status: NR },
+  { key: 'catalog.amenities.sea_view.label', namespace: 'catalog', description: 'Amenity label: sea view', en: 'Sea view', ru: 'Вид на море', status: NR },
+  { key: 'catalog.amenities.washer.label', namespace: 'catalog', description: 'Amenity label: washer', en: 'Washer', ru: 'Стиральная машина', status: NR },
+  { key: 'catalog.amenities.workspace.label', namespace: 'catalog', description: 'Amenity label: workspace', en: 'Workspace', ru: 'Рабочее место', status: NR },
+  { key: 'catalog.amenities.kids_friendly.label', namespace: 'catalog', description: 'Amenity label: kids friendly', en: 'Kids friendly', ru: 'Подходит для детей', status: NR },
+  { key: 'catalog.amenities.pets_allowed.label', namespace: 'catalog', description: 'Amenity label: pets allowed', en: 'Pets allowed', ru: 'Можно с питомцами', status: NR },
+  { key: 'catalog.amenities.security_24h.label', namespace: 'catalog', description: 'Amenity label: 24h security', en: '24h security', ru: 'Охрана 24/7', status: NR },
+  // Cancellation policy labels — guests see these, never the raw key
+  { key: 'catalog.cancellation_policies.flexible.label', namespace: 'catalog', description: 'Cancellation policy label: flexible', en: 'Flexible', ru: 'Гибкая', status: NR },
+  { key: 'catalog.cancellation_policies.moderate.label', namespace: 'catalog', description: 'Cancellation policy label: moderate', en: 'Moderate', ru: 'Умеренная', status: NR },
+  { key: 'catalog.cancellation_policies.strict.label', namespace: 'catalog', description: 'Cancellation policy label: strict', en: 'Strict', ru: 'Строгая', status: NR },
+  // Ticket category labels — full 8-key catalog (was 4 hardcoded in the UI)
+  { key: 'catalog.ticket_categories.maintenance.label', namespace: 'catalog', description: 'Ticket category label: maintenance', en: 'Maintenance', ru: 'Ремонт и обслуживание', status: NR },
+  { key: 'catalog.ticket_categories.housekeeping.label', namespace: 'catalog', description: 'Ticket category label: housekeeping', en: 'Housekeeping', ru: 'Уборка', status: NR },
+  { key: 'catalog.ticket_categories.complaint.label', namespace: 'catalog', description: 'Ticket category label: complaint', en: 'Complaint', ru: 'Жалоба', status: NR },
+  { key: 'catalog.ticket_categories.billing_question.label', namespace: 'catalog', description: 'Ticket category label: billing question', en: 'Billing question', ru: 'Вопрос по оплате', status: NR },
+  { key: 'catalog.ticket_categories.access.label', namespace: 'catalog', description: 'Ticket category label: access', en: 'Access & keys', ru: 'Доступ и ключи', status: NR },
+  { key: 'catalog.ticket_categories.noise.label', namespace: 'catalog', description: 'Ticket category label: noise', en: 'Noise', ru: 'Шум', status: NR },
+  { key: 'catalog.ticket_categories.common_area.label', namespace: 'catalog', description: 'Ticket category label: common area', en: 'Common areas', ru: 'Общие зоны', status: NR },
+  { key: 'catalog.ticket_categories.other.label', namespace: 'catalog', description: 'Ticket category label: other', en: 'Other', ru: 'Другое', status: NR },
+];
+
+const STATUS_LABEL_KEYS: KeyDef[] = [
+  // Missing BookingStatus labels (doc 05 §4: every doc 02 enum label under common.*)
+  { key: 'common.status.booking.checked_in', namespace: 'common', description: 'Booking status: checked in', en: 'Checked in', ru: 'Заселён', status: NR },
+  { key: 'common.status.booking.checked_out', namespace: 'common', description: 'Booking status: checked out', en: 'Checked out', ru: 'Выселен', status: NR },
+  { key: 'common.status.booking.completed', namespace: 'common', description: 'Booking status: completed', en: 'Completed', ru: 'Завершено', status: NR },
+  { key: 'common.status.booking.expired', namespace: 'common', description: 'Booking status: hold expired', en: 'Expired', ru: 'Истекло', status: NR },
+  // UnitStatus — real enum values (mobilizing/live/paused/offboarded)
+  { key: 'common.status.unit.mobilizing', namespace: 'common', description: 'Unit status: mobilizing', en: 'Mobilizing', ru: 'Подготовка', status: NR },
+  { key: 'common.status.unit.live', namespace: 'common', description: 'Unit status: live', en: 'Live', ru: 'Работает', status: NR },
+  { key: 'common.status.unit.paused', namespace: 'common', description: 'Unit status: paused', en: 'Paused', ru: 'Приостановлен', status: NR },
+  { key: 'common.status.unit.offboarded', namespace: 'common', description: 'Unit status: offboarded', en: 'Offboarded', ru: 'Выведен', status: NR },
+  // ServiceOrderStatus — full set
+  { key: 'common.status.service_order.placed', namespace: 'common', description: 'Service order status: placed', en: 'Placed', ru: 'Размещён', status: NR },
+  { key: 'common.status.service_order.paid', namespace: 'common', description: 'Service order status: paid', en: 'Paid', ru: 'Оплачен', status: NR },
+  { key: 'common.status.service_order.accepted', namespace: 'common', description: 'Service order status: accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'common.status.service_order.declined', namespace: 'common', description: 'Service order status: declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'common.status.service_order.expired', namespace: 'common', description: 'Service order status: expired', en: 'Expired', ru: 'Истёк', status: NR },
+  { key: 'common.status.service_order.fulfilled', namespace: 'common', description: 'Service order status: fulfilled', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'common.status.service_order.cancelled', namespace: 'common', description: 'Service order status: cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+  { key: 'common.status.service_order.failed', namespace: 'common', description: 'Service order status: failed (no-show)', en: 'Failed', ru: 'Сорван', status: NR },
+  { key: 'common.status.service_order.closed', namespace: 'common', description: 'Service order status: closed', en: 'Closed', ru: 'Закрыт', status: NR },
 ];
 
 
@@ -1910,7 +2327,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,
@@ -1921,7 +2338,7 @@ export async function seedContent(
     );
 
     // Set translations for all provided locales
-    const locales: Locale[] = ['ru', 'en', 'th'];
+    const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
     for (const locale of locales) {
       const value = keyDef[locale];
       if (value === undefined) continue;

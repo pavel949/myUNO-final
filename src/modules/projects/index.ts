@@ -12,6 +12,15 @@ export {
 } from './projects';
 
 export {
+  listPublicProjects,
+  getPublicProjectBySlug,
+  listPublicUnitIds,
+  type PublicProjectCard,
+  type PublicProjectDetail,
+  type PublicProjectUnit,
+} from './public.service';
+
+export {
   createUnit,
   getUnit,
   listUnits,
@@ -26,8 +35,13 @@ export {
   getOwnerBookingsList,
   getOwnerPortfolioShape,
   getOwnerProjects,
+  getOwnerAlerts,
+  getOwnerComplianceSummary,
+  getOwnerStatements,
   type OwnerDashboardData,
   type OwnerStayInput,
+  type OwnerAlert,
+  type OwnerComplianceStatus,
 } from './owner.service';
 
 export {

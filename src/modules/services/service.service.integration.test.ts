@@ -78,7 +78,7 @@ describe('service.service — integration tests', () => {
         description: 'No approval needed',
         contactEmail: 'quick@provider.com',
         contactPhone: '+66812345679',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       await providerService.approveProvider(db, providerApp.id, admin.id);
@@ -92,7 +92,7 @@ describe('service.service — integration tests', () => {
       // Create service
       const result = await serviceService.createService(db, {
         providerId: providerApp.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Dinner Party',
         priceModel: 'per_person',
         basePriceThb: 500,
@@ -153,7 +153,7 @@ describe('service.service — integration tests', () => {
         description: 'Test retrieval',
         contactEmail: 'detail@provider.com',
         contactPhone: '+66812345681',
-        categoryKeys: ['maintenance'],
+        categoryKeys: ['repairs'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -161,7 +161,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'maintenance',
+        categoryKey: 'repairs',
         title: 'AC Maintenance',
         priceModel: 'fixed',
         basePriceThb: 1500,
@@ -263,7 +263,7 @@ describe('service.service — integration tests', () => {
         description: 'For approval testing',
         contactEmail: 'approval@provider.com',
         contactPhone: '+66812345684',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -271,7 +271,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Pending Service',
         priceModel: 'per_person',
         basePriceThb: 400,
@@ -296,7 +296,7 @@ describe('service.service — integration tests', () => {
         description: 'Cannot approve again',
         contactEmail: 'alreadyactive@provider.com',
         contactPhone: '+66812345685',
-        categoryKeys: ['maintenance'],
+        categoryKeys: ['repairs'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -304,7 +304,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'maintenance',
+        categoryKey: 'repairs',
         title: 'Already Active Service',
         priceModel: 'fixed',
         basePriceThb: 1000,
@@ -327,7 +327,7 @@ describe('service.service — integration tests', () => {
         description: 'For rejection testing',
         contactEmail: 'rejection@provider.com',
         contactPhone: '+66812345686',
-        categoryKeys: ['events'],
+        categoryKeys: ['tours'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -335,7 +335,7 @@ describe('service.service — integration tests', () => {
 
       const serviceResult = await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'events',
+        categoryKey: 'tours',
         title: 'Rejected Service',
         priceModel: 'per_hour',
         basePriceThb: 800,
@@ -524,7 +524,7 @@ describe('service.service — integration tests', () => {
         description: 'Not approved yet',
         contactEmail: 'unvetted-service@provider.com',
         contactPhone: '+66812345691',
-        categoryKeys: ['catering'],
+        categoryKeys: ['chef'],
       });
 
       // Don't approve the provider
@@ -533,7 +533,7 @@ describe('service.service — integration tests', () => {
       // Create service for unapproved provider
       await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Unapproved Catering',
         priceModel: 'per_person',
         basePriceThb: 600,
@@ -565,7 +565,7 @@ describe('service.service — integration tests', () => {
         description: 'Multiple services',
         contactEmail: 'multi-cat@provider.com',
         contactPhone: '+66812345692',
-        categoryKeys: ['cleaning', 'catering', 'tours'],
+        categoryKeys: ['cleaning', 'chef', 'tours'],
       });
 
       await providerService.approveProvider(db, provider.id, admin.id);
@@ -582,7 +582,7 @@ describe('service.service — integration tests', () => {
 
       await serviceService.createService(db, {
         providerId: provider.id,
-        categoryKey: 'catering',
+        categoryKey: 'chef',
         title: 'Catering Service',
         priceModel: 'per_person',
         basePriceThb: 500,
@@ -594,7 +594,7 @@ describe('service.service — integration tests', () => {
       });
 
       const cateringServices = await serviceService.listPublicServices(db, project.id, {
-        categoryKey: 'catering',
+        categoryKey: 'chef',
       });
 
       expect(cleaningServices).toHaveLength(1);
@@ -647,6 +647,216 @@ describe('service.service — integration tests', () => {
     });
   });
 
+  describe('getServiceAverageRating', () => {
+    it('returns average rating and review count (S6)', async () => {
+      const admin = await createIdentity();
+      const orderer1 = await createIdentity();
+      const orderer2 = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Rated Provider',
+        description: 'Gets rated',
+        contactEmail: 'rated@provider.com',
+        contactPhone: '+66812345694',
+        categoryKeys: ['cleaning'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        title: 'Rated Service',
+        priceModel: 'fixed',
+        basePriceThb: 2000,
+      });
+
+      // Create orders
+      const order1 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer1.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1 },
+          total_thb: 2000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const order2 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer2.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-03'),
+          scheduled_end: new Date('2026-08-04'),
+          quantity: 1,
+          price_breakdown: { base: 1 },
+          total_thb: 2000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      // Create reviews
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order1.id,
+          author_identity_id: orderer1.id,
+          rating: 5,
+          comment: 'Excellent',
+          status: 'published',
+        },
+      });
+
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order2.id,
+          author_identity_id: orderer2.id,
+          rating: 4,
+          comment: 'Good',
+          status: 'published',
+        },
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.averageRating).toBe(4.5);
+      expect(result!.reviewCount).toBe(2);
+    });
+
+    it('returns null when service has no reviews (S6)', async () => {
+      const admin = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Unrated Provider',
+        description: 'No reviews',
+        contactEmail: 'unrated@provider.com',
+        contactPhone: '+66812345695',
+        categoryKeys: ['chef'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'chef',
+        title: 'Unrated Service',
+        priceModel: 'per_person',
+        basePriceThb: 500,
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('ignores hidden reviews in average calculation (S6)', async () => {
+      const admin = await createIdentity();
+      const orderer1 = await createIdentity();
+      const orderer2 = await createIdentity();
+      const project = await createProject();
+
+      const provider = await providerService.createProviderApplication(db, {
+        applicantIdentityId: applicant.id,
+        name: 'Hidden Review Provider',
+        description: 'Test hidden reviews',
+        contactEmail: 'hidden@provider.com',
+        contactPhone: '+66812345696',
+        categoryKeys: ['tours'],
+      });
+
+      await providerService.approveProvider(db, provider.id, admin.id);
+      await setGlobalConfig('services.require_admin_approval', false);
+
+      const serviceResult = await serviceService.createService(db, {
+        providerId: provider.id,
+        categoryKey: 'tours',
+        title: 'Tour Service',
+        priceModel: 'fixed',
+        basePriceThb: 5000,
+      });
+
+      const order1 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer1.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const order2 = await db.serviceOrder.create({
+        data: {
+          service_id: serviceResult.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer2.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-03'),
+          scheduled_end: new Date('2026-08-04'),
+          quantity: 1,
+          price_breakdown: { base: 1 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      // Create one published and one hidden review
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order1.id,
+          author_identity_id: orderer1.id,
+          rating: 5,
+          status: 'published',
+        },
+      });
+
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order2.id,
+          author_identity_id: orderer2.id,
+          rating: 1,
+          status: 'hidden', // Should be excluded
+        },
+      });
+
+      const result = await serviceService.getServiceAverageRating(db, serviceResult.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.averageRating).toBe(5); // Only the 5-star review counts
+      expect(result!.reviewCount).toBe(1);
+    });
+  });
+
   describe('e2e — service creation → approval → visibility', () => {
     it('walks through complete service lifecycle and visibility', async () => {
       const admin = await createIdentity();
@@ -659,7 +869,7 @@ describe('service.service — integration tests', () => {
         description: 'Premium spa services',
         contactEmail: 'spa@luxury.com',
         contactPhone: '+66898765432',
-        categoryKeys: ['wellness'],
+        categoryKeys: ['massage_spa'],
       });
 
       // Step 2: Approve provider
@@ -670,7 +880,7 @@ describe('service.service — integration tests', () => {
 
       const serviceApp = await serviceService.createService(db, {
         providerId: providerApp.id,
-        categoryKey: 'wellness',
+        categoryKey: 'massage_spa',
         title: 'Signature Massage',
         titleRu: 'Фирменный массаж',
         description: 'Relaxing full-body treatment',

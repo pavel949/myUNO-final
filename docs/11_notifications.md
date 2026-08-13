@@ -29,11 +29,11 @@ Channel shorthand: **A** in-app · **E** email · **W** WhatsApp · **T** Telegr
 | N-05 ● | `stay.request_approved` | Host approves → guest | A, E, W | Instant, with pay link + hold countdown |
 | N-06 | `stay.request_declined` | Decline or auto-decline → guest | A, E | Instant, with re-search CTA |
 | N-04 | `stay.hold_expired` | Unpaid hold expires → guest | A, E | Instant |
-| N-07 ● | `stay.prearrival_passports` | T-`[cfg] compliance.passport_required_hours_before_checkin` and unmet → guest | A, E, W | Scheduled; repeat once at T-6h |
+| N-07 ● | `stay.prearrival_passports` | T-`[cfg] compliance.passport_required_hours_before_checkin` and unmet → guest | A, E, W | Scheduled; repeat once at T-6h. **Dispatched (LY-8):** the cron dispatcher sends it at T−`[cfg] notify.prearrival_days_before` days (default 5) with the passports ask + home-space link; once per booking (params.booking_id guard). |
 | N-07b | `stay.checkin_instructions` | Verification complete, T-24h → guest | A, E, W | Scheduled |
 | N-12 | `stay.checkout_reminder` | Departure day 08:00 → guest | A, W | Scheduled |
 | N-09 ● | `stay.cancelled` | Cancellation → guest **and** ops/owner-visible feed | A, E | Instant, refund math included |
-| N-13 | `stay.review_prompt` | Check-out + 24h, no review → guest | A, E | Scheduled, once |
+| N-13 | `stay.review_prompt` | Check-out + 24h, no review → guest | A, E | Scheduled, once. **Dispatched (LY-8):** the cron dispatcher sends it at check-out + `[cfg] notify.review_prompt_days_after` days (default 1), body carries the green-season return offer; once per booking. |
 | N-14 | `stay.post_stay` | Check-out + 7d → guest | E | Scheduled ("book direct next time") |
 
 ### Stays — ops/owner side

@@ -30,6 +30,8 @@ Dependencies are strictly linear unless a task names an earlier prerequisite; �
 
 ## Phase 1 · Core records & admin editors
 
+**T-007A · Native CRM foundation.** Add Party-linked CRM profiles, commercial opportunities, activities, purpose-specific consent and attribution; enrich public leads into the CRM; add an admin pipeline. Support partner-supplied rental opportunities without labelling external inventory as managed. DoD: schema migration applies; CRM domain tests, lint and production build pass; no external CRM is authoritative. Specs: 17 all; 18; 01 D1.
+
 **T-008 · Projects & units CRUD (admin).** Admin panel shell (S14 sidebar, admin-gated) + Projects/Units sections: create/edit, media upload via the media seam (strict-name guard, signed URLs), status transitions with the permitted-use gate blocked until compliance exists (T-027 completes it). DoD: gate refuses `live` without `permitted_use_confirmed_at`; audit rows on every edit. Specs: 08 §6.1–2; 02 §§2.4–2.5; 12 §4.
 
 **T-009 · Admin: configuration editor.** The grouped registry UI, per-project/unit override tables, schedule editors (season calendar, cancellation policy), change history. DoD: founder can change `services.take_rate_pct` for one project only; ConfigChange rows written; schedule validation refuses `tm30_sla_hours > 24`. Specs: 04 §1; 08 §6.4.

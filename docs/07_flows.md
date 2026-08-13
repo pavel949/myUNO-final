@@ -33,6 +33,8 @@ Screen S4. `BookingWidget` recomputes `PriceBreakdown` on every change via the p
 ### F-GUEST-3 · Book & pay (instant)
 `[keys] booking.*, payments.*` · Screen S5. Requires auth (inline register/login without losing state). Review screen fields: dates/party recap, breakdown, `guest_note` textarea, **payment method** (from `[cfg] booking.payment.methods_enabled` — cash-only in loop one, so this collapses to a single "Reserve · pay in cash" choice), policy consent check.
 
+**Category-first entry (LY-6).** On a project with `catalog.unit_categories`, the guest may book a **villa category** instead of a specific villa (hotel-style): project-scoped search shows category cards (`groupBy=category` — available count + from-price for the dates), and `POST /api/bookings` with `{projectId, categoryKey}` **auto-assigns** the first free live villa of the category (stable name order; the double-booking guard stays the race net; 409 when the category is sold out). The booking type (instant vs request) comes from the **assigned villa**, never from the client. Picking a specific villa remains the optional step 2 via the unit page. Founder decision 2026-07-28: auto-assignment is the default flow.
+
 **Cash path** (`cash`, the loop-one default and primary rail for RU clients, Q8) → server creates `Booking(status=pending_payment, hold_expires_at=null)` — the reservation **blocks the dates but has no card-hold expiry**; the guest pays in person (on arrival or by agreement). A staff/host records the money via **F-OPS-6**, creating `Payment(method=cash, status=succeeded, received_by, received_at, receipt_ref)` and flipping the booking to `confirmed` (ledger revenue entry, N-02/N-03, system message into the stay thread). Check-in is gated on cash collected when `[cfg] booking.cash_due_blocks_checkin=true`.
 
 **Card path** (`card_provider`, when the provider is switched on) → server creates `Booking(status=pending_payment, hold_expires_at=now+[cfg] booking.hold_minutes)`, `Payment(purpose=stay, method=card_provider)`, redirects to provider checkout (or mock page). Success URL / webhook → idempotent confirm → `status=confirmed`, ledger entry, N-02/N-03, system message.
@@ -41,6 +43,7 @@ Screen S4. `BookingWidget` recomputes `PriceBreakdown` on every change via the p
 
 ### F-GUEST-4 · Request to book (non-instant)
 Same review screen; CTA creates `Booking(status=requested, requested_expires_at=now+[cfg] booking.request_hours)` — **no payment yet**. Host/ops respond (F-OPS-5). Approve → `pending_payment` + notification N-05 with pay link (hold clock starts); decline or timeout → `declined` + N-06 (auto-decline by the scheduler).
+**Approval re-checks the calendar** (a request never blocks it): if the assigned villa was taken meanwhile, a **category-booked** request is silently reassigned to the next free villa of the same category (same tariff — the approved total stays valid; N-05 carries the final villa); a specific-villa request, or an exhausted category, refuses approval with a conflict error and the request stays open.
 ⚠ Guest tries to pay after expiry → expired state screen, re-request CTA.
 
 ### F-GUEST-5 · Pre-arrival & verification
@@ -147,6 +150,7 @@ Requests inbox: party, dates, guest history chip, breakdown → Approve / Declin
 ### F-SVC-2 · Order & pay
 `OrderSlotPicker` (honors `advance_notice_hours`) + quantity + unit/address context (auto from role: guest → their stay's unit; owner → their unit picker; MC → common area free-text) + note. Review → breakdown (base × qty, take-rate embedded — orderer sees the total) → pay via seam → `ServiceOrder(paid)` → provider N-26.
 `quote` model: request → provider quotes in-thread → orderer accepts → pay against the quote.
+**As built (SA-2, super-app rail):** the service page is the single ordering surface — details → when/quantity/note with a previewed total (server recomputes, doc 10) → place → payment step **immediately** (card → checkout seam; or cash-on-fulfilment) → the order's confirmation view (`/services/orders/{id}` with a confirmation banner). Quote-priced services skip the form and hand the guest to the concierge (project WhatsApp from `comms.whatsapp_number`, else in-app messages) — the in-thread quote→accept→pay loop stays the next step (SA-3).
 ⚠ Payment fails → order `expired` after hold window, slot freed. ⚠ Slot taken meanwhile → re-pick screen, nothing charged.
 
 ### F-SVC-3 · Modify / cancel order

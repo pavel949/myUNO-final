@@ -1,4 +1,55 @@
 import { PrismaClient } from '@prisma/client';
+import { getConfig } from '@/modules/config';
+
+/**
+ * Scrub passport data for bookings checked out more than
+ * `[cfg] retention.passport_media_days_after_checkout` days ago (doc 12 §6):
+ * clears the encrypted passport number and date of birth, and marks any
+ * passport scan for deletion (picked up by deleteExpiredMediaAssets).
+ * The guest's name stays (it is on the booking record for statements);
+ * identity anonymization handles full erasure separately.
+ */
+export async function scrubExpiredPassportData(
+  db: PrismaClient
+): Promise<{ scrubbedGuests: number; mediaMarked: number }> {
+  const days =
+    ((await getConfig(db, 'retention.passport_media_days_after_checkout')) as
+      | number
+      | undefined) ?? 30;
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const guests = await db.bookingGuest.findMany({
+    where: {
+      OR: [{ passportNumber: { not: '' } }, { passportMediaId: { not: null } }],
+      booking: {
+        checkedOutAt: { not: null, lte: cutoff },
+      },
+    },
+    select: { id: true, passportMediaId: true },
+  });
+
+  let mediaMarked = 0;
+  const now = new Date();
+  for (const guest of guests) {
+    if (guest.passportMediaId) {
+      await db.mediaAsset.update({
+        where: { id: guest.passportMediaId },
+        data: { deleteAfter: now },
+      });
+      mediaMarked++;
+    }
+    await db.bookingGuest.update({
+      where: { id: guest.id },
+      data: {
+        passportNumber: '',
+        dateOfBirth: null,
+        passportMediaId: null,
+      },
+    });
+  }
+
+  return { scrubbedGuests: guests.length, mediaMarked };
+}
 
 /**
  * Delete expired media assets (passport images, documents past their delete_after date).
@@ -32,13 +83,13 @@ export async function anonymizeDeletedIdentities(
   const now = new Date();
   const graceDeadline = new Date(now.getTime() - gracePeriodDays * 24 * 60 * 60 * 1000);
 
-  // Find identities with deletion requests (those marked as 'merged' = deletion pending)
-  // We'll anonymize any identity where status='merged' and updatedAt is past grace period
-
+  // Deletion requests carry their own status: `merged` means a duplicate
+  // folded into another identity (merged_into_id) and must NEVER be
+  // anonymized by this job (DM-4 — the old overload would have destroyed
+  // genuinely merged identities).
   const identities = await db.identity.findMany({
     where: {
-      // Look for identities marked for deletion (status=merged)
-      status: 'merged',
+      status: 'deletion_requested',
       // And where the update happened past the grace period
       updatedAt: { lte: graceDeadline },
     },
@@ -264,7 +315,14 @@ export async function exportIdentityData(
  */
 export async function runRetentionJobs(
   db: PrismaClient
-): Promise<{ deletedMedia: number; anonymizedIdentities: number; expiredTokens: number }> {
+): Promise<{
+  deletedMedia: number;
+  anonymizedIdentities: number;
+  expiredTokens: number;
+  scrubbedPassports: number;
+}> {
+  // Scrub first so freshly-marked passport media is deleted in the same run.
+  const passportResult = await scrubExpiredPassportData(db);
   const mediaResult = await deleteExpiredMediaAssets(db);
   const identityResult = await anonymizeDeletedIdentities(db);
   const tokenResult = await expireOldTokens(db);
@@ -273,13 +331,14 @@ export async function runRetentionJobs(
     deletedMedia: mediaResult.deleted,
     anonymizedIdentities: identityResult.anonymized,
     expiredTokens: tokenResult.deleted,
+    scrubbedPassports: passportResult.scrubbedGuests,
   };
 }
 
 /**
  * Initiate a deletion request for an identity.
  * Logs the request in the audit trail. Actual deletion happens after grace period.
- * Marks identity as merged (status=merged) to indicate deletion pending.
+ * Marks the identity status deletion_requested; the retention job anonymizes it after the grace period.
  */
 export async function requestIdentityDeletion(
   db: PrismaClient,
@@ -293,11 +352,12 @@ export async function requestIdentityDeletion(
     throw new Error(`Identity ${identityId} not found`);
   }
 
-  // Mark for deletion by setting status to merged (pending deletion)
+  // Mark for deletion with the dedicated status — never 'merged', which
+  // means a duplicate folded into another identity (doc 02 §2.1).
   await db.identity.update({
     where: { id: identityId },
     data: {
-      status: 'merged',
+      status: 'deletion_requested',
     },
   });
 

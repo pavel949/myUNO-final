@@ -1,5 +1,6 @@
-import { PrismaClient, Booking } from '@prisma/client';
+import { PrismaClient, Booking, OwnerStatement } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
 
 export interface OwnerDashboardData {
   identityId: string;
@@ -318,4 +319,285 @@ export async function getOwnerProjects(db: PrismaClient, ownerIdentityId: string
   });
 
   return projects;
+}
+
+export interface OwnerAlert {
+  id: string;
+  type: 'tm30_overdue' | 'tm30_escalated' | 'unit_paused' | 'compliance_expiry' | 'ticket_sla_breach';
+  severity: 'warning' | 'critical';
+  unitId: string;
+  unitName: string;
+  title: string;
+  description: string;
+  createdAt: Date;
+  actionUrl?: string;
+}
+
+export interface OwnerComplianceStatus {
+  unitId: string;
+  unitName: string;
+  permittedUseConfirmedAt: Date | null;
+  tm30OnTimePercent: number;
+  complianceRecordsCount: number;
+  mobilizationProgress: {
+    total: number;
+    completed: number;
+  };
+}
+
+/**
+ * Get real alerts for owner (TM30 overdue, compliance expiry, ticket SLA, paused units).
+ * Replaces hardcoded alertsCount with actionable alerts.
+ */
+export async function getOwnerAlerts(
+  db: PrismaClient,
+  ownerIdentityId: string
+): Promise<OwnerAlert[]> {
+  const alerts: OwnerAlert[] = [];
+
+  // Get all owner's units
+  const units = await db.unit.findMany({
+    where: { ownerIdentityId },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+    },
+  });
+
+  if (units.length === 0) {
+    return [];
+  }
+
+  const unitIds = units.map((u) => u.id);
+
+  const now = new Date();
+  const tm30Sla = await getConfig(db, 'compliance.tm30_sla_hours', {}) || 24;
+
+  // Alert 1: TM30 overdue or escalated
+  const tm30Filings = await db.tm30Filing.findMany({
+    where: {
+      booking: {
+        unit: { id: { in: unitIds } },
+      },
+    },
+    select: {
+      id: true,
+      status: true,
+      filedAt: true,
+      escalatedAt: true,
+      booking: {
+        select: {
+          id: true,
+          unit: { select: { id: true, name: true } },
+          startDate: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  for (const filing of tm30Filings) {
+    if (filing.status === 'pending') {
+      const hoursElapsed = (now.getTime() - filing.booking.startDate.getTime()) / (1000 * 60 * 60);
+      if (hoursElapsed > tm30Sla) {
+        alerts.push({
+          id: `tm30-overdue-${filing.id}`,
+          type: 'tm30_overdue',
+          severity: 'critical',
+          unitId: filing.booking.unit.id,
+          unitName: filing.booking.unit.name,
+          title: 'TM30 Filing Overdue',
+          description: `TM30 filing for guest arrival on ${filing.booking.startDate.toLocaleDateString()} is overdue`,
+          createdAt: filing.booking.startDate,
+          actionUrl: `/ops/tm30`,
+        });
+      }
+    }
+
+    if (filing.escalatedAt) {
+      alerts.push({
+        id: `tm30-escalated-${filing.id}`,
+        type: 'tm30_escalated',
+        severity: 'critical',
+        unitId: filing.booking.unit.id,
+        unitName: filing.booking.unit.name,
+        title: 'TM30 Filing Escalated',
+        description: 'An escalation has been flagged for this TM30 filing',
+        createdAt: filing.escalatedAt,
+        actionUrl: `/ops/tm30`,
+      });
+    }
+  }
+
+  // Alert 2: Paused units
+  for (const unit of units) {
+    if (unit.status === 'paused') {
+      alerts.push({
+        id: `paused-${unit.id}`,
+        type: 'unit_paused',
+        severity: 'warning',
+        unitId: unit.id,
+        unitName: unit.name,
+        title: 'Unit is Paused',
+        description: 'This unit is currently paused and not accepting bookings',
+        createdAt: new Date(),
+      });
+    }
+  }
+
+  // Alert 3: Compliance records expiring soon
+  const complianceRecords = await db.complianceRecord.findMany({
+    where: {
+      unit: { id: { in: unitIds } },
+    },
+    select: {
+      id: true,
+      unit: { select: { id: true, name: true } },
+      expiresOn: true,
+      recordType: true,
+    },
+  });
+
+  const expiryWarningDays = await getConfig(db, 'compliance.expiry_warning_days', {}) || 30;
+
+  const warningDate = new Date(now.getTime() + expiryWarningDays * 24 * 60 * 60 * 1000);
+
+  for (const record of complianceRecords) {
+    if (record.expiresOn && record.expiresOn <= warningDate && record.expiresOn > now) {
+      alerts.push({
+        id: `compliance-expiry-${record.id}`,
+        type: 'compliance_expiry',
+        severity: 'warning',
+        unitId: record.unit.id,
+        unitName: record.unit.name,
+        title: `${record.recordType} Expiring Soon`,
+        description: `Your ${record.recordType} expires on ${record.expiresOn.toLocaleDateString()}`,
+        createdAt: now,
+      });
+    }
+  }
+
+  // Alert 4: Open tickets past SLA
+  const tickets = await db.ticket.findMany({
+    where: {
+      unit: { id: { in: unitIds } },
+      status: { not: 'closed' },
+    },
+    select: {
+      id: true,
+      unit: { select: { id: true, name: true } },
+      slaDueAt: true,
+    },
+  });
+
+  for (const ticket of tickets) {
+    if (ticket.slaDueAt && ticket.slaDueAt < now && ticket.unit) {
+      alerts.push({
+        id: `sla-breach-${ticket.id}`,
+        type: 'ticket_sla_breach',
+        severity: 'warning',
+        unitId: ticket.unit.id,
+        unitName: ticket.unit.name,
+        title: 'Ticket SLA Breached',
+        description: 'An open ticket has exceeded its SLA deadline',
+        createdAt: now,
+        actionUrl: `/tickets`,
+      });
+    }
+  }
+
+  return alerts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+/**
+ * Get compliance summary per unit (permitted use, TM30 on-time %, records, mobilization).
+ */
+export async function getOwnerComplianceSummary(
+  db: PrismaClient,
+  ownerIdentityId: string
+): Promise<OwnerComplianceStatus[]> {
+  const units = await db.unit.findMany({
+    where: { ownerIdentityId },
+    select: {
+      id: true,
+      name: true,
+      permittedUseConfirmedAt: true,
+      status: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const summaries: OwnerComplianceStatus[] = [];
+
+  for (const unit of units) {
+    // Get TM30 on-time %: filed within 24h SLA ÷ total filings
+    const tm30Filings = await db.tm30Filing.findMany({
+      where: {
+        booking: { unit: { id: unit.id } },
+      },
+      select: {
+        id: true,
+        filedAt: true,
+        booking: { select: { startDate: true } },
+      },
+    });
+
+    const tm30Sla = await getConfig(db, 'compliance.tm30_sla_hours', {}) || 24;
+    const onTimeCount = tm30Filings.filter((f) => {
+      if (!f.filedAt) return false;
+      const hoursToFile = (f.filedAt.getTime() - f.booking.startDate.getTime()) / (1000 * 60 * 60);
+      return hoursToFile <= tm30Sla;
+    }).length;
+
+    const tm30OnTimePercent = tm30Filings.length > 0 ? Math.round((onTimeCount / tm30Filings.length) * 100) : 0;
+
+    // Get compliance records
+    const complianceRecords = await getUnitComplianceRecords(db, unit.id);
+
+    // Get mobilization progress
+    const mobilizationChecklist = await getUnitMobilizationChecklist(db, unit.id);
+    const completedItems = mobilizationChecklist.filter((item) => item.completedAt).length;
+
+    summaries.push({
+      unitId: unit.id,
+      unitName: unit.name,
+      permittedUseConfirmedAt: unit.permittedUseConfirmedAt,
+      tm30OnTimePercent,
+      complianceRecordsCount: complianceRecords.length,
+      mobilizationProgress: {
+        total: mobilizationChecklist.length,
+        completed: completedItems,
+      },
+    });
+  }
+
+  return summaries;
+}
+
+/**
+ * Get published statements for an owner across all their units, newest first.
+ */
+export async function getOwnerStatements(
+  db: PrismaClient,
+  ownerIdentityId: string
+): Promise<OwnerStatement[]> {
+  const units = await db.unit.findMany({
+    where: { ownerIdentityId },
+    select: { id: true },
+  });
+
+  if (units.length === 0) {
+    return [];
+  }
+
+  const allStatements = await db.ownerStatement.findMany({
+    where: {
+      unitId: { in: units.map((u) => u.id) },
+      status: 'published',
+    },
+    orderBy: { periodEnd: 'desc' },
+  });
+
+  return allStatements;
 }

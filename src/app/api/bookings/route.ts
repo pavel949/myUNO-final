@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createBooking, DEFAULT_POLICIES } from '@/modules/booking';
+import {
+  createBooking,
+  resolveCancellationPolicy,
+  resolveUnitForCategory,
+} from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
 import { computePriceBreakdown } from '@/modules/core';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
@@ -12,13 +16,16 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * Requires authentication.
  *
  * Request body:
- * - unitId: string
+ * - unitId: string — OR categoryKey (LY-6): book a villa CATEGORY and the
+ *   server auto-assigns the first available villa of that category
+ *   (hotel-style). With categoryKey, instantBook comes from the assigned
+ *   unit and the client value is ignored.
  * - projectId: string
  * - startDate: ISO date string
  * - endDate: ISO date string
  * - adultsCount: number
  * - childrenCount: number
- * - instantBook: boolean
+ * - instantBook: boolean (required on the unitId path)
  * - guestNote?: string
  * - paymentMethod?: 'cash' | 'card_provider'
  *
@@ -34,26 +41,27 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      unitId,
+      unitId: requestedUnitId,
+      categoryKey,
       projectId,
       startDate: startDateStr,
       endDate: endDateStr,
       adultsCount,
       childrenCount,
-      instantBook,
+      instantBook: requestedInstantBook,
       guestNote,
       paymentMethod = 'cash',
     } = body;
 
-    // Validate required fields
+    // Validate required fields — either a concrete unit or a category
     if (
-      !unitId ||
+      (!requestedUnitId && !categoryKey) ||
       !projectId ||
       !startDateStr ||
       !endDateStr ||
       adultsCount === undefined ||
       childrenCount === undefined ||
-      instantBook === undefined
+      (requestedUnitId && !categoryKey && requestedInstantBook === undefined)
     ) {
       throw createPublicError('invalid request: missing required fields', 400);
     }
@@ -63,6 +71,28 @@ export async function POST(req: NextRequest) {
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate >= endDate) {
       throw createPublicError('invalid request: startDate must be before endDate', 400);
+    }
+
+    // Category-first path (LY-6): the server picks the villa.
+    let unitId: string = requestedUnitId;
+    let instantBook: boolean = requestedInstantBook;
+    if (!requestedUnitId && categoryKey) {
+      const assigned = await resolveUnitForCategory(
+        prisma,
+        projectId,
+        categoryKey,
+        startDate,
+        endDate
+      );
+      if (!assigned) {
+        throw createPublicError(
+          'no villa of this category is available for these dates',
+          409
+        );
+      }
+      unitId = assigned.id;
+      // Booking type is a property of the assigned unit, never a client choice
+      instantBook = assigned.instantBook;
     }
 
     // Server-computed price — the single source of truth for the charge.
@@ -84,8 +114,12 @@ export async function POST(req: NextRequest) {
     if (!unit || unit.status !== 'live') {
       throw createPublicError('not found', 404);
     }
-    const policy =
-      DEFAULT_POLICIES[unit.cancellationPolicyKey || 'flexible'] || DEFAULT_POLICIES.flexible;
+    // Config is the source of truth (doc 04 §5); an unknown policy key
+    // fails the booking instead of silently granting the most generous terms.
+    const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
+      projectId,
+      unitId,
+    });
 
     // Create booking via booking service
     const booking = await createBooking(prisma, {

@@ -18,6 +18,9 @@ interface SearchBarProps {
   initialEndDate?: string;
   initialAdults?: number;
   initialChildren?: number;
+  /** Scope the search to one project — a landing's "check availability"
+   *  must never return other resorts' homes (LY-5 bugfix). */
+  projectId?: string;
 }
 
 export function SearchBar({
@@ -26,6 +29,7 @@ export function SearchBar({
   initialEndDate = '',
   initialAdults = 2,
   initialChildren = 0,
+  projectId,
 }: SearchBarProps) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initialStartDate);
@@ -48,6 +52,7 @@ export function SearchBar({
       adults: String(adults),
       children: String(children),
     });
+    if (projectId) params.set('projectId', projectId);
     router.push(`/search?${params.toString()}`);
   };
 

@@ -1,9 +1,11 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getOwnerDashboard, getOwnerPortfolioShape, getOwnerProjects, getOwnerBookingsList } from '@/modules/projects';
+import { getOwnerDashboard, getOwnerPortfolioShape, getOwnerProjects, getOwnerBookingsList, getOwnerAlerts, getOwnerComplianceSummary, getOwnerStatements } from '@/modules/projects';
 import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
 import type { MetricsPoint } from '@/modules/analytics';
+import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
+import type { OwnerStatement } from '@prisma/client';
 
 export interface OwnerTrends {
   /** Last 6 calendar months (oldest first) from MetricDaily. */
@@ -14,7 +16,18 @@ export interface OwnerTrends {
   sparklines: Record<string, number[]>;
 }
 
-export async function fetchOwnerDashboard(ownerIdentityId: string) {
+interface OwnerDashboardData {
+  dashboard: any;
+  shape: any;
+  projects: any[];
+  bookings: any[];
+  trends: OwnerTrends;
+  alerts: OwnerAlert[];
+  complianceSummary: OwnerComplianceStatus[];
+  statements: OwnerStatement[];
+}
+
+export async function fetchOwnerDashboard(ownerIdentityId: string): Promise<OwnerDashboardData> {
   try {
     const dashboard = await getOwnerDashboard(prisma, ownerIdentityId);
     const shape = await getOwnerPortfolioShape(prisma, ownerIdentityId);
@@ -62,12 +75,22 @@ export async function fetchOwnerDashboard(ownerIdentityId: string) {
       }
     }
 
+    // D2: Compliance, alerts, and statements
+    const [alerts, complianceSummary, statements] = await Promise.all([
+      getOwnerAlerts(prisma, ownerIdentityId),
+      getOwnerComplianceSummary(prisma, ownerIdentityId),
+      getOwnerStatements(prisma, ownerIdentityId),
+    ]);
+
     return {
       dashboard,
       shape,
       projects,
       bookings,
       trends,
+      alerts,
+      complianceSummary,
+      statements,
     };
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch owner dashboard');

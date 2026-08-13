@@ -1,10 +1,15 @@
 import { PrismaClient } from '@prisma/client';
+import { getTm30OnTimeRate } from '@/modules/analytics';
 
 export interface OpsBoardData {
   arrivals: OpsBooking[];
   departures: OpsBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
+  slaMetrics: {
+    tm30OnTimeRate7d: number;
+    ticketsWithOpenSLA: number;
+  };
 }
 
 interface OpsBooking {
@@ -38,10 +43,12 @@ function dayRange(date: Date): { from: Date; to: Date } {
 }
 
 /**
- * Get today's operations board data: arrivals, departures, pending payments, pending service orders
+ * Get today's operations board data: arrivals, departures, pending payments, pending service orders, SLA metrics
  */
 export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Promise<OpsBoardData> {
   const { from, to } = dayRange(date);
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days
 
   const bookingSelect = {
     id: true,
@@ -60,7 +67,7 @@ export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Pr
     },
   };
 
-  const [arrivals, departures, pendingPayment, pendingServiceOrders] = await Promise.all([
+  const [arrivals, departures, pendingPayment, pendingServiceOrders, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
     db.booking.findMany({
       where: {
         startDate: { gte: from, lt: to },
@@ -93,7 +100,28 @@ export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Pr
       orderBy: { scheduled_start: 'asc' },
       take: 50,
     }),
+    // TM30 on-time rate for the last 7 days
+    getTm30OnTimeRate(db, { from: sevenDaysAgo, to: now }),
+    // Count tickets with open SLA (status not closed/resolved or past slaDueAt)
+    db.ticket.count({
+      where: {
+        slaDueAt: { not: null },
+        status: { in: ['open', 'acknowledged', 'in_progress'] },
+        OR: [
+          { slaDueAt: { lt: now } },
+        ],
+      },
+    }),
   ]);
 
-  return { arrivals, departures, pendingPayment, pendingServiceOrders };
+  return {
+    arrivals,
+    departures,
+    pendingPayment,
+    pendingServiceOrders,
+    slaMetrics: {
+      tm30OnTimeRate7d,
+      ticketsWithOpenSLA,
+    },
+  };
 }

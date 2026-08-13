@@ -1,4 +1,5 @@
 import { PrismaClient, Payout } from '@prisma/client';
+import { track } from '@/modules/analytics';
 
 export interface RecordOwnerPayoutInput {
   ownerStatementId: string;
@@ -62,6 +63,27 @@ export async function recordOwnerPayout(db: PrismaClient, input: RecordOwnerPayo
       status: 'recorded',
     },
   });
+
+  // Track analytics event
+  // Get owner identity and project from statement
+  const statementWithDetails = await db.ownerStatement.findUnique({
+    where: { id: ownerStatementId },
+    select: {
+      ownerIdentityId: true,
+      unit: { select: { projectId: true } },
+    },
+  });
+
+  if (statementWithDetails) {
+    await track(db, 'owner_payout_recorded', {
+      payoutId: payout.id,
+      statementId: ownerStatementId,
+      identityId: statementWithDetails.ownerIdentityId,
+      projectId: statementWithDetails.unit?.projectId,
+      amountThb,
+      method,
+    });
+  }
 
   return payout;
 }

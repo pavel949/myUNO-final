@@ -8,10 +8,15 @@ import { Input } from '@/components/Input';
 
 type Labels = Record<string, string>;
 
-const CATEGORIES = ['maintenance', 'housekeeping', 'complaint', 'billing_question'];
 const PRIORITIES = ['normal', 'high', 'urgent'];
 
-export default function NewTicketClient({ labels }: { labels: Labels }) {
+export default function NewTicketClient({
+  labels,
+  categories,
+}: {
+  labels: Labels;
+  categories: string[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId');
@@ -88,9 +93,9 @@ export default function NewTicketClient({ labels }: { labels: Labels }) {
                 onChange={(e) => setCategoryKey(e.target.value)}
                 className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-body text-text-ink"
               >
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c} value={c}>
-                    {labels[`tickets.new.category.${c}`] || c}
+                    {labels[`catalog.ticket_categories.${c}.label`] || c}
                   </option>
                 ))}
               </select>

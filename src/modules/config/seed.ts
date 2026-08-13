@@ -209,6 +209,24 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Season calendar with named price periods',
       },
       {
+        key: 'pricing.category_rates',
+        valueType: 'schedule',
+        defaultValue: {},
+        scopeableTo: 'project',
+        groupKey: 'pricing',
+        description:
+          'Absolute per-category rates (satang) keyed by season name: {category: {nightly: {season: satang}, monthly: {season: satang}}}. Empty = category pricing off; nights fall back to base × season markup',
+      },
+      {
+        key: 'pricing.early_bird',
+        valueType: 'json',
+        defaultValue: { min_days_before: null, pct: 0 },
+        scopeableTo: 'project',
+        groupKey: 'pricing',
+        description:
+          'Early-bird discount: pct off the nightly subtotal when booked at least min_days_before days ahead. min_days_before null = disabled',
+      },
+      {
         key: 'pricing.los_discount.weekly_pct',
         valueType: 'percent',
         defaultValue: 5,
@@ -497,6 +515,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Pre-arrival passport deadline',
       },
       {
+        key: 'compliance.expiry_warning_days',
+        valueType: 'int',
+        defaultValue: 30,
+        scopeableTo: 'project',
+        groupKey: 'compliance',
+        description: 'Days before compliance document expiry to raise an alert',
+      },
+      {
         key: 'retention.passport_media_days_after_checkout',
         valueType: 'int',
         defaultValue: 30,
@@ -529,6 +555,31 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Telegram channel enabled',
       },
       {
+        key: 'notify.prearrival_days_before',
+        valueType: 'int',
+        defaultValue: 5,
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description: 'Days before check-in the pre-arrival reminder (passports + home space link) is sent',
+      },
+      {
+        key: 'notify.review_prompt_days_after',
+        valueType: 'int',
+        defaultValue: 1,
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description: 'Days after check-out the review prompt (with the green-season offer) is sent',
+      },
+      {
+        key: 'comms.whatsapp_number',
+        valueType: 'string',
+        defaultValue: '',
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description:
+          'WhatsApp number for wa.me concierge deep links (E.164, no spaces). Empty = WhatsApp CTAs hidden',
+      },
+      {
         key: 'auth.token_ttl_minutes.password_reset',
         valueType: 'int',
         defaultValue: 60,
@@ -556,7 +607,7 @@ export async function seedConfig(db: PrismaClient) {
         key: 'i18n.default_locale',
         valueType: 'enum',
         defaultValue: 'ru',
-        enumOptions: ['ru', 'en', 'th'],
+        enumOptions: ['ru', 'en', 'th', 'zh'],
         scopeableTo: 'global',
         groupKey: 'i18n',
         description: 'New-visitor default language',
@@ -668,6 +719,15 @@ export async function seedConfig(db: PrismaClient) {
         scopeableTo: 'global',
         groupKey: 'catalogs',
         description: 'Unit types catalog',
+      },
+      {
+        key: 'catalog.unit_categories',
+        valueType: 'json',
+        defaultValue: [],
+        scopeableTo: 'project',
+        groupKey: 'catalogs',
+        description:
+          'Unit categories (sellable classes like "Superior 2BR") per project: {key, style_key, bedrooms}. Empty = project sells individual units only',
       },
       {
         key: 'catalog.cancellation_policies',

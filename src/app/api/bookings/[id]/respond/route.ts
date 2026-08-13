@@ -85,17 +85,34 @@ export async function POST(
         projectId: booking.projectId,
         unitId: booking.unitId,
       });
-      const updated = await approveBookingRequest(prisma, {
-        bookingId: booking.id,
-        holdMinutes: typeof holdMinutes === 'number' ? holdMinutes : 30,
-      });
-      // N-05 — guest: request approved, payment window open
+      let updated;
+      try {
+        updated = await approveBookingRequest(prisma, {
+          bookingId: booking.id,
+          holdMinutes: typeof holdMinutes === 'number' ? holdMinutes : 30,
+        });
+      } catch (error) {
+        // The approval re-check found the villa taken and no free villa of
+        // the same category — the request stays open, the admin sees why.
+        if ((error as any)?.code === 'DOUBLE_BOOK') {
+          return NextResponse.json(
+            { error: 'Dates no longer available — no free villa of this category' },
+            { status: 409 }
+          );
+        }
+        throw error;
+      }
+      // N-05 — guest: request approved, payment window open. The approval
+      // may have reassigned the villa within the category — use the final one.
       await createNotification(prisma, {
         identityId: booking.guestIdentityId,
         type: 'stay_request_approved',
         titleKey: 'notify.stay_request_approved.title',
         bodyKey: 'notify.stay_request_approved.body',
-        params: notifyParams,
+        params: {
+          ...notifyParams,
+          unit_name: (updated as { unit?: { name: string } | null }).unit?.name ?? notifyParams.unit_name,
+        },
       });
       return NextResponse.json({ booking: updated }, { status: 200 });
     }

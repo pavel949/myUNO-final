@@ -51,7 +51,7 @@ export async function notifyBookingConfirmed(
     }
 
     if (booking.guestIdentity.email) {
-      const locale = (booking.guestIdentity.preferredLocale || 'en') as 'ru' | 'en' | 'th';
+      const locale = (booking.guestIdentity.preferredLocale || 'en') as 'ru' | 'en' | 'th' | 'zh';
       const labels = await getLabels(
         {
           'email.stay_confirmed.subject': 'Your stay is confirmed — {unit_name}',

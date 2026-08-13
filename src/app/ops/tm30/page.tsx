@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { safeDecrypt } from '@/modules/ops';
 import Tm30QueueClient from './tm30-client';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +65,7 @@ export default async function Tm30QueuePage() {
             id: f.id,
             status: f.status,
             dueAt: f.dueAt.toISOString(),
-            guestName: f.bookingGuest?.fullName || '—',
+            guestName: safeDecrypt(f.bookingGuest?.fullName) || '—',
             nationality: f.bookingGuest?.nationality || '—',
             unitName: f.booking?.unit?.name || '—',
             projectName: f.booking?.project?.name || '—',

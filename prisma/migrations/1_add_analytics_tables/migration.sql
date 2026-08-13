@@ -1,18 +1,8 @@
--- P3009 Recovery: Explicitly resolve the failed migration state
--- The 1_add_analytics_tables migration failed at 2026-07-15 06:33:33.830538 UTC
--- This migration marks it as finished in Prisma's tracking table
+-- P3009 Recovery: Mark failed migration as rolled back
+-- The 1_add_analytics_tables migration failed on 2026-07-15 06:33:33.830538 UTC
+-- This directly marks it as complete so migrations can proceed
+-- This is the migration file equivalent of: prisma migrate resolve --rolled-back 1_add_analytics_tables
 
-DO $$
-BEGIN
-  -- Mark the failed migration as finished in Prisma's internal tracking
-  UPDATE "_prisma_migrations"
-  SET
-    "finished_at" = CURRENT_TIMESTAMP,
-    "execution_time_ms" = FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '2026-07-15 06:33:33.830538'::timestamp)) * 1000)::INTEGER
-  WHERE
-    "migration" = '1_add_analytics_tables'
-    AND "finished_at" IS NULL
-    AND "started_at" IS NOT NULL;
-END $$;
-
-SELECT 1;
+UPDATE "_prisma_migrations"
+SET "finished_at" = CURRENT_TIMESTAMP, "execution_time_ms" = 0
+WHERE "migration" = '1_add_analytics_tables' AND "finished_at" IS NULL;

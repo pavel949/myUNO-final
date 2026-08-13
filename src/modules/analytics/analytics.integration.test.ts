@@ -264,6 +264,66 @@ describe('Analytics Module', () => {
       expect(metric?.nightsOccupied).toBe(0);
       expect(metric?.rentalRevenueCents).toBe(0);
     });
+
+    it('tracks owner-stay nights separately from guest nights', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const owner = await createIdentity();
+      const guest = await createIdentity();
+
+      const targetDate = new Date('2025-01-15');
+
+      // Create a guest stay with 5000 THB revenue
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-15'),
+          endDate: new Date('2025-01-16'),
+          adults: 1,
+          children: 0,
+          totalThb: 5000,
+          status: BookingStatus.confirmed,
+        },
+      });
+
+      // Create an owner stay with 0 revenue (same night)
+      await prisma.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: owner.id,
+          bookingType: 'owner_stay',
+          channel: 'direct',
+          startDate: new Date('2025-01-15'),
+          endDate: new Date('2025-01-16'),
+          adults: 1,
+          children: 0,
+          totalThb: 0,
+          status: BookingStatus.confirmed,
+        },
+      });
+
+      await rollupMetricsDaily(prisma, targetDate);
+
+      const metric = await prisma.metricDaily.findUnique({
+        where: {
+          unitId_date: {
+            unitId: unit.id,
+            date: targetDate,
+          },
+        },
+      });
+
+      // Should count occupancy for both bookings on the same night
+      expect(metric?.nightsOccupied).toBe(1);
+      expect(metric?.ownerStayNights).toBe(1);
+      // Revenue should come from guest stay only
+      expect(metric?.rentalRevenueCents).toBe(500000); // 5000 THB
+    });
   });
 
   describe('getMetricsSeries', () => {

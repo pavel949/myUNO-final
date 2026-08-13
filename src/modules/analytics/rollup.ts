@@ -40,7 +40,7 @@ export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
         endDate: { gt: targetDate },
         status: { in: OCCUPYING_STATUSES },
       },
-      select: { unitId: true, totalThb: true, startDate: true, endDate: true },
+      select: { unitId: true, totalThb: true, startDate: true, endDate: true, bookingType: true },
     }),
     db.blockedDate.findMany({
       where: { startDate: { lte: targetDate }, endDate: { gt: targetDate } },
@@ -77,6 +77,10 @@ export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
     // unit row was created (seeded/imported history predates createdAt).
     const nightsOccupied = unitBookings.length > 0 ? 1 : 0;
 
+    // Owner-stay nights are tracked separately for revenue-occupancy metrics
+    const hasOwnerStay = unitBookings.some((b) => b.bookingType === 'owner_stay');
+    const ownerStayNights = hasOwnerStay ? 1 : 0;
+
     // A vacant night only counts as available if the unit existed by then
     // and was live and unblocked — otherwise occupancy% would be diluted
     // by days the unit wasn't rentable.
@@ -112,6 +116,7 @@ export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
     const metrics = {
       nightsAvailable,
       nightsOccupied,
+      ownerStayNights,
       rentalRevenueCents,
       serviceOrderCount: orders.count,
       serviceOrderRevenueCents: Math.round(orders.revenueCents),

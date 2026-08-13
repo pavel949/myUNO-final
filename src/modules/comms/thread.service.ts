@@ -1,5 +1,6 @@
 import { PrismaClient, ThreadContextType, MessageKind } from '@prisma/client';
 import { publishMessage } from './thread.bus';
+import { track } from '@/modules/analytics';
 
 export interface CreateThreadInput {
   contextType: ThreadContextType;
@@ -61,6 +62,12 @@ export async function findOrCreateThread(
       },
     });
   }
+
+  // Track analytics event for new thread
+  await track(db, 'message_thread_started', {
+    projectId,
+    contextType: contextType,
+  }).catch(() => null);
 
   return { id: thread.id, created: true };
 }

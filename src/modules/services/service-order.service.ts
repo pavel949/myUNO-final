@@ -623,6 +623,15 @@ export async function expireStaleServiceOrders(
       refunded++;
     }
 
+    // Track service order no-show/timeout event
+    await track(db, 'service_order_no_show', {
+      serviceOrderId: order.id,
+      projectId: order.project_id,
+      unitId: order.unit_id ?? undefined,
+      identityId: order.orderer_identity_id,
+      totalThb: order.total_thb,
+    }).catch(() => null);
+
     // Note: order expired due to no response; provider sees it in queue (status=expired)
   }
 

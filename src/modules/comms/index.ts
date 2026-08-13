@@ -52,6 +52,7 @@ export {
   getTicketDetail,
   getProjectTickets,
   getReporterTickets,
+  checkAndTrackSLABreaches,
   type RaiseTicketInput,
   type UpdateTicketStatusInput,
 } from './ticket.service';

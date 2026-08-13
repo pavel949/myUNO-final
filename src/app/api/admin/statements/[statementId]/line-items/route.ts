@@ -20,12 +20,12 @@ export async function GET(
 
     const statementId = params.statementId
 
-    // Fetch statement with line items
+    // Fetch statement with ledger entries
     const statement = await prismadb.ownerStatement.findUnique({
       where: { id: statementId },
       include: {
-        lineItems: {
-          orderBy: { createdAt: 'desc' },
+        ledgerEntries: {
+          orderBy: { occurredOn: 'desc' },
         },
         unit: {
           select: {
@@ -43,22 +43,22 @@ export async function GET(
       )
     }
 
-    // Group line items by category
-    const groupedByCategory = statement.lineItems.reduce(
-      (acc, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = []
+    // Group ledger entries by type
+    const groupedByType = statement.ledgerEntries.reduce(
+      (acc, entry) => {
+        if (!acc[entry.entryType]) {
+          acc[entry.entryType] = []
         }
-        acc[item.category].push(item)
+        acc[entry.entryType].push(entry)
         return acc
       },
-      {} as Record<string, typeof statement.lineItems>
+      {} as Record<string, typeof statement.ledgerEntries>
     )
 
-    // Calculate totals by category
-    const totals = Object.entries(groupedByCategory).reduce(
-      (acc, [category, items]) => {
-        acc[category] = items.reduce((sum, item) => sum + item.amountThb, 0)
+    // Calculate totals by type
+    const totals = Object.entries(groupedByType).reduce(
+      (acc, [type, entries]) => {
+        acc[type] = entries.reduce((sum, entry) => sum + entry.amountThb, 0)
         return acc
       },
       {} as Record<string, number>
@@ -72,16 +72,16 @@ export async function GET(
         periodEnd: statement.periodEnd,
         status: statement.status,
         unitName: statement.unit.name,
-        grossBookingsAmountThb: statement.grossBookingsAmountThb,
-        serviceFeesAmountThb: statement.serviceFeesAmountThb,
-        adjustedNoiThb: statement.adjustedNoiThb,
-        distributableCashThb: statement.distributableCashThb,
-        performanceFeeAmountThb: statement.performanceFeeAmountThb,
+        grossRevenueTh: statement.grossRevenueTh,
+        totalCostsTh: statement.totalCostsTh,
+        noiTh: statement.noiTh,
+        ownerShareTh: statement.ownerShareTh,
+        estateShareTh: statement.estateShareTh,
       },
-      lineItems: statement.lineItems,
-      groupedByCategory,
+      ledgerEntries: statement.ledgerEntries,
+      groupedByType,
       totals,
-      lineItemCount: statement.lineItems.length,
+      entryCount: statement.ledgerEntries.length,
     })
   } catch (error) {
     console.error('[STATEMENT LINE ITEMS]', error)

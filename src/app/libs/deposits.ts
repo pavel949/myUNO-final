@@ -116,7 +116,7 @@ export async function captureDepositPreAuth(
     if (booking) {
       await prismadb.ledgerEntry.create({
         data: {
-          entryType: 'damage_claim_capture',
+          entryType: 'adjustment',
           amountThb: actualCapture,
           unitId: booking.unit.id,
           bookingId: booking.id,

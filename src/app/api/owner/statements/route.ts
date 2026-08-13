@@ -35,9 +35,9 @@ export async function GET(_req: NextRequest) {
             projectId: true,
           },
         },
-        lineItems: {
+        ledgerEntries: {
           select: {
-            category: true,
+            entryType: true,
             amountThb: true,
           },
         },
@@ -57,21 +57,20 @@ export async function GET(_req: NextRequest) {
       unitName: stmt.unit.name,
       projectId: stmt.unit.projectId,
 
-      // Summary stats
-      grossBookingsAmountThb: stmt.grossBookingsAmountThb,
-      serviceFeesAmountThb: stmt.serviceFeesAmountThb,
-      adjustedNoiThb: stmt.adjustedNoiThb,
-      distributableCashThb: stmt.distributableCashThb,
-      performanceFeeAmountThb: stmt.performanceFeeAmountThb,
+      // Summary financial data
+      grossRevenueTh: stmt.grossRevenueTh,
+      totalCostsTh: stmt.totalCostsTh,
+      noiTh: stmt.noiTh,
+      ownerShareTh: stmt.ownerShareTh,
+      estateShareTh: stmt.estateShareTh,
+      capApplied: stmt.capApplied,
 
-      // Sign-off status
-      signedOffByOwnerAt: stmt.signedOffByOwnerAt?.toISOString(),
-      signedOffByOperatorAt: stmt.signedOffByOperatorAt?.toISOString(),
-      approvedAt: stmt.approvedAt?.toISOString(),
+      // Publication status
+      publishedAt: stmt.publishedAt?.toISOString(),
 
       // Metadata
       createdAt: stmt.createdAt.toISOString(),
-      lineItemCount: stmt.lineItems.length,
+      ledgerEntryCount: stmt.ledgerEntries.length,
     }))
 
     // Track analytics event for each statement viewed

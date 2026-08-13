@@ -1,24 +1,22 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
+import { CrmLifecycleStage } from '@prisma/client'
 import prismadb from '@/app/libs/prismadb'
 
 export const dynamic = 'force-dynamic'
 
-type LifecycleStage = 'contact' | 'guest' | 'repeat_guest' | 'investment_interest' | 'qualified_buyer' | 'purchaser' | 'owner' | 'managed_owner'
-
-const VALID_TRANSITIONS: Record<LifecycleStage, LifecycleStage[]> = {
-  contact: ['guest', 'investment_interest'],
-  guest: ['repeat_guest', 'contact'],
-  repeat_guest: ['investment_interest', 'contact'],
-  investment_interest: ['qualified_buyer', 'contact'],
-  qualified_buyer: ['purchaser', 'investment_interest'],
-  purchaser: ['owner', 'qualified_buyer'],
-  owner: ['managed_owner'],
-  managed_owner: ['owner'],
+const VALID_TRANSITIONS: Record<CrmLifecycleStage, CrmLifecycleStage[]> = {
+  contact: ['guest', 'prospect'],
+  guest: ['prospect', 'contact'],
+  prospect: ['buyer', 'contact'],
+  buyer: ['owner', 'prospect'],
+  owner: ['seller'],
+  seller: ['owner'],
+  former_client: ['guest', 'prospect'],
 }
 
 interface TransitionRequest {
-  to_stage: LifecycleStage
+  to_stage: CrmLifecycleStage
   reason: string
   notes?: Record<string, unknown>
 }
@@ -59,7 +57,7 @@ export async function POST(
       )
     }
 
-    const currentStage = profile.lifecycleStage as LifecycleStage
+    const currentStage = profile.lifecycleStage
 
     // Validate transition
     if (!VALID_TRANSITIONS[currentStage]?.includes(body.to_stage)) {
@@ -72,38 +70,11 @@ export async function POST(
       )
     }
 
-    // Require account owner for certain transitions
-    if ((body.to_stage === 'qualified_buyer' || body.to_stage === 'owner' || body.to_stage === 'managed_owner') && !currentUser.identityId) {
-      return NextResponse.json(
-        { error: 'Account owner required for this transition' },
-        { status: 400 }
-      )
-    }
-
     // Update profile with new stage
     const updatedProfile = await prismadb.crmProfile.update({
       where: { id: profileId },
       data: {
         lifecycleStage: body.to_stage,
-        lifecycleChangedAt: new Date(),
-        lifecycleChangeReason: body.reason,
-        lifecycleChangeApprovedByIdentityId: currentUser.identityId,
-        accountOwnerIdentityId:
-          (body.to_stage === 'qualified_buyer' || body.to_stage === 'owner' || body.to_stage === 'managed_owner')
-            ? currentUser.identityId
-            : profile.accountOwnerIdentityId,
-      },
-    })
-
-    // Create audit log entry
-    await prismadb.crmLifecycleTransition.create({
-      data: {
-        profileId,
-        fromStage: currentStage,
-        toStage: body.to_stage,
-        reason: body.reason,
-        approvedByIdentityId: currentUser.identityId,
-        notes: (body.notes || {}) as any,
       },
     })
 

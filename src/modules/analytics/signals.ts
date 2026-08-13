@@ -1,4 +1,4 @@
-import { PrismaClient, BuyerSignalKey, BuyerSignalStatus } from '@prisma/client';
+import { PrismaClient, BuyerSignalKey, BuyerSignalStatus, AnalyticsEventKey } from '@prisma/client';
 import { track } from './track';
 
 // Fallback defaults; thresholds should be read from config in production
@@ -267,8 +267,9 @@ export async function transitionBuyerSignal(
   });
 
   // Track analytics event based on new status
-  const eventMap: Record<BuyerSignalStatus, string> = {
-    open: 'signal_reviewed',
+  const eventMap: Record<BuyerSignalStatus, AnalyticsEventKey> = {
+    open: 'signal_detected',
+    reviewed: 'signal_reviewed',
     handed_to_capital: 'signal_handed_to_capital',
     dismissed: 'signal_dismissed',
   };

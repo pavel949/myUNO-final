@@ -192,7 +192,8 @@ export async function createBooking(
 
   // Track analytics event
   const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  await track(db, 'stay_booking_started', {
+  const eventKey = instantBook ? 'stay_booking_started' : 'stay_booking_requested';
+  await track(db, eventKey, {
     bookingId: booking.id,
     unitId,
     projectId,
@@ -201,7 +202,7 @@ export async function createBooking(
     bookingType,
     nights,
     totalThb,
-  });
+  }).catch(() => null);
 
   return booking;
 }
@@ -261,7 +262,7 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
-  return db.booking.update({
+  const updated = await db.booking.update({
     where: { id: bookingId },
     data: {
       unitId,
@@ -271,6 +272,21 @@ export async function approveBookingRequest(
     },
     include: { unit: { select: { name: true } } },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_request_approved', {
+    bookingId: updated.id,
+    unitId: updated.unitId,
+    projectId: updated.projectId,
+    identityId: updated.guestIdentityId,
+    nights,
+    totalThb: updated.totalThb,
+  }).catch(() => null);
+
+  return updated;
 }
 
 /**
@@ -291,7 +307,7 @@ export async function declineBookingRequest(
     throw new Error(`Cannot decline booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const declined = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'declined',
@@ -301,6 +317,22 @@ export async function declineBookingRequest(
       cancelledAt: new Date(),
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_request_declined', {
+    bookingId: declined.id,
+    unitId: declined.unitId,
+    projectId: declined.projectId,
+    identityId: declined.guestIdentityId,
+    nights,
+    totalThb: declined.totalThb,
+    declinedBy: declinedByIdentityId ? 'host' : 'system',
+  }).catch(() => null);
+
+  return declined;
 }
 
 /**
@@ -482,19 +514,51 @@ export async function completeBooking(
     throw new Error(`Cannot complete booking with status ${booking.status}`);
   }
 
-  return db.booking.update({
+  const completed = await db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'completed',
     },
   });
+
+  // Track analytics event
+  const nights = Math.ceil(
+    (completed.endDate.getTime() - completed.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  await track(db, 'stay_completed', {
+    bookingId: completed.id,
+    unitId: completed.unitId,
+    projectId: completed.projectId,
+    identityId: completed.guestIdentityId,
+    nights,
+    totalThb: completed.totalThb,
+  }).catch(() => null);
+
+  return completed;
 }
 
 /**
  * Expire pending_payment holds (scheduler job).
  */
 export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
-  const expired = await db.booking.updateMany({
+  // Fetch expired bookings first for analytics
+  const expiredBookings = await db.booking.findMany({
+    where: {
+      status: 'pending_payment',
+      holdExpiresAt: { lte: now },
+    },
+    select: {
+      id: true,
+      unitId: true,
+      projectId: true,
+      guestIdentityId: true,
+      totalThb: true,
+      startDate: true,
+      endDate: true,
+    },
+  });
+
+  const updated = await db.booking.updateMany({
     where: {
       status: 'pending_payment',
       holdExpiresAt: { lte: now },
@@ -505,13 +569,45 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
     },
   });
 
-  return expired.count;
+  // Track analytics events for each expired hold
+  for (const booking of expiredBookings) {
+    const nights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(db, 'stay_hold_expired', {
+      bookingId: booking.id,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      identityId: booking.guestIdentityId,
+      nights,
+      totalThb: booking.totalThb,
+    }).catch(() => null);
+  }
+
+  return updated.count;
 }
 
 /**
  * Auto-decline request-to-book bookings past their deadline (scheduler job).
  */
 export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date()) {
+  // Fetch expired requests first for analytics
+  const expiredRequests = await db.booking.findMany({
+    where: {
+      status: 'requested',
+      requestExpiresAt: { lte: now },
+    },
+    select: {
+      id: true,
+      unitId: true,
+      projectId: true,
+      guestIdentityId: true,
+      totalThb: true,
+      startDate: true,
+      endDate: true,
+    },
+  });
+
   const declined = await db.booking.updateMany({
     where: {
       status: 'requested',
@@ -524,6 +620,22 @@ export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date
       cancelledAt: now,
     },
   });
+
+  // Track analytics events for each auto-declined request
+  for (const booking of expiredRequests) {
+    const nights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(db, 'stay_request_declined', {
+      bookingId: booking.id,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      identityId: booking.guestIdentityId,
+      nights,
+      totalThb: booking.totalThb,
+      declinedBy: 'system',
+    }).catch(() => null);
+  }
 
   return declined.count;
 }

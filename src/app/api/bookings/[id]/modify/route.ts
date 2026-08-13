@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createCheckout } from '@/modules/finance';
+import { track } from '@/modules/analytics';
 
 /**
  * POST /api/bookings/[id]/modify
@@ -167,6 +168,25 @@ export async function POST(
         actorIdentityId: user.identityId,
       },
     });
+
+    // Track analytics event
+    const oldNights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const newNights = Math.ceil(
+      (newEndDate.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(prisma, 'stay_modified', {
+      bookingId: updated.id,
+      unitId: updated.unitId,
+      projectId: updated.projectId,
+      identityId: updated.guestIdentityId,
+      oldNights,
+      newNights,
+      oldTotalThb,
+      newTotalThb,
+      balanceThb,
+    }).catch(() => null);
 
     return NextResponse.json(
       {

@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import prismadb from '@/app/libs/prismadb'
+import { track } from '@/modules/analytics'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,6 +73,16 @@ export async function GET(_req: NextRequest) {
       createdAt: stmt.createdAt.toISOString(),
       lineItemCount: stmt.lineItems.length,
     }))
+
+    // Track analytics event for each statement viewed
+    for (const stmt of statements) {
+      await track(prismadb, 'owner_statement_viewed', {
+        identityId: currentUser.identityId,
+        statementId: stmt.id,
+        unitId: stmt.unit.id,
+        projectId: stmt.unit.projectId,
+      }).catch(() => null)
+    }
 
     return NextResponse.json({
       success: true,

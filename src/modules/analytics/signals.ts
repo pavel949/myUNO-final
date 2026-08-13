@@ -266,6 +266,20 @@ export async function transitionBuyerSignal(
     },
   });
 
+  // Track analytics event based on new status
+  const eventMap: Record<BuyerSignalStatus, string> = {
+    open: 'signal_reviewed',
+    handed_to_capital: 'signal_handed_to_capital',
+    dismissed: 'signal_dismissed',
+  };
+
+  await track(db, eventMap[newStatus], {
+    identityId: signal.identityId,
+    signalId: signal.id,
+    signalKey: signal.signalKey,
+    transitionByIdentityId,
+  }).catch(() => null);
+
   return signal;
 }
 
@@ -361,6 +375,13 @@ export async function createDirectInquiry(
       },
     });
   }
+
+  // Track analytics event for owner sell interest
+  await track(db, 'owner_sell_interest', {
+    identityId,
+    signalId: signal.id,
+    recordedByIdentityId,
+  }).catch(() => null);
 
   return signal;
 }

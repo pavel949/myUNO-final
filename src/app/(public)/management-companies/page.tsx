@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { track } from '@/modules/analytics';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ManagementCompaniesPage() {
+  // Track analytics event
+  await track(prisma, 'page_audience_viewed', {
+    audience: 'mc',
+  }).catch(() => null);
+
   const labels = await getLabels({
     'audience.mc.title': 'For Management Companies',
     'audience.mc.subtitle': 'Demanded ops. Single platform. More income.',

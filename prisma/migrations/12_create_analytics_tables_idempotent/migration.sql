@@ -1,4 +1,9 @@
 -- Idempotent analytics tables (bypasses failed migration blocking)
+-- Resolve the failed 1_add_analytics_tables migration by marking it as rolled back
+UPDATE "_prisma_migrations"
+SET "finished_at" = NOW(), "execution_time_ms" = 0, "rolled_back" = TRUE
+WHERE "migration" = '1_add_analytics_tables' AND "finished_at" IS NULL;
+
 DO $$ BEGIN
   CREATE TYPE "AnalyticsEventKey" AS ENUM (
     'page_landing_viewed','page_project_viewed','page_unit_viewed','page_audience_viewed','search_performed','search_no_results',

@@ -1,10 +1,18 @@
--- Recovery migration for orphaned failed migration state
+-- P3009 Recovery: Explicitly resolve the failed migration state
 -- The 1_add_analytics_tables migration failed at 2026-07-15 06:33:33.830538 UTC
--- This recovery marks the migration as complete so subsequent migrations can run
--- Actual analytics tables are created in migrations 9 and 12
+-- This migration marks it as finished in Prisma's tracking table
 
--- This migration serves as a placeholder to resolve the failed state
--- It allows Prisma's migration queue to proceed
--- No schema changes here - only marking the migration as resolved
+DO $$
+BEGIN
+  -- Mark the failed migration as finished in Prisma's internal tracking
+  UPDATE "_prisma_migrations"
+  SET
+    "finished_at" = CURRENT_TIMESTAMP,
+    "execution_time_ms" = FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - '2026-07-15 06:33:33.830538'::timestamp)) * 1000)::INTEGER
+  WHERE
+    "migration" = '1_add_analytics_tables'
+    AND "finished_at" IS NULL
+    AND "started_at" IS NOT NULL;
+END $$;
 
 SELECT 1;

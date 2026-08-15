@@ -109,12 +109,13 @@ export async function createNotification(
 
         // Attempt to send via WhatsApp or Telegram (feature-flagged per doc 04 §7)
         if ((channel === 'whatsapp' || channel === 'telegram') && identity?.email) {
+          const email = identity.email;
           (async () => {
             try {
               // For loop one, phone numbers aren't captured in Identity; stub sends via config scope
               // In production, Identity would have a phone field or MessengerProfile would link it
               const messengerChannel = channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM;
-              const result = await sendMessengerMessage(db, messengerChannel, identity.email, bodyKey, undefined, false);
+              const result = await sendMessengerMessage(db, messengerChannel, email, bodyKey, undefined, false);
 
               // Update delivery status
               await db.notificationDelivery.update({

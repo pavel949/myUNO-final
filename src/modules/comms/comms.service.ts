@@ -1,6 +1,8 @@
 import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/client';
 import { sendEmail, buildNotificationEmail } from './email.seam';
 import { track } from '@/modules/analytics';
+import { sendMessengerMessage, MessengerChannel } from '@/modules/integrations';
+import { config } from '@/modules/config';
 
 export interface CreateNotificationInput {
   identityId: string;
@@ -43,6 +45,15 @@ export async function createNotification(
     // Fan out deliveries per channel (best-effort)
     for (const channel of channels) {
       try {
+        // Skip messenger channels if disabled
+        if (channel === 'whatsapp' || channel === 'telegram') {
+          const enabledKey = channel === 'whatsapp' ? 'notify.channel.whatsapp.enabled' : 'notify.channel.telegram.enabled';
+          const isEnabled = await config.get(db, enabledKey);
+          if (!isEnabled) {
+            continue; // Skip creating delivery if channel disabled
+          }
+        }
+
         const delivery = await db.notificationDelivery.create({
           data: {
             notificationId: notification.id,
@@ -51,7 +62,7 @@ export async function createNotification(
           },
         });
 
-        // Attempt to send email asynchronously (fire-and-forget)
+        // Attempt to send via channel asynchronously (fire-and-forget)
         if (channel === 'email' && identity?.email) {
           (async () => {
             try {
@@ -81,6 +92,43 @@ export async function createNotification(
             } catch (err) {
               console.error(
                 `Failed to send email for delivery ${delivery.id}:`,
+                err
+              );
+              await db.notificationDelivery.update({
+                where: { id: delivery.id },
+                data: {
+                  status: 'failed',
+                  failureReason: err instanceof Error ? err.message : 'Unknown error',
+                },
+              }).catch(() => {
+                // Swallow update errors; don't fail the primary action
+              });
+            }
+          })();
+        }
+
+        // Attempt to send via WhatsApp or Telegram (feature-flagged per doc 04 §7)
+        if ((channel === 'whatsapp' || channel === 'telegram') && identity?.email) {
+          (async () => {
+            try {
+              // For loop one, phone numbers aren't captured in Identity; stub sends via config scope
+              // In production, Identity would have a phone field or MessengerProfile would link it
+              const messengerChannel = channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM;
+              const result = await sendMessengerMessage(db, messengerChannel, identity.email, bodyKey, undefined, false);
+
+              // Update delivery status
+              await db.notificationDelivery.update({
+                where: { id: delivery.id },
+                data: {
+                  status: result.success ? 'sent' : 'failed',
+                  sentAt: result.success ? new Date() : undefined,
+                  failureReason: result.success ? undefined : result.error || 'Unknown error',
+                  externalRef: result.messageId || undefined,
+                },
+              });
+            } catch (err) {
+              console.error(
+                `Failed to send ${channel} message for delivery ${delivery.id}:`,
                 err
               );
               await db.notificationDelivery.update({

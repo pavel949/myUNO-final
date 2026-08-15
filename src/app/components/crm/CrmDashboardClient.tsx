@@ -1,6 +1,7 @@
 'use client';
 
-import { FC, useState, useMemo } from 'react';
+import { FC, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { OpportunitiesKanban } from './OpportunitiesKanban';
 import { OpportunitiesList } from './OpportunitiesList';
 import { CrmDashboard } from './CrmDashboard';
@@ -31,6 +32,7 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
   overdueTasks,
   recentActivities,
 }) => {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [refreshKey, setRefreshKey] = useState(0);
   const [filters, setFilters] = useState<OpportunityFilters>({
@@ -41,6 +43,10 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
     maxProbability: 100,
     assignedOnly: false,
   });
+
+  const handleNavigateToOpportunity = useCallback((opportunityId: string) => {
+    router.push(`/app/admin/crm/opportunities/${opportunityId}`);
+  }, [router]);
 
   const opportunityTypes = useMemo(() => extractOpportunityTypes(opportunities), [opportunities]);
 
@@ -127,10 +133,7 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
         <OpportunitiesList
           key={refreshKey}
           opportunities={filteredOpportunities}
-          onRowClick={(id) => {
-            // TODO: Navigate to opportunity detail page
-            console.log('Clicked opportunity:', id);
-          }}
+          onRowClick={handleNavigateToOpportunity}
         />
       )}
     </div>

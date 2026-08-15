@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DragDropContext,
   Droppable,
@@ -57,6 +58,7 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
   opportunities,
   onUpdate,
 }) => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +66,10 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
     acc[stage] = opportunities.filter((opp) => opp.stage === stage);
     return acc;
   }, {} as Record<string, typeof opportunities>);
+
+  const handleCardClick = useCallback((opportunityId: string) => {
+    router.push(`/app/admin/crm/opportunities/${opportunityId}`);
+  }, [router]);
 
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
@@ -176,6 +182,7 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
                             <OpportunityCard
                               opportunity={opportunity}
                               draggable={true}
+                              onClick={() => handleCardClick(opportunity.id)}
                             />
                           </div>
                         )}

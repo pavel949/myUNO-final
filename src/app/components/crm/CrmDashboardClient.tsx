@@ -1,28 +1,11 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useState, useMemo } from 'react';
 import { OpportunitiesKanban } from './OpportunitiesKanban';
 import { OpportunitiesList } from './OpportunitiesList';
 import { CrmDashboard } from './CrmDashboard';
-import type { CrmOpportunity } from '@prisma/client';
-
-interface SerializedOpportunity extends Omit<CrmOpportunity, 'createdAt' | 'updatedAt' | 'expectedCloseAt' | 'nextActionAt' | 'wonAt' | 'lostAt'> {
-  createdAt: string;
-  updatedAt: string;
-  expectedCloseAt: string | null;
-  nextActionAt: string | null;
-  wonAt: string | null;
-  lostAt: string | null;
-  contact: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    avatar: string | null;
-  } | null;
-  assignedTo?: any;
-  activities: any[];
-}
+import { OpportunitiesFilterPanel, type OpportunityFilters } from './OpportunitiesFilterPanel';
+import { applyOpportunityFilters, extractOpportunityTypes, type SerializedOpportunity } from '@/app/lib/crm-filters';
 
 interface CrmDashboardClientProps {
   opportunities: SerializedOpportunity[];
@@ -50,6 +33,21 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filters, setFilters] = useState<OpportunityFilters>({
+    search: '',
+    stages: [],
+    types: [],
+    minProbability: 0,
+    maxProbability: 100,
+    assignedOnly: false,
+  });
+
+  const opportunityTypes = useMemo(() => extractOpportunityTypes(opportunities), [opportunities]);
+
+  const filteredOpportunities = useMemo(
+    () => applyOpportunityFilters(opportunities, filters),
+    [opportunities, filters]
+  );
 
   const handleRefresh = () => {
     setRefreshKey((k) => k + 1);
@@ -58,8 +56,14 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Filter Panel */}
+      <OpportunitiesFilterPanel
+        onFiltersChange={setFilters}
+        opportunityTypes={opportunityTypes}
+      />
+
       {/* View Switcher */}
-      <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <button
           onClick={() => setViewMode('dashboard')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -114,7 +118,7 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
       {viewMode === 'kanban' && (
         <OpportunitiesKanban
           key={refreshKey}
-          opportunities={opportunities}
+          opportunities={filteredOpportunities}
           onUpdate={handleRefresh}
         />
       )}
@@ -122,7 +126,7 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
       {viewMode === 'list' && (
         <OpportunitiesList
           key={refreshKey}
-          opportunities={opportunities}
+          opportunities={filteredOpportunities}
           onRowClick={(id) => {
             // TODO: Navigate to opportunity detail page
             console.log('Clicked opportunity:', id);

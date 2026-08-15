@@ -115,8 +115,10 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
   };
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="w-full">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
+        <table className="w-full text-sm">
         <thead className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <tr>
             <th className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">
@@ -224,15 +226,70 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       {sorted.length === 0 && (
-        <div className="text-center py-12">
+        <div className="hidden lg:block text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
           <p className="text-gray-500 dark:text-gray-400">
             No opportunities yet
           </p>
         </div>
       )}
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {sorted.length === 0 && (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
+            <p className="text-gray-500 dark:text-gray-400">
+              No opportunities yet
+            </p>
+          </div>
+        )}
+        {sorted.map((opp) => (
+          <div
+            key={opp.id}
+            onClick={() => onRowClick?.(opp.id)}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3 cursor-pointer hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {opp.title}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {opp.contact?.name || 'Unknown'}
+                </p>
+              </div>
+              <span className={`text-xs px-2 py-1 rounded font-medium ${STAGE_COLORS[opp.stage]}`}>
+                {opp.stage.charAt(0).toUpperCase() + opp.stage.slice(1)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600 dark:text-gray-400">Prob:</span>
+                <div className="w-16 h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500"
+                    style={{ width: `${opp.probability}%` }}
+                  />
+                </div>
+                <span className="font-medium text-gray-700 dark:text-gray-300 w-8">
+                  {opp.probability}%
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <span>
+                Value: {formatCurrency(((opp.valueThb ?? 0) * opp.probability) / 100)}
+              </span>
+              <span>{getDaysInStage(opp.createdAt)} days in stage</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

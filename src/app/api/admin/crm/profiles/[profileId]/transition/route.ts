@@ -5,14 +5,19 @@ import prismadb from '@/app/libs/prismadb'
 
 export const dynamic = 'force-dynamic'
 
+// Lifecycle progression: contact → guest → repeat → prospect → investor → buyer → owner → managed
+// Sideways: can regress in funnel or move to seller/former_client
 const VALID_TRANSITIONS: Record<CrmLifecycleStage, CrmLifecycleStage[]> = {
   contact: ['guest', 'prospect'],
-  guest: ['prospect', 'contact'],
-  prospect: ['buyer', 'contact'],
-  buyer: ['owner', 'prospect'],
-  owner: ['seller'],
-  seller: ['owner'],
-  former_client: ['guest', 'prospect'],
+  guest: ['repeat', 'prospect', 'contact'],
+  repeat: ['prospect', 'investor', 'guest'],
+  prospect: ['investor', 'buyer', 'contact', 'guest'],
+  investor: ['buyer', 'prospect'],
+  buyer: ['owner', 'investor', 'prospect'],
+  owner: ['managed', 'seller'],
+  managed: ['owner', 'seller'],
+  seller: ['owner', 'former_client'],
+  former_client: ['contact', 'guest'],
 }
 
 interface TransitionRequest {

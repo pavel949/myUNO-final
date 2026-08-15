@@ -549,11 +549,21 @@ enum IntegrationStatus {
 enum CrmLifecycleStage {
   contact
   guest
+  repeat
   prospect
+  investor
   buyer
   owner
+  managed
   seller
   former_client
+}
+
+enum AssetStatus {
+  managed
+  verified_partner
+  one_off_sourced
+  suspended
 }
 
 enum CrmOpportunityType {
@@ -696,6 +706,8 @@ model Identity {
   crmActivitiesCreated      CrmActivity[]               @relation("crmActivityCreator")
   crmConsents               CrmConsent[]
   crmAttributionTouches     CrmAttributionTouch[]
+  accountOwnedProfiles      CrmProfile[]                @relation("accountOwner")
+  lifecycleApprovalsGiven   LifecycleTransitionLog[]    @relation("lifecycleApprover")
 
   @@map("identity")
 }
@@ -795,6 +807,9 @@ model Unit {
   instantBook             Boolean    @default(true) @map("instant_book")
   cancellationPolicyKey   String?    @map("cancellation_policy_key")
   status                  UnitStatus @default(draft)
+  assetStatus             AssetStatus @default(managed) @map("asset_status")
+  assetStatusChangedAt    DateTime?   @map("asset_status_changed_at")
+  assetStatusReason       String?     @map("asset_status_reason")
   permittedUseConfirmedAt DateTime?  @map("permitted_use_confirmed_at")
   coverMediaId            String?    @map("cover_media_id")
 
@@ -822,6 +837,7 @@ model Unit {
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
+  @@index([assetStatus])
   @@map("unit")
 }
 
@@ -2018,24 +2034,49 @@ model CrmProfile {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId        String            @unique @map("identity_id")
-  lifecycleStage    CrmLifecycleStage @default(contact) @map("lifecycle_stage")
-  leadScore         Int               @default(0) @map("lead_score")
-  tags              String[]          @default([])
-  preferredChannel  String?           @map("preferred_channel")
-  firstSource       String?           @map("first_source")
-  lastSource        String?           @map("last_source")
-  lastInteractionAt DateTime?         @map("last_interaction_at")
-  nextActionAt      DateTime?         @map("next_action_at")
-  ownerSince        DateTime?         @map("owner_since")
-  guestSince        DateTime?         @map("guest_since")
-  customFields      Json              @default("{}") @map("custom_fields")
+  identityId               String            @unique @map("identity_id")
+  lifecycleStage           CrmLifecycleStage @default(contact) @map("lifecycle_stage")
+  accountOwnerIdentityId   String?           @map("account_owner_identity_id")
+  leadScore                Int               @default(0) @map("lead_score")
+  tags                     String[]          @default([])
+  preferredChannel         String?           @map("preferred_channel")
+  firstSource              String?           @map("first_source")
+  lastSource               String?           @map("last_source")
+  lastInteractionAt        DateTime?         @map("last_interaction_at")
+  nextActionAt             DateTime?         @map("next_action_at")
+  ownerSince               DateTime?         @map("owner_since")
+  guestSince               DateTime?         @map("guest_since")
+  lifecycleChangedAt       DateTime?         @map("lifecycle_changed_at")
+  lifecycleChangeReason    String?           @map("lifecycle_change_reason")
+  lifecycleChangeApprovedBy String?          @map("lifecycle_change_approved_by")
+  customFields             Json              @default("{}") @map("custom_fields")
 
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  identity              Identity                   @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  accountOwner          Identity?                  @relation("accountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
+  lifecycleTransitions  LifecycleTransitionLog[]   @relation("profileTransitions")
 
   @@index([lifecycleStage, nextActionAt])
   @@index([leadScore])
+  @@index([accountOwnerIdentityId])
   @@map("crm_profile")
+}
+
+model LifecycleTransitionLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  profileId               String            @map("profile_id")
+  fromStage               CrmLifecycleStage @map("from_stage")
+  toStage                 CrmLifecycleStage @map("to_stage")
+  reason                  String?
+  approvedByIdentityId    String?           @map("approved_by_identity_id")
+
+  profile CrmProfile @relation("profileTransitions", fields: [profileId], references: [id], onDelete: Cascade)
+  approvedBy Identity? @relation("lifecycleApprover", fields: [approvedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("lifecycle_transition_log")
 }
 
 model CrmOpportunity {

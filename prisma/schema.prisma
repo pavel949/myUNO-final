@@ -624,6 +624,40 @@ enum CrmTouchType {
   assisted
 }
 
+enum KPIStatus {
+  on_track
+  at_risk
+  below_target
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum IncidentStatus {
+  open
+  acknowledged
+  in_progress
+  resolved
+  closed
+}
+
+enum IncidentType {
+  maintenance
+  complaint
+  violation
+}
+
+enum ComplianceChecklistFrequency {
+  weekly
+  monthly
+  quarterly
+  annual
+}
+
 // --- The spine ---
 
 model Identity {
@@ -708,6 +742,9 @@ model Identity {
   crmAttributionTouches     CrmAttributionTouch[]
   accountOwnedProfiles      CrmProfile[]                @relation("accountOwner")
   lifecycleApprovalsGiven   LifecycleTransitionLog[]    @relation("lifecycleApprover")
+  incidentsReported         IncidentLog[]               @relation("incidentReportedBy")
+  incidentsAssigned         IncidentLog[]               @relation("incidentAssignedTo")
+  complianceChecklistsChecked ComplianceChecklistInstance[] @relation("complianceChecklistCheckedBy")
 
   @@map("identity")
 }
@@ -834,6 +871,9 @@ model Unit {
   metricsDaily          MetricDaily[]
   integrationAccounts   IntegrationAccount[]
   crmOpportunities      CrmOpportunity[]
+  operationalKpis       OperationalKpi[]
+  incidentLogs          IncidentLog[]
+  complianceChecklistInstances ComplianceChecklistInstance[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -1938,6 +1978,92 @@ model MobilizationChecklistItem {
   @@unique([unitId, step])
   @@index([unitId, status])
   @@map("mobilization_checklist_item")
+}
+
+// --- Phase 3: Operational KPIs & Compliance ---
+
+model OperationalKpi {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  unitId       String    @map("unit_id")
+  metricName   String    @map("metric_name")
+  periodStart  DateTime  @map("period_start") @db.Date
+  periodEnd    DateTime  @map("period_end") @db.Date
+  targetValue  Decimal?  @map("target_value") @db.Decimal(10, 2)
+  actualValue  Decimal?  @map("actual_value") @db.Decimal(10, 2)
+  status       KPIStatus @default(on_track)
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, periodStart, periodEnd])
+  @@index([metricName, status])
+  @@map("operational_kpi")
+}
+
+model IncidentLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId                String           @map("unit_id")
+  incidentType          IncidentType     @map("incident_type")
+  severity              IncidentSeverity
+  description           String
+  reportedByIdentityId  String           @map("reported_by_identity_id")
+  assignedToIdentityId  String?          @map("assigned_to_identity_id")
+  status                IncidentStatus   @default(open)
+  resolvedAt            DateTime?        @map("resolved_at")
+  resolutionNotes       String?          @map("resolution_notes")
+
+  // Relations
+  unit         Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  reportedBy   Identity  @relation(name: "incidentReportedBy", fields: [reportedByIdentityId], references: [id], onDelete: Restrict)
+  assignedTo   Identity? @relation(name: "incidentAssignedTo", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, status])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("incident_log")
+}
+
+model ComplianceChecklistTemplate {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name      String
+  frequency ComplianceChecklistFrequency
+  items     Json     @default("[]") @db.JsonB
+
+  // Relations
+  instances ComplianceChecklistInstance[]
+
+  @@map("compliance_checklist_template")
+}
+
+model ComplianceChecklistInstance {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId             String    @map("unit_id")
+  templateId         String    @map("template_id")
+  dueDate            DateTime  @map("due_date") @db.Date
+  completedDate      DateTime? @map("completed_date") @db.Date
+  checkedByIdentityId String?   @map("checked_by_identity_id")
+  passed             Boolean?
+  notes              String?
+
+  // Relations
+  unit        Unit                           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  template    ComplianceChecklistTemplate    @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  checkedBy   Identity?                      @relation(name: "complianceChecklistCheckedBy", fields: [checkedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, dueDate])
+  @@index([passed])
+  @@map("compliance_checklist_instance")
 }
 
 // --- Analytics & signals ---

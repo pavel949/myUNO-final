@@ -658,6 +658,26 @@ enum ComplianceChecklistFrequency {
   annual
 }
 
+enum ChannelCategory {
+  owned
+  earned
+  paid
+}
+
+enum ProspectingAccountType {
+  owner
+  developer
+  institutional_partner
+}
+
+enum ProspectingAccountStatus {
+  new
+  contacted
+  interested
+  pitched
+  closed
+}
+
 // --- The spine ---
 
 model Identity {
@@ -741,10 +761,13 @@ model Identity {
   crmConsents               CrmConsent[]
   crmAttributionTouches     CrmAttributionTouch[]
   accountOwnedProfiles      CrmProfile[]                @relation("accountOwner")
+  referredProfiles          CrmProfile[]                @relation("referrerTo")
   lifecycleApprovalsGiven   LifecycleTransitionLog[]    @relation("lifecycleApprover")
   incidentsReported         IncidentLog[]               @relation("incidentReportedBy")
   incidentsAssigned         IncidentLog[]               @relation("incidentAssignedTo")
   complianceChecklistsChecked ComplianceChecklistInstance[] @relation("complianceChecklistCheckedBy")
+  prospectingAccounts       ProspectingAccount[]        @relation("prospectingContact")
+  prospectingAccountsAssigned ProspectingAccount[]     @relation("prospectingAssignee")
 
   @@map("identity")
 }
@@ -2176,14 +2199,22 @@ model CrmProfile {
   lifecycleChangeReason    String?           @map("lifecycle_change_reason")
   lifecycleChangeApprovedBy String?          @map("lifecycle_change_approved_by")
   customFields             Json              @default("{}") @map("custom_fields")
+  sourceChannelId          String?           @map("source_channel_id")
+  sourceMedium             String?           @map("source_medium")
+  sourceCampaign           String?           @map("source_campaign")
+  referrerIdentityId       String?           @map("referrer_identity_id")
 
   identity              Identity                   @relation(fields: [identityId], references: [id], onDelete: Cascade)
   accountOwner          Identity?                  @relation("accountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
+  sourceChannel         Channel?                   @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  referrer              Identity?                  @relation("referrerTo", fields: [referrerIdentityId], references: [id], onDelete: SetNull)
   lifecycleTransitions  LifecycleTransitionLog[]   @relation("profileTransitions")
 
   @@index([lifecycleStage, nextActionAt])
   @@index([leadScore])
   @@index([accountOwnerIdentityId])
+  @@index([sourceChannelId])
+  @@index([referrerIdentityId])
   @@map("crm_profile")
 }
 
@@ -2203,6 +2234,43 @@ model LifecycleTransitionLog {
   @@index([profileId])
   @@index([createdAt])
   @@map("lifecycle_transition_log")
+}
+
+model Channel {
+  id          String          @id @default(uuid())
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  name        String
+  category    ChannelCategory
+  description String?
+
+  crmProfiles CrmProfile[]
+
+  @@index([category])
+  @@map("channel")
+}
+
+model ProspectingAccount {
+  id                    String                     @id @default(uuid())
+  createdAt             DateTime                   @default(now()) @map("created_at")
+  updatedAt             DateTime                   @updatedAt @map("updated_at")
+  identityId            String                     @map("identity_id")
+  accountType           ProspectingAccountType     @map("account_type")
+  status                ProspectingAccountStatus   @default(new)
+  reasonForContact      String?                    @map("reason_for_contact")
+  priority              Int                        @default(1)
+  assignedToIdentityId  String?                    @map("assigned_to_identity_id")
+  lastContactedAt       DateTime?                  @map("last_contacted_at")
+  expectedCloseAt       DateTime?                  @map("expected_close_at")
+
+  identity   Identity  @relation("prospectingContact", fields: [identityId], references: [id], onDelete: Cascade)
+  assignedTo Identity? @relation("prospectingAssignee", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([identityId])
+  @@index([status])
+  @@index([assignedToIdentityId])
+  @@index([expectedCloseAt])
+  @@map("prospecting_account")
 }
 
 model CrmOpportunity {

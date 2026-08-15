@@ -47,6 +47,10 @@ export interface PublicLeadInput {
   contact: string;
   message?: string;
   source?: string;
+  sourceChannelId?: string;
+  sourceMedium?: string;
+  sourceCampaign?: string;
+  referrerIdentityId?: string;
 }
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -74,6 +78,10 @@ export async function ensureCrmProfile(
     lifecycleStage?: CrmLifecycleStage;
     source?: string;
     preferredChannel?: string;
+    sourceChannelId?: string;
+    sourceMedium?: string;
+    sourceCampaign?: string;
+    referrerIdentityId?: string;
   } = {}
 ) {
   return db.crmProfile.upsert({
@@ -84,10 +92,18 @@ export async function ensureCrmProfile(
       firstSource: defaults.source,
       lastSource: defaults.source,
       preferredChannel: defaults.preferredChannel,
+      sourceChannelId: defaults.sourceChannelId,
+      sourceMedium: defaults.sourceMedium,
+      sourceCampaign: defaults.sourceCampaign,
+      referrerIdentityId: defaults.referrerIdentityId,
     },
     update: {
       ...(defaults.source ? { lastSource: defaults.source } : {}),
       ...(defaults.preferredChannel ? { preferredChannel: defaults.preferredChannel } : {}),
+      ...(defaults.sourceChannelId ? { sourceChannelId: defaults.sourceChannelId } : {}),
+      ...(defaults.sourceMedium ? { sourceMedium: defaults.sourceMedium } : {}),
+      ...(defaults.sourceCampaign ? { sourceCampaign: defaults.sourceCampaign } : {}),
+      ...(defaults.referrerIdentityId ? { referrerIdentityId: defaults.referrerIdentityId } : {}),
     },
   });
 }
@@ -274,6 +290,10 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
       lifecycleStage: 'prospect',
       source,
       preferredChannel: parsed.preferredChannel,
+      sourceChannelId: input.sourceChannelId,
+      sourceMedium: input.sourceMedium,
+      sourceCampaign: input.sourceCampaign,
+      referrerIdentityId: input.referrerIdentityId,
     });
     await tx.crmConsent.create({
       data: {

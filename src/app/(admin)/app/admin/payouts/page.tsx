@@ -7,7 +7,7 @@ export default async function AdminPayoutsPage() {
   const payouts = await prisma.payout.findMany({
     include: {
       recordedBy: { select: { firstName: true, lastName: true } },
-      provider: { select: { businessName: true } },
+      provider: { select: { name: true } },
       ownerStatement: { select: { id: true } },
     },
     orderBy: { createdAt: 'desc' },

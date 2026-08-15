@@ -4,9 +4,9 @@ import { getLabels } from '@/lib/i18n';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStatementsPage() {
-  const statements = await prisma.statement.findMany({
+  const statements = await prisma.ownerStatement.findMany({
     include: {
-      unitEngagement: {
+      engagement: {
         include: {
           owner: { select: { firstName: true, lastName: true } },
           unit: { select: { name: true } },
@@ -51,10 +51,10 @@ export default async function AdminStatementsPage() {
                     {`${s.periodStart.toLocaleDateString()} – ${s.periodEnd.toLocaleDateString()}`}
                   </td>
                   <td className="px-12 py-8">
-                    {`${s.unitEngagement?.owner?.firstName} ${s.unitEngagement?.owner?.lastName}`}
+                    {`${s.engagement?.owner?.firstName} ${s.engagement?.owner?.lastName}`}
                   </td>
-                  <td className="px-12 py-8">{s.unitEngagement?.unit?.name || '—'}</td>
-                  <td className="px-12 py-8 text-right font-mono">{(s.netThb / 100).toFixed(2)}</td>
+                  <td className="px-12 py-8">{s.engagement?.unit?.name || '—'}</td>
+                  <td className="px-12 py-8 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>

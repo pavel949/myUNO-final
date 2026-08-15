@@ -20,17 +20,14 @@ export async function GET(
 
     const statementId = params.statementId
 
-    // Fetch statement with ledger entries
+    // Fetch statement with its ledger entries
     const statement = await prismadb.ownerStatement.findUnique({
       where: { id: statementId },
       include: {
+        unit: true,
         ledgerEntries: {
-          orderBy: { occurredOn: 'desc' },
-        },
-        unit: {
-          select: {
-            id: true,
-            name: true,
+          orderBy: {
+            occurredOn: 'desc',
           },
         },
       },
@@ -43,45 +40,42 @@ export async function GET(
       )
     }
 
-    // Group ledger entries by type
-    const groupedByType = statement.ledgerEntries.reduce(
-      (acc, entry) => {
-        if (!acc[entry.entryType]) {
-          acc[entry.entryType] = []
-        }
-        acc[entry.entryType].push(entry)
-        return acc
-      },
-      {} as Record<string, typeof statement.ledgerEntries>
-    )
+    // Map ledger entries to line items
+    const lineItems = statement.ledgerEntries.map((entry) => ({
+      id: entry.id,
+      category: entry.entryType,
+      description: entry.description,
+      amount: entry.amountThb,
+      occurredOn: entry.occurredOn.toISOString(),
+      bookingId: entry.bookingId,
+      serviceOrderId: entry.serviceOrderId,
+    }))
 
-    // Calculate totals by type
-    const totals = Object.entries(groupedByType).reduce(
-      (acc, [type, entries]) => {
-        acc[type] = entries.reduce((sum, entry) => sum + entry.amountThb, 0)
-        return acc
-      },
-      {} as Record<string, number>
-    )
+    // Calculate totals by category
+    const totals: Record<string, number> = {}
+    lineItems.forEach((item) => {
+      if (!totals[item.category]) {
+        totals[item.category] = 0
+      }
+      totals[item.category] += item.amount
+    })
 
     return NextResponse.json({
       success: true,
       statement: {
         id: statement.id,
-        periodStart: statement.periodStart,
-        periodEnd: statement.periodEnd,
+        unitId: statement.unitId,
+        periodStart: statement.periodStart.toISOString(),
+        periodEnd: statement.periodEnd.toISOString(),
+        grossRevenue: statement.grossRevenueTh,
+        totalCosts: statement.totalCostsTh,
+        noi: statement.noiTh,
+        ownerShare: statement.ownerShareTh,
+        estateShare: statement.estateShareTh,
         status: statement.status,
-        unitName: statement.unit.name,
-        grossRevenueTh: statement.grossRevenueTh,
-        totalCostsTh: statement.totalCostsTh,
-        noiTh: statement.noiTh,
-        ownerShareTh: statement.ownerShareTh,
-        estateShareTh: statement.estateShareTh,
       },
-      ledgerEntries: statement.ledgerEntries,
-      groupedByType,
+      lineItems,
       totals,
-      entryCount: statement.ledgerEntries.length,
     })
   } catch (error) {
     console.error('[STATEMENT LINE ITEMS]', error)

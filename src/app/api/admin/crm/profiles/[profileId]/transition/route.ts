@@ -75,11 +75,25 @@ export async function POST(
       )
     }
 
-    // Update profile with new stage
+    // Update profile with new stage and audit fields
     const updatedProfile = await prismadb.crmProfile.update({
       where: { id: profileId },
       data: {
         lifecycleStage: body.to_stage,
+        lifecycleChangedAt: new Date(),
+        lifecycleChangeReason: body.reason,
+        lifecycleChangeApprovedBy: currentUser.identityId,
+      },
+    })
+
+    // Create audit log entry
+    await prismadb.lifecycleTransitionLog.create({
+      data: {
+        profileId,
+        fromStage: currentStage,
+        toStage: body.to_stage,
+        reason: body.reason,
+        approvedByIdentityId: currentUser.identityId,
       },
     })
 

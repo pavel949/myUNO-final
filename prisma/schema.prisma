@@ -678,6 +678,33 @@ enum ProspectingAccountStatus {
   closed
 }
 
+enum ManagementFeeBasis {
+  percentage_gop
+  percentage_noi
+  percentage_gross_booking
+  fixed
+}
+
+enum FeeType {
+  management
+  performance
+  transaction
+  distribution
+}
+
+enum FeeStatus {
+  accrued
+  invoiced
+  paid
+}
+
+enum ContractStatus {
+  active
+  pending_signature
+  expired
+  terminated
+}
+
 // --- The spine ---
 
 model Identity {
@@ -768,6 +795,8 @@ model Identity {
   complianceChecklistsChecked ComplianceChecklistInstance[] @relation("complianceChecklistCheckedBy")
   prospectingAccounts       ProspectingAccount[]        @relation("prospectingContact")
   prospectingAccountsAssigned ProspectingAccount[]     @relation("prospectingAssignee")
+  managementContractsOwned  ManagementContract[]        @relation("contractOwner")
+  managementContractsSigned ManagementContract[]        @relation("contractSignatory")
 
   @@map("identity")
 }
@@ -840,6 +869,7 @@ model Project {
   metricsDaily         MetricDaily[]
   integrationAccounts  IntegrationAccount[]
   crmOpportunities     CrmOpportunity[]
+  managementContracts  ManagementContract[]
 
   @@map("project")
 }
@@ -897,6 +927,7 @@ model Unit {
   operationalKpis       OperationalKpi[]
   incidentLogs          IncidentLog[]
   complianceChecklistInstances ComplianceChecklistInstance[]
+  managementContracts   ManagementContract[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -2376,6 +2407,68 @@ model CrmAttributionTouch {
   @@index([identityId, occurredAt])
   @@index([source, campaign, occurredAt])
   @@map("crm_attribution_touch")
+}
+
+// --- Business Model Tracking (management contracts and earned fees) ---
+
+model ManagementContract {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId                    String              @map("unit_id")
+  projectId                 String              @map("project_id")
+  ownerIdentityId           String              @map("owner_identity_id")
+  managementFeeBasis        ManagementFeeBasis  @map("management_fee_basis")
+  managementFeeRate         Decimal?            @map("management_fee_rate") @db.Decimal(5, 4)
+  managementFeeFixedAmount  Int?                @map("management_fee_fixed_amount")
+  performanceFeeEnabled     Boolean             @default(false) @map("performance_fee_enabled")
+  performanceFeeBasis       String?             @map("performance_fee_basis")
+  performanceFeeRate        Decimal?            @map("performance_fee_rate") @db.Decimal(5, 4)
+  performanceFeeBaseline    Int?                @map("performance_fee_baseline")
+  contractStartDate         DateTime            @map("contract_start_date") @db.Date
+  contractEndDate           DateTime?           @map("contract_end_date") @db.Date
+  status                    ContractStatus      @default(active)
+  signedAt                  DateTime?           @map("signed_at")
+  signedByOwnerIdentityId   String?             @map("signed_by_owner_identity_id")
+
+  // Relations
+  unit              Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ownerIdentity     Identity  @relation("contractOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  signedByIdentity  Identity? @relation("contractSignatory", fields: [signedByOwnerIdentityId], references: [id], onDelete: SetNull)
+  earnedFees        EarnedFee[]
+
+  @@index([unitId])
+  @@index([projectId])
+  @@index([ownerIdentityId])
+  @@index([status])
+  @@index([contractStartDate])
+  @@map("management_contract")
+}
+
+model EarnedFee {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  managementContractId String    @map("management_contract_id")
+  feeType              FeeType   @map("fee_type")
+  periodStart          DateTime  @map("period_start") @db.Date
+  periodEnd            DateTime  @map("period_end") @db.Date
+  calculationBasis     String    @map("calculation_basis")
+  amount               Int
+  status               FeeStatus @default(accrued)
+  invoiceId            String?   @map("invoice_id")
+  paidAt               DateTime? @map("paid_at")
+
+  // Relations
+  managementContract ManagementContract @relation(fields: [managementContractId], references: [id], onDelete: Cascade)
+
+  @@index([managementContractId])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+  @@index([feeType])
+  @@map("earned_fee")
 }
 
 // --- Integrations (iCal, payment providers, messaging, controlled exports) ---

@@ -1,3 +1,5 @@
+'use client';
+
 import { FC } from 'react';
 import { MarketplaceHeader, MarketplaceGrid } from '@/app/components/marketplace';
 

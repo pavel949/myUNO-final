@@ -7,7 +7,7 @@ export default async function AdminPayoutsPage() {
   const payouts = await prisma.payout.findMany({
     include: {
       recordedBy: { select: { firstName: true, lastName: true } },
-      provider: { select: { name: true } },
+      provider: { select: { businessName: true } },
       ownerStatement: { select: { id: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -16,10 +16,11 @@ export default async function AdminPayoutsPage() {
 
   const labels = await getLabels({
     'admin.payouts.title': 'Payouts',
-    'admin.payouts.empty': 'No payouts yet.',
+    'admin.payouts.empty': 'No payouts recorded.',
+    'admin.payouts.reference': 'Reference',
     'admin.payouts.amount': 'Amount (฿)',
     'admin.payouts.status': 'Status',
-    'admin.payouts.recorded_by': 'Recorded by',
+    'admin.payouts.recorded_by': 'Recorded By',
   });
 
   return (
@@ -34,7 +35,7 @@ export default async function AdminPayoutsPage() {
           <table className="w-full text-small">
             <thead>
               <tr className="border-b border-border-line">
-                <th className="px-12 py-12 text-left">Reference</th>
+                <th className="px-12 py-12 text-left">{labels['admin.payouts.reference']}</th>
                 <th className="px-12 py-12 text-right">{labels['admin.payouts.amount']}</th>
                 <th className="px-12 py-12 text-left">{labels['admin.payouts.status']}</th>
                 <th className="px-12 py-12 text-left">{labels['admin.payouts.recorded_by']}</th>
@@ -43,13 +44,11 @@ export default async function AdminPayoutsPage() {
             <tbody>
               {payouts.map((p) => (
                 <tr key={p.id} className="border-b border-border-line">
-                  <td className="px-12 py-8">{p.reference}</td>
+                  <td className="px-12 py-8 font-mono">{p.reference}</td>
                   <td className="px-12 py-8 text-right font-mono">{(p.amountThb / 100).toFixed(2)}</td>
-                  <td className="px-12 py-8 capitalize text-small">{p.status}</td>
-                  <td className="px-12 py-8 text-small">
-                    {p.recordedBy
-                      ? `${p.recordedBy.firstName} ${p.recordedBy.lastName}`
-                      : '—'}
+                  <td className="px-12 py-8">{p.status}</td>
+                  <td className="px-12 py-8">
+                    {`${p.recordedBy?.firstName} ${p.recordedBy?.lastName}`}
                   </td>
                 </tr>
               ))}

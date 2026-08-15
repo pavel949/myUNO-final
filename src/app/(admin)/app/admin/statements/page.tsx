@@ -1,11 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { listProjects } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStatementsPage() {
-  const projects = await listProjects();
   const statements = await prisma.statement.findMany({
     include: {
       unitEngagement: {

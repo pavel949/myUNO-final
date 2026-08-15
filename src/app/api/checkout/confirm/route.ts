@@ -16,13 +16,16 @@ import { track } from '@/modules/analytics';
  * unauthenticated confirm would let anyone mark a booking paid.
  */
 export async function POST(req: NextRequest) {
+  let sessionId: string | null = null;
+
   try {
     const user = await getCurrentUser();
     if (!user) {
       throw createPublicError('unauthorized', 401);
     }
 
-    const { sessionId } = await req.json();
+    const body = await req.json();
+    sessionId = body.sessionId;
 
     if (!sessionId || typeof sessionId !== 'string') {
       throw createPublicError('sessionId is required', 400);

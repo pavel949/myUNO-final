@@ -20,7 +20,7 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard: FC<PropertyCardProps> = ({
-  id,
+  id: _id,
   title,
   price,
   image,

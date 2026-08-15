@@ -18,7 +18,7 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard: FC<ProjectCardProps> = ({
-  id,
+  id: _id,
   name,
   description,
   coverImage,
@@ -37,7 +37,6 @@ export const ProjectCard: FC<ProjectCardProps> = ({
   };
 
   const brandColor = brandColors[brand];
-  const occupancyRate = unitCount > 0 ? ((availableCount / unitCount) * 100).toFixed(0) : 0;
 
   return (
     <div

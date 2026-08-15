@@ -2,7 +2,7 @@ import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/cli
 import { sendEmail, buildNotificationEmail } from './email.seam';
 import { track } from '@/modules/analytics';
 import { sendMessengerMessage, MessengerChannel } from '@/modules/integrations';
-import { config } from '@/modules/config';
+import { getConfig } from '@/modules/config';
 
 export interface CreateNotificationInput {
   identityId: string;
@@ -48,7 +48,7 @@ export async function createNotification(
         // Skip messenger channels if disabled
         if (channel === 'whatsapp' || channel === 'telegram') {
           const enabledKey = channel === 'whatsapp' ? 'notify.channel.whatsapp.enabled' : 'notify.channel.telegram.enabled';
-          const isEnabled = await config.get(db, enabledKey);
+          const isEnabled = await getConfig(db, enabledKey);
           if (!isEnabled) {
             continue; // Skip creating delivery if channel disabled
           }

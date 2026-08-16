@@ -94,9 +94,11 @@ export async function sendMessengerMessage(
     // 2. Send the message
     // 3. Return external message ID for tracking
     //
-    // For loop one, just log that the message would be sent.
+    // For loop one, record only that a send happened. The recipient's contact
+    // details and the message body are personal data and never reach the logs
+    // (doc 12) — a stub is not a licence to print PII.
     console.log(
-      `[Messenger stub] ${channel} message to ${recipientPhone}: ${messageBody}`
+      `[Messenger stub] ${channel} message queued (${messageBody.length} chars)`
     );
 
     // Record sync attempt

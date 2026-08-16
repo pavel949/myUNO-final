@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { resetDb, createIdentity, createProject, createUnit, createProvider, createService } from '@/test/util';
 import { prisma } from '@/lib/prisma';
+import { seedConfig } from '@/modules/config/seed';
 import {
   track,
   rollupMetricsDaily,
@@ -14,6 +15,10 @@ import { AnalyticsEventKey, BookingStatus, BuyerSignalKey } from '@prisma/client
 describe('Analytics Module', () => {
   beforeEach(async () => {
     await resetDb();
+    // The buyer-signal detectors read their thresholds from the config
+    // registry (doc 04 §7), so the registry has to exist here as it does in
+    // every running environment.
+    await seedConfig(prisma);
   });
 
   describe('track', () => {

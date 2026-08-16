@@ -115,7 +115,19 @@ export async function createNotification(
               // For loop one, phone numbers aren't captured in Identity; stub sends via config scope
               // In production, Identity would have a phone field or MessengerProfile would link it
               const messengerChannel = channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM;
-              const result = await sendMessengerMessage(db, messengerChannel, email, bodyKey, undefined, false);
+
+              // A messenger carries the same rendered sentence the email does
+              // (T-040: "template rendering from the same content keys").
+              // Sending `bodyKey` raw would deliver "notify.stay_confirmed.body"
+              // to the guest.
+              const { body } = await buildNotificationEmail(db, {
+                titleKey,
+                bodyKey,
+                params,
+                locale: identity.preferredLocale,
+              });
+
+              const result = await sendMessengerMessage(db, messengerChannel, email, body, undefined, false);
 
               // Update delivery status
               await db.notificationDelivery.update({

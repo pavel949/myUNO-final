@@ -1808,6 +1808,19 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.statement.signoff_already_signed', namespace: 'owner', description: 'Owner already signed this statement', en: 'You have already signed this statement.', ru: 'Вы уже подписали этот отчёт.', th: 'คุณได้ลงนามในรายงานนี้แล้ว', status: NR },
   { key: 'owner.statement.signoff_timeout', namespace: 'owner', description: 'Sign-off request timed out', en: 'The request took too long. Please try again.', ru: 'Запрос занял слишком много времени. Попробуйте ещё раз.', th: 'คำขอใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง', status: NR },
 
+  // Finance & reconciliation (doc 10 §9, T-031)
+  { key: 'finance.reconciliation.title', namespace: 'finance', description: 'Reconciliation board page title', en: 'Reconciliation Board', ru: 'Таблица согласования платежей', th: 'บอร์ดสมานฉันท์', status: NR },
+  { key: 'finance.reconciliation.description', namespace: 'finance', description: 'Reconciliation board description', en: 'Manage unmatched payments, failed refunds, and pending payouts.', ru: 'Управляйте непопадающими платежами, неудачными возвратами и ожидающими платежами.', th: 'จัดการการชำระเงินที่ไม่ตรงกัน การคืนเงินที่ล้มเหลว และการชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.unmatched_payments', namespace: 'finance', description: 'Unmatched payments section title', en: 'Unmatched Payments', ru: 'Непопадающие платежи', th: 'การชำระเงินที่ไม่ตรงกัน', status: NR },
+  { key: 'finance.reconciliation.failed_refunds', namespace: 'finance', description: 'Failed refunds section title', en: 'Failed Refunds', ru: 'Неудачные возвраты', th: 'การคืนเงินที่ล้มเหลว', status: NR },
+  { key: 'finance.reconciliation.pending_payouts', namespace: 'finance', description: 'Pending payouts section title', en: 'Pending Payouts', ru: 'Ожидающие платежи', th: 'การชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.retry_refund', namespace: 'finance', description: 'Retry refund button', en: 'Retry', ru: 'Повторить', th: 'ลองใหม่', status: NR },
+  { key: 'finance.reconciliation.write_off', namespace: 'finance', description: 'Write off refund button', en: 'Write Off', ru: 'Списать', th: 'ปลดตัวแบบ', status: NR },
+  { key: 'finance.reconciliation.mark_reconciled', namespace: 'finance', description: 'Mark payout as reconciled button', en: 'Mark Reconciled', ru: 'Отметить согласованный', th: 'ทำเครื่องหมายว่าสมานฉันท์แล้ว', status: NR },
+  { key: 'finance.reconciliation.empty', namespace: 'finance', description: 'Reconciliation board empty state', en: 'No reconciliation data', ru: 'Нет данных согласования', th: 'ไม่มีข้อมูลการสมานฉันท์', status: NR },
+  { key: 'finance.reconciliation.all_clear', namespace: 'finance', description: 'Reconciliation board all clear title', en: 'All Clear', ru: 'Всё в порядке', th: 'ทั้งหมดชัดเจน', status: NR },
+  { key: 'finance.reconciliation.no_issues', namespace: 'finance', description: 'Reconciliation board all clear description', en: 'No unmatched payments, failed refunds, or pending payouts.', ru: 'Нет непопадающих платежей, неудачных возвратов или ожидающих платежей.', th: 'ไม่มีการชำระเงินที่ไม่ตรงกัน การคืนเงินที่ล้มเหลว หรือการชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },

@@ -4,6 +4,8 @@ import React from 'react';
 import { Button } from '@/components';
 
 interface QuickActionsRowProps {
+  /** Resolved copy from the content layer — the row never writes its own. */
+  labels: Record<string, string>;
   onMessageHost?: () => void;
   onOrderService?: () => void;
   onRaiseIssue?: () => void;
@@ -11,7 +13,7 @@ interface QuickActionsRowProps {
 }
 
 export const QuickActionsRow = React.forwardRef<HTMLDivElement, QuickActionsRowProps>(
-  ({ onMessageHost, onOrderService, onRaiseIssue, onExtendStay }, ref) => {
+  ({ labels, onMessageHost, onOrderService, onRaiseIssue, onExtendStay }, ref) => {
     return (
       <div ref={ref} className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-40">
         <Button
@@ -20,7 +22,7 @@ export const QuickActionsRow = React.forwardRef<HTMLDivElement, QuickActionsRowP
           onClick={onMessageHost}
           className="text-body"
         >
-          💬 Message Host
+          {labels['home.action.message_host']}
         </Button>
         <Button
           variant="secondary"
@@ -28,7 +30,7 @@ export const QuickActionsRow = React.forwardRef<HTMLDivElement, QuickActionsRowP
           onClick={onOrderService}
           className="text-body"
         >
-          🛠️ Order Service
+          {labels['home.action.order_service']}
         </Button>
         <Button
           variant="secondary"
@@ -36,7 +38,7 @@ export const QuickActionsRow = React.forwardRef<HTMLDivElement, QuickActionsRowP
           onClick={onRaiseIssue}
           className="text-body"
         >
-          🚨 Raise Issue
+          {labels['home.action.raise_issue']}
         </Button>
         <Button
           variant="sun"
@@ -44,7 +46,7 @@ export const QuickActionsRow = React.forwardRef<HTMLDivElement, QuickActionsRowP
           onClick={onExtendStay}
           className="text-body"
         >
-          📅 Extend Stay
+          {labels['home.action.extend_stay']}
         </Button>
       </div>
     );

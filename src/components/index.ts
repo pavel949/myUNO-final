@@ -6,9 +6,18 @@ export { ServiceCategoryIcon, SERVICE_CATEGORY_ICON_NAMES } from './ServiceCateg
 export { Avatar } from './Avatar';
 export { Badge, VerifiedBadge } from './Badge';
 export { EmptyState, LoadingState, ErrorState } from './StateComponents';
+export { RoleContextBanner } from './RoleContextBanner';
 
 // Owner components
 export { StatTile, ProjectSwitcher, BookingsList, LatestStatementCard, OpenTicketsList, SellInterestCard, OwnerStayModal } from './owner';
 
 // In-stay components
-export { StayCard, QuickActionsRow, ActiveOrdersList, AnnouncementsSection } from './instay';
+export {
+  StayCard,
+  QuickActionsRow,
+  ActiveOrdersList,
+  AnnouncementsSection,
+  ServicesRail,
+  ExtendStayPanel,
+  type RailService,
+} from './instay';

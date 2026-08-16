@@ -2093,6 +2093,41 @@ const HOME_KEYS: KeyDef[] = [
   { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
   { key: 'home.concierge_whatsapp', namespace: 'home', description: 'Home space: concierge WhatsApp CTA', en: 'Message the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过WhatsApp联系礼宾', status: NR },
   { key: 'home.shuttle.title', namespace: 'home', description: 'Home space: shuttle schedule title', en: 'Beach shuttle schedule', ru: 'Расписание шаттла до пляжа', zh: '海滩班车时刻表', status: NR },
+
+  // Stay card (T-034 · S6 hero)
+  { key: 'home.stay.check_in', namespace: 'home', description: 'Stay card: check-in date label', en: 'Check-in', ru: 'Заезд', zh: '入住', status: NR },
+  { key: 'home.stay.check_out', namespace: 'home', description: 'Stay card: check-out date label', en: 'Check-out', ru: 'Выезд', zh: '退房', status: NR },
+  { key: 'home.stay.checked_in_note', namespace: 'home', description: 'Stay card: note shown once the guest has checked in', en: 'You are checked in. Everything you need is on this page.', ru: 'Вы заселились. Всё необходимое — на этой странице.', zh: '您已入住。所需的一切都在此页面上。', status: NR },
+  { key: 'home.stay.visiting_from', namespace: 'home', description: 'Stay card: guest nationality line ({nationality})', en: 'Visiting from {nationality}', ru: 'Гость из {nationality}', zh: '来自{nationality}', status: NR },
+  { key: 'home.stay_status.confirmed', namespace: 'home', description: 'Stay card status chip: confirmed', en: 'Confirmed', ru: 'Подтверждено', zh: '已确认', status: NR },
+  { key: 'home.stay_status.checked_in', namespace: 'home', description: 'Stay card status chip: checked in', en: 'Checked in', ru: 'Заселён', zh: '已入住', status: NR },
+  { key: 'home.stay_status.checked_out', namespace: 'home', description: 'Stay card status chip: checked out', en: 'Checked out', ru: 'Выехал', zh: '已退房', status: NR },
+
+  // Quick actions row (T-034 · S6)
+  { key: 'home.action.message_host', namespace: 'home', description: 'Quick action: open a thread with the host/ops', en: 'Message host', ru: 'Написать хозяину', zh: '联系房东', status: NR },
+  { key: 'home.action.order_service', namespace: 'home', description: 'Quick action: go to services for this stay', en: 'Order a service', ru: 'Заказать услугу', zh: '预订服务', status: NR },
+  { key: 'home.action.raise_issue', namespace: 'home', description: 'Quick action: raise a ticket about this stay', en: 'Raise an issue', ru: 'Сообщить о проблеме', zh: '报告问题', status: NR },
+  { key: 'home.action.extend_stay', namespace: 'home', description: 'Quick action: extend the stay', en: 'Extend stay', ru: 'Продлить проживание', zh: '延长住宿', status: NR },
+
+  // Services rail (T-034 · S6)
+  { key: 'home.services.title', namespace: 'home', description: 'Services rail heading', en: 'Services for your stay', ru: 'Услуги для вашего проживания', zh: '为您的住宿提供的服务', status: NR },
+  { key: 'home.services.vetted', namespace: 'home', description: 'Services rail: vetted-provider badge', en: 'Vetted', ru: 'Проверен', zh: '已审核', status: NR },
+  { key: 'home.services.from', namespace: 'home', description: 'Services rail: price prefix', en: 'from', ru: 'от', zh: '起价', status: NR },
+
+  // In-stay extension (T-034 · F-GUEST-7 → F-GUEST-9)
+  { key: 'home.extend.title', namespace: 'home', description: 'Extension panel heading', en: 'Stay longer', ru: 'Остаться дольше', zh: '延长住宿', status: NR },
+  { key: 'home.extend.description', namespace: 'home', description: 'Extension panel explanation', en: 'Choose a new check-out date. We will check the calendar and price the extra nights before anything is charged.', ru: 'Выберите новую дату выезда. Мы проверим календарь и рассчитаем стоимость дополнительных ночей до оплаты.', zh: '请选择新的退房日期。我们会先核对日历并计算额外住宿费用，然后再收费。', status: NR },
+  { key: 'home.extend.new_end_date', namespace: 'home', description: 'Extension panel: new check-out date field label', en: 'New check-out date', ru: 'Новая дата выезда', zh: '新的退房日期', status: NR },
+  { key: 'home.extend.submit', namespace: 'home', description: 'Extension panel: submit button', en: 'Check availability', ru: 'Проверить доступность', zh: '查询空房', status: NR },
+  { key: 'home.extend.note', namespace: 'home', description: 'Extension panel: note about payment of added nights', en: 'The extra nights are added to your stay balance and paid separately.', ru: 'Дополнительные ночи добавляются к остатку по проживанию и оплачиваются отдельно.', zh: '额外的住宿夜数将计入您的住宿余额，另行支付。', status: NR },
+  { key: 'home.extend.error_generic', namespace: 'home', description: 'Extension panel: generic failure message', en: 'We could not extend the stay. Please try again or message the host.', ru: 'Не удалось продлить проживание. Попробуйте ещё раз или напишите хозяину.', zh: '无法延长住宿。请重试或联系房东。', status: NR },
+
+  // Role context banner (T-034 · doc 06 §3, F-OWN-6)
+  { key: 'home.role_context', namespace: 'home', description: 'Role context banner sentence ({role}, {unit})', en: 'You are also the {role} of {unit}. This page shows your stay.', ru: 'Вы также {role} объекта {unit}. Здесь показано ваше проживание.', zh: '您同时是{unit}的{role}。此页面显示您的住宿。', status: NR },
+  { key: 'home.role_context.owner_link', namespace: 'home', description: 'Role context banner: link back to the owner dashboard', en: 'Go to owner dashboard', ru: 'Перейти в кабинет владельца', zh: '前往业主面板', status: NR },
+  { key: 'home.role.owner', namespace: 'home', description: 'Role name in the context banner: owner', en: 'owner', ru: 'владелец', zh: '业主', status: NR },
+  { key: 'home.role.resident', namespace: 'home', description: 'Role name in the context banner: resident', en: 'resident', ru: 'резидент', zh: '住户', status: NR },
+  { key: 'home.role.buyer', namespace: 'home', description: 'Role name in the context banner: buyer', en: 'buyer', ru: 'покупатель', zh: '买家', status: NR },
 ];
 
 const ADMIN_S3_KEYS: KeyDef[] = [

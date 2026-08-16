@@ -1805,6 +1805,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.statement.signoff_awaiting_operator', namespace: 'owner', description: 'Statement sign-off: waiting on myUNO', en: 'Awaiting myUNO’s signature', ru: 'Ожидает подписи myUNO', th: 'รอลายเซ็นของ myUNO', status: NR },
   { key: 'owner.statement.signoff_approved', namespace: 'owner', description: 'Statement sign-off: both signatures recorded', en: 'Approved', ru: 'Утверждён', th: 'อนุมัติแล้ว', status: NR },
   { key: 'owner.statement.signoff_error', namespace: 'owner', description: 'Statement sign-off failed', en: 'We could not record your sign-off. Please try again.', ru: 'Не удалось записать вашу подпись. Попробуйте ещё раз.', th: 'เราไม่สามารถบันทึกการลงนามของคุณได้ กรุณาลองใหม่อีกครั้ง', status: NR },
+  { key: 'owner.statement.signoff_already_signed', namespace: 'owner', description: 'Owner already signed this statement', en: 'You have already signed this statement.', ru: 'Вы уже подписали этот отчёт.', th: 'คุณได้ลงนามในรายงานนี้แล้ว', status: NR },
+  { key: 'owner.statement.signoff_timeout', namespace: 'owner', description: 'Sign-off request timed out', en: 'The request took too long. Please try again.', ru: 'Запрос занял слишком много времени. Попробуйте ещё раз.', th: 'คำขอใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง', status: NR },
 
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },

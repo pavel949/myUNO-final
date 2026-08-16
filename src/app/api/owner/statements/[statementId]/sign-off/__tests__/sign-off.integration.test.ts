@@ -157,6 +157,36 @@ describe('Owner statement sign-off (Q33)', () => {
     expect(res.status).toBe(404)
   })
 
+  it('404s on a closed statement (signed_off)', async () => {
+    const statement = await createStatement('signed_off')
+
+    const res = await ownerSignOff(put(statement.id), {
+      params: { statementId: statement.id },
+    })
+
+    expect(res.status).toBe(404)
+  })
+
+  it('404s on a closed statement (distributed)', async () => {
+    const statement = await createStatement('distributed')
+
+    const res = await ownerSignOff(put(statement.id), {
+      params: { statementId: statement.id },
+    })
+
+    expect(res.status).toBe(404)
+  })
+
+  it('404s on a closed statement (superseded)', async () => {
+    const statement = await createStatement('superseded')
+
+    const res = await ownerSignOff(put(statement.id), {
+      params: { statementId: statement.id },
+    })
+
+    expect(res.status).toBe(404)
+  })
+
   it('404s on a statement that does not exist', async () => {
     const res = await ownerSignOff(put('no-such-statement'), {
       params: { statementId: 'no-such-statement' },

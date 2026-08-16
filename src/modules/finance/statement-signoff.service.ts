@@ -1,4 +1,4 @@
-import { OwnerStatementStatus, Prisma, PrismaClient } from '@prisma/client';
+import type { OwnerStatementStatus, Prisma, PrismaClient } from '@prisma/client';
 
 /**
  * Statement sign-off — the one place the two signatures are recorded.
@@ -15,9 +15,12 @@ import { OwnerStatementStatus, Prisma, PrismaClient } from '@prisma/client';
 export type StatementSignOffActor = 'owner' | 'operator';
 
 /**
- * The statuses an owner may open and sign. A `draft` statement has not passed
- * the admin sign-off gate (doc 10 money rules — "statements gate on admin
+ * The statuses an owner may **open and read**. A `draft` statement has not
+ * passed the admin sign-off gate (doc 10 money rules — "statements gate on admin
  * sign-off"), so it is not the owner's to read; everything past that point is.
+ *
+ * This is a visibility decision only. It must never gate a write — see
+ * `SIGNABLE_STATEMENT_STATUSES`.
  */
 export const OWNER_VISIBLE_STATEMENT_STATUSES: OwnerStatementStatus[] = [
   'published',
@@ -31,6 +34,29 @@ export function isOwnerVisibleStatementStatus(
   status: OwnerStatementStatus
 ): boolean {
   return OWNER_VISIBLE_STATEMENT_STATUSES.includes(status);
+}
+
+/**
+ * The statuses a signature may still be **written onto** — a strict subset of
+ * the visible set.
+ *
+ * Reading and signing are two different decisions and need two different lists.
+ * A closed statement (`signed_off`, `distributed`, `superseded`) stays readable
+ * for the owner's records, but it is finished: taking a fresh signature on it
+ * would re-stamp `approvedAt` and, for a `distributed` or `superseded`
+ * statement, rewrite its status back to `signed_off` — losing the fact that the
+ * money already went out or that a corrected statement replaced this one. The
+ * ledger is append-only (CLAUDE.md money rules) and a closed statement is too.
+ */
+export const SIGNABLE_STATEMENT_STATUSES: OwnerStatementStatus[] = [
+  'published',
+  'pending_owner_review',
+];
+
+export function isSignableStatementStatus(
+  status: OwnerStatementStatus
+): boolean {
+  return SIGNABLE_STATEMENT_STATUSES.includes(status);
 }
 
 /** The minimum a caller needs to authorize and evaluate a sign-off. */
@@ -91,7 +117,8 @@ export function hasSignedOff(
  * owner signing first leaves the status where it was.
  *
  * The caller authorizes first — this function assumes the actor is allowed and
- * that `hasSignedOff` was checked.
+ * that `hasSignedOff` was checked. Atomicity: uses updateMany with a guard
+ * clause so concurrent requests detect collisions instead of overwriting.
  */
 export async function recordStatementSignOff(
   db: PrismaClient,
@@ -116,17 +143,33 @@ export async function recordStatementSignOff(
     data.status = 'pending_owner_review';
   }
 
-  const updated = await db.ownerStatement.update({
-    where: { id: state.id },
+  // Guard clause: the signature field must still be null. If a concurrent
+  // request already signed, updateMany returns zero rows and we detect it.
+  const guardWhere: Prisma.OwnerStatementWhereInput =
+    actor === 'owner'
+      ? { id: state.id, signedOffByOwnerAt: null }
+      : { id: state.id, signedOffByOperatorAt: null };
+
+  const updated = await db.ownerStatement.updateMany({
+    where: guardWhere,
     data,
   });
 
+  if (updated.count === 0) {
+    throw new Error('Conflict: statement already signed by this actor');
+  }
+
+  // Re-fetch to return the full updated state.
+  const refreshed = await db.ownerStatement.findUniqueOrThrow({
+    where: { id: state.id },
+  });
+
   return {
-    id: updated.id,
-    unitId: updated.unitId,
-    status: updated.status,
-    signedOffByOwnerAt: updated.signedOffByOwnerAt?.toISOString() ?? null,
-    signedOffByOperatorAt: updated.signedOffByOperatorAt?.toISOString() ?? null,
-    approvedAt: updated.approvedAt?.toISOString() ?? null,
+    id: refreshed.id,
+    unitId: refreshed.unitId,
+    status: refreshed.status,
+    signedOffByOwnerAt: refreshed.signedOffByOwnerAt?.toISOString() ?? null,
+    signedOffByOperatorAt: refreshed.signedOffByOperatorAt?.toISOString() ?? null,
+    approvedAt: refreshed.approvedAt?.toISOString() ?? null,
   };
 }

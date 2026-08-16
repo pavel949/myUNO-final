@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button, StatTile, EmptyState } from '@/components';
+import { SIGNABLE_STATEMENT_STATUSES } from '@/modules/finance';
 import type { LineItemCategory, OwnerStatementStatus } from '@prisma/client';
 
 export interface StatementLine {
@@ -64,16 +65,18 @@ const formatCurrency = (thb: number): string => {
 };
 
 const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString(undefined, {
+  new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'Asia/Bangkok',
   });
 
 const formatMonth = (iso: string): string =>
-  new Date(iso).toLocaleDateString(undefined, {
+  new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
+    timeZone: 'Asia/Bangkok',
   });
 
 /**
@@ -112,6 +115,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [signingOff, setSigningOff] = useState(false);
   const [signOffError, setSignOffError] = useState<string | null>(null);
+  const [status, setStatus] = useState<OwnerStatementStatus>(statement.status);
   const [ownerSignedAt, setOwnerSignedAt] = useState<string | null>(
     statement.signedOffByOwnerAt
   );
@@ -235,19 +239,43 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
     setSigningOff(true);
     setSignOffError(null);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch(
         `/api/owner/statements/${statement.id}/sign-off`,
-        { method: 'PUT' }
+        {
+          method: 'PUT',
+          signal: controller.signal,
+        }
       );
+
+      clearTimeout(timeout);
       const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(labels['owner.statement.signoff_error']);
+
+      if (response.status === 409) {
+        setSignOffError(labels['owner.statement.signoff_already_signed'] || labels['owner.statement.signoff_error']);
+        return;
       }
-      setOwnerSignedAt(data?.statement?.signedOffByOwnerAt ?? new Date().toISOString());
-      setOperatorSignedAt(data?.statement?.signedOffByOperatorAt ?? operatorSignedAt);
-      setApprovedAt(data?.statement?.approvedAt ?? approvedAt);
-    } catch {
-      setSignOffError(labels['owner.statement.signoff_error']);
+
+      if (!response.ok) {
+        throw new Error(data?.error || labels['owner.statement.signoff_error']);
+      }
+
+      // Update all fields from response
+      if (data?.statement) {
+        setStatus(data.statement.status);
+        setOwnerSignedAt(data.statement.signedOffByOwnerAt);
+        setOperatorSignedAt(data.statement.signedOffByOperatorAt);
+        setApprovedAt(data.statement.approvedAt);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setSignOffError(labels['owner.statement.signoff_timeout'] || labels['owner.statement.signoff_error']);
+      } else {
+        const msg = err instanceof Error ? err.message : labels['owner.statement.signoff_error'];
+        setSignOffError(msg);
+      }
     } finally {
       setSigningOff(false);
     }
@@ -288,10 +316,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             </div>
             <span
               className={`inline-flex items-center px-16 py-8 rounded-full text-small font-medium ${
-                STATUS_CLASSES[statement.status]
+                STATUS_CLASSES[status]
               }`}
             >
-              {labels[`common.status.statement.${statement.status}`]}
+              {labels[`common.status.statement.${status}`]}
             </span>
           </div>
         </div>
@@ -426,7 +454,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                                 )}
                               </div>
                               <p className="text-body font-medium text-text-ink whitespace-nowrap">
-                                {formatCurrency(line.amountTh)}
+                                {renderAmount(line.amountTh, line.category === 'refund')}
                               </p>
                             </li>
                           ))}
@@ -526,7 +554,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
               )}
             </div>
 
-            {!ownerSignedAt && (
+            {!ownerSignedAt && SIGNABLE_STATEMENT_STATUSES.includes(status) && (
               <>
                 <p className="text-body text-text-secondary mb-16">
                   {labels['owner.statement.signoff_description']}

@@ -151,6 +151,18 @@ describe('Owner statement detail page — scoping', () => {
     ).rejects.toBeInstanceOf(NotFoundSignal)
   })
 
+  it('renders pending_owner_review statements (awaiting owner signature)', async () => {
+    const statement = await createStatement('pending_owner_review')
+
+    const element = await OwnerStatementDetailPage({
+      params: { statementId: statement.id },
+    })
+
+    const props = (element as { props: Record<string, any> }).props
+    expect(props.statement.id).toBe(statement.id)
+    expect(props.statement.status).toBe('pending_owner_review')
+  })
+
   it('sends an anonymous visitor to log in', async () => {
     const statement = await createStatement()
     mockGetCurrentUser.mockResolvedValue(null)

@@ -4,7 +4,7 @@ import prismadb from '@/app/libs/prismadb'
 import {
   getStatementSignOffState,
   hasSignedOff,
-  isOwnerVisibleStatementStatus,
+  isSignableStatementStatus,
   recordStatementSignOff,
 } from '@/modules/finance'
 
@@ -48,7 +48,9 @@ export async function PUT(
       )
     }
 
-    if (!isOwnerVisibleStatementStatus(statement.status)) {
+    // Visibility and write eligibility are separate decisions. A statement that
+    // is closed (signed_off, distributed, superseded) is readable but not signable.
+    if (!isSignableStatementStatus(statement.status)) {
       return NextResponse.json(
         { error: 'Statement not found' },
         { status: 404 }
@@ -69,6 +71,13 @@ export async function PUT(
       statement: updated,
     })
   } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Internal server error'
+    if (msg.includes('Conflict')) {
+      return NextResponse.json(
+        { error: 'The owner has already signed off this statement' },
+        { status: 409 }
+      )
+    }
     console.error('[OWNER STATEMENT SIGN OFF]', error)
     return NextResponse.json(
       { error: 'Internal server error' },

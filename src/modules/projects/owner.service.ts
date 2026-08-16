@@ -602,6 +602,7 @@ export async function getOwnerStatements(
   const allStatements = await db.ownerStatement.findMany({
     where: {
       unitId: { in: units.map((u) => u.id) },
+      ownerIdentityId,
       status: { in: OWNER_VISIBLE_STATEMENT_STATUSES },
     },
     orderBy: { periodEnd: 'desc' },

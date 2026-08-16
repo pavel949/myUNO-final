@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { submitLead, LEAD_AUDIENCES, type LeadAudience } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { checkRateLimit } from '@/app/libs/rateLimit';
 import { capturePublicLead } from '@/modules/crm';
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
 
 /**
  * POST /api/leads — public lead form on the audience pages (doc 08 §3).
@@ -14,6 +23,23 @@ import { capturePublicLead } from '@/modules/crm';
  */
 export async function POST(req: NextRequest) {
   try {
+    // This endpoint is unauthenticated and, on success, opens a thread and
+    // alerts every admin (N-29). Without a limit, one script can bury the
+    // founder's inbox and the real leads inside it. The honeypot below stops
+    // naive bots; this stops the determined ones.
+    const limit = checkRateLimit(`leads:ip:${clientIp(req)}`);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'rate_limited' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((limit.retryAfterMs ?? 60_000) / 1000)),
+          },
+        }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== 'object') {
       throw createPublicError('invalid_request', 400);

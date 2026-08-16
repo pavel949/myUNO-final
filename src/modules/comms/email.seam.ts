@@ -16,6 +16,16 @@ export interface SendEmailInput {
 }
 
 /**
+ * Reduce an address to something a developer can correlate but nobody can
+ * contact: first character and domain. `anna@example.com` → `a***@example.com`.
+ */
+export function redactEmail(address: string): string {
+  const [local, domain] = address.split('@');
+  if (!domain) return '***';
+  return `${local.slice(0, 1)}***@${domain}`;
+}
+
+/**
  * Send an email via the configured provider.
  * With RESEND_API_KEY: posts to Resend API.
  * Without: logs to console (development fallback).
@@ -29,12 +39,15 @@ export async function sendEmail(
   const resendKey = process.env.RESEND_API_KEY;
 
   if (!resendKey) {
-    // Development fallback: log to console
+    // Development fallback: record that an email would have gone out, without
+    // its recipient or its contents. Doc 12 admits no dev-mode exception —
+    // staging logs are shipped and retained like any other, and a booking
+    // confirmation or reset link in them is a real disclosure.
     console.log('[EMAIL - DEV MODE]', {
-      to,
+      to: redactEmail(to),
       subject,
-      body,
-      htmlBody,
+      bodyChars: body?.length ?? 0,
+      htmlChars: htmlBody?.length ?? 0,
       timestamp: new Date().toISOString(),
     });
     return 'dev-mode-console-logged';

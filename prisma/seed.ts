@@ -3,6 +3,7 @@ import { seedConfig } from '../src/modules/config/seed';
 import { seedContent } from '../src/modules/content/seed';
 import { seedDemoData } from '../src/modules/core/seed';
 import { seedLayantara } from '../src/modules/core/layantara.seed';
+import { seedWalkthroughState } from '../src/modules/core/walkthrough.seed';
 
 const db = new PrismaClient();
 
@@ -16,6 +17,8 @@ async function main() {
     await seedDemoData(db);
     console.log('✓ Demo data seeded');
     await seedLayantara(db);
+    // Last: the walkthrough state reads the cast the steps above created.
+    await seedWalkthroughState(db);
     console.log('✓ Seed completed successfully');
   } catch (error) {
     console.error('Seed failed:', error);

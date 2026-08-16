@@ -23,8 +23,26 @@ export async function detectBuyerSignals(
     getConfig(db, 'analytics.buyer_signal.long_stay_nights'),
   ]);
 
-  await detectRepeatStaySignals(db, repeatStayThreshold, auditActorIdentityId);
-  await detectLongStaySignals(db, longStayNights, auditActorIdentityId);
+  // An unregistered threshold means the config registry is not seeded, not
+  // that the threshold is zero. Fail closed: skip the detector rather than
+  // treat every guest as a buyer and flood the funnel with noise no one can
+  // untangle afterwards.
+  if (typeof repeatStayThreshold === 'number') {
+    await detectRepeatStaySignals(db, repeatStayThreshold, auditActorIdentityId);
+  } else {
+    console.warn(
+      '[signals] analytics.buyer_signal.repeat_stay_threshold is not registered — repeat_stay detection skipped'
+    );
+  }
+
+  if (typeof longStayNights === 'number') {
+    await detectLongStaySignals(db, longStayNights, auditActorIdentityId);
+  } else {
+    console.warn(
+      '[signals] analytics.buyer_signal.long_stay_nights is not registered — long_stay detection skipped'
+    );
+  }
+
   await detectListingEngagementSignals(db, auditActorIdentityId);
 }
 

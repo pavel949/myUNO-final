@@ -6,6 +6,19 @@ export enum MessengerChannel {
   TELEGRAM = 'telegram',
 }
 
+/**
+ * Reduce a recipient — an address or a phone number — to a correlatable stub.
+ * Kept local rather than imported so the integrations module does not reach
+ * into comms for a two-line helper.
+ */
+function redactRecipient(recipient: string): string {
+  if (recipient.includes('@')) {
+    const [local, domain] = recipient.split('@');
+    return `${local.slice(0, 1)}***@${domain}`;
+  }
+  return recipient.length > 4 ? `***${recipient.slice(-2)}` : '***';
+}
+
 export interface MessengerConfig {
   apiKey?: string;
   apiSecret?: string;
@@ -96,9 +109,10 @@ export async function sendMessengerMessage(
     //
     // For loop one, record only that a send happened. The recipient's contact
     // details and the message body are personal data and never reach the logs
-    // (doc 12) — a stub is not a licence to print PII.
+    // (doc 12) — a stub is not a licence to print PII. The recipient is
+    // reduced to something a developer can correlate but nobody can contact.
     console.log(
-      `[Messenger stub] ${channel} message queued (${messageBody.length} chars)`
+      `[Messenger stub] ${channel} message queued to ${redactRecipient(recipientPhone)} (${messageBody.length} chars)`
     );
 
     // Record sync attempt

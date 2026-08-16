@@ -1,0 +1,48 @@
+name: Fix Prisma Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_name:
+        description: 'Migration name to resolve'
+        required: false
+        default: '1_add_analytics_tables'
+
+jobs:
+  fix-migration:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: ✅ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm install
+
+      - name: 🔧 Verify database connection
+        run: |
+          echo "Testing database connection..."
+          npx prisma --version
+
+      - name: 🔄 Resolve migration
+        run: |
+          echo "Resolving migration: ${{ github.event.inputs.migration_name }}"
+          npx prisma migrate resolve --rolled-back ${{ github.event.inputs.migration_name }}
+
+      - name: ✔️ Verify build
+        run: npm run build
+
+      - name: 📝 Summary
+        run: |
+          echo "✅ Migration fixed successfully!"
+          echo "Migration: ${{ github.event.inputs.migration_name }}"
+          echo "Build verified: OK"

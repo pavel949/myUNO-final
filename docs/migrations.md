@@ -48,6 +48,29 @@ So deleting and recreating the database — the obvious remedy — would not hav
 helped. CI never caught it because CI applied the schema with `prisma db push`,
 which skips migrations entirely.
 
+### And a third fault, underneath both
+
+Clearing the block let a deploy get further than it had since July, and it
+surfaced the deepest problem: `type "NotificationType" does not exist`.
+
+`0_init` was rewritten on 16 July — the commit is called "Fix broken migration
+chain: squash to a single schema-true 0_init" — **after** it had already been
+applied to the deployed database on 14 July. Prisma never re-applies a migration
+it has already recorded, so the new content never reached that database. It
+still holds the original 437-line schema, while the current `0_init` is 1789
+lines. Thirty-nine tables and forty-eight enums that every later migration
+depends on were simply absent.
+
+That is also the origin of the whole incident: the migration files and the real
+database diverged back in July, and `1_add_analytics_tables` was the first thing
+to trip over the gap.
+
+The fix is `20260716000000_align_init_baseline` — the difference between the two
+`0_init` versions, generated with `prisma migrate diff` and then made
+idempotent. Where the schema is already complete (a fresh database, CI) every
+statement is a no-op; where it is not, it creates exactly what is missing. All
+309 statements only add.
+
 ## What was changed
 
 - **Names are timestamps now** (`20260719000001_…`), Prisma's own convention, so
@@ -75,9 +98,18 @@ migration whose folder no longer exists.
 It is deliberately narrow:
 
 - only rows where `finished_at IS NULL` **and** `rolled_back_at IS NULL`;
-- only rows older than one hour, so a migration currently running is never cut
-  off;
+- only rows older than two minutes, so a migration currently running is never
+  cut off;
 - it never drops a table, a column, or a row.
+
+The window is two minutes rather than something longer for a reason worth
+recording: a failed deploy leaves a fresh marker, so a long window would leave
+the *next* deploy blocked by it — exactly the failure this script exists to end.
+Two minutes comfortably outlasts a migration actually applying (well under a
+second here), `migrate deploy` holds its own advisory lock while it works so
+overlapping deploys serialise anyway, and Prisma runs each migration in a
+transaction, so a failed one leaves no partial objects behind and is safe to
+retry.
 
 Without `DATABASE_URL` it prints why it is skipping and exits successfully, so
 installs without a database still work.

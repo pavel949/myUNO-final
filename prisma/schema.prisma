@@ -784,6 +784,7 @@ model Identity {
   announcementsCreated      Announcement[]
   announcementReads         AnnouncementRead[]
   vettedProviders           Provider[]                  @relation("providerVettedBy")
+  servicesApproved          Service[]                   @relation("serviceApprovedBy")
   providerApplications      Provider[]                  @relation("providerApplicant")
   tm30FilingsFiled          Tm30Filing[]                @relation("tm30FilingFiled")
   conditionReportsCreated   ConditionReport[]
@@ -1437,8 +1438,16 @@ model Service {
   status             ServiceStatus  @default(draft)
   coverMediaId       String?        @map("cover_media_id")
 
+  // Who approved this service and when. Mirrors Provider.vetted_at /
+  // vetted_by_identity_id: approval is a gate an admin passes a service through,
+  // so it needs the same audit trail (CLAUDE.md, "Audit Logging"). Cleared on
+  // rejection so a resubmitted service is not left carrying a stale approval.
+  approved_at             DateTime? @map("approved_at")
+  approved_by_identity_id String?   @map("approved_by_identity_id")
+
   // Relations
   provider          Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  approved_by       Identity?        @relation("serviceApprovedBy", fields: [approved_by_identity_id], references: [id], onDelete: SetNull)
   coverMedia        MediaAsset?      @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   media             ServiceMedia[]   @relation("serviceMediaList")
   availableProjects ServiceProject[]
@@ -1446,6 +1455,7 @@ model Service {
 
   @@index([provider_id, status])
   @@index([categoryKey])
+  @@index([status, approved_at])
   @@map("service")
 }
 

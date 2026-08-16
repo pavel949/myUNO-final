@@ -285,6 +285,10 @@ describe('service.service — integration tests', () => {
       });
 
       expect(approved?.status).toBe('active');
+      // Who approved it and when, not just that it is approved — the same trail
+      // provider vetting keeps.
+      expect(approved?.approved_by_identity_id).toBe(admin.id);
+      expect(approved?.approved_at).toBeInstanceOf(Date);
     });
 
     it('rejects approving a non-draft service', async () => {
@@ -354,6 +358,10 @@ describe('service.service — integration tests', () => {
       });
 
       expect(rejected?.status).toBe('paused');
+      // A rejected service must not keep an approval stamp, so a resubmission
+      // starts clean.
+      expect(rejected?.approved_at).toBeNull();
+      expect(rejected?.approved_by_identity_id).toBeNull();
     });
   });
 

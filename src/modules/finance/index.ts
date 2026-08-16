@@ -66,10 +66,10 @@ export {
 } from './payout.service';
 
 export {
-  createPreAuthDeposit,
-  voidDepositOnCleanCheckout,
-  captureDepositOnClaim,
-  releaseDepositOnDisputeResolution,
+  scheduleDepositPreauth,
+  voidDepositPreauthIfClean,
+  captureDepositPreauthOnClaim,
+  releaseDepositPreauthOnDispute,
   fileDepositClaim,
   approveClaim,
   rejectClaim,

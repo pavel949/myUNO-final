@@ -55,10 +55,9 @@ export async function POST(
     }
 
     // Check for deposit preauth
-    const depositPreauth = await prismadb.payment.findFirst({
+    const depositPreauth = await prismadb.depositPreauth.findUnique({
       where: {
         bookingId: claim.bookingId,
-        purpose: 'deposit_preauth',
       },
     })
 
@@ -73,7 +72,7 @@ export async function POST(
     const actualCapture = Math.min(body.captureAmountThb, claim.claimedAmountThb, depositPreauth.amountThb)
 
     // Capture the preauth
-    await captureDepositPreAuth(depositPreauth.id, claimId, actualCapture)
+    await captureDepositPreAuth(claim.bookingId, claimId, actualCapture)
 
     // Update claim status
     const updatedClaim = await prismadb.depositClaim.update({

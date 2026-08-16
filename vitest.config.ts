@@ -31,7 +31,10 @@ export default defineConfig({
     // Component tests (.tsx) need a DOM
     environmentMatchGlobs: [['**/*.test.tsx', 'jsdom']],
     include: ['**/*.test.ts', '**/*.test.tsx'],
-    exclude: ['node_modules', '.next'],
+    // .claude holds throwaway agent worktrees (gitignored). They carry full
+    // copies of the suite, so without this a local run collects every test
+    // twice and reports failures from stale checkouts.
+    exclude: ['**/node_modules/**', '**/.next/**', '**/.claude/**'],
     // Integration tests share one Postgres DB and reset it between tests.
     // Run in a single fork so parallel files never race on TRUNCATE (deadlocks)
     // or clobber each other's rows mid-test.

@@ -1,10 +1,68 @@
 import { Suspense } from 'react';
-import { getLabels } from '@/lib/i18n';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { publicPageAlternates, unitJsonLd } from '@/lib/seo';
+import { getPublicUnitById } from '@/modules/projects';
+import { t } from '@/modules/content';
+import { prisma } from '@/lib/prisma';
 import UnitDetailClient from './unit-client';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * The unit's own description is a content key, so it may legitimately be
+ * absent. Nothing is invented to fill the gap — the page simply carries less.
+ */
+async function unitDescription(descriptionKey: string | null): Promise<string | null> {
+  if (!descriptionKey) return null;
+  try {
+    const value = await t(prisma, descriptionKey, undefined, getRequestLocale());
+    return value && value !== descriptionKey && value !== '—' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const unit = await getPublicUnitById(params.id).catch(() => null);
+
+  // A draft or paused unit has no public face, so it gets no indexable
+  // metadata either (doc 08 §7).
+  if (!unit) {
+    return { robots: { index: false, follow: false } };
+  }
+
+  const description = await unitDescription(unit.descriptionKey);
+
+  return {
+    title: `${unit.name} · ${unit.project.name} | myUNO`,
+    ...(description ? { description } : {}),
+    alternates: publicPageAlternates(`/units/${unit.id}`),
+    openGraph: {
+      title: `${unit.name} · ${unit.project.name}`,
+      ...(description ? { description } : {}),
+      ...(unit.coverUrl ? { images: [unit.coverUrl] } : {}),
+    },
+  };
+}
+
 export default async function UnitDetailPage({ params }: { params: { id: string } }) {
+  // Suspended/draft entities never render (doc 08 §7). The booking widget
+  // below is client-rendered, so without this gate a paused unit would still
+  // serve a page and get indexed.
+  const unit = await getPublicUnitById(params.id).catch(() => null);
+  if (!unit) {
+    notFound();
+  }
+
+  const description = await unitDescription(unit.descriptionKey);
+  const jsonLd = unitJsonLd({ ...unit, description });
+
   const labels = await getLabels({
     'listing.loading': 'Loading unit details…',
     'listing.not_found': 'Unit not found',
@@ -58,6 +116,10 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
 
   return (
     <Suspense>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <UnitDetailClient
         unitId={params.id}
         labels={{

@@ -1,14 +1,14 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
-import { siteUrl } from '@/lib/seo';
+import { siteUrl, publicPageAlternates } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
 
 export const metadata: Metadata = {
   title: 'myUNO | Serviced Living in Phuket',
   description:
     'Invest with confidence. Live worry-free. One platform for owners, guests, and providers.',
-  alternates: { canonical: '/' },
+  alternates: publicPageAlternates('/'),
 };
 
 export const dynamic = 'force-dynamic';

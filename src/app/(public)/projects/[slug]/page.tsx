@@ -9,6 +9,7 @@ import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
+import { publicPageAlternates } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ export async function generateMetadata({
   return {
     title: `${project.name} | myUNO`,
     description: description.slice(0, 160) || undefined,
-    alternates: { canonical: `/projects/${project.slug}` },
+    alternates: publicPageAlternates(`/projects/${project.slug}`),
     openGraph: {
       title: project.name,
       description: description.slice(0, 160) || undefined,

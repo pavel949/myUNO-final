@@ -7,6 +7,7 @@ export { Avatar } from './Avatar';
 export { Badge, VerifiedBadge } from './Badge';
 export { EmptyState, LoadingState, ErrorState } from './StateComponents';
 export { RoleContextBanner } from './RoleContextBanner';
+export { LegalEntityBlock } from './LegalEntityBlock';
 
 // Owner components
 export { StatTile, ProjectSwitcher, BookingsList, LatestStatementCard, OpenTicketsList, SellInterestCard, OwnerStayModal } from './owner';

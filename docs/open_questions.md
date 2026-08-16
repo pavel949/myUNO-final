@@ -4,7 +4,7 @@ Anything a scenario needs that the specs don't yet cover is logged here and **as
 
 Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a marked assumption is in the specs pending confirmation · **ANSWERED** — resolved, folded into the specs.
 
-**Answered so far (2026-07):** Q4, Q6, Q7, Q8, Q10, Q11, Q12, Q13, Q16, Q17, Q18. **Still open:** Q1, Q2, Q3, Q5, Q9, Q14, Q15, Q19, Q20, Q21 (crypto), Q22 (international payouts).
+**Answered so far (2026-07):** Q4, Q6, Q7, Q8, Q10, Q11, Q12, Q13, Q16, Q17, Q18. **Still open:** Q1, Q2, Q3, Q5, Q9, Q14, Q15, Q19, Q20, Q21 (crypto), Q22 (international payouts), Q32 (service-fee rate), Q34 (provider take rate), Q35 (audience FAQ copy), Q36 (terms + privacy prose).
 
 ---
 
@@ -175,6 +175,18 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Source:** repairing the finance test suite. `computeProviderRemittance` exists twice. `src/app/libs/payouts.ts` deducts the take rate; `src/modules/finance/payout.service.ts` returns `takeRateTotal: 0` and computes `net = total − refunds`, omitting it. Doc 10 §5 specifies `fulfilled orders − take-rate − refunds`, so the module version underpays myUNO — or overpays the provider — depending on which one a caller reaches. The module version also counts `accepted` orders alongside `fulfilled`, which doc 10 does not.
 - **Why it was not simply fixed:** no test failed on it, and both the take-rate treatment and whether an accepted-but-unfulfilled order is remittable are money-policy calls. Guessing either would put real THB on the wrong side of a provider settlement.
 - **Needs from founder:** confirm doc 10 §5 as written (fulfilled only, take rate deducted), after which the two implementations should be collapsed into one — a single calculation is the point, since two can always drift apart again.
+
+### Q35. Five of the six audience pages have no FAQ copy — OPEN
+- **Source:** building T-035's structured-data layer. Doc 08 §3 puts an FAQ accordion in the audience-page template, and doc 08 §7 requires `FAQPage` JSON-LD on it. Only **owners** has founder-written FAQ content (eight questions, seeded and rendered). `guests`, `developers`, `buyers`, `management-companies` and `providers` have no `audience.*.faq.*` keys at all — none seeded, none rendered.
+- **Why it was not simply written:** an FAQ is where a prospect's sharpest questions get answered — what it costs, what is legal, who is liable, whether this is live. Drafting those answers for five audiences would be inventing commercial and legal positions, which is exactly what CLAUDE.md forbids. The owners FAQ reads like the founder wrote it, and the others should match that voice rather than an agent's.
+- **Built anyway:** the mechanism, not the content. `faqPageJsonLd()` (`src/lib/seo.ts`) builds the graph from whatever answered pairs a page passes it, drops entries whose question or answer is blank, and returns null when nothing is answered — so a page with no FAQ emits no FAQ graph rather than an empty promise. The owners page uses it today; the other five pick it up the moment their copy exists, with no further code.
+- **Needs from founder:** the FAQ questions and answers for guests, developers, buyers, management companies and providers — or a ruling that some audiences do not get an FAQ at all.
+
+### Q36. The terms and privacy prose is unwritten — OPEN (entity facts published, policy body pending)
+- **Source:** T-035. `/legal/terms` and `/legal/privacy` were stubs: a heading in hard-coded English and nothing else — no entity details, no PDPA controller line, though doc 08 §2 says the Q16 facts populate exactly these two pages and the footer.
+- **Built:** both pages now render from `legal.*` content keys and carry the `LegalEntityBlock` — operating entity, DBD registration, registered address, director, email, phone — with the privacy page naming that entity as the **PDPA data controller** (doc 12) and listing the access / correction / deletion / withdraw-consent rights, including the carve-out that records kept for financial or immigration compliance are anonymised rather than deleted. Each page carries a plainly worded notice that the full document is being prepared with counsel.
+- **Why the body was not drafted:** terms of service and a privacy policy are counsel's instruments and carry legal consequence. An agent-written approximation that reads authoritative is worse than an honest "not yet" — visitors would rely on it, and PDPA exposure attaches to what is published.
+- **Needs from founder:** the counsel-drafted terms of service and privacy policy. Also still outstanding from Q16: a dedicated public support/WhatsApp line and a privacy mailbox if different from the director's email, and Ignatev Capital's entity details if it is named publicly.
 
 ---
 

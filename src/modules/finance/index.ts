@@ -41,6 +41,17 @@ export {
 } from './statement.service';
 
 export {
+  getStatementSignOffState,
+  hasSignedOff,
+  recordStatementSignOff,
+  isOwnerVisibleStatementStatus,
+  OWNER_VISIBLE_STATEMENT_STATUSES,
+  type StatementSignOffActor,
+  type StatementSignOffState,
+  type StatementSignOffView,
+} from './statement-signoff.service';
+
+export {
   recordOwnerPayout,
   recordProviderRemittance,
   computeProviderRemittance,

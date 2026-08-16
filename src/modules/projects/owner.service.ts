@@ -1,6 +1,7 @@
 import { PrismaClient, Booking, OwnerStatement } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
+import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
 
 export interface OwnerDashboardData {
   identityId: string;
@@ -576,7 +577,14 @@ export async function getOwnerComplianceSummary(
 }
 
 /**
- * Get published statements for an owner across all their units, newest first.
+ * Get the statements an owner may see, across all their units, newest first.
+ *
+ * Every status past the admin sign-off gate, not `published` alone. Once a
+ * statement can sit in `pending_owner_review` — waiting on the owner's own
+ * signature — listing only `published` would hide from the owner the very
+ * statement that is waiting for them, leaving sign-off reachable by direct link
+ * and nowhere else. `OWNER_VISIBLE_STATEMENT_STATUSES` is the single place this
+ * is decided; the statement page and the sign-off routes read the same list.
  */
 export async function getOwnerStatements(
   db: PrismaClient,
@@ -594,7 +602,7 @@ export async function getOwnerStatements(
   const allStatements = await db.ownerStatement.findMany({
     where: {
       unitId: { in: units.map((u) => u.id) },
-      status: 'published',
+      status: { in: OWNER_VISIBLE_STATEMENT_STATUSES },
     },
     orderBy: { periodEnd: 'desc' },
   });

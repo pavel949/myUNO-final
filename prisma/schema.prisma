@@ -216,6 +216,23 @@ enum OwnerStatementStatus {
   draft
   published
   superseded
+  // Appended, in this order, by 20260813000010_owner_reporting_and_transparency.
+  // The order has to match the database, or Prisma sees a difference and
+  // rewrites the type.
+  pending_owner_review
+  signed_off
+  distributed
+}
+
+// Every line on an owner statement traces to one of these (CLAUDE.md, "Fee
+// Transparency for Owners": line-item drill-down to booking, receipt or fee).
+enum LineItemCategory {
+  booking_revenue
+  refund
+  service_fee
+  operating_expense
+  tax
+  performance_fee
 }
 
 enum PayoutPayeeType {
@@ -1021,6 +1038,7 @@ model Booking {
   conditionReports ConditionReport[]
   depositClaims    DepositClaim[]
   analyticsEvents  AnalyticsEvent[]
+  statementLines   StatementLineItem[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -1191,6 +1209,23 @@ model OwnerStatement {
   publishedByIdentityId String?              @map("published_by_identity_id")
   pdfMediaId            String?              @map("pdf_media_id")
 
+  // The transparency block CLAUDE.md requires on every monthly statement:
+  // gross bookings, service fees, expenses, adjusted NOI, distributable cash and
+  // the performance fee with the basis it was calculated on. Nullable because
+  // statements drafted before this existed have none of it.
+  grossBookingsAmountTh      Int?      @map("gross_bookings_amount_thb")
+  guestPaymentsReceivedTh    Int?      @map("guest_payments_received_thb")
+  serviceFeesAmountTh        Int?      @map("service_fees_amount_thb")
+  operatingExpensesAmountTh  Int?      @map("operating_expenses_amount_thb")
+  taxesAmountTh              Int?      @map("taxes_amount_thb")
+  adjustedNoiTh              Int?      @map("adjusted_noi_thb")
+  distributableCashTh        Int?      @map("distributable_cash_thb")
+  performanceFeeAmountTh     Int?      @map("performance_fee_amount_thb")
+  performanceFeeBasisText    String?   @map("performance_fee_basis_text")
+  signedOffByOwnerAt         DateTime? @map("signed_off_by_owner_at")
+  signedOffByOperatorAt      DateTime? @map("signed_off_by_operator_at")
+  approvedAt                 DateTime? @map("approved_at")
+
   // Relations
   unit          Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner         Identity       @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
@@ -1199,11 +1234,38 @@ model OwnerStatement {
   pdfMedia      MediaAsset?    @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
   ledgerEntries LedgerEntry[]
   payouts       Payout[]
+  lineItems     StatementLineItem[]
 
   @@index([unitId, periodStart, periodEnd])
   @@index([ownerIdentityId, status])
   @@index([status, publishedAt])
   @@map("owner_statement")
+}
+
+// One line on a statement, so an owner can trace any figure to its source
+// (CLAUDE.md, "Fee Transparency for Owners": line-item drill-down).
+model StatementLineItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  statementId String           @map("statement_id")
+  category    LineItemCategory
+  description String
+  amountTh    Int              @map("amount_thb")
+
+  // What the line traces back to: a booking for revenue and refunds, an uploaded
+  // receipt for an expense. Both optional — a performance fee traces to the
+  // management contract, which the statement already identifies.
+  bookingId            String? @map("booking_id")
+  supportingDocumentId String? @map("supporting_document_id")
+
+  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([statementId, category])
+  @@index([bookingId])
+  @@map("statement_line_item")
 }
 
 model Payout {

@@ -5,11 +5,11 @@
 -- the names Prisma derives from the schema. Generated with `prisma migrate diff`
 -- so every type, index and constraint name matches the schema exactly.
 --
--- Deliberately NOT included: the drops of "statement_line_item" and of the
--- owner_statement reporting columns. Those exist in the database but not in
--- schema.prisma; see docs/open_questions.md. Prisma ignores columns it does not
--- declare, and every one of them is nullable, so leaving them costs nothing
--- while dropping them would destroy owner-reporting data.
+-- Nothing here drops a table, a column or an enum value. An earlier version of
+-- this migration did, because schema.prisma was missing the owner-statement
+-- reporting model that 20260813000010 had already built. With that model
+-- adopted (open question Q31, ruled in favour of the full reporting model),
+-- schema and database agree and there is nothing left to remove.
 
 -- CreateEnum
 CREATE TYPE "AssetStatus" AS ENUM ('managed', 'verified_partner', 'one_off_sourced', 'suspended');
@@ -57,20 +57,10 @@ CREATE TYPE "ContractStatus" AS ENUM ('active', 'pending_signature', 'expired', 
 -- multiple migrations, each migration adding only one value to
 -- the enum.
 
+
 ALTER TYPE "CrmLifecycleStage" ADD VALUE 'repeat';
 ALTER TYPE "CrmLifecycleStage" ADD VALUE 'investor';
 ALTER TYPE "CrmLifecycleStage" ADD VALUE 'managed';
-
--- AlterEnum
-BEGIN;
-CREATE TYPE "OwnerStatementStatus_new" AS ENUM ('draft', 'published', 'superseded');
-ALTER TABLE "owner_statement" ALTER COLUMN "status" DROP DEFAULT;
-ALTER TABLE "owner_statement" ALTER COLUMN "status" TYPE "OwnerStatementStatus_new" USING ("status"::text::"OwnerStatementStatus_new");
-ALTER TYPE "OwnerStatementStatus" RENAME TO "OwnerStatementStatus_old";
-ALTER TYPE "OwnerStatementStatus_new" RENAME TO "OwnerStatementStatus";
-DROP TYPE "OwnerStatementStatus_old";
-ALTER TABLE "owner_statement" ALTER COLUMN "status" SET DEFAULT 'draft';
-COMMIT;
 
 -- DropIndex
 DROP INDEX "unit_owner_identity_id_idx";
@@ -371,3 +361,4 @@ ALTER TABLE "management_contract" ADD CONSTRAINT "management_contract_signed_by_
 
 -- AddForeignKey
 ALTER TABLE "earned_fee" ADD CONSTRAINT "earned_fee_management_contract_id_fkey" FOREIGN KEY ("management_contract_id") REFERENCES "management_contract"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

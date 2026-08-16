@@ -130,10 +130,15 @@ Every claim above was checked against a real PostgreSQL 16 database:
 | Repair and deploy run twice | no-op both times |
 | Test suite on a migration-built vs `db push` database | identical results, so the chain changes no behaviour |
 
-## One known difference
+## No remaining difference
 
-`statement_line_item` and twelve `owner_statement` reporting columns exist in the
-database but not in `schema.prisma`, so the application cannot use them. They
-were kept rather than dropped, because dropping them destroys owner-reporting
-data. This is logged as **Q31** in `docs/open_questions.md` and needs a founder
-ruling.
+`statement_line_item` and the twelve `owner_statement` reporting columns existed
+in the database but not in `schema.prisma`, so the application could not use
+them. They were kept rather than dropped, because dropping them destroys
+owner-reporting data, and the gap was raised as **Q31**.
+
+The founder ruled in favour of the full reporting model, so the schema now
+declares all of it and the two agree exactly: `prisma migrate diff` reports no
+difference in either direction, and the reconciliation migration no longer drops
+anything. What is still missing is the code on top — statement generation
+writing those figures and their line items, and the endpoints that read them.

@@ -19,13 +19,17 @@ export async function POST(req: NextRequest) {
       throw createPublicError('invalid_request', 400);
     }
 
-    const { audience, name, contact, message, consent, website } = body as {
+    const { audience, name, contact, message, consent, website, sourceChannelId, sourceMedium, sourceCampaign, referrerIdentityId } = body as {
       audience?: string;
       name?: string;
       contact?: string;
       message?: string;
       consent?: boolean;
       website?: string;
+      sourceChannelId?: string;
+      sourceMedium?: string;
+      sourceCampaign?: string;
+      referrerIdentityId?: string;
     };
 
     // Honeypot filled → pretend success, store nothing.
@@ -59,6 +63,10 @@ export async function POST(req: NextRequest) {
       name,
       contact,
       message: typeof message === 'string' ? message : undefined,
+      sourceChannelId: typeof sourceChannelId === 'string' ? sourceChannelId : undefined,
+      sourceMedium: typeof sourceMedium === 'string' ? sourceMedium : undefined,
+      sourceCampaign: typeof sourceCampaign === 'string' ? sourceCampaign : undefined,
+      referrerIdentityId: typeof referrerIdentityId === 'string' ? referrerIdentityId : undefined,
     }).catch((error) => console.error('[CRM lead enrichment]', error));
 
     return NextResponse.json({ ok: true });

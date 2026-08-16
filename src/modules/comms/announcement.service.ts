@@ -1,5 +1,6 @@
 import { PrismaClient, AnnouncementAudience, AnnouncementPostedAs, RoleType } from '@prisma/client';
 import { createNotification } from './comms.service';
+import { track } from '@/modules/analytics';
 
 export interface CreateAnnouncementInput {
   projectId: string;
@@ -93,6 +94,14 @@ export async function publishAnnouncement(
     where: { id: announcementId },
     data: { status: 'published' },
   });
+
+  // Track analytics event for announcement published
+  await track(db, 'announcement_published', {
+    projectId: announcement.projectId,
+    identityId: announcement.createdByIdentityId,
+    audience: announcement.audience,
+    announcementId: announcement.id,
+  }).catch(() => null);
 
   // Fetch all identities who should receive the notification based on audience
   const recipientIds = await getAudienceIdentities(
@@ -291,6 +300,18 @@ export async function markAnnouncementRead(
     throw new Error(`Announcement ${announcementId} not found`);
   }
 
+  // Check if this is a new read (doesn't exist yet)
+  const existingRead = await db.announcementRead.findUnique({
+    where: {
+      announcementId_identityId: {
+        announcementId,
+        identityId,
+      },
+    },
+  });
+
+  const isNewRead = !existingRead;
+
   // Upsert read record (idempotent)
   await db.announcementRead.upsert({
     where: {
@@ -305,6 +326,15 @@ export async function markAnnouncementRead(
     },
     update: {}, // No-op if exists
   });
+
+  // Track analytics event for announcement read (only on first read)
+  if (isNewRead) {
+    await track(db, 'announcement_read', {
+      projectId: announcement.projectId,
+      identityId,
+      announcementId,
+    }).catch(() => null);
+  }
 }
 
 /**

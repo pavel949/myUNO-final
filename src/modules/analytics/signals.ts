@@ -1,4 +1,5 @@
-import { PrismaClient, BuyerSignalKey, BuyerSignalStatus } from '@prisma/client';
+import { PrismaClient, BuyerSignalKey, BuyerSignalStatus, AnalyticsEventKey } from '@prisma/client';
+import { track } from './track';
 
 // Fallback defaults; thresholds should be read from config in production
 const DEFAULT_REPEAT_STAY_THRESHOLD = 2;
@@ -77,6 +78,14 @@ async function detectRepeatStaySignals(
           },
         });
       }
+
+      // Track analytics event
+      await track(db, 'signal_detected', {
+        identityId: guest.guestIdentityId,
+        signalType: 'repeat_stay',
+        strength,
+        completedStays,
+      }).catch(() => null);
     }
   }
 }
@@ -135,6 +144,14 @@ async function detectLongStaySignals(
           },
         });
       }
+
+      // Track analytics event
+      await track(db, 'signal_detected', {
+        identityId: stay.guestIdentityId,
+        signalType: 'long_stay',
+        nights,
+        bookingId: stay.id,
+      }).catch(() => null);
     }
   }
 }
@@ -203,6 +220,13 @@ async function detectListingEngagementSignals(
           },
         });
       }
+
+      // Track analytics event
+      await track(db, 'signal_detected', {
+        identityId,
+        signalType: 'listing_engagement',
+        uniqueUnitsViewed: units.size,
+      }).catch(() => null);
     }
   }
 }
@@ -241,6 +265,21 @@ export async function transitionBuyerSignal(
       },
     },
   });
+
+  // Track analytics event based on new status
+  const eventMap: Record<BuyerSignalStatus, AnalyticsEventKey> = {
+    open: 'signal_detected',
+    reviewed: 'signal_reviewed',
+    handed_to_capital: 'signal_handed_to_capital',
+    dismissed: 'signal_dismissed',
+  };
+
+  await track(db, eventMap[newStatus], {
+    identityId: signal.identityId,
+    signalId: signal.id,
+    signalKey: signal.signalKey,
+    transitionByIdentityId,
+  }).catch(() => null);
 
   return signal;
 }
@@ -337,6 +376,13 @@ export async function createDirectInquiry(
       },
     });
   }
+
+  // Track analytics event for owner sell interest
+  await track(db, 'owner_sell_interest', {
+    identityId,
+    signalId: signal.id,
+    recordedByIdentityId,
+  }).catch(() => null);
 
   return signal;
 }

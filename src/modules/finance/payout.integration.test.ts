@@ -125,7 +125,8 @@ describe('Payouts & Reconciliation (T-031)', () => {
       const provider = await createProvider();
       const service = await createService({ providerId: provider.id });
 
-      // Create service order (fulfilled)
+      // Create service order (fulfilled). Dated inside the remittance period —
+      // computeProviderRemittance selects orders by createdAt within it.
       await db.serviceOrder.create({
         data: {
           service_id: service.id,
@@ -134,8 +135,9 @@ describe('Payouts & Reconciliation (T-031)', () => {
           orderer_role: 'owner',
           project_id: project.id,
           unit_id: unit.id,
-          scheduled_start: new Date(),
-          scheduled_end: new Date(),
+          createdAt: new Date('2026-07-10'),
+          scheduled_start: new Date('2026-07-10'),
+          scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
           status: 'fulfilled',
           price_breakdown: { total: 10000, fee: 1000, provider: 9000 },
@@ -160,7 +162,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
       const provider = await createProvider();
       const service = await createService({ providerId: provider.id });
 
-      // Create service order
+      // Create service order (dated inside the remittance period)
       const order = await db.serviceOrder.create({
         data: {
           service_id: service.id,
@@ -169,8 +171,9 @@ describe('Payouts & Reconciliation (T-031)', () => {
           orderer_role: 'owner',
           project_id: project.id,
           unit_id: unit.id,
-          scheduled_start: new Date(),
-          scheduled_end: new Date(),
+          createdAt: new Date('2026-07-10'),
+          scheduled_start: new Date('2026-07-10'),
+          scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
           status: 'fulfilled',
           price_breakdown: { total: 10000, fee: 1000, provider: 9000 },
@@ -192,6 +195,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
         },
       });
 
+      // Refund is clawed back only if it falls in the same period as the order
       await db.refund.create({
         data: {
           paymentId: payment.id,
@@ -200,6 +204,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
           reason: 'provider_no_show',
           status: 'succeeded',
           initiatedByIdentityId: staff.id,
+          createdAt: new Date('2026-07-15'),
         },
       });
 

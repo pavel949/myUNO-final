@@ -216,6 +216,23 @@ enum OwnerStatementStatus {
   draft
   published
   superseded
+  // Appended, in this order, by 20260813000010_owner_reporting_and_transparency.
+  // The order has to match the database, or Prisma sees a difference and
+  // rewrites the type.
+  pending_owner_review
+  signed_off
+  distributed
+}
+
+// Every line on an owner statement traces to one of these (CLAUDE.md, "Fee
+// Transparency for Owners": line-item drill-down to booking, receipt or fee).
+enum LineItemCategory {
+  booking_revenue
+  refund
+  service_fee
+  operating_expense
+  tax
+  performance_fee
 }
 
 enum PayoutPayeeType {
@@ -549,11 +566,21 @@ enum IntegrationStatus {
 enum CrmLifecycleStage {
   contact
   guest
+  repeat
   prospect
+  investor
   buyer
   owner
+  managed
   seller
   former_client
+}
+
+enum AssetStatus {
+  managed
+  verified_partner
+  one_off_sourced
+  suspended
 }
 
 enum CrmOpportunityType {
@@ -612,6 +639,87 @@ enum CrmTouchType {
   lead_creation
   conversion
   assisted
+}
+
+enum KPIStatus {
+  on_track
+  at_risk
+  below_target
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum IncidentStatus {
+  open
+  acknowledged
+  in_progress
+  resolved
+  closed
+}
+
+enum IncidentType {
+  maintenance
+  complaint
+  violation
+}
+
+enum ComplianceChecklistFrequency {
+  weekly
+  monthly
+  quarterly
+  annual
+}
+
+enum ChannelCategory {
+  owned
+  earned
+  paid
+}
+
+enum ProspectingAccountType {
+  owner
+  developer
+  institutional_partner
+}
+
+enum ProspectingAccountStatus {
+  new
+  contacted
+  interested
+  pitched
+  closed
+}
+
+enum ManagementFeeBasis {
+  percentage_gop
+  percentage_noi
+  percentage_gross_booking
+  fixed
+}
+
+enum FeeType {
+  management
+  performance
+  transaction
+  distribution
+}
+
+enum FeeStatus {
+  accrued
+  invoiced
+  paid
+}
+
+enum ContractStatus {
+  active
+  pending_signature
+  expired
+  terminated
 }
 
 // --- The spine ---
@@ -676,6 +784,7 @@ model Identity {
   announcementsCreated      Announcement[]
   announcementReads         AnnouncementRead[]
   vettedProviders           Provider[]                  @relation("providerVettedBy")
+  servicesApproved          Service[]                   @relation("serviceApprovedBy")
   providerApplications      Provider[]                  @relation("providerApplicant")
   tm30FilingsFiled          Tm30Filing[]                @relation("tm30FilingFiled")
   conditionReportsCreated   ConditionReport[]
@@ -696,6 +805,16 @@ model Identity {
   crmActivitiesCreated      CrmActivity[]               @relation("crmActivityCreator")
   crmConsents               CrmConsent[]
   crmAttributionTouches     CrmAttributionTouch[]
+  accountOwnedProfiles      CrmProfile[]                @relation("accountOwner")
+  referredProfiles          CrmProfile[]                @relation("referrerTo")
+  lifecycleApprovalsGiven   LifecycleTransitionLog[]    @relation("lifecycleApprover")
+  incidentsReported         IncidentLog[]               @relation("incidentReportedBy")
+  incidentsAssigned         IncidentLog[]               @relation("incidentAssignedTo")
+  complianceChecklistsChecked ComplianceChecklistInstance[] @relation("complianceChecklistCheckedBy")
+  prospectingAccounts       ProspectingAccount[]        @relation("prospectingContact")
+  prospectingAccountsAssigned ProspectingAccount[]     @relation("prospectingAssignee")
+  managementContractsOwned  ManagementContract[]        @relation("contractOwner")
+  managementContractsSigned ManagementContract[]        @relation("contractSignatory")
 
   @@map("identity")
 }
@@ -768,6 +887,7 @@ model Project {
   metricsDaily         MetricDaily[]
   integrationAccounts  IntegrationAccount[]
   crmOpportunities     CrmOpportunity[]
+  managementContracts  ManagementContract[]
 
   @@map("project")
 }
@@ -795,6 +915,9 @@ model Unit {
   instantBook             Boolean    @default(true) @map("instant_book")
   cancellationPolicyKey   String?    @map("cancellation_policy_key")
   status                  UnitStatus @default(draft)
+  assetStatus             AssetStatus @default(managed) @map("asset_status")
+  assetStatusChangedAt    DateTime?   @map("asset_status_changed_at")
+  assetStatusReason       String?     @map("asset_status_reason")
   permittedUseConfirmedAt DateTime?  @map("permitted_use_confirmed_at")
   coverMediaId            String?    @map("cover_media_id")
 
@@ -819,9 +942,14 @@ model Unit {
   metricsDaily          MetricDaily[]
   integrationAccounts   IntegrationAccount[]
   crmOpportunities      CrmOpportunity[]
+  operationalKpis       OperationalKpi[]
+  incidentLogs          IncidentLog[]
+  complianceChecklistInstances ComplianceChecklistInstance[]
+  managementContracts   ManagementContract[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
+  @@index([assetStatus])
   @@map("unit")
 }
 
@@ -911,6 +1039,7 @@ model Booking {
   conditionReports ConditionReport[]
   depositClaims    DepositClaim[]
   analyticsEvents  AnalyticsEvent[]
+  statementLines   StatementLineItem[]
 
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
@@ -1081,6 +1210,23 @@ model OwnerStatement {
   publishedByIdentityId String?              @map("published_by_identity_id")
   pdfMediaId            String?              @map("pdf_media_id")
 
+  // The transparency block CLAUDE.md requires on every monthly statement:
+  // gross bookings, service fees, expenses, adjusted NOI, distributable cash and
+  // the performance fee with the basis it was calculated on. Nullable because
+  // statements drafted before this existed have none of it.
+  grossBookingsAmountTh      Int?      @map("gross_bookings_amount_thb")
+  guestPaymentsReceivedTh    Int?      @map("guest_payments_received_thb")
+  serviceFeesAmountTh        Int?      @map("service_fees_amount_thb")
+  operatingExpensesAmountTh  Int?      @map("operating_expenses_amount_thb")
+  taxesAmountTh              Int?      @map("taxes_amount_thb")
+  adjustedNoiTh              Int?      @map("adjusted_noi_thb")
+  distributableCashTh        Int?      @map("distributable_cash_thb")
+  performanceFeeAmountTh     Int?      @map("performance_fee_amount_thb")
+  performanceFeeBasisText    String?   @map("performance_fee_basis_text")
+  signedOffByOwnerAt         DateTime? @map("signed_off_by_owner_at")
+  signedOffByOperatorAt      DateTime? @map("signed_off_by_operator_at")
+  approvedAt                 DateTime? @map("approved_at")
+
   // Relations
   unit          Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner         Identity       @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
@@ -1089,11 +1235,38 @@ model OwnerStatement {
   pdfMedia      MediaAsset?    @relation(name: "statementPdf", fields: [pdfMediaId], references: [id])
   ledgerEntries LedgerEntry[]
   payouts       Payout[]
+  lineItems     StatementLineItem[]
 
   @@index([unitId, periodStart, periodEnd])
   @@index([ownerIdentityId, status])
   @@index([status, publishedAt])
   @@map("owner_statement")
+}
+
+// One line on a statement, so an owner can trace any figure to its source
+// (CLAUDE.md, "Fee Transparency for Owners": line-item drill-down).
+model StatementLineItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  statementId String           @map("statement_id")
+  category    LineItemCategory
+  description String
+  amountTh    Int              @map("amount_thb")
+
+  // What the line traces back to: a booking for revenue and refunds, an uploaded
+  // receipt for an expense. Both optional — a performance fee traces to the
+  // management contract, which the statement already identifies.
+  bookingId            String? @map("booking_id")
+  supportingDocumentId String? @map("supporting_document_id")
+
+  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([statementId, category])
+  @@index([bookingId])
+  @@map("statement_line_item")
 }
 
 model Payout {
@@ -1265,8 +1438,16 @@ model Service {
   status             ServiceStatus  @default(draft)
   coverMediaId       String?        @map("cover_media_id")
 
+  // Who approved this service and when. Mirrors Provider.vetted_at /
+  // vetted_by_identity_id: approval is a gate an admin passes a service through,
+  // so it needs the same audit trail (CLAUDE.md, "Audit Logging"). Cleared on
+  // rejection so a resubmitted service is not left carrying a stale approval.
+  approved_at             DateTime? @map("approved_at")
+  approved_by_identity_id String?   @map("approved_by_identity_id")
+
   // Relations
   provider          Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  approved_by       Identity?        @relation("serviceApprovedBy", fields: [approved_by_identity_id], references: [id], onDelete: SetNull)
   coverMedia        MediaAsset?      @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   media             ServiceMedia[]   @relation("serviceMediaList")
   availableProjects ServiceProject[]
@@ -1274,6 +1455,7 @@ model Service {
 
   @@index([provider_id, status])
   @@index([categoryKey])
+  @@index([status, approved_at])
   @@map("service")
 }
 
@@ -1924,6 +2106,92 @@ model MobilizationChecklistItem {
   @@map("mobilization_checklist_item")
 }
 
+// --- Phase 3: Operational KPIs & Compliance ---
+
+model OperationalKpi {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  unitId       String    @map("unit_id")
+  metricName   String    @map("metric_name")
+  periodStart  DateTime  @map("period_start") @db.Date
+  periodEnd    DateTime  @map("period_end") @db.Date
+  targetValue  Decimal?  @map("target_value") @db.Decimal(10, 2)
+  actualValue  Decimal?  @map("actual_value") @db.Decimal(10, 2)
+  status       KPIStatus @default(on_track)
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, periodStart, periodEnd])
+  @@index([metricName, status])
+  @@map("operational_kpi")
+}
+
+model IncidentLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId                String           @map("unit_id")
+  incidentType          IncidentType     @map("incident_type")
+  severity              IncidentSeverity
+  description           String
+  reportedByIdentityId  String           @map("reported_by_identity_id")
+  assignedToIdentityId  String?          @map("assigned_to_identity_id")
+  status                IncidentStatus   @default(open)
+  resolvedAt            DateTime?        @map("resolved_at")
+  resolutionNotes       String?          @map("resolution_notes")
+
+  // Relations
+  unit         Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  reportedBy   Identity  @relation(name: "incidentReportedBy", fields: [reportedByIdentityId], references: [id], onDelete: Restrict)
+  assignedTo   Identity? @relation(name: "incidentAssignedTo", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, status])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("incident_log")
+}
+
+model ComplianceChecklistTemplate {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name      String
+  frequency ComplianceChecklistFrequency
+  items     Json     @default("[]") @db.JsonB
+
+  // Relations
+  instances ComplianceChecklistInstance[]
+
+  @@map("compliance_checklist_template")
+}
+
+model ComplianceChecklistInstance {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId             String    @map("unit_id")
+  templateId         String    @map("template_id")
+  dueDate            DateTime  @map("due_date") @db.Date
+  completedDate      DateTime? @map("completed_date") @db.Date
+  checkedByIdentityId String?   @map("checked_by_identity_id")
+  passed             Boolean?
+  notes              String?
+
+  // Relations
+  unit        Unit                           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  template    ComplianceChecklistTemplate    @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  checkedBy   Identity?                      @relation(name: "complianceChecklistCheckedBy", fields: [checkedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, dueDate])
+  @@index([passed])
+  @@map("compliance_checklist_instance")
+}
+
 // --- Analytics & signals ---
 
 model AnalyticsEvent {
@@ -2018,24 +2286,94 @@ model CrmProfile {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  identityId        String            @unique @map("identity_id")
-  lifecycleStage    CrmLifecycleStage @default(contact) @map("lifecycle_stage")
-  leadScore         Int               @default(0) @map("lead_score")
-  tags              String[]          @default([])
-  preferredChannel  String?           @map("preferred_channel")
-  firstSource       String?           @map("first_source")
-  lastSource        String?           @map("last_source")
-  lastInteractionAt DateTime?         @map("last_interaction_at")
-  nextActionAt      DateTime?         @map("next_action_at")
-  ownerSince        DateTime?         @map("owner_since")
-  guestSince        DateTime?         @map("guest_since")
-  customFields      Json              @default("{}") @map("custom_fields")
+  identityId               String            @unique @map("identity_id")
+  lifecycleStage           CrmLifecycleStage @default(contact) @map("lifecycle_stage")
+  accountOwnerIdentityId   String?           @map("account_owner_identity_id")
+  leadScore                Int               @default(0) @map("lead_score")
+  tags                     String[]          @default([])
+  preferredChannel         String?           @map("preferred_channel")
+  firstSource              String?           @map("first_source")
+  lastSource               String?           @map("last_source")
+  lastInteractionAt        DateTime?         @map("last_interaction_at")
+  nextActionAt             DateTime?         @map("next_action_at")
+  ownerSince               DateTime?         @map("owner_since")
+  guestSince               DateTime?         @map("guest_since")
+  lifecycleChangedAt       DateTime?         @map("lifecycle_changed_at")
+  lifecycleChangeReason    String?           @map("lifecycle_change_reason")
+  lifecycleChangeApprovedBy String?          @map("lifecycle_change_approved_by")
+  customFields             Json              @default("{}") @map("custom_fields")
+  sourceChannelId          String?           @map("source_channel_id")
+  sourceMedium             String?           @map("source_medium")
+  sourceCampaign           String?           @map("source_campaign")
+  referrerIdentityId       String?           @map("referrer_identity_id")
 
-  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  identity              Identity                   @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  accountOwner          Identity?                  @relation("accountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
+  sourceChannel         Channel?                   @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  referrer              Identity?                  @relation("referrerTo", fields: [referrerIdentityId], references: [id], onDelete: SetNull)
+  lifecycleTransitions  LifecycleTransitionLog[]   @relation("profileTransitions")
 
   @@index([lifecycleStage, nextActionAt])
   @@index([leadScore])
+  @@index([accountOwnerIdentityId])
+  @@index([sourceChannelId])
+  @@index([referrerIdentityId])
   @@map("crm_profile")
+}
+
+model LifecycleTransitionLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  profileId               String            @map("profile_id")
+  fromStage               CrmLifecycleStage @map("from_stage")
+  toStage                 CrmLifecycleStage @map("to_stage")
+  reason                  String?
+  approvedByIdentityId    String?           @map("approved_by_identity_id")
+
+  profile CrmProfile @relation("profileTransitions", fields: [profileId], references: [id], onDelete: Cascade)
+  approvedBy Identity? @relation("lifecycleApprover", fields: [approvedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("lifecycle_transition_log")
+}
+
+model Channel {
+  id          String          @id @default(uuid())
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  name        String
+  category    ChannelCategory
+  description String?
+
+  crmProfiles CrmProfile[]
+
+  @@index([category])
+  @@map("channel")
+}
+
+model ProspectingAccount {
+  id                    String                     @id @default(uuid())
+  createdAt             DateTime                   @default(now()) @map("created_at")
+  updatedAt             DateTime                   @updatedAt @map("updated_at")
+  identityId            String                     @map("identity_id")
+  accountType           ProspectingAccountType     @map("account_type")
+  status                ProspectingAccountStatus   @default(new)
+  reasonForContact      String?                    @map("reason_for_contact")
+  priority              Int                        @default(1)
+  assignedToIdentityId  String?                    @map("assigned_to_identity_id")
+  lastContactedAt       DateTime?                  @map("last_contacted_at")
+  expectedCloseAt       DateTime?                  @map("expected_close_at")
+
+  identity   Identity  @relation("prospectingContact", fields: [identityId], references: [id], onDelete: Cascade)
+  assignedTo Identity? @relation("prospectingAssignee", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([identityId])
+  @@index([status])
+  @@index([assignedToIdentityId])
+  @@index([expectedCloseAt])
+  @@map("prospecting_account")
 }
 
 model CrmOpportunity {
@@ -2141,6 +2479,68 @@ model CrmAttributionTouch {
   @@index([identityId, occurredAt])
   @@index([source, campaign, occurredAt])
   @@map("crm_attribution_touch")
+}
+
+// --- Business Model Tracking (management contracts and earned fees) ---
+
+model ManagementContract {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId                    String              @map("unit_id")
+  projectId                 String              @map("project_id")
+  ownerIdentityId           String              @map("owner_identity_id")
+  managementFeeBasis        ManagementFeeBasis  @map("management_fee_basis")
+  managementFeeRate         Decimal?            @map("management_fee_rate") @db.Decimal(5, 4)
+  managementFeeFixedAmount  Int?                @map("management_fee_fixed_amount")
+  performanceFeeEnabled     Boolean             @default(false) @map("performance_fee_enabled")
+  performanceFeeBasis       String?             @map("performance_fee_basis")
+  performanceFeeRate        Decimal?            @map("performance_fee_rate") @db.Decimal(5, 4)
+  performanceFeeBaseline    Int?                @map("performance_fee_baseline")
+  contractStartDate         DateTime            @map("contract_start_date") @db.Date
+  contractEndDate           DateTime?           @map("contract_end_date") @db.Date
+  status                    ContractStatus      @default(active)
+  signedAt                  DateTime?           @map("signed_at")
+  signedByOwnerIdentityId   String?             @map("signed_by_owner_identity_id")
+
+  // Relations
+  unit              Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ownerIdentity     Identity  @relation("contractOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  signedByIdentity  Identity? @relation("contractSignatory", fields: [signedByOwnerIdentityId], references: [id], onDelete: SetNull)
+  earnedFees        EarnedFee[]
+
+  @@index([unitId])
+  @@index([projectId])
+  @@index([ownerIdentityId])
+  @@index([status])
+  @@index([contractStartDate])
+  @@map("management_contract")
+}
+
+model EarnedFee {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  managementContractId String    @map("management_contract_id")
+  feeType              FeeType   @map("fee_type")
+  periodStart          DateTime  @map("period_start") @db.Date
+  periodEnd            DateTime  @map("period_end") @db.Date
+  calculationBasis     String    @map("calculation_basis")
+  amount               Int
+  status               FeeStatus @default(accrued)
+  invoiceId            String?   @map("invoice_id")
+  paidAt               DateTime? @map("paid_at")
+
+  // Relations
+  managementContract ManagementContract @relation(fields: [managementContractId], references: [id], onDelete: Cascade)
+
+  @@index([managementContractId])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+  @@index([feeType])
+  @@map("earned_fee")
 }
 
 // --- Integrations (iCal, payment providers, messaging, controlled exports) ---

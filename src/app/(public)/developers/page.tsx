@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { track } from '@/modules/analytics';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +19,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DevelopersPage() {
+  // Track analytics event
+  await track(prisma, 'page_audience_viewed', {
+    audience: 'developers',
+  }).catch(() => null);
+
   const labels = await getLabels({
     'audience.developers.hero_title':
       'The rental promise sells the unit. Make sure it stays yours.',

@@ -5,6 +5,7 @@ import { can } from '@/modules/core';
 import { approveBookingRequest, declineBookingRequest } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
+import { track } from '@/modules/analytics';
 
 /**
  * POST /api/bookings/[id]/respond
@@ -114,6 +115,25 @@ export async function POST(
           unit_name: (updated as { unit?: { name: string } | null }).unit?.name ?? notifyParams.unit_name,
         },
       });
+
+      // Track analytics event
+      const updatedBooking = await prisma.booking.findUnique({
+        where: { id: booking.id },
+      });
+      if (updatedBooking) {
+        const nights = Math.ceil(
+          (updatedBooking.endDate.getTime() - updatedBooking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        await track(prisma, 'stay_request_approved', {
+          bookingId: updatedBooking.id,
+          unitId: updatedBooking.unitId,
+          projectId: updatedBooking.projectId,
+          identityId: booking.guestIdentityId,
+          nights,
+          totalThb: updatedBooking.totalThb,
+        }).catch(() => null);
+      }
+
       return NextResponse.json({ booking: updated }, { status: 200 });
     }
 
@@ -129,6 +149,20 @@ export async function POST(
       bodyKey: 'notify.stay_request_declined.body',
       params: notifyParams,
     });
+
+    // Track analytics event
+    const nights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(prisma, 'stay_request_declined', {
+      bookingId: booking.id,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      identityId: booking.guestIdentityId,
+      nights,
+      totalThb: updated.totalThb,
+    }).catch(() => null);
+
     return NextResponse.json({ booking: updated }, { status: 200 });
   } catch (error) {
     console.error(

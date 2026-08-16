@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage } from './thread.service';
 import { createNotification } from './comms.service';
+import { track } from '@/modules/analytics';
 
 /**
  * Public lead capture (doc 08 §3, T-035): the audience-page forms for
@@ -88,6 +89,11 @@ export async function submitLead(
       }).catch(() => null)
     )
   );
+
+  // Track analytics event
+  await track(db, 'lead_submitted', {
+    audienceType: audience,
+  }).catch(() => null);
 
   return { threadId: thread.id };
 }

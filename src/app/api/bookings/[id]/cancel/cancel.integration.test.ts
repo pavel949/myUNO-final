@@ -59,13 +59,17 @@ describe('POST /api/bookings/[id]/cancel', () => {
 
   it('guest cancels a confirmed flexible booking with full refund 2+ days out', async () => {
     mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    // Anchor check-in to "now" — the route refunds against the live clock, so
+    // fixed dates rotted into the past and silently turned this into a
+    // 0%-refund late cancellation (fixed dates rotted).
+    const day = 24 * 60 * 60 * 1000;
     const booking = await createBooking({
       unitId,
       projectId,
       guestIdentityId: guest.id,
       status: 'confirmed',
-      startDate: new Date('2026-08-15'),
-      endDate: new Date('2026-08-17'),
+      startDate: new Date(Date.now() + 3 * day),
+      endDate: new Date(Date.now() + 5 * day),
       totalThb: 8000,
       cancellationPolicySnapshot: flexibleSnapshot,
     });

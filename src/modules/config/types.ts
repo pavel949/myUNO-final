@@ -122,6 +122,7 @@ export interface ServicesConfig {
 export interface OtherConfig {
   'finance.statement.day_of_month': number;
   'finance.statement.requires_admin_signoff': boolean;
+  'finance.statement.service_fee_pct': number;
   'finance.occupancy_tax_pct': number;
   'finance.payout.default_thb_account': string;
   'compliance.tm30_sla_hours': number;

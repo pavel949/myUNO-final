@@ -39,36 +39,7 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Wait for PostgreSQL (before build)
-        run: |
-          max_attempts=10
-          attempt=0
-          until [ $attempt -ge $max_attempts ]; do
-            if pg_isready -h localhost -p 5432 -U test; then
-              echo "PostgreSQL is ready!"
-              break
-            fi
-            echo "Waiting for PostgreSQL... (attempt $((attempt + 1))/$max_attempts)"
-            sleep 1
-            ((attempt++))
-          done
-
-      - name: Create test database (before build)
-        env:
-          PGPASSWORD: test
-        run: |
-          psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
-
-      - name: Build
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
-          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          NEXTAUTH_SECRET: test-secret
-          NEXTAUTH_URL: http://localhost:3000
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        run: npm run build
-
-      - name: Wait for PostgreSQL (with retry)
+      - name: Wait for PostgreSQL
         run: |
           max_attempts=30
           attempt=0
@@ -91,18 +62,30 @@ jobs:
           PGPASSWORD: test
         run: |
           psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
-          psql -h localhost -U test -d myuno_test -c "CREATE EXTENSION IF NOT EXISTS citext;" 2>/dev/null || true
 
-      # Schema-push workflow: the branch has no prisma/migrations directory
-      # (the schema lives in schema.prisma; the test DB is throwaway), so
-      # `migrate deploy` left the CI database empty and every suite failed
-      # on missing tables. Push the schema directly instead.
-      - name: Apply schema to test database
+      # Runs the real migration chain, the same way production deploys do, and
+      # before the build so the schema exists when Next.js prerenders pages that
+      # read from the database. Applying the schema after the build was why CI
+      # failed on `relation "public.translation" does not exist`.
+      #
+      # `migrate deploy` rather than `db push`: CLAUDE.md fixes the stack on
+      # migration files, never db-push, and pushing the schema meant CI never
+      # exercised the migrations. A migration chain that could not apply from
+      # scratch therefore stayed green here while every deployment failed.
+      - name: Apply migrations to test database
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
-        run: |
-          npx prisma db push --skip-generate
+        run: npx prisma migrate deploy
         timeout-minutes: 5
+
+      - name: Build
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: npm run build
 
       - name: Run tests
         env:

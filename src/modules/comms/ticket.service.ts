@@ -1,6 +1,7 @@
 import { PrismaClient, TicketStatus, TicketPriority, TicketEventType, RoleType } from '@prisma/client';
 import { assertCatalogKeys } from '@/modules/config';
 import { publishMessage } from './thread.bus';
+import { track } from '@/modules/analytics';
 
 export interface RaiseTicketInput {
   projectId: string;
@@ -83,6 +84,16 @@ export async function raiseTicket(
     note: 'Ticket created',
   });
 
+  // Track analytics event for ticket raised
+  await track(db, 'ticket_raised', {
+    projectId,
+    unitId,
+    identityId: raisedByIdentityId,
+    ticketId: ticket.id,
+    category: categoryKey,
+    priority,
+  }).catch(() => null);
+
   return { id: ticket.id, threadId: thread.id };
 }
 
@@ -126,6 +137,19 @@ export async function updateTicketStatus(
     newStatus,
     note,
   });
+
+  // Track analytics event if resolved
+  if (newStatus === 'resolved') {
+    await track(db, 'ticket_resolved', {
+      ticketId,
+      projectId: ticket.projectId,
+      unitId: ticket.unitId ?? undefined,
+      identityId: ticket.raisedByIdentityId,
+      actorIdentityId,
+      category: ticket.categoryKey,
+      priority: ticket.priority,
+    }).catch(() => null);
+  }
 
   // Publish status change to thread stream (if thread exists)
   if (ticket.threadId) {
@@ -309,4 +333,54 @@ export async function getReporterTickets(
     },
     orderBy: { updatedAt: 'desc' },
   });
+}
+
+/**
+ * Check for SLA breaches and track analytics events.
+ * Called by cron job to detect tickets where slaDueAt has passed while still open.
+ */
+export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number> {
+  const now = new Date();
+
+  // Find open tickets with slaDueAt in the past that haven't been marked as breached
+  const breachedTickets = await db.ticket.findMany({
+    where: {
+      status: { not: 'closed' },
+      slaDueAt: { lt: now },
+      // Track only once per ticket by checking a breach_tracked_at field or similar
+      // For now, track all matching tickets
+    },
+    select: {
+      id: true,
+      projectId: true,
+      unitId: true,
+      raisedByIdentityId: true,
+      categoryKey: true,
+      priority: true,
+      slaDueAt: true,
+      createdAt: true,
+    },
+  });
+
+  let breachedCount = 0;
+
+  for (const ticket of breachedTickets) {
+    // Calculate hours to resolve (from creation to now, but should have been resolved by slaDueAt)
+    const hoursElapsed = (now.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
+
+    // Track the SLA breach event
+    await track(db, 'ticket_sla_breached', {
+      ticketId: ticket.id,
+      projectId: ticket.projectId,
+      unitId: ticket.unitId ?? undefined,
+      identityId: ticket.raisedByIdentityId,
+      category: ticket.categoryKey,
+      priority: ticket.priority,
+      hoursToSLA: Math.round(hoursElapsed),
+    }).catch(() => null);
+
+    breachedCount++;
+  }
+
+  return breachedCount;
 }

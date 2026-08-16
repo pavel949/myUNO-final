@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "postinstall": "node scripts/repair-failed-migrations.mjs",
+    "build": "node scripts/repair-failed-migrations.mjs && prisma generate && next build",
+    "db:repair": "node scripts/repair-failed-migrations.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest",
@@ -20,6 +22,7 @@
     "bcryptjs": "^3.0.3",
     "next": "^14.2.0",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "uuid": "^14.0.1"
   },
@@ -30,6 +33,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.0",
     "@vitest/ui": "^1.1.0",
     "autoprefixer": "^10.4.0",

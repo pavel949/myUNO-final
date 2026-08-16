@@ -475,6 +475,15 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Draft → published requires admin action',
       },
       {
+        key: 'finance.statement.service_fee_pct',
+        valueType: 'percent',
+        defaultValue: 12,
+        scopeableTo: 'unit',
+        groupKey: 'finance',
+        description:
+          'myUNO service fee on gross bookings, shown as the service_fee line on the owner statement (provisional — founder has not confirmed the rate)',
+      },
+      {
         key: 'finance.occupancy_tax_pct',
         valueType: 'percent',
         defaultValue: 0,

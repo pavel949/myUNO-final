@@ -8,6 +8,7 @@ import { getConfig } from '@/modules/config';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
+import { track } from '@/modules/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,11 @@ export default async function ProjectLandingPage({
 }) {
   const project = await getPublicProjectBySlug(params.slug);
   if (!project) notFound();
+
+  // Track analytics event
+  await track(prisma, 'page_project_viewed', {
+    projectId: project.id,
+  }).catch(() => null);
 
   const labels = await getLabels({
     'project_page.availability.title': 'Check availability',

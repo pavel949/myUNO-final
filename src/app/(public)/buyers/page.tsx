@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { track } from '@/modules/analytics';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BuyersPage() {
+  // Track analytics event
+  await track(prisma, 'page_audience_viewed', {
+    audience: 'buyers',
+  }).catch(() => null);
+
   const labels = await getLabels({
     'audience.buyers.title': 'For Buyers',
     'audience.buyers.subtitle': 'Purchase already underway? Our team eases the handoff.',

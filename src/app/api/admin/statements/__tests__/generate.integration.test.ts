@@ -1,196 +1,204 @@
 /* eslint-disable no-restricted-imports */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { POST as generatePost } from '../generate/route'
-import { GET as getLineItems } from '../../[statementId]/line-items/route'
-import { PUT as signOff } from '../../[statementId]/sign-off/route'
-import { GET as getOwnerStatements } from '../../../owner/statements/route'
-import prismadb from '@/app/libs/prismadb'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+import {
+  db,
+  resetDb,
+  setGlobalConfig,
+  createIdentity,
+  createProject,
+  createUnit,
+  createBooking,
+} from '@/test/util'
+
+const mockGetCurrentUser = vi.fn()
+vi.mock('@/app/actions/getCurrentUser', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}))
+
+vi.mock('@/lib/prisma', async () => {
+  const util = await import('@/test/util')
+  return { prisma: util.db }
+})
+
+import { POST as generatePost } from '../generate/route'
+import { GET as getLineItems } from '../[statementId]/line-items/route'
+import { PUT as signOff } from '../[statementId]/sign-off/route'
+import { GET as getOwnerStatements } from '../../../owner/statements/route'
+
+// The service fee is a registered business rule, not a literal in the route
+// (doc 04 `finance.statement.service_fee_pct`). The test pins the rate it
+// asserts on so a founder edit to the default can never break the test.
+const SERVICE_FEE_PCT = 12
+
+function currentUser(
+  identity: { id: string; email: string | null },
+  isAdmin: boolean
+) {
+  return {
+    identityId: identity.id,
+    email: identity.email,
+    firstName: 'Test',
+    lastName: 'User',
+    isAdmin,
+    roles: [],
+  }
+}
+
+function post(body: unknown): NextRequest {
+  return new NextRequest('http://localhost/api/admin/statements/generate', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function get(url: string): NextRequest {
+  return new NextRequest(url, { method: 'GET' })
+}
+
+function put(body: unknown): NextRequest {
+  return new NextRequest('http://localhost/api/admin/statements/x/sign-off', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
 
 describe('Owner Statement Generation', () => {
-  let testUnit: any
-  let testProject: any
-  let testIdentity: any
-  let testBooking: any
+  let admin: Awaited<ReturnType<typeof createIdentity>>
+  let owner: Awaited<ReturnType<typeof createIdentity>>
+  let testProject: Awaited<ReturnType<typeof createProject>>
+  let testUnit: Awaited<ReturnType<typeof createUnit>>
+  let testBooking: Awaited<ReturnType<typeof createBooking>>
   let statementId: string
 
+  const periodStart = new Date('2026-07-01')
+  const periodEnd = new Date('2026-07-31')
+
   beforeAll(async () => {
-    // Create test identity (owner)
-    testIdentity = await prismadb.identity.create({
-      data: {
-        email: `owner-${Date.now()}@test.local`,
-        first_name: 'Test',
-        last_name: 'Owner',
-      },
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', SERVICE_FEE_PCT)
+
+    admin = await createIdentity({ isAdmin: true })
+    owner = await createIdentity({ firstName: 'Test', lastName: 'Owner' })
+
+    testProject = await createProject({ name: 'Test Project' })
+    testUnit = await createUnit({
+      projectId: testProject.id,
+      ownerIdentityId: owner.id,
+      name: 'Test Unit',
     })
 
-    // Create test project
-    testProject = await prismadb.project.create({
+    // Direct-managed units need their NOI cap before a statement may be
+    // generated (money rules, doc 10).
+    await db.unitEngagement.create({
       data: {
-        name: 'Test Project',
-        brand_code: `TEST_${Date.now()}`,
-        location_value: 'TH',
-        owner_identity_id: testIdentity.id,
-      },
-    })
-
-    // Create test unit
-    testUnit = await prismadb.unit.create({
-      data: {
-        title: 'Test Unit',
-        project_id: testProject.id,
-        owner_identity_id: testIdentity.id,
-      },
-    })
-
-    // Create engagement for the unit
-    await prismadb.unitEngagement.create({
-      data: {
-        unit_id: testUnit.id,
-        engagement_type: 'direct_managed',
+        unitId: testUnit.id,
+        ownerIdentityId: owner.id,
+        engagementType: 'direct_managed',
         status: 'active',
-        noi_cap_annual_thb: 1000000,
+        noiCapAnnualThb: 1_000_000,
       },
     })
 
-    // Create test booking for the statement period
-    const periodStart = new Date('2026-07-01')
-    const periodEnd = new Date('2026-07-31')
-    testBooking = await prismadb.booking.create({
-      data: {
-        unit_id: testUnit.id,
-        project_id: testProject.id,
-        guest_identity_id: testIdentity.id,
-        booking_type: 'stay',
-        channel: 'direct',
-        status: 'confirmed',
-        start_date: periodStart,
-        end_date: periodEnd,
-        adults: 2,
-        children: 0,
-        total_thb: 50000,
-      },
+    testBooking = await createBooking({
+      unitId: testUnit.id,
+      projectId: testProject.id,
+      guestIdentityId: owner.id,
+      startDate: periodStart,
+      endDate: periodEnd,
+      status: 'confirmed',
+      totalThb: 50_000,
     })
 
-    // Add payment to booking
-    await prismadb.payment.create({
+    await db.payment.create({
       data: {
         purpose: 'stay',
-        booking_id: testBooking.id,
-        payer_identity_id: testIdentity.id,
+        bookingId: testBooking.id,
+        payerIdentityId: owner.id,
         method: 'cash',
         provider: 'cash',
-        amount_thb: 50000,
+        amountThb: 50_000,
         status: 'succeeded',
-        succeeded_at: new Date(),
+        succeededAt: new Date(),
       },
     })
-  })
 
-  afterAll(async () => {
-    // Cleanup in reverse dependency order
-    if (testBooking?.id) {
-      await prismadb.booking.deleteMany({
-        where: { id: testBooking.id },
-      })
-    }
-    if (testUnit?.id) {
-      await prismadb.unitEngagement.deleteMany({
-        where: { unit_id: testUnit.id },
-      })
-      await prismadb.unit.delete({
-        where: { id: testUnit.id },
-      })
-    }
-    if (testProject?.id) {
-      await prismadb.project.delete({
-        where: { id: testProject.id },
-      })
-    }
-    if (testIdentity?.id) {
-      await prismadb.identity.delete({
-        where: { id: testIdentity.id },
-      })
-    }
+    mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
   })
 
   it('should validate required fields', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'POST',
-      body: JSON.stringify({
-        // missing unitId, periodStart, periodEnd
-      }),
-    })
-
-    const res = await generatePost(req)
+    const res = await generatePost(post({}))
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toContain('Missing required fields')
   })
 
   it('should handle non-existent unit', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await generatePost(
+      post({
         unitId: 'non-existent-id',
         periodStart: '2026-07-01',
         periodEnd: '2026-07-31',
-      }),
-    })
-
-    const res = await generatePost(req)
+      })
+    )
     expect(res.status).toBe(404)
     const data = await res.json()
     expect(data.error).toContain('Unit not found')
   })
 
   it('should generate statement with valid data', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await generatePost(
+      post({
         unitId: testUnit.id,
         periodStart: '2026-07-01',
         periodEnd: '2026-07-31',
-      }),
-    })
-
-    const res = await generatePost(req)
+      })
+    )
     expect(res.status).toBe(200)
 
     const data = await res.json()
     expect(data.success).toBe(true)
     expect(data.statement).toBeDefined()
-    expect(data.statement.grossBookingsAmountThb).toBe(50000)
-    expect(data.statement.guestPaymentsReceivedThb).toBe(50000)
+    expect(data.statement.grossBookingsAmountThb).toBe(50_000)
+    expect(data.statement.guestPaymentsReceivedThb).toBe(50_000)
     expect(data.statement.status).toBe('draft')
 
     statementId = data.statement.id
   })
 
+  it('should write statement line items on generation', async () => {
+    const stored = await db.statementLineItem.findMany({
+      where: { statementId },
+    })
+    expect(stored.length).toBeGreaterThan(0)
+    expect(stored.some((line) => line.category === 'booking_revenue')).toBe(true)
+    expect(stored.some((line) => line.category === 'service_fee')).toBe(true)
+    // Revenue lines trace back to the booking they came from.
+    expect(
+      stored.find((line) => line.category === 'booking_revenue')?.bookingId
+    ).toBe(testBooking.id)
+  })
+
   it('should not allow duplicate statements for same period', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await generatePost(
+      post({
         unitId: testUnit.id,
         periodStart: '2026-07-01',
         periodEnd: '2026-07-31',
-      }),
-    })
-
-    const res = await generatePost(req)
+      })
+    )
     expect(res.status).toBe(409)
     const data = await res.json()
     expect(data.error).toContain('already exists')
   })
 
   it('should retrieve line items by category', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'GET',
-    })
-
-    const res = await getLineItems(req, {
-      params: { statementId },
-    })
+    const res = await getLineItems(
+      get(`http://localhost/api/admin/statements/${statementId}/line-items`),
+      { params: { statementId } }
+    )
     expect(res.status).toBe(200)
 
     const data = await res.json()
@@ -206,79 +214,49 @@ describe('Owner Statement Generation', () => {
   })
 
   it('should calculate line item totals correctly', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'GET',
-    })
-
-    const res = await getLineItems(req, {
-      params: { statementId },
-    })
+    const res = await getLineItems(
+      get(`http://localhost/api/admin/statements/${statementId}/line-items`),
+      { params: { statementId } }
+    )
     const data = await res.json()
 
     // Gross bookings = 50000
     // Service fee = 12% = 6000
-    expect(data.totals.booking_revenue).toBe(50000)
-    expect(data.totals.service_fee).toBe(6000)
+    expect(data.totals.booking_revenue).toBe(50_000)
+    expect(data.totals.service_fee).toBe(
+      Math.round((50_000 * SERVICE_FEE_PCT) / 100)
+    )
   })
 
   it('should allow owner to sign off', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'PUT',
-      body: JSON.stringify({
-        actor: 'owner',
-      }),
-    })
+    mockGetCurrentUser.mockResolvedValue(currentUser(owner, false))
 
-    // Mock getCurrentUser to return the owner
-    const originalModule = await import('@/app/actions/getCurrentUser')
-    const originalGetCurrentUser = originalModule.getCurrentUser
-    ;(originalModule as any).getCurrentUser = async () => ({
-      id: testIdentity.id,
-      email: testIdentity.email,
-      role: 'user',
-    })
-
-    const res = await signOff(req, {
+    const res = await signOff(put({ actor: 'owner' }), {
       params: { statementId },
     })
-
-    // Restore original function
-    ;(originalModule as any).getCurrentUser = originalGetCurrentUser
 
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.success).toBe(true)
-    expect(data.statement.signedOffByOwnerAt).toBeDefined()
+    expect(data.statement.signedOffByOwnerAt).toBeTruthy()
   })
 
   it('should allow operator to sign off', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'PUT',
-      body: JSON.stringify({
-        actor: 'operator',
-      }),
-    })
+    mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
 
-    const res = await signOff(req, {
+    const res = await signOff(put({ actor: 'operator' }), {
       params: { statementId },
     })
 
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.success).toBe(true)
-    expect(data.statement.signedOffByOperatorAt).toBeDefined()
+    expect(data.statement.signedOffByOperatorAt).toBeTruthy()
     expect(data.statement.status).toBe('signed_off')
   })
 
   it('should prevent duplicate owner sign-off', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'PUT',
-      body: JSON.stringify({
-        actor: 'owner',
-      }),
-    })
-
-    const res = await signOff(req, {
+    const res = await signOff(put({ actor: 'owner' }), {
       params: { statementId },
     })
 
@@ -288,11 +266,11 @@ describe('Owner Statement Generation', () => {
   })
 
   it('should list owner statements', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'GET',
-    })
+    mockGetCurrentUser.mockResolvedValue(currentUser(owner, false))
 
-    const res = await getOwnerStatements(req)
+    const res = await getOwnerStatements(
+      get('http://localhost/api/owner/statements')
+    )
     expect(res.status).toBe(200)
 
     const data = await res.json()
@@ -301,21 +279,18 @@ describe('Owner Statement Generation', () => {
     expect(Array.isArray(data.statements)).toBe(true)
 
     // Should contain our generated statement
-    const found = data.statements.find(
-      (s: any) => s.id === statementId
-    )
+    const found = data.statements.find((s: any) => s.id === statementId)
     expect(found).toBeDefined()
     expect(found.status).toBe('signed_off')
   })
 
   it('should handle non-existent statement', async () => {
-    const req = new NextRequest('http://localhost:3000', {
-      method: 'GET',
-    })
+    mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
 
-    const res = await getLineItems(req, {
-      params: { statementId: 'non-existent-id' },
-    })
+    const res = await getLineItems(
+      get('http://localhost/api/admin/statements/non-existent-id/line-items'),
+      { params: { statementId: 'non-existent-id' } }
+    )
 
     expect(res.status).toBe(404)
     const data = await res.json()

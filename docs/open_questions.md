@@ -158,6 +158,21 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Founder ruling (16 Aug): adopt the full reporting model.** `schema.prisma` now declares `StatementLineItem`, the `LineItemCategory` enum, the twelve `OwnerStatement` reporting fields, and the three appended statuses (`pending_owner_review`, `signed_off`, `distributed`). The schema and the database now agree exactly — `prisma migrate diff` reports no difference in either direction, and the reconciliation migration no longer needs to drop anything.
 - **Still to build, tracked separately:** statement generation populating the reporting fields and writing line items, the line-items endpoint grouping by category, the sign-off endpoint, and the integration tests that describe all three (which are written against a Prisma Client API that does not exist — they use snake_case field names — so they need rewriting, not patching). The service-fee rate those tests assume is 12%, which is **not** a registered parameter yet; per CLAUDE.md it must become one in doc 04 rather than a literal in the route, and the rate itself needs confirming.
 
+### Q32. The service-fee rate on owner statements — OPEN (⚠ provisional 12%)
+- **Source:** building the owner-statement reporting model after Q31 was ruled. Every statement now carries a `service_fees_amount_thb` line, and the rate behind it had to come from somewhere. The integration test describing the feature assumed 12%, which appears to have been carried over from a different codebase rather than decided here.
+- **Built:** a registered parameter `finance.statement.service_fee_pct` (percent, group `finance`, scopeable to unit → project → global), default **12 ⚠**, documented in doc 04 §7. It is read through `config.get()`, never as a literal, so changing it is an admin edit and not a code change. The same commit also removed a hard-coded 15% management-fee literal that the old generation route carried.
+- **Needs from founder:** the real rate, and whether it differs by engagement type (direct-managed / via management company / owner-direct) or by project. Until ruled, 12% stands and every statement records the basis it used.
+
+### Q33. Owner sign-off sits on an admin route — OPEN
+- **Source:** the sign-off endpoint built for Q31. It lives at `PUT /api/admin/statements/{id}/sign-off` and takes `{actor: 'owner' | 'operator'}`. The operator side is admin-only; the owner side currently accepts the statement's own owner, or an admin recording it on their behalf.
+- **Why it is a question:** everything else an owner does sits under `/api/owner/…`, and CLAUDE.md scopes visibility by role. An owner calling an `/api/admin/` path is inconsistent even though the check itself is correct.
+- **Needs from founder (or the architecture owner):** whether owner sign-off moves to `/api/owner/statements/{id}/sign-off`, leaving the admin route for the operator signature and for an admin recording an owner's signature offline (which the cash-first, RU-clientele model probably needs).
+
+### Q34. Two provider-remittance calculations disagree about the take rate — OPEN
+- **Source:** repairing the finance test suite. `computeProviderRemittance` exists twice. `src/app/libs/payouts.ts` deducts the take rate; `src/modules/finance/payout.service.ts` returns `takeRateTotal: 0` and computes `net = total − refunds`, omitting it. Doc 10 §5 specifies `fulfilled orders − take-rate − refunds`, so the module version underpays myUNO — or overpays the provider — depending on which one a caller reaches. The module version also counts `accepted` orders alongside `fulfilled`, which doc 10 does not.
+- **Why it was not simply fixed:** no test failed on it, and both the take-rate treatment and whether an accepted-but-unfulfilled order is remittable are money-policy calls. Guessing either would put real THB on the wrong side of a provider settlement.
+- **Needs from founder:** confirm doc 10 §5 as written (fulfilled only, take rate deducted), after which the two implementations should be collapsed into one — a single calculation is the point, since two can always drift apart again.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

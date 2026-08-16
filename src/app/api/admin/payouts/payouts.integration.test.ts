@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import prismadb from '@/app/libs/prismadb'
-import { resetDb, createIdentity, createProject, createUnit } from '@/test/util'
+import {
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createUnitEngagement,
+  createProvider,
+  createService,
+} from '@/test/util'
 import { computeProviderRemittance, getReconciliationData } from '@/app/libs/payouts'
 
 describe('T-031: Payouts & Reconciliation', () => {
@@ -10,13 +18,7 @@ describe('T-031: Payouts & Reconciliation', () => {
 
   describe('Provider Remittance Math', () => {
     it('should calculate net remittance correctly with no orders', async () => {
-      const provider = await prismadb.provider.create({
-        data: {
-          name: 'Test Provider',
-          status: 'active',
-          vetted_at: new Date(),
-        },
-      })
+      const provider = await createProvider({ status: 'active' })
 
       const periodStart = new Date('2026-01-01')
       const periodEnd = new Date('2026-01-31')
@@ -36,26 +38,17 @@ describe('T-031: Payouts & Reconciliation', () => {
     })
 
     it('should include only fulfilled orders in the period', async () => {
-      const provider = await prismadb.provider.create({
-        data: {
-          name: 'Test Provider',
-          status: 'active',
-          vetted_at: new Date(),
-        },
-      })
+      const provider = await createProvider({ status: 'active' })
 
       const orderer = await createIdentity()
       const periodStart = new Date('2026-01-01')
       const periodEnd = new Date('2026-01-31')
 
       // Create service for orders
-      const service = await prismadb.service.create({
-        data: {
-          provider_id: provider.id,
-          title: 'Test Service',
-          description: 'Test',
-          status: 'active',
-        },
+      const service = await createService({
+        providerId: provider.id,
+        title: 'Test Service',
+        status: 'active',
       })
 
       const project = await createProject()
@@ -74,7 +67,7 @@ describe('T-031: Payouts & Reconciliation', () => {
           total_thb: 5000,
           take_rate_pct_snapshot: 10,
           price_breakdown: {},
-          updated_at: new Date('2026-01-15'),
+          updatedAt: new Date('2026-01-15'),
         },
       })
 
@@ -109,7 +102,7 @@ describe('T-031: Payouts & Reconciliation', () => {
           total_thb: 5000,
           take_rate_pct_snapshot: 10,
           price_breakdown: {},
-          updated_at: new Date('2026-02-15'),
+          updatedAt: new Date('2026-02-15'),
         },
       })
 
@@ -131,20 +124,35 @@ describe('T-031: Payouts & Reconciliation', () => {
     it('should record owner payout for approved statement', async () => {
       const owner = await createIdentity()
       const project = await createProject()
-      const unit = await createUnit(project.id, owner.id)
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
+      const engagement = await createUnitEngagement({
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        status: 'active',
+      })
       const admin = await createIdentity()
 
       const statement = await prismadb.ownerStatement.create({
         data: {
           unitId: unit.id,
           ownerIdentityId: owner.id,
+          engagementId: engagement.id,
           periodStart: new Date('2026-01-01'),
           periodEnd: new Date('2026-01-31'),
           status: 'signed_off',
-          grossBookingsAmountThb: 50000,
-          serviceFeesAmountThb: 6000,
-          adjustedNoiThb: 40000,
-          distributableCashThb: 40000,
+          // The statement totals: 50000 revenue - 10000 costs = 40000 NOI,
+          // all of which is the owner's share here.
+          grossRevenueTh: 50000,
+          totalCostsTh: 10000,
+          noiTh: 40000,
+          ownerShareTh: 40000,
+          estateShareTh: 0,
+          // The transparency block (Prisma names end in `Th`, columns in `_thb`)
+          grossBookingsAmountTh: 50000,
+          serviceFeesAmountTh: 6000,
+          operatingExpensesAmountTh: 4000,
+          adjustedNoiTh: 40000,
+          distributableCashTh: 40000,
         },
       })
 
@@ -174,7 +182,7 @@ describe('T-031: Payouts & Reconciliation', () => {
     it('should surface failed refunds until cleared', async () => {
       const owner = await createIdentity()
       const project = await createProject()
-      const unit = await createUnit(project.id, owner.id)
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
       const guest = await createIdentity()
 
       const booking = await prismadb.booking.create({
@@ -182,7 +190,9 @@ describe('T-031: Payouts & Reconciliation', () => {
           unitId: unit.id,
           projectId: project.id,
           guestIdentityId: guest.id,
-          bookingType: 'direct',
+          // A guest's stay booked on our own rails: the type is the stay kind,
+          // the channel is where it came from.
+          bookingType: 'guest_stay',
           channel: 'direct',
           status: 'confirmed',
           startDate: new Date('2026-01-15'),
@@ -240,20 +250,35 @@ describe('T-031: Payouts & Reconciliation', () => {
     it('should track payouts from recorded to reconciled', async () => {
       const owner = await createIdentity()
       const project = await createProject()
-      const unit = await createUnit(project.id, owner.id)
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
+      const engagement = await createUnitEngagement({
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        status: 'active',
+      })
       const admin = await createIdentity()
 
       const statement = await prismadb.ownerStatement.create({
         data: {
           unitId: unit.id,
           ownerIdentityId: owner.id,
+          engagementId: engagement.id,
           periodStart: new Date('2026-01-01'),
           periodEnd: new Date('2026-01-31'),
           status: 'signed_off',
-          grossBookingsAmountThb: 50000,
-          serviceFeesAmountThb: 6000,
-          adjustedNoiThb: 40000,
-          distributableCashThb: 40000,
+          // The statement totals: 50000 revenue - 10000 costs = 40000 NOI,
+          // all of which is the owner's share here.
+          grossRevenueTh: 50000,
+          totalCostsTh: 10000,
+          noiTh: 40000,
+          ownerShareTh: 40000,
+          estateShareTh: 0,
+          // The transparency block (Prisma names end in `Th`, columns in `_thb`)
+          grossBookingsAmountTh: 50000,
+          serviceFeesAmountTh: 6000,
+          operatingExpensesAmountTh: 4000,
+          adjustedNoiTh: 40000,
+          distributableCashTh: 40000,
         },
       })
 

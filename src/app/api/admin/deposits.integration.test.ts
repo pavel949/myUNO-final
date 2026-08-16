@@ -15,23 +15,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const unit = await createUnit(project.id)
 
       // Set config for preauth
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '10000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 10000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
 
       // Initiate preauth
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
@@ -57,15 +65,21 @@ describe('T-032: Deposits & Damage Claims', () => {
       const unit = await createUnit(project.id)
 
       // Set config to off (default)
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'off',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
 
       // Try to initiate preauth
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
@@ -81,23 +95,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const unit = await createUnit(project.id)
 
       // Set config for preauth
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '5000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
 
       expect(paymentId).not.toBeNull()
@@ -118,23 +140,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const project = await createProject()
       const unit = await createUnit(project.id)
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '5000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
 
       // Void twice
@@ -156,23 +186,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const project = await createProject()
       const unit = await createUnit(project.id)
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '8000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 8000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
 
       expect(paymentId).not.toBeNull()
@@ -204,7 +242,7 @@ describe('T-032: Deposits & Damage Claims', () => {
       const ledgerEntry = await prismadb.ledgerEntry.findFirst({
         where: {
           paymentId: paymentId!,
-          entryType: 'damage_claim_capture',
+          entryType: 'adjustment',
         },
       })
 
@@ -219,23 +257,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const project = await createProject()
       const unit = await createUnit(project.id)
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '5000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
 
       const claim = await prismadb.depositClaim.create({
@@ -256,7 +302,7 @@ describe('T-032: Deposits & Damage Claims', () => {
       const ledgerEntry = await prismadb.ledgerEntry.findFirst({
         where: {
           paymentId: paymentId!,
-          entryType: 'damage_claim_capture',
+          entryType: 'adjustment',
         },
       })
 
@@ -269,23 +315,31 @@ describe('T-032: Deposits & Damage Claims', () => {
       const project = await createProject()
       const unit = await createUnit(project.id)
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.mode',
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
           value: 'preauth',
-          unitId: unit.id,
+          updatedByIdentityId: 'test',
         },
       })
 
-      await prismadb.configParameter.create({
+      await prismadb.configOverride.create({
         data: {
-          key: 'booking.deposit.amount_thb',
-          value: '5000',
-          unitId: unit.id,
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: 'test',
         },
       })
 
-      const booking = await createBooking(unit.id, guest.id, project.id)
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+      })
       const paymentId = await initiateDepositPreAuth(booking.id, unit.id, guest.id)
 
       // Void the preauth

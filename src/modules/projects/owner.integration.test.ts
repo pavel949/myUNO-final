@@ -61,18 +61,23 @@ describe('Owner experience (T-033)', () => {
       const project = await createProject();
       const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
-      // Create a guest booking
+      // Anchor to "now" so the owner-stay 24h-notice rule is satisfied on any
+      // run date and the availability check is what actually rejects the stay
+      // (fixed dates rotted into the past and tripped the notice rule first).
+      const day = 24 * 60 * 60 * 1000;
+
+      // Create a guest booking starting 3 days out, running 5 nights
       await createBooking({
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
-        startDate: new Date('2026-08-10'),
-        endDate: new Date('2026-08-15'),
+        startDate: new Date(Date.now() + 3 * day),
+        endDate: new Date(Date.now() + 8 * day),
       });
 
       // Try to book owner stay overlapping with guest booking
-      const startDate = new Date('2026-08-12');
-      const endDate = new Date('2026-08-17');
+      const startDate = new Date(Date.now() + 5 * day);
+      const endDate = new Date(Date.now() + 10 * day);
 
       await expect(
         bookOwnerStay(db, {

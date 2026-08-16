@@ -98,6 +98,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 |---|---|---|---|---|
 | `finance.statement.day_of_month` | int | global | `5` (confirmed Q17) | Day statements for the previous month are generated as drafts. |
 | `finance.statement.requires_admin_signoff` | boolean | global | `true` | Draft → published requires admin action (the v3 sign-off gate). |
+| `finance.statement.service_fee_pct` | percent | unit | `12` ⚠ (rate not confirmed by the founder) | The myUNO service fee charged on gross bookings of the period, written as the `service_fee` line of the owner statement and subtracted before adjusted NOI. Overridable per project and per unit so a negotiated mandate keeps its own rate. |
 | `finance.occupancy_tax_pct` | percent | project | `0` | Occupancy/local tax line if applicable (0 until counsel says otherwise; the breakdown supports it from day one). |
 | `finance.payout.default_thb_account` | string | global | `Bank of Ayudhya (Krungsri) 475-1-22131-3 · SWIFT AYUDTHBK` | The company account owner THB payouts are sent from (Q18); recorded on each `Payout`. International/non-THB payouts are a future decision (Q22). |
 | `compliance.tm30_sla_hours` | int | global | `24` | **The legal deadline.** Editable only to be *stricter*; the editor refuses values > 24. |

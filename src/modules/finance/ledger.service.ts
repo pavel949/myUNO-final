@@ -153,14 +153,22 @@ export async function reverseLedgerEntry(
     throw new Error(`LedgerEntry ${entryId} not found`);
   }
 
-  // Create a reversal entry: same amount but opposite sign
+  // Create a reversal entry: same amount but opposite sign.
+  //
+  // The reversal carries the ORIGINAL's occurredOn, not today's date. occurredOn
+  // is the accrual date — "which month's statement it lands in" (doc 02 §5.3) —
+  // and statements sweep ledger entries by occurredOn within the period
+  // (statement.service). Dating the reversal today would leave the wrong entry
+  // standing in its own period's NOI and drop the correction into a different
+  // month, so the correction would never cancel what it corrects. createdAt
+  // still records when the reversal was actually made (the audit trail).
   const reversal = await db.ledgerEntry.create({
     data: {
       entryType: 'adjustment',
       amountThb: -original.amountThb,
       unitId: original.unitId,
       projectId: original.projectId,
-      occurredOn: new Date(),
+      occurredOn: original.occurredOn,
       description: `Reversal of ${original.description}: ${reverseReason}`,
       createdByIdentityId: reversedByIdentityId,
     },
@@ -192,7 +200,9 @@ export async function getUnitLedgerEntries(
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, firstName: true, lastName: true } },
     },
-    orderBy: { occurredOn: 'asc' },
+    // createdAt breaks ties so entries sharing an accrual date (an original and
+    // its reversal, for instance) always read back in the order they were written.
+    orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
   });
 
   return entries;
@@ -221,7 +231,7 @@ export async function getProjectLedgerEntries(
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, firstName: true, lastName: true } },
     },
-    orderBy: { occurredOn: 'asc' },
+    orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
   });
 
   return entries;

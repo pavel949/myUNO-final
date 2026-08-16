@@ -1,8 +1,19 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import prismadb from '@/app/libs/prismadb'
+import { LineItemCategory } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
+
+interface LineItemView {
+  id: string
+  category: LineItemCategory
+  description: string
+  amountThb: number
+  bookingId: string | null
+  supportingDocumentId: string | null
+  createdAt: string
+}
 
 export async function GET(
   _req: NextRequest,
@@ -20,15 +31,14 @@ export async function GET(
 
     const statementId = params.statementId
 
-    // Fetch statement with its ledger entries
+    // The statement's own line items are the drill-down source; ledger entries
+    // are the raw accounting rows behind them, not the statement's lines.
     const statement = await prismadb.ownerStatement.findUnique({
       where: { id: statementId },
       include: {
-        unit: true,
-        ledgerEntries: {
-          orderBy: {
-            occurredOn: 'desc',
-          },
+        unit: { select: { id: true, name: true, projectId: true } },
+        lineItems: {
+          orderBy: [{ category: 'asc' }, { createdAt: 'asc' }],
         },
       },
     })
@@ -40,41 +50,49 @@ export async function GET(
       )
     }
 
-    // Map ledger entries to line items
-    const lineItems = statement.ledgerEntries.map((entry) => ({
-      id: entry.id,
-      category: entry.entryType,
-      description: entry.description,
-      amount: entry.amountThb,
-      occurredOn: entry.occurredOn.toISOString(),
-      bookingId: entry.bookingId,
-      serviceOrderId: entry.serviceOrderId,
+    const lineItems: LineItemView[] = statement.lineItems.map((item) => ({
+      id: item.id,
+      category: item.category,
+      description: item.description,
+      amountThb: item.amountTh,
+      bookingId: item.bookingId,
+      supportingDocumentId: item.supportingDocumentId,
+      createdAt: item.createdAt.toISOString(),
     }))
 
-    // Calculate totals by category
-    const totals: Record<string, number> = {}
-    lineItems.forEach((item) => {
-      if (!totals[item.category]) {
-        totals[item.category] = 0
-      }
-      totals[item.category] += item.amount
-    })
+    // Group and total by category so the owner statement can be read
+    // section by section (CLAUDE.md, "Fee Transparency for Owners").
+    const groupedByCategory: Partial<Record<LineItemCategory, LineItemView[]>> = {}
+    const totals: Partial<Record<LineItemCategory, number>> = {}
+
+    for (const item of lineItems) {
+      const group = groupedByCategory[item.category] ?? []
+      group.push(item)
+      groupedByCategory[item.category] = group
+      totals[item.category] = (totals[item.category] ?? 0) + item.amountThb
+    }
 
     return NextResponse.json({
       success: true,
       statement: {
         id: statement.id,
         unitId: statement.unitId,
+        unitName: statement.unit.name,
         periodStart: statement.periodStart.toISOString(),
         periodEnd: statement.periodEnd.toISOString(),
-        grossRevenue: statement.grossRevenueTh,
-        totalCosts: statement.totalCostsTh,
-        noi: statement.noiTh,
-        ownerShare: statement.ownerShareTh,
-        estateShare: statement.estateShareTh,
+        grossBookingsAmountThb: statement.grossBookingsAmountTh,
+        guestPaymentsReceivedThb: statement.guestPaymentsReceivedTh,
+        serviceFeesAmountThb: statement.serviceFeesAmountTh,
+        operatingExpensesAmountThb: statement.operatingExpensesAmountTh,
+        taxesAmountThb: statement.taxesAmountTh,
+        adjustedNoiThb: statement.adjustedNoiTh,
+        distributableCashThb: statement.distributableCashTh,
+        performanceFeeAmountThb: statement.performanceFeeAmountTh,
+        performanceFeeBasisText: statement.performanceFeeBasisText,
         status: statement.status,
       },
       lineItems,
+      groupedByCategory,
       totals,
     })
   } catch (error) {

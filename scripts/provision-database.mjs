@@ -67,9 +67,28 @@ if (/:6543/.test(DATABASE_URL) || /pgbouncer=true/.test(DATABASE_URL)) {
 
 function run(label, command, args) {
   console.log(`── ${label}`)
-  const result = spawnSync(command, args, { stdio: 'inherit', env: process.env })
+  // shell: true is required on Windows, where `npx` is npx.cmd and Node cannot
+  // execute it directly — without it the process never starts and the failure
+  // looks like the database rejected us.
+  const result = spawnSync(command, args, {
+    stdio: 'inherit',
+    env: process.env,
+    shell: true,
+  })
+
+  // A spawn that never ran sets `error` and leaves `status` null. Reporting
+  // only the status turns "the command is missing" into a silent, mystifying
+  // failure with no output above it.
+  if (result.error) {
+    console.error(`\n${label} could not start: ${result.error.message}`)
+    console.error('Is Node installed and are you in the project folder?')
+    process.exit(1)
+  }
+
   if (result.status !== 0) {
-    console.error(`\n${label} failed. Nothing further was attempted.`)
+    console.error(
+      `\n${label} failed — the error is printed above. Nothing further was attempted.`
+    )
     process.exit(result.status ?? 1)
   }
   console.log('')

@@ -106,6 +106,15 @@ export async function generateOwnerStatement(
     capApplied = false;
   }
 
+  // Compute reporting fields (CLAUDE.md Fee Transparency)
+  const serviceFeePct = await getConfig(db, 'finance.statement.service_fee_pct', {
+    projectId: unit.projectId,
+    unitId,
+  });
+  const serviceFeesAmountThb = Math.round((totals.totalRevenueTh * (serviceFeePct || 12)) / 100);
+  const adjustedNoiThb = totals.netTh;
+  const distributableCashThb = Math.min(ownerShareThb, adjustedNoiThb);
+
   // Create the statement in draft status
   const statement = await db.ownerStatement.create({
     data: {
@@ -121,8 +130,39 @@ export async function generateOwnerStatement(
       estateShareTh: estateShareThb,
       capApplied,
       status: 'draft',
+      // Transparency fields (Q31)
+      grossBookingsAmountTh: totals.totalRevenueTh,
+      guestPaymentsReceivedTh: totals.totalRevenueTh, // In loop one, all recorded payments are received
+      serviceFeesAmountTh: serviceFeesAmountThb,
+      operatingExpensesAmountTh: Math.abs(totals.totalCostsTh),
+      taxesAmountTh: 0, // Taxes are not yet tracked separately
+      adjustedNoiTh: adjustedNoiThb,
+      distributableCashTh: distributableCashThb,
+      performanceFeeAmountTh: null, // Performance fees not implemented in loop one
+      performanceFeeBasisText: null,
     },
   });
+
+  // Create line items from ledger entries for drill-down (Q31)
+  const entries = await db.ledgerEntry.findMany({
+    where: {
+      unitId,
+      occurredOn: { gte: periodStart, lte: periodEnd },
+    },
+  });
+
+  for (const entry of entries) {
+    const category = mapLedgerEntryTypeToLineItemCategory(entry.entryType);
+    await db.statementLineItem.create({
+      data: {
+        statementId: statement.id,
+        category,
+        description: entry.description,
+        amountTh: entry.amountThb,
+        bookingId: entry.bookingId || undefined,
+      },
+    });
+  }
 
   return statement;
 }
@@ -268,4 +308,36 @@ export async function getLatestPublishedStatement(db: PrismaClient, unitId: stri
     },
     orderBy: { periodEnd: 'desc' },
   });
+}
+
+/**
+ * Map a ledger entry type to its statement line-item category.
+ * Enforces the transparency model: every ledger entry types to exactly one category.
+ */
+function mapLedgerEntryTypeToLineItemCategory(
+  entryType: string
+): 'booking_revenue' | 'refund' | 'service_fee' | 'operating_expense' | 'tax' | 'performance_fee' {
+  switch (entryType) {
+    case 'rental_revenue':
+      return 'booking_revenue';
+    case 'refund_out':
+      return 'refund';
+    case 'service_commission':
+    case 'ota_commission_cost':
+      return 'service_fee';
+    case 'tax_collected':
+      return 'tax';
+    case 'cleaning_cost':
+    case 'maintenance_cost':
+    case 'consumables_cost':
+    case 'utilities_cost':
+    case 'setup_fee':
+    case 'mc_platform_fee':
+    case 'owner_direct_fee':
+    case 'payout_owner':
+    case 'payout_provider':
+    case 'adjustment':
+    default:
+      return 'operating_expense';
+  }
 }

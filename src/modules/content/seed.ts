@@ -1379,7 +1379,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'landing.search.check_out', namespace: 'landing', description: 'Hero search: check-out date label', en: 'Check-out', ru: 'Выезд', status: NR },
   { key: 'landing.search.adults', namespace: 'landing', description: 'Hero search: adults count label', en: 'Adults', ru: 'Взрослые', status: NR },
   { key: 'landing.search.children', namespace: 'landing', description: 'Hero search: children count label', en: 'Children', ru: 'Дети', status: NR },
-  { key: 'landing.search.submit', namespace: 'landing', description: 'Hero search: submit button', en: 'Find your stay', ru: 'Найти жильё', status: NR },
+  { key: 'landing.search.submit', namespace: 'landing', description: 'Hero search: submit button', en: 'Find your stay', ru: 'Подобрать размещение', status: NR },
 
   // Booking confirmation fan-out (N-02, doc 11)
   { key: 'notify.stay_confirmed.title', namespace: 'notify', description: 'Notification: stay confirmed (guest)', en: 'Booking confirmed', ru: 'Бронирование подтверждено', status: NR },
@@ -1405,34 +1405,34 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'common.not_found.home', namespace: 'common', description: '404 back-home button', en: 'Back to home', ru: 'На главную', status: NR },
 
   // Navbar
-  { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Найти жильё', status: NR },
+  { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Бронирование', status: NR },
   { key: 'nav.residences', namespace: 'nav', description: 'Navbar link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
   { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', status: NR },
-  { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Доверие', status: NR },
+  { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Гарантии', status: NR },
   { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', status: NR },
   { key: 'nav.register', namespace: 'nav', description: 'Navbar button: sign up', en: 'Sign up', ru: 'Регистрация', status: NR },
   { key: 'nav.logout', namespace: 'nav', description: 'Navbar button: log out', en: 'Log out', ru: 'Выйти', status: NR },
   { key: 'nav.my_trips', namespace: 'nav', description: 'Navbar link: my trips', en: 'My trips', ru: 'Мои поездки', status: NR },
   { key: 'nav.owner_dashboard', namespace: 'nav', description: 'Navbar link: owner dashboard', en: 'Owner dashboard', ru: 'Кабинет владельца', status: NR },
   { key: 'nav.mc_portal', namespace: 'nav', description: 'Navbar link: MC portal', en: 'MC portal', ru: 'Портал УК', status: NR },
-  { key: 'nav.admin', namespace: 'nav', description: 'Navbar link: admin panel', en: 'Admin', ru: 'Админ', status: NR },
+  { key: 'nav.admin', namespace: 'nav', description: 'Navbar link: admin panel', en: 'Admin', ru: 'Администрирование', status: NR },
   { key: 'nav.menu', namespace: 'nav', description: 'Mobile menu button aria-label', en: 'Menu', ru: 'Меню', status: NR },
 
   // Footer
   { key: 'nav.footer.brand_column', namespace: 'nav', description: 'Footer column title: brand', en: 'myUNO', ru: 'myUNO', status: NR },
   { key: 'nav.footer.home', namespace: 'nav', description: 'Footer link: home', en: 'Home', ru: 'Главная', status: NR },
   { key: 'nav.footer.residences', namespace: 'nav', description: 'Footer link: projects hub', en: 'Residences', ru: 'Резиденции', status: NR },
-  { key: 'nav.footer.trust', namespace: 'nav', description: 'Footer link: trust', en: 'Trust', ru: 'Доверие', status: NR },
+  { key: 'nav.footer.trust', namespace: 'nav', description: 'Footer link: trust', en: 'Trust', ru: 'Гарантии', status: NR },
   { key: 'nav.footer.audience_column', namespace: 'nav', description: 'Footer column title: audiences', en: 'For Everyone', ru: 'Для всех', status: NR },
   { key: 'nav.footer.owners', namespace: 'nav', description: 'Footer link: owners', en: 'Owners', ru: 'Владельцы', status: NR },
   { key: 'nav.footer.guests', namespace: 'nav', description: 'Footer link: guests', en: 'Guests', ru: 'Гости', status: NR },
-  { key: 'nav.footer.providers', namespace: 'nav', description: 'Footer link: providers', en: 'Providers', ru: 'Поставщики услуг', status: NR },
+  { key: 'nav.footer.providers', namespace: 'nav', description: 'Footer link: providers', en: 'Providers', ru: 'Сервис-партнёры', status: NR },
   { key: 'nav.footer.partners_column', namespace: 'nav', description: 'Footer column title: partners', en: 'Partners', ru: 'Партнёры', status: NR },
   { key: 'nav.footer.developers', namespace: 'nav', description: 'Footer link: developers', en: 'Developers', ru: 'Девелоперы', status: NR },
   { key: 'nav.footer.buyers', namespace: 'nav', description: 'Footer link: buyers', en: 'Buyers', ru: 'Покупатели', status: NR },
   { key: 'nav.footer.management', namespace: 'nav', description: 'Footer link: management companies', en: 'Management', ru: 'Управляющие компании', status: NR },
   { key: 'nav.footer.legal_column', namespace: 'nav', description: 'Footer column title: legal', en: 'Legal', ru: 'Правовая информация', status: NR },
-  { key: 'nav.footer.terms', namespace: 'nav', description: 'Footer link: terms of service', en: 'Terms', ru: 'Условия', status: NR },
+  { key: 'nav.footer.terms', namespace: 'nav', description: 'Footer link: terms of service', en: 'Terms', ru: 'Условия использования', status: NR },
   { key: 'nav.footer.privacy', namespace: 'nav', description: 'Footer link: privacy policy', en: 'Privacy', ru: 'Конфиденциальность', status: NR },
   { key: 'nav.footer.company_line', namespace: 'nav', description: 'Footer legal entity line', en: 'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com', ru: 'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com', status: NR },
   { key: 'nav.footer.copyright', namespace: 'nav', description: 'Footer copyright line', en: '© 2026 myUNO. All rights reserved.', ru: '© 2026 myUNO. Все права защищены.', status: NR },
@@ -1546,18 +1546,18 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'auth.verify.go_login', namespace: 'auth', description: 'Email verification: go to login', en: 'Go to log in', ru: 'Перейти ко входу', status: NR },
 
   // Search page
-  { key: 'search.title', namespace: 'search', description: 'Search page title', en: 'Find your stay', ru: 'Найдите жильё', status: NR },
+  { key: 'search.title', namespace: 'search', description: 'Search page title', en: 'Find your stay', ru: 'Подберите размещение', status: NR },
   { key: 'search.results_summary', namespace: 'search', description: 'Search results summary line', en: '{from} to {to} · {guests} guests', ru: '{from} — {to} · гостей: {guests}', status: NR },
   { key: 'search.prompt', namespace: 'search', description: 'Search page prompt when no dates chosen', en: 'Choose your dates to see available homes.', ru: 'Выберите даты, чтобы увидеть доступные дома.', status: NR },
   { key: 'search.loading', namespace: 'search', description: 'Search loading message', en: 'Loading results…', ru: 'Загружаем результаты…', status: NR },
   { key: 'search.error_generic', namespace: 'search', description: 'Search generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', status: NR },
-  { key: 'search.empty', namespace: 'search', description: 'Search empty state', en: 'No homes are available for these dates.', ru: 'На эти даты свободных домов нет.', status: NR },
+  { key: 'search.empty', namespace: 'search', description: 'Search empty state', en: 'No homes are available for these dates.', ru: 'На эти даты свободных вариантов нет.', status: NR },
   { key: 'search.empty_hint', namespace: 'search', description: 'Search empty state hint', en: 'Try different dates or a shorter stay.', ru: 'Попробуйте другие даты или более короткий срок.', status: NR },
   { key: 'search.per_night', namespace: 'search', description: 'Price unit: per night', en: 'per night', ru: 'за ночь', status: NR },
-  { key: 'search.categories.title', namespace: 'search', description: 'Search: category cards section title', en: 'Book by category', ru: 'Бронирование по категории', zh: '按类别预订', status: NR },
+  { key: 'search.categories.title', namespace: 'search', description: 'Search: category cards section title', en: 'Book by category', ru: 'Выберите категорию', zh: '按类别预订', status: NR },
   { key: 'search.categories.available', namespace: 'search', description: 'Category card: availability count', en: '{count} villas available', ru: 'Свободно вилл: {count}', zh: '{count} 栋别墅可订', status: NR },
   { key: 'search.categories.from', namespace: 'search', description: 'Category card: from price per night', en: 'from ฿{price} / night', ru: 'от ฿{price} / ночь', zh: '每晚 ฿{price} 起', status: NR },
-  { key: 'search.categories.book', namespace: 'search', description: 'Category card: request CTA', en: 'Request this category', ru: 'Запросить категорию', zh: '申请此类别', status: NR },
+  { key: 'search.categories.book', namespace: 'search', description: 'Category card: request CTA', en: 'Request this category', ru: 'Забронировать', zh: '申请此类别', status: NR },
   { key: 'search.categories.booking', namespace: 'search', description: 'Category card: submitting state', en: 'Sending request…', ru: 'Отправляем запрос…', zh: '正在发送申请…', status: NR },
   { key: 'search.categories.auto_assign', namespace: 'search', description: 'Category card: auto-assignment note', en: 'We assign the best free villa of this category to your dates.', ru: 'Мы сами назначим лучшую свободную виллу этой категории на ваши даты.', zh: '我们将为您的日期安排该类别中最合适的空闲别墅。', status: NR },
   { key: 'search.error_booking', namespace: 'search', description: 'Search: category booking error', en: 'Could not create the request. Please try again.', ru: 'Не удалось создать запрос. Попробуйте ещё раз.', zh: '无法创建申请，请重试。', status: NR },
@@ -1572,7 +1572,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'listing.loading', namespace: 'listing', description: 'Unit detail loading message', en: 'Loading unit details…', ru: 'Загружаем данные…', status: NR },
   { key: 'listing.not_found', namespace: 'listing', description: 'Unit detail not found', en: 'Unit not found', ru: 'Дом не найден', status: NR },
   { key: 'listing.back_to_results', namespace: 'listing', description: 'Unit detail: back to search results link', en: '← Back to results', ru: '← Назад к результатам', status: NR },
-  { key: 'listing.default_description', namespace: 'listing', description: 'Unit detail default description', en: 'A beautiful home in Phuket.', ru: 'Прекрасный дом на Пхукете.', status: NR },
+  { key: 'listing.default_description', namespace: 'listing', description: 'Unit detail default description', en: 'A beautiful home in Phuket.', ru: 'Прекрасный вариант для отдыха на Пхукете.', status: NR },
   { key: 'listing.max_guests', namespace: 'listing', description: 'Unit fact: max guests', en: 'Max guests', ru: 'Макс. гостей', status: NR },
   { key: 'listing.min_stay', namespace: 'listing', description: 'Unit fact: minimum stay', en: 'Min stay', ru: 'Мин. срок', status: NR },
   { key: 'listing.nights', namespace: 'listing', description: 'Plural: nights', en: 'nights', ru: 'ночей', status: NR },
@@ -1618,7 +1618,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'booking.detail.pay_card', namespace: 'booking', description: 'Button: pay by card', en: 'Pay by card', ru: 'Оплатить картой', status: NR },
   { key: 'booking.detail.pay_cash_note', namespace: 'booking', description: 'Note: cash payment option', en: 'You can also pay in cash to our team at check-in — we will confirm your booking on the spot.', ru: 'Также можно оплатить наличными нашей команде при заезде — бронирование подтвердим на месте.', status: NR },
   { key: 'booking.detail.receipt', namespace: 'booking', description: 'Label: receipt reference', en: 'Receipt', ru: 'Чек', status: NR },
-  { key: 'booking.detail.home_space', namespace: 'booking', description: 'Button: open in-stay home space', en: 'Open my home space', ru: 'Открыть мой дом', status: NR },
+  { key: 'booking.detail.home_space', namespace: 'booking', description: 'Button: open in-stay home space', en: 'Open my home space', ru: 'Личный кабинет проживания', status: NR },
   { key: 'booking.detail.cancel_title', namespace: 'booking', description: 'Cancel section title', en: 'Cancel this trip', ru: 'Отменить поездку', status: NR },
   { key: 'booking.detail.cancel_button', namespace: 'booking', description: 'Button: cancel booking', en: 'Cancel booking', ru: 'Отменить бронирование', status: NR },
   { key: 'booking.detail.cancel_confirm', namespace: 'booking', description: 'Confirm dialog: cancel with refund', en: 'Cancel this booking? Refund by your cancellation policy: ฿{refund}.', ru: 'Отменить бронирование? Возврат по условиям отмены: ฿{refund}.', status: NR },
@@ -2397,6 +2397,19 @@ const CATALOG_LABEL_KEYS: KeyDef[] = [
   { key: 'catalog.cancellation_policies.flexible.label', namespace: 'catalog', description: 'Cancellation policy label: flexible', en: 'Flexible', ru: 'Гибкая', status: NR },
   { key: 'catalog.cancellation_policies.moderate.label', namespace: 'catalog', description: 'Cancellation policy label: moderate', en: 'Moderate', ru: 'Умеренная', status: NR },
   { key: 'catalog.cancellation_policies.strict.label', namespace: 'catalog', description: 'Cancellation policy label: strict', en: 'Strict', ru: 'Строгая', status: NR },
+
+  // Unit-type labels. The config catalog (config/seed.ts `unitTypesCatalog`)
+  // defined villa/condo/townhouse but nothing ever named them, so a unit's type
+  // rendered as its raw key. These are the words the interface uses wherever the
+  // type IS known; generic surfaces that cannot know it (search, navigation)
+  // stay on the neutral "размещение"/"варианты" rather than guessing.
+  //
+  // `condo` is Апартаменты, not Кондоминиум: кондоминиум is the legal form of
+  // ownership in Thai law, while апартаменты is the word Russian buyers and
+  // guests actually use for the unit itself.
+  { key: 'catalog.unit_types.villa.label', namespace: 'catalog', description: 'Unit type label: villa', en: 'Villa', ru: 'Вилла', th: 'วิลล่า', status: NR },
+  { key: 'catalog.unit_types.condo.label', namespace: 'catalog', description: 'Unit type label: condominium unit', en: 'Apartment', ru: 'Апартаменты', th: 'คอนโด', status: NR },
+  { key: 'catalog.unit_types.townhouse.label', namespace: 'catalog', description: 'Unit type label: townhouse', en: 'Townhouse', ru: 'Таунхаус', th: 'ทาวน์เฮาส์', status: NR },
   // Ticket category labels — full 8-key catalog (was 4 hardcoded in the UI)
   { key: 'catalog.ticket_categories.maintenance.label', namespace: 'catalog', description: 'Ticket category label: maintenance', en: 'Maintenance', ru: 'Ремонт и обслуживание', status: NR },
   { key: 'catalog.ticket_categories.housekeeping.label', namespace: 'catalog', description: 'Ticket category label: housekeeping', en: 'Housekeeping', ru: 'Уборка', status: NR },

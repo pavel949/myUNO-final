@@ -10,7 +10,18 @@
  *   <div>{t('greeting.hello')}</div>  ✅
  *   <button>{t('action.click')}</button>  ✅
  *   <div className="...">  ✅ (empty/non-text)
- *   {/* comment */}  ✅
+ *   a JSX comment expression  ✅
+ *
+ * NOTE: the JSX comment example above is described in prose on purpose. Writing
+ * it literally puts a comment terminator inside this block comment, which ends
+ * the comment early and leaves the rest of the file as a syntax error — the
+ * whole rule then fails to load.
+ *
+ * STATUS: drafted, not wired. `.eslintrc.json` registers neither a plugin nor a
+ * rules directory for it, so `npm run lint` never loads this file. See
+ * IMPLEMENTATION_GUIDE.md before enabling it — turning it on surfaces existing
+ * violations (the admin screens are not localized yet) and will fail the build
+ * until those are either localized or scoped out.
  */
 module.exports = {
   meta: {

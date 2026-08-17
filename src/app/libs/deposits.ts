@@ -91,27 +91,44 @@ export async function captureDepositPreAuth(
   // Cap capture at preauth amount
   const actualCapture = Math.min(captureAmount, preauth.amountThb)
 
-  // Capture via provider seam (in production, calls provider's capture API)
-  console.log(`[DEPOSIT] Capturing ${actualCapture} THB from preauth ${preauth.id} for claim ${claimId}`)
-
-  // Update preauth status to captured
-  await prismadb.depositPreauth.update({
-    where: { id: preauth.id },
-    data: {
-      status: 'captured',
-      capturedAt: new Date(),
-      captureViaClaimId: claimId,
-    },
-  })
-
-  // Create ledger entry for captured amount
+  // Resolve the booking before any write. The ledger entry needs its unit, and
+  // capturing a guest's money while silently skipping the ledger row — the old
+  // `if (booking)` — leaves money moved with no record of it in an append-only
+  // ledger (CLAUDE.md money rules). Missing booking is a failure, not a skip.
   const booking = await prismadb.booking.findUnique({
     where: { id: bookingId },
     include: { unit: true },
   })
 
-  if (booking) {
-    await prismadb.ledgerEntry.create({
+  if (!booking) {
+    throw new Error(`Booking ${bookingId} not found — refusing to capture without a ledger entry`)
+  }
+
+  // Capture via provider seam (in production, calls provider's capture API)
+  console.log(`[DEPOSIT] Capturing ${actualCapture} THB from preauth ${preauth.id} for claim ${claimId}`)
+
+  // One transaction, and the status predicate makes the transition atomic.
+  // The checks above read the preauth in a separate statement, so two
+  // concurrent approvals both saw `authorized` and both captured the guest's
+  // hold. Re-asserting `status: 'authorized'` in the WHERE means exactly one
+  // update matches; the loser sees zero rows and throws instead of double
+  // charging. Pairing it with the ledger insert keeps the two in step — a
+  // failed insert now rolls the capture back rather than stranding it.
+  await prismadb.$transaction(async (tx) => {
+    const claimed = await tx.depositPreauth.updateMany({
+      where: { id: preauth.id, status: 'authorized' },
+      data: {
+        status: 'captured',
+        capturedAt: new Date(),
+        captureViaClaimId: claimId,
+      },
+    })
+
+    if (claimed.count === 0) {
+      throw new Error('Deposit preauth is no longer capturable')
+    }
+
+    await tx.ledgerEntry.create({
       data: {
         entryType: 'adjustment',
         amountThb: actualCapture,
@@ -121,5 +138,5 @@ export async function captureDepositPreAuth(
         occurredOn: new Date(),
       },
     })
-  }
+  })
 }

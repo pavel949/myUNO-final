@@ -37,13 +37,18 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-24 py-32">
         <div className="prose prose-invert max-w-none">
+          {/*
+            The handbook body is rendered as text, never as HTML. It is
+            admin-editable content out of the database, so injecting it with
+            dangerouslySetInnerHTML let an editor put script into every guest's
+            in-stay page. `whitespace-pre-wrap` already preserves the line
+            breaks the old newline-to-break substitution was there for, so
+            React's default escaping costs us nothing.
+          */}
           {handbookContent ? (
-            <div
-              className="text-body text-text-ink whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{
-                __html: handbookContent.replace(/\n/g, '<br />'),
-              }}
-            />
+            <div className="text-body text-text-ink whitespace-pre-wrap">
+              {handbookContent}
+            </div>
           ) : (
             <div className="bg-surface-paper border border-border-line rounded-md p-24">
               <p className="text-body text-text-secondary text-center">

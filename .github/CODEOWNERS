@@ -1,0 +1,41 @@
+# Review ownership. The founder owns the decisions the platform is built on, so
+# anything that encodes one needs their eyes — not because the code is hard, but
+# because changing it changes the business.
+
+# Default: everything gets a review.
+*                               @pavel949
+
+# The constitution and the locked architecture decisions (D1–D10). A change here
+# precedes the code, never follows it.
+/CLAUDE.md                      @pavel949
+/docs/01_architecture_decisions.md  @pavel949
+/docs/open_questions.md         @pavel949
+
+# Money. Ledger, statements, payouts, deposits, engagement economics.
+/src/modules/finance/           @pavel949
+/src/app/libs/deposits.ts       @pavel949
+/src/app/libs/payouts.ts        @pavel949
+
+# Compliance and personal data: PDPA, TM30, encryption, retention.
+/src/modules/core/encryption*   @pavel949
+/docs/12_security_privacy.md    @pavel949
+/SECURITY.md                    @pavel949
+
+# Permissions. The scoping matrix is the product's core promise.
+/src/modules/core/permissions*  @pavel949
+/docs/03_roles_and_permissions.md   @pavel949
+
+# The registries — business rules and user-facing words, both editable without
+# code precisely so they are reviewed as decisions rather than as diffs.
+/docs/04_configuration.md       @pavel949
+/docs/05_content_i18n.md        @pavel949
+/src/modules/content/legal-pages.seed.ts    @pavel949
+/src/modules/content/audience-faq.seed.ts   @pavel949
+
+# Schema and migrations: forward-only, irreversible in practice.
+/prisma/                        @pavel949
+
+# Deployment, CI and secrets handling.
+/.github/                       @pavel949
+/vercel.json                    @pavel949
+/docs/15_deployment.md          @pavel949

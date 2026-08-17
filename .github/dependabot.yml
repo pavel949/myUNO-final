@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Security patches matter here — the platform holds passport and payment data.
+  # Grouped so a week's patches arrive as one reviewable pull request rather than
+  # a dozen that each need the full CI gate.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      production-patches:
+        dependency-type: production
+        update-types: [patch, minor]
+      development:
+        dependency-type: development
+        update-types: [patch, minor]
+    ignore:
+      # Majors for the locked stack (doc 01 D2) are migrations, not updates:
+      # they land as their own task with their own verification, never as an
+      # automated bump.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+      - dependency-name: "@prisma/client"
+        update-types: [version-update:semver-major]
+      - dependency-name: prisma
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

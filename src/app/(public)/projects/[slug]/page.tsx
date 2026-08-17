@@ -9,7 +9,7 @@ import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
-import { publicPageAlternates } from '@/lib/seo';
+import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -175,7 +175,7 @@ export default async function ProjectLandingPage({
     <main className="min-h-screen bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       {/* Hero */}

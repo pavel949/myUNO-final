@@ -100,9 +100,15 @@ export async function captureDepositPreauthOnClaim(
     throw new Error(`Cannot capture preauth with status ${preauth.status}`);
   }
 
-  // Capture the pre-auth
-  const captured = await db.depositPreauth.update({
-    where: { id: preauth.id },
+  // Re-assert the status in the WHERE rather than trusting the read above.
+  // The check and the write are two statements, so two concurrent claim
+  // approvals for the same booking both observed `authorized` and both
+  // captured — charging the guest twice, with the second write silently
+  // replacing `captureViaClaimId`. The unique constraint on that column only
+  // catches a repeat of the *same* claim, not two different ones. With the
+  // predicate here exactly one update matches and the loser gets zero rows.
+  const claimed = await db.depositPreauth.updateMany({
+    where: { id: preauth.id, status: 'authorized' },
     data: {
       status: 'captured',
       capturedAt: new Date(),
@@ -110,7 +116,13 @@ export async function captureDepositPreauthOnClaim(
     },
   });
 
-  return captured;
+  if (claimed.count === 0) {
+    throw new Error(
+      `Preauth for booking ${bookingId} is no longer capturable — a concurrent claim resolved it first`
+    );
+  }
+
+  return db.depositPreauth.findUniqueOrThrow({ where: { id: preauth.id } });
 }
 
 /**

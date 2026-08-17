@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { siteUrl, publicPageAlternates, faqPageJsonLd, unitJsonLd } from './seo';
+import {
+  siteUrl,
+  publicPageAlternates,
+  faqPageJsonLd,
+  unitJsonLd,
+  serializeJsonLd,
+} from './seo';
 
 /**
  * T-035 DoD: the structured data validates.
@@ -182,6 +188,49 @@ describe('SEO structured data (T-035, doc 08 §7)', () => {
 
       expect(() => JSON.parse(serialised)).not.toThrow();
       expect(JSON.parse(serialised)['@type']).toBe('Accommodation');
+    });
+  });
+
+  describe('serializeJsonLd', () => {
+    // The attack: a unit name, project name or FAQ answer is admin-editable, so
+    // a content editor can put `</script>` in one. Raw JSON.stringify would end
+    // the script element there and the browser would parse the rest as markup.
+    it('escapes a </script> payload so it cannot close the script element', () => {
+      const payload = '</script><img src=x onerror=alert(1)>';
+      const out = serializeJsonLd({ name: payload });
+
+      expect(out).not.toContain('</script>');
+      expect(out).not.toContain('<img');
+      expect(out).toContain('\\u003c');
+    });
+
+    it('round-trips through JSON.parse — crawlers still read the real value', () => {
+      const payload = '</script><b>Villa & Co</b>';
+      const parsed = JSON.parse(serializeJsonLd({ name: payload })) as {
+        name: string;
+      };
+
+      // Escaped on the wire, identical after parsing: the escaping is lossless.
+      expect(parsed.name).toBe(payload);
+    });
+
+    it('escapes the ampersand and the JS line terminators', () => {
+      const out = serializeJsonLd({ a: '&', b: '\u2028', c: '\u2029' });
+
+      expect(out).not.toContain('&');
+      expect(out).toContain('\\u0026');
+      expect(out).toContain('\\u2028');
+      expect(out).toContain('\\u2029');
+    });
+
+    it('leaves an ordinary payload structurally intact', () => {
+      const graph = faqPageJsonLd([
+        { question: 'Is the escaping lossless?', answer: 'Yes — parse it back.' },
+      ]);
+      const parsed = JSON.parse(serializeJsonLd(graph)) as Record<string, unknown>;
+
+      expect(parsed['@type']).toBe('FAQPage');
+      expect((parsed.mainEntity as unknown[])).toHaveLength(1);
     });
   });
 });

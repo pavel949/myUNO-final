@@ -4,7 +4,7 @@ import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
 import { prisma } from '@/lib/prisma';
-import { faqPageJsonLd, publicPageAlternates } from '@/lib/seo';
+import { faqPageJsonLd, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,7 +109,7 @@ export default async function OwnersPage() {
       {faqJsonLd ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       ) : null}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">

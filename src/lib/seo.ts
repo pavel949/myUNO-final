@@ -138,3 +138,32 @@ export function unitJsonLd(unit: UnitJsonLdInput): Record<string, unknown> {
     },
   };
 }
+
+/**
+ * Serialize a JSON-LD payload for injection into a `<script>` element.
+ *
+ * `JSON.stringify` alone is **not** safe here. Our JSON-LD carries values from
+ * the database — unit names, project names, FAQ answers, all editable in the
+ * admin panel — and HTML parses the contents of a `<script>` element as raw
+ * text. A stored value containing `</script>` therefore closes the element
+ * early and everything after it is parsed as markup: a stored-XSS path that
+ * starts at a content editor and lands on every visitor's page.
+ *
+ * Escaping the three HTML-significant characters as unicode escapes closes it.
+ * They only ever occur inside JSON string literals (JSON's own structural
+ * characters are `{}[],:"` and whitespace), so a global replace cannot corrupt
+ * the document shape, and `<` decodes back to `<` for any consumer that
+ * runs `JSON.parse` — which is exactly how crawlers read JSON-LD. U+2028 and
+ * U+2029 are legal in JSON strings but are line terminators in JavaScript, so
+ * they are escaped too.
+ *
+ * Always render JSON-LD through this function, never `JSON.stringify` directly.
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}

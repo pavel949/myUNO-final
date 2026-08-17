@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
-import { publicPageAlternates, unitJsonLd } from '@/lib/seo';
+import { publicPageAlternates, unitJsonLd, serializeJsonLd } from '@/lib/seo';
 import { getPublicUnitById } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
@@ -118,7 +118,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     <Suspense>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <UnitDetailClient
         unitId={params.id}

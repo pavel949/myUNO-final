@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
-import { siteUrl, publicPageAlternates } from '@/lib/seo';
+import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
 
 export const metadata: Metadata = {
@@ -136,7 +136,7 @@ export default async function LandingPage() {
     <main className="min-h-screen bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
       />
       {/* Hero + search */}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">

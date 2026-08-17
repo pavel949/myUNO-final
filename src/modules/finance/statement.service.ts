@@ -115,35 +115,8 @@ export async function generateOwnerStatement(
   const adjustedNoiThb = totals.netTh;
   const distributableCashThb = Math.min(ownerShareThb, adjustedNoiThb);
 
-  // Create the statement in draft status
-  const statement = await db.ownerStatement.create({
-    data: {
-      unitId,
-      ownerIdentityId: unit.ownerIdentityId,
-      engagementId: engagement.id,
-      periodStart,
-      periodEnd,
-      grossRevenueTh: totals.totalRevenueTh,
-      totalCostsTh: totals.totalCostsTh,
-      noiTh: totals.netTh,
-      ownerShareTh: ownerShareThb,
-      estateShareTh: estateShareThb,
-      capApplied,
-      status: 'draft',
-      // Transparency fields (Q31)
-      grossBookingsAmountTh: totals.totalRevenueTh,
-      guestPaymentsReceivedTh: totals.totalRevenueTh, // In loop one, all recorded payments are received
-      serviceFeesAmountTh: serviceFeesAmountThb,
-      operatingExpensesAmountTh: Math.abs(totals.totalCostsTh),
-      taxesAmountTh: 0, // Taxes are not yet tracked separately
-      adjustedNoiTh: adjustedNoiThb,
-      distributableCashTh: distributableCashThb,
-      performanceFeeAmountTh: null, // Performance fees not implemented in loop one
-      performanceFeeBasisText: null,
-    },
-  });
-
-  // Create line items from ledger entries for drill-down (Q31)
+  // The period's ledger entries, read once: they price the tax total below and
+  // then become the statement's line items (Q31 drill-down).
   const entries = await db.ledgerEntry.findMany({
     where: {
       unitId,
@@ -151,18 +124,61 @@ export async function generateOwnerStatement(
     },
   });
 
-  for (const entry of entries) {
-    const category = mapLedgerEntryTypeToLineItemCategory(entry.entryType);
-    await db.statementLineItem.create({
+  const lineItems = entries.map((entry) => ({
+    category: mapLedgerEntryTypeToLineItemCategory(entry.entryType),
+    description: entry.description,
+    amountTh: entry.amountThb,
+    bookingId: entry.bookingId || undefined,
+  }));
+
+  // Derived from the same rows that produce the `tax` line items, so the summary
+  // figure and the drill-down behind it can never tell different stories. Stored
+  // as a positive magnitude, matching `operatingExpensesAmountTh`.
+  const taxesAmountThb = Math.abs(
+    lineItems
+      .filter((line) => line.category === 'tax')
+      .reduce((sum, line) => sum + line.amountTh, 0)
+  );
+
+  // A statement and the lines it drills down to are one record. Written
+  // separately, a failed line-item insert leaves a draft whose totals have no
+  // source rows behind them — and that draft can still be published and signed.
+  const statement = await db.$transaction(async (tx) => {
+    const created = await tx.ownerStatement.create({
       data: {
-        statementId: statement.id,
-        category,
-        description: entry.description,
-        amountTh: entry.amountThb,
-        bookingId: entry.bookingId || undefined,
+        unitId,
+        ownerIdentityId: unit.ownerIdentityId!,
+        engagementId: engagement.id,
+        periodStart,
+        periodEnd,
+        grossRevenueTh: totals.totalRevenueTh,
+        totalCostsTh: totals.totalCostsTh,
+        noiTh: totals.netTh,
+        ownerShareTh: ownerShareThb,
+        estateShareTh: estateShareThb,
+        capApplied,
+        status: 'draft',
+        // Transparency fields (Q31)
+        grossBookingsAmountTh: totals.totalRevenueTh,
+        guestPaymentsReceivedTh: totals.totalRevenueTh, // In loop one, all recorded payments are received
+        serviceFeesAmountTh: serviceFeesAmountThb,
+        operatingExpensesAmountTh: Math.abs(totals.totalCostsTh),
+        taxesAmountTh: taxesAmountThb,
+        adjustedNoiTh: adjustedNoiThb,
+        distributableCashTh: distributableCashThb,
+        performanceFeeAmountTh: null, // Performance fees not implemented in loop one
+        performanceFeeBasisText: null,
       },
     });
-  }
+
+    if (lineItems.length > 0) {
+      await tx.statementLineItem.createMany({
+        data: lineItems.map((line) => ({ ...line, statementId: created.id })),
+      });
+    }
+
+    return created;
+  });
 
   return statement;
 }

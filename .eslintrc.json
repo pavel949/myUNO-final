@@ -9,7 +9,7 @@
   "overrides": [
     {
       "files": ["**/*.ts", "**/*.tsx"],
-      "excludedFiles": ["prisma/seed.ts"],
+      "excludedFiles": ["prisma/seed.ts", "prisma/seed-registries.ts"],
       "rules": {
         "no-restricted-imports": [
           "warn",

@@ -188,6 +188,13 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Why the body was not drafted:** terms of service and a privacy policy are counsel's instruments and carry legal consequence. An agent-written approximation that reads authoritative is worse than an honest "not yet" — visitors would rely on it, and PDPA exposure attaches to what is published.
 - **Needs from founder:** the counsel-drafted terms of service and privacy policy. Also still outstanding from Q16: a dedicated public support/WhatsApp line and a privacy mailbox if different from the director's email, and Ignatev Capital's entity details if it is named publicly.
 
+### Q37. The database sits in Mumbai, but the deployment spec and the privacy notice say Singapore — OPEN
+- **Source:** connecting the app to Supabase. Doc 15 §2 specifies **Singapore** for the managed Postgres: closest to Phuket users, and named in the privacy notice as where personal data rests (PDPA). The provisioned project `MyUno- final` (`burcnghheyzbzffzgmjz`) is in **`ap-south-1` (Mumbai)**.
+- **Why it is not just a latency question:** under the PDPA the privacy notice tells data subjects where their personal data is held. Passports, payment records and guest identities would rest in a country the published notice does not name. That is a disclosure problem before it is an engineering one.
+- **Why deciding now is cheaper:** the database is currently empty. Moving regions is a dump-and-restore today; once there are real guests, bookings and encrypted passports it becomes a migration with downtime, and the `ENCRYPTION_KEY` must travel with it intact or every passport becomes unreadable (doc 15 §4).
+- **Needs from founder:** either (a) re-provision in Singapore (`ap-southeast-1`) and point `DATABASE_URL` at it, or (b) rule that Mumbai is acceptable — in which case doc 15 §2 and the privacy notice copy (`legal.privacy.*`, Q36) must both be corrected to name it, and counsel should confirm the disclosure reads correctly.
+- **Not decided by an agent:** this trades a compliance statement against convenience, which is a founder call.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

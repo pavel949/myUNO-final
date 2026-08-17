@@ -12,17 +12,21 @@
  * Both steps are idempotent, so running it twice is safe and is the normal way
  * to bring an environment back into line after a schema change.
  *
- * ── Supabase: use the DIRECT connection, not the transaction pooler ──────────
+ * ── Supabase: any connection EXCEPT the transaction pooler ──────────────────
  *
- * `prisma migrate deploy` takes an advisory lock and issues DDL, neither of
- * which survives Supabase's transaction pooler on port 6543. Migrations must run
- * against the direct connection:
+ * `prisma migrate deploy` takes an advisory lock and issues DDL. Supabase's
+ * *transaction* pooler (port 6543) supports neither, and fails with a confusing
+ * prepared-statement error, so this script stops if it sees one.
  *
- *   postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+ * Both of the others are fine:
  *
- * A pooler URL typically fails here with a confusing prepared-statement or lock
- * error, so this script checks for one up front and stops rather than letting
- * you debug that.
+ *   Session pooler   aws-0-<region>.pooler.supabase.com:5432   ← usually this one
+ *   Direct           db.<ref>.supabase.co:5432
+ *
+ * Prefer the session pooler. Supabase now gives direct connections IPv6-only
+ * addresses unless the IPv4 add-on is enabled, and most networks — including
+ * plenty of CI runners — cannot reach those, which shows up as a connection
+ * timeout with no error message.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -47,13 +51,16 @@ function describeTarget(url) {
 const target = describeTarget(DATABASE_URL)
 console.log(`\nProvisioning: ${target}\n`)
 
-if (/pooler\.supabase\.com/.test(DATABASE_URL) || /:6543/.test(DATABASE_URL)) {
+// Only the transaction pooler is a problem. The session pooler on 5432 is a
+// normal Postgres connection and migrates fine — which matters, because it is
+// often the only address reachable over IPv4.
+if (/:6543/.test(DATABASE_URL) || /pgbouncer=true/.test(DATABASE_URL)) {
   console.error(
-    'This looks like a Supabase pooler URL. Migrations need the direct\n' +
-      'connection (db.<ref>.supabase.co:5432) — the pooler does not support the\n' +
-      'advisory lock and DDL that `prisma migrate deploy` relies on.\n\n' +
-      'Re-run with the direct connection string from Supabase → Settings →\n' +
-      'Database → Connection string → URI.'
+    'This is the Supabase transaction pooler (port 6543). It supports neither\n' +
+      'the advisory lock nor the DDL that `prisma migrate deploy` needs.\n\n' +
+      'Use the session pooler instead — same host, port 5432:\n' +
+      '  postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres\n\n' +
+      'Supabase → Settings → Database → Connection string → Session pooler.'
   )
   process.exit(1)
 }

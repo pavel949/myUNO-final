@@ -20,6 +20,50 @@ A managed platform stack — recommended: **Vercel** (the Next.js app + cron job
 
 The choice is deliberately boring and reversible: the app is a standard Next.js + Postgres deployment, movable to any equivalent host without code changes.
 
+### 2.1 What is actually provisioned
+
+Vercel project `my-uno-final`; database on **Supabase**, project **`MyUno- final`** (ref `burcnghheyzbzffzgmjz`). Supabase is used as plain Postgres over Prisma — the Supabase client libraries are not used anywhere, which is why the platform's own auth and row-level security are not part of the access model. **Scoping is enforced server-side in every query (doc 03); that has not changed.**
+
+⚠️ **The provisioned region is `ap-south-1` (Mumbai), not the Singapore this section specifies.** Region is a PDPA matter — the privacy notice names where personal data rests — so this is a discrepancy to resolve, not a detail to absorb. Logged as **Q37**; moving later means migrating data, so it is cheaper to decide before real guests exist.
+
+⚠️ **Row-level security is disabled on all 57 tables.** Supabase exposes an auto-generated REST API to the `anon` role, and its key is public by design, so with RLS off every row — passports, payments, the ledger, the audit log — is readable and writable by anyone holding it. This exists independently of the application code and none of the doc 03 scoping protects against it. See §2.3.
+
+### 2.2 Connection strings — which one, and why it matters
+
+Supabase offers three addresses for the same database, and they are not interchangeable:
+
+| Address | Port | Migrations | Runtime | Notes |
+|---|---|---|---|---|
+| **Session pooler** `aws-0-<region>.pooler.supabase.com` | 5432 | ✅ | ✅ | **Use this.** IPv4, behaves as ordinary Postgres |
+| Transaction pooler | 6543 | ❌ | ✅ | No prepared statements or advisory locks — `prisma migrate deploy` fails |
+| Direct `db.<ref>.supabase.co` | 5432 | ✅ | ✅ | IPv6-only on new projects without the IPv4 add-on; frequently unreachable, and it fails as a silent timeout rather than an error |
+
+The schema declares a single `url = env("DATABASE_URL")` and no `directUrl`, deliberately: one variable, one address, nothing to keep in sync. The session pooler serves both roles, so the extra complexity buys nothing here.
+
+`scripts/provision-database.mjs` rejects a transaction-pooler URL up front and names the right one, because that failure otherwise surfaces as an unrelated-looking prepared-statement error.
+
+### 2.3 Row-level security on Supabase
+
+The application connects as the table owner, and **Postgres table owners bypass RLS by default** (they are subject to it only under `FORCE ROW LEVEL SECURITY`, which is not set). So enabling RLS with **no policies at all** closes the public REST surface while leaving the application untouched — the opposite of the usual Supabase advice, and correct precisely because the Supabase client libraries are unused here.
+
+Verified on a scratch database with this schema: a non-owner role holding full table grants went from reading 76 rows to 0 once RLS was enabled, while the owner continued to read all 76 and the registry seed completed its reads and writes normally.
+
+Remediation is `ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;` for every application table. **Not yet applied.**
+
+### 2.4 Bringing a database up to date
+
+One command, idempotent, safe to re-run:
+
+```bash
+DATABASE_URL="<session pooler URL>" node scripts/provision-database.mjs
+```
+
+It applies migrations (`prisma migrate deploy` — never `db push`), seeds **config and content only**, then verifies the registry counts and exits non-zero if they are empty. It never writes the demo projects, units and identities from `prisma/seed.ts`; those are for local and staging, and on a live domain they are indistinguishable from real listings.
+
+Step-by-step, including the Vercel side: **`docs/DATABASE_SETUP.md`**.
+
+Note that deployments do **not** run migrations. The build runs `repair-failed-migrations.mjs` then `prisma generate`, and nothing more — so a schema change reaches an environment only when someone runs the command above against it. An earlier attempt to add `prisma migrate deploy` to the build was reverted: it made every deploy depend on the database being reachable at build time, and the deploy failed the first time it was not.
+
 ## 3. How changes ship
 
 1. A builder finishes a doc-16 task on a branch; CI runs the full gate (tests, typecheck, lints — doc 14 §8).

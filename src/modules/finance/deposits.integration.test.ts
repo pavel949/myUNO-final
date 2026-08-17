@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import {
-  createPreAuthDeposit,
-  voidDepositOnCleanCheckout,
-  captureDepositOnClaim,
+  scheduleDepositPreauth,
+  voidDepositPreauthIfClean,
+  captureDepositPreauthOnClaim,
   fileDepositClaim,
   approveClaim,
   rejectClaim,
@@ -15,8 +15,8 @@ describe('Deposits & Damage Claims (T-032)', () => {
     await resetDb();
   });
 
-  describe('pre-auth deposit creation', () => {
-    it('creates pre-auth deposit for a booking', async () => {
+  describe('schedule deposit pre-auth', () => {
+    it('schedules pre-auth deposit for a booking', async () => {
       const guest = await createIdentity();
       const project = await createProject();
       const unit = await createUnit(project.id);
@@ -29,14 +29,13 @@ describe('Deposits & Damage Claims (T-032)', () => {
         endDate: new Date('2026-08-07'),
       });
 
-      // Create pre-auth deposit (e.g., 2000 THB hold)
-      const deposit = await createPreAuthDeposit(db, booking.id, 2000);
+      // Schedule pre-auth deposit (e.g., 2000 THB hold)
+      const preauth = await scheduleDepositPreauth(db, booking.id, 2000);
 
-      expect(deposit.purpose).toBe('deposit_preauth');
-      expect(deposit.bookingId).toBe(booking.id);
-      expect(deposit.amountThb).toBe(2000);
-      expect(deposit.status).toBe('created');
-      expect(deposit.payerIdentityId).toBe(guest.id);
+      expect(preauth.bookingId).toBe(booking.id);
+      expect(preauth.amountThb).toBe(2000);
+      expect(preauth.status).toBe('authorized');
+      expect(preauth.authorizedAt).toBeInstanceOf(Date);
     });
   });
 
@@ -54,24 +53,24 @@ describe('Deposits & Damage Claims (T-032)', () => {
         endDate: new Date('2026-08-07'),
       });
 
-      // Create pre-auth deposit
-      const deposit = await createPreAuthDeposit(db, booking.id, 2000);
-      expect(deposit.status).toBe('created');
+      // Schedule pre-auth deposit
+      const preauth = await scheduleDepositPreauth(db, booking.id, 2000);
+      expect(preauth.status).toBe('authorized');
 
       // Simulate checkout: mark booking as checked_out
       await db.booking.update({
         where: { id: booking.id },
         data: {
           checkedOutAt: new Date(),
-          status: 'checked_out',
         },
       });
 
       // Condition report shows no damage → void the pre-auth
-      const voided = await voidDepositOnCleanCheckout(db, deposit.id);
+      const voided = await voidDepositPreauthIfClean(db, booking.id);
 
-      expect(voided.id).toBe(deposit.id);
+      expect(voided.id).toBe(preauth.id);
       expect(voided.status).toBe('voided');
+      expect(voided.voidedAt).toBeInstanceOf(Date);
     });
 
     it('guest is not charged when deposit is voided on clean checkout', async () => {
@@ -87,26 +86,25 @@ describe('Deposits & Damage Claims (T-032)', () => {
         endDate: new Date('2026-08-07'),
       });
 
-      const deposit = await createPreAuthDeposit(db, booking.id, 2000);
+      await scheduleDepositPreauth(db, booking.id, 2000);
 
       // Mark as checked out
       await db.booking.update({
         where: { id: booking.id },
         data: {
           checkedOutAt: new Date(),
-          status: 'checked_out',
         },
       });
 
       // Void on clean checkout
-      await voidDepositOnCleanCheckout(db, deposit.id);
+      await voidDepositPreauthIfClean(db, booking.id);
 
-      // Verify payment is voided (not captured/charged)
-      const payment = await db.payment.findUnique({
-        where: { id: deposit.id },
+      // Verify preauth is voided (not captured/charged)
+      const preauth = await db.depositPreauth.findUnique({
+        where: { bookingId: booking.id },
       });
 
-      expect(payment?.status).toBe('voided');
+      expect(preauth?.status).toBe('voided');
     });
   });
 
@@ -125,22 +123,21 @@ describe('Deposits & Damage Claims (T-032)', () => {
         endDate: new Date('2026-08-07'),
       });
 
-      // Create pre-auth deposit
-      const deposit = await createPreAuthDeposit(db, booking.id, 2000);
-      expect(deposit.status).toBe('created');
+      // Schedule pre-auth deposit
+      const preauth = await scheduleDepositPreauth(db, booking.id, 2000);
+      expect(preauth.status).toBe('authorized');
 
       // Guest checks out
       await db.booking.update({
         where: { id: booking.id },
         data: {
           checkedOutAt: new Date(),
-          status: 'checked_out',
         },
       });
 
       // Guest files damage claim within 48h
       const claim = await fileDepositClaim(db, {
-        reservationId: booking.id,
+        bookingId: booking.id,
         claimantIdentityId: guest.id,
         description: 'Broken mirror in bedroom',
         claimedAmountThb: 1500,
@@ -156,13 +153,14 @@ describe('Deposits & Damage Claims (T-032)', () => {
       expect(approved.status).toBe('approved');
       expect(approved.resolutionAt).toBeDefined();
 
-      // Verify payment is now succeeded (captured)
-      const payment = await db.payment.findUnique({
-        where: { id: deposit.id },
+      // Verify preauth is now captured
+      const updated = await db.depositPreauth.findUnique({
+        where: { id: preauth.id },
       });
 
-      expect(payment?.status).toBe('succeeded');
-      expect(payment?.receivedAt).toBeDefined();
+      expect(updated?.status).toBe('captured');
+      expect(updated?.capturedAt).toBeDefined();
+      expect(updated?.captureViaClaimId).toBe(claim.id);
     });
 
     it('refunds pre-auth when damage claim is rejected', async () => {
@@ -179,19 +177,18 @@ describe('Deposits & Damage Claims (T-032)', () => {
         endDate: new Date('2026-08-07'),
       });
 
-      const deposit = await createPreAuthDeposit(db, booking.id, 2000);
+      const preauth = await scheduleDepositPreauth(db, booking.id, 2000);
 
       await db.booking.update({
         where: { id: booking.id },
         data: {
           checkedOutAt: new Date(),
-          status: 'checked_out',
         },
       });
 
       // Guest files claim
       const claim = await fileDepositClaim(db, {
-        reservationId: booking.id,
+        bookingId: booking.id,
         claimantIdentityId: guest.id,
         description: 'Alleged stain on couch',
         claimedAmountThb: 500,
@@ -202,12 +199,13 @@ describe('Deposits & Damage Claims (T-032)', () => {
 
       expect(rejected.status).toBe('rejected');
 
-      // Verify payment is voided (funds returned)
-      const payment = await db.payment.findUnique({
-        where: { id: deposit.id },
+      // Verify preauth is voided (funds returned)
+      const updated = await db.depositPreauth.findUnique({
+        where: { id: preauth.id },
       });
 
-      expect(payment?.status).toBe('voided');
+      expect(updated?.status).toBe('voided');
+      expect(updated?.voidedAt).toBeDefined();
     });
   });
 
@@ -238,7 +236,7 @@ describe('Deposits & Damage Claims (T-032)', () => {
       // Attempt to file claim (should fail)
       await expect(
         fileDepositClaim(db, {
-          reservationId: booking.id,
+          bookingId: booking.id,
           claimantIdentityId: guest.id,
           description: 'Damage claim',
           claimedAmountThb: 1000,
@@ -263,7 +261,7 @@ describe('Deposits & Damage Claims (T-032)', () => {
 
       await expect(
         fileDepositClaim(db, {
-          reservationId: booking.id,
+          bookingId: booking.id,
           claimantIdentityId: guest.id,
           description: 'Damage claim',
           claimedAmountThb: 1000,
@@ -299,14 +297,14 @@ describe('Deposits & Damage Claims (T-032)', () => {
       await db.booking.update({ where: { id: booking2.id }, data: { checkedOutAt: new Date() } });
 
       const claim1 = await fileDepositClaim(db, {
-        reservationId: booking1.id,
+        bookingId: booking1.id,
         claimantIdentityId: guest.id,
         description: 'Damage 1',
         claimedAmountThb: 1000,
       });
 
       const claim2 = await fileDepositClaim(db, {
-        reservationId: booking2.id,
+        bookingId: booking2.id,
         claimantIdentityId: guest.id,
         description: 'Damage 2',
         claimedAmountThb: 500,
@@ -335,7 +333,7 @@ describe('Deposits & Damage Claims (T-032)', () => {
       });
 
       // A pre-auth deposit must exist so approving the claim can capture it
-      await createPreAuthDeposit(db, booking.id, 2000);
+      await scheduleDepositPreauth(db, booking.id, 2000);
 
       await db.booking.update({
         where: { id: booking.id },
@@ -343,7 +341,7 @@ describe('Deposits & Damage Claims (T-032)', () => {
       });
 
       const claim = await fileDepositClaim(db, {
-        reservationId: booking.id,
+        bookingId: booking.id,
         claimantIdentityId: guest.id,
         description: 'Damage',
         claimedAmountThb: 1000,

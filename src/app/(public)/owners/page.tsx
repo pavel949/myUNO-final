@@ -4,6 +4,7 @@ import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
 import { prisma } from '@/lib/prisma';
+import { faqPageJsonLd, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${labels['audience.owners.title']} | myUNO`,
     description: labels['audience.owners.hero_lede'],
+    alternates: publicPageAlternates('/owners'),
   };
 }
 
@@ -98,8 +100,18 @@ export default async function OwnersPage() {
     a: labels[`audience.owners.faq.q${n}_body`],
   }));
 
+  // FAQPage structured data (doc 08 §7) — built from the same answers the
+  // page renders, so the two can never drift apart.
+  const faqJsonLd = faqPageJsonLd(faqs.map((f) => ({ question: f.q, answer: f.a })));
+
   return (
     <main className="min-h-screen bg-white">
+      {faqJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+        />
+      ) : null}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-heading-1 font-bold mb-24">

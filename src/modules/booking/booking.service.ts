@@ -517,15 +517,40 @@ export async function completeBooking(
   return completed;
 }
 
+export interface StayExtensionResult {
+  bookingId: string;
+  currentEndDate: Date;
+  newEndDate: Date;
+  additionalNights: number;
+  /** Price of the added nights alone — what the guest still owes. */
+  addedThb: number;
+  /** The booking's balance after this extension is added to it. */
+  balanceDueThb: number;
+  newTotalThb: number;
+}
+
 /**
- * Request a booking extension (extend endDate).
+ * Extend a stay that is already under way (doc 07 F-GUEST-7 → F-GUEST-9).
+ *
+ * A stay in progress has exactly one date affordance: push the end date
+ * later. The start date is history by then, so it is never touched here —
+ * a guest who wants a different shape of booking cancels and rebooks.
+ *
+ * The added nights are availability-checked against the rest of the calendar,
+ * priced on their own, and recorded as an unpaid balance. Collecting that
+ * balance is the caller's job (a `stay_balance` checkout through the finance
+ * seam) — this module never reaches into payments.
  */
 export async function requestExtension(
   db: PrismaClient,
   bookingId: string,
-  newEndDate: Date
-) {
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
+  newEndDate: Date,
+  actorIdentityId?: string
+): Promise<StayExtensionResult> {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { unit: true },
+  });
   if (!booking) {
     throw new Error(`Booking ${bookingId} not found`);
   }
@@ -538,11 +563,63 @@ export async function requestExtension(
     throw new Error('New end date must be after current end date');
   }
 
+  // The added nights are the only ones in question — the nights already being
+  // slept in are this booking's own and cannot conflict with anything.
+  const conflicting = await db.booking.findFirst({
+    where: {
+      unitId: booking.unitId,
+      id: { not: bookingId },
+      startDate: { lt: newEndDate },
+      endDate: { gt: booking.endDate },
+      OR: [
+        { status: { in: ['confirmed', 'checked_in'] } },
+        { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+      ],
+    },
+  });
+
+  if (conflicting) {
+    throw new Error('The unit is already booked for those nights');
+  }
+
   const additionalNights = Math.ceil(
     (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Track analytics event
+  const addedThb = additionalNights * (booking.unit?.baseNightlyThb ?? 0);
+  const newTotalThb = booking.totalThb + addedThb;
+  const balanceDueThb = (booking.balanceDueThb || 0) + addedThb;
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: {
+      endDate: newEndDate,
+      totalThb: newTotalThb,
+      balanceDueThb,
+    },
+  });
+
+  // F-GUEST-9 writes a BookingChange for every date move, so the stay's shape
+  // is always reconstructable from its own history.
+  await db.bookingChange.create({
+    data: {
+      bookingId,
+      changeType: 'dates',
+      oldValue: {
+        startDate: booking.startDate.toISOString(),
+        endDate: booking.endDate.toISOString(),
+        totalThb: booking.totalThb,
+      },
+      newValue: {
+        startDate: booking.startDate.toISOString(),
+        endDate: newEndDate.toISOString(),
+        totalThb: newTotalThb,
+      },
+      priceDeltaThb: addedThb,
+      actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+    },
+  });
+
   await track(db, 'stay_extension_requested', {
     bookingId,
     unitId: booking.unitId,
@@ -551,12 +628,14 @@ export async function requestExtension(
     addedNights: additionalNights,
   }).catch(() => null);
 
-  // For now, just return the request info. Actual extension logic would follow.
   return {
     bookingId,
     currentEndDate: booking.endDate,
-    newEndDate,
+    newEndDate: updated.endDate,
     additionalNights,
+    addedThb,
+    balanceDueThb,
+    newTotalThb,
   };
 }
 

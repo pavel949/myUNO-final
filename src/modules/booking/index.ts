@@ -24,6 +24,7 @@ export {
   type DeclineBookingRequestInput,
   type ConfirmBookingInput,
   type CancelBookingInput,
+  type StayExtensionResult,
 } from './booking.service';
 
 export {

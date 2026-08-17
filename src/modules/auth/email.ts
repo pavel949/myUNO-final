@@ -33,11 +33,13 @@ async function sendViaResend(message: EmailMessage): Promise<void> {
 }
 
 async function sendViaConsole(message: EmailMessage): Promise<void> {
-  console.log(`\n📧 Email would be sent to ${message.to}`);
-  console.log(`Subject: ${message.subject}`);
-  console.log(`---`);
-  console.log(message.html);
-  console.log(`---\n`);
+  // The console fallback records that an email would have gone out — not who
+  // to, and not what it said. These are auth emails: their bodies carry
+  // one-time reset and verification links, so dumping them to a log hands
+  // anyone with log access a working account takeover (doc 12).
+  console.log(
+    `📧 Email would be sent: subject="${message.subject}" (${message.html.length} chars)`
+  );
 }
 
 export async function sendEmail(message: EmailMessage): Promise<void> {

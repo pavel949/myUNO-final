@@ -9,6 +9,7 @@ import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
+import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ export async function generateMetadata({
   return {
     title: `${project.name} | myUNO`,
     description: description.slice(0, 160) || undefined,
-    alternates: { canonical: `/projects/${project.slug}` },
+    alternates: publicPageAlternates(`/projects/${project.slug}`),
     openGraph: {
       title: project.name,
       description: description.slice(0, 160) || undefined,
@@ -174,7 +175,7 @@ export default async function ProjectLandingPage({
     <main className="min-h-screen bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       {/* Hero */}

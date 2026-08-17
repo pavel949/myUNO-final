@@ -1,21 +1,48 @@
 import { PrismaClient, BuyerSignalKey, BuyerSignalStatus, AnalyticsEventKey } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 import { track } from './track';
 
-// Fallback defaults; thresholds should be read from config in production
-const DEFAULT_REPEAT_STAY_THRESHOLD = 2;
-const DEFAULT_LONG_STAY_NIGHTS = 28;
-const DEFAULT_LISTING_ENGAGEMENT_VIEW_COUNT = 3;
+// doc 13 §4 fixes this one at 3 views in 30 days — it is the rule itself, not
+// a dial, so unlike the two thresholds below it is not a registered parameter.
+const LISTING_ENGAGEMENT_VIEW_COUNT = 3;
 
 /**
  * Detect buyer signals from completed stays, long stays, and engagement patterns.
  * Each signal creation is audit-logged per doc 13 §4.
+ *
+ * The two thresholds are registered parameters (doc 04 §7) read through
+ * `config.get()`, so the founder can retune what counts as a buyer without a
+ * deploy — which is the whole point of them being configuration.
  */
 export async function detectBuyerSignals(
   db: PrismaClient,
   auditActorIdentityId?: string
 ) {
-  await detectRepeatStaySignals(db, auditActorIdentityId);
-  await detectLongStaySignals(db, auditActorIdentityId);
+  const [repeatStayThreshold, longStayNights] = await Promise.all([
+    getConfig(db, 'analytics.buyer_signal.repeat_stay_threshold'),
+    getConfig(db, 'analytics.buyer_signal.long_stay_nights'),
+  ]);
+
+  // An unregistered threshold means the config registry is not seeded, not
+  // that the threshold is zero. Fail closed: skip the detector rather than
+  // treat every guest as a buyer and flood the funnel with noise no one can
+  // untangle afterwards.
+  if (typeof repeatStayThreshold === 'number') {
+    await detectRepeatStaySignals(db, repeatStayThreshold, auditActorIdentityId);
+  } else {
+    console.warn(
+      '[signals] analytics.buyer_signal.repeat_stay_threshold is not registered — repeat_stay detection skipped'
+    );
+  }
+
+  if (typeof longStayNights === 'number') {
+    await detectLongStaySignals(db, longStayNights, auditActorIdentityId);
+  } else {
+    console.warn(
+      '[signals] analytics.buyer_signal.long_stay_nights is not registered — long_stay detection skipped'
+    );
+  }
+
   await detectListingEngagementSignals(db, auditActorIdentityId);
 }
 
@@ -25,6 +52,7 @@ export async function detectBuyerSignals(
  */
 async function detectRepeatStaySignals(
   db: PrismaClient,
+  threshold: number,
   auditActorIdentityId?: string
 ) {
   // Candidates are the booking guest identities themselves (doc 13 §4):
@@ -40,7 +68,7 @@ async function detectRepeatStaySignals(
     if (!guest.guestIdentityId) continue;
     const completedStays = guest._count._all;
 
-    if (completedStays >= DEFAULT_REPEAT_STAY_THRESHOLD) {
+    if (completedStays >= threshold) {
       const strength = completedStays >= 3 ? 3 : 2;
       const signal = await db.buyerSignal.upsert({
         where: {
@@ -96,6 +124,7 @@ async function detectRepeatStaySignals(
  */
 async function detectLongStaySignals(
   db: PrismaClient,
+  minNights: number,
   auditActorIdentityId?: string
 ) {
   const longStays = await db.booking.findMany({
@@ -109,7 +138,7 @@ async function detectLongStaySignals(
         (1000 * 60 * 60 * 24)
     );
 
-    if (nights >= DEFAULT_LONG_STAY_NIGHTS) {
+    if (nights >= minNights) {
       const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
@@ -186,7 +215,7 @@ async function detectListingEngagementSignals(
   }
 
   for (const [identityId, units] of engagementMap) {
-    if (units.size >= DEFAULT_LISTING_ENGAGEMENT_VIEW_COUNT) {
+    if (units.size >= LISTING_ENGAGEMENT_VIEW_COUNT) {
       const signal = await db.buyerSignal.upsert({
         where: {
           identityId_signalKey: {
@@ -241,6 +270,14 @@ export async function transitionBuyerSignal(
   transitionByIdentityId: string,
   notes?: string
 ) {
+  // Read the status before the write: the updated row already carries the new
+  // one, so logging `signal.status` after the update recorded every transition
+  // as from-X-to-X and destroyed the very history the audit trail exists for.
+  const previous = await db.buyerSignal.findUnique({
+    where: { id: signalId },
+    select: { status: true },
+  });
+
   const signal = await db.buyerSignal.update({
     where: { id: signalId },
     data: {
@@ -259,7 +296,7 @@ export async function transitionBuyerSignal(
       entityType: 'buyer_signal',
       entityId: signal.id,
       data: {
-        fromStatus: signal.status,
+        fromStatus: previous?.status ?? null,
         toStatus: newStatus,
         notes,
       },

@@ -5,6 +5,7 @@ import { listPublicProjects } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { getRequestLocale } from '@/lib/i18n';
+import { publicPageAlternates } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: labels['projects.meta.title'],
     description: labels['projects.meta.description'],
-    alternates: { canonical: '/projects' },
+    alternates: publicPageAlternates('/projects'),
   };
 }
 

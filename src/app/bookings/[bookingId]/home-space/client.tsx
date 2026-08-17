@@ -8,7 +8,11 @@ import {
   QuickActionsRow,
   ActiveOrdersList,
   AnnouncementsSection,
+  ServicesRail,
+  ExtendStayPanel,
+  RoleContextBanner,
   Button,
+  type RailService,
 } from '@/components';
 
 interface Unit {
@@ -55,6 +59,8 @@ interface InStayHomeSpaceClientProps {
   booking: Booking;
   activeOrders: ActiveOrder[];
   announcements: Announcement[];
+  services: RailService[];
+  secondaryRoles: string[];
   conciergeWhatsappUrl?: string | null;
   shuttleText?: string;
   labels: Record<string, string>;
@@ -64,11 +70,20 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   booking,
   activeOrders,
   announcements,
+  services,
+  secondaryRoles,
   conciergeWhatsappUrl,
   shuttleText,
   labels,
 }) => {
   const router = useRouter();
+  const [extendOpen, setExtendOpen] = React.useState(false);
+  const [extendBusy, setExtendBusy] = React.useState(false);
+  const [extendError, setExtendError] = React.useState<string | null>(null);
+
+  // The extension is only offered once the stay is actually under way — before
+  // then the trip page's full date change is the right tool (F-GUEST-9).
+  const inStay = booking.status === 'checked_in';
   const handleMessageHost = async () => {
     // F-COM-1: booking-context thread with ops + owner
     const response = await fetch('/api/threads', {
@@ -99,8 +114,44 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   };
 
   const handleExtendStay = () => {
-    // F-GUEST-9: date change lives on the trip page
+    // Mid-stay the only date move is later, and it belongs here rather than on
+    // the trip page, whose full date change is hidden once a stay has begun.
+    if (inStay) {
+      setExtendOpen((open) => !open);
+      return;
+    }
     router.push(`/trips/${booking.id}`);
+  };
+
+  const submitExtension = async (newEndDate: string) => {
+    setExtendBusy(true);
+    setExtendError(null);
+    try {
+      // F-GUEST-9: the server re-checks availability and prices the added
+      // nights; nothing about the total is decided on the client.
+      const response = await fetch(`/api/bookings/${booking.id}/modify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endDate: newEndDate }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setExtendError(data?.error || labels['home.extend.error_generic']);
+        return;
+      }
+
+      // Added nights are owed, so send the guest straight to settling them.
+      if (data?.pricing?.checkoutUrl) {
+        router.push(data.pricing.checkoutUrl);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setExtendError(labels['home.extend.error_generic']);
+    } finally {
+      setExtendBusy(false);
+    }
   };
 
   return (
@@ -112,6 +163,21 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
       </div>
 
       <div className="max-w-4xl mx-auto px-24">
+        {/* Whoever else this person is here, the stay is what they came for —
+            the banner keeps the other hat legible (doc 06; F-OWN-6). */}
+        {secondaryRoles.length > 0 ? (
+          <RoleContextBanner
+            message={(labels['home.role_context'] ?? '')
+              .replace('{role}', labels[`home.role.${secondaryRoles[0]}`] ?? secondaryRoles[0])
+              .replace('{unit}', booking.unit.name)}
+            action={
+              secondaryRoles.includes('owner')
+                ? { label: labels['home.role_context.owner_link'], href: '/owner' }
+                : undefined
+            }
+          />
+        ) : null}
+
         {/* Hero stay card */}
         <StayCard
           projectName={booking.unit.project.name}
@@ -121,14 +187,34 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
           status={booking.status}
           checkedInAt={booking.checkedInAt}
           guestNationality={booking.guest?.nationality ?? undefined}
+          labels={labels}
         />
 
         {/* Quick actions row */}
         <QuickActionsRow
+          labels={labels}
           onMessageHost={handleMessageHost}
           onOrderService={handleOrderService}
           onRaiseIssue={handleRaiseIssue}
           onExtendStay={handleExtendStay}
+        />
+
+        {/* Extension entry — the in-stay half of F-GUEST-9 */}
+        {inStay && extendOpen ? (
+          <ExtendStayPanel
+            currentEndDate={booking.endDate}
+            isLoading={extendBusy}
+            error={extendError}
+            labels={labels}
+            onExtend={submitExtension}
+          />
+        ) : null}
+
+        {/* Services rail — this project's services, orderable for this stay */}
+        <ServicesRail
+          services={services}
+          labels={labels}
+          hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
         />
 
         {/* Concierge WhatsApp (config-driven; hidden without a number) */}
@@ -191,8 +277,6 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
         </div>
       </div>
 
-      {/* TODO: Add modals for message, service order, issue, and extend stay */}
-      {/* These will be implemented once the respective modal components are available */}
     </div>
   );
 };

@@ -47,6 +47,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `listing.*` | Unit/listing detail page (amenities heading, policies block, house rules). |
 | `booking.*` | The stay flow end-to-end: widget, review step, payment, confirmation, holds, request-to-book, modification, cancellation dialogs (incl. every unhappy-path message: `booking.error.payment_failed`, `booking.error.dates_taken`, `booking.hold.expired` …). |
 | `checkin.*` | Pre-arrival & check-in: passport capture, TM30 notice (`checkin.tm30.explainer` — why we ask), instructions. |
+| `home.*` | The in-stay home space (doc 06 S6): welcome header, stay card, quick actions, services rail, extension panel, handbook and concierge CTAs, and the role-context banner (`home.role_context`) shown when the guest wears a second hat on the unit. |
 | `services.*` | Marketplace: catalog UI, service card, order flow, provider confirmation states, cancellation/refund dialogs, no-show apology. |
 | `tickets.*` | Raise-ticket form, status labels, SLA texts, resolution view. |
 | `messages.*` | Inbox, thread UI, read receipts, system-message templates (`messages.system.booking_confirmed` …). |

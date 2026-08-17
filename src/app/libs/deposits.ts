@@ -2,13 +2,12 @@ import prismadb from './prismadb'
 import { getConfig } from '@/modules/config/config.service'
 
 /**
- * Initiate deposit pre-auth for a booking at check-in minus N days.
- * Only if mode=preauth and amount > 0.
+ * Schedule deposit pre-auth for a booking.
+ * Called before check-in if mode=preauth and amount > 0.
  */
-export async function initiateDepositPreAuth(
+export async function scheduleDepositPreAuth(
   bookingId: string,
-  unitId: string,
-  guestIdentityId: string
+  unitId: string
 ): Promise<string | null> {
   // Get config for this unit
   const depositMode = await getConfig(prismadb, 'booking.deposit.mode', { unitId })
@@ -18,113 +17,126 @@ export async function initiateDepositPreAuth(
     return null
   }
 
-  // Create payment for preauth (via provider seam in production)
-  const payment = await prismadb.payment.create({
+  // Create DepositPreauth record (via provider seam in production)
+  const preauth = await prismadb.depositPreauth.create({
     data: {
-      purpose: 'deposit_preauth',
       bookingId,
-      payerIdentityId: guestIdentityId,
-      method: 'card_provider',
-      provider: 'mock',
       amountThb: depositAmount as number,
-      status: 'pending',
+      authorizedAt: new Date(),
+      status: 'authorized',
+      // In production, this is the provider's session ID from the preauth call
+      providerSessionId: `mock-preauth-${bookingId}`,
     },
   })
 
-  return payment.id
+  return preauth.id
 }
 
 /**
  * Void deposit preauth on clean checkout.
  * Called after check-out inspection confirms no damage.
  */
-export async function voidDepositPreAuth(paymentId: string): Promise<void> {
-  const payment = await prismadb.payment.findUnique({
-    where: { id: paymentId },
+export async function voidDepositPreAuth(bookingId: string): Promise<void> {
+  const preauth = await prismadb.depositPreauth.findUnique({
+    where: { bookingId },
   })
 
-  if (!payment) {
-    throw new Error('Payment not found')
+  if (!preauth) {
+    // No preauth for this booking (mode is 'off')
+    return
   }
 
-  if (payment.purpose !== 'deposit_preauth') {
-    throw new Error('Payment is not a deposit preauth')
-  }
-
-  if (payment.status === 'voided') {
+  if (preauth.status === 'voided') {
     return
   }
 
   // Void via provider seam (in production, calls provider's void API)
-  // For now, mock void
-  console.log(`[DEPOSIT] Voiding preauth ${paymentId} - clean checkout`)
+  console.log(`[DEPOSIT] Voiding preauth ${preauth.id} - clean checkout`)
 
   // Mark as voided
-  await prismadb.payment.update({
-    where: { id: paymentId },
-    data: { status: 'voided' },
+  await prismadb.depositPreauth.update({
+    where: { id: preauth.id },
+    data: {
+      status: 'voided',
+      voidedAt: new Date(),
+    },
   })
 }
 
 /**
  * Capture deposit preauth on damage claim approval.
- * Amount is capped at the preauth amount and claim amount.
+ * Called within 48h window; amount capped at preauth amount and claim amount.
  */
 export async function captureDepositPreAuth(
-  paymentId: string,
+  bookingId: string,
   claimId: string,
   captureAmount: number
 ): Promise<void> {
-  const payment = await prismadb.payment.findUnique({
-    where: { id: paymentId },
+  const preauth = await prismadb.depositPreauth.findUnique({
+    where: { bookingId },
   })
 
-  if (!payment) {
-    throw new Error('Payment not found')
+  if (!preauth) {
+    throw new Error('No deposit preauth found for this booking')
   }
 
-  if (payment.purpose !== 'deposit_preauth') {
-    throw new Error('Payment is not a deposit preauth')
-  }
-
-  if (payment.status === 'voided') {
+  if (preauth.status === 'voided') {
     throw new Error('Deposit preauth was already voided')
   }
 
+  if (preauth.status === 'captured') {
+    throw new Error('Deposit preauth was already captured')
+  }
+
   // Cap capture at preauth amount
-  const actualCapture = Math.min(captureAmount, payment.amountThb)
+  const actualCapture = Math.min(captureAmount, preauth.amountThb)
 
-  // Capture via provider seam (in production, calls provider's capture API)
-  console.log(`[DEPOSIT] Capturing ${actualCapture} THB from preauth ${paymentId} for claim ${claimId}`)
-
-  // Update payment status to succeeded
-  await prismadb.payment.update({
-    where: { id: paymentId },
-    data: {
-      status: 'succeeded',
-      succeededAt: new Date(),
-    },
+  // Resolve the booking before any write. The ledger entry needs its unit, and
+  // capturing a guest's money while silently skipping the ledger row — the old
+  // `if (booking)` — leaves money moved with no record of it in an append-only
+  // ledger (CLAUDE.md money rules). Missing booking is a failure, not a skip.
+  const booking = await prismadb.booking.findUnique({
+    where: { id: bookingId },
+    include: { unit: true },
   })
 
-  // Create ledger entry for captured amount
-  if (payment.bookingId) {
-    const booking = await prismadb.booking.findUnique({
-      where: { id: payment.bookingId },
-      include: { unit: true },
+  if (!booking) {
+    throw new Error(`Booking ${bookingId} not found — refusing to capture without a ledger entry`)
+  }
+
+  // Capture via provider seam (in production, calls provider's capture API)
+  console.log(`[DEPOSIT] Capturing ${actualCapture} THB from preauth ${preauth.id} for claim ${claimId}`)
+
+  // One transaction, and the status predicate makes the transition atomic.
+  // The checks above read the preauth in a separate statement, so two
+  // concurrent approvals both saw `authorized` and both captured the guest's
+  // hold. Re-asserting `status: 'authorized'` in the WHERE means exactly one
+  // update matches; the loser sees zero rows and throws instead of double
+  // charging. Pairing it with the ledger insert keeps the two in step — a
+  // failed insert now rolls the capture back rather than stranding it.
+  await prismadb.$transaction(async (tx) => {
+    const claimed = await tx.depositPreauth.updateMany({
+      where: { id: preauth.id, status: 'authorized' },
+      data: {
+        status: 'captured',
+        capturedAt: new Date(),
+        captureViaClaimId: claimId,
+      },
     })
 
-    if (booking) {
-      await prismadb.ledgerEntry.create({
-        data: {
-          entryType: 'adjustment',
-          amountThb: actualCapture,
-          unitId: booking.unit.id,
-          bookingId: booking.id,
-          paymentId: payment.id,
-          description: `Damage claim capture: ${actualCapture} THB (claim: ${claimId})`,
-          occurredOn: new Date(),
-        },
-      })
+    if (claimed.count === 0) {
+      throw new Error('Deposit preauth is no longer capturable')
     }
-  }
+
+    await tx.ledgerEntry.create({
+      data: {
+        entryType: 'adjustment',
+        amountThb: actualCapture,
+        unitId: booking.unit.id,
+        bookingId: booking.id,
+        description: `Damage claim capture: ฿${actualCapture} from deposit preauth (claim: ${claimId})`,
+        occurredOn: new Date(),
+      },
+    })
+  })
 }

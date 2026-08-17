@@ -1286,6 +1286,141 @@ describe('booking.service — integration tests', () => {
     });
   });
 
+  describe('requestExtension — in-stay extension (T-034, F-GUEST-7 → F-GUEST-9)', () => {
+    async function checkedInStay(overrides?: { baseNightlyThb?: number }) {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: overrides?.baseNightlyThb ?? 2000,
+      });
+      const guest = await createIdentity();
+
+      const booking = await db.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2026-08-01'),
+          endDate: new Date('2026-08-05'),
+          adults: 2,
+          children: 0,
+          totalThb: 8000,
+          status: 'checked_in',
+          checkedInAt: new Date('2026-08-01'),
+        },
+      });
+
+      return { project, unit, guest, booking };
+    }
+
+    it('pushes the end date out and prices only the added nights', async () => {
+      const { guest, booking } = await checkedInStay();
+
+      const result = await bookingService.requestExtension(
+        db,
+        booking.id,
+        new Date('2026-08-08'),
+        guest.id
+      );
+
+      expect(result.additionalNights).toBe(3);
+      expect(result.addedThb).toBe(6000); // 3 nights × 2000, the added nights only
+      expect(result.newTotalThb).toBe(14000); // 8000 already owed + 6000 added
+
+      const updated = await db.booking.findUnique({ where: { id: booking.id } });
+      expect(updated?.endDate).toEqual(new Date('2026-08-08'));
+      expect(updated?.totalThb).toBe(14000);
+      // The added nights are owed, not paid — the balance is what the
+      // stay_balance checkout collects.
+      expect(updated?.balanceDueThb).toBe(6000);
+      // The start date is history and is never touched by an extension.
+      expect(updated?.startDate).toEqual(new Date('2026-08-01'));
+    });
+
+    it('records the move as a BookingChange so the stay stays reconstructable', async () => {
+      const { guest, booking } = await checkedInStay();
+
+      await bookingService.requestExtension(db, booking.id, new Date('2026-08-07'), guest.id);
+
+      const change = await db.bookingChange.findFirst({ where: { bookingId: booking.id } });
+
+      expect(change?.changeType).toBe('dates');
+      expect(change?.priceDeltaThb).toBe(4000);
+      expect(change?.actorIdentityId).toBe(guest.id);
+      expect((change?.newValue as { endDate: string }).endDate).toBe(
+        new Date('2026-08-07').toISOString()
+      );
+    });
+
+    it('refuses added nights the unit is already booked for', async () => {
+      const { project, unit, booking } = await checkedInStay();
+      const nextGuest = await createIdentity();
+
+      // Someone else arrives the day this stay was due to end.
+      await db.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: nextGuest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          startDate: new Date('2026-08-05'),
+          endDate: new Date('2026-08-09'),
+          adults: 1,
+          children: 0,
+          totalThb: 8000,
+          status: 'confirmed',
+        },
+      });
+
+      await expect(
+        bookingService.requestExtension(db, booking.id, new Date('2026-08-08'))
+      ).rejects.toThrow('already booked');
+
+      // Nothing moved.
+      const untouched = await db.booking.findUnique({ where: { id: booking.id } });
+      expect(untouched?.endDate).toEqual(new Date('2026-08-05'));
+    });
+
+    it('does not treat the stay itself as a conflict', async () => {
+      const { booking } = await checkedInStay();
+
+      // The nights already being slept in belong to this booking; only the
+      // added nights are in question.
+      await expect(
+        bookingService.requestExtension(db, booking.id, new Date('2026-08-06'))
+      ).resolves.toMatchObject({ additionalNights: 1 });
+    });
+
+    it('refuses to shorten a stay that is under way', async () => {
+      const { booking } = await checkedInStay();
+
+      await expect(
+        bookingService.requestExtension(db, booking.id, new Date('2026-08-03'))
+      ).rejects.toThrow('must be after current end date');
+    });
+
+    it('refuses to extend a stay that has not been checked into', async () => {
+      const { booking } = await checkedInStay();
+      await db.booking.update({ where: { id: booking.id }, data: { status: 'confirmed' } });
+
+      await expect(
+        bookingService.requestExtension(db, booking.id, new Date('2026-08-08'))
+      ).rejects.toThrow('Cannot request extension');
+    });
+
+    it('adds to an existing balance rather than replacing it', async () => {
+      const { booking } = await checkedInStay();
+      await db.booking.update({ where: { id: booking.id }, data: { balanceDueThb: 1500 } });
+
+      const result = await bookingService.requestExtension(db, booking.id, new Date('2026-08-06'));
+
+      expect(result.balanceDueThb).toBe(3500); // 1500 already owed + 2000 added
+    });
+  });
+
   describe('getInStayHomeSpace (D1)', () => {
     it('returns booking details, active orders, and announcements for an authorized guest', async () => {
       const project = await createProject();

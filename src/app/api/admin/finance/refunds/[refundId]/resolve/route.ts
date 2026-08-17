@@ -8,7 +8,7 @@ interface ResolveRefundRequest {
   action: 'retry' | 'write_off'
 }
 
-export async function PUT(
+export async function POST(
   req: NextRequest,
   { params }: { params: { refundId: string } }
 ) {
@@ -23,16 +23,15 @@ export async function PUT(
     }
 
     const body: ResolveRefundRequest = await req.json()
-    const refundId = params.refundId
 
     if (!body.action || !['retry', 'write_off'].includes(body.action)) {
       return NextResponse.json(
-        { error: 'action must be "retry" or "write_off"' },
+        { error: 'Invalid action. Must be "retry" or "write_off".' },
         { status: 400 }
       )
     }
 
-    const refund = await resolveFailedRefund(refundId, body.action)
+    const refund = await resolveFailedRefund(params.refundId, body.action)
 
     return NextResponse.json({
       success: true,
@@ -42,10 +41,7 @@ export async function PUT(
         amountThb: refund.amountThb,
         reason: refund.reason,
       },
-      message:
-        body.action === 'write_off'
-          ? `Refund written off: ฿${refund.amountThb.toLocaleString()}`
-          : `Refund marked for retry: ฿${refund.amountThb.toLocaleString()}`,
+      message: `Refund ${body.action === 'retry' ? 'queued for retry' : 'written off'}: ฿${refund.amountThb.toLocaleString()}`,
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'Refund not found') {

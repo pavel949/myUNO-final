@@ -257,6 +257,12 @@ enum DepositClaimStatus {
   disputed
 }
 
+enum DepositPreauthStatus {
+  authorized
+  voided
+  captured
+}
+
 enum MediaAssetKind {
   photo
   document
@@ -1038,6 +1044,7 @@ model Booking {
   tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
   depositClaims    DepositClaim[]
+  depositPreauth   DepositPreauth?
   analyticsEvents  AnalyticsEvent[]
   statementLines   StatementLineItem[]
 
@@ -1313,13 +1320,37 @@ model DepositClaim {
   resolutionNote     String?
 
   // Relations
-  booking       Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  claimant      Identity     @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
-  evidenceMedia MediaAsset[] @relation(name: "claimEvidence")
+  booking            Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  claimant           Identity       @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
+  evidenceMedia      MediaAsset[]   @relation(name: "claimEvidence")
+  depositPreauthCap  DepositPreauth? @relation("depositClaimCapture")
 
   @@index([bookingId, status])
   @@index([claimantIdentityId, filedAt])
   @@map("deposit_claim")
+}
+
+model DepositPreauth {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingId           String                   @map("booking_id")
+  amountThb           Int                      @map("amount_thb")
+  providerSessionId   String?                  @map("provider_session_id")
+  status              DepositPreauthStatus     @default(authorized)
+  authorizedAt        DateTime                 @map("authorized_at")
+  voidedAt            DateTime?                @map("voided_at")
+  capturedAt          DateTime?                @map("captured_at")
+  captureViaClaimId   String?                  @unique @map("capture_via_claim_id")
+
+  // Relations
+  booking       Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  captureClaim  DepositClaim?  @relation(name: "depositClaimCapture", fields: [captureViaClaimId], references: [id], onDelete: SetNull)
+
+  @@unique([bookingId])
+  @@index([status, authorizedAt])
+  @@map("deposit_preauth")
 }
 
 model UnitEngagement {

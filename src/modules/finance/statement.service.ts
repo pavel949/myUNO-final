@@ -106,22 +106,78 @@ export async function generateOwnerStatement(
     capApplied = false;
   }
 
-  // Create the statement in draft status
-  const statement = await db.ownerStatement.create({
-    data: {
+  // Compute reporting fields (CLAUDE.md Fee Transparency)
+  const serviceFeePct = await getConfig(db, 'finance.statement.service_fee_pct', {
+    projectId: unit.projectId,
+    unitId,
+  });
+  const serviceFeesAmountThb = Math.round((totals.totalRevenueTh * (serviceFeePct || 12)) / 100);
+  const adjustedNoiThb = totals.netTh;
+  const distributableCashThb = Math.min(ownerShareThb, adjustedNoiThb);
+
+  // The period's ledger entries, read once: they price the tax total below and
+  // then become the statement's line items (Q31 drill-down).
+  const entries = await db.ledgerEntry.findMany({
+    where: {
       unitId,
-      ownerIdentityId: unit.ownerIdentityId,
-      engagementId: engagement.id,
-      periodStart,
-      periodEnd,
-      grossRevenueTh: totals.totalRevenueTh,
-      totalCostsTh: totals.totalCostsTh,
-      noiTh: totals.netTh,
-      ownerShareTh: ownerShareThb,
-      estateShareTh: estateShareThb,
-      capApplied,
-      status: 'draft',
+      occurredOn: { gte: periodStart, lte: periodEnd },
     },
+  });
+
+  const lineItems = entries.map((entry) => ({
+    category: mapLedgerEntryTypeToLineItemCategory(entry.entryType),
+    description: entry.description,
+    amountTh: entry.amountThb,
+    bookingId: entry.bookingId || undefined,
+  }));
+
+  // Derived from the same rows that produce the `tax` line items, so the summary
+  // figure and the drill-down behind it can never tell different stories. Stored
+  // as a positive magnitude, matching `operatingExpensesAmountTh`.
+  const taxesAmountThb = Math.abs(
+    lineItems
+      .filter((line) => line.category === 'tax')
+      .reduce((sum, line) => sum + line.amountTh, 0)
+  );
+
+  // A statement and the lines it drills down to are one record. Written
+  // separately, a failed line-item insert leaves a draft whose totals have no
+  // source rows behind them — and that draft can still be published and signed.
+  const statement = await db.$transaction(async (tx) => {
+    const created = await tx.ownerStatement.create({
+      data: {
+        unitId,
+        ownerIdentityId: unit.ownerIdentityId!,
+        engagementId: engagement.id,
+        periodStart,
+        periodEnd,
+        grossRevenueTh: totals.totalRevenueTh,
+        totalCostsTh: totals.totalCostsTh,
+        noiTh: totals.netTh,
+        ownerShareTh: ownerShareThb,
+        estateShareTh: estateShareThb,
+        capApplied,
+        status: 'draft',
+        // Transparency fields (Q31)
+        grossBookingsAmountTh: totals.totalRevenueTh,
+        guestPaymentsReceivedTh: totals.totalRevenueTh, // In loop one, all recorded payments are received
+        serviceFeesAmountTh: serviceFeesAmountThb,
+        operatingExpensesAmountTh: Math.abs(totals.totalCostsTh),
+        taxesAmountTh: taxesAmountThb,
+        adjustedNoiTh: adjustedNoiThb,
+        distributableCashTh: distributableCashThb,
+        performanceFeeAmountTh: null, // Performance fees not implemented in loop one
+        performanceFeeBasisText: null,
+      },
+    });
+
+    if (lineItems.length > 0) {
+      await tx.statementLineItem.createMany({
+        data: lineItems.map((line) => ({ ...line, statementId: created.id })),
+      });
+    }
+
+    return created;
   });
 
   return statement;
@@ -268,4 +324,36 @@ export async function getLatestPublishedStatement(db: PrismaClient, unitId: stri
     },
     orderBy: { periodEnd: 'desc' },
   });
+}
+
+/**
+ * Map a ledger entry type to its statement line-item category.
+ * Enforces the transparency model: every ledger entry types to exactly one category.
+ */
+function mapLedgerEntryTypeToLineItemCategory(
+  entryType: string
+): 'booking_revenue' | 'refund' | 'service_fee' | 'operating_expense' | 'tax' | 'performance_fee' {
+  switch (entryType) {
+    case 'rental_revenue':
+      return 'booking_revenue';
+    case 'refund_out':
+      return 'refund';
+    case 'service_commission':
+    case 'ota_commission_cost':
+      return 'service_fee';
+    case 'tax_collected':
+      return 'tax';
+    case 'cleaning_cost':
+    case 'maintenance_cost':
+    case 'consumables_cost':
+    case 'utilities_cost':
+    case 'setup_fee':
+    case 'mc_platform_fee':
+    case 'owner_direct_fee':
+    case 'payout_owner':
+    case 'payout_provider':
+    case 'adjustment':
+    default:
+      return 'operating_expense';
+  }
 }

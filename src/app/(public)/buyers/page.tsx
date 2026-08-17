@@ -4,6 +4,7 @@ import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
 import { prisma } from '@/lib/prisma';
+import { publicPageAlternates } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${labels['audience.buyers.title']} | myUNO`,
     description: labels['audience.buyers.subtitle'],
-    alternates: { canonical: '/buyers' },
+    alternates: publicPageAlternates('/buyers'),
   };
 }
 

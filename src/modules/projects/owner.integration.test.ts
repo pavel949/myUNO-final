@@ -1,11 +1,21 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
+import type { OwnerStatementStatus } from '@prisma/client';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  createBooking,
+  createUnitEngagement,
+} from '@/test/util';
 import {
   bookOwnerStay,
   getOwnerDashboard,
   getOwnerBookingsList,
   getOwnerPortfolioShape,
   getOwnerProjects,
+  getOwnerStatements,
 } from './owner.service';
 
 describe('Owner experience (T-033)', () => {
@@ -286,6 +296,79 @@ describe('Owner experience (T-033)', () => {
       const unit = await createUnit({ projectId: project.id, ownerIdentityId: otherOwner.id });
 
       await expect(getOwnerBookingsList(db, unit.id, owner.id)).rejects.toThrow('Access denied');
+    });
+  });
+
+  describe('statement list visibility', () => {
+    async function statementFor(
+      unitId: string,
+      ownerIdentityId: string,
+      engagementId: string,
+      status: OwnerStatementStatus,
+      periodStart: string
+    ) {
+      return db.ownerStatement.create({
+        data: {
+          unitId,
+          ownerIdentityId,
+          engagementId,
+          periodStart: new Date(periodStart),
+          periodEnd: new Date(periodStart),
+          grossRevenueTh: 50_000,
+          totalCostsTh: 10_000,
+          noiTh: 40_000,
+          ownerShareTh: 35_000,
+          estateShareTh: 5_000,
+          status,
+        },
+      });
+    }
+
+    it('lists every statement past the admin gate, and hides drafts', async () => {
+      const owner = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const engagement = await createUnitEngagement({
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        status: 'active',
+      });
+
+      const draft = await statementFor(unit.id, owner.id, engagement.id, 'draft', '2026-04-01');
+      // The one that matters: it is waiting on this owner's own signature, so
+      // listing only `published` would hide it and leave sign-off reachable by
+      // direct link alone.
+      const awaitingOwner = await statementFor(
+        unit.id, owner.id, engagement.id, 'pending_owner_review', '2026-05-01'
+      );
+      const published = await statementFor(unit.id, owner.id, engagement.id, 'published', '2026-06-01');
+      const signedOff = await statementFor(unit.id, owner.id, engagement.id, 'signed_off', '2026-07-01');
+
+      const listed = await getOwnerStatements(db, owner.id);
+      const listedIds = listed.map((s) => s.id);
+
+      expect(listedIds).toContain(awaitingOwner.id);
+      expect(listedIds).toContain(published.id);
+      expect(listedIds).toContain(signedOff.id);
+      // A draft has not passed doc 10's admin sign-off gate, so it is not the
+      // owner's to read.
+      expect(listedIds).not.toContain(draft.id);
+    });
+
+    it('never lists another owner-s statements', async () => {
+      const owner = await createIdentity();
+      const stranger = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const engagement = await createUnitEngagement({
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        status: 'active',
+      });
+
+      await statementFor(unit.id, owner.id, engagement.id, 'published', '2026-06-01');
+
+      expect(await getOwnerStatements(db, stranger.id)).toEqual([]);
     });
   });
 });

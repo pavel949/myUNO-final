@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { listPublicServices } from '@/modules/services';
 
 export interface InStayHomeSpaceData {
   booking: {
@@ -38,6 +39,27 @@ export interface InStayHomeSpaceData {
     body: string;
     createdAt: string;
   }>;
+  /**
+   * The services rail (doc 06 S6) — only what is actually orderable at this
+   * stay's project, so the rail can never advertise a service the guest
+   * cannot have.
+   */
+  services: Array<{
+    id: string;
+    title: string;
+    categoryKey: string;
+    basePriceThb: number | null;
+    priceModel: string;
+    providerName: string;
+    isVetted: boolean;
+  }>;
+  /**
+   * Roles this viewer holds on the stay's unit or project *besides* being its
+   * guest. An owner sleeping in their own unit is the ordinary case (F-OWN-6):
+   * the in-stay card is what they need, and `RoleContextBanner` keeps the
+   * other hat legible instead of silently swapping their view.
+   */
+  secondaryRoles: string[];
 }
 
 /**
@@ -57,6 +79,7 @@ export async function getInStayHomeSpace(
           id: true,
           name: true,
           projectId: true,
+          ownerIdentityId: true,
           project: {
             select: {
               id: true,
@@ -127,6 +150,29 @@ export async function getInStayHomeSpace(
     take: 5,
   });
 
+  // The rail is scoped to this stay's project by the services module itself,
+  // so a guest is never shown a service another project's providers offer.
+  const services = await listPublicServices(db, booking.unit.projectId);
+
+  // Every other hat this viewer wears on this unit or project. Unit ownership
+  // lives on the unit row rather than in RoleAssignment, so it is read
+  // separately and merged.
+  const roleAssignments = await db.roleAssignment.findMany({
+    where: {
+      identityId: guestIdentityId,
+      status: 'active',
+      OR: [{ unitId: booking.unit.id }, { projectId: booking.unit.projectId }],
+    },
+    select: { role: true },
+  });
+
+  const secondaryRoles = Array.from(
+    new Set([
+      ...(booking.unit.ownerIdentityId === guestIdentityId ? ['owner'] : []),
+      ...roleAssignments.map((r) => r.role as string),
+    ])
+  ).filter((role) => role !== 'guest');
+
   // Concierge deep link from project config (LY-7); empty = hidden
   const whatsappNumber = await getConfig(db, 'comms.whatsapp_number', {
     projectId: booking.unit.projectId,
@@ -137,6 +183,16 @@ export async function getInStayHomeSpace(
 
   return {
     conciergeWhatsappUrl,
+    secondaryRoles,
+    services: services.map((s) => ({
+      id: s.id,
+      title: s.title,
+      categoryKey: s.categoryKey,
+      basePriceThb: s.basePriceThb ?? null,
+      priceModel: s.priceModel,
+      providerName: s.provider?.name ?? '',
+      isVetted: Boolean(s.isVetted),
+    })),
     booking: {
       id: booking.id,
       startDate: booking.startDate.toISOString(),

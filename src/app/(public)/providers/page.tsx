@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { publicPageAlternates } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${labels['audience.providers.title']} | myUNO`,
     description: labels['audience.providers.subtitle'],
-    alternates: { canonical: '/providers' },
+    alternates: publicPageAlternates('/providers'),
   };
 }
 

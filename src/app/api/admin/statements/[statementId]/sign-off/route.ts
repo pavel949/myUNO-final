@@ -1,16 +1,28 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import prismadb from '@/app/libs/prismadb'
-import { OwnerStatementStatus, Prisma } from '@prisma/client'
+import {
+  getStatementSignOffState,
+  hasSignedOff,
+  isSignableStatementStatus,
+  recordStatementSignOff,
+  StatementSignOffError,
+  type StatementSignOffActor,
+} from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
 
-type SignOffActor = 'owner' | 'operator'
-
 interface SignOffRequest {
-  actor: SignOffActor
+  actor: StatementSignOffActor
 }
 
+/**
+ * The operator (myUNO) signature, and an admin recording an owner's signature
+ * taken offline — a signed paper statement, which the cash-first RU clientele
+ * of CLAUDE.md still produces. The owner signing for themselves goes through
+ * `PUT /api/owner/statements/{id}/sign-off` instead (Q33); both routes share
+ * the state machine in `@/modules/finance`.
+ */
 export async function PUT(
   req: NextRequest,
   { params }: { params: { statementId: string } }
@@ -42,16 +54,10 @@ export async function PUT(
       )
     }
 
-    const statement = await prismadb.ownerStatement.findUnique({
-      where: { id: params.statementId },
-      select: {
-        id: true,
-        ownerIdentityId: true,
-        status: true,
-        signedOffByOwnerAt: true,
-        signedOffByOperatorAt: true,
-      },
-    })
+    const statement = await getStatementSignOffState(
+      prismadb,
+      params.statementId
+    )
 
     if (!statement) {
       return NextResponse.json(
@@ -77,12 +83,9 @@ export async function PUT(
       )
     }
 
-    const alreadySigned =
-      body.actor === 'owner'
-        ? statement.signedOffByOwnerAt
-        : statement.signedOffByOperatorAt
-
-    if (alreadySigned) {
+    // Duplicate before closed: a signed_off statement is closed *and* already
+    // carries a signature, and "you already signed" is the more specific answer.
+    if (hasSignedOff(statement, body.actor)) {
       return NextResponse.json(
         {
           error: `The ${body.actor} has already signed off this statement`,
@@ -91,45 +94,42 @@ export async function PUT(
       )
     }
 
-    const now = new Date()
-    const data: Prisma.OwnerStatementUpdateInput =
-      body.actor === 'owner'
-        ? { signedOffByOwnerAt: now }
-        : { signedOffByOperatorAt: now }
-
-    // Both signatures present → the statement is signed off and can be
-    // distributed; a single signature leaves it awaiting the other side.
-    const otherSignature =
-      body.actor === 'owner'
-        ? statement.signedOffByOperatorAt
-        : statement.signedOffByOwnerAt
-
-    if (otherSignature) {
-      data.status = 'signed_off' as OwnerStatementStatus
-      data.approvedAt = now
-    } else if (body.actor === 'operator') {
-      // Operator signed first — the statement now waits on the owner.
-      data.status = 'pending_owner_review' as OwnerStatementStatus
+    // A closed statement (signed_off, distributed, superseded) is finished:
+    // signing it again would re-stamp `approvedAt` and drag the status back to
+    // `signed_off`, erasing the record that the money went out or that a
+    // corrected statement replaced this one. A `draft` is *not* closed — signing
+    // one is the admin sign-off gate itself — so it stays signable here.
+    // Unlike the owner route, the admin gets told why.
+    if (!isSignableStatementStatus(statement.status)) {
+      return NextResponse.json(
+        {
+          error: `Statement is ${statement.status} and can no longer be signed`,
+        },
+        { status: 409 }
+      )
     }
 
-    const updated = await prismadb.ownerStatement.update({
-      where: { id: statement.id },
-      data,
-    })
+    const updated = await recordStatementSignOff(
+      prismadb,
+      params.statementId,
+      body.actor
+    )
 
     return NextResponse.json({
       success: true,
-      statement: {
-        id: updated.id,
-        unitId: updated.unitId,
-        status: updated.status,
-        signedOffByOwnerAt: updated.signedOffByOwnerAt?.toISOString() ?? null,
-        signedOffByOperatorAt:
-          updated.signedOffByOperatorAt?.toISOString() ?? null,
-        approvedAt: updated.approvedAt?.toISOString() ?? null,
-      },
+      statement: updated,
     })
   } catch (error) {
+    // Same checks as above, losing a race inside the lock.
+    if (error instanceof StatementSignOffError) {
+      if (error.reason === 'not_found') {
+        return NextResponse.json(
+          { error: 'Statement not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json({ error: error.message }, { status: 409 })
+    }
     console.error('[STATEMENT SIGN OFF]', error)
     return NextResponse.json(
       { error: 'Internal server error' },

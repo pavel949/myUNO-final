@@ -52,10 +52,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if deposit preauth exists for this booking
-    const depositPreauth = await prismadb.payment.findFirst({
+    const depositPreauth = await prismadb.depositPreauth.findUnique({
       where: {
         bookingId: body.bookingId,
-        purpose: 'deposit_preauth',
       },
     })
 

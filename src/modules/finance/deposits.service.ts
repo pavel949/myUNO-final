@@ -1,7 +1,7 @@
-import { PrismaClient, DepositClaim, Payment } from '@prisma/client';
+import { PrismaClient, DepositClaim, DepositPreauth } from '@prisma/client';
 
 export interface DepositClaimInput {
-  reservationId: string;
+  bookingId: string;
   claimantIdentityId: string;
   description: string;
   claimedAmountThb: number;
@@ -14,15 +14,15 @@ export interface DepositClaimDetails extends DepositClaim {
 }
 
 /**
- * Create a pre-authorization deposit hold (via payment seam).
- * Deposit is held as a provider pre-auth; amount configurable per project.
- * Returns Payment with status 'created' or 'pending' depending on provider.
+ * Create a pre-authorization deposit hold via the provider.
+ * Returns DepositPreauth with status 'authorized'.
+ * Config determines the amount and timing (pre-check-in scheduling).
  */
-export async function createPreAuthDeposit(
+export async function scheduleDepositPreauth(
   db: PrismaClient,
   bookingId: string,
   amountThb: number
-): Promise<Payment> {
+): Promise<DepositPreauth> {
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
   });
@@ -31,48 +31,48 @@ export async function createPreAuthDeposit(
     throw new Error(`Booking ${bookingId} not found`);
   }
 
-  // Create pre-auth payment via the seam
-  const payment = await db.payment.create({
+  // Create pre-auth via the seam (in loop one, this calls the provider directly)
+  const preauth = await db.depositPreauth.create({
     data: {
-      purpose: 'deposit_preauth',
       bookingId,
-      payerIdentityId: booking.guestIdentityId,
-      method: 'card_provider',
-      provider: 'mock', // In production, this comes from config
       amountThb,
-      status: 'created',
+      authorizedAt: new Date(),
+      status: 'authorized',
+      // In production, providerSessionId is returned from the provider seam
+      providerSessionId: `mock-preauth-${bookingId}`,
     },
   });
 
-  return payment;
+  return preauth;
 }
 
 /**
  * Void deposit pre-auth on clean checkout.
  * Called when condition report shows no damage; releases the hold.
- * Transitions payment.status to 'voided'.
  */
-export async function voidDepositOnCleanCheckout(
+export async function voidDepositPreauthIfClean(
   db: PrismaClient,
-  paymentId: string
-): Promise<Payment> {
-  const payment = await db.payment.findUnique({
-    where: { id: paymentId },
+  bookingId: string
+): Promise<DepositPreauth> {
+  const preauth = await db.depositPreauth.findUnique({
+    where: { bookingId },
   });
 
-  if (!payment) {
-    throw new Error(`Payment ${paymentId} not found`);
+  if (!preauth) {
+    // No preauth for this booking (mode is 'off')
+    throw new Error(`No deposit preauth found for booking ${bookingId}`);
   }
 
-  if (payment.purpose !== 'deposit_preauth') {
-    throw new Error(`Payment is not a deposit pre-auth`);
+  if (preauth.status === 'voided' || preauth.status === 'captured') {
+    throw new Error(`Cannot void preauth with status ${preauth.status}`);
   }
 
   // Void the pre-auth
-  const voided = await db.payment.update({
-    where: { id: paymentId },
+  const voided = await db.depositPreauth.update({
+    where: { id: preauth.id },
     data: {
       status: 'voided',
+      voidedAt: new Date(),
     },
   });
 
@@ -80,68 +80,78 @@ export async function voidDepositOnCleanCheckout(
 }
 
 /**
- * Capture deposit pre-auth when damage claim is filed.
- * Transitions payment.status to 'succeeded' (captured from guest card).
- * Damage claim is recorded separately with evidence.
+ * Capture deposit pre-auth when damage claim is approved.
+ * Called within 48h window of claim filing.
  */
-export async function captureDepositOnClaim(
+export async function captureDepositPreauthOnClaim(
   db: PrismaClient,
+  bookingId: string,
   claimId: string
-): Promise<Payment> {
-  const claim = await db.depositClaim.findUnique({
-    where: { id: claimId },
-    include: { booking: { include: { payments: { where: { purpose: 'deposit_preauth' } } } } },
+): Promise<DepositPreauth> {
+  const preauth = await db.depositPreauth.findUnique({
+    where: { bookingId },
   });
 
-  if (!claim) {
-    throw new Error(`Claim ${claimId} not found`);
+  if (!preauth) {
+    throw new Error(`No deposit preauth found for booking ${bookingId}`);
   }
 
-  // Find the pre-auth payment for this booking
-  const preAuth = claim.booking.payments[0];
-  if (!preAuth) {
-    throw new Error(`No pre-auth deposit found for booking ${claim.bookingId}`);
+  if (preauth.status !== 'authorized') {
+    throw new Error(`Cannot capture preauth with status ${preauth.status}`);
   }
 
-  // Capture the pre-auth
-  const captured = await db.payment.update({
-    where: { id: preAuth.id },
+  // Re-assert the status in the WHERE rather than trusting the read above.
+  // The check and the write are two statements, so two concurrent claim
+  // approvals for the same booking both observed `authorized` and both
+  // captured — charging the guest twice, with the second write silently
+  // replacing `captureViaClaimId`. The unique constraint on that column only
+  // catches a repeat of the *same* claim, not two different ones. With the
+  // predicate here exactly one update matches and the loser gets zero rows.
+  const claimed = await db.depositPreauth.updateMany({
+    where: { id: preauth.id, status: 'authorized' },
     data: {
-      status: 'succeeded',
-      receivedAt: new Date(),
+      status: 'captured',
+      capturedAt: new Date(),
+      captureViaClaimId: claimId,
     },
   });
 
-  return captured;
+  if (claimed.count === 0) {
+    throw new Error(
+      `Preauth for booking ${bookingId} is no longer capturable — a concurrent claim resolved it first`
+    );
+  }
+
+  return db.depositPreauth.findUniqueOrThrow({ where: { id: preauth.id } });
 }
 
 /**
  * Release deposit on dispute resolution (rejected claim or refund after approval).
- * Transitions payment.status back to 'voided' (funds returned to guest).
+ * Voids the preauth, returning funds to guest.
  */
-export async function releaseDepositOnDisputeResolution(
+export async function releaseDepositPreauthOnDispute(
   db: PrismaClient,
-  claimId: string
-): Promise<Payment> {
-  const claim = await db.depositClaim.findUnique({
-    where: { id: claimId },
-    include: { booking: { include: { payments: { where: { purpose: 'deposit_preauth' } } } } },
+  bookingId: string
+): Promise<DepositPreauth> {
+  const preauth = await db.depositPreauth.findUnique({
+    where: { bookingId },
   });
 
-  if (!claim) {
-    throw new Error(`Claim ${claimId} not found`);
+  if (!preauth) {
+    throw new Error(`No deposit preauth found for booking ${bookingId}`);
   }
 
-  const preAuth = claim.booking.payments[0];
-  if (!preAuth) {
-    throw new Error(`No pre-auth deposit found for booking ${claim.bookingId}`);
+  if (preauth.status === 'voided') {
+    // Already voided, return it
+    return preauth;
   }
 
   // Release (void) the pre-auth
-  const released = await db.payment.update({
-    where: { id: preAuth.id },
+  const released = await db.depositPreauth.update({
+    where: { id: preauth.id },
     data: {
       status: 'voided',
+      voidedAt: new Date(),
     },
   });
 
@@ -150,21 +160,21 @@ export async function releaseDepositOnDisputeResolution(
 
 /**
  * File a damage claim within 48h of checkout.
- * Guest provides description and attaches evidence (photos/documents).
- * Claim enters 'filed' status; awaits admin review.
+ * Staff attach photos to check-out ConditionReport + estimated cost.
+ * Claim enters 'filed' status; awaits admin review within 48h window.
  */
 export async function fileDepositClaim(db: PrismaClient, input: DepositClaimInput): Promise<DepositClaim> {
-  const { reservationId, claimantIdentityId, description, claimedAmountThb, evidenceMediaIds } = input;
+  const { bookingId, claimantIdentityId, description, claimedAmountThb, evidenceMediaIds } = input;
 
   const booking = await db.booking.findUnique({
-    where: { id: reservationId },
+    where: { id: bookingId },
   });
 
   if (!booking) {
-    throw new Error(`Booking ${reservationId} not found`);
+    throw new Error(`Booking ${bookingId} not found`);
   }
 
-  // Verify checkout happened (status is checked_out or completed)
+  // Verify checkout happened
   if (booking.checkedOutAt === null) {
     throw new Error(`Booking has not checked out yet`);
   }
@@ -178,7 +188,7 @@ export async function fileDepositClaim(db: PrismaClient, input: DepositClaimInpu
   // Create the claim
   const claim = await db.depositClaim.create({
     data: {
-      bookingId: reservationId,
+      bookingId,
       claimantIdentityId,
       description,
       claimedAmountThb,
@@ -225,7 +235,7 @@ export async function getClaimsAwaitingResolution(db: PrismaClient): Promise<Dep
 
 /**
  * Approve a damage claim: capture the pre-auth deposit and mark claim approved.
- * Transitions claim.status to 'approved' and captures pre-auth payment.
+ * Called by admin within 48h window; captures the preauth up to claimed amount.
  */
 export async function approveClaim(
   db: PrismaClient,
@@ -240,8 +250,14 @@ export async function approveClaim(
     throw new Error(`Claim ${claimId} not found`);
   }
 
-  // Capture the pre-auth payment
-  await captureDepositOnClaim(db, claimId);
+  // Verify within 48h window
+  const hoursSinceFiled = (Date.now() - claim.filedAt.getTime()) / (1000 * 60 * 60);
+  if (hoursSinceFiled > 48) {
+    throw new Error(`Claim approval window (48h) has expired`);
+  }
+
+  // Capture the pre-auth deposit
+  await captureDepositPreauthOnClaim(db, claim.bookingId, claimId);
 
   // Approve the claim
   const approved = await db.depositClaim.update({
@@ -258,7 +274,7 @@ export async function approveClaim(
 
 /**
  * Reject a damage claim: release the pre-auth deposit and mark claim rejected.
- * Transitions claim.status to 'rejected' and voids pre-auth payment.
+ * Called by admin; voids the preauth, returning funds to guest.
  */
 export async function rejectClaim(
   db: PrismaClient,
@@ -273,8 +289,8 @@ export async function rejectClaim(
     throw new Error(`Claim ${claimId} not found`);
   }
 
-  // Release the pre-auth payment
-  await releaseDepositOnDisputeResolution(db, claimId);
+  // Release the pre-auth deposit
+  await releaseDepositPreauthOnDispute(db, claim.bookingId);
 
   // Reject the claim
   const rejected = await db.depositClaim.update({

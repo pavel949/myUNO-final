@@ -254,6 +254,71 @@ async function buildPublicReviews(projectId: string): Promise<PublicProjectRevie
   };
 }
 
+export interface PublicUnitDetail extends PublicProjectUnit {
+  descriptionKey: string | null;
+  minNights: number;
+  amenityKeys: string[];
+  project: {
+    slug: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+}
+
+/**
+ * One live unit, for the unit page's metadata and structured data (doc 08 §7).
+ *
+ * Returns null unless both the unit and its project are live — a draft or
+ * paused entity has no public face at all, so the page 404s rather than
+ * quietly rendering inventory that is not for sale.
+ */
+export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
+  const unit = await prisma.unit.findUnique({
+    where: { id },
+    include: {
+      coverMedia: { select: { storageKey: true } },
+      project: {
+        select: {
+          slug: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  if (!unit || unit.status !== 'live' || unit.project.status !== 'live') return null;
+
+  return {
+    id: unit.id,
+    name: unit.name,
+    unitType: unit.unitType,
+    categoryKey: unit.categoryKey,
+    bedrooms: unit.bedrooms,
+    bathrooms: unit.bathrooms,
+    maxGuests: unit.maxGuests,
+    sizeSqm: unit.sizeSqm,
+    baseNightlyThb: unit.baseNightlyThb,
+    instantBook: unit.instantBook,
+    coverUrl: unit.coverMedia?.storageKey ?? null,
+    descriptionKey: unit.descriptionKey,
+    minNights: unit.minNights,
+    amenityKeys: unit.amenityKeys,
+    project: {
+      slug: unit.project.slug,
+      name: unit.project.name,
+      address: unit.project.address,
+      latitude: Number(unit.project.latitude),
+      longitude: Number(unit.project.longitude),
+    },
+  };
+}
+
 /** Live units (id only) for the sitemap. */
 export async function listPublicUnitIds(): Promise<string[]> {
   const units = await prisma.unit.findMany({

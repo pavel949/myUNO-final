@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import prismadb from '@/app/libs/prismadb'
+import { voidDepositPreAuth } from '@/app/libs/deposits'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +51,14 @@ export async function POST(
         { error: `Claim cannot be rejected from status: ${claim.status}` },
         { status: 400 }
       )
+    }
+
+    // Void the deposit preauth (return funds to guest)
+    try {
+      await voidDepositPreAuth(claim.bookingId)
+    } catch (err) {
+      console.error('[REJECT DAMAGE CLAIM] Failed to void preauth:', err)
+      // Continue; void failure is non-fatal
     }
 
     // Update claim status

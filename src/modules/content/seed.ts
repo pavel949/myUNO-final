@@ -1321,6 +1321,45 @@ const COMMON_KEYS: KeyDef[] = [
   },
 ];
 
+// Trust + legal page bodies and the entity-block labels (T-035, doc 08 §§1–2).
+// The Q16 entity *values* are above and founder-supplied; these are the UI
+// labels and section copy around them, agent-drafted as needs_review per
+// doc 05 §1. The substantive terms/privacy prose is counsel's and is NOT
+// drafted here — see docs/open_questions.md Q16.
+const TRUST_LEGAL_PAGE_KEYS: KeyDef[] = [
+  { key: 'legal.entity.title', namespace: 'legal', description: 'Entity block heading on the terms page and footer', en: 'Who operates myUNO', ru: 'Кто управляет myUNO', zh: '谁运营 myUNO', status: 'needs_review' },
+  { key: 'legal.entity.controller_title', namespace: 'legal', description: 'Entity block heading when named as PDPA data controller', en: 'Data controller', ru: 'Контролёр данных', zh: '数据控制者', status: 'needs_review' },
+  { key: 'legal.entity.controller_body', namespace: 'legal', description: 'PDPA controller line (doc 12)', en: 'This entity is the data controller for personal data collected through myUNO under Thailand’s Personal Data Protection Act. Use the contact details below for any access, correction or deletion request.', ru: 'Эта компания является контролёром персональных данных, собираемых через myUNO, в соответствии с законом Таиланда о защите персональных данных (PDPA). Для запросов на доступ, исправление или удаление используйте контакты ниже.', zh: '根据泰国《个人资料保护法》，本实体是通过 myUNO 收集的个人资料的数据控制者。如需查阅、更正或删除，请使用下方联系方式。', status: 'needs_review' },
+  { key: 'legal.entity.label.name', namespace: 'legal', description: 'Entity block field label: operating entity', en: 'Operating entity', ru: 'Юридическое лицо', zh: '运营主体', status: 'needs_review' },
+  { key: 'legal.entity.label.dbd_registration', namespace: 'legal', description: 'Entity block field label: DBD registration', en: 'DBD registration', ru: 'Регистрация DBD', zh: 'DBD 注册号', status: 'needs_review' },
+  { key: 'legal.entity.label.address', namespace: 'legal', description: 'Entity block field label: registered address', en: 'Registered address', ru: 'Юридический адрес', zh: '注册地址', status: 'needs_review' },
+  { key: 'legal.entity.label.director', namespace: 'legal', description: 'Entity block field label: director', en: 'Director', ru: 'Директор', zh: '董事', status: 'needs_review' },
+  { key: 'legal.entity.label.email', namespace: 'legal', description: 'Entity block field label: email', en: 'Email', ru: 'Эл. почта', zh: '电子邮件', status: 'needs_review' },
+  { key: 'legal.entity.label.phone', namespace: 'legal', description: 'Entity block field label: phone', en: 'Phone', ru: 'Телефон', zh: '电话', status: 'needs_review' },
+
+  { key: 'legal.terms.pending', namespace: 'legal', description: 'Terms page: notice shown until counsel-drafted terms are published', en: 'The full terms of service are being prepared with counsel. Until they are published here, the operating entity below is who you are contracting with, and its contact details are how to reach us about any term.', ru: 'Полные условия обслуживания готовятся вместе с юристами. Пока они не опубликованы здесь, указанное ниже юридическое лицо — ваша сторона договора, а его контакты — способ связаться с нами по любому условию.', zh: '完整的服务条款正在与法律顾问共同拟定。在此处发布之前，下方的运营主体即为您的合同相对方，其联系方式可用于咨询任何条款。', status: 'needs_review' },
+
+  { key: 'legal.privacy.pending', namespace: 'legal', description: 'Privacy page: notice shown until the counsel-drafted policy is published', en: 'The full privacy policy is being prepared with counsel. Until it is published here, the controller named below is responsible for your personal data, and the rights summarised on this page apply regardless.', ru: 'Полная политика конфиденциальности готовится вместе с юристами. Пока она не опубликована здесь, за ваши персональные данные отвечает указанный ниже контролёр, а перечисленные на этой странице права действуют в любом случае.', zh: '完整的隐私政策正在与法律顾问共同拟定。在此处发布之前，下方列明的控制者对您的个人资料负责，本页概述的权利仍然适用。', status: 'needs_review' },
+  { key: 'legal.privacy.rights_title', namespace: 'legal', description: 'Privacy page: PDPA rights section heading', en: 'Your rights under the PDPA', ru: 'Ваши права по закону PDPA', zh: '您在 PDPA 下的权利', status: 'needs_review' },
+  { key: 'legal.privacy.rights_access', namespace: 'legal', description: 'Privacy page: right of access', en: 'Ask what personal data we hold about you, and get a copy of it.', ru: 'Узнать, какие персональные данные о вас у нас есть, и получить их копию.', zh: '查询我们持有您的哪些个人资料，并获取副本。', status: 'needs_review' },
+  { key: 'legal.privacy.rights_correct', namespace: 'legal', description: 'Privacy page: right of rectification', en: 'Have inaccurate personal data corrected.', ru: 'Исправить неточные персональные данные.', zh: '更正不准确的个人资料。', status: 'needs_review' },
+  { key: 'legal.privacy.rights_delete', namespace: 'legal', description: 'Privacy page: right of erasure, with the retention carve-out (doc 12)', en: 'Ask for your personal data to be deleted. Records we are required to keep for financial or immigration compliance are retained, and your identity is anonymised in them instead.', ru: 'Запросить удаление персональных данных. Записи, которые мы обязаны хранить для финансовой или миграционной отчётности, сохраняются, но ваша личность в них обезличивается.', zh: '要求删除您的个人资料。出于财务或入境合规而必须保存的记录将予以保留，但其中的身份信息会被匿名化。', status: 'needs_review' },
+  { key: 'legal.privacy.rights_withdraw', namespace: 'legal', description: 'Privacy page: right to withdraw consent', en: 'Withdraw consent you have given, at any time.', ru: 'В любой момент отозвать данное вами согласие.', zh: '随时撤回您已给予的同意。', status: 'needs_review' },
+  { key: 'legal.privacy.rights_how', namespace: 'legal', description: 'Privacy page: how to exercise the rights', en: 'Send any of these requests to the controller’s email below. We answer within the period the PDPA allows.', ru: 'Направьте любой из этих запросов на адрес контролёра, указанный ниже. Мы отвечаем в срок, установленный законом PDPA.', zh: '请将上述任何请求发送至下方控制者的电子邮箱。我们会在 PDPA 规定的期限内回复。', status: 'needs_review' },
+
+  { key: 'trust.verified.title', namespace: 'trust', description: 'Trust page pillar: guest verification', en: 'Every guest is verified', ru: 'Каждый гость проверен', zh: '每位客人都经过核验', status: 'needs_review' },
+  { key: 'trust.verified.body', namespace: 'trust', description: 'Trust page pillar body: guest verification + TM30', en: 'Passports are captured before arrival and filed with immigration within 24 hours, as Thai law requires. Owners know who slept in their unit; guests know their neighbours were checked the same way.', ru: 'Паспорта собираются до заезда и подаются в иммиграционную службу в течение 24 часов, как требует закон Таиланда. Владелец знает, кто ночевал в его квартире; гость знает, что соседей проверили так же.', zh: '护照在抵达前采集，并按泰国法律要求在24小时内向移民局申报。业主知道谁住过自己的房子；客人知道邻居也经过同样的核验。', status: 'needs_review' },
+  { key: 'trust.recorded.title', namespace: 'trust', description: 'Trust page pillar: payments on the record', en: 'Every payment is on the record', ru: 'Каждый платёж зафиксирован', zh: '每笔付款都有记录', status: 'needs_review' },
+  { key: 'trust.recorded.body', namespace: 'trust', description: 'Trust page pillar body: append-only ledger and traceable statements', en: 'Cash or card, every baht is receipted against the booking it belongs to and posted to a ledger that is never rewritten. Owner statements trace line by line back to the bookings and costs behind them.', ru: 'Наличные или карта — каждый бат получает чек, привязанный к своему бронированию, и попадает в реестр, который никогда не переписывается. Каждая строка отчёта владельца прослеживается до бронирований и расходов, из которых она сложилась.', zh: '无论现金还是刷卡，每一泰铢都会开具与其所属预订对应的收据，并记入永不改写的账簿。业主报表的每一行都可追溯至背后的预订与成本。', status: 'needs_review' },
+  { key: 'trust.tracked.title', namespace: 'trust', description: 'Trust page pillar: complaints tracked', en: 'Every complaint is tracked', ru: 'Каждая жалоба отслеживается', zh: '每一项投诉都被跟踪', status: 'needs_review' },
+  { key: 'trust.tracked.body', namespace: 'trust', description: 'Trust page pillar body: shared ticket status and SLA', en: 'Raise an issue and you see the same status and history our staff see, with the clock running against a published response time. Nothing is resolved by being quietly forgotten.', ru: 'Сообщите о проблеме — и вы видите тот же статус и ту же историю, что и наши сотрудники, с таймером до объявленного срока ответа. Ничего не «решается» тем, что о нём тихо забыли.', zh: '提出问题后，您会看到与我们员工相同的状态与历史记录，并有计时器对照已公布的响应时限。没有任何问题会因被悄悄遗忘而「解决」。', status: 'needs_review' },
+  { key: 'trust.ombudsman_link', namespace: 'trust', description: 'Trust page: link to the Ombudsman credential page', en: 'About the independent Ombudsman', ru: 'Об независимом омбудсмене', zh: '关于独立监察员', status: 'needs_review' },
+
+  { key: 'trust.ombudsman.pending', namespace: 'trust', description: 'Ombudsman page: notice shown while the credential text is unwritten (Q15)', en: 'The independent Ombudsman credential is not published yet. When it is, the full terms of the escalation route will appear here.', ru: 'Документ независимого омбудсмена ещё не опубликован. Когда он появится, здесь будут изложены полные условия порядка эскалации.', zh: '独立监察员的资质文件尚未公布。公布后，升级处理途径的完整条款将显示于此。', status: 'needs_review' },
+  { key: 'trust.ombudsman.meanwhile', namespace: 'trust', description: 'Ombudsman page: what holds in the meantime', en: 'In the meantime, every complaint raised on the platform is tracked with a visible status and history.', ru: 'Тем временем каждая жалоба, поданная на платформе, отслеживается с открытым статусом и историей.', zh: '在此期间，平台上提出的每一项投诉都会以可见的状态和历史记录进行跟踪。', status: 'needs_review' },
+  { key: 'trust.ombudsman.back', namespace: 'trust', description: 'Ombudsman page: link back to the trust page', en: 'How trust works at myUNO', ru: 'Как устроено доверие в myUNO', zh: 'myUNO 如何建立信任', status: 'needs_review' },
+];
+
 
 // UI shell keys added by the usability-restoration pass (navbar, footer, auth
 // pages, search, unit detail). Agent-drafted copy — seeded EN + RU as
@@ -1765,6 +1804,62 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.statement.your_share', namespace: 'owner', description: 'Statement table header: owner share', en: 'Your Share', ru: 'Ваша доля', status: NR },
   { key: 'owner.statement.view', namespace: 'owner', description: 'View statement link', en: 'View', ru: 'Открыть', status: NR },
 
+  // Owner statement detail — S8 (doc 06 §4), the transparency block and its
+  // line-item drill-down (CLAUDE.md, "Fee Transparency for Owners")
+  { key: 'owner.statement.back', namespace: 'owner', description: 'Statement detail: back to the owner dashboard', en: 'Back to dashboard', ru: 'Назад в кабинет', th: 'กลับไปที่แดชบอร์ด', status: NR },
+  { key: 'owner.statement.detail_title', namespace: 'owner', description: 'Statement detail page title', en: 'Statement', ru: 'Отчёт', th: 'รายงาน', status: NR },
+  { key: 'owner.statement.unit', namespace: 'owner', description: 'Statement detail: unit the statement covers', en: 'Unit', ru: 'Юнит', th: 'ยูนิต', status: NR },
+  { key: 'owner.statement.published_on', namespace: 'owner', description: 'Statement detail: publication date label', en: 'Published', ru: 'Опубликован', th: 'เผยแพร่เมื่อ', status: NR },
+  { key: 'owner.statement.summary_title', namespace: 'owner', description: 'Statement detail: summary tiles heading', en: 'Summary', ru: 'Итоги', th: 'สรุป', status: NR },
+  { key: 'owner.statement.breakdown_title', namespace: 'owner', description: 'Statement detail: calculation breakdown heading', en: 'How this statement was calculated', ru: 'Как рассчитан этот отчёт', th: 'รายงานนี้คำนวณอย่างไร', status: NR },
+  { key: 'owner.statement.breakdown_subtitle', namespace: 'owner', description: 'Statement detail: breakdown explainer', en: 'Every figure below traces to the rows behind it. Open a figure to see its source lines.', ru: 'Каждая сумма ниже раскрывается до строк, из которых она сложилась. Откройте сумму, чтобы увидеть источники.', th: 'ทุกตัวเลขด้านล่างสามารถเปิดดูรายการที่มาได้ กดที่ตัวเลขเพื่อดูรายการต้นทาง', status: NR },
+  { key: 'owner.statement.gross_bookings', namespace: 'owner', description: 'Statement figure: gross bookings', en: 'Gross bookings', ru: 'Валовая выручка от бронирований', th: 'รายรับรวมจากการจอง', status: NR },
+  { key: 'owner.statement.guest_payments_received', namespace: 'owner', description: 'Statement figure: guest payments received', en: 'Guest payments received', ru: 'Получено от гостей', th: 'เงินที่ได้รับจากแขก', status: NR },
+  { key: 'owner.statement.refunds', namespace: 'owner', description: 'Statement figure: refunds', en: 'Refunds', ru: 'Возвраты', th: 'การคืนเงิน', status: NR },
+  { key: 'owner.statement.service_fees', namespace: 'owner', description: 'Statement figure: service fees', en: 'Service fees', ru: 'Сервисные комиссии', th: 'ค่าบริการ', status: NR },
+  { key: 'owner.statement.operating_expenses', namespace: 'owner', description: 'Statement figure: operating expenses', en: 'Operating expenses', ru: 'Операционные расходы', th: 'ค่าใช้จ่ายในการดำเนินงาน', status: NR },
+  { key: 'owner.statement.taxes', namespace: 'owner', description: 'Statement figure: taxes', en: 'Taxes', ru: 'Налоги', th: 'ภาษี', status: NR },
+  { key: 'owner.statement.adjusted_noi', namespace: 'owner', description: 'Statement figure: adjusted net operating income', en: 'Adjusted net operating income', ru: 'Скорректированный чистый операционный доход', th: 'รายได้จากการดำเนินงานสุทธิที่ปรับแล้ว', status: NR },
+  { key: 'owner.statement.performance_fee', namespace: 'owner', description: 'Statement figure: performance fee', en: 'Performance fee', ru: 'Комиссия за результат', th: 'ค่าธรรมเนียมตามผลงาน', status: NR },
+  { key: 'owner.statement.performance_fee_basis', namespace: 'owner', description: 'Statement: label before the performance fee calculation basis', en: 'Calculated on', ru: 'База расчёта', th: 'คำนวณจาก', status: NR },
+  { key: 'owner.statement.distributable_cash', namespace: 'owner', description: 'Statement figure: distributable cash', en: 'Distributable cash', ru: 'Денежные средства к распределению', th: 'เงินสดที่พร้อมจัดสรร', status: NR },
+  { key: 'owner.statement.estate_share', namespace: 'owner', description: 'Statement figure: the myUNO/estate share', en: 'myUNO share', ru: 'Доля myUNO', th: 'ส่วนแบ่งของ myUNO', status: NR },
+  { key: 'owner.statement.gross_revenue', namespace: 'owner', description: 'Statement figure: gross revenue (statements without the itemised block)', en: 'Gross revenue', ru: 'Валовая выручка', th: 'รายรับรวม', status: NR },
+  { key: 'owner.statement.total_costs', namespace: 'owner', description: 'Statement figure: total costs (statements without the itemised block)', en: 'Total costs', ru: 'Всего расходов', th: 'ต้นทุนรวม', status: NR },
+  { key: 'owner.statement.split_title', namespace: 'owner', description: 'Statement detail: owner/estate split heading', en: 'How the result is split', ru: 'Как делится результат', th: 'การแบ่งผลลัพธ์', status: NR },
+  { key: 'owner.statement.cap_applied', namespace: 'owner', description: 'Statement: the NOI cap limited the owner share', en: 'NOI cap applied', ru: 'Применён потолок NOI', th: 'ใช้เพดาน NOI แล้ว', status: NR },
+  { key: 'owner.statement.cap_applied_note', namespace: 'owner', description: 'Statement: explanation of the applied NOI cap', en: 'Your share for this period was limited by the annual NOI cap in your management contract.', ru: 'Ваша доля за период ограничена годовым потолком NOI по договору управления.', th: 'ส่วนแบ่งของคุณในงวดนี้ถูกจำกัดด้วยเพดาน NOI รายปีตามสัญญาบริหาร', status: NR },
+  { key: 'owner.statement.lines_show', namespace: 'owner', description: 'Statement: open a figure onto its line items', en: 'Show source lines', ru: 'Показать строки-источники', th: 'แสดงรายการต้นทาง', status: NR },
+  { key: 'owner.statement.lines_hide', namespace: 'owner', description: 'Statement: close a figure’s line items', en: 'Hide source lines', ru: 'Скрыть строки-источники', th: 'ซ่อนรายการต้นทาง', status: NR },
+  { key: 'owner.statement.lines_empty', namespace: 'owner', description: 'Statement: a figure has no line items behind it', en: 'No source lines recorded for this figure.', ru: 'Для этой суммы строк-источников не записано.', th: 'ไม่มีรายการต้นทางสำหรับตัวเลขนี้', status: NR },
+  { key: 'owner.statement.lines_empty_all', namespace: 'owner', description: 'Statement: the whole statement has no line items', en: 'This statement has no source lines yet. Message us and we will trace every figure for you.', ru: 'В этом отчёте пока нет строк-источников. Напишите нам — мы раскроем каждую сумму.', th: 'รายงานนี้ยังไม่มีรายการต้นทาง ส่งข้อความถึงเราแล้วเราจะอธิบายทุกตัวเลขให้', status: NR },
+  { key: 'owner.statement.booking_ref', namespace: 'owner', description: 'Statement line: the booking a line traces to', en: 'Booking', ru: 'Бронирование', th: 'การจอง', status: NR },
+  { key: 'owner.statement.legacy_notice', namespace: 'owner', description: 'Statement: notice for statements drafted before the itemised breakdown existed', en: 'This statement predates the itemised breakdown. The figures recorded at the time are shown below.', ru: 'Этот отчёт создан до появления детализации. Ниже показаны суммы, записанные на тот момент.', th: 'รายงานนี้จัดทำก่อนมีการแยกรายการ ด้านล่างคือตัวเลขที่บันทึกไว้ในขณะนั้น', status: NR },
+  { key: 'owner.statement.signoff_title', namespace: 'owner', description: 'Statement sign-off section heading', en: 'Sign-off', ru: 'Подписание', th: 'การลงนาม', status: NR },
+  { key: 'owner.statement.signoff_description', namespace: 'owner', description: 'Statement sign-off: what signing means', en: 'Signing records that you have reviewed the figures on this statement.', ru: 'Подпись фиксирует, что вы ознакомились с цифрами отчёта.', th: 'การลงนามเป็นการบันทึกว่าคุณได้ตรวจสอบตัวเลขในรายงานนี้แล้ว', status: NR },
+  { key: 'owner.statement.signoff_action', namespace: 'owner', description: 'Statement sign-off button', en: 'Sign off this statement', ru: 'Подписать отчёт', th: 'ลงนามรายงานนี้', status: NR },
+  { key: 'owner.statement.signoff_owner_signed', namespace: 'owner', description: 'Statement sign-off: the owner has signed', en: 'Signed by you', ru: 'Подписано вами', th: 'ลงนามโดยคุณ', status: NR },
+  { key: 'owner.statement.signoff_operator_signed', namespace: 'owner', description: 'Statement sign-off: myUNO has signed', en: 'Signed by myUNO', ru: 'Подписано myUNO', th: 'ลงนามโดย myUNO', status: NR },
+  { key: 'owner.statement.signoff_awaiting_owner', namespace: 'owner', description: 'Statement sign-off: waiting on the owner', en: 'Awaiting your signature', ru: 'Ожидает вашей подписи', th: 'รอลายเซ็นของคุณ', status: NR },
+  { key: 'owner.statement.signoff_awaiting_operator', namespace: 'owner', description: 'Statement sign-off: waiting on myUNO', en: 'Awaiting myUNO’s signature', ru: 'Ожидает подписи myUNO', th: 'รอลายเซ็นของ myUNO', status: NR },
+  { key: 'owner.statement.signoff_approved', namespace: 'owner', description: 'Statement sign-off: both signatures recorded', en: 'Approved', ru: 'Утверждён', th: 'อนุมัติแล้ว', status: NR },
+  { key: 'owner.statement.signoff_error', namespace: 'owner', description: 'Statement sign-off failed', en: 'We could not record your sign-off. Please try again.', ru: 'Не удалось записать вашу подпись. Попробуйте ещё раз.', th: 'เราไม่สามารถบันทึกการลงนามของคุณได้ กรุณาลองใหม่อีกครั้ง', status: NR },
+  { key: 'owner.statement.signoff_already_signed', namespace: 'owner', description: 'Owner already signed this statement', en: 'You have already signed this statement.', ru: 'Вы уже подписали этот отчёт.', th: 'คุณได้ลงนามในรายงานนี้แล้ว', status: NR },
+  { key: 'owner.statement.signoff_timeout', namespace: 'owner', description: 'Sign-off request timed out', en: 'The request took too long. Please try again.', ru: 'Запрос занял слишком много времени. Попробуйте ещё раз.', th: 'คำขอใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง', status: NR },
+
+  // Finance & reconciliation (doc 10 §9, T-031)
+  { key: 'finance.reconciliation.title', namespace: 'finance', description: 'Reconciliation board page title', en: 'Reconciliation Board', ru: 'Таблица согласования платежей', th: 'บอร์ดสมานฉันท์', status: NR },
+  { key: 'finance.reconciliation.description', namespace: 'finance', description: 'Reconciliation board description', en: 'Manage unmatched payments, failed refunds, and pending payouts.', ru: 'Управляйте непопадающими платежами, неудачными возвратами и ожидающими платежами.', th: 'จัดการการชำระเงินที่ไม่ตรงกัน การคืนเงินที่ล้มเหลว และการชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.unmatched_payments', namespace: 'finance', description: 'Unmatched payments section title', en: 'Unmatched Payments', ru: 'Непопадающие платежи', th: 'การชำระเงินที่ไม่ตรงกัน', status: NR },
+  { key: 'finance.reconciliation.failed_refunds', namespace: 'finance', description: 'Failed refunds section title', en: 'Failed Refunds', ru: 'Неудачные возвраты', th: 'การคืนเงินที่ล้มเหลว', status: NR },
+  { key: 'finance.reconciliation.pending_payouts', namespace: 'finance', description: 'Pending payouts section title', en: 'Pending Payouts', ru: 'Ожидающие платежи', th: 'การชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.retry_refund', namespace: 'finance', description: 'Retry refund button', en: 'Retry', ru: 'Повторить', th: 'ลองใหม่', status: NR },
+  { key: 'finance.reconciliation.write_off', namespace: 'finance', description: 'Write off refund button', en: 'Write Off', ru: 'Списать', th: 'ปลดตัวแบบ', status: NR },
+  { key: 'finance.reconciliation.mark_reconciled', namespace: 'finance', description: 'Mark payout as reconciled button', en: 'Mark Reconciled', ru: 'Отметить согласованный', th: 'ทำเครื่องหมายว่าสมานฉันท์แล้ว', status: NR },
+  { key: 'finance.reconciliation.empty', namespace: 'finance', description: 'Reconciliation board empty state', en: 'No reconciliation data', ru: 'Нет данных согласования', th: 'ไม่มีข้อมูลการสมานฉันท์', status: NR },
+  { key: 'finance.reconciliation.all_clear', namespace: 'finance', description: 'Reconciliation board all clear title', en: 'All Clear', ru: 'Всё в порядке', th: 'ทั้งหมดชัดเจน', status: NR },
+  { key: 'finance.reconciliation.no_issues', namespace: 'finance', description: 'Reconciliation board all clear description', en: 'No unmatched payments, failed refunds, or pending payouts.', ru: 'Нет непопадающих платежей, неудачных возвратов или ожидающих платежей.', th: 'ไม่มีการชำระเงินที่ไม่ตรงกัน การคืนเงินที่ล้มเหลว หรือการชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },
@@ -2037,6 +2132,41 @@ const HOME_KEYS: KeyDef[] = [
   { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', status: NR },
   { key: 'home.concierge_whatsapp', namespace: 'home', description: 'Home space: concierge WhatsApp CTA', en: 'Message the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过WhatsApp联系礼宾', status: NR },
   { key: 'home.shuttle.title', namespace: 'home', description: 'Home space: shuttle schedule title', en: 'Beach shuttle schedule', ru: 'Расписание шаттла до пляжа', zh: '海滩班车时刻表', status: NR },
+
+  // Stay card (T-034 · S6 hero)
+  { key: 'home.stay.check_in', namespace: 'home', description: 'Stay card: check-in date label', en: 'Check-in', ru: 'Заезд', zh: '入住', status: NR },
+  { key: 'home.stay.check_out', namespace: 'home', description: 'Stay card: check-out date label', en: 'Check-out', ru: 'Выезд', zh: '退房', status: NR },
+  { key: 'home.stay.checked_in_note', namespace: 'home', description: 'Stay card: note shown once the guest has checked in', en: 'You are checked in. Everything you need is on this page.', ru: 'Вы заселились. Всё необходимое — на этой странице.', zh: '您已入住。所需的一切都在此页面上。', status: NR },
+  { key: 'home.stay.visiting_from', namespace: 'home', description: 'Stay card: guest nationality line ({nationality})', en: 'Visiting from {nationality}', ru: 'Гость из {nationality}', zh: '来自{nationality}', status: NR },
+  { key: 'home.stay_status.confirmed', namespace: 'home', description: 'Stay card status chip: confirmed', en: 'Confirmed', ru: 'Подтверждено', zh: '已确认', status: NR },
+  { key: 'home.stay_status.checked_in', namespace: 'home', description: 'Stay card status chip: checked in', en: 'Checked in', ru: 'Заселён', zh: '已入住', status: NR },
+  { key: 'home.stay_status.checked_out', namespace: 'home', description: 'Stay card status chip: checked out', en: 'Checked out', ru: 'Выехал', zh: '已退房', status: NR },
+
+  // Quick actions row (T-034 · S6)
+  { key: 'home.action.message_host', namespace: 'home', description: 'Quick action: open a thread with the host/ops', en: 'Message host', ru: 'Написать хозяину', zh: '联系房东', status: NR },
+  { key: 'home.action.order_service', namespace: 'home', description: 'Quick action: go to services for this stay', en: 'Order a service', ru: 'Заказать услугу', zh: '预订服务', status: NR },
+  { key: 'home.action.raise_issue', namespace: 'home', description: 'Quick action: raise a ticket about this stay', en: 'Raise an issue', ru: 'Сообщить о проблеме', zh: '报告问题', status: NR },
+  { key: 'home.action.extend_stay', namespace: 'home', description: 'Quick action: extend the stay', en: 'Extend stay', ru: 'Продлить проживание', zh: '延长住宿', status: NR },
+
+  // Services rail (T-034 · S6)
+  { key: 'home.services.title', namespace: 'home', description: 'Services rail heading', en: 'Services for your stay', ru: 'Услуги для вашего проживания', zh: '为您的住宿提供的服务', status: NR },
+  { key: 'home.services.vetted', namespace: 'home', description: 'Services rail: vetted-provider badge', en: 'Vetted', ru: 'Проверен', zh: '已审核', status: NR },
+  { key: 'home.services.from', namespace: 'home', description: 'Services rail: price prefix', en: 'from', ru: 'от', zh: '起价', status: NR },
+
+  // In-stay extension (T-034 · F-GUEST-7 → F-GUEST-9)
+  { key: 'home.extend.title', namespace: 'home', description: 'Extension panel heading', en: 'Stay longer', ru: 'Остаться дольше', zh: '延长住宿', status: NR },
+  { key: 'home.extend.description', namespace: 'home', description: 'Extension panel explanation', en: 'Choose a new check-out date. We will check the calendar and price the extra nights before anything is charged.', ru: 'Выберите новую дату выезда. Мы проверим календарь и рассчитаем стоимость дополнительных ночей до оплаты.', zh: '请选择新的退房日期。我们会先核对日历并计算额外住宿费用，然后再收费。', status: NR },
+  { key: 'home.extend.new_end_date', namespace: 'home', description: 'Extension panel: new check-out date field label', en: 'New check-out date', ru: 'Новая дата выезда', zh: '新的退房日期', status: NR },
+  { key: 'home.extend.submit', namespace: 'home', description: 'Extension panel: submit button', en: 'Check availability', ru: 'Проверить доступность', zh: '查询空房', status: NR },
+  { key: 'home.extend.note', namespace: 'home', description: 'Extension panel: note about payment of added nights', en: 'The extra nights are added to your stay balance and paid separately.', ru: 'Дополнительные ночи добавляются к остатку по проживанию и оплачиваются отдельно.', zh: '额外的住宿夜数将计入您的住宿余额，另行支付。', status: NR },
+  { key: 'home.extend.error_generic', namespace: 'home', description: 'Extension panel: generic failure message', en: 'We could not extend the stay. Please try again or message the host.', ru: 'Не удалось продлить проживание. Попробуйте ещё раз или напишите хозяину.', zh: '无法延长住宿。请重试或联系房东。', status: NR },
+
+  // Role context banner (T-034 · doc 06 §3, F-OWN-6)
+  { key: 'home.role_context', namespace: 'home', description: 'Role context banner sentence ({role}, {unit})', en: 'You are also the {role} of {unit}. This page shows your stay.', ru: 'Вы также {role} объекта {unit}. Здесь показано ваше проживание.', zh: '您同时是{unit}的{role}。此页面显示您的住宿。', status: NR },
+  { key: 'home.role_context.owner_link', namespace: 'home', description: 'Role context banner: link back to the owner dashboard', en: 'Go to owner dashboard', ru: 'Перейти в кабинет владельца', zh: '前往业主面板', status: NR },
+  { key: 'home.role.owner', namespace: 'home', description: 'Role name in the context banner: owner', en: 'owner', ru: 'владелец', zh: '业主', status: NR },
+  { key: 'home.role.resident', namespace: 'home', description: 'Role name in the context banner: resident', en: 'resident', ru: 'резидент', zh: '住户', status: NR },
+  { key: 'home.role.buyer', namespace: 'home', description: 'Role name in the context banner: buyer', en: 'buyer', ru: 'покупатель', zh: '买家', status: NR },
 ];
 
 const ADMIN_S3_KEYS: KeyDef[] = [
@@ -2299,6 +2429,20 @@ const STATUS_LABEL_KEYS: KeyDef[] = [
   { key: 'common.status.service_order.cancelled', namespace: 'common', description: 'Service order status: cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
   { key: 'common.status.service_order.failed', namespace: 'common', description: 'Service order status: failed (no-show)', en: 'Failed', ru: 'Сорван', status: NR },
   { key: 'common.status.service_order.closed', namespace: 'common', description: 'Service order status: closed', en: 'Closed', ru: 'Закрыт', status: NR },
+  // OwnerStatementStatus — the statement's own lifecycle (doc 02)
+  { key: 'common.status.statement.draft', namespace: 'common', description: 'Statement status: draft', en: 'Draft', ru: 'Черновик', th: 'ฉบับร่าง', status: NR },
+  { key: 'common.status.statement.published', namespace: 'common', description: 'Statement status: published', en: 'Published', ru: 'Опубликован', th: 'เผยแพร่แล้ว', status: NR },
+  { key: 'common.status.statement.superseded', namespace: 'common', description: 'Statement status: superseded by a newer statement', en: 'Superseded', ru: 'Заменён', th: 'ถูกแทนที่', status: NR },
+  { key: 'common.status.statement.pending_owner_review', namespace: 'common', description: 'Statement status: waiting on the owner’s signature', en: 'Awaiting your review', ru: 'Ожидает вашей проверки', th: 'รอการตรวจสอบจากคุณ', status: NR },
+  { key: 'common.status.statement.signed_off', namespace: 'common', description: 'Statement status: both signatures recorded', en: 'Signed off', ru: 'Подписан', th: 'ลงนามแล้ว', status: NR },
+  { key: 'common.status.statement.distributed', namespace: 'common', description: 'Statement status: the owner share has been paid out', en: 'Paid out', ru: 'Выплачен', th: 'จ่ายแล้ว', status: NR },
+  // LineItemCategory — what a statement line item is (doc 02)
+  { key: 'common.line_item_category.booking_revenue', namespace: 'common', description: 'Statement line category: booking revenue', en: 'Booking revenue', ru: 'Выручка от бронирований', th: 'รายรับจากการจอง', status: NR },
+  { key: 'common.line_item_category.refund', namespace: 'common', description: 'Statement line category: refunds', en: 'Refunds', ru: 'Возвраты', th: 'การคืนเงิน', status: NR },
+  { key: 'common.line_item_category.service_fee', namespace: 'common', description: 'Statement line category: service fees', en: 'Service fees', ru: 'Сервисные комиссии', th: 'ค่าบริการ', status: NR },
+  { key: 'common.line_item_category.operating_expense', namespace: 'common', description: 'Statement line category: operating expenses', en: 'Operating expenses', ru: 'Операционные расходы', th: 'ค่าใช้จ่ายในการดำเนินงาน', status: NR },
+  { key: 'common.line_item_category.tax', namespace: 'common', description: 'Statement line category: taxes', en: 'Taxes', ru: 'Налоги', th: 'ภาษี', status: NR },
+  { key: 'common.line_item_category.performance_fee', namespace: 'common', description: 'Statement line category: performance fee', en: 'Performance fee', ru: 'Комиссия за результат', th: 'ค่าธรรมเนียมตามผลงาน', status: NR },
 ];
 
 
@@ -2327,7 +2471,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

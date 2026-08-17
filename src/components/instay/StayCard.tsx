@@ -10,6 +10,8 @@ interface StayCardProps {
   status: string;
   checkedInAt?: string | null;
   guestNationality?: string;
+  /** Resolved copy from the content layer — the card never writes its own. */
+  labels: Record<string, string>;
 }
 
 const formatDate = (dateStr: string): string => {
@@ -39,6 +41,7 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
       endDate,
       status,
       guestNationality,
+      labels,
     },
     ref
   ) => {
@@ -52,26 +55,28 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
             <h1 className="text-heading-2 font-bold">{unitName}</h1>
           </div>
           <span className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${getStatusBadgeColor(status)}`}>
-            {status.replace('_', ' ')}
+            {labels[`home.stay_status.${status}`] ?? status.replace('_', ' ')}
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-20 mb-24">
           <div>
-            <p className="text-small text-text-secondary mb-4">Check-in</p>
+            <p className="text-small text-text-secondary mb-4">{labels['home.stay.check_in']}</p>
             <p className="text-body font-semibold">{formatDate(startDate)}</p>
           </div>
           <div>
-            <p className="text-small text-text-secondary mb-4">Check-out</p>
+            <p className="text-small text-text-secondary mb-4">{labels['home.stay.check_out']}</p>
             <p className="text-body font-semibold">{formatDate(endDate)}</p>
           </div>
         </div>
 
         {isCheckedIn && (
           <div className="border-t border-brand-andaman-dark pt-16 mt-16">
-            <p className="text-small font-medium">You're checked in and ready to go!</p>
+            <p className="text-small font-medium">{labels['home.stay.checked_in_note']}</p>
             {guestNationality && (
-              <p className="text-small text-text-secondary mt-4">Visiting from {guestNationality}</p>
+              <p className="text-small text-text-secondary mt-4">
+                {(labels['home.stay.visiting_from'] ?? '').replace('{nationality}', guestNationality)}
+              </p>
             )}
           </div>
         )}

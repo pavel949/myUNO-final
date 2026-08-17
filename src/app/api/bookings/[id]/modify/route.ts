@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createCheckout } from '@/modules/finance';
+import { requestExtension } from '@/modules/booking';
 import { track } from '@/modules/analytics';
 
 /**
@@ -56,6 +57,47 @@ export async function POST(
       return NextResponse.json(
         { error: 'Not authorized to modify this booking' },
         { status: 403 }
+      );
+    }
+
+    // A stay already under way takes the F-GUEST-7 in-stay branch: the only
+    // date move left is pushing the end later, so it goes through the booking
+    // module's extension rather than the general re-shape below.
+    if (booking.status === 'checked_in') {
+      if (!newEndDateStr) {
+        return NextResponse.json(
+          { error: 'An extension needs a new end date' },
+          { status: 400 }
+        );
+      }
+
+      const extension = await requestExtension(
+        prisma,
+        bookingId,
+        new Date(newEndDateStr),
+        user.identityId
+      );
+
+      // The added nights are collected as a stay balance, never bundled back
+      // into the original stay payment (doc 10).
+      const checkout = await createCheckout(prisma, {
+        purpose: 'stay_balance',
+        bookingId,
+        payerIdentityId: user.identityId,
+        amountThb: extension.addedThb,
+      });
+
+      return NextResponse.json(
+        {
+          extension,
+          pricing: {
+            oldTotalThb: booking.totalThb,
+            newTotalThb: extension.newTotalThb,
+            balanceThb: extension.addedThb,
+            checkoutUrl: checkout?.checkoutUrl || null,
+          },
+        },
+        { status: 200 }
       );
     }
 

@@ -41,6 +41,21 @@ export {
 } from './statement.service';
 
 export {
+  getStatementSignOffState,
+  hasSignedOff,
+  recordStatementSignOff,
+  isOwnerVisibleStatementStatus,
+  isSignableStatementStatus,
+  OWNER_VISIBLE_STATEMENT_STATUSES,
+  SIGNABLE_STATEMENT_STATUSES,
+  StatementSignOffError,
+  type StatementSignOffFailure,
+  type StatementSignOffActor,
+  type StatementSignOffState,
+  type StatementSignOffView,
+} from './statement-signoff.service';
+
+export {
   recordOwnerPayout,
   recordProviderRemittance,
   computeProviderRemittance,
@@ -53,10 +68,10 @@ export {
 } from './payout.service';
 
 export {
-  createPreAuthDeposit,
-  voidDepositOnCleanCheckout,
-  captureDepositOnClaim,
-  releaseDepositOnDisputeResolution,
+  scheduleDepositPreauth,
+  voidDepositPreauthIfClean,
+  captureDepositPreauthOnClaim,
+  releaseDepositPreauthOnDispute,
   fileDepositClaim,
   approveClaim,
   rejectClaim,

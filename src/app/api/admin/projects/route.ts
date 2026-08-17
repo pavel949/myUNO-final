@@ -2,6 +2,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { createProject, listProjects } from '@/modules/projects';
 import { prisma } from '@/lib/prisma';
+import { getConfig } from '@/modules/config';
+import { decodePlusCode } from '@/lib/plus-code';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -26,8 +28,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const { plusCode, ...rest } = body;
+
+    // A Plus Code, when given, is the authority for the position — decoded
+    // here rather than in the browser so every entry point (this form, a future
+    // import, a script) resolves it the same way and against the same
+    // configured reference.
+    const coordinates = plusCode
+      ? await resolvePlusCode(plusCode)
+      : { latitude: rest.latitude, longitude: rest.longitude };
+
     const project = await createProject({
-      ...body,
+      ...rest,
+      ...coordinates,
       actorIdentityId: user.identityId,
     });
     return NextResponse.json(project, { status: 201 });
@@ -37,6 +50,27 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+}
+
+/**
+ * Turn a pasted Plus Code into coordinates, using the configured reference.
+ *
+ * Short codes — the form Google Maps displays — are only unique within about
+ * 50 km of a reference point, so the anchor comes from configuration
+ * (`geo.plus_code_reference_*`, defaulting to Phuket) rather than being assumed.
+ */
+async function resolvePlusCode(plusCode: string) {
+  const [referenceLatitude, referenceLongitude] = await Promise.all([
+    getConfig(prisma, 'geo.plus_code_reference_lat'),
+    getConfig(prisma, 'geo.plus_code_reference_lng'),
+  ]);
+
+  const { latitude, longitude } = decodePlusCode(plusCode, {
+    referenceLatitude: Number(referenceLatitude),
+    referenceLongitude: Number(referenceLongitude),
+  });
+
+  return { latitude, longitude };
 }
 
 export async function GET(req: NextRequest) {

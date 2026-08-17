@@ -79,6 +79,28 @@ export interface StatementSignOffView {
   approvedAt: string | null;
 }
 
+/** Why a sign-off was refused. Routes map these onto status codes. */
+export type StatementSignOffFailure =
+  | 'not_found'
+  | 'not_signable'
+  | 'already_signed';
+
+/**
+ * A refused sign-off. Carries the reason as data so each route can choose its
+ * own answer: the owner route hides a non-signable statement behind a 404 (its
+ * scope convention — a statement they may not write is not theirs to address),
+ * while the admin route answers 409 and says which status blocked it.
+ */
+export class StatementSignOffError extends Error {
+  readonly reason: StatementSignOffFailure;
+
+  constructor(reason: StatementSignOffFailure, message: string) {
+    super(message);
+    this.name = 'StatementSignOffError';
+    this.reason = reason;
+  }
+}
+
 /** Load only the fields the sign-off decision needs. `null` = no such statement. */
 export async function getStatementSignOffState(
   db: PrismaClient,
@@ -116,60 +138,95 @@ export function hasSignedOff(
  * first → `pending_owner_review` (the statement now waits on the owner); the
  * owner signing first leaves the status where it was.
  *
- * The caller authorizes first — this function assumes the actor is allowed and
- * that `hasSignedOff` was checked. Atomicity: uses updateMany with a guard
- * clause so concurrent requests detect collisions instead of overwriting.
+ * Takes the statement **id**, not a previously-read state, and re-reads under a
+ * row lock — because every part of this decision is a race otherwise. Two
+ * signatures arriving together each read "the other side hasn't signed", and
+ * both write without the `signed_off` transition: the statement ends up with two
+ * signatures, no `approvedAt`, and a status that says it is still waiting. A
+ * signature landing beside a `distributed` transition would likewise rewrite a
+ * closed statement back open. `SELECT … FOR UPDATE` serializes the pair, so the
+ * second request decides against what the first actually wrote.
+ *
+ * The caller authorizes (whose statement this is); this function owns the state
+ * machine and re-checks status and duplicate signature inside the lock, throwing
+ * `StatementSignOffError` rather than trusting the caller's earlier read.
  */
 export async function recordStatementSignOff(
   db: PrismaClient,
-  state: StatementSignOffState,
+  statementId: string,
   actor: StatementSignOffActor,
   now: Date = new Date()
 ): Promise<StatementSignOffView> {
-  const data: Prisma.OwnerStatementUpdateInput =
-    actor === 'owner'
-      ? { signedOffByOwnerAt: now }
-      : { signedOffByOperatorAt: now };
+  return db.$transaction(async (tx) => {
+    // Take the row lock first. A concurrent sign-off blocks here and, once the
+    // first commits, reads the row it wrote — never the stale pre-write copy.
+    const locked = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM owner_statement WHERE id = ${statementId} FOR UPDATE
+    `;
 
-  const otherSignature =
-    actor === 'owner'
-      ? state.signedOffByOperatorAt
-      : state.signedOffByOwnerAt;
+    if (locked.length === 0) {
+      throw new StatementSignOffError(
+        'not_found',
+        `Statement ${statementId} not found`
+      );
+    }
 
-  if (otherSignature) {
-    data.status = 'signed_off';
-    data.approvedAt = now;
-  } else if (actor === 'operator') {
-    data.status = 'pending_owner_review';
-  }
+    const fresh = await tx.ownerStatement.findUniqueOrThrow({
+      where: { id: statementId },
+      select: {
+        status: true,
+        signedOffByOwnerAt: true,
+        signedOffByOperatorAt: true,
+      },
+    });
 
-  // Guard clause: the signature field must still be null. If a concurrent
-  // request already signed, updateMany returns zero rows and we detect it.
-  const guardWhere: Prisma.OwnerStatementWhereInput =
-    actor === 'owner'
-      ? { id: state.id, signedOffByOwnerAt: null }
-      : { id: state.id, signedOffByOperatorAt: null };
+    // A closed statement is finished. Signing it would re-stamp `approvedAt`
+    // and drag `distributed`/`superseded` back to `signed_off`, losing the fact
+    // that the money went out or that a correction replaced this statement.
+    if (!isSignableStatementStatus(fresh.status)) {
+      throw new StatementSignOffError(
+        'not_signable',
+        `Statement ${statementId} is ${fresh.status} and can no longer be signed`
+      );
+    }
 
-  const updated = await db.ownerStatement.updateMany({
-    where: guardWhere,
-    data,
+    if (hasSignedOff(fresh, actor)) {
+      throw new StatementSignOffError(
+        'already_signed',
+        `The ${actor} has already signed off this statement`
+      );
+    }
+
+    const data: Prisma.OwnerStatementUpdateInput =
+      actor === 'owner'
+        ? { signedOffByOwnerAt: now }
+        : { signedOffByOperatorAt: now };
+
+    const otherSignature =
+      actor === 'owner'
+        ? fresh.signedOffByOperatorAt
+        : fresh.signedOffByOwnerAt;
+
+    if (otherSignature) {
+      data.status = 'signed_off';
+      data.approvedAt = now;
+    } else if (actor === 'operator') {
+      data.status = 'pending_owner_review';
+    }
+
+    const updated = await tx.ownerStatement.update({
+      where: { id: statementId },
+      data,
+    });
+
+    return {
+      id: updated.id,
+      unitId: updated.unitId,
+      status: updated.status,
+      signedOffByOwnerAt: updated.signedOffByOwnerAt?.toISOString() ?? null,
+      signedOffByOperatorAt:
+        updated.signedOffByOperatorAt?.toISOString() ?? null,
+      approvedAt: updated.approvedAt?.toISOString() ?? null,
+    };
   });
-
-  if (updated.count === 0) {
-    throw new Error('Conflict: statement already signed by this actor');
-  }
-
-  // Re-fetch to return the full updated state.
-  const refreshed = await db.ownerStatement.findUniqueOrThrow({
-    where: { id: state.id },
-  });
-
-  return {
-    id: refreshed.id,
-    unitId: refreshed.unitId,
-    status: refreshed.status,
-    signedOffByOwnerAt: refreshed.signedOffByOwnerAt?.toISOString() ?? null,
-    signedOffByOperatorAt: refreshed.signedOffByOperatorAt?.toISOString() ?? null,
-    approvedAt: refreshed.approvedAt?.toISOString() ?? null,
-  };
 }

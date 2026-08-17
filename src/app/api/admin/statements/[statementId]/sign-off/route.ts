@@ -4,7 +4,9 @@ import prismadb from '@/app/libs/prismadb'
 import {
   getStatementSignOffState,
   hasSignedOff,
+  isSignableStatementStatus,
   recordStatementSignOff,
+  StatementSignOffError,
   type StatementSignOffActor,
 } from '@/modules/finance'
 
@@ -81,6 +83,20 @@ export async function PUT(
       )
     }
 
+    // A closed statement (signed_off, distributed, superseded) is finished:
+    // signing it again would re-stamp `approvedAt` and drag the status back to
+    // `signed_off`, erasing the record that the money went out or that a
+    // corrected statement replaced this one. An admin may read it; nobody may
+    // sign it. Unlike the owner route, the admin gets told why.
+    if (!isSignableStatementStatus(statement.status)) {
+      return NextResponse.json(
+        {
+          error: `Statement is ${statement.status} and can no longer be signed`,
+        },
+        { status: 409 }
+      )
+    }
+
     if (hasSignedOff(statement, body.actor)) {
       return NextResponse.json(
         {
@@ -92,7 +108,7 @@ export async function PUT(
 
     const updated = await recordStatementSignOff(
       prismadb,
-      statement,
+      params.statementId,
       body.actor
     )
 
@@ -101,6 +117,16 @@ export async function PUT(
       statement: updated,
     })
   } catch (error) {
+    // Same checks as above, losing a race inside the lock.
+    if (error instanceof StatementSignOffError) {
+      if (error.reason === 'not_found') {
+        return NextResponse.json(
+          { error: 'Statement not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json({ error: error.message }, { status: 409 })
+    }
     console.error('[STATEMENT SIGN OFF]', error)
     return NextResponse.json(
       { error: 'Internal server error' },

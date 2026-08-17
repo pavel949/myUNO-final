@@ -48,6 +48,8 @@ export {
   isSignableStatementStatus,
   OWNER_VISIBLE_STATEMENT_STATUSES,
   SIGNABLE_STATEMENT_STATUSES,
+  StatementSignOffError,
+  type StatementSignOffFailure,
   type StatementSignOffActor,
   type StatementSignOffState,
   type StatementSignOffView,

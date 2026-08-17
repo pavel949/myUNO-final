@@ -6,6 +6,7 @@ import {
   hasSignedOff,
   isSignableStatementStatus,
   recordStatementSignOff,
+  StatementSignOffError,
 } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
@@ -64,19 +65,27 @@ export async function PUT(
       )
     }
 
-    const updated = await recordStatementSignOff(prismadb, statement, 'owner')
+    const updated = await recordStatementSignOff(
+      prismadb,
+      params.statementId,
+      'owner'
+    )
 
     return NextResponse.json({
       success: true,
       statement: updated,
     })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Internal server error'
-    if (msg.includes('Conflict')) {
-      return NextResponse.json(
-        { error: 'The owner has already signed off this statement' },
-        { status: 409 }
-      )
+    // The checks above are the friendly path; these are the same checks losing
+    // a race inside the lock, so they get the same answers.
+    if (error instanceof StatementSignOffError) {
+      if (error.reason === 'already_signed') {
+        return NextResponse.json(
+          { error: 'The owner has already signed off this statement' },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json({ error: 'Statement not found' }, { status: 404 })
     }
     console.error('[OWNER STATEMENT SIGN OFF]', error)
     return NextResponse.json(

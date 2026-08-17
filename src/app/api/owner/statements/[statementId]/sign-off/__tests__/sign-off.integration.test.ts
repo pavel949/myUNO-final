@@ -260,4 +260,111 @@ describe('Owner statement sign-off (Q33)', () => {
     const data = await res.json()
     expect(data.statement.signedOffByOwnerAt).toBeTruthy()
   })
+
+  // A closed statement is finished. Signing it again would re-stamp approvedAt
+  // and drag distributed/superseded back to signed_off — losing the record that
+  // the money went out, or that a correction replaced this statement.
+  describe('the admin route refuses to sign a closed statement', () => {
+    const closed: OwnerStatementStatus[] = [
+      'signed_off',
+      'distributed',
+      'superseded',
+    ]
+
+    for (const status of closed) {
+      it(`refuses the operator signature on a ${status} statement`, async () => {
+        const statement = await createStatement(status)
+        mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+
+        const res = await adminSignOff(
+          put(statement.id, { actor: 'operator' }),
+          { params: { statementId: statement.id } }
+        )
+
+        expect(res.status).toBe(409)
+
+        const stored = await db.ownerStatement.findUnique({
+          where: { id: statement.id },
+        })
+        expect(stored?.status).toBe(status)
+        expect(stored?.signedOffByOperatorAt).toBeNull()
+        expect(stored?.approvedAt).toBeNull()
+      })
+    }
+
+    it('does not re-stamp approvedAt on an already signed_off statement', async () => {
+      const approvedAt = new Date('2026-07-01T00:00:00.000Z')
+      const statement = await createStatement('signed_off')
+      await db.ownerStatement.update({
+        where: { id: statement.id },
+        data: { signedOffByOwnerAt: approvedAt, approvedAt },
+      })
+
+      mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+      const res = await adminSignOff(put(statement.id, { actor: 'operator' }), {
+        params: { statementId: statement.id },
+      })
+
+      expect(res.status).toBe(409)
+
+      const stored = await db.ownerStatement.findUnique({
+        where: { id: statement.id },
+      })
+      expect(stored?.approvedAt?.toISOString()).toBe(approvedAt.toISOString())
+    })
+  })
+
+  // Both signatures arriving together each read "the other side hasn't signed".
+  // Without the row lock both write without the signed_off transition, and the
+  // statement ends up fully signed but still marked as waiting, with no
+  // approvedAt — a statement that can never close.
+  it('closes the statement when both signatures race each other', async () => {
+    const statement = await createStatement()
+
+    const ownerUser = currentUser(owner)
+    const adminUser = currentUser(admin, true)
+    let call = 0
+    // The two requests interleave: each resolves its own actor's session.
+    mockGetCurrentUser.mockImplementation(() =>
+      Promise.resolve(call++ % 2 === 0 ? ownerUser : adminUser)
+    )
+
+    const [ownerRes, adminRes] = await Promise.all([
+      ownerSignOff(put(statement.id), {
+        params: { statementId: statement.id },
+      }),
+      adminSignOff(put(statement.id, { actor: 'operator' }), {
+        params: { statementId: statement.id },
+      }),
+    ])
+
+    expect(ownerRes.status).toBe(200)
+    expect(adminRes.status).toBe(200)
+
+    const stored = await db.ownerStatement.findUnique({
+      where: { id: statement.id },
+    })
+    expect(stored?.signedOffByOwnerAt).toBeTruthy()
+    expect(stored?.signedOffByOperatorAt).toBeTruthy()
+    // The loser of the race saw the winner's signature and closed the statement.
+    expect(stored?.status).toBe('signed_off')
+    expect(stored?.approvedAt).toBeTruthy()
+  })
+
+  it('records only one signature when the same actor signs twice at once', async () => {
+    const statement = await createStatement()
+    mockGetCurrentUser.mockResolvedValue(currentUser(owner))
+
+    const results = await Promise.all([
+      ownerSignOff(put(statement.id), {
+        params: { statementId: statement.id },
+      }),
+      ownerSignOff(put(statement.id), {
+        params: { statementId: statement.id },
+      }),
+    ])
+
+    const codes = results.map((r) => r.status).sort()
+    expect(codes).toEqual([200, 409])
+  })
 })

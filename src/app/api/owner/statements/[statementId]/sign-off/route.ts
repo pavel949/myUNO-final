@@ -4,6 +4,7 @@ import prismadb from '@/app/libs/prismadb'
 import {
   getStatementSignOffState,
   hasSignedOff,
+  isOwnerVisibleStatementStatus,
   isSignableStatementStatus,
   recordStatementSignOff,
   StatementSignOffError,
@@ -49,19 +50,25 @@ export async function PUT(
       )
     }
 
-    // Visibility and write eligibility are separate decisions. A statement that
-    // is closed (signed_off, distributed, superseded) is readable but not signable.
-    if (!isSignableStatementStatus(statement.status)) {
-      return NextResponse.json(
-        { error: 'Statement not found' },
-        { status: 404 }
-      )
-    }
-
     if (hasSignedOff(statement, 'owner')) {
       return NextResponse.json(
         { error: 'The owner has already signed off this statement' },
         { status: 409 }
+      )
+    }
+
+    // Two separate rules, and the owner needs both. A `draft` is signable —
+    // that is the admin sign-off gate — but it is not *owner*-visible, so it is
+    // not theirs to sign. A closed statement is the mirror case: readable for
+    // their records, but finished. Either way the answer is the scope
+    // convention above — for this owner, the statement is not addressable.
+    if (
+      !isOwnerVisibleStatementStatus(statement.status) ||
+      !isSignableStatementStatus(statement.status)
+    ) {
+      return NextResponse.json(
+        { error: 'Statement not found' },
+        { status: 404 }
       )
     }
 

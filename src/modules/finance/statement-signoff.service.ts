@@ -37,8 +37,8 @@ export function isOwnerVisibleStatementStatus(
 }
 
 /**
- * The statuses a signature may still be **written onto** — a strict subset of
- * the visible set.
+ * The statuses a signature may still be **written onto** — every status that is
+ * not yet closed.
  *
  * Reading and signing are two different decisions and need two different lists.
  * A closed statement (`signed_off`, `distributed`, `superseded`) stays readable
@@ -47,8 +47,15 @@ export function isOwnerVisibleStatementStatus(
  * statement, rewrite its status back to `signed_off` — losing the fact that the
  * money already went out or that a corrected statement replaced this one. The
  * ledger is append-only (CLAUDE.md money rules) and a closed statement is too.
+ *
+ * `draft` belongs here. A freshly generated statement is a draft, and signing it
+ * **is** the admin sign-off gate that moves it forward (doc 10 money rules —
+ * "statements gate on admin sign-off"). What a draft is not is the *owner's* to
+ * sign: that is a visibility rule, so the owner route pairs this check with
+ * `isOwnerVisibleStatementStatus` rather than this list carrying the exception.
  */
 export const SIGNABLE_STATEMENT_STATUSES: OwnerStatementStatus[] = [
+  'draft',
   'published',
   'pending_owner_review',
 ];
@@ -180,6 +187,16 @@ export async function recordStatementSignOff(
       },
     });
 
+    // Duplicate before closed, because the two overlap: a signed_off statement
+    // is closed *and* already carries this actor's signature. "You already
+    // signed" is the more specific and more useful of the two answers.
+    if (hasSignedOff(fresh, actor)) {
+      throw new StatementSignOffError(
+        'already_signed',
+        `The ${actor} has already signed off this statement`
+      );
+    }
+
     // A closed statement is finished. Signing it would re-stamp `approvedAt`
     // and drag `distributed`/`superseded` back to `signed_off`, losing the fact
     // that the money went out or that a correction replaced this statement.
@@ -187,13 +204,6 @@ export async function recordStatementSignOff(
       throw new StatementSignOffError(
         'not_signable',
         `Statement ${statementId} is ${fresh.status} and can no longer be signed`
-      );
-    }
-
-    if (hasSignedOff(fresh, actor)) {
-      throw new StatementSignOffError(
-        'already_signed',
-        `The ${actor} has already signed off this statement`
       );
     }
 

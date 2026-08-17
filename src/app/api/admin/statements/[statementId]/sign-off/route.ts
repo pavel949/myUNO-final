@@ -83,24 +83,27 @@ export async function PUT(
       )
     }
 
-    // A closed statement (signed_off, distributed, superseded) is finished:
-    // signing it again would re-stamp `approvedAt` and drag the status back to
-    // `signed_off`, erasing the record that the money went out or that a
-    // corrected statement replaced this one. An admin may read it; nobody may
-    // sign it. Unlike the owner route, the admin gets told why.
-    if (!isSignableStatementStatus(statement.status)) {
+    // Duplicate before closed: a signed_off statement is closed *and* already
+    // carries a signature, and "you already signed" is the more specific answer.
+    if (hasSignedOff(statement, body.actor)) {
       return NextResponse.json(
         {
-          error: `Statement is ${statement.status} and can no longer be signed`,
+          error: `The ${body.actor} has already signed off this statement`,
         },
         { status: 409 }
       )
     }
 
-    if (hasSignedOff(statement, body.actor)) {
+    // A closed statement (signed_off, distributed, superseded) is finished:
+    // signing it again would re-stamp `approvedAt` and drag the status back to
+    // `signed_off`, erasing the record that the money went out or that a
+    // corrected statement replaced this one. A `draft` is *not* closed — signing
+    // one is the admin sign-off gate itself — so it stays signable here.
+    // Unlike the owner route, the admin gets told why.
+    if (!isSignableStatementStatus(statement.status)) {
       return NextResponse.json(
         {
-          error: `The ${body.actor} has already signed off this statement`,
+          error: `Statement is ${statement.status} and can no longer be signed`,
         },
         { status: 409 }
       )

@@ -312,6 +312,48 @@ describe('Owner statement sign-off (Q33)', () => {
       })
       expect(stored?.approvedAt?.toISOString()).toBe(approvedAt.toISOString())
     })
+
+    // The counterpart to the cases above, and the line between them: `draft` is
+    // not closed, it is pre-gate. Signing a draft through the admin route *is*
+    // the admin sign-off gate (doc 10), so it must stay open. Blocking it here
+    // is what broke statement generation the first time this gate was written.
+    it('still signs a draft — that is the admin sign-off gate', async () => {
+      const statement = await createStatement('draft')
+      mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+
+      const res = await adminSignOff(put(statement.id, { actor: 'operator' }), {
+        params: { statementId: statement.id },
+      })
+
+      expect(res.status).toBe(200)
+
+      const stored = await db.ownerStatement.findUnique({
+        where: { id: statement.id },
+      })
+      expect(stored?.signedOffByOperatorAt).toBeTruthy()
+      expect(stored?.status).toBe('pending_owner_review')
+    })
+
+    // A duplicate signature and a closed status overlap on a signed_off
+    // statement. The actor is told they already signed, not that the statement
+    // closed — the more specific answer, and the one the generation suite
+    // asserts.
+    it('reports the duplicate, not the closure, when both apply', async () => {
+      const statement = await createStatement('signed_off')
+      await db.ownerStatement.update({
+        where: { id: statement.id },
+        data: { signedOffByOwnerAt: new Date() },
+      })
+
+      mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+      const res = await adminSignOff(put(statement.id, { actor: 'owner' }), {
+        params: { statementId: statement.id },
+      })
+
+      expect(res.status).toBe(409)
+      const data = await res.json()
+      expect(data.error).toContain('already signed')
+    })
   })
 
   // Both signatures arriving together each read "the other side hasn't signed".

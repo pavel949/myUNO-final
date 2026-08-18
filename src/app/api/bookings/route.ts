@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
       adultsCount,
       childrenCount,
       instantBook: requestedInstantBook,
+      infantsCount = 0,
+      petsCount = 0,
       guestNote,
       paymentMethod = 'cash',
     } = body;
@@ -112,7 +114,9 @@ export async function POST(req: NextRequest) {
         candidate.id,
         startDate,
         endDate,
-        guestCount
+        guestCount,
+        undefined,
+        Number(petsCount)
       );
 
       // Snapshot the unit's cancellation policy at booking time (doc 07 F-GUEST-8)
@@ -141,6 +145,8 @@ export async function POST(req: NextRequest) {
           endDate,
           adults: Number(adultsCount),
           children: Number(childrenCount),
+          infants: Number(infantsCount),
+          pets: Number(petsCount),
           totalThb: candidateBreakdown.total_thb,
           // Booking type is a property of the assigned unit, never a client choice
           instantBook: candidate.instantBook,

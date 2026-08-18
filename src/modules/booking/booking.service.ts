@@ -12,6 +12,10 @@ export interface CreateBookingInput {
   endDate: Date;
   adults: number;
   children: number;
+  /** Not counted toward occupancy — an infant needs a cot, not a bed. */
+  infants?: number;
+  /** Checked against the unit's pet policy, not against its bed count. */
+  pets?: number;
   totalThb: number;
   priceBreakdown?: Record<string, unknown>;
   cancellationPolicySnapshot?: Record<string, unknown>;
@@ -227,6 +231,8 @@ export async function createBooking(
     endDate,
     adults,
     children,
+    infants = 0,
+    pets = 0,
     totalThb,
     priceBreakdown,
     cancellationPolicySnapshot,
@@ -299,6 +305,8 @@ export async function createBooking(
         endDate,
         adults,
         children,
+        infants,
+        pets,
         totalThb,
         ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
         ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),

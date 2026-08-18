@@ -927,6 +927,9 @@ model Unit {
   assetStatusChangedAt    DateTime?   @map("asset_status_changed_at")
   assetStatusReason       String?     @map("asset_status_reason")
   permittedUseConfirmedAt DateTime?  @map("permitted_use_confirmed_at")
+  /// Null means the unit has not said — which is not the same as "no".
+  petsAllowed             Boolean?   @map("pets_allowed")
+  maxPets                 Int?       @map("max_pets")
   coverMediaId            String?    @map("cover_media_id")
 
   // Relations
@@ -1018,6 +1021,10 @@ model Booking {
   endDate                    DateTime           @map("end_date") @db.Date
   adults                     Int
   children                   Int
+  /// Not counted toward occupancy — an infant needs a cot, not a bed.
+  infants                    Int                @default(0)
+  /// Recorded against the unit's pet policy, not against its bed count.
+  pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
   balanceDueThb              Int                @default(0) @map("balance_due_thb")

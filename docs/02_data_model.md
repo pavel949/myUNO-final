@@ -132,6 +132,8 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `instant_book` | boolean | `false` = request-to-book (host approval flow). |
 | `cancellation_policy_key` | text, nullable | Named policy override; null = inherit project/global config. |
 | `status` | enum `draft, mobilizing, live, paused, offboarded` | Only `live` is bookable. `paused` hides from search but keeps existing bookings. |
+| `pets_allowed` | bool, nullable | Whether the unit takes pets. **Null means the unit has not answered, which is not the same as "no"** — an unanswered policy refuses a pet rather than assuming one is welcome, and the operator sets it during mobilization. |
+| `max_pets` | int, nullable | How many. Null with `pets_allowed = true` means no stated limit. |
 | `permitted_use_confirmed_at` | timestamptz, nullable | **The legal gate.** A unit cannot move to `live` unless set (with the confirming compliance record §11.2). |
 | `cover_media_id` + `UnitMedia` join (`unit_id`,`media_id`,`sort`) | | Photo gallery; first is cover. |
 
@@ -254,6 +256,7 @@ One row per stay, whatever the channel. This is the calendar of record.
 | `start_date`, `end_date` | date | Check-in / check-out days (end exclusive for nights math). |
 | `adults`, `children` | int | Party size; validated against `max_guests`. |
 | `price_breakdown` | jsonb | The server-computed line items frozen at booking: nightly lines (each night + applied rule/season), fees, taxes, discounts. Never trusted from the client. |
+| `infants`, `pets` | int, default 0 | **Not counted toward occupancy.** An infant needs a cot, not a bed, and counting one against `max_guests` turns a family of four into a party the villa refuses — the convention every OTA follows. Pets are checked against the unit's `pets_allowed` / `max_pets` instead. CHECK constraints reject negatives and require at least one adult: somebody has to be responsible for the stay. |
 | `total_thb` | int | Sum of the breakdown. `0` for `owner_stay`. |
 | `balance_due_thb` | int, default 0 | Unpaid difference after an upward modification. |
 | `refund_accrued_thb` | int, default 0 | Accrued refunds (downward modification, cancellation) — what has been/should be returned via the provider. |

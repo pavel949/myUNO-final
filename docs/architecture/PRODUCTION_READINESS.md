@@ -5,7 +5,7 @@
 Scores are 0–5. Launch severity: **P0** must be fixed before any real booking · **P1** before public
 launch · **P2** shortly after · **P3** enhancement.
 
-**The system is not production-ready while any P0 is open. Three P0s are open.**
+**The system is not production-ready while any P0 is open. Two P0s are open.**
 
 ---
 
@@ -15,9 +15,9 @@ launch · **P2** shortly after · **P3** enhancement.
 | 2 | SSOT integrity | **2/5** | Price and min-nights live on `Unit`; amenities are untyped `String[]` on both Project and Unit | No canonical owner for price or amenity; no provenance API | Move price to a dated rate rule; make amenities a catalog + assignment with inheritance | P1 |
 | 3 | Booking correctness | **4/5** | State machine present; 111 tests pass; concurrency now DB-enforced and proven (§5) | No `BookingItem` ⇒ multi-unit bookings impossible; no persisted `Quote` to revalidate at checkout | Add `Quote`; add `BookingItem` before multi-room sales | P1 |
 | 4 | Inventory concurrency | **4/5** | `booking_no_overlap` GiST exclusion constraint; 6 concurrency tests; proven load-bearing by drop-and-rerun | Owner blocks (`BlockedDate`) are still not covered by the same constraint | Extend exclusion coverage to blocked dates (P0-4) | **P0** |
-| 5 | Payments | **1/5** | Cash path real and tested; everything else mocked (`finance.service.ts:227` hardcodes `'mock'`) | `verifyWebhookSignature` returns `true` unconditionally; no webhook route; Opn/Omise absent though named default | Implement real signature verification + idempotent webhook, or keep payments strictly cash-only and remove the stubs from the shipped path | **P0** |
+| 5 | Payments | **2/5** | Cash path real and tested; `finance.service.ts:227` hardcodes `'mock'`. Seam now fails closed — unimplemented provider throws, mock refused in production, nothing claims money moved without proof (9 tests) | Still cash-only. No real rail, no webhook route, no idempotency table. `/api/checkout/confirm` is authenticated and payer-scoped, so a payer can settle their own mock payment — correct for a cash-first loop, not for real money | Wire a real provider with genuine signature verification before any card payment | P1 |
 | 6 | Finance | **3/5** | `OwnerStatement` + line items + two-signature sign-off with `SELECT … FOR UPDATE` — the strongest area | Ledger is single-entry; financial snapshots are updatable | Enforce snapshot immutability (DB trigger); plan double-entry | P1 |
-| 7 | Security | **2/5** | bcrypt-12, HMAC sessions with `timingSafeEqual`, real AES-256-GCM | Webhook verification stub; audit log mutable; no KDF/AAD/key-version on encryption | Fix webhook (P0-3); make `audit_log` append-only | **P0** |
+| 7 | Security | **3/5** | bcrypt-12, HMAC sessions with `timingSafeEqual`, real AES-256-GCM; payment seam now fails closed | Audit log is mutable (zero `TRIGGER`/`REVOKE` in any migration); no KDF/AAD/key-version on encryption | Make `audit_log` append-only (P1-3) | P1 |
 | 8 | Tenant isolation | **2/5** | No `organization_id` on Identity/Project/Unit/Booking/Ledger | Isolation relies entirely on project/unit scoping | Decide whether myUNO is single-tenant. If multi-tenant, add the column before data grows | P1 |
 | 9 | Owner data isolation | **5/5** | Scoped in the WHERE clause; 404 (not 403) on another owner's statement; tested at `sign-off.integration.test.ts:134` and `page.integration.test.ts:137` | — | — | — |
 | 10 | Operations | **3/5** | Tickets, TM30 with SLA, condition reports, compliance records | No housekeeping/task entities; tasks not generated from booking events | Add `Task`/`TaskTemplate` in the operations phase | P2 |
@@ -37,12 +37,14 @@ launch · **P2** shortly after · **P3** enhancement.
 |---|---|---|---|
 | ~~P0-1~~ | Double-booking race in `createBooking` | Same unit sellable twice | **CLOSED this session** — DB exclusion constraint + 6 tests |
 | ~~P0-2~~ | `DATABASE_URL_TEST` pointed at production | `resetDb()` truncates every table — `npm test` would wipe production | **CLOSED this session** — repointed at local test DB, warning added |
-| **P0-3** | Webhook signature verification returns `true` | Forged payment confirmations | OPEN |
+| ~~P0-3~~ | Stub adapters fabricated confirmations; webhook verification returned `true` | A deployment configured for a real rail would have taken fake payments | **CLOSED this session** — Stripe stub deleted, seam fails closed, 9 tests |
 | **P0-4** | Owner blocks not covered by the exclusion constraint | A unit can be owner-blocked and sold for the same nights | OPEN |
 | **P0-5** | Unauthenticated iCal export | Per-unit occupancy and pricing readable by UUID | OPEN |
 
 ## Overall
 
-**Weighted verdict: not production-ready.** The booking engine is now safe on its core invariant,
-which was the single largest risk and is the reason the previous "architecturally ready" verdict was
-wrong. Payments, webhook authenticity and observability remain the blockers.
+**Weighted verdict: not production-ready.** The booking engine is now safe on its core invariant —
+the single largest risk, and the reason the previous "architecturally ready" verdict was wrong — and
+the payment seam can no longer claim money arrived when it did not. Two P0s remain: a unit can still
+be owner-blocked and sold for the same nights, and the iCal feed is unauthenticated. Observability
+is still absent entirely.

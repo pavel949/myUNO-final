@@ -1,5 +1,6 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
+import { computePriceBreakdown } from '@/modules/core';
 
 export interface CreateBookingInput {
   unitId: string;
@@ -814,6 +815,173 @@ export async function requestExtension(
 /**
  * Mark a booking as no-show (tracking event; status remains checked_out until resolved).
  */
+export interface ChangeDatesResult {
+  bookingId: string;
+  previousStartDate: Date;
+  previousEndDate: Date;
+  startDate: Date;
+  endDate: Date;
+  previousTotalThb: number;
+  totalThb: number;
+  /** Positive when the guest owes more; collected through the finance seam. */
+  balanceDueThb: number;
+  /** Positive when the stay got cheaper; accrued, not paid out here. */
+  refundAccruedThb: number;
+}
+
+/**
+ * Move a booking's dates (F-GUEST-9, the general case).
+ *
+ * `requestExtension` only ever pushes the end date out. A guest whose flight
+ * moves needs the whole range to shift, and one cutting a trip short needs it to
+ * shrink — neither of which that function can express, so the only route was
+ * cancel and rebook. That loses the booking, the price the guest agreed, and
+ * frequently the guest.
+ *
+ * Repricing is a full recomputation for the new range rather than an adjustment
+ * of the old total: nights move across seasons, and a delta calculated from the
+ * old nightly rate would quietly undercharge a stay that shifted into a peak.
+ *
+ * The difference lands as a balance to collect or a refund accrued. Neither is
+ * settled here — the finance seam owns money, this module owns the stay.
+ */
+export async function changeBookingDates(
+  db: PrismaClient,
+  input: {
+    bookingId: string;
+    startDate: Date;
+    endDate: Date;
+    actorIdentityId?: string;
+  }
+): Promise<ChangeDatesResult> {
+  const { bookingId, startDate, endDate, actorIdentityId } = input;
+
+  if (endDate <= startDate) {
+    throw new Error('The new end date must be after the new start date');
+  }
+
+  const changeable: BookingStatus[] = ['pending_payment', 'confirmed', 'checked_in'];
+
+  const result = await db.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+      include: { unit: true },
+    });
+    if (!booking) {
+      throw new Error(`Booking ${bookingId} not found`);
+    }
+
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
+
+    if (!changeable.includes(booking.status)) {
+      throw new Error(`Cannot change the dates of a booking with status ${booking.status}`);
+    }
+
+    // A stay in progress cannot have its start moved — the guest is already in
+    // the villa, and rewriting the arrival would falsify the register the TM30
+    // filing was made from.
+    if (booking.status === 'checked_in' && startDate.getTime() !== booking.startDate.getTime()) {
+      throw new Error('A stay that has begun can change its departure, not its arrival');
+    }
+
+    // Excluding itself: the booking's own current nights are not a conflict with
+    // the nights it is moving to, and overlap between old and new is the usual
+    // case rather than the exception.
+    const conflicting = await findBlockingConflict(
+      tx as PrismaClient,
+      booking.unitId,
+      startDate,
+      endDate,
+      bookingId
+    );
+    if (conflicting) {
+      const err = new Error('The unit is already booked for those dates');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+
+    const blocked = await tx.blockedDate.findFirst({
+      where: {
+        unitId: booking.unitId,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+      },
+      select: { id: true, reason: true },
+    });
+    if (blocked) {
+      const err = new Error(`The unit is unavailable for those dates (${blocked.reason})`);
+      (err as any).code = 'DOUBLE_BOOK';
+      (err as any).blockReason = blocked.reason;
+      throw err;
+    }
+
+    const breakdown = await computePriceBreakdown(
+      tx as PrismaClient,
+      booking.unitId,
+      startDate,
+      endDate,
+      booking.adults + booking.children
+    );
+
+    const previousTotalThb = booking.totalThb;
+    const totalThb = breakdown.total_thb;
+    const difference = totalThb - previousTotalThb;
+
+    const balanceDueThb =
+      difference > 0 ? booking.balanceDueThb + difference : booking.balanceDueThb;
+    const refundAccruedThb =
+      difference < 0 ? booking.refundAccruedThb + Math.abs(difference) : booking.refundAccruedThb;
+
+    const updated = await tx.booking.update({
+      where: { id: bookingId },
+      data: { startDate, endDate, totalThb, balanceDueThb, refundAccruedThb },
+    });
+
+    // The price breakdown is immutable once set, so the new pricing lives on the
+    // change row rather than overwriting the terms the booking was sold under.
+    await tx.bookingChange.create({
+      data: {
+        bookingId,
+        changeType: 'dates',
+        oldValue: {
+          startDate: booking.startDate.toISOString(),
+          endDate: booking.endDate.toISOString(),
+          totalThb: previousTotalThb,
+        },
+        newValue: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          totalThb,
+          priceBreakdown: { ...breakdown } as any,
+        } as any,
+        priceDeltaThb: difference,
+        actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+      },
+    });
+
+    return {
+      bookingId,
+      previousStartDate: booking.startDate,
+      previousEndDate: booking.endDate,
+      startDate: updated.startDate,
+      endDate: updated.endDate,
+      previousTotalThb,
+      totalThb,
+      balanceDueThb,
+      refundAccruedThb,
+    };
+  });
+
+  // stay_modified already covers a change to a booking's shape (doc 13); a date
+  // move is exactly that, so no new event key is minted for it.
+  await track(db, 'stay_modified', {
+    bookingId,
+    priceDeltaThb: result.totalThb - result.previousTotalThb,
+  }).catch(() => null);
+
+  return result;
+}
+
 export async function markNoShow(
   db: PrismaClient,
   bookingId: string

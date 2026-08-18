@@ -48,3 +48,13 @@ export {
   sendPrearrivalReminders,
   sendPostStayPrompts,
 } from './lifecycle.jobs';
+
+// Reviews of the guest, after their stay — the other direction from stay
+// reviews. Built on the polymorphic Review with target_type 'guest'.
+export {
+  writeGuestReview,
+  getGuestReviewEligibility,
+  getGuestReputation,
+  type WriteGuestReviewInput,
+  type GuestReputation,
+} from './guest-review.service';

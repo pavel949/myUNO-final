@@ -431,6 +431,9 @@ enum ServiceOrderStatus {
 enum ReviewTargetType {
   stay
   service_order
+  /// A review *of* the guest, written after their stay. `target_id` is the
+  /// booking, not the identity — see the 20260818000018 migration for why.
+  guest
 }
 
 enum Tm30FilingStatus {

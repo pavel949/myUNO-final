@@ -250,3 +250,51 @@ describe('Units module', () => {
     });
   });
 });
+
+/**
+ * A unit cannot be born live.
+ *
+ * Permitted-use confirmation is a legal gate (CLAUDE.md, legal non-negotiables),
+ * and it was enforced only when a unit *transitioned* to live. The create path
+ * took a status straight from its input, and `POST /api/admin/units` spreads the
+ * request body into it — so `{"status":"live"}` produced a bookable unit that had
+ * never been cleared for letting.
+ */
+describe('permitted use gates going live, on every path', () => {
+  it('refuses to create a unit that is already live', async () => {
+    const project = await createProject();
+
+    await expect(
+      createUnitFn({
+        projectId: project.id,
+        name: 'Uncleared villa',
+        unitType: 'villa',
+        bedrooms: 2,
+        bathrooms: 1,
+        maxGuests: 4,
+        addressSupplement: '1',
+        baseNightlyThb: 100_000,
+        minNights: 1,
+        status: 'live',
+      })
+    ).rejects.toThrow(/cannot be created live/i);
+  });
+
+  it('still allows the ordinary draft creation', async () => {
+    const project = await createProject();
+
+    const unit = await createUnitFn({
+      projectId: project.id,
+      name: 'Draft villa',
+      unitType: 'villa',
+      bedrooms: 2,
+      bathrooms: 1,
+      maxGuests: 4,
+      addressSupplement: '2',
+      baseNightlyThb: 100_000,
+      minNights: 1,
+    });
+
+    expect(unit.status).toBe('draft');
+  });
+});

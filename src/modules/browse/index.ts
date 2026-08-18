@@ -89,3 +89,23 @@ export {
   type SearchCriteria,
   type MatchableUnit,
 } from './saved.service';
+
+// How a list of villas is ordered. The catalog is defined once so the API, the
+// picker, and the tests cannot disagree about what a valid sort is.
+export {
+  UNIT_SORTS,
+  DEFAULT_UNIT_SORT,
+  parseUnitSort,
+  rankByRating,
+  type UnitSort,
+  type UnitSortKey,
+  type RatedForSort,
+} from './sort';
+
+// A villa's rating, assembled back through its bookings — stay reviews target
+// the booking, not the unit.
+export { getUnitRatings, getUnitRating, type UnitRating } from './unit-rating.service';
+
+// "Show me what's in this area." Filters on the project's coordinates, because
+// a unit's location is its project's.
+export { parseMapBounds, boundsWhere, type MapBounds, type BoundsParse } from './bounds';

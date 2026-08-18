@@ -1562,6 +1562,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'search.categories.auto_assign', namespace: 'search', description: 'Category card: auto-assignment note', en: 'We assign the best free villa of this category to your dates.', ru: 'Мы сами назначим лучшую свободную виллу этой категории на ваши даты.', zh: '我们将为您的日期安排该类别中最合适的空闲别墅。', status: NR },
   { key: 'search.error_booking', namespace: 'search', description: 'Search: category booking error', en: 'Could not create the request. Please try again.', ru: 'Не удалось создать запрос. Попробуйте ещё раз.', zh: '无法创建申请，请重试。', status: NR },
   { key: 'search.showing', namespace: 'search', description: 'Search pagination summary', en: 'Showing {shown} of {total} results', ru: 'Показано {shown} из {total}', status: NR },
+  { key: 'search.sort_label', namespace: 'search', description: 'Search: sort picker label', en: 'Sort by', ru: 'Сортировка', status: NR },
+  { key: 'search.load_more', namespace: 'search', description: 'Search: load the next page of results', en: 'Show more homes', ru: 'Показать ещё', status: NR },
+  { key: 'search.loading_more', namespace: 'search', description: 'Search: loading the next page', en: 'Loading…', ru: 'Загружаем…', status: NR },
+  { key: 'search.rating_summary', namespace: 'search', description: 'Search card: rating and review count', en: '{rating} · {count} reviews', ru: '{rating} · отзывов: {count}', status: NR },
   { key: 'search.bar_check_in', namespace: 'search', description: 'Search bar: check-in label', en: 'Check-in', ru: 'Заезд', status: NR },
   { key: 'search.bar_check_out', namespace: 'search', description: 'Search bar: check-out label', en: 'Check-out', ru: 'Выезд', status: NR },
   { key: 'search.bar_adults', namespace: 'search', description: 'Search bar: adults label', en: 'Adults', ru: 'Взрослые', status: NR },
@@ -2406,6 +2410,13 @@ const CATALOG_LABEL_KEYS: KeyDef[] = [
   { key: 'catalog.ticket_categories.noise.label', namespace: 'catalog', description: 'Ticket category label: noise', en: 'Noise', ru: 'Шум', status: NR },
   { key: 'catalog.ticket_categories.common_area.label', namespace: 'catalog', description: 'Ticket category label: common area', en: 'Common areas', ru: 'Общие зоны', status: NR },
   { key: 'catalog.ticket_categories.other.label', namespace: 'catalog', description: 'Ticket category label: other', en: 'Other', ru: 'Другое', status: NR },
+  // Search sort labels — one per UNIT_SORTS entry (src/modules/browse/sort.ts)
+  { key: 'catalog.unit_sorts.recommended.label', namespace: 'catalog', description: 'Search sort: recommended (the default)', en: 'Recommended', ru: 'Рекомендуемые', status: NR },
+  { key: 'catalog.unit_sorts.price_asc.label', namespace: 'catalog', description: 'Search sort: cheapest first', en: 'Price: low to high', ru: 'Цена: по возрастанию', status: NR },
+  { key: 'catalog.unit_sorts.price_desc.label', namespace: 'catalog', description: 'Search sort: most expensive first', en: 'Price: high to low', ru: 'Цена: по убыванию', status: NR },
+  { key: 'catalog.unit_sorts.bedrooms_desc.label', namespace: 'catalog', description: 'Search sort: most bedrooms first', en: 'Most bedrooms', ru: 'Больше спален', status: NR },
+  { key: 'catalog.unit_sorts.capacity_desc.label', namespace: 'catalog', description: 'Search sort: sleeps the most first', en: 'Sleeps the most', ru: 'Больше гостей', status: NR },
+  { key: 'catalog.unit_sorts.top_rated.label', namespace: 'catalog', description: 'Search sort: best reviewed first', en: 'Top rated', ru: 'Лучшие оценки', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [

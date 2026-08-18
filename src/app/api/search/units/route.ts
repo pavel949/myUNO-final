@@ -4,6 +4,13 @@ import { track } from '@/modules/analytics';
 import { getApplicableNightlyPrice } from '@/modules/core';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
+import {
+  parseUnitSort,
+  rankByRating,
+  getUnitRatings,
+  parseMapBounds,
+  boundsWhere,
+} from '@/modules/browse';
 
 /**
  * GET /api/search/units
@@ -20,6 +27,11 @@ import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
  * - unitTypes?: comma-separated unit type keys
  * - bedrooms?: number (exact)
  * - categoryKey?: string (unit category, LY-6)
+ * - swLat/swLng/neLat/neLng?: a map viewport, all four or none. Filters on the
+ *   project's coordinates — a unit's location is its project's.
+ * - sort?: one of the browse sort keys (recommended | price_asc | price_desc |
+ *   bedrooms_desc | capacity_desc | top_rated). An unknown value falls back to
+ *   the default rather than failing the search.
  * - groupBy=category: return per-category availability instead of a unit
  *   list — {categories: [{category_key, available_count, from_nightly_thb}]}.
  *   from_nightly_thb is the first-night price when dates are given (the
@@ -52,6 +64,7 @@ export async function GET(req: NextRequest) {
       : undefined;
     const categoryKey = searchParams.get('categoryKey') || undefined;
     const groupBy = searchParams.get('groupBy') || undefined;
+    const sort = parseUnitSort(searchParams.get('sort'));
     const limit = Math.min(
       parseInt(searchParams.get('limit') || '50'),
       100
@@ -78,6 +91,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // A partly-given map viewport is refused rather than ignored: dropping it
+    // would return villas outside the map the guest is looking at, while
+    // appearing to respect it.
+    const parsedBounds = parseMapBounds((key) => searchParams.get(key));
+    if (!parsedBounds.ok) {
+      return NextResponse.json({ error: parsedBounds.error }, { status: 400 });
+    }
+
     // Parse filters
     const unitTypes = unitTypesStr ? unitTypesStr.split(',') : [];
 
@@ -91,6 +112,7 @@ export async function GET(req: NextRequest) {
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(categoryKey && { categoryKey }),
+      ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds) : {}),
     };
 
     // If date range provided, exclude units with overlapping bookings or blocks
@@ -180,47 +202,98 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ categories }, { status: 200 });
     }
 
-    // Fetch units
-    const units = await prisma.unit.findMany({
-      where,
-      include: {
-        project: {
-          select: { id: true, name: true },
-        },
-        coverMedia: { select: { storageKey: true } },
-        media: {
-          orderBy: { sort: 'asc' },
-          take: 1,
-          select: { media: { select: { storageKey: true } } },
-        },
+    const listInclude = {
+      project: {
+        select: { id: true, name: true },
       },
-      take: limit,
-      skip: offset,
-      orderBy: { createdAt: 'desc' },
-    });
+      coverMedia: { select: { storageKey: true } },
+      media: {
+        orderBy: { sort: 'asc' as const },
+        take: 1,
+        select: { media: { select: { storageKey: true } } },
+      },
+    };
+
+    // Most sorts are a database ORDER BY; "top rated" is not, because the
+    // rating lives across review → booking → unit rather than in a column. So
+    // it ranks the whole matching set and then takes the page. Ranking only the
+    // page would order whichever villas the database happened to return first —
+    // a different list entirely.
+    let rankedPageIds: string[] | null = null;
+    if (sort.needsRating) {
+      const candidates = await prisma.unit.findMany({
+        where,
+        select: { id: true, createdAt: true },
+      });
+      const candidateRatings = await getUnitRatings(
+        prisma,
+        candidates.map((u) => u.id)
+      );
+      rankedPageIds = rankByRating(
+        candidates.map((u) => ({
+          id: u.id,
+          createdAt: u.createdAt,
+          ...(candidateRatings.get(u.id) ?? { averageRating: null, reviewCount: 0 }),
+        }))
+      )
+        .slice(offset, offset + limit)
+        .map((u) => u.id);
+    }
+
+    const page = rankedPageIds
+      ? await prisma.unit.findMany({
+          where: { id: { in: rankedPageIds } },
+          include: listInclude,
+        })
+      : await prisma.unit.findMany({
+          where,
+          include: listInclude,
+          take: limit,
+          skip: offset,
+          orderBy: sort.orderBy,
+        });
+
+    // `IN` gives no order back, so the ranked order is restored here.
+    const units = rankedPageIds
+      ? rankedPageIds
+          .map((id) => page.find((u) => u.id === id))
+          .filter((u): u is (typeof page)[number] => Boolean(u))
+      : page;
 
     // Fetch total count
     const total = await prisma.unit.count({ where });
+
+    // Ratings for the cards on this page — a villa nobody has reviewed gets
+    // null, not zero: it is unknown, not bad.
+    const ratings = await getUnitRatings(
+      prisma,
+      units.map((u) => u.id)
+    );
 
     await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
       projectId,
       resultsCount: total,
       hasDates: Boolean(startDate && endDate),
       guests: totalGuests,
+      sort: sort.key,
     });
 
     return NextResponse.json(
       {
         units: units.map((unit) => {
           const { coverMedia, media, ...rest } = unit;
+          const rating = ratings.get(unit.id);
           return {
             ...rest,
             coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
+            averageRating: rating?.averageRating ?? null,
+            reviewCount: rating?.reviewCount ?? 0,
           };
         }),
         total,
         limit,
         offset,
+        sort: sort.key,
       },
       { status: 200 }
     );

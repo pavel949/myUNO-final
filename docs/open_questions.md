@@ -232,6 +232,21 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Needs from founder:** which ownership structures the business transacts in (foreign freehold condo / Thai company / 30-year lease + renewals / usufruct / superficies / other), whether the platform should hold the title identifier and quota position at all or only reference ClearView's audit, and who may see any of it — this is among the most sensitive data the platform would hold, and doc 12's access matrix has no row for it.
 - **Not blocking today:** loop one is stays. Nothing above stops a booking. It blocks the *own* third of "stay, live, own" the moment a real purchase runs through the platform.
 
+### Q42. Who may set a unit's commercial terms and change who owns it — OPEN
+- **Source:** wiring the property onboarding routes (doc 07 F-OWN-1). Two of the five new routes had no capability in doc 03's matrix to guard on.
+- **What the matrix already covers:** the mobilization checklist sits under `units:create`, whose capability is literally "Create units, run mobilization checklist"; compliance records sit under `compliance:manage_compliance_records`. Both routes use those rows unchanged.
+- **What it does not cover:** recording or amending a **`UnitEngagement`** — the engagement type, the NOI cap, the fee override, i.e. what myUNO earns from the unit — and **changing who owns a unit**. Neither is listed as a capability anywhere in doc 03 §3.
+- **What was built, and why that way:** both routes guard on **admin only** (`requireAdmin`, `src/app/libs/onboardingGuard.ts`). Doc 07 names the actor as "admin/staff with the owner", which suggests staff_ops should have at least the mandate — but adding a matrix row is writing permission policy, and the matrix has a table-driven test the founder owns. Admin-only is the narrow, reversible reading: widening later grants access, tightening later takes it away from people already using it.
+- **Needs from founder:** whether `staff_ops` may record a mandate, and whether anyone below admin may record a change of ownership. If yes, both become matrix rows in doc 03 with the lockstep test updated.
+
+### Q43. Two go-live gates are looser than the specs read — OPEN
+- **Source:** the same work. Both are tightenings of a **legal** gate, so neither was changed on an agent's judgement.
+- **(a) Permitted use can be confirmed with no evidence behind it.** `permittedUseConfirmedAt` is what gates a unit going live, and the units screen can stamp it directly — with no `ComplianceRecord(permitted_use)` attached. ClearView's mandate in CLAUDE.md is proof-of-evidence; a bare timestamp is the opposite of that. *Now closable:* confirming a permitted-use record through the new `PATCH …/compliance/[recordId]` stamps the timestamp too, so there is a path that produces both. The direct stamp still exists. The onboarding screen warns when a unit is confirmed with no record attached, which is a nudge, not a gate.
+  - **The ruling needed:** should `confirm-permitted-use` **refuse** without a confirmed `permitted_use` record?
+- **(b) The mobilization gate is narrower than doc 07 states.** Doc 07 F-OWN-1 step 2 says the mandate is a gate: "no further steps until `active`". The implementation gates only the **mandate step itself** — every step after it is open, so the legal audit and condition survey can be ticked before any mandate exists. Pinned by a test (`onboarding.integration.test.ts`, "leaves the rest of the steps open, which is narrower than doc 07 reads") so the behaviour cannot drift while this is open.
+  - **The ruling needed:** should an inactive mandate block every later step, as doc 07 reads — or is the current behaviour what operations actually want, in which case doc 07 should be corrected instead?
+- **Fixed meanwhile, needing no ruling:** a refused go-live used to leave `golive_checklist` marked done while the unit stayed draft — the step was written before the all-steps-complete check, with no transaction to undo it. The check now runs before any write, and the tick plus the go-live are one transaction.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

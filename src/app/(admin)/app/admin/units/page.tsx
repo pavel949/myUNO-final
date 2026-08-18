@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import UnitsAdminClient from './units-client';
+import CreateUnitForm from './create-unit-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +15,26 @@ export default async function AdminUnitsPage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  const projects = await prisma.project.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+
   const labels = await getLabels({
     'admin.units.title': 'Projects & Units',
+    'admin.units.create': 'Add a unit',
+    'admin.units.cancel': 'Cancel',
+    'admin.units.saving': 'Saving…',
+    'admin.units.project': 'Project',
+    'admin.units.name': 'Name',
+    'admin.units.type': 'Type',
+    'admin.units.bedrooms': 'Bedrooms',
+    'admin.units.bathrooms': 'Bathrooms',
+    'admin.units.max_guests': 'Sleeps',
+    'admin.units.address_supplement': 'Address detail (unit number, building)',
+    'admin.units.base_nightly': 'Base ฿/night',
+    'admin.units.min_nights': 'Minimum nights',
+    'admin.units.no_projects': 'Create a project before adding units.',
     'admin.units.status': 'Status',
     'admin.units.owner': 'Owner',
     'admin.units.price': 'Base ฿/night',
@@ -33,6 +52,7 @@ export default async function AdminUnitsPage() {
       <h1 className="text-heading-1 font-bold text-text-ink mb-24">
         {labels['admin.units.title']}
       </h1>
+      <CreateUnitForm projects={projects} labels={labels} />
       <UnitsAdminClient
         units={units.map((unit) => ({
           id: unit.id,

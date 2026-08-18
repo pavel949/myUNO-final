@@ -2,6 +2,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import { AssetStatus } from '@prisma/client'
 import prismadb from '@/app/libs/prismadb'
+import {} from '@/modules/core'
+import { logAudit } from '@/modules/audit';
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +69,17 @@ export async function PUT(
         assetStatusChangedAt: new Date(),
         assetStatusReason: body.reason,
       },
+    })
+
+    // The row records *why* the status changed but not *who* changed it, and
+    // suspending an asset is exactly the kind of state change CLAUDE.md's
+    // audit-logging section expects to be traceable to a person.
+    await logAudit({
+      actorIdentityId: currentUser.identityId,
+      action: 'units:asset_status_changed',
+      entityType: 'Unit',
+      entityId: unitId,
+      data: { from: currentStatus, to: body.status, reason: body.reason },
     })
 
     return NextResponse.json({

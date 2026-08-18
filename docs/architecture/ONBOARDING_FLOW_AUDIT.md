@@ -8,6 +8,8 @@ Verified 2026-08-18 against `src/` at `938550b` + the area work.
 
 ---
 
+> **Status update (same day).** Findings O-1 to O-6 are now **fixed** — the routes and screens exist and are tested. §6 records what was built, what the build itself uncovered, and what still needs a founder ruling. §§1–5 are left as written so the before-state stays legible.
+
 ## 1. Verdict
 
 **The flow is roughly half wired.** A unit can be created and put live through the application; it can then take bookings. But **four of the seven specified steps have no path to the database at all**, and the one that matters commercially — recording the engagement — is among them.
@@ -33,7 +35,7 @@ So the loop does not close. Stays work; the owner-side promise the business is b
 Worth stating plainly, because the gaps below are about reach, not quality.
 
 - **The permitted-use gate holds.** `createUnit` refuses to create a unit `live` outright (`units.ts:100`) — the comment records that `POST /api/admin/units` spreads the request body straight through, so `{"status":"live"}` once created a bookable unit that had never been cleared. Going live is a transition through `updateUnit`, where the gate lives.
-- **The mobilization gate logic is real and ordered.** `checkMobilizationGate` enforces step order, and `completeMobilizationStep` calls it (`compliance.service.ts:233`). The rule that no step advances past a blocked one is implemented.
+- **The mobilization gate exists and is called.** `completeMobilizationStep` consults `checkMobilizationGate` before completing (`compliance.service.ts:233`). ~~It enforces step order.~~ **Corrected in §6:** it does not. Reading the gate line by line while wiring the route showed it guards exactly two steps — `mandate` (needs an active engagement) and `golive_checklist` (needs a confirmed permitted-use record). Every other step is open, so the claim that "no step advances past a blocked one" was wrong when first written here.
 - **Taxonomy keys are validated** against their doc 04 §8 catalogs on create (`assertCatalogKeys`).
 - **Ownership is recorded as a dated fact** from the day a unit exists (`ensureOwnershipRecorded`), idempotently.
 - **The owner dashboard already reads** compliance records and the mobilization checklist (`owner.service.ts:557,560`).
@@ -78,3 +80,34 @@ Both tighten a legal gate, so neither should be guessed.
 ---
 
 *Companion to `PLATFORM_MATURITY.md` and `AIRBNB_PARITY.md`. Findings are reach findings: a service that exists but nothing calls is recorded as unreachable, not as built.*
+
+
+---
+
+## 6. Resolution (2026-08-18)
+
+### Built
+
+| Was | Now |
+|---|---|
+| O-1 engagement unreachable | `GET/POST/PUT /api/admin/units/[id]/engagement` + a mandate panel on the unit screen |
+| O-2 compliance unreachable | `GET/POST /api/admin/units/[id]/compliance`, `PATCH …/compliance/[recordId]` to confirm one |
+| O-3 checklist unreachable, never created | `GET/POST /api/admin/units/[id]/mobilization`, `POST …/mobilization/[itemId]` |
+| O-4 owner unchangeable | `GET/PUT /api/admin/units/[id]/owner`, through `setUnitOwner` so history is recorded rather than a pointer moved |
+| O-5 no unit-create UI | A create form on `/app/admin/units`, landing straight in the onboarding workspace |
+| O-6 asset-status had no audit trail | `logAudit` on the status route |
+
+New screen: `/app/admin/units/[id]` — the seven steps of F-OWN-1 with the action each needs. 27 route tests in `src/app/api/admin/units/onboarding.integration.test.ts`.
+
+Guarding: compliance and checklist use the doc 03 rows that already cover them (`compliance:manage_compliance_records`; `units:create`, whose capability is literally "Create units, run mobilization checklist"). **Engagement and ownership are admin-only** — doc 03 has no row for setting a unit's commercial terms or changing who holds title, and inventing one would be writing policy the founder owns. Narrow and reversible; widening to staff is **Q42**.
+
+### What building it uncovered
+
+- **A refused go-live used to corrupt the record.** `completeMobilizationStep` marked the step `done`, *then* checked that every other step was finished, and threw with no transaction to undo it — so a refused go-live left `golive_checklist` ticked while the unit sat in draft. The check now runs before any write, and the tick plus the go-live are one transaction. Fixed in `src/modules/core/compliance.service.ts`, pinned by a test.
+- **`initializeMobilizationChecklist` was not idempotent.** `@@unique([unitId, step])` meant a second call threw. Now `createMany({ skipDuplicates: true })`, because a double-click on a real screen must repair rather than 500.
+- **The mobilization gate is narrower than doc 07 reads.** Doc 07 says the mandate gates "no further steps until active", which would block the steps *after* it. The code gates only the mandate step itself, so the legal audit can be ticked before a mandate exists. Pinned by a test so it cannot drift silently — widening it is **Q43**.
+- **The permitted-use hole is now closable but not closed.** Confirming a `permitted_use` record stamps `Unit.permittedUseConfirmedAt`, so there is now a path that produces evidence and confirmation together. The units screen can still stamp the timestamp on its own. Refusing that is **Q43**.
+
+### Still true after this work
+
+An engagement is created `draft`, and activating it requires the mandate document (doc 07 step 2, "mandate PDF upload"). That is a real requirement, not a gap — but it means **onboarding still needs the signed mandate uploaded before statements can run**. The screen shows the engagement's status so the state is visible rather than surprising.

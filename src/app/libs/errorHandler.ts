@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { CORRELATION_ID_HEADER, reportError, sanitiseCorrelationId } from '@/lib/observability';
 
 interface ErrorWithStatus extends Error {
   statusCode?: number;
@@ -6,31 +8,50 @@ interface ErrorWithStatus extends Error {
 }
 
 /**
- * Unified error handler for API routes.
- * Never leaks internal details to the client; logs full context server-side only.
+ * The id middleware issued for this request.
+ *
+ * `headers()` throws outside a request scope — a background job, or a test
+ * calling a handler directly — and an error handler that throws while handling
+ * an error is the worst possible failure mode, so this never propagates.
  */
-export function handleError(error: unknown): NextResponse {
+function currentCorrelationId(): string | null {
+  try {
+    return sanitiseCorrelationId(headers().get(CORRELATION_ID_HEADER));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Unified error handler for API routes.
+ *
+ * Never leaks internal details to the client, and now records the failure as a
+ * structured, PII-scrubbed record carrying the request's correlation id. The id
+ * goes back to the caller in the body and on the header, so a user reporting
+ * "it broke" can quote a reference that finds the exact request in the log.
+ */
+export function handleError(error: unknown, context: Record<string, unknown> = {}): NextResponse {
   const statusCode = getStatusCode(error);
   const isPublic = isPublicError(error);
+  const correlationId = currentCorrelationId();
 
-  // Log full error server-side (includes stack, internals)
-  if (error instanceof Error) {
-    console.error('API error:', {
-      message: error.message,
-      stack: error.stack,
-      statusCode,
-      timestamp: new Date().toISOString(),
-    });
-  } else {
-    console.error('API error (non-Error):', error);
-  }
+  // 4xx are the caller's mistakes and are expected traffic; logging them at
+  // error level would drown the failures that actually need attention.
+  const { correlationId: reportedId } = reportError(error, {
+    ...context,
+    correlationId,
+    statusCode,
+    expected: statusCode < 500,
+  });
 
-  // Return sanitized response to client (never internal details)
   const clientMessage = getSafeErrorMessage(statusCode, isPublic);
 
   return NextResponse.json(
-    { error: clientMessage },
-    { status: statusCode }
+    { error: clientMessage, ...(reportedId ? { reference: reportedId } : {}) },
+    {
+      status: statusCode,
+      headers: reportedId ? { [CORRELATION_ID_HEADER]: reportedId } : undefined,
+    }
   );
 }
 

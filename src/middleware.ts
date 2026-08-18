@@ -1,12 +1,31 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import {
+  CORRELATION_ID_HEADER,
+  newCorrelationId,
+  sanitiseCorrelationId,
+} from '@/lib/observability';
 
 /**
- * Security headers middleware for T-042 hardening.
- * Applies CSP, HSTS, X-Frame-Options, and other protective headers to all responses.
+ * Security headers (T-042) and request correlation (P1-5).
+ *
+ * Every request gets an id here, before any handler runs, so a log line, an
+ * error page and a support conversation can all name the same request. An
+ * inbound id is honoured when it looks like one we issued — that keeps a trace
+ * intact across an internal hop — and replaced otherwise, so a caller cannot
+ * choose an id that forges log lines or injects header content.
  */
-export function middleware(_request: NextRequest) {
-  const response = NextResponse.next();
+export function middleware(request: NextRequest) {
+  const correlationId =
+    sanitiseCorrelationId(request.headers.get(CORRELATION_ID_HEADER)) ?? newCorrelationId();
+
+  // Forwarded on the request so handlers can read it, and echoed on the response
+  // so the browser, the client and any proxy log see the same id.
+  const forwardedHeaders = new Headers(request.headers);
+  forwardedHeaders.set(CORRELATION_ID_HEADER, correlationId);
+
+  const response = NextResponse.next({ request: { headers: forwardedHeaders } });
+  response.headers.set(CORRELATION_ID_HEADER, correlationId);
 
   // Content Security Policy — strict by default, public pages only
   response.headers.set(

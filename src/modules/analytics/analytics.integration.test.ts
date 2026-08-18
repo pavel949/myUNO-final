@@ -85,7 +85,11 @@ describe('Analytics Module', () => {
 
       const targetDate = new Date('2025-01-15');
 
-      // Create two confirmed bookings on this date
+      // This used to book the same unit-night twice to prove the rollup counted
+      // one occupied night. Since `booking_no_overlap` that state cannot exist,
+      // so the second booking is the cancelled one it would have displaced —
+      // still the case worth defending: a cancelled stay adds neither a night
+      // nor revenue, and the live stay is counted exactly once.
       await prisma.booking.create({
         data: {
           unitId: unit.id,
@@ -97,7 +101,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 1,
           children: 0,
-          totalThb: 5000,
+          totalThb: 13000,
           status: BookingStatus.confirmed,
         },
       });
@@ -114,7 +118,7 @@ describe('Analytics Module', () => {
           adults: 2,
           children: 1,
           totalThb: 8000,
-          status: BookingStatus.confirmed,
+          status: BookingStatus.cancelled,
         },
       });
 
@@ -295,7 +299,10 @@ describe('Analytics Module', () => {
         },
       });
 
-      // Create an owner stay with 0 revenue (same night)
+      // The owner takes the following night. It cannot be the same night — an
+      // owner and a guest cannot both sleep in the unit, and since
+      // `booking_no_overlap` the database says so too.
+      const ownerNight = new Date('2025-01-16');
       await prisma.booking.create({
         data: {
           unitId: unit.id,
@@ -303,8 +310,8 @@ describe('Analytics Module', () => {
           guestIdentityId: owner.id,
           bookingType: 'owner_stay',
           channel: 'direct',
-          startDate: new Date('2025-01-15'),
-          endDate: new Date('2025-01-16'),
+          startDate: ownerNight,
+          endDate: new Date('2025-01-17'),
           adults: 1,
           children: 0,
           totalThb: 0,
@@ -313,21 +320,24 @@ describe('Analytics Module', () => {
       });
 
       await rollupMetricsDaily(prisma, targetDate);
+      await rollupMetricsDaily(prisma, ownerNight);
 
-      const metric = await prisma.metricDaily.findUnique({
-        where: {
-          unitId_date: {
-            unitId: unit.id,
-            date: targetDate,
-          },
-        },
+      const guestMetric = await prisma.metricDaily.findUnique({
+        where: { unitId_date: { unitId: unit.id, date: targetDate } },
+      });
+      const ownerMetric = await prisma.metricDaily.findUnique({
+        where: { unitId_date: { unitId: unit.id, date: ownerNight } },
       });
 
-      // Should count occupancy for both bookings on the same night
-      expect(metric?.nightsOccupied).toBe(1);
-      expect(metric?.ownerStayNights).toBe(1);
-      // Revenue should come from guest stay only
-      expect(metric?.rentalRevenueCents).toBe(500000); // 5000 THB
+      // The guest night earns; it is not an owner night.
+      expect(guestMetric?.nightsOccupied).toBe(1);
+      expect(guestMetric?.ownerStayNights).toBe(0);
+      expect(guestMetric?.rentalRevenueCents).toBe(500000); // 5000 THB
+
+      // The owner night is occupied and counted separately, and earns nothing.
+      expect(ownerMetric?.nightsOccupied).toBe(1);
+      expect(ownerMetric?.ownerStayNights).toBe(1);
+      expect(ownerMetric?.rentalRevenueCents).toBe(0);
     });
   });
 

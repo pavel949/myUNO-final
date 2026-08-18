@@ -256,7 +256,10 @@ describe('verification.service', () => {
 
     it('returns result with checked and failed counts', async () => {
       const project = await createProject();
+      // Two stays past their verification deadline. Two arrivals on the same
+      // night need two units — one unit cannot hold both.
       const unit = await createUnit(project.id);
+      const unit2 = await createUnit({ projectId: project.id, name: 'VERIF-B' });
       const guest1 = await createIdentity();
       const guest2 = await createIdentity();
 
@@ -273,7 +276,7 @@ describe('verification.service', () => {
       });
 
       await createBooking({
-        unitId: unit.id,
+        unitId: unit2.id,
         projectId: project.id,
         guestIdentityId: guest2.id,
         status: 'confirmed',

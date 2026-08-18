@@ -288,7 +288,15 @@ export interface BookingFactoryOpts {
 
 export async function createBooking(opts: BookingFactoryOpts) {
   const startDate = opts.startDate || new Date('2026-07-15');
-  const endDate = opts.endDate || new Date('2026-07-17');
+  // The default departure trails the default arrival, but a caller that supplies
+  // only a start date (commonly "yesterday", for deadline cases) would otherwise
+  // inherit a fixed end date that may precede it — a stay ending before it began,
+  // which `booking_dates_ordered` rejects. Derive the default from the arrival.
+  const endDate =
+    opts.endDate ||
+    (opts.startDate
+      ? new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000)
+      : new Date('2026-07-17'));
 
   return db.booking.create({
     data: {

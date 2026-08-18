@@ -61,6 +61,67 @@ export const SAFE_IDENTITY_SELECT = {
  * or an unpaid hold that is still live. `requested` never blocks — a request
  * is non-binding until approved.
  */
+/**
+ * Postgres raises 23P01 when the `booking_no_overlap` exclusion constraint
+ * rejects an insert or a status change — the loser of a genuine race, which the
+ * pre-flight read cannot catch. Callers already understand DOUBLE_BOOK, so it
+ * surfaces as that rather than as a driver-level error.
+ */
+/**
+ * Codes Postgres and Prisma use for "you lost a concurrency fight, try again":
+ * serialization failure, deadlock, and Prisma's write-conflict wrapper. They say
+ * nothing about availability, so retrying is what turns them into a real answer —
+ * on the second pass the winner has committed and the pre-flight read reports a
+ * clean DOUBLE_BOOK instead of a driver error reaching the guest.
+ */
+function isTransientConflict(error: unknown): boolean {
+  const seen: string[] = [];
+  let cursor: unknown = error;
+  for (let depth = 0; cursor && depth < 5; depth += 1) {
+    const e = cursor as { message?: unknown; code?: string; cause?: unknown };
+    if (typeof e.message === 'string') seen.push(e.message);
+    if (typeof e.code === 'string') seen.push(e.code);
+    cursor = e.cause;
+  }
+  const haystack = seen.join('\n');
+  return (
+    haystack.includes('P2034') ||
+    haystack.includes('40001') ||
+    haystack.includes('40P01') ||
+    haystack.includes('write conflict') ||
+    haystack.includes('deadlock')
+  );
+}
+
+function rethrowAsDoubleBook(error: unknown): never {
+  // Already the domain error (the pre-flight read won the race) — pass it through.
+  if ((error as { code?: string })?.code === 'DOUBLE_BOOK') throw error;
+
+  // Prisma surfaces the violation in more than one shape: sometimes as a known
+  // request error carrying meta.code, sometimes as an unknown request error that
+  // only quotes the driver text, and inside a transaction it may be wrapped again.
+  // Scanning the message chain covers all of them; `cause` walks the wrapping.
+  const seen: string[] = [];
+  let cursor: unknown = error;
+  for (let depth = 0; cursor && depth < 5; depth += 1) {
+    const e = cursor as { message?: unknown; meta?: { code?: string }; code?: string; cause?: unknown };
+    if (typeof e.message === 'string') seen.push(e.message);
+    if (e.meta?.code) seen.push(e.meta.code);
+    if (typeof e.code === 'string') seen.push(e.code);
+    cursor = e.cause;
+  }
+  const haystack = seen.join('\n');
+  const isOverlapViolation =
+    haystack.includes('23P01') || haystack.includes('booking_no_overlap');
+
+  if (isOverlapViolation) {
+    const err = new Error('Dates unavailable — booking already exists');
+    (err as any).code = 'DOUBLE_BOOK';
+    throw err;
+  }
+  throw error;
+}
+
 async function findBlockingConflict(
   db: PrismaClient,
   unitId: string,
@@ -152,43 +213,67 @@ export async function createBooking(
     guestNote,
   } = input;
 
-  // Check for double-booking (race condition). An unpaid hold only blocks
-  // while it is still live — an abandoned checkout must not poison the dates.
-  const conflicting = await findBlockingConflict(db, unitId, startDate, endDate);
-
-  if (conflicting) {
-    const err = new Error('Dates unavailable — booking already exists');
-    (err as any).code = 'DOUBLE_BOOK';
-    throw err;
-  }
-
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
-  const booking = await db.booking.create({
-    data: {
-      unitId,
-      projectId,
-      guestIdentityId,
-      bookingType,
-      channel,
-      status: initialStatus,
-      startDate,
-      endDate,
-      adults,
-      children,
-      totalThb,
-      ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
-      ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-      holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
-      requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
-      guestNote,
-    },
-    include: {
-      unit: true,
-      guestIdentity: { select: SAFE_IDENTITY_SELECT },
-    },
+  // Availability is decided inside one transaction, and the last word belongs to
+  // the `booking_no_overlap` exclusion constraint rather than to the read below.
+  // Two concurrent callers can both see a free calendar; only one can commit.
+  const claimDates = () => db.$transaction(async (tx) => {
+    // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
+    // immutable), so a lapsed hold still occupies the range until it is retired.
+    // Retiring it here means an abandoned checkout never blocks the next guest,
+    // even if the scheduled expireHolds job has not run yet.
+    await tx.booking.updateMany({
+      where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+
+    // Kept ahead of the insert so the ordinary "those dates are taken" case
+    // answers with a clean domain error instead of a constraint violation.
+    const conflicting = await findBlockingConflict(tx as PrismaClient, unitId, startDate, endDate);
+    if (conflicting) {
+      const err = new Error('Dates unavailable — booking already exists');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+
+    return tx.booking.create({
+      data: {
+        unitId,
+        projectId,
+        guestIdentityId,
+        bookingType,
+        channel,
+        status: initialStatus,
+        startDate,
+        endDate,
+        adults,
+        children,
+        totalThb,
+        ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
+        ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
+        holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
+        requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
+        guestNote,
+      },
+      include: {
+        unit: true,
+        guestIdentity: { select: SAFE_IDENTITY_SELECT },
+      },
+    });
   });
+
+  let booking;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      booking = await claimDates();
+      break;
+    } catch (error) {
+      if (attempt < 2 && isTransientConflict(error)) continue;
+      rethrowAsDoubleBook(error);
+    }
+  }
 
   // Track analytics event
   const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -274,16 +359,20 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
-  return db.booking.update({
-    where: { id: bookingId },
-    data: {
-      unitId,
-      status: 'pending_payment',
-      holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
-      requestExpiresAt: null,
-    },
-    include: { unit: { select: { name: true } } },
-  });
+  // `requested` sits outside the exclusion constraint, so this update is the
+  // moment the dates are actually claimed — and the moment a race can be lost.
+  return db.booking
+    .update({
+      where: { id: bookingId },
+      data: {
+        unitId,
+        status: 'pending_payment',
+        holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
+        requestExpiresAt: null,
+      },
+      include: { unit: { select: { name: true } } },
+    })
+    .catch(rethrowAsDoubleBook);
 }
 
 /**

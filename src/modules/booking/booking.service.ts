@@ -220,6 +220,15 @@ export async function createBooking(
   // the `booking_no_overlap` exclusion constraint rather than to the read below.
   // Two concurrent callers can both see a free calendar; only one can commit.
   const claimDates = () => db.$transaction(async (tx) => {
+    // Serialize attempts on this unit for the life of the transaction. Without
+    // it, concurrent inserts of the same range make Postgres take
+    // exclusion-constraint locks in whatever order they arrive, and a stampede
+    // deadlocks rather than queues — correct, because the constraint still holds
+    // and the loser retries, but needlessly expensive. One lock per unit turns
+    // that into an orderly queue; different units are unaffected. The lock is
+    // released on commit or rollback, so no path can leak it.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+
     // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
     // immutable), so a lapsed hold still occupies the range until it is retired.
     // Retiring it here means an abandoned checkout never blocks the next guest,

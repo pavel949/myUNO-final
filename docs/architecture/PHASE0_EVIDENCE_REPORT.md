@@ -221,10 +221,27 @@ who can reach the endpoint could forge a payment confirmation. Logged as **P0-3*
   - `approveBookingRequest` maps the same violation on its status transition
 - `src/modules/booking/double-booking.concurrency.integration.test.ts` — 6 tests
 
-**Proof the constraint is load-bearing, not decorative:** dropping it and re-running the suite
-fails 3 of 6 tests, and leaves genuinely overlapping rows in the table (re-adding the constraint
-then fails with `conflicts with key … [2026-09-10,2026-09-14)`). Re-adding it returns the suite to
-6/6.
+- `createBooking` takes `pg_advisory_xact_lock(hashtext(unit_id))` at the start of the transaction.
+  Without it, concurrent inserts of the same range make Postgres take exclusion-constraint locks in
+  arrival order and a stampede **deadlocks** instead of queueing. That was still *correct* — the
+  constraint held and the loser retried — but CI showed 12 `deadlock detected` entries with
+  `CONTEXT: while checking exclusion constraint on tuple … in relation "booking"`, and the retry
+  thrash pushed a `beforeEach` hook past its 20 s timeout. One lock per unit turns the stampede into
+  a queue; different units are unaffected; the lock releases on commit or rollback.
+
+**Proof the constraint is load-bearing, not decorative:** dropping it and re-running the suite fails
+tests and leaves genuinely overlapping rows in the table (re-adding it then fails with
+`conflicts with key … [2026-09-10,2026-09-14)`). Restoring it returns the suite to 6/6.
+
+Note the layering, which the drop test makes visible: with the advisory lock in place, dropping the
+constraint fails **1** of 6 rather than 3 — the two service-path races are now caught by the
+pre-flight read, because the lock serializes them. The failing one is the test that bypasses
+`createBooking` and changes a booking's status directly. That is the point: **the lock provides
+orderliness, the constraint provides the guarantee**, and it is the constraint that still governs
+any writer which does not go through the service.
+
+**Proof the deadlocks are gone:** the local Postgres log held 848 `deadlock detected` entries
+accumulated before the lock was added, and **zero** new ones across three further stampede runs.
 
 ### Regression found and fixed
 

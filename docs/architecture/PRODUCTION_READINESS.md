@@ -55,3 +55,20 @@ What stands between here and a public launch is P1, and the two largest items ar
 but absences: **there is no observability at all** (no error tracking, no metrics, no correlation
 IDs — a failure in production would be invisible), and **no documented or rehearsed backup restore**.
 Financial snapshots and the audit log are also still mutable.
+
+---
+
+## Database & deploy — resolved 2026-08-18
+
+**Production database: Supabase** (project `MyUno- final`, ap-south-1, Postgres 17), used as plain Postgres. No Supabase SDK is installed; the connection string is the entire integration, so the "no vendor lock in the code" rule in doc 15 §2 holds literally.
+
+**Prisma Cloud disconnected.** It was a hosted database at `db.prisma.io` plus a GitHub check — never the production database, failing six consecutive PR checks with `P1001: can't reach database server`. Prisma the **ORM** is unaffected and remains the schema, migrations, and client. Nothing in the repository referenced Prisma Cloud, so removal took no code change.
+
+**Two real defects were found and fixed on the way:**
+
+1. **Nothing applied migrations to production.** `scripts/repair-failed-migrations.mjs` documented itself as running "before `prisma migrate deploy`", but no such step existed outside CI's throwaway database. The hosted database sat seven migrations behind the repository while every build reported success. Fixed by `scripts/deploy-migrations.mjs`.
+2. **The first version of that fix was itself a hazard.** It would have migrated whatever `DATABASE_URL` pointed at — and this repository's `.env` points at production, so a developer running `npm run build` would have migrated production unasked. Migrating is now opt-in: a Vercel production deploy, or explicit `MIGRATE_ON_BUILD=1`.
+
+**State of the hosted database:** 30 migration rows, 0 unfinished — the repository's 22, plus 8 orphan rows left from before the migrations were renamed to timestamped names. The orphans are cosmetic; they make `prisma migrate status` warn about migrations "not found locally" and can be deleted.
+
+**Still outstanding:** the production connection string lives in a developer `.env`. It is gitignored, but anyone with a checkout holds production, and this database stores passports under PDPA (doc 12). It belongs in the platform secret store before real guest data exists.

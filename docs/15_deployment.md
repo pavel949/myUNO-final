@@ -20,10 +20,26 @@ A managed platform stack — recommended: **Vercel** (the Next.js app + cron job
 
 The choice is deliberately boring and reversible: the app is a standard Next.js + Postgres deployment, movable to any equivalent host without code changes.
 
+### 2.1 As actually deployed (2026-08-18)
+
+| Piece | Chosen | Notes |
+|---|---|---|
+| App + cron | **Vercel** | project `my-uno-final` |
+| Database | **Supabase** — project `MyUno- final`, region ap-south-1, Postgres 17 | Used as **plain Postgres**. None of Supabase's auth, storage, or realtime is used, and no `@supabase/*` package is installed — the connection string is the whole integration. |
+| Connection | Session-mode pooler, port **5432** | Migrations need session mode. Port 6543 is transaction mode and will not run them. |
+
+**Prisma stays; Prisma Cloud does not.** These are different things and the distinction caused real confusion, so it is written down: **Prisma is the ORM** — the schema, the migration files, the client, used in every query — and it is not going anywhere. **Prisma Cloud / Prisma Postgres** was a *hosted database* plus a GitHub deploy integration, pointed at `db.prisma.io`, which is not the database this document specifies. It was disconnected on 2026-08-18 after failing six consecutive PR checks with `P1001: can't reach database server`, having never been the production database.
+
+Nothing in this repository ever referenced it: `schema.prisma` reads `env("DATABASE_URL")`, and the integration lived entirely in the Prisma console and the GitHub App. Removing it therefore required no code change — only the two console actions.
+
+**Migrations reach production through the build.** `scripts/deploy-migrations.mjs` runs `prisma migrate deploy` on a Vercel **production** deploy, or when `MIGRATE_ON_BUILD=1` is set explicitly. It skips otherwise, on purpose: a Vercel environment variable covers every environment unless scoped, and this repository's own `.env` points `DATABASE_URL` at production — so without the guard, a preview build of any branch, or a developer running `npm run build`, would migrate the production database.
+
+⚠ **Scope `DATABASE_URL` to Production only** in Vercel. Adding it unscoped re-creates exactly the hazard the guard exists to prevent.
+
 ## 3. How changes ship
 
 1. A builder finishes a doc-16 task on a branch; CI runs the full gate (tests, typecheck, lints — doc 14 §8).
-2. Merge to `main` → **staging deploys automatically**, including database migrations (Prisma migrate, forward-only; every migration reviewed).
+2. Merge to `main` → **staging deploys automatically**, including database migrations (Prisma migrate, forward-only; every migration reviewed). *Mechanism (2026-08-18): `scripts/deploy-migrations.mjs` in the build — see §2.1. Before that date nothing in the pipeline applied migrations to any real database, and the hosted database sat seven migrations behind the repository while every build went green.*
 3. The founder (or Fable) checks the change on staging — the affected flow, in a browser.
 4. A manual **"promote to production"** step deploys the same build + migrations to production. No Friday-evening promotions; migrations that touch money/compliance tables get a pre-promotion backup point (§5).
 5. Rollback = redeploy the previous build (one click); a migration that must be undone gets a new forward migration — never editing history.

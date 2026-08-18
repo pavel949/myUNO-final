@@ -24,6 +24,14 @@
  *    for: the app would start and then break at the first query.
  *
  * Set `SKIP_MIGRATE_DEPLOY=1` to opt out entirely.
+ *
+ * **Migrating is opt-in, never a side effect of building.** It runs on a Vercel
+ * production deploy, or when `MIGRATE_ON_BUILD=1` says so, and skips otherwise.
+ * Two things make that necessary: a Vercel environment variable covers every
+ * environment unless scoped, so one `DATABASE_URL` would let a preview build of
+ * any branch migrate production; and this repository's own `.env` points
+ * `DATABASE_URL` at the production Supabase instance, so a developer running
+ * `npm run build` would migrate production without ever asking to.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -43,6 +51,26 @@ if (process.env.SKIP_MIGRATE_DEPLOY === '1') {
 
 if (!process.env.DATABASE_URL) {
   say('No DATABASE_URL — nothing to migrate. Skipping.')
+  process.exit(0)
+}
+
+// Migrating is opt-in, never a side effect of building.
+//
+// Two ways this bites otherwise. A Vercel environment variable covers every
+// environment unless scoped, so one DATABASE_URL would let a preview build of
+// any branch migrate production. And this repository's own .env points
+// DATABASE_URL at the production Supabase instance, so a developer running
+// `npm run build` would migrate production without ever asking to.
+//
+// So: run on a real production deploy, or when someone says so explicitly.
+const isVercelProduction = process.env.VERCEL_ENV === 'production'
+const explicitlyAsked = process.env.MIGRATE_ON_BUILD === '1'
+if (!isVercelProduction && !explicitlyAsked) {
+  say(
+    process.env.VERCEL_ENV
+      ? `VERCEL_ENV=${process.env.VERCEL_ENV} — only production deployments migrate. Skipping.`
+      : 'Not a production deploy. Set MIGRATE_ON_BUILD=1 to migrate. Skipping.'
+  )
   process.exit(0)
 }
 

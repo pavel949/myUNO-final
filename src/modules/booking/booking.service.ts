@@ -684,78 +684,113 @@ export async function requestExtension(
   newEndDate: Date,
   actorIdentityId?: string
 ): Promise<StayExtensionResult> {
-  const booking = await db.booking.findUnique({
-    where: { id: bookingId },
-    include: { unit: true },
-  });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
+  // Read, check and write are one transaction under the per-unit advisory lock,
+  // the same guard `createBooking` takes. Before this the three were separate
+  // statements: two guests could each be told their extension was available and
+  // both could commit. The exclusion constraint would have caught the resulting
+  // overlap, but as a raw Postgres error rather than a refusal the caller could
+  // act on — and only for bookings, never for blocks.
+  const { booking, updated, additionalNights, addedThb, newTotalThb, balanceDueThb } =
+    await db.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        include: { unit: true },
+      });
+      if (!booking) {
+        throw new Error(`Booking ${bookingId} not found`);
+      }
 
-  if (booking.status !== 'checked_in') {
-    throw new Error(`Cannot request extension for booking with status ${booking.status}`);
-  }
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
 
-  if (newEndDate <= booking.endDate) {
-    throw new Error('New end date must be after current end date');
-  }
+      if (booking.status !== 'checked_in') {
+        throw new Error(`Cannot request extension for booking with status ${booking.status}`);
+      }
 
-  // The added nights are the only ones in question — the nights already being
-  // slept in are this booking's own and cannot conflict with anything.
-  const conflicting = await db.booking.findFirst({
-    where: {
-      unitId: booking.unitId,
-      id: { not: bookingId },
-      startDate: { lt: newEndDate },
-      endDate: { gt: booking.endDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-      ],
-    },
-  });
+      if (newEndDate <= booking.endDate) {
+        throw new Error('New end date must be after current end date');
+      }
 
-  if (conflicting) {
-    throw new Error('The unit is already booked for those nights');
-  }
+      // The added nights are the only ones in question — the nights already being
+      // slept in are this booking's own and cannot conflict with anything.
+      const conflicting = await tx.booking.findFirst({
+        where: {
+          unitId: booking.unitId,
+          id: { not: bookingId },
+          startDate: { lt: newEndDate },
+          endDate: { gt: booking.endDate },
+          OR: [
+            { status: { in: ['confirmed', 'checked_in'] } },
+            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+          ],
+        },
+      });
 
-  const additionalNights = Math.ceil(
-    (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+      if (conflicting) {
+        const err = new Error('The unit is already booked for those nights');
+        (err as any).code = 'DOUBLE_BOOK';
+        throw err;
+      }
 
-  const addedThb = additionalNights * (booking.unit?.baseNightlyThb ?? 0);
-  const newTotalThb = booking.totalThb + addedThb;
-  const balanceDueThb = (booking.balanceDueThb || 0) + addedThb;
+      // A unit can be unavailable without a booking, and the extension path never
+      // looked: an owner hold, a maintenance window, or nights already sold on an
+      // OTA would all have been extended straight over.
+      const blocked = await tx.blockedDate.findFirst({
+        where: {
+          unitId: booking.unitId,
+          startDate: { lt: newEndDate },
+          endDate: { gt: booking.endDate },
+        },
+        select: { id: true, reason: true },
+      });
+      if (blocked) {
+        const err = new Error(`The unit is unavailable for those nights (${blocked.reason})`);
+        (err as any).code = 'DOUBLE_BOOK';
+        (err as any).blockReason = blocked.reason;
+        throw err;
+      }
 
-  const updated = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      endDate: newEndDate,
-      totalThb: newTotalThb,
-      balanceDueThb,
-    },
-  });
+      const additionalNights = Math.ceil(
+        (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
-  // F-GUEST-9 writes a BookingChange for every date move, so the stay's shape
-  // is always reconstructable from its own history.
-  await db.bookingChange.create({
-    data: {
-      bookingId,
-      changeType: 'dates',
-      oldValue: {
-        startDate: booking.startDate.toISOString(),
-        endDate: booking.endDate.toISOString(),
-        totalThb: booking.totalThb,
-      },
-      newValue: {
-        startDate: booking.startDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-        totalThb: newTotalThb,
-      },
-      priceDeltaThb: addedThb,
-      actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
-    },
-  });
+      const addedThb = additionalNights * (booking.unit?.baseNightlyThb ?? 0);
+      const newTotalThb = booking.totalThb + addedThb;
+      const balanceDueThb = (booking.balanceDueThb || 0) + addedThb;
+
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          endDate: newEndDate,
+          totalThb: newTotalThb,
+          balanceDueThb,
+        },
+      });
+
+      // F-GUEST-9 writes a BookingChange for every date move, so the stay's shape
+      // is always reconstructable from its own history. Inside the transaction:
+      // a stay whose dates moved without a record of the move is worse than one
+      // that did not move at all.
+      await tx.bookingChange.create({
+        data: {
+          bookingId,
+          changeType: 'dates',
+          oldValue: {
+            startDate: booking.startDate.toISOString(),
+            endDate: booking.endDate.toISOString(),
+            totalThb: booking.totalThb,
+          },
+          newValue: {
+            startDate: booking.startDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+            totalThb: newTotalThb,
+          },
+          priceDeltaThb: addedThb,
+          actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+        },
+      });
+
+      return { booking, updated, additionalNights, addedThb, newTotalThb, balanceDueThb };
+    });
 
   await track(db, 'stay_extension_requested', {
     bookingId,

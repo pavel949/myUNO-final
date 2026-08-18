@@ -763,6 +763,8 @@ model Identity {
   oneTimeTokens             OneTimeToken[]
   ownedUnits                Unit[]                      @relation("unitOwner")
   ownershipPeriods          OwnershipPeriod[]           @relation("ownershipPeriodOwner")
+  savedUnits                SavedUnit[]
+  savedSearches             SavedSearch[]
   ownershipPeriodsRecorded  OwnershipPeriod[]           @relation("ownershipPeriodRecorder")
   roleAssignments           RoleAssignment[]            @relation("roleAssignmentIdentity")
   grantedRoles              RoleAssignment[]            @relation("grantedRoles")
@@ -961,6 +963,7 @@ model Unit {
   complianceChecklistInstances ComplianceChecklistInstance[]
   managementContracts   ManagementContract[]
   ownershipPeriods      OwnershipPeriod[]
+  savedBy               SavedUnit[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -2646,4 +2649,43 @@ model OwnershipPeriod {
   @@index([unitId, startsOn])
   @@index([ownerIdentityId])
   @@map("ownership_period")
+}
+
+/// A villa someone kept, so a browse that ends has something to come back to.
+model SavedUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  identityId String  @map("identity_id")
+  unitId     String  @map("unit_id")
+  /// Free-text list name. Null is the default list.
+  collection String?
+  note       String?
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  unit     Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([identityId])
+  @@index([unitId])
+  @@map("saved_unit")
+}
+
+/// A filter set someone kept, so we can tell them when something matches.
+model SavedSearch {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId    String   @map("identity_id")
+  name          String?
+  /// The criteria themselves, not a query string — a URL shape is presentation.
+  criteria      Json     @db.JsonB
+  alertsEnabled Boolean  @default(true) @map("alerts_enabled")
+  lastAlertedAt DateTime? @map("last_alerted_at")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId])
+  @@index([alertsEnabled])
+  @@map("saved_search")
 }

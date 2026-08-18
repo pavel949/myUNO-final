@@ -199,6 +199,14 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Needs from founder:** a ruling on which is authoritative for "what myUNO earned on this unit this month" — the engagement-derived estate share, or the contract-derived `EarnedFee`. The likely shape is that `EarnedFee` is the accrual ledger and the statement is its settlement view, in which case the statement generator should *write* `EarnedFee` rows rather than compute in parallel. That is a one-way door for reporting history, so it wants an explicit decision.
 - **Pinned meanwhile:** `src/modules/finance/fee-model-boundary.integration.test.ts` asserts which model owns which number, so the boundary cannot drift while the question is open.
 
+
+### Q38. A saved search can match, but nothing says what happens next — OPEN
+- **Source:** building saved villas and saved searches for Airbnb parity. Storage and matching are built; the alert is not.
+- **What exists:** `SavedUnit` and `SavedSearch` (migration `20260818000019`), with `matchesSavedSearch` deciding whether a unit satisfies a criteria set and `findSearchesMatching` returning the searches a newly live villa matches whose owner asked to hear about it. All pure and tested.
+- **What is missing, and why it was not guessed:** what an alert *does*. Mail the moment a villa appears, digest daily, or say nothing until the person returns to the site — each is a different relationship with a prospect, and for the RU clientele CLAUDE.md describes, an eager mailer reads differently than it would to a Western audience. The channel matters too: email, WhatsApp and Telegram are all wired, and picking one is a tone decision rather than a technical one. Frequency caps and quiet hours are the same kind of call. `last_alerted_at` is on the table ready for whichever cadence is chosen.
+- **Needs from founder:** cadence (immediate / daily / on-return), channel, and whether a saver hears about every match or only the first few. Once ruled, wiring is small — the matching half is done and tested.
+- **Also unruled, smaller:** whether saved lists are private forever or shareable with a partner planning the same trip. Built private, which is the reversible choice.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

@@ -72,3 +72,20 @@ export const browse = {
     return [];
   },
 } as BrowseService;
+
+// Saved villas and saved searches. Matching is here; what an alert *does* is a
+// founder decision (Q38), so nothing in this module sends anything.
+export {
+  saveUnit,
+  unsaveUnit,
+  listSavedUnits,
+  listSavedCollections,
+  saveSearch,
+  listSavedSearches,
+  deleteSavedSearch,
+  matchesSavedSearch,
+  findSearchesMatching,
+  type SaveUnitInput,
+  type SearchCriteria,
+  type MatchableUnit,
+} from './saved.service';

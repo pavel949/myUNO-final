@@ -27,22 +27,54 @@ export const db = new PrismaClient({
  * missed newer tables and failed on FK constraints).
  *
  * Uses DELETE with FK triggers disabled (session_replication_role = replica)
- * rather than TRUNCATE: TRUNCATE takes an ACCESS EXCLUSIVE lock that deadlocks
- * against the best-effort background notification/email queries that can still
- * be in flight from a just-finished test. DELETE takes row-level locks and
- * doesn't conflict, so resets are deadlock-free.
+ * rather than TRUNCATE: TRUNCATE takes an ACCESS EXCLUSIVE lock against the
+ * best-effort background notification/email queries that can still be in flight
+ * from a just-finished test.
+ *
+ * DELETE is better but not immune, and this used to claim it was. Under CI load
+ * Postgres reported deadlocks between `DELETE FROM content_key` here and an
+ * in-flight `INSERT INTO translation … ON CONFLICT` from the previous test,
+ * which takes `FOR KEY SHARE` on `identity` for its foreign key: each waits on
+ * a lock the other holds. The suite then failed in whichever file happened to
+ * be resetting — content, messenger, seed — with nothing wrong in that file.
+ *
+ * So a deadlock is retried rather than thrown. That is safe because a reset is
+ * idempotent: the retry simply deletes whatever the loser left behind. Batching
+ * the deletes into a single server-side script was tried first to shrink the
+ * lock window and is not viable — Prisma will not run a multi-statement script
+ * through executeRawUnsafe, and the suite fails wholesale.
  */
+const RESET_DEADLOCK_RETRIES = 5;
+
+function isDeadlock(error: unknown): boolean {
+  const text = `${(error as Error)?.message ?? ''}${(error as { code?: string })?.code ?? ''}`;
+  return text.includes('40P01') || text.includes('deadlock');
+}
+
 export async function resetDb() {
   const tables = await db.$queryRaw<Array<{ tablename: string }>>`
     SELECT tablename FROM pg_tables
     WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
   `;
   if (tables.length === 0) return;
-  await db.$transaction([
-    db.$executeRawUnsafe(`SET session_replication_role = 'replica'`),
-    ...tables.map((t) => db.$executeRawUnsafe(`DELETE FROM "${t.tablename}"`)),
-    db.$executeRawUnsafe(`SET session_replication_role = 'origin'`),
-  ]);
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await db.$transaction([
+        db.$executeRawUnsafe(`SET session_replication_role = 'replica'`),
+        ...tables.map((t) => db.$executeRawUnsafe(`DELETE FROM "${t.tablename}"`)),
+        db.$executeRawUnsafe(`SET session_replication_role = 'origin'`),
+      ]);
+      break;
+    } catch (error) {
+      if (attempt < RESET_DEADLOCK_RETRIES && isDeadlock(error)) {
+        // Give the in-flight statement a moment to finish before trying again.
+        await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+        continue;
+      }
+      throw error;
+    }
+  }
   // Module-level in-memory caches survive a DB wipe — clear them so a test
   // never reads a value cached from a prior test's data.
   clearConfigCache();

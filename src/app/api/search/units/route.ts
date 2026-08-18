@@ -11,6 +11,7 @@ import {
   parseMapBounds,
   boundsWhere,
 } from '@/modules/browse';
+import { listAreas, collectDescendantIds } from '@/modules/projects';
 
 /**
  * GET /api/search/units
@@ -27,6 +28,8 @@ import {
  * - unitTypes?: comma-separated unit type keys
  * - bedrooms?: number (exact)
  * - categoryKey?: string (unit category, LY-6)
+ * - areaSlug?: an area, including every area beneath it — "the west coast"
+ *   covers its beaches without anyone restating the list.
  * - swLat/swLng/neLat/neLng?: a map viewport, all four or none. Filters on the
  *   project's coordinates — a unit's location is its project's.
  * - sort?: one of the browse sort keys (recommended | price_asc | price_desc |
@@ -99,13 +102,46 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: parsedBounds.error }, { status: 400 });
     }
 
+    // An area covers everything beneath it. An unknown slug matches nothing
+    // rather than everything — silently widening a filtered search to the whole
+    // portfolio is the dangerous direction to fail in.
+    const areaSlug = searchParams.get('areaSlug') || undefined;
+    let areaProjectIds: string[] | null = null;
+    if (areaSlug) {
+      const area = await prisma.area.findUnique({ where: { slug: areaSlug }, select: { id: true } });
+      if (!area) {
+        areaProjectIds = [];
+      } else {
+        const areas = await listAreas(prisma);
+        const inArea = await prisma.project.findMany({
+          where: { areaId: { in: collectDescendantIds(areas, area.id) } },
+          select: { id: true },
+        });
+        areaProjectIds = inArea.map((p) => p.id);
+      }
+    }
+
     // Parse filters
     const unitTypes = unitTypesStr ? unitTypesStr.split(',') : [];
+
+    // Project scope: an explicit project, an area, or both — in which case the
+    // answer is the intersection. Spreading them separately would let one
+    // silently overwrite the other and widen the search past what was asked.
+    const projectScope =
+      areaProjectIds !== null
+        ? {
+            projectId: {
+              in: projectId ? areaProjectIds.filter((id) => id === projectId) : areaProjectIds,
+            },
+          }
+        : projectId
+          ? { projectId }
+          : {};
 
     // Build where clause
     const where: any = {
       status: 'live',
-      ...(projectId && { projectId }),
+      ...projectScope,
       ...(minPrice !== undefined && { baseNightlyThb: { gte: minPrice } }),
       ...(maxPrice !== undefined && { baseNightlyThb: { lte: maxPrice } }),
       ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),

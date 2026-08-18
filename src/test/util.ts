@@ -133,6 +133,9 @@ export interface ProjectFactoryOpts {
   slug?: string;
   name?: string;
   status?: 'draft' | 'live' | 'archived';
+  areaId?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 export async function createProject(opts: ProjectFactoryOpts = {}) {
@@ -143,11 +146,12 @@ export async function createProject(opts: ProjectFactoryOpts = {}) {
       areaLabelKey: 'project.area.default',
       descriptionKey: 'project.description.default',
       handbookKey: 'project.handbook.default',
-      latitude: new Decimal('13.7563'),
-      longitude: new Decimal('100.5018'),
+      latitude: new Decimal(opts.latitude ?? '13.7563'),
+      longitude: new Decimal(opts.longitude ?? '100.5018'),
       address: '123 Test Street, Bangkok',
       timezone: 'Asia/Bangkok',
       status: opts.status || 'draft',
+      ...(opts.areaId ? { areaId: opts.areaId } : {}),
     },
   });
 }

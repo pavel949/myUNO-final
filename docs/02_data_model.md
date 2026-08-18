@@ -99,7 +99,8 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 |---|---|---|
 | `slug` | text, unique | URL identity, e.g. `layan-verde`. |
 | `name` | text | Display name (a proper noun — not a content key; project names are the same in all locales). |
-| `area_label_key` | content key | Location label ("Layan Beach") — localized. |
+| `area_label_key` | content key | **Legacy.** The project's own location label. Superseded by `area_id` — two projects in Bang Tao must not be able to name Bang Tao differently. Read through `resolveAreaLabelKey`, which prefers the area when one is set. Droppable once every project is assigned. |
+| `area_id` | FK→Area, nullable, **SetNull** | Where the project is (§2.4.1). Nullable so an unassigned project still works; never cascades, because an area describes a project rather than owning it. |
 | `description_key` | content key | The project story on its landing page. |
 | `latitude`, `longitude` | decimal | Map pin. |
 | `address` | text | Street address (used on TM30-ready records with unit numbers). |
@@ -110,6 +111,27 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `handbook_key` | content key | The project handbook/rules (persistent reference — replaces the "rules pinned in Telegram"). |
 | `status` | enum `draft, live, archived` | Only `live` projects appear publicly. |
 | `default_currency` | text, default `THB` | Fixed THB in loop one; field exists so the constraint is visible. |
+
+### 2.4.1 `Area` — a place inventory is described by
+
+Before this, a location was `area_label_key`: a content key, i.e. a string to display. Nothing could be asked *about* an area — no area page, no occupancy compared across a region, no "near here" — and every project named its own area independently, which had already produced three key shapes for one concept.
+
+An area exists for **two jobs, both over myUNO's own inventory**: **browse** (an area landing page, a search filter, a sitemap entry) and **reporting** (occupancy, ADR and revenue rolled up across a region). It is deliberately *not* a market-wide comparables set — an area holds projects the platform operates.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `slug` | text, unique | URL segment. Browse is half the reason this model exists. |
+| `name_key` | content key | The area's name, RU/EN/TH like every label. |
+| `description_key` | content key, nullable | Prose for the area landing page. |
+| `parent_id` | FK→Area, nullable, **SetNull** | The area this one sits inside. |
+| `status` | enum `draft`/`live` | Public only when it is worth a page: one project in a region is a project, not a destination. |
+| `sort` | int, default 0 | Order among siblings; ties fall back to slug, never insertion order. |
+
+**Depth is data, not schema.** `parent_id` means island → coast → beach, or a flat list, without a migration either way. Everything that reads an area reads it *inclusively*: a report or a browse page for "the west coast" covers every beach beneath it, resolved by `collectDescendantIds`.
+
+**Cycles are refused twice.** A CHECK constraint blocks an area being its own parent, so a direct write cannot route around the service; `wouldFormCycle` walks the ancestry on write to block the longer case ("Phuket is inside Bang Tao is inside Phuket"), which Postgres cannot express as a CHECK. Every tree walk also carries a visited set, so already-broken data yields a finite wrong answer instead of a hung request.
+
+**Empty is not zero.** An area with no inventory reports `occupancy_pct` and `adr_thb` as **null**, never `0` — a region with nothing in it is not a region at 0% occupancy, and a dashboard that cannot tell those apart reports a catastrophe that is really an absence. An unknown area resolves to **nothing rather than everything**, because silently widening a filtered view to the whole portfolio is the dangerous direction to fail in.
 
 ### 2.5 `Unit` — a home inside a project
 

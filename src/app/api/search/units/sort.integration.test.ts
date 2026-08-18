@@ -209,3 +209,86 @@ describe('GET /api/search/units — ordering', () => {
     expect(filtered.total).toBe(2);
   });
 });
+
+/**
+ * "Villas in Bang Tao" was a question the search could not hear: a location was
+ * a display string on the project, so nothing could be filtered by it.
+ */
+describe('GET /api/search/units — by area', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  async function twoBeaches() {
+    const west = await db.area.create({
+      data: { slug: 'west-coast', nameKey: 'area.west.name', status: 'live' },
+    });
+    const bangTao = await db.area.create({
+      data: { slug: 'bang-tao', nameKey: 'area.bt.name', parentId: west.id, status: 'live' },
+    });
+    const kata = await db.area.create({
+      data: { slug: 'kata', nameKey: 'area.kata.name', status: 'live' },
+    });
+
+    const inBangTao = await createProject({ slug: 'p-bt', areaId: bangTao.id, status: 'live' });
+    const inKata = await createProject({ slug: 'p-kata', areaId: kata.id, status: 'live' });
+
+    await createUnit({ projectId: inBangTao.id, name: 'Bang Tao villa', status: 'live', maxGuests: 4 });
+    await createUnit({ projectId: inKata.id, name: 'Kata villa', status: 'live', maxGuests: 4 });
+
+    return { west, bangTao, kata, inBangTao, inKata };
+  }
+
+  function byArea(query: Record<string, string>) {
+    const params = new URLSearchParams({ adultsCount: '1', ...query });
+    return GET(new NextRequest(`http://localhost/api/search/units?${params}`));
+  }
+
+  it('filters to the villas in an area', async () => {
+    await twoBeaches();
+
+    const body = await (await byArea({ areaSlug: 'bang-tao' })).json();
+    expect(body.units.map((u: { name: string }) => u.name)).toEqual(['Bang Tao villa']);
+  });
+
+  it('a parent area covers the beaches beneath it', async () => {
+    await twoBeaches();
+
+    // "The west coast" covers Bang Tao without anyone restating the list.
+    const body = await (await byArea({ areaSlug: 'west-coast' })).json();
+    expect(body.units.map((u: { name: string }) => u.name)).toEqual(['Bang Tao villa']);
+  });
+
+  it('an unknown area matches nothing, not everything', async () => {
+    await twoBeaches();
+
+    // Silently widening a filtered search to the whole portfolio is the
+    // dangerous direction to fail in.
+    const body = await (await byArea({ areaSlug: 'atlantis' })).json();
+    expect(body.units).toHaveLength(0);
+    expect(body.total).toBe(0);
+  });
+
+  it('intersects with an explicit project rather than letting one overwrite the other', async () => {
+    const { inKata } = await twoBeaches();
+
+    // Kata's project is not in Bang Tao, so asking for both yields nothing —
+    // not "everything in Bang Tao" and not "everything in Kata".
+    const body = await (await byArea({ areaSlug: 'bang-tao', projectId: inKata.id })).json();
+    expect(body.units).toHaveLength(0);
+  });
+
+  it('agrees with itself when the project is in the area', async () => {
+    const { inBangTao } = await twoBeaches();
+
+    const body = await (await byArea({ areaSlug: 'bang-tao', projectId: inBangTao.id })).json();
+    expect(body.units.map((u: { name: string }) => u.name)).toEqual(['Bang Tao villa']);
+  });
+
+  it('leaves the search unfiltered when no area is asked for', async () => {
+    await twoBeaches();
+
+    const body = await (await byArea({})).json();
+    expect(body.units).toHaveLength(2);
+  });
+});

@@ -37,6 +37,13 @@ enum ProjectStatus {
   archived
 }
 
+/// An area is public only when it is worth a page of its own. One project in a
+/// region is a project, not a destination.
+enum AreaStatus {
+  draft
+  live
+}
+
 enum UnitType {
   villa
   condo
@@ -863,14 +870,55 @@ model OneTimeToken {
   @@map("one_time_token")
 }
 
+/// A place inventory is described by — "Bang Tao", "Phuket west coast".
+///
+/// Before this, a location was a content key on the project: a display string,
+/// so nothing could be asked *about* an area. Areas exist for two jobs the
+/// founder named — **browse** (an area page, a search filter, "near here") and
+/// **reporting** (occupancy and revenue rolled up across the projects in a
+/// region). Both concern myUNO's own inventory, so an area holds projects the
+/// platform operates rather than a market-wide comparables set.
+///
+/// The parent link makes depth **data rather than schema**: island → coast →
+/// beach, or a flat list, without a migration either way. A report or a browse
+/// page for an area includes everything beneath it.
+model Area {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// The URL segment. Browse is half the reason this model exists.
+  slug           String     @unique
+  nameKey        String     @map("name_key")
+  descriptionKey String?    @map("description_key")
+  parentId       String?    @map("parent_id")
+  status         AreaStatus @default(draft)
+  /// Display order among siblings; ties fall back to slug.
+  sort           Int        @default(0)
+
+  // Relations
+  parent   Area?     @relation(name: "areaParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Area[]    @relation(name: "areaParent")
+  projects Project[]
+
+  @@index([parentId])
+  @@index([status])
+  @@map("area")
+}
+
 model Project {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  slug            String        @unique
-  name            String
+  slug String @unique
+  name String
+  /// Legacy: the project's own label for where it is. Superseded by `areaId` —
+  /// two projects in Bang Tao must not be able to name Bang Tao differently.
+  /// Read through `resolveAreaLabelKey`, which prefers the area when one is
+  /// set. Droppable once every project has an area.
   areaLabelKey    String        @map("area_label_key")
+  areaId          String?       @map("area_id")
   descriptionKey  String        @map("description_key")
   latitude        Decimal       @db.Decimal(9, 6)
   longitude       Decimal       @db.Decimal(9, 6)
@@ -883,6 +931,9 @@ model Project {
   defaultCurrency String        @default("THB") @map("default_currency")
 
   // Relations
+  /// SetNull, never cascade: deleting an area must not delete the projects in
+  /// it. An area is a way of describing where a project is, not its owner.
+  area                 Area?                @relation(fields: [areaId], references: [id], onDelete: SetNull)
   coverMedia           MediaAsset?          @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   units                Unit[]
   roleAssignments      RoleAssignment[]     @relation("projectScope")
@@ -902,6 +953,7 @@ model Project {
   crmOpportunities     CrmOpportunity[]
   managementContracts  ManagementContract[]
 
+  @@index([areaId])
   @@map("project")
 }
 

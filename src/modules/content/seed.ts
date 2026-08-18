@@ -2419,6 +2419,19 @@ const CATALOG_LABEL_KEYS: KeyDef[] = [
   { key: 'catalog.unit_sorts.top_rated.label', namespace: 'catalog', description: 'Search sort: best reviewed first', en: 'Top rated', ru: 'Лучшие оценки', status: NR },
 ];
 
+/**
+ * Area names live in the content layer like every other label, so an area can
+ * be renamed without a migration and reads in RU/EN/TH. These are the keys the
+ * seeded Andaman-corridor areas point at; a new area gets its own key when the
+ * founder adds it in the admin panel.
+ */
+const AREA_LABEL_KEYS: KeyDef[] = [
+  { key: 'area.phuket.name', namespace: 'area', description: 'Area name: Phuket (island)', en: 'Phuket', ru: 'Пхукет', status: NR },
+  { key: 'area.phuket_west.name', namespace: 'area', description: 'Area name: Phuket west coast', en: 'West coast', ru: 'Западное побережье', status: NR },
+  { key: 'area.bang_tao.name', namespace: 'area', description: 'Area name: Bang Tao', en: 'Bang Tao', ru: 'Банг Тао', status: NR },
+  { key: 'area.layan.name', namespace: 'area', description: 'Area name: Layan', en: 'Layan', ru: 'Лаян', status: NR },
+];
+
 const STATUS_LABEL_KEYS: KeyDef[] = [
   // Missing BookingStatus labels (doc 05 §4: every doc 02 enum label under common.*)
   { key: 'common.status.booking.checked_in', namespace: 'common', description: 'Booking status: checked in', en: 'Checked in', ru: 'Заселён', status: NR },
@@ -2482,7 +2495,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

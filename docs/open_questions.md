@@ -188,6 +188,17 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Why the body was not drafted:** terms of service and a privacy policy are counsel's instruments and carry legal consequence. An agent-written approximation that reads authoritative is worse than an honest "not yet" — visitors would rely on it, and PDPA exposure attaches to what is published.
 - **Needs from founder:** the counsel-drafted terms of service and privacy policy. Also still outstanding from Q16: a dedicated public support/WhatsApp line and a privacy mailbox if different from the director's email, and Ignatev Capital's entity details if it is named publicly.
 
+
+### Q37. myUNO's management revenue is recorded twice, in two places that never meet — OPEN
+- **Source:** reviewing the project and unit models. Two mechanisms each represent what myUNO earns from a unit, and neither reads the other.
+  - `OwnerStatement.estate_share_thb` — derived from the unit's active **`UnitEngagement`** (`/api/admin/statements/generate`), which is what doc 02 §2.6 and doc 10 §4 specify. This is the number the owner sees.
+  - **`EarnedFee`** rows — created by `/api/admin/fees/calculate` from a **`ManagementContract`**, carrying a management fee with its own `calculation_basis`, and a performance fee. This is the number the CRM and fee reporting see.
+- **What is *not* wrong:** the statement math itself. `UnitEngagement` selects the owner/estate split and `ManagementContract` supplies performance-fee terms only — a coherent division, and the statement route takes the performance fee from the contract deliberately ("its basis and rate come from the contract, never from a default"). The two models are complementary, not rival definitions of one number.
+- **What is wrong:** the **management fee** exists in both worlds with nothing reconciling them. A statement's `estate_share_thb` already contains myUNO's take for the period; an `EarnedFee` management-fee row for the same unit and period states it again. Anything that sums both — a revenue report, a CRM pipeline value, a board pack — double-counts. Statements never read `EarnedFee`, so the owner-facing number is safe; the management-facing one is not.
+- **Why it was not simply fixed:** deciding which record is the accrual and which is the settlement is a money-policy call, and collapsing them the wrong way would either strip the fee-basis audit trail (`earned_fee.calculation_basis`, promised in CLAUDE.md's fee-transparency section) or change what an owner statement reports. Guessing puts real THB on the wrong side of a report.
+- **Needs from founder:** a ruling on which is authoritative for "what myUNO earned on this unit this month" — the engagement-derived estate share, or the contract-derived `EarnedFee`. The likely shape is that `EarnedFee` is the accrual ledger and the statement is its settlement view, in which case the statement generator should *write* `EarnedFee` rows rather than compute in parallel. That is a one-way door for reporting history, so it wants an explicit decision.
+- **Pinned meanwhile:** `src/modules/finance/fee-model-boundary.integration.test.ts` asserts which model owns which number, so the boundary cannot drift while the question is open.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

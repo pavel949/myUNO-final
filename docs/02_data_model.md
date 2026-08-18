@@ -171,6 +171,24 @@ unit created outside that path, and is idempotent.
 
 ### 2.6 `UnitEngagement` — how the unit is on the platform (the economics selector)
 
+> **`UnitEngagement` and `ManagementContract` are not rivals — they answer different questions.**
+> Two entities describe a unit's commercial relationship and it is easy to read one as a
+> replacement for the other. The division is deliberate:
+>
+> | Question | Answered by |
+> |---|---|
+> | Which economics apply — how is the take split between owner and estate? | **`UnitEngagement`** (this section). The statement generator branches on `engagement_type`, and a direct-managed unit without its `noi_cap_annual_thb` refuses generation rather than guessing (doc 10 §4). |
+> | Is a performance fee owed, on what basis, above what baseline? | **`ManagementContract`**. Read only when `performance_fee_enabled`; never defaulted, so a unit with no such contract earns no performance fee. |
+>
+> The owner/estate split must never be taken from the contract, and a performance fee must never be
+> defaulted from config — either change moves an owner's money to a different document than doc 10
+> names. `src/modules/finance/fee-model-boundary.integration.test.ts` pins both.
+>
+> **Open:** `EarnedFee` (created from a `ManagementContract`) records a management fee that
+> `OwnerStatement.estate_share_thb` already contains, and nothing reconciles them. Statements never
+> read `EarnedFee`, so the owner-facing number is unaffected; anything summing both double-counts.
+> See **Q37** — a founder ruling, not a fix to make silently.
+
 Exactly one **active** engagement per unit at a time (enforced by partial unique index on `unit_id` where `status='active'`); history preserved as rows.
 
 | Field | Type | Meaning |

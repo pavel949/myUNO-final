@@ -116,7 +116,7 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | Field | Type | Meaning |
 |---|---|---|
 | `project_id` | FK→Project | The one project it belongs to. |
-| `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform**. Nullable while a unit is being set up before its owner has an identity. |
+| `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform, today**. Nullable while a unit is being set up before its owner has an identity. **A denormalisation of `OwnershipPeriod` (2.5.1), not the fact itself** — the two are written together by `setUnitOwner`. Money records must ask `getOwnerAt(date)`, never this column, because it only ever describes the present. |
 | `name` | text | Display name/number ("Villa A-3", "B-707"). Unique within project. |
 | `unit_type` | enum `villa, condo, townhouse` | Physical type. |
 | `category_key` | string, nullable | Sellable class inside the project (e.g. `superior_2br`), validated against the project's `catalog.unit_categories` config (doc 04 §8). Null = the unit is sold individually, not as part of a category. Indexed with `project_id` for category availability queries. |
@@ -134,6 +134,40 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `status` | enum `draft, mobilizing, live, paused, offboarded` | Only `live` is bookable. `paused` hides from search but keeps existing bookings. |
 | `permitted_use_confirmed_at` | timestamptz, nullable | **The legal gate.** A unit cannot move to `live` unless set (with the confirming compliance record §11.2). |
 | `cover_media_id` + `UnitMedia` join (`unit_id`,`media_id`,`sort`) | | Photo gallery; first is cover. |
+
+
+#### 2.5.1 `OwnershipPeriod` — the chain of title
+
+`Unit.owner_identity_id` is a single scalar, so changing an owner used to erase the
+previous one. An owner statement, a payout, or a fee earned last year could not
+prove who held title when it was earned — which contradicts the rule that
+financial history is immutable (doc 10). This table is the record of fact; the
+scalar is kept as the denormalised "who owns it now" that most reads use.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `unit_id` | FK→Unit | The unit. |
+| `owner_identity_id` | FK→Identity | Who held title during this period. |
+| `starts_on` | date | The day they took title. |
+| `ends_on` | date, nullable | The day the next owner took over. **Null = the current owner.** Half-open, the same convention bookings use: the handover day belongs to the incoming owner. |
+| `note` | text, nullable | How the record came to exist (backfill, sale, correction). |
+| `recorded_by_identity_id` | FK→Identity, nullable | Which staff member recorded it. |
+
+**Constraints.** `ownership_period_no_overlap` is a GiST exclusion over
+`(unit_id, daterange(starts_on, COALESCE(ends_on,'infinity'), '[)'))` — one unit
+cannot have two owners on the same day, and two concurrent transfers cannot both
+commit. `ownership_period_dates_ordered` rejects a period ending before it
+starts. Both are enforced in the database rather than the service, for the same
+reason `booking_no_overlap` is.
+
+**Backfill.** Every unit that already had an owner received an open period
+starting at the unit's `created_at`. That is the earliest date the system has
+evidence for, and it is stated in the row's `note` rather than implied.
+
+**Writing.** `setUnitOwner` closes the open period, opens the next, and moves the
+scalar — one transaction. `updateUnit` does **not** accept an owner, so this is
+the only supported path. `ensureOwnershipRecorded` opens a first period for a
+unit created outside that path, and is idempotent.
 
 ### 2.6 `UnitEngagement` — how the unit is on the platform (the economics selector)
 

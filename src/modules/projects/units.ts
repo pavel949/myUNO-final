@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
 import { UnitStatus, UnitType } from '@prisma/client';
+import { ensureOwnershipRecorded } from './ownership.service';
 
 interface CreateUnitInput {
   projectId: string;
@@ -120,6 +121,11 @@ export async function createUnit(input: CreateUnitInput) {
       status,
     },
   });
+
+  // Ownership is a dated fact, not just a column: open the first period so the
+  // unit has a chain of title from the day it exists. Idempotent, so a retry
+  // after a partial failure repairs rather than duplicates.
+  await ensureOwnershipRecorded(prisma, unit.id);
 
   // Audit log
   await logAudit({

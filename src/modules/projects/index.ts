@@ -53,3 +53,12 @@ export {
   getMCDashboard,
   getMCFeeReport,
 } from './mc.service';
+
+// Ownership history (chain of title). `Unit.ownerIdentityId` stays the current
+// owner; these answer who owned it *then*, which is what money records need.
+export {
+  setUnitOwner,
+  getOwnerAt,
+  getOwnershipHistory,
+  ensureOwnershipRecorded,
+} from './ownership.service';

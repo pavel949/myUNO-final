@@ -759,6 +759,8 @@ model Identity {
   authAccounts              AuthAccount[]
   oneTimeTokens             OneTimeToken[]
   ownedUnits                Unit[]                      @relation("unitOwner")
+  ownershipPeriods          OwnershipPeriod[]           @relation("ownershipPeriodOwner")
+  ownershipPeriodsRecorded  OwnershipPeriod[]           @relation("ownershipPeriodRecorder")
   roleAssignments           RoleAssignment[]            @relation("roleAssignmentIdentity")
   grantedRoles              RoleAssignment[]            @relation("grantedRoles")
   mediaAssets               MediaAsset[]                @relation("uploadedBy")
@@ -952,6 +954,7 @@ model Unit {
   incidentLogs          IncidentLog[]
   complianceChecklistInstances ComplianceChecklistInstance[]
   managementContracts   ManagementContract[]
+  ownershipPeriods      OwnershipPeriod[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -2605,4 +2608,32 @@ model IntegrationAccount {
   @@index([scopeType, unitId])
   @@index([status, lastSyncAt])
   @@map("integration_account")
+}
+
+/// Who held title to a unit, and when.
+///
+/// `Unit.ownerIdentityId` remains the denormalised current owner that most reads
+/// use; this is the record of fact behind it. Both are written in one
+/// transaction by `setUnitOwner`, and a database exclusion constraint stops one
+/// unit having two owners on the same day.
+model OwnershipPeriod {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  unitId               String    @map("unit_id")
+  ownerIdentityId      String    @map("owner_identity_id")
+  startsOn             DateTime  @map("starts_on") @db.Date
+  /// Null means this is the current owner.
+  endsOn               DateTime? @map("ends_on") @db.Date
+  note                 String?
+  recordedByIdentityId String?   @map("recorded_by_identity_id")
+
+  // Relations
+  unit       Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner      Identity  @relation(name: "ownershipPeriodOwner", fields: [ownerIdentityId], references: [id])
+  recordedBy Identity? @relation(name: "ownershipPeriodRecorder", fields: [recordedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, startsOn])
+  @@index([ownerIdentityId])
+  @@map("ownership_period")
 }

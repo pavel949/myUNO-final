@@ -247,6 +247,23 @@ export async function createBooking(
       throw err;
     }
 
+    // A unit can also be unavailable without a booking: an owner hold, a
+    // maintenance window, or a stay imported from an OTA. `resolveUnitForCategory`
+    // has always honoured these, but the direct path did not — so a villa Airbnb
+    // had already sold could be sold again here. The exclusion constraint cannot
+    // see across tables, which is why this check has to be inside the same
+    // advisory-locked transaction rather than in front of it.
+    const blocked = await tx.blockedDate.findFirst({
+      where: { unitId, startDate: { lt: endDate }, endDate: { gt: startDate } },
+      select: { id: true, reason: true },
+    });
+    if (blocked) {
+      const err = new Error(`Dates unavailable — unit is blocked (${blocked.reason})`);
+      (err as any).code = 'DOUBLE_BOOK';
+      (err as any).blockReason = blocked.reason;
+      throw err;
+    }
+
     return tx.booking.create({
       data: {
         unitId,

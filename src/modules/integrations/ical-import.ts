@@ -80,40 +80,48 @@ export async function importICalEvents(
   try {
     for (const event of events) {
       try {
-        // Check for conflicts with platform bookings
-        const conflictingBooking = await checkForConflicts(
-          db,
-          unitId,
-          event.dtStart,
-          event.dtEnd,
-        );
+        // Conflict check and block creation are one transaction, under the same
+        // per-unit advisory lock `createBooking` takes. Without it the two race:
+        // an import can see a free calendar while a guest is mid-checkout, and
+        // both commit — the unit sold on Airbnb and here for the same nights.
+        // The lock makes the two paths queue; it releases on commit or rollback.
+        const outcome = await db.$transaction(async (tx) => {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
 
-        if (conflictingBooking) {
-          result.conflicts.push({
-            event,
-            conflictingBooking,
+          const conflictingBooking = await checkForConflicts(
+            tx as PrismaClient,
+            unitId,
+            event.dtStart,
+            event.dtEnd,
+          );
+          if (conflictingBooking) {
+            return { kind: 'conflict' as const, conflictingBooking };
+          }
+
+          // Idempotency via externalRef (the OTA UID).
+          const existing = await getExistingBlockedDate(tx as PrismaClient, unitId, event.uid);
+          if (existing) {
+            return { kind: 'already-imported' as const };
+          }
+
+          await tx.blockedDate.create({
+            data: {
+              unitId,
+              startDate: event.dtStart,
+              endDate: event.dtEnd,
+              reason: BlockedDateReason.ota_import,
+              note: event.summary || event.description,
+              externalRef: event.uid,
+            },
           });
+
+          return { kind: 'imported' as const };
+        });
+
+        if (outcome.kind === 'conflict') {
+          result.conflicts.push({ event, conflictingBooking: outcome.conflictingBooking });
           continue; // Don't import if conflict detected
         }
-
-        // Check if already imported (idempotency via externalRef)
-        const existing = await getExistingBlockedDate(db, unitId, event.uid);
-        if (existing) {
-          result.imported++; // Count as already imported
-          continue;
-        }
-
-        // Create BlockedDate for OTA booking
-        await db.blockedDate.create({
-          data: {
-            unitId,
-            startDate: event.dtStart,
-            endDate: event.dtEnd,
-            reason: BlockedDateReason.ota_import,
-            note: event.summary || event.description,
-            externalRef: event.uid, // Store UID for idempotency
-          },
-        });
 
         result.imported++;
       } catch (error) {

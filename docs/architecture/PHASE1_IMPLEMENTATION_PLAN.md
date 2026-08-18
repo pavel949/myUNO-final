@@ -39,31 +39,31 @@ operational necessity → revenue → UX.
 table. Repointed at local PostgreSQL with a warning comment. `.env` is gitignored, so **every
 developer machine must be checked individually.** Effort 0.1 d.
 
-### P0-3 · Webhook signature verification is a stub
+### ~~P0-3 · Webhook signature verification is a stub~~ — DONE this session
 
 | | |
 |---|---|
-| **Problem** | `providers/stripe.ts:146-154` and `providers/index.ts:43-45` return `true` unconditionally, including when a secret is configured. |
-| **Business impact** | Anyone reaching the endpoint could mark a booking paid without paying. |
+| **Problem** | `providers/stripe.ts:146-154` and `providers/index.ts:43-45` returned `true` unconditionally, including when a secret was configured. The Stripe adapter had no SDK behind it and returned fabricated confirmations for a hardcoded 50000 satang. Asking for an unimplemented provider — `omise`, the named default — silently fell back to the mock. |
+| **Business impact** | A deployment configured for a real rail would have accepted fake payments and reported success. Narrower than first written: `/api/checkout/confirm` is authenticated and payer-scoped, so this was never open to the internet. |
 | **Dependencies** | A decision: ship cash-only for loop one, or connect a real provider (CLAUDE.md names Opn/Omise the default; no SDK is installed). |
 | **Files** | `src/modules/finance/providers/*`, a new `src/app/api/webhooks/[provider]/route.ts` |
 | **DB** | `webhook_event` table (provider, external id unique, payload, processed_at) for idempotency |
 | **Tests** | Valid signature accepted; tampered body rejected; replayed event processed once |
-| **Acceptance** | No code path can confirm a payment from an unverified request. |
+| **Acceptance** | No code path can confirm a payment, refund, or verify a signature without a real rail. **Met** — `stripe.ts` deleted; unimplemented provider throws; mock throws in production and refuses to confirm/refund/verify; 9 tests in `provider-seam.test.ts`. |
 | **Effort** | 2 d with a real provider; **0.5 d** to instead delete the stubs and hard-fail on any non-cash provider |
 | **Risk** | Leaving the stub in a shipped build is the risk. Removing it is strictly safer. |
 | **Rollback** | Feature-flag the provider path off; cash continues to work |
 
-### P0-4 · Owner blocks can be oversold
+### ~~P0-4 · Owner blocks can be oversold~~ — DONE this session
 
 | | |
 |---|---|
 | **Problem** | `BlockedDate` and `Booking` are separate tables with no cross-table constraint. `createBooking` never consults `BlockedDate` (`resolveUnitForCategory` does, but the direct path does not). |
 | **Business impact** | A unit the owner reserved for themselves, or that is under maintenance, can be sold. |
 | **Approach** | Either (a) a shared `unit_occupancy` table both bookings and blocks write to, carrying one exclusion constraint — the correct long-term shape and the seed of the inventory model; or (b) short-term, check `BlockedDate` inside the `createBooking` transaction. |
-| **Recommendation** | (b) now, (a) in the inventory phase — (a) is a data migration and should not be rushed behind a P0. |
-| **Tests** | Booking over an owner block is refused; concurrent block-create and booking-create cannot both win |
-| **Effort** | 0.5 d for (b), 3 d for (a) |
+| **Chosen** | (b). `createBooking` checks `blocked_date` inside its advisory-locked transaction, and the iCal importer takes the same lock, so a block and a booking cannot interleave. (a) stays queued for the inventory phase — it is a data migration and should not be rushed behind a P0. |
+| **Tests** | **Met** — `blocked-dates.integration.test.ts`, 7 tests: owner hold, maintenance and OTA-import blocks each refuse a stay; partial overlap refused; back-to-back allowed; other units unaffected; a racing iCal import and direct booking leave exactly one owner of the range. 5 of the 7 fail with the check removed. |
+| **Effort** | 0.5 d spent on (b); 3 d for (a), still queued |
 | **Rollback** | Revert the service change; constraint unaffected |
 
 ### P0-5 · Unauthenticated iCal export
@@ -108,10 +108,13 @@ model · maps/geocoding · analytics warehouse.
 
 ## Recommended next task
 
-**P0-3 (webhook verification)** — and the cheap, safe form of it: since only cash is real
-(`finance.service.ts:227` hardcodes the mock provider) and no webhook route exists, the correct
-move is to **delete the stubbed provider adapters from the shipped path and fail closed** on any
-non-cash provider. That removes a forged-payment vector in half a day without pretending an
-integration exists.
+**P0-5 — authenticate the iCal export feed.** It is the last open P0 and the only remaining
+must-fix before a real booking.
 
-**P0-4** is the natural follow-on, since it is the same booking transaction that was just made safe.
+P0-3 and P0-4 were completed this session. P0-3 took the cheap, safe form recommended here: the
+stubbed adapters were deleted and the seam now fails closed, rather than building an integration
+nobody has credentials for.
+
+**P0-5** (authenticate the iCal export feed) is now the only P0 left. It is roughly half a day: a
+per-unit signed token in the URL, with tests proving an unguessable token is required and a wrong
+one 404s.

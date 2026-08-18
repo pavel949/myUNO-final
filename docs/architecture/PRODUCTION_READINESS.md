@@ -5,7 +5,7 @@
 Scores are 0–5. Launch severity: **P0** must be fixed before any real booking · **P1** before public
 launch · **P2** shortly after · **P3** enhancement.
 
-**The system is not production-ready while any P0 is open. Two P0s are open.**
+**The system is not production-ready while any P0 is open. One P0 is open.**
 
 ---
 
@@ -14,7 +14,7 @@ launch · **P2** shortly after · **P3** enhancement.
 | 1 | Domain model | **2/5** | 71 models, but no UnitType entity, no space hierarchy, no ownership periods, no rate plans, no inventory pools (§3) | Sellable class is a loose `categoryKey String?`; ownership is a scalar with no history | Introduce `UnitType`, `SpaceNode`, `OwnershipPeriod` as entities | P1 |
 | 2 | SSOT integrity | **2/5** | Price and min-nights live on `Unit`; amenities are untyped `String[]` on both Project and Unit | No canonical owner for price or amenity; no provenance API | Move price to a dated rate rule; make amenities a catalog + assignment with inheritance | P1 |
 | 3 | Booking correctness | **4/5** | State machine present; 111 tests pass; concurrency now DB-enforced and proven (§5) | No `BookingItem` ⇒ multi-unit bookings impossible; no persisted `Quote` to revalidate at checkout | Add `Quote`; add `BookingItem` before multi-room sales | P1 |
-| 4 | Inventory concurrency | **4/5** | `booking_no_overlap` GiST exclusion constraint; 6 concurrency tests; proven load-bearing by drop-and-rerun | Owner blocks (`BlockedDate`) are still not covered by the same constraint | Extend exclusion coverage to blocked dates (P0-4) | **P0** |
+| 4 | Inventory concurrency | **5/5** | `booking_no_overlap` GiST exclusion constraint (proven load-bearing by drop-and-rerun) + per-unit advisory lock + blocked-date check inside the same transaction; 13 concurrency tests | Bookings and blocks are still two tables held together by a lock rather than one constraint — correct, but a shared `unit_occupancy` table would make it structural | Fold both into one occupancy table in the inventory phase | P2 |
 | 5 | Payments | **2/5** | Cash path real and tested; `finance.service.ts:227` hardcodes `'mock'`. Seam now fails closed — unimplemented provider throws, mock refused in production, nothing claims money moved without proof (9 tests) | Still cash-only. No real rail, no webhook route, no idempotency table. `/api/checkout/confirm` is authenticated and payer-scoped, so a payer can settle their own mock payment — correct for a cash-first loop, not for real money | Wire a real provider with genuine signature verification before any card payment | P1 |
 | 6 | Finance | **3/5** | `OwnerStatement` + line items + two-signature sign-off with `SELECT … FOR UPDATE` — the strongest area | Ledger is single-entry; financial snapshots are updatable | Enforce snapshot immutability (DB trigger); plan double-entry | P1 |
 | 7 | Security | **3/5** | bcrypt-12, HMAC sessions with `timingSafeEqual`, real AES-256-GCM; payment seam now fails closed | Audit log is mutable (zero `TRIGGER`/`REVOKE` in any migration); no KDF/AAD/key-version on encryption | Make `audit_log` append-only (P1-3) | P1 |
@@ -38,13 +38,13 @@ launch · **P2** shortly after · **P3** enhancement.
 | ~~P0-1~~ | Double-booking race in `createBooking` | Same unit sellable twice | **CLOSED this session** — DB exclusion constraint + 6 tests |
 | ~~P0-2~~ | `DATABASE_URL_TEST` pointed at production | `resetDb()` truncates every table — `npm test` would wipe production | **CLOSED this session** — repointed at local test DB, warning added |
 | ~~P0-3~~ | Stub adapters fabricated confirmations; webhook verification returned `true` | A deployment configured for a real rail would have taken fake payments | **CLOSED this session** — Stripe stub deleted, seam fails closed, 9 tests |
-| **P0-4** | Owner blocks not covered by the exclusion constraint | A unit can be owner-blocked and sold for the same nights | OPEN |
+| ~~P0-4~~ | Owner blocks not covered by the exclusion constraint | A unit could be owner-blocked, under maintenance, or already sold on an OTA, and still sold here | **CLOSED this session** — checked inside the advisory-locked transaction, both sides serialized, 7 tests |
 | **P0-5** | Unauthenticated iCal export | Per-unit occupancy and pricing readable by UUID | OPEN |
 
 ## Overall
 
 **Weighted verdict: not production-ready.** The booking engine is now safe on its core invariant —
 the single largest risk, and the reason the previous "architecturally ready" verdict was wrong — and
-the payment seam can no longer claim money arrived when it did not. Two P0s remain: a unit can still
-be owner-blocked and sold for the same nights, and the iCal feed is unauthenticated. Observability
-is still absent entirely.
+the payment seam can no longer claim money arrived when it did not. One P0 remains: the iCal export feed is
+unauthenticated and exposes per-unit occupancy and pricing. Observability is still absent entirely,
+and that is the largest P1.

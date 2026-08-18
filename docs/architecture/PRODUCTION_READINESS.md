@@ -5,7 +5,8 @@
 Scores are 0–5. Launch severity: **P0** must be fixed before any real booking · **P1** before public
 launch · **P2** shortly after · **P3** enhancement.
 
-**The system is not production-ready while any P0 is open. One P0 is open.**
+**No P0 remains open.** That is the bar for taking a real booking — not the bar for public launch,
+which the P1 list below still gates.
 
 ---
 
@@ -21,13 +22,13 @@ launch · **P2** shortly after · **P3** enhancement.
 | 8 | Tenant isolation | **2/5** | No `organization_id` on Identity/Project/Unit/Booking/Ledger | Isolation relies entirely on project/unit scoping | Decide whether myUNO is single-tenant. If multi-tenant, add the column before data grows | P1 |
 | 9 | Owner data isolation | **5/5** | Scoped in the WHERE clause; 404 (not 403) on another owner's statement; tested at `sign-off.integration.test.ts:134` and `page.integration.test.ts:137` | — | — | — |
 | 10 | Operations | **3/5** | Tickets, TM30 with SLA, condition reports, compliance records | No housekeeping/task entities; tasks not generated from booking events | Add `Task`/`TaskTemplate` in the operations phase | P2 |
-| 11 | External integrations | **1/5** | Only cash payments, email and blob storage make real calls | OTA sync is a comment block; WhatsApp/Telegram stubs return `success: true`, so deliveries are recorded as `sent` for messages never sent | Stop recording stub sends as delivered; implement iCal fetch+parse | P1 |
+| 11 | External integrations | **2/5** | Only cash payments, email and blob storage make real calls. The iCal **export** feed is now authenticated and correct — blocks previously carried `TRANSP:TRANSPARENT`, telling consumers a blocked night was free | OTA **import** is still a comment block (no fetch, no parser); WhatsApp/Telegram stubs return `success: true`, so deliveries are recorded as `sent` for messages never sent | Stop recording stub sends as delivered; implement iCal fetch+parse | P1 |
 | 12 | Observability | **0/5** | `console.error` only (`errorHandler.ts:17-26`) | No error tracking, no metrics, no correlation IDs, no alerting | Add error tracking before public launch | P1 |
 | 13 | Testing | **4/5** | **1193/1193 passing across 81 files** (build 0, lint 0); 978-line permission matrix; 6 new concurrency tests | No load/E2E tests; media module untested; encryption untested directly. Seven fixtures were found asserting states the DB now forbids — the suite was not guarding data integrity | Add direct encryption tests; E2E for the booking path | P1 |
 | 14 | Deployment | **3/5** | Vercel config, 3 crons, migration chain applies cleanly from scratch (verified locally) | Supabase migration state **unverified** — sandbox cannot reach the host | Run `prisma migrate status` from a networked machine before launch | P1 |
 | 15 | Backup & recovery | **0/5** | Nothing found in the repo | No documented backup, restore drill, or RPO/RTO | Document and rehearse a restore | P1 |
 | 16 | Performance | **1/5** | Indexes exist on hot booking paths | `resolveUnitForCategory` is an N+1 loop; no availability projection; no load testing | Replace the loop with a set-based query | P2 |
-| 17 | Legal & privacy | **3/5** | Real AES-256-GCM, retention jobs, PDPA anonymisation, access logging | Unauthenticated iCal export leaks per-unit occupancy and pricing; audit log mutable | Authenticate the iCal feed (P0-5 candidate) | P1 |
+| 17 | Legal & privacy | **4/5** | Real AES-256-GCM, retention jobs, PDPA anonymisation, access logging; iCal feed now token-gated and stripped to availability | Audit log is mutable | Make `audit_log` append-only (P1-3) | P1 |
 
 ---
 
@@ -39,12 +40,18 @@ launch · **P2** shortly after · **P3** enhancement.
 | ~~P0-2~~ | `DATABASE_URL_TEST` pointed at production | `resetDb()` truncates every table — `npm test` would wipe production | **CLOSED this session** — repointed at local test DB, warning added |
 | ~~P0-3~~ | Stub adapters fabricated confirmations; webhook verification returned `true` | A deployment configured for a real rail would have taken fake payments | **CLOSED this session** — Stripe stub deleted, seam fails closed, 9 tests |
 | ~~P0-4~~ | Owner blocks not covered by the exclusion constraint | A unit could be owner-blocked, under maintenance, or already sold on an OTA, and still sold here | **CLOSED this session** — checked inside the advisory-locked transaction, both sides serialized, 7 tests |
-| **P0-5** | Unauthenticated iCal export | Per-unit occupancy and pricing readable by UUID | OPEN |
+| ~~P0-5~~ | Unauthenticated iCal export | Per-unit occupancy and pricing readable by UUID | **CLOSED this session** — per-unit signed token, payload cut to availability only, 9 tests |
 
 ## Overall
 
-**Weighted verdict: not production-ready.** The booking engine is now safe on its core invariant —
-the single largest risk, and the reason the previous "architecturally ready" verdict was wrong — and
-the payment seam can no longer claim money arrived when it did not. One P0 remains: the iCal export feed is
-unauthenticated and exposes per-unit occupancy and pricing. Observability is still absent entirely,
-and that is the largest P1.
+**Weighted verdict: the P0 list is clear; the system is still not ready for public launch.**
+
+The booking engine is now safe on its core invariant — the single largest risk, and the reason the
+previous "architecturally ready" verdict was wrong. A unit cannot be sold twice, cannot be sold over
+a block, the payment seam cannot claim money arrived when it did not, and the calendar feed no longer
+publishes occupancy and rates to anyone holding a UUID.
+
+What stands between here and a public launch is P1, and the two largest items are not code defects
+but absences: **there is no observability at all** (no error tracking, no metrics, no correlation
+IDs — a failure in production would be invisible), and **no documented or rehearsed backup restore**.
+Financial snapshots and the audit log are also still mutable.

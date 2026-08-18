@@ -66,11 +66,30 @@ developer machine must be checked individually.** Effort 0.1 d.
 | **Effort** | 0.5 d spent on (b); 3 d for (a), still queued |
 | **Rollback** | Revert the service change; constraint unaffected |
 
-### P0-5 · Unauthenticated iCal export
+### ~~P0-5 · Unauthenticated iCal export~~ — DONE this session
 
-`api/units/[unitId]/ical/export/route.ts:131` deliberately skips auth. The feed exposes booking
-dates, status, type, and nightly pricing per unit UUID. Fix: per-unit signed token in the URL.
-Effort 0.5 d. Tests: unguessable-token required; wrong token 404s.
+The route said so itself: *"no auth check for public iCal export"*. A unit UUID was the only thing
+between a competitor and that property's occupancy, booking status and type, operators' free-text
+notes on blocks, and every nightly pricing rule.
+
+The feed is fetched by OTAs on a schedule with no session, so the URL carries the authority: an
+HMAC token bound to the unit (`src/modules/integrations/ical-token.ts`), compared in constant time,
+answering **404** on a bad token so it cannot confirm the unit exists.
+
+The payload was cut to what an availability feed is for — which nights are taken. Pricing rules are
+no longer read at all; events say only `SUMMARY:Unavailable`; event UIDs are derived rather than
+being the booking's primary key.
+
+Two real defects surfaced while doing it:
+- Blocked ranges carried `TRANSP:TRANSPARENT`, which tells the consuming calendar the night is
+  **free** — the exact opposite of a block, and a live oversell risk on any OTA reading the feed.
+- Cancelled bookings were correctly excluded already; that is now covered by a test.
+
+9 tests in `ical-export.integration.test.ts`. Effort 0.5 d, as estimated.
+
+**Follow-up (P2):** tokens are derived, not stored, so a single feed cannot be revoked without
+rotating `ICAL_FEED_SECRET` and invalidating every feed. A stored per-unit token with its own
+revocation is the upgrade when feeds are handed to third parties at scale.
 
 ---
 
@@ -108,13 +127,18 @@ model · maps/geocoding · analytics warehouse.
 
 ## Recommended next task
 
-**P0-5 — authenticate the iCal export feed.** It is the last open P0 and the only remaining
-must-fix before a real booking.
+**P1-5 — error tracking and correlation IDs.** Every P0 is closed, so the binding constraint is no
+longer a known defect but the inability to see an unknown one: today a production failure reaches
+`console.error` and stops there. Nothing else on the P1 list can be verified in production without
+it, which is why it should come before the rest.
 
-P0-3 and P0-4 were completed this session. P0-3 took the cheap, safe form recommended here: the
-stubbed adapters were deleted and the seam now fails closed, rather than building an integration
+Then **P1-1** (financial snapshot immutability) and **P1-3** (append-only audit log) — both are
+single DB triggers, both close the gap between what `CLAUDE.md` promises about immutable financial
+history and what the schema actually enforces. Then **P1-10**, a rehearsed restore.
+
+P0-3, P0-4 and P0-5 were completed this session. P0-3 took the cheap, safe form recommended here —
+the stubbed adapters were deleted and the seam now fails closed, rather than building an integration
 nobody has credentials for.
 
-**P0-5** (authenticate the iCal export feed) is now the only P0 left. It is roughly half a day: a
-per-unit signed token in the URL, with tests proving an unguessable token is required and a wrong
-one 404s.
+All five P0 items are closed. The next work is P1, and the ordering below is by what would hurt most
+in production.

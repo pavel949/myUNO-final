@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyIcalFeedToken, icalEventUid } from '@/modules/integrations/ical-token';
 
 // No dynamic request API in this GET — force it dynamic so OTA calendar
 // consumers always see current availability, not a build-time snapshot.
@@ -17,7 +18,11 @@ function formatDateTime(date: Date): string {
 }
 
 async function generateICalContent(unitId: string): Promise<string> {
-  const [unit, bookings, blockedDates, pricingRules] = await Promise.all([
+  // An availability feed answers one question: which nights are taken. It used
+  // to also publish nightly prices, booking status and type, and operators'
+  // free-text notes on blocks — commercially sensitive, and none of it needed by
+  // an OTA. Pricing rules are no longer read at all.
+  const [unit, bookings, blockedDates] = await Promise.all([
     prisma.unit.findUnique({
       where: { id: unitId },
       include: { project: true },
@@ -25,14 +30,12 @@ async function generateICalContent(unitId: string): Promise<string> {
     prisma.booking.findMany({
       where: { unitId, status: { not: 'cancelled' } },
       orderBy: { startDate: 'asc' },
+      select: { id: true, startDate: true, endDate: true, createdAt: true, updatedAt: true },
     }),
     prisma.blockedDate.findMany({
       where: { unitId },
       orderBy: { startDate: 'asc' },
-    }),
-    prisma.pricingRule.findMany({
-      where: { unitId },
-      orderBy: { startDate: 'asc' },
+      select: { id: true, startDate: true, endDate: true, createdAt: true, updatedAt: true },
     }),
   ]);
 
@@ -60,14 +63,15 @@ async function generateICalContent(unitId: string): Promise<string> {
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:booking-${booking.id}@myuno.local`,
+      `UID:${icalEventUid('booking', booking.id)}`,
       `DTSTAMP:${modified}`,
       `CREATED:${created}`,
       `LAST-MODIFIED:${modified}`,
       `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
       `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `SUMMARY:Booking #${booking.id.slice(0, 8)} - ${booking.guestIdentityId ? 'Reserved' : 'Hold'}`,
-      `DESCRIPTION:Status: ${booking.status}\\nType: ${booking.bookingType}`,
+      // "Unavailable" and nothing more — the convention OTAs expect, and it
+      // keeps guest-linked detail out of a URL-authenticated feed.
+      `SUMMARY:Unavailable`,
       `TRANSP:OPAQUE`,
       'END:VEVENT',
     );
@@ -82,36 +86,17 @@ async function generateICalContent(unitId: string): Promise<string> {
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:blocked-${blocked.id}@myuno.local`,
+      `UID:${icalEventUid('blocked', blocked.id)}`,
       `DTSTAMP:${modified}`,
       `CREATED:${created}`,
       `LAST-MODIFIED:${modified}`,
       `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
       `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `SUMMARY:Blocked - ${escapeText(blocked.reason)}`,
-      `DESCRIPTION:${blocked.note ? escapeText(blocked.note) : ''}`,
-      `TRANSP:TRANSPARENT`,
-      'END:VEVENT',
-    );
-  }
-
-  // Add pricing rules as events (for reference)
-  for (const rule of pricingRules) {
-    const startDate = new Date(rule.startDate);
-    const endDate = new Date(rule.endDate);
-    const created = formatDateTime(rule.createdAt);
-    const modified = formatDateTime(rule.updatedAt);
-
-    lines.push(
-      'BEGIN:VEVENT',
-      `UID:pricing-${rule.id}@myuno.local`,
-      `DTSTAMP:${modified}`,
-      `CREATED:${created}`,
-      `LAST-MODIFIED:${modified}`,
-      `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `SUMMARY:Price: ${(rule.nightlyThb / 100).toFixed(2)} THB${rule.label ? ` - ${escapeText(rule.label)}` : ''}`,
-      `TRANSP:TRANSPARENT`,
+      // The reason and the operator's note are internal. A blocked night is
+      // simply unavailable, and it must read OPAQUE — TRANSPARENT told the
+      // consuming calendar the night was free, which is the opposite of a block.
+      `SUMMARY:Unavailable`,
+      `TRANSP:OPAQUE`,
       'END:VEVENT',
     );
   }
@@ -122,20 +107,31 @@ async function generateICalContent(unitId: string): Promise<string> {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { unitId: string } }
 ) {
   try {
     const { unitId } = params;
 
-    // Verify unit exists and is accessible (no auth check for public iCal export)
+    // The feed is fetched by Airbnb, Booking.com and Google Calendar on a
+    // schedule, with no session — so the URL carries the authority. Until this
+    // gate existed, anyone holding a unit UUID could read that unit's occupancy.
+    // 404 rather than 401: a wrong token must not confirm the unit exists.
+    // Parsed from req.url rather than req.nextUrl: the latter exists only on a
+    // NextRequest, and the route handler is also invoked directly with a plain
+    // Request by the integration tests.
+    const token = new URL(req.url).searchParams.get('token');
+    if (!verifyIcalFeedToken(unitId, token)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     const unit = await prisma.unit.findUnique({
       where: { id: unitId },
       select: { id: true },
     });
 
     if (!unit) {
-      return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const iCalContent = await generateICalContent(unitId);

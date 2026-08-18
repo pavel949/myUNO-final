@@ -32,7 +32,8 @@ export default async function IntegrationsPage() {
     'admin.integrations.about_active': 'Active — last sync succeeded; calendar data is synchronized',
     'admin.integrations.about_error': 'Error — last sync failed; check the error message and retry via cron',
     'admin.integrations.about_disabled': 'Disabled — integration manually disabled; no syncs will occur',
-    'admin.integrations.about_export': 'Per-unit iCal export is available at /api/units/[unitId]/ical/export',
+    'admin.integrations.about_export':
+      'Per-unit iCal export is at /api/units/[unitId]/ical/export and requires the unit’s feed token in the URL. Treat that link as a secret — anyone holding it can read the unit’s availability.',
     'admin.integrations.about_conflicts':
       'Conflict detection is active — OTA bookings overlapping platform bookings are logged',
   });

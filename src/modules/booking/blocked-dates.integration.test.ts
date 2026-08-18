@@ -158,9 +158,22 @@ describe('blocked dates block a booking (P0-4)', () => {
       });
       const blocks = await db.blockedDate.count({ where: { unitId: unit.id } });
 
-      // Exactly one side owns the range — never both.
+      // Exactly one side owns the range — never both. This is the invariant.
       expect(bookings + blocks).toBe(1);
-      expect(results.every((r) => r.status === 'fulfilled')).toBe(true);
+
+      // Which side wins depends on which transaction commits first, and losing
+      // is a legitimate outcome rather than an error to be avoided: the importer
+      // records a conflict and returns, while the booking refuses with
+      // DOUBLE_BOOK. What must never happen is the booking failing for some
+      // other reason — a driver error escaping, say — so that is what is checked.
+      const [bookingResult, importResult] = results;
+      if (bookingResult.status === 'rejected') {
+        expect(bookingResult.reason).toMatchObject({ code: 'DOUBLE_BOOK' });
+        expect(blocks).toBe(1);
+      } else {
+        expect(bookings).toBe(1);
+      }
+      expect(importResult.status).toBe('fulfilled');
     });
   });
 });

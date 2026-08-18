@@ -247,6 +247,13 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
   - **The ruling needed:** should an inactive mandate block every later step, as doc 07 reads — or is the current behaviour what operations actually want, in which case doc 07 should be corrected instead?
 - **Fixed meanwhile, needing no ruling:** a refused go-live used to leave `golive_checklist` marked done while the unit stayed draft — the step was written before the all-steps-complete check, with no transaction to undo it. The check now runs before any write, and the tick plus the go-live are one transaction.
 
+### Q44. Row-level security is switched on everywhere and doing nothing — OPEN
+- **Source:** inspecting the Supabase database while resolving the Prisma Cloud check (doc 15 §2.1). Every one of the 73 tables reports `rls_enabled: true`.
+- **Why that is not the reassurance it looks like:** the application connects through Prisma as the project's Postgres role, which **bypasses RLS entirely**. So today RLS constrains nothing the platform does — every access rule that actually holds is the server-side scoping in the query layer (`core.can()` plus scoped `where` clauses, doc 03). RLS being on is the default Supabase applies to new tables, not a decision this project made.
+- **The risk is the appearance, not the state.** Nothing is currently unsafe: the app enforces scope in code, and RLS with no policies denies rather than allows, so an anon-key client would be refused rather than let through. The hazard is someone reading "RLS enabled" on 73 tables and concluding the database is defended at the row level when the defence lives entirely in application code — and then, say, shipping a browser client with the anon key on that assumption.
+- **Not verified from here:** whether any policies are actually defined. The tooling available in that session could list tables but not policies, so this records what was seen and not more.
+- **Needs from founder (with counsel where PII is involved):** whether RLS is meant to be a real second layer for the 🔒 tables doc 12 names — `identity`, `booking_guest`, `media_asset`, `tm30_filing` — in which case policies need writing and testing; or whether it is understood to be inert, in which case that should be stated in doc 12 so nobody mistakes it for protection. Doing nothing is a defensible answer; leaving it ambiguous is not.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

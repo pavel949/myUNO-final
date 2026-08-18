@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { reportError } from '@/lib/observability';
 
 interface AuditLogInput {
   actorIdentityId?: string; // system actions may be null
@@ -28,8 +29,18 @@ export async function logAudit(input: AuditLogInput): Promise<void> {
       },
     });
   } catch (error) {
-    // Never fail the primary action because of audit logging failure
-    console.error('Audit logging error:', error);
+    // Best-effort by design: a role grant must not fail because the trail could
+    // not be written. But CLAUDE.md promises that every grant, config change and
+    // PII access *is* audited, so a swallowed failure is a broken promise nobody
+    // can see. It goes through the structured logger, carrying enough to
+    // reconstruct the entry by hand — never a bare console.error.
+    reportError(error, {
+      auditWriteFailed: true,
+      action,
+      entityType,
+      entityId,
+      actorIdentityId: actorIdentityId ?? null,
+    });
   }
 }
 

@@ -1,5 +1,6 @@
 import { PrismaClient, BlockedDateReason, Booking } from '@prisma/client';
 import { recordIntegrationSync } from './integrations';
+import { createNotification } from '@/modules/comms';
 
 export interface ICalEvent {
   uid: string; // Unique identifier for idempotency
@@ -61,7 +62,8 @@ async function getExistingBlockedDate(db: PrismaClient, unitId: string, uid: str
 
 /**
  * Import OTA bookings from iCal events, creating BlockedDate entries (reason: ota_import)
- * and detecting conflicts with platform bookings. Conflicts are logged but not created.
+ * and detecting conflicts with platform bookings. A conflicting range is not
+ * imported; it is returned for `createConflictNotifications` to raise.
  *
  * Idempotency: uses externalRef (OTA UID) to prevent duplicate imports.
  */
@@ -145,26 +147,75 @@ export async function importICalEvents(
 }
 
 /**
- * Mark OTA imports as conflicts and log for admin resolution (N-25).
- * Called after import to handle the conflict banners and admin alerts.
+ * Tell ops that an OTA feed clashes with a stay we have already sold (N-25).
  *
- * Stub for loop one: In production, this would:
- * 1. Find ops staff identities for this project
- * 2. Create notification for each with type='ops_ical_conflict'
- * 3. Set params JSON with conflict details (event UID, dates, booking ID)
- * 4. Use titleKey/bodyKey from content layer (N-25)
+ * The platform is the system of record, so the import never resolves the clash
+ * itself — it refuses to write the block and raises the conflict for a human.
  */
 export async function createConflictNotifications(
+  db: PrismaClient,
+  unitId: string,
   conflicts: Array<{
     event: ICalEvent;
     conflictingBooking: Booking;
   }>,
 ) {
-  if (conflicts.length > 0) {
-    console.warn(
-      `[iCal import] ${conflicts.length} conflicts detected; create N-25 notifications when ops identity routing available`
-    );
+  if (conflicts.length === 0) return { notified: 0 };
+
+  // N-25 (doc 11): the ops lead and admins are told. This used to be a
+  // console.warn with a note to build it "when ops identity routing is
+  // available" — which meant a villa sold twice across two channels produced a
+  // line in a log nobody reads, on a schedule nobody watches.
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, name: true, projectId: true },
+  });
+  if (!unit) return { notified: 0 };
+
+  // Ops staff on this unit's project, plus every admin. Roles are data, so this
+  // is a query rather than a hard-coded recipient list (doc 03).
+  const [opsRoles, admins] = await Promise.all([
+    db.roleAssignment.findMany({
+      where: {
+        role: { in: ['staff_ops', 'onsite_host'] },
+        status: 'active',
+        OR: [{ projectId: unit.projectId }, { unitId: unit.id }],
+      },
+      select: { identityId: true },
+    }),
+    db.identity.findMany({
+      where: { isAdmin: true, status: 'active' },
+      select: { id: true },
+    }),
+  ]);
+
+  const recipients = Array.from(
+    new Set([...opsRoles.map((r) => r.identityId), ...admins.map((a) => a.id)])
+  );
+
+  let notified = 0;
+  for (const identityId of recipients) {
+    // One notification per conflicting stay, not one per sync: an operator
+    // needs to know which booking clashes, and a summary count would send them
+    // hunting for it.
+    for (const conflict of conflicts) {
+      const created = await createNotification(db, {
+        identityId,
+        type: 'ops_ical_conflict',
+        titleKey: 'notify.ops.ical_conflict.title',
+        bodyKey: 'notify.ops.ical_conflict.body',
+        params: {
+          unit_name: unit.name,
+          booking_id: conflict.conflictingBooking.id,
+          start_date: conflict.event.dtStart.toISOString().slice(0, 10),
+          end_date: conflict.event.dtEnd.toISOString().slice(0, 10),
+        },
+      });
+      if (created) notified += 1;
+    }
   }
+
+  return { notified };
 }
 
 /**

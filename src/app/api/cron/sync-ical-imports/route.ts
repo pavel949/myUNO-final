@@ -1,102 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { IntegrationKey, IntegrationStatus } from '@prisma/client';
+import { syncAllICalAccounts } from '@/modules/integrations';
 
 /**
- * Cron job to sync iCal imports from OTA sources.
- * Called periodically (e.g., hourly) to fetch updates from Airbnb, Booking.com, Agoda.
+ * Pull OTA calendars into the platform (T-039, doc 07 F-OPS-4).
  *
- * For loop one, this is a stub that:
- * 1. Identifies active iCal integrations
- * 2. Logs that they need to be synced (adapter stubs per Q-19)
- * 3. Records sync attempt for health monitoring
+ * Every active iCal integration is fetched, parsed, and imported as
+ * `blocked_date` rows so a unit sold on Airbnb stops being sellable here.
+ * Overlaps with existing platform bookings are recorded as conflicts and
+ * notified rather than silently resolved — the platform is the system of record,
+ * so an OTA cannot cancel one of our stays.
  *
- * Real sync logic (fetch from OTA APIs, parse iCal, import) comes after Q-19 is answered.
+ * This handler previously stamped `lastSyncAt` and cleared `lastError` without
+ * fetching anything, which meant the integration health panel reported every
+ * feed green while nothing had ever been read. The work now lives in
+ * `syncAllICalAccounts`, which only records success when a feed was actually
+ * read, and leaves `lastSyncAt` untouched on failure so a feed broken for a week
+ * cannot look freshly synced.
  */
 export async function POST(req: NextRequest) {
-  // Verify cron secret
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers.get('authorization');
 
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    // Find all active iCal integration accounts
-    const integrations = await prisma.integrationAccount.findMany({
-      where: {
-        integrationKey: {
-          in: [
-            IntegrationKey.ical_airbnb,
-            IntegrationKey.ical_booking,
-            IntegrationKey.ical_agoda,
-          ],
-        },
-        status: IntegrationStatus.active,
-      },
-      include: {
-        unit: true,
-        project: true,
-      },
-    });
+    const summary = await syncAllICalAccounts(prisma);
 
-    const results = {
-      totalIntegrations: integrations.length,
-      synced: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
-    for (const integration of integrations) {
-      try {
-        // Stub: In production, this would:
-        // 1. Fetch the OTA iCal URL (from config.ical_url)
-        // 2. Parse the iCal events
-        // 3. Call importICalEvents() to detect conflicts and create BlockedDates
-        // 4. Call createConflictNotifications() for any conflicts
-        //
-        // For now, just record the sync attempt.
-
-        await prisma.integrationAccount.update({
-          where: { id: integration.id },
-          data: {
-            lastSyncAt: new Date(),
-            status: IntegrationStatus.active,
-            lastError: null,
-          },
-        });
-
-        results.synced++;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        results.failed++;
-        results.errors.push(
-          `${integration.integrationKey} (unit: ${integration.unit?.id}): ${errorMsg}`
-        );
-
-        // Record error in integration account
-        await prisma.integrationAccount.update({
-          where: { id: integration.id },
-          data: {
-            lastSyncAt: new Date(),
-            status: IntegrationStatus.error,
-            lastError: errorMsg,
-          },
-        });
-      }
-    }
-
-    return NextResponse.json(results, { status: 200 });
+    // 200 even when individual feeds failed: the job did its work, and the
+    // per-feed state is on the accounts. A non-2xx here would make the cron
+    // runner retry the healthy feeds too.
+    return NextResponse.json(summary, { status: 200 });
   } catch (error) {
     console.error('[iCal sync cron] Error:', error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to sync iCal imports',
-      },
+      { error: error instanceof Error ? error.message : 'Failed to sync iCal imports' },
       { status: 500 }
     );
   }

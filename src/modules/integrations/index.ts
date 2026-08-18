@@ -22,6 +22,23 @@ export {
 } from './ical-import';
 
 export {
+  syncICalAccount,
+  syncAllICalAccounts,
+  readFeedUrl,
+  ICAL_INTEGRATION_KEYS,
+  type SyncOneResult,
+  type SyncAllResult,
+} from './ical-sync';
+
+export { parseICal, type ParseResult } from './ical-parse';
+
+export {
+  fetchICalFeed,
+  assertSafeFeedUrl,
+  ICalFetchError,
+} from './ical-fetch';
+
+export {
   registerWhatsAppAccount,
   registerTelegramAccount,
   sendMessengerMessage,

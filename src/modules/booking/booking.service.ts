@@ -146,11 +146,54 @@ async function findBlockingConflict(
 }
 
 /**
- * Category-first booking (LY-6): pick the first available live unit of a
- * sellable category for the requested dates — hotel-style auto-assignment.
- * Stable order (by name) keeps assignment deterministic; the double-booking
- * guard inside createBooking stays the race-safety net.
- * Returns null when the category has no free unit for the range.
+ * Every live unit of a sellable category that is free for the range (LY-6),
+ * in a stable order so assignment is deterministic.
+ *
+ * One query, not one per unit. The old loop fetched the category then ran two
+ * queries per unit, so a forty-villa category cost eighty-one round trips on
+ * every search. The overlap and hold-expiry rules are the same ones
+ * `findBlockingConflict` applies — a lapsed `pending_payment` hold does not
+ * block, a live one does.
+ *
+ * Returns the whole list rather than the first match because the caller needs
+ * somewhere to go when it loses a race: the availability read cannot be held
+ * against a concurrent booking, and refusing the guest while a sibling villa
+ * stands empty is a lost sale, not a safety measure.
+ */
+export async function findAvailableUnitsForCategory(
+  db: PrismaClient,
+  projectId: string,
+  categoryKey: string,
+  startDate: Date,
+  endDate: Date
+): Promise<Array<{ id: string; instantBook: boolean }>> {
+  const now = new Date();
+  const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
+
+  return db.unit.findMany({
+    where: {
+      projectId,
+      categoryKey,
+      status: 'live',
+      bookings: {
+        none: {
+          ...overlaps,
+          OR: [
+            { status: { in: ['confirmed', 'checked_in'] } },
+            { status: 'pending_payment', holdExpiresAt: { gt: now } },
+          ],
+        },
+      },
+      blockedDates: { none: overlaps },
+    },
+    orderBy: { name: 'asc' },
+    select: { id: true, instantBook: true },
+  });
+}
+
+/**
+ * The first free unit of a category, or null. Kept as the single-answer form of
+ * `findAvailableUnitsForCategory` for callers that only want a yes/no.
  */
 export async function resolveUnitForCategory(
   db: PrismaClient,
@@ -159,35 +202,14 @@ export async function resolveUnitForCategory(
   startDate: Date,
   endDate: Date
 ): Promise<{ id: string; instantBook: boolean } | null> {
-  const units = await db.unit.findMany({
-    where: { projectId, categoryKey, status: 'live' },
-    orderBy: { name: 'asc' },
-    select: { id: true, instantBook: true },
-  });
-
-  for (const unit of units) {
-    const conflictingBooking = await findBlockingConflict(
-      db,
-      unit.id,
-      startDate,
-      endDate
-    );
-    if (conflictingBooking) continue;
-
-    const blocked = await db.blockedDate.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lt: endDate },
-        endDate: { gt: startDate },
-      },
-      select: { id: true },
-    });
-    if (blocked) continue;
-
-    return unit;
-  }
-
-  return null;
+  const [first] = await findAvailableUnitsForCategory(
+    db,
+    projectId,
+    categoryKey,
+    startDate,
+    endDate
+  );
+  return first ?? null;
 }
 
 export async function createBooking(

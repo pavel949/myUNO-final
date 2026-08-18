@@ -5,6 +5,7 @@
 export {
   createBooking,
   resolveUnitForCategory,
+  findAvailableUnitsForCategory,
   approveBookingRequest,
   declineBookingRequest,
   confirmBooking,

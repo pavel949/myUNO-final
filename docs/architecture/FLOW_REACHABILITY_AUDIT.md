@@ -55,11 +55,11 @@ Not reachable:
 - **F-FIN-2 (payouts and reconciliation)** — `recordOwnerPayout`, `recordProviderRemittance`, `markPayoutReconciled` have no callers; the `/app/admin/payouts` page exists but is not in the admin navigation.
 - **F-DIS-1/2 (damage claims, disputes)** — `fileDepositClaim`, `approveClaim`, `rejectClaim` have no callers. Deposits can be scheduled but a claim cannot be filed.
 - **F-MC-2** — beyond the single `/mc` page.
-- **Announcements** — `createAnnouncement`, `publishAnnouncement` have no callers. Announcements render on the home space and can never be written.
+- ~~**Announcements**~~ — **built** (`/app/admin/announcements`, `POST /api/announcements` + publish/withdraw). Two scoping bugs surfaced underneath the missing composer and are fixed with it: the home space rendered *every* published announcement regardless of `audience`, so an owners-only notice appeared on a guest's screen and an expired one never went away; and publishing to `guests_in_stay` notified **nobody**, because the audience resolved through a `guest` role row that booking has never written — the publish succeeded and reached zero people. In-stay membership now derives from the booking. `postedAs` is resolved server-side from the poster's role and is not accepted from the request: it is the signature on a building-wide broadcast, and a client-chosen value would let staff speak as the juristic person.
 
 ## 4. Admin panel
 
-Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. Still missing: **Tickets & Announcements**, **Compliance**.
+Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. **Announcements is now built** (`/app/admin/announcements`) — draft, then publish as a separate deliberate act, with withdraw. Still missing: **Tickets**, **Compliance**.
 
 ~~**Finance is built but invisible.**~~ **Fixed:** ledger, statements and payouts are now in the sidebar. Reconciliation still sits outside the admin group at `/admin/finance/reconciliation`.
 
@@ -88,7 +88,8 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 3. ~~**Record a cost (F-OPS-3)**~~ **Done** — `/ops/costs`. The gap was the screen, not the route; see §3.
 4. ~~**People & Roles admin**~~ **Done** — `/app/admin/people`.
 5. ~~**Audit log viewer**~~ **Done** — `/app/admin/audit`, with a recorded CSV export for doc 12 §6's monthly compliance report. ~~Finance in the nav~~ done.
-6. **Announcements composer**, then **claim account (F-AUTH-4)**, then **damage claims (F-DIS-1)**.
+6. ~~**Announcements composer**~~ **Done** — admin-side. MC and juristic members can already post through the same route (`can()` scopes it by project); what they lack is a screen of their own, which belongs with item 7.
+   Then **claim account (F-AUTH-4)**, then **damage claims (F-DIS-1)**.
 7. **Resident and juristic surfaces**, **MC boards**, **the remaining five ops boards**, **provider remittances**.
 8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.
 

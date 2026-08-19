@@ -59,6 +59,8 @@ export {
 
 export {
   createAnnouncement,
+  resolvePostingAuthority,
+  inStayGuestIdentityIds,
   publishAnnouncement,
   unpublishAnnouncement,
   updateAnnouncement,
@@ -68,4 +70,5 @@ export {
   getUnreadCount,
   type CreateAnnouncementInput,
   type UpdateAnnouncementInput,
+  type PostingAuthority,
 } from './announcement.service';

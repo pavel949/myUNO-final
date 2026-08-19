@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { listPublicServices } from '@/modules/services';
+import { getProjectAnnouncements } from '@/modules/comms';
 
 export interface InStayHomeSpaceData {
   booking: {
@@ -132,23 +133,22 @@ export async function getInStayHomeSpace(
     take: 10,
   });
 
-  // Fetch announcements for the project
-  const announcements = await db.announcement.findMany({
-    where: {
-      projectId: booking.unit.projectId,
-      status: 'published',
-    },
-    select: {
-      id: true,
-      title: true,
-      body: true,
-      createdAt: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    take: 5,
-  });
+  // Announcements this guest is actually an audience for.
+  //
+  // This used to be a raw `findMany` on project + published, which ignored the
+  // `audience` field entirely: an announcement addressed to owners or to staff
+  // appeared on a guest's home space, and an expired one never went away. The
+  // comms module already knew how to do this correctly — the duplicate query
+  // here simply did not ask it. `guests_in_stay` is passed explicitly because
+  // this viewer's membership of that audience comes from having a stay in
+  // progress, not from a role row.
+  const visible = await getProjectAnnouncements(
+    db,
+    booking.unit.projectId,
+    guestIdentityId,
+    { alsoInclude: ['guests_in_stay'] }
+  );
+  const announcements = visible.slice(0, 5);
 
   // The rail is scoped to this stay's project by the services module itself,
   // so a guest is never shown a service another project's providers offer.

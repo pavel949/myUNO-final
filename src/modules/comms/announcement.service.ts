@@ -15,6 +15,59 @@ export interface CreateAnnouncementInput {
   expiresAt?: Date;
 }
 
+/** Who an announcement is signed by, and on whose behalf. */
+export interface PostingAuthority {
+  postedAs: AnnouncementPostedAs;
+  organizationId: string | null;
+}
+
+/**
+ * Work out, from the roles a person actually holds on this project, the voice
+ * they are allowed to post in.
+ *
+ * This must never be taken from the request. `postedAs` is the signature on a
+ * project-wide broadcast: a staff member who could send it as
+ * `juristic_person` would be putting words in the mouth of the legal body that
+ * governs the building. CLAUDE.md is explicit that announcements come from
+ * myUNO or the juristic person / management company, and which of the three it
+ * is follows from the role, not from a form field.
+ *
+ * Throws with `code: 'NOT_AUTHORIZED'` when the person has no voice here at all.
+ */
+export async function resolvePostingAuthority(
+  db: PrismaClient,
+  identityId: string,
+  projectId: string,
+  isAdmin: boolean
+): Promise<PostingAuthority> {
+  if (isAdmin) return { postedAs: 'myuno', organizationId: null };
+
+  const assignments = await db.roleAssignment.findMany({
+    where: {
+      identityId,
+      status: 'active',
+      role: { in: ['staff_ops', 'mc_member', 'juristic_member'] },
+      // Platform-scoped staff post anywhere; everyone else must hold the role
+      // on this project. A management-company member for one building has no
+      // standing in another.
+      OR: [{ projectId }, { projectId: null, scopeType: 'platform' }],
+    },
+  });
+
+  const staff = assignments.find((a) => a.role === 'staff_ops');
+  if (staff) return { postedAs: 'myuno', organizationId: null };
+
+  const mc = assignments.find((a) => a.role === 'mc_member');
+  if (mc) return { postedAs: 'management_company', organizationId: mc.organizationId };
+
+  const juristic = assignments.find((a) => a.role === 'juristic_member');
+  if (juristic) return { postedAs: 'juristic_person', organizationId: juristic.organizationId };
+
+  const error = new Error('You cannot post announcements for this project');
+  (error as { code?: string }).code = 'NOT_AUTHORIZED';
+  throw error;
+}
+
 export interface UpdateAnnouncementInput {
   title?: string;
   body?: string;
@@ -71,7 +124,8 @@ export async function createAnnouncement(
 export async function publishAnnouncement(
   db: PrismaClient,
   announcementId: string,
-  identityId: string
+  identityId: string,
+  isAdmin = false
 ): Promise<void> {
   const announcement = await db.announcement.findUnique({
     where: { id: announcementId },
@@ -82,11 +136,21 @@ export async function publishAnnouncement(
     throw new Error(`Announcement ${announcementId} not found`);
   }
 
-  // Permission check: creator or admin can publish
+  // The creator, or an admin. The admin arm used to be a TODO, which meant a
+  // draft written by someone who had since left could never be published or
+  // withdrawn by anyone.
   const creator = announcement.createdByIdentityId === identityId;
-  if (!creator) {
-    // TODO: Check if admin (once core.can() is ready)
-    throw new Error('Not authorized to publish this announcement');
+  if (!creator && !isAdmin) {
+    const error = new Error('Not authorized to publish this announcement');
+    (error as { code?: string }).code = 'NOT_AUTHORIZED';
+    throw error;
+  }
+
+  // Publishing twice would notify the whole project twice.
+  if (announcement.status === 'published') {
+    const error = new Error('This announcement is already published');
+    (error as { code?: string }).code = 'ALREADY_PUBLISHED';
+    throw error;
   }
 
   // Update status to published
@@ -233,7 +297,16 @@ export async function deleteAnnouncement(
 export async function getProjectAnnouncements(
   db: PrismaClient,
   projectId: string,
-  identityId: string
+  identityId: string,
+  options?: {
+    /**
+     * Audiences the caller knows apply to this viewer for a reason that is not
+     * a role row. The in-stay home space passes `guests_in_stay`: a guest's
+     * membership of that audience comes from having a booking here right now,
+     * and booking has never written a `guest` RoleAssignment.
+     */
+    alsoInclude?: AnnouncementAudience[];
+  }
 ): Promise<any[]> {
   // Get the identity's roles in this project
   const roleAssignments = await db.roleAssignment.findMany({
@@ -274,8 +347,9 @@ export async function getProjectAnnouncements(
   });
 
   // Filter by audience and return with read status
+  const alsoInclude = new Set(options?.alsoInclude ?? []);
   return announcements
-    .filter((a) => audienceMatches(a.audience, userRoles))
+    .filter((a) => alsoInclude.has(a.audience) || audienceMatches(a.audience, userRoles))
     .map((a) => ({
       ...a,
       isRead: a.reads.length > 0,
@@ -407,44 +481,77 @@ async function getAudienceIdentities(
   projectId: string,
   audience: AnnouncementAudience
 ): Promise<string[]> {
-  let roleFilter: RoleType[];
+  const recipients = new Set<string>();
+
+  const addRoles = async (roles: RoleType[] | undefined) => {
+    const assignments = await db.roleAssignment.findMany({
+      where: {
+        projectId,
+        status: 'active',
+        ...(roles ? { role: { in: roles } } : {}),
+      },
+      select: { identityId: true },
+      distinct: ['identityId'],
+    });
+    for (const a of assignments) recipients.add(a.identityId);
+  };
+
+  const addGuestsInStay = async () => {
+    for (const g of await inStayGuestIdentityIds(db, projectId)) recipients.add(g);
+  };
 
   switch (audience) {
     case 'everyone':
-      // All active roles in project
-      const allRoles = await db.roleAssignment.findMany({
-        where: {
-          projectId,
-          status: 'active',
-        },
-        select: { identityId: true },
-        distinct: ['identityId'],
-      });
-      return allRoles.map((r) => r.identityId);
-
+      await addRoles(undefined);
+      // A guest staying in the building right now is unmistakably part of
+      // "everyone", and without this they were the one group a project-wide
+      // announcement never reached.
+      await addGuestsInStay();
+      break;
     case 'owners':
-      roleFilter = ['owner'];
+      await addRoles(['owner']);
       break;
     case 'residents':
-      roleFilter = ['resident'];
+      await addRoles(['resident']);
       break;
     case 'guests_in_stay':
-      roleFilter = ['guest'];
+      // Deliberately *not* a role lookup. Booking has never written a `guest`
+      // RoleAssignment, so filtering on one sent this audience to nobody at
+      // all — the announcement published, notified zero people, and looked
+      // successful. Membership here is having a stay in progress.
+      await addGuestsInStay();
       break;
     case 'staff':
-      roleFilter = ['staff_ops', 'onsite_host'];
+      await addRoles(['staff_ops', 'onsite_host']);
       break;
   }
 
-  const roles = await db.roleAssignment.findMany({
+  return [...recipients];
+}
+
+/**
+ * Everyone whose stay in this project is under way: checked in, or confirmed
+ * with today inside the dates. Compared on the date alone because a stay's
+ * dates are dates, not instants.
+ */
+export async function inStayGuestIdentityIds(
+  db: PrismaClient,
+  projectId: string,
+  now: Date = new Date()
+): Promise<string[]> {
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  const bookings = await db.booking.findMany({
     where: {
       projectId,
-      role: { in: roleFilter },
-      status: 'active',
+      OR: [
+        { status: 'checked_in' },
+        { status: 'confirmed', startDate: { lte: today }, endDate: { gte: today } },
+      ],
     },
-    select: { identityId: true },
-    distinct: ['identityId'],
+    select: { guestIdentityId: true },
+    distinct: ['guestIdentityId'],
   });
 
-  return roles.map((r) => r.identityId);
+  return bookings.map((b) => b.guestIdentityId);
 }

@@ -2499,6 +2499,41 @@ const AREA_LABEL_KEYS: KeyDef[] = [
   { key: 'area.layan.name', namespace: 'area', description: 'Area name: Layan', en: 'Layan', ru: 'Лаян', status: NR },
 ];
 
+const ACCOUNT_KEYS: KeyDef[] = [
+  // The account surface (doc 08 §5 `/app/account`). The notification half is
+  // the PDPA withdrawal surface, so its wording matters more than most.
+  { key: 'nav.account', namespace: 'nav', description: 'Navbar: link to your account', en: 'Account', ru: 'Аккаунт', status: NR },
+  { key: 'account.title', namespace: 'account', description: 'Account page title', en: 'Your account', ru: 'Ваш аккаунт', status: NR },
+  { key: 'account.profile.title', namespace: 'account', description: 'Account: profile section', en: 'Profile', ru: 'Профиль', status: NR },
+  { key: 'account.profile.first_name', namespace: 'account', description: 'Account: first name field', en: 'First name', ru: 'Имя', status: NR },
+  { key: 'account.profile.last_name', namespace: 'account', description: 'Account: last name field', en: 'Last name', ru: 'Фамилия', status: NR },
+  { key: 'account.profile.email', namespace: 'account', description: 'Account: email label', en: 'Email', ru: 'Эл. почта', status: NR },
+  { key: 'account.profile.phone', namespace: 'account', description: 'Account: phone label', en: 'Phone', ru: 'Телефон', status: NR },
+  { key: 'account.profile.verified', namespace: 'account', description: 'Account: contact verified', en: 'Verified', ru: 'Подтверждён', status: NR },
+  { key: 'account.profile.unverified', namespace: 'account', description: 'Account: contact not verified', en: 'Not verified', ru: 'Не подтверждён', status: NR },
+  { key: 'account.profile.contact_note', namespace: 'account', description: 'Account: why email and phone are not editable here', en: 'To change your email or phone, contact us — both are used to recover your account.', ru: 'Чтобы изменить почту или телефон, свяжитесь с нами — они используются для восстановления доступа.', status: NR },
+  { key: 'account.locale.title', namespace: 'account', description: 'Account: language section', en: 'Language', ru: 'Язык', status: NR },
+  { key: 'account.locale.en', namespace: 'account', description: 'Language option: English', en: 'English', ru: 'Английский', status: NR },
+  { key: 'account.locale.ru', namespace: 'account', description: 'Language option: Russian', en: 'Russian', ru: 'Русский', status: NR },
+  { key: 'account.locale.th', namespace: 'account', description: 'Language option: Thai', en: 'Thai', ru: 'Тайский', status: NR },
+  { key: 'account.password.title', namespace: 'account', description: 'Account: password section', en: 'Password', ru: 'Пароль', status: NR },
+  { key: 'account.password.current', namespace: 'account', description: 'Account: current password field', en: 'Current password', ru: 'Текущий пароль', status: NR },
+  { key: 'account.password.new', namespace: 'account', description: 'Account: new password field', en: 'New password', ru: 'Новый пароль', status: NR },
+  { key: 'account.password.submit', namespace: 'account', description: 'Account: change password button', en: 'Change password', ru: 'Изменить пароль', status: NR },
+  { key: 'account.password.changed', namespace: 'account', description: 'Account: password changed confirmation', en: 'Password changed.', ru: 'Пароль изменён.', status: NR },
+  { key: 'account.password.none', namespace: 'account', description: 'Account: no password set on this identity', en: 'This account signs in with a link. Use the reset email to set a password.', ru: 'Вход в этот аккаунт — по ссылке. Установите пароль через письмо для сброса.', status: NR },
+  { key: 'account.notifications.title', namespace: 'account', description: 'Account: notifications section', en: 'Notifications', ru: 'Уведомления', status: NR },
+  { key: 'account.notifications.intro', namespace: 'account', description: 'Account: notifications explanation', en: 'Choose what reaches you. Some messages cannot be turned off.', ru: 'Выберите, что вам приходит. Некоторые сообщения отключить нельзя.', status: NR },
+  { key: 'account.notifications.in_app', namespace: 'account', description: 'Notification channel: in app', en: 'In app', ru: 'В приложении', status: NR },
+  { key: 'account.notifications.email', namespace: 'account', description: 'Notification channel: email', en: 'Email', ru: 'Почта', status: NR },
+  { key: 'account.notifications.required', namespace: 'account', description: 'Account: notification cannot be muted', en: 'Always on', ru: 'Всегда включено', status: NR },
+  { key: 'account.notifications.required_why', namespace: 'account', description: 'Account: why a notification cannot be muted', en: 'This one carries a legal or payment obligation, so it cannot be silenced.', ru: 'Это уведомление связано с юридическим или платёжным обязательством, поэтому его нельзя отключить.', status: NR },
+  { key: 'account.save', namespace: 'account', description: 'Account: save button', en: 'Save', ru: 'Сохранить', status: NR },
+  { key: 'account.saving', namespace: 'account', description: 'Account: saving state', en: 'Saving…', ru: 'Сохраняем…', status: NR },
+  { key: 'account.saved', namespace: 'account', description: 'Account: saved confirmation', en: 'Saved.', ru: 'Сохранено.', status: NR },
+  { key: 'account.error', namespace: 'account', description: 'Account: generic save failure', en: 'That did not save. Please try again.', ru: 'Не удалось сохранить. Попробуйте ещё раз.', status: NR },
+];
+
 const STATUS_LABEL_KEYS: KeyDef[] = [
   // Missing BookingStatus labels (doc 05 §4: every doc 02 enum label under common.*)
   { key: 'common.status.booking.checked_in', namespace: 'common', description: 'Booking status: checked in', en: 'Checked in', ru: 'Заселён', status: NR },
@@ -2562,7 +2597,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...STATUS_LABEL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

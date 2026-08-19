@@ -27,6 +27,7 @@ export interface NavbarLabels {
   mcPortal: string;
   opsBoard: string;
   admin: string;
+  account: string;
   menu: string;
 }
 
@@ -73,6 +74,8 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
           ? [{ href: '/ops', label: labels.opsBoard }]
           : []),
         ...(user.isAdmin ? [{ href: '/app/admin/signals', label: labels.admin }] : []),
+        // Last, and for everyone: an account is not a role, it is the person.
+        { href: '/account', label: labels.account },
       ]
     : [];
 

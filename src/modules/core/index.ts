@@ -66,3 +66,18 @@ export {
   runRetentionJobs,
   scrubExpiredPassportData,
 } from './retention.service';
+
+// A person's own account: who they are, how they sign in, and what reaches
+// them. The notification half is the PDPA withdrawal surface, not a nicety.
+export {
+  getAccountProfile,
+  updateAccountProfile,
+  changeAccountPassword,
+  getNotificationSettings,
+  setNotificationPreference,
+  SUPPORTED_LOCALES,
+  UNMUTABLE_TYPES,
+  type AccountProfile,
+  type UpdateProfileInput,
+  type NotificationSetting,
+} from './account.service';

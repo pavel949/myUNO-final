@@ -38,6 +38,7 @@ export default async function RootLayout({
     'nav.mc_portal': 'MC portal',
     'nav.ops': 'Ops',
     'nav.admin': 'Admin',
+    'nav.account': 'Account',
     'nav.menu': 'Menu',
   });
 
@@ -90,6 +91,7 @@ export default async function RootLayout({
             mcPortal: navLabels['nav.mc_portal'],
             opsBoard: navLabels['nav.ops'],
             admin: navLabels['nav.admin'],
+            account: navLabels['nav.account'],
             menu: navLabels['nav.menu'],
           }}
           bellLabels={{

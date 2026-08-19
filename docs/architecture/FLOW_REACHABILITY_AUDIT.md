@@ -59,9 +59,9 @@ Not reachable:
 
 ## 4. Admin panel
 
-Doc 08 §6 specifies twelve sections. Missing entirely: **People & Roles** (the APIs exist and nothing calls them, so no role can be granted through the app), **Tickets & Announcements**, **Compliance**, **Audit log** (every action writes audit rows; nothing reads them).
+Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. Still missing: **Tickets & Announcements**, **Compliance**, **Audit log** (every action writes audit rows; nothing reads them).
 
-**Finance is built but invisible.** `/app/admin/ledger`, `/statements` and `/payouts` all exist as pages, and **none is in the sidebar** — the nav has eleven links, none financial. Reconciliation sits outside the admin group at `/admin/finance/reconciliation`.
+~~**Finance is built but invisible.**~~ **Fixed:** ledger, statements and payouts are now in the sidebar. Reconciliation still sits outside the admin group at `/admin/finance/reconciliation`.
 
 ## 5. Data model
 
@@ -79,11 +79,11 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 
 ## 6. What to build, in the order I would do it
 
-1. **Reconnect the booking state machine.** Make the routes call the services. This is correctness, not tidiness: it is the difference between the tested path and the running path being the same code.
-2. **`/account`** — profile, locale, password, notification preferences. Consent that cannot be withdrawn is a PDPA problem, not a feature gap.
-3. **Record a cost (F-OPS-3)** — without it an owner statement is revenue with no expenses, which is not a statement.
-4. **People & Roles admin** — no role can be granted through the application today.
-5. **Audit log viewer, and Finance in the nav** — the cheapest items here; both are pure reach over data that already exists.
+1. ~~**Reconnect the booking state machine.**~~ **Done** — check-in, check-out and the date change now run the tested transitions. `state-machine-is-wired.test.ts` keeps them there.
+2. ~~**`/account`**~~ **Done** — profile, language, password, and notification preferences with the two obligation-carrying types fixed on.
+3. ~~**Record a cost (F-OPS-3)**~~ **Done** — `/ops/costs`. The gap was the screen, not the route; see §3.
+4. ~~**People & Roles admin**~~ **Done** — `/app/admin/people`.
+5. **Audit log viewer** — still open, and still the cheapest thing here. ~~Finance in the nav~~ done.
 6. **Announcements composer**, then **claim account (F-AUTH-4)**, then **damage claims (F-DIS-1)**.
 7. **Resident and juristic surfaces**, **MC boards**, **the remaining five ops boards**, **provider remittances**.
 8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.

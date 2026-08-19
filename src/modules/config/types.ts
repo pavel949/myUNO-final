@@ -120,6 +120,11 @@ export interface ServicesConfig {
 
 // Finance, compliance, etc. (doc 04 §7)
 export interface OtherConfig {
+  // Anchor for resolving SHORT Plus Codes ("X7RW+32 Choeng Thale"), which are
+  // only unique within ~50 km of a reference point. Configured, not assumed, so
+  // operating outside Phuket does not require a code change.
+  'geo.plus_code_reference_lat': number;
+  'geo.plus_code_reference_lng': number;
   'finance.statement.day_of_month': number;
   'finance.statement.requires_admin_signoff': boolean;
   'finance.statement.service_fee_pct': number;

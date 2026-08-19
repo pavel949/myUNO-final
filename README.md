@@ -96,6 +96,21 @@ Every imported component must pass an architecture, licensing, security and data
 - [CRM and commercial system](docs/17_crm_and_commercial_system.md)
 - [Target platform architecture](docs/18_platform_architecture.md)
 
+## Connecting a database
+
+One command creates every table and loads the business rules and RU/EN/TH copy:
+
+```bash
+DATABASE_URL="postgresql://..." node scripts/provision-database.mjs
+```
+
+It is idempotent, verifies its own result, and never writes demo inventory. For
+the connection string, the Vercel variables and how to check it worked, see
+**[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)** — start there.
+
+Note that **deployments do not run migrations**; a schema change reaches an
+environment only when the command above is run against it.
+
 ## Local development
 
 ```bash

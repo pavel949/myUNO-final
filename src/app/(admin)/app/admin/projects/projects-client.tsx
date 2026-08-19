@@ -33,6 +33,7 @@ export default function ProjectsAdminClient({
     slug: '',
     name: '',
     address: '',
+    plusCode: '',
     latitude: '',
     longitude: '',
   });
@@ -73,6 +74,9 @@ export default function ProjectsAdminClient({
           slug: draft.slug,
           name: draft.name,
           address: draft.address,
+          // Sent raw: the server decodes it against the configured reference,
+          // so every entry point resolves a code identically.
+          ...(draft.plusCode.trim() ? { plusCode: draft.plusCode.trim() } : {}),
           latitude: Number(draft.latitude),
           longitude: Number(draft.longitude),
           // Content keys follow the project.{slug}.* convention (doc 05 §4)
@@ -85,7 +89,7 @@ export default function ProjectsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.projects.error_generic']);
       }
-      setDraft({ slug: '', name: '', address: '', latitude: '', longitude: '' });
+      setDraft({ slug: '', name: '', address: '', plusCode: '', latitude: '', longitude: '' });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.projects.error_generic']);
@@ -249,6 +253,26 @@ export default function ProjectsAdminClient({
               onChange={(e) => setDraft((d) => ({ ...d, address: e.target.value }))}
             />
           </div>
+          {/*
+            Position is entered as a Plus Code, copied straight from Google
+            Maps. Two decimal numbers are easy to transpose and impossible to
+            eyeball; one token that fails visibly is not. The coordinate boxes
+            stay below for the cases a code cannot express.
+          */}
+          <div>
+            <label className="text-small text-text-secondary block mb-4">
+              {labels['admin.projects.plus_code']}
+            </label>
+            <input
+              className={fieldClass}
+              placeholder={labels['admin.projects.plus_code_placeholder']}
+              value={draft.plusCode}
+              onChange={(e) => setDraft((d) => ({ ...d, plusCode: e.target.value }))}
+            />
+            <p className="text-small text-text-secondary mt-4">
+              {labels['admin.projects.plus_code_hint']}
+            </p>
+          </div>
           <div className="flex gap-8">
             <input
               className={fieldClass}
@@ -271,8 +295,9 @@ export default function ProjectsAdminClient({
               !draft.slug ||
               !draft.name ||
               !draft.address ||
-              !Number.isFinite(Number(draft.latitude)) ||
-              !Number.isFinite(Number(draft.longitude)) ||
+              (!draft.plusCode.trim() &&
+                (!Number.isFinite(Number(draft.latitude)) ||
+                  !Number.isFinite(Number(draft.longitude)))) ||
               draft.latitude === '' ||
               draft.longitude === ''
             }

@@ -66,8 +66,8 @@ Financial snapshots and the audit log are also still mutable.
 
 **Two real defects were found and fixed on the way:**
 
-1. **Nothing applied migrations to production.** `scripts/repair-failed-migrations.mjs` documented itself as running "before `prisma migrate deploy`", but no such step existed outside CI's throwaway database. The hosted database sat seven migrations behind the repository while every build reported success. Fixed by `scripts/deploy-migrations.mjs`.
-2. **The first version of that fix was itself a hazard.** It would have migrated whatever `DATABASE_URL` pointed at — and this repository's `.env` points at production, so a developer running `npm run build` would have migrated production unasked. Migrating is now opt-in: a Vercel production deploy, or explicit `MIGRATE_ON_BUILD=1`.
+1. **The hosted database was seven migrations behind** while every build reported success, because nothing in the pipeline applied migrations to it. It has been caught up: 30 rows, 0 unfinished.
+2. **The fix first attempted here was wrong, twice over, and was withdrawn.** A build step running `prisma migrate deploy` would have migrated whatever `DATABASE_URL` pointed at — and this repository's `.env` points at production, so a developer running `npm run build` would have migrated production unasked. Worse, `main` had already tried build-time migration and **deliberately reverted it** (doc 15 §2.4): it made every deploy depend on the database being reachable, and guarding that turns a missed migration into a silent skip, which is the more dangerous failure for a schema carrying money and passports. The sanctioned path is `scripts/provision-database.mjs`, run against a target explicitly.
 
 **State of the hosted database:** 30 migration rows, 0 unfinished — the repository's 22, plus 8 orphan rows left from before the migrations were renamed to timestamped names. The orphans are cosmetic; they make `prisma migrate status` warn about migrations "not found locally" and can be deleted.
 

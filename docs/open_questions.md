@@ -189,6 +189,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Needs from founder:** the counsel-drafted terms of service and privacy policy. Also still outstanding from Q16: a dedicated public support/WhatsApp line and a privacy mailbox if different from the director's email, and Ignatev Capital's entity details if it is named publicly.
 
 
+
 ### Q37. myUNO's management revenue is recorded twice, in two places that never meet — OPEN
 - **Source:** reviewing the project and unit models. Two mechanisms each represent what myUNO earns from a unit, and neither reads the other.
   - `OwnerStatement.estate_share_thb` — derived from the unit's active **`UnitEngagement`** (`/api/admin/statements/generate`), which is what doc 02 §2.6 and doc 10 §4 specify. This is the number the owner sees.
@@ -247,12 +248,19 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
   - **The ruling needed:** should an inactive mandate block every later step, as doc 07 reads — or is the current behaviour what operations actually want, in which case doc 07 should be corrected instead?
 - **Fixed meanwhile, needing no ruling:** a refused go-live used to leave `golive_checklist` marked done while the unit stayed draft — the step was written before the all-steps-complete check, with no transaction to undo it. The check now runs before any write, and the tick plus the go-live are one transaction.
 
-### Q44. Row-level security is switched on everywhere and doing nothing — OPEN
-- **Source:** inspecting the Supabase database while resolving the Prisma Cloud check (doc 15 §2.1). Every one of the 73 tables reports `rls_enabled: true`.
-- **Why that is not the reassurance it looks like:** the application connects through Prisma as the project's Postgres role, which **bypasses RLS entirely**. So today RLS constrains nothing the platform does — every access rule that actually holds is the server-side scoping in the query layer (`core.can()` plus scoped `where` clauses, doc 03). RLS being on is the default Supabase applies to new tables, not a decision this project made.
-- **The risk is the appearance, not the state.** Nothing is currently unsafe: the app enforces scope in code, and RLS with no policies denies rather than allows, so an anon-key client would be refused rather than let through. The hazard is someone reading "RLS enabled" on 73 tables and concluding the database is defended at the row level when the defence lives entirely in application code — and then, say, shipping a browser client with the anon key on that assumption.
-- **Not verified from here:** whether any policies are actually defined. The tooling available in that session could list tables but not policies, so this records what was seen and not more.
-- **Needs from founder (with counsel where PII is involved):** whether RLS is meant to be a real second layer for the 🔒 tables doc 12 names — `identity`, `booking_guest`, `media_asset`, `tm30_filing` — in which case policies need writing and testing; or whether it is understood to be inert, in which case that should be stated in doc 12 so nobody mistakes it for protection. Doing nothing is a defensible answer; leaving it ambiguous is not.
+### Q45. The database sits in Mumbai, but the deployment spec and the privacy notice say Singapore — OPEN
+- **Source:** connecting the app to Supabase. Doc 15 §2 specifies **Singapore** for the managed Postgres: closest to Phuket users, and named in the privacy notice as where personal data rests (PDPA). The provisioned project `MyUno- final` (`burcnghheyzbzffzgmjz`) is in **`ap-south-1` (Mumbai)**.
+- **Why it is not just a latency question:** under the PDPA the privacy notice tells data subjects where their personal data is held. Passports, payment records and guest identities would rest in a country the published notice does not name. That is a disclosure problem before it is an engineering one.
+- **Why deciding now is cheaper:** the database is currently empty. Moving regions is a dump-and-restore today; once there are real guests, bookings and encrypted passports it becomes a migration with downtime, and the `ENCRYPTION_KEY` must travel with it intact or every passport becomes unreadable (doc 15 §4).
+- **Needs from founder:** either (a) re-provision in Singapore (`ap-southeast-1`) and point `DATABASE_URL` at it, or (b) rule that Mumbai is acceptable — in which case doc 15 §2 and the privacy notice copy (`legal.privacy.*`, Q36) must both be corrected to name it, and counsel should confirm the disclosure reads correctly.
+- **Not decided by an agent:** this trades a compliance statement against convenience, which is a founder call.
+
+### Q44. Row-level security — ANSWERED (enabled 2026-08-19)
+- Logged during this work as "enabled everywhere and doing nothing", on the reading that it was Supabase's default. That was wrong: doc 15 §2.3 shows it was a deliberate remediation, because with RLS **off** Supabase's public REST API exposed every row — passports, payments, the ledger — to anyone holding the anon key, independently of any application code.
+- **Applied and verified:** all 73 tables now report `rls_enabled`. The application connects as the table owner, and owners bypass RLS unless `FORCE ROW LEVEL SECURITY` is set, so enabling it with no policies closes the public surface without touching the app — which doc 15 §2.3 verified on a scratch database before it was applied.
+- **Left open deliberately:** whether RLS should additionally become a *real* second layer with policies over the 🔒 tables doc 12 names. Today it is a closed door, not a lock. That is a sufficient answer; making it more is a founder-and-counsel decision, not an agent's.
+
+
 
 ---
 

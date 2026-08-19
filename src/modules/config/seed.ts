@@ -358,6 +358,28 @@ export async function seedConfig(db: PrismaClient) {
   await db.configParameter.createMany({
     data: [
       {
+        // Anchor for resolving SHORT Plus Codes (the form Google Maps shows,
+        // e.g. "X7RW+32 Choeng Thale"). A short code is only unique within
+        // ~50 km of a reference, so the same code means one place near Phuket
+        // and another near Bangkok. Configurable rather than hard-coded so
+        // operating outside the Andaman corridor is a config change, not a
+        // code change. Full codes ignore this entirely.
+        key: 'geo.plus_code_reference_lat',
+        valueType: 'decimal',
+        defaultValue: 7.9519,
+        scopeableTo: 'project',
+        groupKey: 'geo',
+        description: 'Latitude anchoring short Plus Code resolution (default: Phuket)',
+      },
+      {
+        key: 'geo.plus_code_reference_lng',
+        valueType: 'decimal',
+        defaultValue: 98.3381,
+        scopeableTo: 'project',
+        groupKey: 'geo',
+        description: 'Longitude anchoring short Plus Code resolution (default: Phuket)',
+      },
+      {
         key: 'services.take_rate_pct',
         valueType: 'percent',
         defaultValue: 15,

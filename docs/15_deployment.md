@@ -16,30 +16,71 @@ One application (the modular monolith), one PostgreSQL database, one object-stor
 
 ## 2. Hosting
 
-A managed platform stack — recommended: **Vercel** (the Next.js app + cron jobs) + **a managed PostgreSQL** (e.g. Supabase/Neon/RDS — **used as plain Postgres**, our Prisma schema, no vendor lock in the code) + **S3-compatible storage** (with the Q6/passport encryption rules from doc 12). Region: **Singapore** (closest to Phuket users; named in the privacy notice per PDPA). Everything the app needs arrives as environment variables from the platform's secret store — no secrets in code (doc 12 §4). DNS: the apex domain to the app; `staging.` subdomain gated by a simple access wall.
+A managed platform stack — recommended: **Vercel** (the Next.js app + cron jobs) + **a managed PostgreSQL** (e.g. Supabase/Neon/RDS — **used as plain Postgres**, our Prisma schema, no vendor lock in the code) + **S3-compatible storage** (with the Q6/passport encryption rules from doc 12). Region: **Mumbai, ap-south-1** (AWS infrastructure; named in the privacy notice per PDPA — data at rest in India). Everything the app needs arrives as environment variables from the platform's secret store — no secrets in code (doc 12 §4). DNS: the apex domain to the app; `staging.` subdomain gated by a simple access wall.
 
 The choice is deliberately boring and reversible: the app is a standard Next.js + Postgres deployment, movable to any equivalent host without code changes.
 
-### 2.1 As actually deployed (2026-08-18)
 
-| Piece | Chosen | Notes |
-|---|---|---|
-| App + cron | **Vercel** | project `my-uno-final` |
-| Database | **Supabase** — project `MyUno- final`, region ap-south-1, Postgres 17 | Used as **plain Postgres**. None of Supabase's auth, storage, or realtime is used, and no `@supabase/*` package is installed — the connection string is the whole integration. |
-| Connection | Session-mode pooler, port **5432** | Migrations need session mode. Port 6543 is transaction mode and will not run them. |
+### 2.1 What is actually provisioned
 
-**Prisma stays; Prisma Cloud does not.** These are different things and the distinction caused real confusion, so it is written down: **Prisma is the ORM** — the schema, the migration files, the client, used in every query — and it is not going anywhere. **Prisma Cloud / Prisma Postgres** was a *hosted database* plus a GitHub deploy integration, pointed at `db.prisma.io`, which is not the database this document specifies. It was disconnected on 2026-08-18 after failing six consecutive PR checks with `P1001: can't reach database server`, having never been the production database.
+Vercel project `my-uno-final`; database on **Supabase**, project **`MyUno-final`** (ref `burcnghheyzbzffzgmjz`), region **ap-south-1 (Mumbai)**. Supabase is used as plain Postgres over Prisma — the Supabase client libraries are not used anywhere, which is why the platform's own auth and row-level security are not part of the access model. **Scoping is enforced server-side in every query (doc 03); that has not changed.**
 
-Nothing in this repository ever referenced it: `schema.prisma` reads `env("DATABASE_URL")`, and the integration lived entirely in the Prisma console and the GitHub App. Removing it therefore required no code change — only the two console actions.
+✅ **Row-level security is now enabled on all tables** (verified 2026-08-19; was disabled on 57 tables when this section was written).** Supabase exposes an auto-generated REST API to the `anon` role, and its key is public by design, so with RLS off every row — passports, payments, the ledger, the audit log — is readable and writable by anyone holding it. This exists independently of the application code and none of the doc 03 scoping protects against it. See §2.3.
 
-**Migrations reach production through the build.** `scripts/deploy-migrations.mjs` runs `prisma migrate deploy` on a Vercel **production** deploy, or when `MIGRATE_ON_BUILD=1` is set explicitly. It skips otherwise, on purpose: a Vercel environment variable covers every environment unless scoped, and this repository's own `.env` points `DATABASE_URL` at production — so without the guard, a preview build of any branch, or a developer running `npm run build`, would migrate the production database.
+### 2.2 Connection strings — which one, and why it matters
 
-⚠ **Scope `DATABASE_URL` to Production only** in Vercel. Adding it unscoped re-creates exactly the hazard the guard exists to prevent.
+Supabase offers three addresses for the same database, and they are not interchangeable:
+
+| Address | Port | Migrations | Runtime | Notes |
+|---|---|---|---|---|
+| **Session pooler** `aws-0-<region>.pooler.supabase.com` | 5432 | ✅ | ✅ | **Use this.** IPv4, behaves as ordinary Postgres |
+| Transaction pooler | 6543 | ❌ | ✅ | No prepared statements or advisory locks — `prisma migrate deploy` fails |
+| Direct `db.<ref>.supabase.co` | 5432 | ✅ | ✅ | IPv6-only on new projects without the IPv4 add-on; frequently unreachable, and it fails as a silent timeout rather than an error |
+
+The schema declares a single `url = env("DATABASE_URL")` and no `directUrl`, deliberately: one variable, one address, nothing to keep in sync. The session pooler serves both roles, so the extra complexity buys nothing here.
+
+`scripts/provision-database.mjs` rejects a transaction-pooler URL up front and names the right one, because that failure otherwise surfaces as an unrelated-looking prepared-statement error.
+
+### 2.3 Row-level security on Supabase
+
+The application connects as the table owner, and **Postgres table owners bypass RLS by default** (they are subject to it only under `FORCE ROW LEVEL SECURITY`, which is not set). So enabling RLS with **no policies at all** closes the public REST surface while leaving the application untouched — the opposite of the usual Supabase advice, and correct precisely because the Supabase client libraries are unused here.
+
+Verified on a scratch database with this schema: a non-owner role holding full table grants went from reading 76 rows to 0 once RLS was enabled, while the owner continued to read all 76 and the registry seed completed its reads and writes normally.
+
+Remediation is `ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;` for every application table. **Applied — verified 2026-08-19:** every one of the 73 tables now reports `rls_enabled`, so the public REST surface is closed. The application is unaffected, exactly as the scratch-database test above predicted.
+
+### 2.4 Bringing a database up to date
+
+One command, idempotent, safe to re-run:
+
+```bash
+DATABASE_URL="<session pooler URL>" node scripts/provision-database.mjs
+```
+
+It applies migrations (`prisma migrate deploy` — never `db push`), seeds **config and content only**, then verifies the registry counts and exits non-zero if they are empty. It never writes the demo projects, units and identities from `prisma/seed.ts`; those are for local and staging, and on a live domain they are indistinguishable from real listings.
+
+Step-by-step, including the Vercel side: **`docs/DATABASE_SETUP.md`**.
+
+Note that deployments do **not** run migrations. The build runs `repair-failed-migrations.mjs` then `prisma generate`, and nothing more — so a schema change reaches an environment only when someone runs the command above against it. An earlier attempt to add `prisma migrate deploy` to the build was reverted: it made every deploy depend on the database being reachable at build time, and the deploy failed the first time it was not.
+
+### 2.5 Prisma Cloud — disconnected 2026-08-18
+
+**Prisma stays; Prisma Cloud does not.** The distinction caused real confusion, so it is written down. **Prisma is the ORM** — the schema, the migration files, the client, used in every query — and is not going anywhere. **Prisma Cloud / Prisma Postgres** was a *hosted database* at `db.prisma.io` plus a GitHub deploy check: never the database this document specifies, and it failed seven consecutive PR checks with `P1001: can't reach database server`.
+
+Nothing in this repository ever referenced it — `schema.prisma` reads `env("DATABASE_URL")` and the integration lived entirely in the Prisma console and the GitHub App — so removing it required no code change, only the two console actions. Confirmed gone: pushes after the disconnection carry one check (Supabase Preview) where they previously carried two.
+
+### 2.6 State of the hosted database (2026-08-19)
+
+`_prisma_migrations` holds **30 rows, 0 unfinished**: the repository's 22 migrations, plus 8 orphans left from before the migrations were renamed to timestamped names. The orphans are cosmetic — they make `prisma migrate status` warn about migrations "not found locally" — and are removable with `DELETE FROM _prisma_migrations WHERE migration_name ~ '^[1-8]_';`.
+
+The seven migrations added on 2026-08-18 were applied through `scripts/supabase-catchup.sql`, generated for a founder working from a phone with no terminal. That script is a one-off record of that catch-up, not a mechanism: §2.4's `provision-database.mjs` remains the way a database is brought up to date.
+
+
 
 ## 3. How changes ship
 
 1. A builder finishes a doc-16 task on a branch; CI runs the full gate (tests, typecheck, lints — doc 14 §8).
-2. Merge to `main` → **staging deploys automatically**, including database migrations (Prisma migrate, forward-only; every migration reviewed). *Mechanism (2026-08-18): `scripts/deploy-migrations.mjs` in the build — see §2.1. Before that date nothing in the pipeline applied migrations to any real database, and the hosted database sat seven migrations behind the repository while every build went green.*
+2. Merge to `main` → **staging deploys automatically**, including database migrations (Prisma migrate, forward-only; every migration reviewed). *Correction (2026-08-19): deploys do **not** run migrations — see §2.4. A database is brought up to date by running `scripts/provision-database.mjs` against it.*
 3. The founder (or Fable) checks the change on staging — the affected flow, in a browser.
 4. A manual **"promote to production"** step deploys the same build + migrations to production. No Friday-evening promotions; migrations that touch money/compliance tables get a pre-promotion backup point (§5).
 5. Rollback = redeploy the previous build (one click); a migration that must be undone gets a new forward migration — never editing history.

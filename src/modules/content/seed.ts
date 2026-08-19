@@ -1565,6 +1565,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'search.categories.auto_assign', namespace: 'search', description: 'Category card: auto-assignment note', en: 'We assign the best free villa of this category to your dates.', ru: 'Мы сами назначим лучшую свободную виллу этой категории на ваши даты.', zh: '我们将为您的日期安排该类别中最合适的空闲别墅。', status: NR },
   { key: 'search.error_booking', namespace: 'search', description: 'Search: category booking error', en: 'Could not create the request. Please try again.', ru: 'Не удалось создать запрос. Попробуйте ещё раз.', zh: '无法创建申请，请重试。', status: NR },
   { key: 'search.showing', namespace: 'search', description: 'Search pagination summary', en: 'Showing {shown} of {total} results', ru: 'Показано {shown} из {total}', status: NR },
+  { key: 'search.sort_label', namespace: 'search', description: 'Search: sort picker label', en: 'Sort by', ru: 'Сортировка', status: NR },
+  { key: 'search.load_more', namespace: 'search', description: 'Search: load the next page of results', en: 'Show more homes', ru: 'Показать ещё', status: NR },
+  { key: 'search.loading_more', namespace: 'search', description: 'Search: loading the next page', en: 'Loading…', ru: 'Загружаем…', status: NR },
+  { key: 'search.rating_summary', namespace: 'search', description: 'Search card: rating and review count', en: '{rating} · {count} reviews', ru: '{rating} · отзывов: {count}', status: NR },
   { key: 'search.bar_check_in', namespace: 'search', description: 'Search bar: check-in label', en: 'Check-in', ru: 'Заезд', status: NR },
   { key: 'search.bar_check_out', namespace: 'search', description: 'Search bar: check-out label', en: 'Check-out', ru: 'Выезд', status: NR },
   { key: 'search.bar_adults', namespace: 'search', description: 'Search bar: adults label', en: 'Adults', ru: 'Взрослые', status: NR },
@@ -2422,6 +2426,77 @@ const CATALOG_LABEL_KEYS: KeyDef[] = [
   { key: 'catalog.ticket_categories.noise.label', namespace: 'catalog', description: 'Ticket category label: noise', en: 'Noise', ru: 'Шум', status: NR },
   { key: 'catalog.ticket_categories.common_area.label', namespace: 'catalog', description: 'Ticket category label: common area', en: 'Common areas', ru: 'Общие зоны', status: NR },
   { key: 'catalog.ticket_categories.other.label', namespace: 'catalog', description: 'Ticket category label: other', en: 'Other', ru: 'Другое', status: NR },
+  // Search sort labels — one per UNIT_SORTS entry (src/modules/browse/sort.ts)
+  { key: 'catalog.unit_sorts.recommended.label', namespace: 'catalog', description: 'Search sort: recommended (the default)', en: 'Recommended', ru: 'Рекомендуемые', status: NR },
+  { key: 'catalog.unit_sorts.price_asc.label', namespace: 'catalog', description: 'Search sort: cheapest first', en: 'Price: low to high', ru: 'Цена: по возрастанию', status: NR },
+  { key: 'catalog.unit_sorts.price_desc.label', namespace: 'catalog', description: 'Search sort: most expensive first', en: 'Price: high to low', ru: 'Цена: по убыванию', status: NR },
+  { key: 'catalog.unit_sorts.bedrooms_desc.label', namespace: 'catalog', description: 'Search sort: most bedrooms first', en: 'Most bedrooms', ru: 'Больше спален', status: NR },
+  { key: 'catalog.unit_sorts.capacity_desc.label', namespace: 'catalog', description: 'Search sort: sleeps the most first', en: 'Sleeps the most', ru: 'Больше гостей', status: NR },
+  { key: 'catalog.unit_sorts.top_rated.label', namespace: 'catalog', description: 'Search sort: best reviewed first', en: 'Top rated', ru: 'Лучшие оценки', status: NR },
+];
+
+/**
+ * Area names live in the content layer like every other label, so an area can
+ * be renamed without a migration and reads in RU/EN/TH. These are the keys the
+ * seeded Andaman-corridor areas point at; a new area gets its own key when the
+ * founder adds it in the admin panel.
+ */
+/**
+ * The property onboarding workspace (doc 07 F-OWN-1). Staff-facing, so the
+ * Russian is the operating language of the team rather than guest tone.
+ */
+const ONBOARDING_KEYS: KeyDef[] = [
+  { key: 'admin.units.create', namespace: 'admin', description: 'Units: add a unit', en: 'Add a unit', ru: 'Добавить юнит', status: NR },
+  { key: 'admin.units.cancel', namespace: 'admin', description: 'Units: cancel the form', en: 'Cancel', ru: 'Отмена', status: NR },
+  { key: 'admin.units.saving', namespace: 'admin', description: 'Units: saving state', en: 'Saving…', ru: 'Сохраняем…', status: NR },
+  { key: 'admin.units.project', namespace: 'admin', description: 'Units: project field', en: 'Project', ru: 'Проект', status: NR },
+  { key: 'admin.units.name', namespace: 'admin', description: 'Units: name field', en: 'Name', ru: 'Название', status: NR },
+  { key: 'admin.units.type', namespace: 'admin', description: 'Units: unit type field', en: 'Type', ru: 'Тип', status: NR },
+  { key: 'admin.units.bedrooms', namespace: 'admin', description: 'Units: bedrooms field', en: 'Bedrooms', ru: 'Спальни', status: NR },
+  { key: 'admin.units.bathrooms', namespace: 'admin', description: 'Units: bathrooms field', en: 'Bathrooms', ru: 'Ванные', status: NR },
+  { key: 'admin.units.max_guests', namespace: 'admin', description: 'Units: capacity field', en: 'Sleeps', ru: 'Спальных мест', status: NR },
+  { key: 'admin.units.address_supplement', namespace: 'admin', description: 'Units: address detail field', en: 'Address detail (unit number, building)', ru: 'Адрес: номер юнита, корпус', status: NR },
+  { key: 'admin.units.base_nightly', namespace: 'admin', description: 'Units: base nightly rate field', en: 'Base ฿/night', ru: 'Базовая ставка ฿/ночь', status: NR },
+  { key: 'admin.units.min_nights', namespace: 'admin', description: 'Units: minimum nights field', en: 'Minimum nights', ru: 'Минимум ночей', status: NR },
+  { key: 'admin.units.no_projects', namespace: 'admin', description: 'Units: no project exists yet', en: 'Create a project before adding units.', ru: 'Сначала создайте проект.', status: NR },
+
+  { key: 'admin.onboarding.title', namespace: 'admin', description: 'Onboarding workspace title', en: 'Onboarding', ru: 'Ввод в эксплуатацию', status: NR },
+  { key: 'admin.onboarding.back', namespace: 'admin', description: 'Onboarding: back to the list', en: 'All units', ru: 'Все юниты', status: NR },
+  { key: 'admin.onboarding.step', namespace: 'admin', description: 'Onboarding: step label', en: 'Step', ru: 'Шаг', status: NR },
+  { key: 'admin.onboarding.done', namespace: 'admin', description: 'Onboarding: step done', en: 'Done', ru: 'Готово', status: NR },
+  { key: 'admin.onboarding.pending', namespace: 'admin', description: 'Onboarding: step pending', en: 'Pending', ru: 'Ожидает', status: NR },
+  { key: 'admin.onboarding.blocked', namespace: 'admin', description: 'Onboarding: step blocked', en: 'Blocked', ru: 'Заблокировано', status: NR },
+  { key: 'admin.onboarding.start_checklist', namespace: 'admin', description: 'Onboarding: start the checklist', en: 'Start the checklist', ru: 'Начать чек-лист', status: NR },
+  { key: 'admin.onboarding.no_checklist', namespace: 'admin', description: 'Onboarding: no checklist yet', en: 'This unit has no mobilization checklist yet.', ru: 'У юнита ещё нет чек-листа ввода в эксплуатацию.', status: NR },
+  { key: 'admin.onboarding.complete_step', namespace: 'admin', description: 'Onboarding: complete a step', en: 'Mark done', ru: 'Отметить выполненным', status: NR },
+  { key: 'admin.onboarding.notes', namespace: 'admin', description: 'Onboarding: notes field', en: 'Notes', ru: 'Заметки', status: NR },
+  { key: 'admin.onboarding.owner_title', namespace: 'admin', description: 'Onboarding: owner section', en: 'Owner', ru: 'Собственник', status: NR },
+  { key: 'admin.onboarding.owner_none', namespace: 'admin', description: 'Onboarding: no owner set', en: 'No owner set. A mandate cannot be recorded without one.', ru: 'Собственник не указан. Без него нельзя оформить мандат.', status: NR },
+  { key: 'admin.onboarding.owner_set', namespace: 'admin', description: 'Onboarding: set the owner', en: 'Set owner', ru: 'Назначить собственника', status: NR },
+  { key: 'admin.onboarding.owner_email', namespace: 'admin', description: 'Onboarding: owner email field', en: 'Owner email', ru: 'E-mail собственника', status: NR },
+  { key: 'admin.onboarding.engagement_title', namespace: 'admin', description: 'Onboarding: mandate section', en: 'Mandate (engagement)', ru: 'Мандат (условия управления)', status: NR },
+  { key: 'admin.onboarding.engagement_none', namespace: 'admin', description: 'Onboarding: no engagement recorded', en: 'No engagement. Owner statements cannot be generated until one exists.', ru: 'Мандат не оформлен. Без него отчёты собственнику не формируются.', status: NR },
+  { key: 'admin.onboarding.engagement_type', namespace: 'admin', description: 'Onboarding: engagement type field', en: 'Engagement type', ru: 'Тип управления', status: NR },
+  { key: 'admin.onboarding.noi_cap', namespace: 'admin', description: 'Onboarding: NOI cap field', en: 'NOI cap per year (THB)', ru: 'Годовой потолок NOI (THB)', status: NR },
+  { key: 'admin.onboarding.noi_cap_hint', namespace: 'admin', description: 'Onboarding: NOI cap has no default', en: 'Required for direct-managed. No default — it must be agreed.', ru: 'Обязателен для прямого управления. Значения по умолчанию нет — только по договорённости.', status: NR },
+  { key: 'admin.onboarding.record_engagement', namespace: 'admin', description: 'Onboarding: record the mandate', en: 'Record mandate', ru: 'Оформить мандат', status: NR },
+  { key: 'admin.onboarding.compliance_title', namespace: 'admin', description: 'Onboarding: compliance section', en: 'Compliance records', ru: 'Документы соответствия', status: NR },
+  { key: 'admin.onboarding.compliance_none', namespace: 'admin', description: 'Onboarding: no compliance records', en: 'No records yet.', ru: 'Пока нет документов.', status: NR },
+  { key: 'admin.onboarding.record_type', namespace: 'admin', description: 'Onboarding: record type field', en: 'Record type', ru: 'Тип документа', status: NR },
+  { key: 'admin.onboarding.label', namespace: 'admin', description: 'Onboarding: record label field', en: 'Label', ru: 'Название', status: NR },
+  { key: 'admin.onboarding.expires', namespace: 'admin', description: 'Onboarding: expiry field', en: 'Expires on', ru: 'Действует до', status: NR },
+  { key: 'admin.onboarding.add_record', namespace: 'admin', description: 'Onboarding: add a compliance record', en: 'Add record', ru: 'Добавить документ', status: NR },
+  { key: 'admin.onboarding.confirm_record', namespace: 'admin', description: 'Onboarding: confirm a compliance record', en: 'Confirm', ru: 'Подтвердить', status: NR },
+  { key: 'admin.onboarding.permitted_use_warning', namespace: 'admin', description: 'Onboarding: permitted use confirmed with no record behind it', en: 'Permitted use is confirmed, but no permitted-use record is attached.', ru: 'Разрешённое использование подтверждено, но документ не приложен.', status: NR },
+  { key: 'admin.onboarding.error_generic', namespace: 'admin', description: 'Onboarding: generic failure', en: 'Action failed. Please try again.', ru: 'Не удалось выполнить действие. Попробуйте ещё раз.', status: NR },
+  { key: 'admin.onboarding.saving', namespace: 'admin', description: 'Onboarding: saving state', en: 'Saving…', ru: 'Сохраняем…', status: NR },
+];
+
+const AREA_LABEL_KEYS: KeyDef[] = [
+  { key: 'area.phuket.name', namespace: 'area', description: 'Area name: Phuket (island)', en: 'Phuket', ru: 'Пхукет', status: NR },
+  { key: 'area.phuket_west.name', namespace: 'area', description: 'Area name: Phuket west coast', en: 'West coast', ru: 'Западное побережье', status: NR },
+  { key: 'area.bang_tao.name', namespace: 'area', description: 'Area name: Bang Tao', en: 'Bang Tao', ru: 'Банг Тао', status: NR },
+  { key: 'area.layan.name', namespace: 'area', description: 'Area name: Layan', en: 'Layan', ru: 'Лаян', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [
@@ -2487,7 +2562,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...STATUS_LABEL_KEYS]) {
+  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...STATUS_LABEL_KEYS]) {
     // Ensure content key exists
     await ensureContentKey(
       db,

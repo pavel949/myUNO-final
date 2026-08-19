@@ -53,3 +53,33 @@ export {
   getMCDashboard,
   getMCFeeReport,
 } from './mc.service';
+
+// Ownership history (chain of title). `Unit.ownerIdentityId` stays the current
+// owner; these answer who owned it *then*, which is what money records need.
+export {
+  setUnitOwner,
+  getOwnerAt,
+  getOwnershipHistory,
+  ensureOwnershipRecorded,
+} from './ownership.service';
+
+// Areas — a place inventory is described by, for the two jobs the founder
+// named: browse (an area page, a search filter) and reporting (occupancy and
+// revenue rolled up across a region). Depth is data, not schema.
+export {
+  listAreas,
+  listBrowsableAreas,
+  getAreaForBrowse,
+  createArea,
+  updateArea,
+  buildAreaTree,
+  collectDescendantIds,
+  wouldFormCycle,
+  resolveAreaLabelKey,
+  getAreaPerformance,
+  getPortfolioByArea,
+  type AreaNode,
+  type AreaTreeNode,
+  type SaveAreaInput,
+  type AreaPerformance,
+} from './area.service';

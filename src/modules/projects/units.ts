@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
 import { UnitStatus, UnitType } from '@prisma/client';
+import { ensureOwnershipRecorded } from './ownership.service';
 
 interface CreateUnitInput {
   projectId: string;
@@ -92,6 +93,18 @@ export async function createUnit(input: CreateUnitInput) {
     throw new Error(`Unit with name "${name}" already exists in this project`);
   }
 
+  // A unit cannot be born live. Permitted-use confirmation is a legal gate
+  // (CLAUDE.md, legal non-negotiables) and it was enforced only on the update
+  // path — while POST /api/admin/units spreads the request body straight into
+  // this function, so `{"status":"live"}` created a bookable unit that had never
+  // been cleared. Going live is a transition, and it goes through updateUnit
+  // where the gate lives.
+  if (status === 'live') {
+    throw new Error(
+      'A unit cannot be created live. Create it as draft, confirm permitted use, then set it live.'
+    );
+  }
+
   // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3).
   // Unit categories are a project-scoped catalog, so pass the project scope.
   await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
@@ -120,6 +133,11 @@ export async function createUnit(input: CreateUnitInput) {
       status,
     },
   });
+
+  // Ownership is a dated fact, not just a column: open the first period so the
+  // unit has a chain of title from the day it exists. Idempotent, so a retry
+  // after a partial failure repairs rather than duplicates.
+  await ensureOwnershipRecorded(prisma, unit.id);
 
   // Audit log
   await logAudit({

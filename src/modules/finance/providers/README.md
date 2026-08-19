@@ -1,6 +1,29 @@
 # Payment Provider Adapters
 
-Pluggable provider strategy supporting Stripe, Thai payment methods (PromptPay, Alipay), Russian methods (Yandex.Kassa), and currency exchange solutions.
+> **Status: no payment provider is implemented. The seam fails closed.**
+>
+> Loop one charges cash (doc 10). The only non-cash rail is the local mock
+> checkout page, and it is refused in production.
+>
+> This directory previously shipped a Stripe adapter that had no SDK behind it:
+> it returned fabricated confirmations for a hardcoded 500 THB and its
+> `verifyWebhookSignature` returned `true` for **any** signature, including when
+> a webhook secret was configured. Selecting an unimplemented provider —
+> `omise`, the one CLAUDE.md names as the default — silently fell back to the
+> mock, so a deployment configured for real payments would have accepted fake
+> ones and reported success. That adapter is deleted.
+>
+> The rules now, held by `provider-seam.test.ts`:
+> - An unimplemented provider **throws**. There is no silent fallback.
+> - The mock **throws** in production.
+> - Nothing may report that money moved unless it can prove it. The mock
+>   refuses to confirm, refund, or verify a signature; only `createCheckout`
+>   works, because opening a session is all it can honestly do.
+>
+> When a real rail is wired, implement signature verification for real and add
+> `'<provider>'` to `IMPLEMENTED_PROVIDERS` in `index.ts` — not before.
+
+Planned provider strategy: Stripe, Thai payment methods (PromptPay, Alipay), Russian methods (Yandex.Kassa), and currency exchange solutions.
 
 ## Architecture
 

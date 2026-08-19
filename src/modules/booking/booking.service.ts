@@ -1,5 +1,6 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
+import { computePriceBreakdown } from '@/modules/core';
 
 export interface CreateBookingInput {
   unitId: string;
@@ -11,6 +12,10 @@ export interface CreateBookingInput {
   endDate: Date;
   adults: number;
   children: number;
+  /** Not counted toward occupancy — an infant needs a cot, not a bed. */
+  infants?: number;
+  /** Checked against the unit's pet policy, not against its bed count. */
+  pets?: number;
   totalThb: number;
   priceBreakdown?: Record<string, unknown>;
   cancellationPolicySnapshot?: Record<string, unknown>;
@@ -61,6 +66,67 @@ export const SAFE_IDENTITY_SELECT = {
  * or an unpaid hold that is still live. `requested` never blocks — a request
  * is non-binding until approved.
  */
+/**
+ * Postgres raises 23P01 when the `booking_no_overlap` exclusion constraint
+ * rejects an insert or a status change — the loser of a genuine race, which the
+ * pre-flight read cannot catch. Callers already understand DOUBLE_BOOK, so it
+ * surfaces as that rather than as a driver-level error.
+ */
+/**
+ * Codes Postgres and Prisma use for "you lost a concurrency fight, try again":
+ * serialization failure, deadlock, and Prisma's write-conflict wrapper. They say
+ * nothing about availability, so retrying is what turns them into a real answer —
+ * on the second pass the winner has committed and the pre-flight read reports a
+ * clean DOUBLE_BOOK instead of a driver error reaching the guest.
+ */
+function isTransientConflict(error: unknown): boolean {
+  const seen: string[] = [];
+  let cursor: unknown = error;
+  for (let depth = 0; cursor && depth < 5; depth += 1) {
+    const e = cursor as { message?: unknown; code?: string; cause?: unknown };
+    if (typeof e.message === 'string') seen.push(e.message);
+    if (typeof e.code === 'string') seen.push(e.code);
+    cursor = e.cause;
+  }
+  const haystack = seen.join('\n');
+  return (
+    haystack.includes('P2034') ||
+    haystack.includes('40001') ||
+    haystack.includes('40P01') ||
+    haystack.includes('write conflict') ||
+    haystack.includes('deadlock')
+  );
+}
+
+function rethrowAsDoubleBook(error: unknown): never {
+  // Already the domain error (the pre-flight read won the race) — pass it through.
+  if ((error as { code?: string })?.code === 'DOUBLE_BOOK') throw error;
+
+  // Prisma surfaces the violation in more than one shape: sometimes as a known
+  // request error carrying meta.code, sometimes as an unknown request error that
+  // only quotes the driver text, and inside a transaction it may be wrapped again.
+  // Scanning the message chain covers all of them; `cause` walks the wrapping.
+  const seen: string[] = [];
+  let cursor: unknown = error;
+  for (let depth = 0; cursor && depth < 5; depth += 1) {
+    const e = cursor as { message?: unknown; meta?: { code?: string }; code?: string; cause?: unknown };
+    if (typeof e.message === 'string') seen.push(e.message);
+    if (e.meta?.code) seen.push(e.meta.code);
+    if (typeof e.code === 'string') seen.push(e.code);
+    cursor = e.cause;
+  }
+  const haystack = seen.join('\n');
+  const isOverlapViolation =
+    haystack.includes('23P01') || haystack.includes('booking_no_overlap');
+
+  if (isOverlapViolation) {
+    const err = new Error('Dates unavailable — booking already exists');
+    (err as any).code = 'DOUBLE_BOOK';
+    throw err;
+  }
+  throw error;
+}
+
 async function findBlockingConflict(
   db: PrismaClient,
   unitId: string,
@@ -85,11 +151,54 @@ async function findBlockingConflict(
 }
 
 /**
- * Category-first booking (LY-6): pick the first available live unit of a
- * sellable category for the requested dates — hotel-style auto-assignment.
- * Stable order (by name) keeps assignment deterministic; the double-booking
- * guard inside createBooking stays the race-safety net.
- * Returns null when the category has no free unit for the range.
+ * Every live unit of a sellable category that is free for the range (LY-6),
+ * in a stable order so assignment is deterministic.
+ *
+ * One query, not one per unit. The old loop fetched the category then ran two
+ * queries per unit, so a forty-villa category cost eighty-one round trips on
+ * every search. The overlap and hold-expiry rules are the same ones
+ * `findBlockingConflict` applies — a lapsed `pending_payment` hold does not
+ * block, a live one does.
+ *
+ * Returns the whole list rather than the first match because the caller needs
+ * somewhere to go when it loses a race: the availability read cannot be held
+ * against a concurrent booking, and refusing the guest while a sibling villa
+ * stands empty is a lost sale, not a safety measure.
+ */
+export async function findAvailableUnitsForCategory(
+  db: PrismaClient,
+  projectId: string,
+  categoryKey: string,
+  startDate: Date,
+  endDate: Date
+): Promise<Array<{ id: string; instantBook: boolean }>> {
+  const now = new Date();
+  const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
+
+  return db.unit.findMany({
+    where: {
+      projectId,
+      categoryKey,
+      status: 'live',
+      bookings: {
+        none: {
+          ...overlaps,
+          OR: [
+            { status: { in: ['confirmed', 'checked_in'] } },
+            { status: 'pending_payment', holdExpiresAt: { gt: now } },
+          ],
+        },
+      },
+      blockedDates: { none: overlaps },
+    },
+    orderBy: { name: 'asc' },
+    select: { id: true, instantBook: true },
+  });
+}
+
+/**
+ * The first free unit of a category, or null. Kept as the single-answer form of
+ * `findAvailableUnitsForCategory` for callers that only want a yes/no.
  */
 export async function resolveUnitForCategory(
   db: PrismaClient,
@@ -98,35 +207,14 @@ export async function resolveUnitForCategory(
   startDate: Date,
   endDate: Date
 ): Promise<{ id: string; instantBook: boolean } | null> {
-  const units = await db.unit.findMany({
-    where: { projectId, categoryKey, status: 'live' },
-    orderBy: { name: 'asc' },
-    select: { id: true, instantBook: true },
-  });
-
-  for (const unit of units) {
-    const conflictingBooking = await findBlockingConflict(
-      db,
-      unit.id,
-      startDate,
-      endDate
-    );
-    if (conflictingBooking) continue;
-
-    const blocked = await db.blockedDate.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lt: endDate },
-        endDate: { gt: startDate },
-      },
-      select: { id: true },
-    });
-    if (blocked) continue;
-
-    return unit;
-  }
-
-  return null;
+  const [first] = await findAvailableUnitsForCategory(
+    db,
+    projectId,
+    categoryKey,
+    startDate,
+    endDate
+  );
+  return first ?? null;
 }
 
 export async function createBooking(
@@ -143,6 +231,8 @@ export async function createBooking(
     endDate,
     adults,
     children,
+    infants = 0,
+    pets = 0,
     totalThb,
     priceBreakdown,
     cancellationPolicySnapshot,
@@ -152,43 +242,95 @@ export async function createBooking(
     guestNote,
   } = input;
 
-  // Check for double-booking (race condition). An unpaid hold only blocks
-  // while it is still live — an abandoned checkout must not poison the dates.
-  const conflicting = await findBlockingConflict(db, unitId, startDate, endDate);
-
-  if (conflicting) {
-    const err = new Error('Dates unavailable — booking already exists');
-    (err as any).code = 'DOUBLE_BOOK';
-    throw err;
-  }
-
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
-  const booking = await db.booking.create({
-    data: {
-      unitId,
-      projectId,
-      guestIdentityId,
-      bookingType,
-      channel,
-      status: initialStatus,
-      startDate,
-      endDate,
-      adults,
-      children,
-      totalThb,
-      ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
-      ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-      holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
-      requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
-      guestNote,
-    },
-    include: {
-      unit: true,
-      guestIdentity: { select: SAFE_IDENTITY_SELECT },
-    },
+  // Availability is decided inside one transaction, and the last word belongs to
+  // the `booking_no_overlap` exclusion constraint rather than to the read below.
+  // Two concurrent callers can both see a free calendar; only one can commit.
+  const claimDates = () => db.$transaction(async (tx) => {
+    // Serialize attempts on this unit for the life of the transaction. Without
+    // it, concurrent inserts of the same range make Postgres take
+    // exclusion-constraint locks in whatever order they arrive, and a stampede
+    // deadlocks rather than queues — correct, because the constraint still holds
+    // and the loser retries, but needlessly expensive. One lock per unit turns
+    // that into an orderly queue; different units are unaffected. The lock is
+    // released on commit or rollback, so no path can leak it.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+
+    // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
+    // immutable), so a lapsed hold still occupies the range until it is retired.
+    // Retiring it here means an abandoned checkout never blocks the next guest,
+    // even if the scheduled expireHolds job has not run yet.
+    await tx.booking.updateMany({
+      where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+
+    // Kept ahead of the insert so the ordinary "those dates are taken" case
+    // answers with a clean domain error instead of a constraint violation.
+    const conflicting = await findBlockingConflict(tx as PrismaClient, unitId, startDate, endDate);
+    if (conflicting) {
+      const err = new Error('Dates unavailable — booking already exists');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+
+    // A unit can also be unavailable without a booking: an owner hold, a
+    // maintenance window, or a stay imported from an OTA. `resolveUnitForCategory`
+    // has always honoured these, but the direct path did not — so a villa Airbnb
+    // had already sold could be sold again here. The exclusion constraint cannot
+    // see across tables, which is why this check has to be inside the same
+    // advisory-locked transaction rather than in front of it.
+    const blocked = await tx.blockedDate.findFirst({
+      where: { unitId, startDate: { lt: endDate }, endDate: { gt: startDate } },
+      select: { id: true, reason: true },
+    });
+    if (blocked) {
+      const err = new Error(`Dates unavailable — unit is blocked (${blocked.reason})`);
+      (err as any).code = 'DOUBLE_BOOK';
+      (err as any).blockReason = blocked.reason;
+      throw err;
+    }
+
+    return tx.booking.create({
+      data: {
+        unitId,
+        projectId,
+        guestIdentityId,
+        bookingType,
+        channel,
+        status: initialStatus,
+        startDate,
+        endDate,
+        adults,
+        children,
+        infants,
+        pets,
+        totalThb,
+        ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
+        ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
+        holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
+        requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
+        guestNote,
+      },
+      include: {
+        unit: true,
+        guestIdentity: { select: SAFE_IDENTITY_SELECT },
+      },
+    });
   });
+
+  let booking;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      booking = await claimDates();
+      break;
+    } catch (error) {
+      if (attempt < 2 && isTransientConflict(error)) continue;
+      rethrowAsDoubleBook(error);
+    }
+  }
 
   // Track analytics event
   const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -274,16 +416,20 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
-  return db.booking.update({
-    where: { id: bookingId },
-    data: {
-      unitId,
-      status: 'pending_payment',
-      holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
-      requestExpiresAt: null,
-    },
-    include: { unit: { select: { name: true } } },
-  });
+  // `requested` sits outside the exclusion constraint, so this update is the
+  // moment the dates are actually claimed — and the moment a race can be lost.
+  return db.booking
+    .update({
+      where: { id: bookingId },
+      data: {
+        unitId,
+        status: 'pending_payment',
+        holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
+        requestExpiresAt: null,
+      },
+      include: { unit: { select: { name: true } } },
+    })
+    .catch(rethrowAsDoubleBook);
 }
 
 /**
@@ -547,78 +693,113 @@ export async function requestExtension(
   newEndDate: Date,
   actorIdentityId?: string
 ): Promise<StayExtensionResult> {
-  const booking = await db.booking.findUnique({
-    where: { id: bookingId },
-    include: { unit: true },
-  });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
+  // Read, check and write are one transaction under the per-unit advisory lock,
+  // the same guard `createBooking` takes. Before this the three were separate
+  // statements: two guests could each be told their extension was available and
+  // both could commit. The exclusion constraint would have caught the resulting
+  // overlap, but as a raw Postgres error rather than a refusal the caller could
+  // act on — and only for bookings, never for blocks.
+  const { booking, updated, additionalNights, addedThb, newTotalThb, balanceDueThb } =
+    await db.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        include: { unit: true },
+      });
+      if (!booking) {
+        throw new Error(`Booking ${bookingId} not found`);
+      }
 
-  if (booking.status !== 'checked_in') {
-    throw new Error(`Cannot request extension for booking with status ${booking.status}`);
-  }
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
 
-  if (newEndDate <= booking.endDate) {
-    throw new Error('New end date must be after current end date');
-  }
+      if (booking.status !== 'checked_in') {
+        throw new Error(`Cannot request extension for booking with status ${booking.status}`);
+      }
 
-  // The added nights are the only ones in question — the nights already being
-  // slept in are this booking's own and cannot conflict with anything.
-  const conflicting = await db.booking.findFirst({
-    where: {
-      unitId: booking.unitId,
-      id: { not: bookingId },
-      startDate: { lt: newEndDate },
-      endDate: { gt: booking.endDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-      ],
-    },
-  });
+      if (newEndDate <= booking.endDate) {
+        throw new Error('New end date must be after current end date');
+      }
 
-  if (conflicting) {
-    throw new Error('The unit is already booked for those nights');
-  }
+      // The added nights are the only ones in question — the nights already being
+      // slept in are this booking's own and cannot conflict with anything.
+      const conflicting = await tx.booking.findFirst({
+        where: {
+          unitId: booking.unitId,
+          id: { not: bookingId },
+          startDate: { lt: newEndDate },
+          endDate: { gt: booking.endDate },
+          OR: [
+            { status: { in: ['confirmed', 'checked_in'] } },
+            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+          ],
+        },
+      });
 
-  const additionalNights = Math.ceil(
-    (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+      if (conflicting) {
+        const err = new Error('The unit is already booked for those nights');
+        (err as any).code = 'DOUBLE_BOOK';
+        throw err;
+      }
 
-  const addedThb = additionalNights * (booking.unit?.baseNightlyThb ?? 0);
-  const newTotalThb = booking.totalThb + addedThb;
-  const balanceDueThb = (booking.balanceDueThb || 0) + addedThb;
+      // A unit can be unavailable without a booking, and the extension path never
+      // looked: an owner hold, a maintenance window, or nights already sold on an
+      // OTA would all have been extended straight over.
+      const blocked = await tx.blockedDate.findFirst({
+        where: {
+          unitId: booking.unitId,
+          startDate: { lt: newEndDate },
+          endDate: { gt: booking.endDate },
+        },
+        select: { id: true, reason: true },
+      });
+      if (blocked) {
+        const err = new Error(`The unit is unavailable for those nights (${blocked.reason})`);
+        (err as any).code = 'DOUBLE_BOOK';
+        (err as any).blockReason = blocked.reason;
+        throw err;
+      }
 
-  const updated = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      endDate: newEndDate,
-      totalThb: newTotalThb,
-      balanceDueThb,
-    },
-  });
+      const additionalNights = Math.ceil(
+        (newEndDate.getTime() - booking.endDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
-  // F-GUEST-9 writes a BookingChange for every date move, so the stay's shape
-  // is always reconstructable from its own history.
-  await db.bookingChange.create({
-    data: {
-      bookingId,
-      changeType: 'dates',
-      oldValue: {
-        startDate: booking.startDate.toISOString(),
-        endDate: booking.endDate.toISOString(),
-        totalThb: booking.totalThb,
-      },
-      newValue: {
-        startDate: booking.startDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-        totalThb: newTotalThb,
-      },
-      priceDeltaThb: addedThb,
-      actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
-    },
-  });
+      const addedThb = additionalNights * (booking.unit?.baseNightlyThb ?? 0);
+      const newTotalThb = booking.totalThb + addedThb;
+      const balanceDueThb = (booking.balanceDueThb || 0) + addedThb;
+
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          endDate: newEndDate,
+          totalThb: newTotalThb,
+          balanceDueThb,
+        },
+      });
+
+      // F-GUEST-9 writes a BookingChange for every date move, so the stay's shape
+      // is always reconstructable from its own history. Inside the transaction:
+      // a stay whose dates moved without a record of the move is worse than one
+      // that did not move at all.
+      await tx.bookingChange.create({
+        data: {
+          bookingId,
+          changeType: 'dates',
+          oldValue: {
+            startDate: booking.startDate.toISOString(),
+            endDate: booking.endDate.toISOString(),
+            totalThb: booking.totalThb,
+          },
+          newValue: {
+            startDate: booking.startDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+            totalThb: newTotalThb,
+          },
+          priceDeltaThb: addedThb,
+          actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+        },
+      });
+
+      return { booking, updated, additionalNights, addedThb, newTotalThb, balanceDueThb };
+    });
 
   await track(db, 'stay_extension_requested', {
     bookingId,
@@ -642,6 +823,173 @@ export async function requestExtension(
 /**
  * Mark a booking as no-show (tracking event; status remains checked_out until resolved).
  */
+export interface ChangeDatesResult {
+  bookingId: string;
+  previousStartDate: Date;
+  previousEndDate: Date;
+  startDate: Date;
+  endDate: Date;
+  previousTotalThb: number;
+  totalThb: number;
+  /** Positive when the guest owes more; collected through the finance seam. */
+  balanceDueThb: number;
+  /** Positive when the stay got cheaper; accrued, not paid out here. */
+  refundAccruedThb: number;
+}
+
+/**
+ * Move a booking's dates (F-GUEST-9, the general case).
+ *
+ * `requestExtension` only ever pushes the end date out. A guest whose flight
+ * moves needs the whole range to shift, and one cutting a trip short needs it to
+ * shrink — neither of which that function can express, so the only route was
+ * cancel and rebook. That loses the booking, the price the guest agreed, and
+ * frequently the guest.
+ *
+ * Repricing is a full recomputation for the new range rather than an adjustment
+ * of the old total: nights move across seasons, and a delta calculated from the
+ * old nightly rate would quietly undercharge a stay that shifted into a peak.
+ *
+ * The difference lands as a balance to collect or a refund accrued. Neither is
+ * settled here — the finance seam owns money, this module owns the stay.
+ */
+export async function changeBookingDates(
+  db: PrismaClient,
+  input: {
+    bookingId: string;
+    startDate: Date;
+    endDate: Date;
+    actorIdentityId?: string;
+  }
+): Promise<ChangeDatesResult> {
+  const { bookingId, startDate, endDate, actorIdentityId } = input;
+
+  if (endDate <= startDate) {
+    throw new Error('The new end date must be after the new start date');
+  }
+
+  const changeable: BookingStatus[] = ['pending_payment', 'confirmed', 'checked_in'];
+
+  const result = await db.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+      include: { unit: true },
+    });
+    if (!booking) {
+      throw new Error(`Booking ${bookingId} not found`);
+    }
+
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
+
+    if (!changeable.includes(booking.status)) {
+      throw new Error(`Cannot change the dates of a booking with status ${booking.status}`);
+    }
+
+    // A stay in progress cannot have its start moved — the guest is already in
+    // the villa, and rewriting the arrival would falsify the register the TM30
+    // filing was made from.
+    if (booking.status === 'checked_in' && startDate.getTime() !== booking.startDate.getTime()) {
+      throw new Error('A stay that has begun can change its departure, not its arrival');
+    }
+
+    // Excluding itself: the booking's own current nights are not a conflict with
+    // the nights it is moving to, and overlap between old and new is the usual
+    // case rather than the exception.
+    const conflicting = await findBlockingConflict(
+      tx as PrismaClient,
+      booking.unitId,
+      startDate,
+      endDate,
+      bookingId
+    );
+    if (conflicting) {
+      const err = new Error('The unit is already booked for those dates');
+      (err as any).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+
+    const blocked = await tx.blockedDate.findFirst({
+      where: {
+        unitId: booking.unitId,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+      },
+      select: { id: true, reason: true },
+    });
+    if (blocked) {
+      const err = new Error(`The unit is unavailable for those dates (${blocked.reason})`);
+      (err as any).code = 'DOUBLE_BOOK';
+      (err as any).blockReason = blocked.reason;
+      throw err;
+    }
+
+    const breakdown = await computePriceBreakdown(
+      tx as PrismaClient,
+      booking.unitId,
+      startDate,
+      endDate,
+      booking.adults + booking.children
+    );
+
+    const previousTotalThb = booking.totalThb;
+    const totalThb = breakdown.total_thb;
+    const difference = totalThb - previousTotalThb;
+
+    const balanceDueThb =
+      difference > 0 ? booking.balanceDueThb + difference : booking.balanceDueThb;
+    const refundAccruedThb =
+      difference < 0 ? booking.refundAccruedThb + Math.abs(difference) : booking.refundAccruedThb;
+
+    const updated = await tx.booking.update({
+      where: { id: bookingId },
+      data: { startDate, endDate, totalThb, balanceDueThb, refundAccruedThb },
+    });
+
+    // The price breakdown is immutable once set, so the new pricing lives on the
+    // change row rather than overwriting the terms the booking was sold under.
+    await tx.bookingChange.create({
+      data: {
+        bookingId,
+        changeType: 'dates',
+        oldValue: {
+          startDate: booking.startDate.toISOString(),
+          endDate: booking.endDate.toISOString(),
+          totalThb: previousTotalThb,
+        },
+        newValue: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          totalThb,
+          priceBreakdown: { ...breakdown } as any,
+        } as any,
+        priceDeltaThb: difference,
+        actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+      },
+    });
+
+    return {
+      bookingId,
+      previousStartDate: booking.startDate,
+      previousEndDate: booking.endDate,
+      startDate: updated.startDate,
+      endDate: updated.endDate,
+      previousTotalThb,
+      totalThb,
+      balanceDueThb,
+      refundAccruedThb,
+    };
+  });
+
+  // stay_modified already covers a change to a booking's shape (doc 13); a date
+  // move is exactly that, so no new event key is minted for it.
+  await track(db, 'stay_modified', {
+    bookingId,
+    priceDeltaThb: result.totalThb - result.previousTotalThb,
+  }).catch(() => null);
+
+  return result;
+}
+
 export async function markNoShow(
   db: PrismaClient,
   bookingId: string

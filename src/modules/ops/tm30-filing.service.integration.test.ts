@@ -187,7 +187,11 @@ describe('tm30-filing.service', () => {
   describe('getTm30Queue', () => {
     it('returns filings sorted by due_at', async () => {
       const project = await createProject();
+      // Two arrivals a day apart. They need separate units — overlapping stays
+      // in one unit are what `booking_no_overlap` exists to prevent, and the
+      // queue is project-wide anyway.
       const unit = await createUnit(project.id);
+      const unit2 = await createUnit({ projectId: project.id, name: 'TM30-B' });
       const guest1 = await createIdentity();
       const guest2 = await createIdentity();
 
@@ -205,7 +209,7 @@ describe('tm30-filing.service', () => {
       });
 
       const booking2 = await createBooking({
-        unitId: unit.id,
+        unitId: unit2.id,
         projectId: project.id,
         guestIdentityId: guest2.id,
         startDate: new Date('2026-07-16'),
@@ -229,7 +233,9 @@ describe('tm30-filing.service', () => {
 
     it('filters by status', async () => {
       const project = await createProject();
+      // Separate units: two concurrent stays cannot share one unit.
       const unit = await createUnit(project.id);
+      const unit2 = await createUnit({ projectId: project.id, name: 'TM30-status-B' });
       const guest1 = await createIdentity();
       const guest2 = await createIdentity();
       const staff = await createIdentity();
@@ -247,7 +253,7 @@ describe('tm30-filing.service', () => {
       });
 
       const booking2 = await createBooking({
-        unitId: unit.id,
+        unitId: unit2.id,
         projectId: project.id,
         guestIdentityId: guest2.id,
       });

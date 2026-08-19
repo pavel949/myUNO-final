@@ -235,37 +235,42 @@ export async function completeMobilizationStep(
     throw new Error(`Cannot complete step: ${gateCheck.reason}`);
   }
 
-  // Update the checklist item
-  await db.mobilizationChecklistItem.update({
-    where: { id: checklistItemId },
-    data: {
-      status: 'done',
-      completedAt: new Date(),
-      completedByIdentityId,
-      notes,
-    },
-  });
-
-  // If this is the go-live step, flip unit to live
+  // Go-live needs every other step finished — checked *before* anything is
+  // written. This used to mark the step done first and throw afterwards, with
+  // no transaction to undo it: a refused go-live left `golive_checklist`
+  // ticked while the unit stayed draft, so the screen said the unit was ready
+  // and it was not. Refusing before writing keeps the record honest.
   if (item.step === 'golive_checklist') {
-    // First verify all checklist items are done
-    const allItems = await db.mobilizationChecklistItem.findMany({
-      where: { unitId: item.unitId },
+    const siblings = await db.mobilizationChecklistItem.findMany({
+      where: { unitId: item.unitId, id: { not: checklistItemId } },
     });
 
-    const allDone = allItems.every((i: any) => i.status === 'done' || i.status === 'skipped');
+    const allDone = siblings.every((i) => i.status === 'done' || i.status === 'skipped');
     if (!allDone) {
       throw new Error('All checklist items must be completed before going live');
     }
+  }
 
-    // Flip unit to live
-    await db.unit.update({
-      where: { id: item.unitId },
+  // The tick and the go-live are one act: a unit must never be live with its
+  // final step unrecorded, nor the step recorded without the unit live.
+  await db.$transaction(async (tx) => {
+    await tx.mobilizationChecklistItem.update({
+      where: { id: checklistItemId },
       data: {
-        status: 'live',
+        status: 'done',
+        completedAt: new Date(),
+        completedByIdentityId,
+        notes,
       },
     });
-  }
+
+    if (item.step === 'golive_checklist') {
+      await tx.unit.update({
+        where: { id: item.unitId },
+        data: { status: 'live' },
+      });
+    }
+  });
 }
 
 /**
@@ -297,27 +302,32 @@ export async function isMobilizationComplete(
 /**
  * Initialize mobilization checklist for a unit (called on unit creation).
  */
+/** The seven steps of doc 07 F-OWN-1, in the order the gate enforces. */
+export const MOBILIZATION_STEPS = [
+  'qualify',
+  'mandate',
+  'legal_audit',
+  'condition_survey',
+  'standards_uplift',
+  'pricing_setup',
+  'golive_checklist',
+] as const;
+
+/**
+ * Give a unit its checklist.
+ *
+ * Idempotent: `@@unique([unitId, step])` means a second call would otherwise
+ * throw, and this is now reachable from a route where a double-click or a retry
+ * after a partial failure must repair rather than fail. `skipDuplicates` also
+ * makes it safe to run against a unit whose checklist was partly created.
+ */
 export async function initializeMobilizationChecklist(
   db: PrismaClient,
   unitId: string
-): Promise<void> {
-  const steps = [
-    'qualify',
-    'mandate',
-    'legal_audit',
-    'condition_survey',
-    'standards_uplift',
-    'pricing_setup',
-    'golive_checklist',
-  ];
-
-  for (const step of steps) {
-    await db.mobilizationChecklistItem.create({
-      data: {
-        unitId,
-        step: step as any,
-        status: 'pending',
-      },
-    });
-  }
+): Promise<{ created: number }> {
+  const { count } = await db.mobilizationChecklistItem.createMany({
+    data: MOBILIZATION_STEPS.map((step) => ({ unitId, step, status: 'pending' as const })),
+    skipDuplicates: true,
+  });
+  return { created: count };
 }

@@ -133,4 +133,6 @@ These are list-shaped configuration: each catalog is a `json` parameter holding 
 
 Legal non-negotiables are constants, not parameters: the no-fund-holding rule, the FX routing-only rule, permitted-use-before-live gate, PDPA handling, and the 24h TM30 ceiling (only tightenable, §7). Ledger entry types and role names are schema, not config — money and permission vocabulary changes deserve a migration and a human review, not a settings edit.
 
+**Search sort options** (`UNIT_SORTS`, `src/modules/browse/sort.ts`) are code, not a §8 catalog, though they look like one. A catalog entry is a key and a label; a sort entry carries the ordering itself — which column, which direction, which tie-breaker, and whether it needs a value no column holds. Making it editable would let an entry be added with no ordering behind it, and the picker would offer a sort that does nothing. Only the **labels** are editable, as `catalog.unit_sorts.<key>.label` content keys.
+
 *Every parameter above must exist as a seed row with exactly these keys — flows (doc 07), money (doc 10), and notifications (doc 11) reference them by key. ⚠ items trace to `open_questions.md` and ship with these defaults until the founder rules.*

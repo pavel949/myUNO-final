@@ -233,7 +233,8 @@ export async function computePriceBreakdown(
   checkInDate: Date,
   checkOutDate: Date,
   guestCount: number,
-  bookingDate: Date = new Date()
+  bookingDate: Date = new Date(),
+  pets: number = 0
 ): Promise<PriceBreakdown> {
   const unit = await db.unit.findUnique({ where: { id: unitId } });
   if (!unit) {
@@ -242,9 +243,24 @@ export async function computePriceBreakdown(
 
   const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
 
-  // Validate party size
+  // Validate party size. Occupancy is adults + children — the convention every
+  // OTA uses — so infants are excluded here and checked against the unit's pet
+  // and cot policy instead. Counting an infant against the bed count turns a
+  // family of four into a party the villa refuses.
   if (guestCount > unit.maxGuests) {
     throw new Error(`Party size ${guestCount} exceeds unit max of ${unit.maxGuests}`);
+  }
+
+  // Pets are a house rule, not a headcount. A unit that has not answered the
+  // question is not the same as one that said no, so an unanswered policy
+  // refuses rather than assumes — the operator sets it during mobilization.
+  if (pets > 0) {
+    if (unit.petsAllowed !== true) {
+      throw new Error('This unit does not accept pets');
+    }
+    if (unit.maxPets !== null && unit.maxPets !== undefined && pets > unit.maxPets) {
+      throw new Error(`This unit accepts up to ${unit.maxPets} pet(s), not ${pets}`);
+    }
   }
 
   const nights = getDaysBetween(checkInDate, checkOutDate);

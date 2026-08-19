@@ -37,6 +37,13 @@ enum ProjectStatus {
   archived
 }
 
+/// An area is public only when it is worth a page of its own. One project in a
+/// region is a project, not a destination.
+enum AreaStatus {
+  draft
+  live
+}
+
 enum UnitType {
   villa
   condo
@@ -431,6 +438,9 @@ enum ServiceOrderStatus {
 enum ReviewTargetType {
   stay
   service_order
+  /// A review *of* the guest, written after their stay. `target_id` is the
+  /// booking, not the identity — see the 20260818000018 migration for why.
+  guest
 }
 
 enum Tm30FilingStatus {
@@ -759,6 +769,10 @@ model Identity {
   authAccounts              AuthAccount[]
   oneTimeTokens             OneTimeToken[]
   ownedUnits                Unit[]                      @relation("unitOwner")
+  ownershipPeriods          OwnershipPeriod[]           @relation("ownershipPeriodOwner")
+  savedUnits                SavedUnit[]
+  savedSearches             SavedSearch[]
+  ownershipPeriodsRecorded  OwnershipPeriod[]           @relation("ownershipPeriodRecorder")
   roleAssignments           RoleAssignment[]            @relation("roleAssignmentIdentity")
   grantedRoles              RoleAssignment[]            @relation("grantedRoles")
   mediaAssets               MediaAsset[]                @relation("uploadedBy")
@@ -856,14 +870,55 @@ model OneTimeToken {
   @@map("one_time_token")
 }
 
+/// A place inventory is described by — "Bang Tao", "Phuket west coast".
+///
+/// Before this, a location was a content key on the project: a display string,
+/// so nothing could be asked *about* an area. Areas exist for two jobs the
+/// founder named — **browse** (an area page, a search filter, "near here") and
+/// **reporting** (occupancy and revenue rolled up across the projects in a
+/// region). Both concern myUNO's own inventory, so an area holds projects the
+/// platform operates rather than a market-wide comparables set.
+///
+/// The parent link makes depth **data rather than schema**: island → coast →
+/// beach, or a flat list, without a migration either way. A report or a browse
+/// page for an area includes everything beneath it.
+model Area {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// The URL segment. Browse is half the reason this model exists.
+  slug           String     @unique
+  nameKey        String     @map("name_key")
+  descriptionKey String?    @map("description_key")
+  parentId       String?    @map("parent_id")
+  status         AreaStatus @default(draft)
+  /// Display order among siblings; ties fall back to slug.
+  sort           Int        @default(0)
+
+  // Relations
+  parent   Area?     @relation(name: "areaParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Area[]    @relation(name: "areaParent")
+  projects Project[]
+
+  @@index([parentId])
+  @@index([status])
+  @@map("area")
+}
+
 model Project {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  slug            String        @unique
-  name            String
+  slug String @unique
+  name String
+  /// Legacy: the project's own label for where it is. Superseded by `areaId` —
+  /// two projects in Bang Tao must not be able to name Bang Tao differently.
+  /// Read through `resolveAreaLabelKey`, which prefers the area when one is
+  /// set. Droppable once every project has an area.
   areaLabelKey    String        @map("area_label_key")
+  areaId          String?       @map("area_id")
   descriptionKey  String        @map("description_key")
   latitude        Decimal       @db.Decimal(9, 6)
   longitude       Decimal       @db.Decimal(9, 6)
@@ -876,6 +931,9 @@ model Project {
   defaultCurrency String        @default("THB") @map("default_currency")
 
   // Relations
+  /// SetNull, never cascade: deleting an area must not delete the projects in
+  /// it. An area is a way of describing where a project is, not its owner.
+  area                 Area?                @relation(fields: [areaId], references: [id], onDelete: SetNull)
   coverMedia           MediaAsset?          @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   units                Unit[]
   roleAssignments      RoleAssignment[]     @relation("projectScope")
@@ -895,6 +953,7 @@ model Project {
   crmOpportunities     CrmOpportunity[]
   managementContracts  ManagementContract[]
 
+  @@index([areaId])
   @@map("project")
 }
 
@@ -925,6 +984,9 @@ model Unit {
   assetStatusChangedAt    DateTime?   @map("asset_status_changed_at")
   assetStatusReason       String?     @map("asset_status_reason")
   permittedUseConfirmedAt DateTime?  @map("permitted_use_confirmed_at")
+  /// Null means the unit has not said — which is not the same as "no".
+  petsAllowed             Boolean?   @map("pets_allowed")
+  maxPets                 Int?       @map("max_pets")
   coverMediaId            String?    @map("cover_media_id")
 
   // Relations
@@ -952,6 +1014,8 @@ model Unit {
   incidentLogs          IncidentLog[]
   complianceChecklistInstances ComplianceChecklistInstance[]
   managementContracts   ManagementContract[]
+  ownershipPeriods      OwnershipPeriod[]
+  savedBy               SavedUnit[]
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
@@ -1015,6 +1079,10 @@ model Booking {
   endDate                    DateTime           @map("end_date") @db.Date
   adults                     Int
   children                   Int
+  /// Not counted toward occupancy — an infant needs a cot, not a bed.
+  infants                    Int                @default(0)
+  /// Recorded against the unit's pet policy, not against its bed count.
+  pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
   balanceDueThb              Int                @default(0) @map("balance_due_thb")
@@ -2605,4 +2673,71 @@ model IntegrationAccount {
   @@index([scopeType, unitId])
   @@index([status, lastSyncAt])
   @@map("integration_account")
+}
+
+/// Who held title to a unit, and when.
+///
+/// `Unit.ownerIdentityId` remains the denormalised current owner that most reads
+/// use; this is the record of fact behind it. Both are written in one
+/// transaction by `setUnitOwner`, and a database exclusion constraint stops one
+/// unit having two owners on the same day.
+model OwnershipPeriod {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  unitId               String    @map("unit_id")
+  ownerIdentityId      String    @map("owner_identity_id")
+  startsOn             DateTime  @map("starts_on") @db.Date
+  /// Null means this is the current owner.
+  endsOn               DateTime? @map("ends_on") @db.Date
+  note                 String?
+  recordedByIdentityId String?   @map("recorded_by_identity_id")
+
+  // Relations
+  unit       Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner      Identity  @relation(name: "ownershipPeriodOwner", fields: [ownerIdentityId], references: [id])
+  recordedBy Identity? @relation(name: "ownershipPeriodRecorder", fields: [recordedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([unitId, startsOn])
+  @@index([ownerIdentityId])
+  @@map("ownership_period")
+}
+
+/// A villa someone kept, so a browse that ends has something to come back to.
+model SavedUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  identityId String  @map("identity_id")
+  unitId     String  @map("unit_id")
+  /// Free-text list name. Null is the default list.
+  collection String?
+  note       String?
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  unit     Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([identityId])
+  @@index([unitId])
+  @@map("saved_unit")
+}
+
+/// A filter set someone kept, so we can tell them when something matches.
+model SavedSearch {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  identityId    String   @map("identity_id")
+  name          String?
+  /// The criteria themselves, not a query string — a URL shape is presentation.
+  criteria      Json     @db.JsonB
+  alertsEnabled Boolean  @default(true) @map("alerts_enabled")
+  lastAlertedAt DateTime? @map("last_alerted_at")
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId])
+  @@index([alertsEnabled])
+  @@map("saved_search")
 }

@@ -148,6 +148,7 @@ Ranked by severity and scope.
 ## Notes
 
 - **P3009 migration stuck state** is external to this repo (lives in `db.prisma.io` account's `_prisma_migrations` table). A **fresh Supabase database is clean** — `prisma migrate deploy` applies `0_init` cleanly.
+  - **Resolved 2026-08-18.** Supabase became the production database and the Prisma Cloud integration was disconnected; `db.prisma.io` is no longer used by this project. This audit's reading was right: the Supabase database took the full chain cleanly. See doc 15 §2.1.
 - **In-memory SSE bus** will silently break on Vercel serverless (multi-instance). For MVP, either (a) deploy to a single-instance Node.js host (Render, Railway, Fly.io) with sticky sessions + in-memory, or (b) add Redis pub/sub (production-ready but adds cost/complexity). Document this constraint in `docs/15_deployment.md`.
 - **One Prisma singleton leak:** `src/app/libs/prismadb.ts` and `src/lib/prisma.ts` are both connected to `DATABASE_URL`, duplication creates a footgun. Consolidate to one instance.
 

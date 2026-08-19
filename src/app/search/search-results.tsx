@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
+
+/** One screenful. Beyond this the guest asks for more rather than waiting for it. */
+const PAGE_SIZE = 24;
 
 interface Unit {
   id: string;
@@ -12,13 +15,9 @@ interface Unit {
   description?: string;
   projectId?: string;
   coverUrl?: string | null;
-}
-
-interface SearchResult {
-  units: Unit[];
-  total: number;
-  limit: number;
-  offset: number;
+  /** Null when nobody has reviewed it — unknown, not zero. */
+  averageRating?: number | null;
+  reviewCount?: number;
 }
 
 interface CategoryCard {
@@ -45,6 +44,10 @@ export interface SearchResultsLabels {
   categoryBooking: string;
   categoryAutoAssign: string;
   errorBooking: string;
+  sortLabel: string;
+  loadMore: string;
+  loadingMore: string;
+  ratingSummary: string;
   barCheckIn: string;
   barCheckOut: string;
   barAdults: string;
@@ -60,31 +63,49 @@ function fill(template: string, params: Record<string, string | number>): string
   return result;
 }
 
-export default function SearchResults({ labels }: { labels: SearchResultsLabels }) {
+export interface SortOption {
+  key: string;
+  label: string;
+}
+
+export default function SearchResults({
+  labels,
+  sortOptions,
+}: {
+  labels: SearchResultsLabels;
+  sortOptions: SortOption[];
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [results, setResults] = useState<SearchResult | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState<CategoryCard[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingCategory, setBookingCategory] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
 
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
   const adults = searchParams.get('adults') || '1';
   const children = searchParams.get('children') || '0';
   const projectId = searchParams.get('projectId');
+  const sort = searchParams.get('sort') || sortOptions[0]?.key || 'recommended';
   const hasDates = Boolean(startDate && endDate);
 
-  useEffect(() => {
-    if (!hasDates) {
-      setResults(null);
-      setError(null);
-      return;
-    }
+  /**
+   * Which search the answers belong to. A slow first page must not overwrite a
+   * faster second search — the guest would be looking at the results of a
+   * question they have already changed.
+   */
+  const requestRef = useRef(0);
 
-    const fetchResults = async () => {
-      setLoading(true);
+  const fetchPage = useCallback(
+    async (offset: number) => {
+      const generation = ++requestRef.current;
+      if (offset === 0) setLoading(true);
+      else setLoadingMore(true);
       setError(null);
 
       try {
@@ -93,7 +114,9 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
           endDate: endDate as string,
           adultsCount: adults,
           childrenCount: children,
-          limit: '50',
+          sort,
+          limit: String(PAGE_SIZE),
+          offset: String(offset),
         });
         if (projectId) params.set('projectId', projectId);
 
@@ -103,31 +126,59 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
         }
 
         const data = await response.json();
-        setResults(data);
+        if (generation !== requestRef.current) return;
 
-        // Category cards for project-scoped searches (LY-6)
-        if (projectId) {
-          const grouped = new URLSearchParams(params);
-          grouped.set('groupBy', 'category');
-          const groupedRes = await fetch(`/api/search/units?${grouped}`);
-          if (groupedRes.ok) {
-            const groupedData = await groupedRes.json();
-            setCategories(groupedData.categories || []);
+        setUnits((previous) => (offset === 0 ? data.units : [...previous, ...data.units]));
+        setTotal(data.total);
+        setSearched(true);
+
+        // Category cards for project-scoped searches (LY-6) — the rollup is the
+        // whole set, so it is fetched once with the first page, not with each.
+        if (offset === 0) {
+          if (projectId) {
+            const grouped = new URLSearchParams(params);
+            grouped.set('groupBy', 'category');
+            const groupedRes = await fetch(`/api/search/units?${grouped}`);
+            if (generation !== requestRef.current) return;
+            const groupedData = groupedRes.ok ? await groupedRes.json() : null;
+            setCategories(groupedData?.categories || []);
           } else {
             setCategories([]);
           }
-        } else {
-          setCategories([]);
         }
       } catch (err) {
+        if (generation !== requestRef.current) return;
         setError(err instanceof Error ? err.message : labels.errorGeneric);
       } finally {
-        setLoading(false);
+        if (generation === requestRef.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
-    };
+    },
+    [startDate, endDate, adults, children, projectId, sort, labels.errorGeneric]
+  );
 
-    fetchResults();
-  }, [hasDates, startDate, endDate, adults, children, projectId, labels.errorGeneric]);
+  useEffect(() => {
+    if (!hasDates) {
+      requestRef.current++;
+      setUnits([]);
+      setTotal(0);
+      setSearched(false);
+      setError(null);
+      return;
+    }
+    // Changing the dates, the party, or the ordering is a different question:
+    // the answer starts again at page one rather than appending to the old one.
+    fetchPage(0);
+  }, [hasDates, fetchPage]);
+
+  const handleSortChange = (nextSort: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('sort', nextSort);
+    // In the URL, so the ordering survives a reload and travels in a shared link.
+    router.replace(`/search?${next.toString()}`);
+  };
 
   const handleBookCategory = async (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;
@@ -192,13 +243,31 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
         {!hasDates && <p className="text-body text-text-secondary">{labels.prompt}</p>}
 
         {hasDates && (
-          <p className="text-body text-text-secondary mb-24">
-            {fill(labels.resultsSummary, {
-              from: startDate as string,
-              to: endDate as string,
-              guests: Number(adults) + Number(children),
-            })}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-16 mb-24">
+            <p className="text-body text-text-secondary">
+              {fill(labels.resultsSummary, {
+                from: startDate as string,
+                to: endDate as string,
+                guests: Number(adults) + Number(children),
+              })}
+            </p>
+            {sortOptions.length > 0 && (
+              <label className="flex items-center gap-8 text-small text-text-secondary">
+                {labels.sortLabel}
+                <select
+                  value={sort}
+                  onChange={(event) => handleSortChange(event.target.value)}
+                  className="h-40 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
         )}
 
         {loading && <p className="text-body text-text-secondary">{labels.loading}</p>}
@@ -250,16 +319,16 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
           </div>
         )}
 
-        {!loading && results && results.units.length === 0 && (
+        {!loading && searched && units.length === 0 && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
             <p className="text-body text-text-ink mb-8">{labels.empty}</p>
             <p className="text-small text-text-secondary">{labels.emptyHint}</p>
           </div>
         )}
 
-        {!loading && results && results.units.length > 0 && (
+        {!loading && units.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
-            {results.units.map((unit) => (
+            {units.map((unit) => (
               <Link
                 key={unit.id}
                 href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
@@ -281,17 +350,37 @@ export default function SearchResults({ labels }: { labels: SearchResultsLabels 
                     ฿{unit.baseNightlyThb?.toLocaleString()}
                   </p>
                   <p className="text-small text-text-secondary">{labels.perNight}</p>
+                  {/* A villa nobody has reviewed shows nothing, rather than a
+                      zero — it is unknown, not bad. */}
+                  {unit.averageRating !== null && unit.averageRating !== undefined && (
+                    <p className="text-small text-text-secondary mt-8">
+                      {fill(labels.ratingSummary, {
+                        rating: unit.averageRating.toFixed(1),
+                        count: unit.reviewCount ?? 0,
+                      })}
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}
           </div>
         )}
 
-        {!loading && results && results.total > results.limit && (
+        {!loading && units.length > 0 && (
           <div className="mt-32 text-center">
-            <p className="text-small text-text-secondary">
-              {fill(labels.showing, { shown: results.units.length, total: results.total })}
+            <p className="text-small text-text-secondary mb-16">
+              {fill(labels.showing, { shown: units.length, total })}
             </p>
+            {units.length < total && (
+              <button
+                type="button"
+                onClick={() => fetchPage(units.length)}
+                disabled={loadingMore}
+                className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition disabled:opacity-50"
+              >
+                {loadingMore ? labels.loadingMore : labels.loadMore}
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -9,7 +9,7 @@
     "db:repair": "node scripts/repair-failed-migrations.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:registries": "tsx prisma/seed-registries.ts"

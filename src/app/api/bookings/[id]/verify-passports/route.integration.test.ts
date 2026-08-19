@@ -100,9 +100,13 @@ describe('POST /api/bookings/[id]/verify-passports', () => {
     const unit = await createUnit(project.id);
     const guest = await createIdentity();
 
-    // Create booking with startDate in the past
+    // An arrival that has already happened — the deadline case. The departure
+    // has to trail the arrival or the stay is not a stay; the factory default
+    // end date is a fixed calendar date, so set both together.
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 1);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 2);
 
     const booking = await createBooking({
       unitId: unit.id,
@@ -111,6 +115,7 @@ describe('POST /api/bookings/[id]/verify-passports', () => {
       status: 'confirmed',
       verificationStatus: 'pending',
       startDate,
+      endDate,
     });
 
     // Set up ops lead role

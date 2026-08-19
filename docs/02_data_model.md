@@ -99,7 +99,8 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 |---|---|---|
 | `slug` | text, unique | URL identity, e.g. `layan-verde`. |
 | `name` | text | Display name (a proper noun — not a content key; project names are the same in all locales). |
-| `area_label_key` | content key | Location label ("Layan Beach") — localized. |
+| `area_label_key` | content key | **Legacy.** The project's own location label. Superseded by `area_id` — two projects in Bang Tao must not be able to name Bang Tao differently. Read through `resolveAreaLabelKey`, which prefers the area when one is set. Droppable once every project is assigned. |
+| `area_id` | FK→Area, nullable, **SetNull** | Where the project is (§2.4.1). Nullable so an unassigned project still works; never cascades, because an area describes a project rather than owning it. |
 | `description_key` | content key | The project story on its landing page. |
 | `latitude`, `longitude` | decimal | Map pin. |
 | `address` | text | Street address (used on TM30-ready records with unit numbers). |
@@ -111,12 +112,33 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `status` | enum `draft, live, archived` | Only `live` projects appear publicly. |
 | `default_currency` | text, default `THB` | Fixed THB in loop one; field exists so the constraint is visible. |
 
+### 2.4.1 `Area` — a place inventory is described by
+
+Before this, a location was `area_label_key`: a content key, i.e. a string to display. Nothing could be asked *about* an area — no area page, no occupancy compared across a region, no "near here" — and every project named its own area independently, which had already produced three key shapes for one concept.
+
+An area exists for **two jobs, both over myUNO's own inventory**: **browse** (an area landing page, a search filter, a sitemap entry) and **reporting** (occupancy, ADR and revenue rolled up across a region). It is deliberately *not* a market-wide comparables set — an area holds projects the platform operates.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `slug` | text, unique | URL segment. Browse is half the reason this model exists. |
+| `name_key` | content key | The area's name, RU/EN/TH like every label. |
+| `description_key` | content key, nullable | Prose for the area landing page. |
+| `parent_id` | FK→Area, nullable, **SetNull** | The area this one sits inside. |
+| `status` | enum `draft`/`live` | Public only when it is worth a page: one project in a region is a project, not a destination. |
+| `sort` | int, default 0 | Order among siblings; ties fall back to slug, never insertion order. |
+
+**Depth is data, not schema.** `parent_id` means island → coast → beach, or a flat list, without a migration either way. Everything that reads an area reads it *inclusively*: a report or a browse page for "the west coast" covers every beach beneath it, resolved by `collectDescendantIds`.
+
+**Cycles are refused twice.** A CHECK constraint blocks an area being its own parent, so a direct write cannot route around the service; `wouldFormCycle` walks the ancestry on write to block the longer case ("Phuket is inside Bang Tao is inside Phuket"), which Postgres cannot express as a CHECK. Every tree walk also carries a visited set, so already-broken data yields a finite wrong answer instead of a hung request.
+
+**Empty is not zero.** An area with no inventory reports `occupancy_pct` and `adr_thb` as **null**, never `0` — a region with nothing in it is not a region at 0% occupancy, and a dashboard that cannot tell those apart reports a catastrophe that is really an absence. An unknown area resolves to **nothing rather than everything**, because silently widening a filtered view to the whole portfolio is the dangerous direction to fail in.
+
 ### 2.5 `Unit` — a home inside a project
 
 | Field | Type | Meaning |
 |---|---|---|
 | `project_id` | FK→Project | The one project it belongs to. |
-| `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform**. Nullable while a unit is being set up before its owner has an identity. |
+| `owner_identity_id` | FK→Identity, nullable | The title-holder **as known to the platform, today**. Nullable while a unit is being set up before its owner has an identity. **A denormalisation of `OwnershipPeriod` (2.5.1), not the fact itself** — the two are written together by `setUnitOwner`. Money records must ask `getOwnerAt(date)`, never this column, because it only ever describes the present. |
 | `name` | text | Display name/number ("Villa A-3", "B-707"). Unique within project. |
 | `unit_type` | enum `villa, condo, townhouse` | Physical type. |
 | `category_key` | string, nullable | Sellable class inside the project (e.g. `superior_2br`), validated against the project's `catalog.unit_categories` config (doc 04 §8). Null = the unit is sold individually, not as part of a category. Indexed with `project_id` for category availability queries. |
@@ -132,10 +154,64 @@ Hashed single-use tokens (pattern taken from the legacy clone).
 | `instant_book` | boolean | `false` = request-to-book (host approval flow). |
 | `cancellation_policy_key` | text, nullable | Named policy override; null = inherit project/global config. |
 | `status` | enum `draft, mobilizing, live, paused, offboarded` | Only `live` is bookable. `paused` hides from search but keeps existing bookings. |
+| `pets_allowed` | bool, nullable | Whether the unit takes pets. **Null means the unit has not answered, which is not the same as "no"** — an unanswered policy refuses a pet rather than assuming one is welcome, and the operator sets it during mobilization. |
+| `max_pets` | int, nullable | How many. Null with `pets_allowed = true` means no stated limit. |
 | `permitted_use_confirmed_at` | timestamptz, nullable | **The legal gate.** A unit cannot move to `live` unless set (with the confirming compliance record §11.2). |
 | `cover_media_id` + `UnitMedia` join (`unit_id`,`media_id`,`sort`) | | Photo gallery; first is cover. |
 
+
+#### 2.5.1 `OwnershipPeriod` — the chain of title
+
+`Unit.owner_identity_id` is a single scalar, so changing an owner used to erase the
+previous one. An owner statement, a payout, or a fee earned last year could not
+prove who held title when it was earned — which contradicts the rule that
+financial history is immutable (doc 10). This table is the record of fact; the
+scalar is kept as the denormalised "who owns it now" that most reads use.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `unit_id` | FK→Unit | The unit. |
+| `owner_identity_id` | FK→Identity | Who held title during this period. |
+| `starts_on` | date | The day they took title. |
+| `ends_on` | date, nullable | The day the next owner took over. **Null = the current owner.** Half-open, the same convention bookings use: the handover day belongs to the incoming owner. |
+| `note` | text, nullable | How the record came to exist (backfill, sale, correction). |
+| `recorded_by_identity_id` | FK→Identity, nullable | Which staff member recorded it. |
+
+**Constraints.** `ownership_period_no_overlap` is a GiST exclusion over
+`(unit_id, daterange(starts_on, COALESCE(ends_on,'infinity'), '[)'))` — one unit
+cannot have two owners on the same day, and two concurrent transfers cannot both
+commit. `ownership_period_dates_ordered` rejects a period ending before it
+starts. Both are enforced in the database rather than the service, for the same
+reason `booking_no_overlap` is.
+
+**Backfill.** Every unit that already had an owner received an open period
+starting at the unit's `created_at`. That is the earliest date the system has
+evidence for, and it is stated in the row's `note` rather than implied.
+
+**Writing.** `setUnitOwner` closes the open period, opens the next, and moves the
+scalar — one transaction. `updateUnit` does **not** accept an owner, so this is
+the only supported path. `ensureOwnershipRecorded` opens a first period for a
+unit created outside that path, and is idempotent.
+
 ### 2.6 `UnitEngagement` — how the unit is on the platform (the economics selector)
+
+> **`UnitEngagement` and `ManagementContract` are not rivals — they answer different questions.**
+> Two entities describe a unit's commercial relationship and it is easy to read one as a
+> replacement for the other. The division is deliberate:
+>
+> | Question | Answered by |
+> |---|---|
+> | Which economics apply — how is the take split between owner and estate? | **`UnitEngagement`** (this section). The statement generator branches on `engagement_type`, and a direct-managed unit without its `noi_cap_annual_thb` refuses generation rather than guessing (doc 10 §4). |
+> | Is a performance fee owed, on what basis, above what baseline? | **`ManagementContract`**. Read only when `performance_fee_enabled`; never defaulted, so a unit with no such contract earns no performance fee. |
+>
+> The owner/estate split must never be taken from the contract, and a performance fee must never be
+> defaulted from config — either change moves an owner's money to a different document than doc 10
+> names. `src/modules/finance/fee-model-boundary.integration.test.ts` pins both.
+>
+> **Open:** `EarnedFee` (created from a `ManagementContract`) records a management fee that
+> `OwnerStatement.estate_share_thb` already contains, and nothing reconciles them. Statements never
+> read `EarnedFee`, so the owner-facing number is unaffected; anything summing both double-counts.
+> See **Q37** — a founder ruling, not a fix to make silently.
 
 Exactly one **active** engagement per unit at a time (enforced by partial unique index on `unit_id` where `status='active'`); history preserved as rows.
 
@@ -202,6 +278,7 @@ One row per stay, whatever the channel. This is the calendar of record.
 | `start_date`, `end_date` | date | Check-in / check-out days (end exclusive for nights math). |
 | `adults`, `children` | int | Party size; validated against `max_guests`. |
 | `price_breakdown` | jsonb | The server-computed line items frozen at booking: nightly lines (each night + applied rule/season), fees, taxes, discounts. Never trusted from the client. |
+| `infants`, `pets` | int, default 0 | **Not counted toward occupancy.** An infant needs a cot, not a bed, and counting one against `max_guests` turns a family of four into a party the villa refuses — the convention every OTA follows. Pets are checked against the unit's `pets_allowed` / `max_pets` instead. CHECK constraints reject negatives and require at least one adult: somebody has to be responsible for the stay. |
 | `total_thb` | int | Sum of the breakdown. `0` for `owner_stay`. |
 | `balance_due_thb` | int, default 0 | Unpaid difference after an upward modification. |
 | `refund_accrued_thb` | int, default 0 | Accrued refunds (downward modification, cancellation) — what has been/should be returned via the provider. |

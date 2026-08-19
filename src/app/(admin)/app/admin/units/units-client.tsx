@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/Button';
 
 interface AdminUnit {
@@ -117,7 +118,9 @@ export default function UnitsAdminClient({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-body font-semibold text-text-ink">
-              {unit.name}
+              <Link href={`/app/admin/units/${unit.id}`} className="hover:underline">
+                {unit.name}
+              </Link>
               <span className="text-text-secondary font-normal"> · {unit.projectName}</span>
             </p>
             <p className="text-small text-text-secondary">

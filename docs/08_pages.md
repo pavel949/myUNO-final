@@ -48,6 +48,18 @@ Lead forms (owners/developers/buyers/MC): name, contact (phone/WhatsApp/email), 
 
 S2 composition: hero (project cover, name, `area_label_key`, the endorsed lockup), availability bar (**project-scoped** — the search carries `projectId`, LY-5), **styles + villa-categories cards** (renders only when the project defines `catalog.unit_categories`; counts from live units, "from" prices from `pricing.category_rates`), **long-stay block** (renders when any category sells monthly rates; CTA → the project's WhatsApp from `comms.whatsapp_number`), units grid (live units), project story (`description_key` rich), amenities, services available here, **guest reviews** (published stay reviews of the project, dynamic — renders only when they exist; author first name only), location map, the project handbook teaser (public subset), trust band (+ the project's licence line via `project.{slug}.licence` when present), FAQ (Q25). JSON-LD upgrades from `LodgingBusiness` to `schema.org/Resort` when the categories catalog exists. **Vanity URLs:** `/{slug}` redirects to the canonical `/projects/{slug}` for any live project (myuno.app/layantara); `/{slug}/guest` → the guest access flow. This page is the future "home space's public face" and the developer-pitch artifact (v3 §34.2).
 
+### 4.1 Search results `/search` (S3)
+
+S3 composition: the availability bar (dates · party · project scope), a **sort picker**, the villa grid, and — when a project is in scope — the category rollup cards above it.
+
+Sorting is `UNIT_SORTS` (`src/modules/browse/sort.ts`; doc 04 §9 explains why it is code rather than a §8 catalog): recommended, price ascending, price descending, most bedrooms, sleeps the most, top rated. The chosen sort lives in the URL, so an ordering survives a reload and travels in a shared link, and an unrecognised value falls back to the default rather than failing the search. Every sort breaks its ties on `id`, so paging never repeats a villa it has already shown.
+
+The search accepts an **area** (`areaSlug`), which covers every area beneath it — "the west coast" reaches its beaches without anyone restating the list. An unknown slug matches nothing rather than everything. An area combined with an explicit `projectId` yields the **intersection**, never one silently overwriting the other.
+
+The search also accepts a **map viewport** (`swLat/swLng/neLat/neLng`, all four or none) and filters on the **project's** coordinates — a unit's location is its project's, and `Unit` deliberately carries none of its own. A partly-given box is a `400`, not a silent no-op: an answer that looks filtered and is not is worse than an error. The results *map view* that would supply those corners is not built — it is a new screen composition and therefore doc 06's call.
+
+Results page in blocks of 24 behind a show-more control. **Top rated ranks the whole matching set before paging** — ranking only the page would order whichever villas the database returned first. A villa with no published reviews sorts last and shows no rating on its card: unknown, never a zero, which would bury every villa in its first season.
+
 ## 5. The authenticated app (`/app`)
 
 | Path | Surface | Composition |

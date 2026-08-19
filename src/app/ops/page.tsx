@@ -22,6 +22,7 @@ export default async function OpsBoardPage() {
 
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',
+    'staff.ops.costs_link': 'Record a cost',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.arrivals': "Today's arrivals",
     'staff.ops.departures': "Today's departures",
@@ -70,12 +71,20 @@ export default async function OpsBoardPage() {
           <h1 className="text-heading-1 font-bold text-text-ink">
             {labels['staff.ops.title']}
           </h1>
-          <Link
-            href="/ops/tm30"
-            className="text-brand-andaman font-semibold hover:underline"
-          >
-            {labels['staff.ops.tm30_link']}
-          </Link>
+          <div className="flex items-center gap-16">
+            <Link
+              href="/ops/costs"
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.costs_link']}
+            </Link>
+            <Link
+              href="/ops/tm30"
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.tm30_link']}
+            </Link>
+          </div>
         </div>
 
         {/* SLA health tiles */}

@@ -50,7 +50,7 @@ Reachable end to end: **F-AUTH-1/2** (register, login, reset), **F-GUEST-1..10**
 Not reachable:
 
 - **F-AUTH-4 (claim account)** — `claimAccount` has no caller. An invited owner cannot claim their account, so the invite path in F-OWN-1 step 7 ends nowhere.
-- **F-OPS-3 (record a cost)** — the ledger write functions (`recordBookingRevenue`, `recordRefundOut`, …) have no route. Staff cannot record an expense, so owner statements can only ever show revenue.
+- ~~**F-OPS-3 (record a cost)**~~ — **this was overstated and is corrected here.** `POST /api/ledger/record-cost` did exist; what was missing was a *screen* to reach it, so an expense could only be entered by hand-crafting a request. Built at `/ops/costs`, linked from the ops board. The functions named in the original claim — `recordBookingRevenue`, `recordRefundOut` — genuinely have no route, but they are **automatic** entries that belong on the payment path, not behind a form, so their having no route is correct rather than a gap. (Revenue is in fact written, by `finance.service.ts`; `ledger.service.ts:recordBookingRevenue` is an unused second implementation of it — a smaller instance of the same duplication this audit's §1 describes.)
 - **F-OPS-5 / F-OWN-4** — no surface.
 - **F-FIN-2 (payouts and reconciliation)** — `recordOwnerPayout`, `recordProviderRemittance`, `markPayoutReconciled` have no callers; the `/app/admin/payouts` page exists but is not in the admin navigation.
 - **F-DIS-1/2 (damage claims, disputes)** — `fileDepositClaim`, `approveClaim`, `rejectClaim` have no callers. Deposits can be scheduled but a claim cannot be filed.

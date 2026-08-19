@@ -1,11 +1,25 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import prismadb from '@/app/libs/prismadb'
 import { resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util'
-import {
-  scheduleDepositPreAuth,
-  voidDepositPreAuth,
-  captureDepositPreAuth,
-} from '@/app/libs/deposits'
+import * as deposits from '@/modules/finance/deposits.service'
+
+// These were written against `src/app/libs/deposits.ts`, a second implementation
+// of the deposit rail that lived outside the modules and was the one the routes
+// actually called. Two implementations, and they differed where it counts: the
+// module's capture took the *whole* hold and wrote no ledger entry. There is now
+// one implementation, in the module where doc 14 says business logic lives, and
+// these assertions — which are good ones — point at it through the thin adapters
+// below rather than being rewritten.
+const scheduleDepositPreAuth = async (bookingId: string, unitId: string) =>
+  (await deposits.scheduleDepositPreauthIfConfigured(prismadb, bookingId, unitId))?.id ?? null
+
+const voidDepositPreAuth = async (bookingId: string) => {
+  await deposits.voidDepositPreauthIfClean(prismadb, bookingId)
+}
+
+const captureDepositPreAuth = async (bookingId: string, claimId: string, amount: number) => {
+  await deposits.captureDepositPreauthOnClaim(prismadb, bookingId, claimId, amount)
+}
 
 // The deposit rail is keyed by booking, not by payment: doc 10 forbids holding
 // guest funds, so a deposit is only ever a provider pre-authorization recorded
@@ -218,9 +232,9 @@ describe('T-032: Deposits & Damage Claims', () => {
         },
       })
 
-      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toThrow(
-        'Deposit preauth was already voided'
-      )
+      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toMatchObject({
+        code: 'ALREADY_VOIDED',
+      })
     })
 
     it('should reject a second capture on the same preauth', async () => {
@@ -240,9 +254,10 @@ describe('T-032: Deposits & Damage Claims', () => {
 
       await captureDepositPreAuth(booking.id, claim.id, 2000)
 
-      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toThrow(
-        'Deposit preauth was already captured'
-      )
+      // Asserting the code, not the wording: message text is not a contract.
+      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toMatchObject({
+        code: 'ALREADY_CAPTURED',
+      })
     })
 
     it('should reject capture when the booking has no preauth', async () => {
@@ -259,9 +274,9 @@ describe('T-032: Deposits & Damage Claims', () => {
         },
       })
 
-      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toThrow(
-        'No deposit preauth found for this booking'
-      )
+      await expect(captureDepositPreAuth(booking.id, claim.id, 2000)).rejects.toMatchObject({
+        code: 'NO_PREAUTH',
+      })
     })
   })
 })

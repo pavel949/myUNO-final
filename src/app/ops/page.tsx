@@ -23,6 +23,7 @@ export default async function OpsBoardPage() {
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',
     'staff.ops.costs_link': 'Record a cost',
+    'staff.ops.claims_link': 'Damage claims',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.arrivals': "Today's arrivals",
     'staff.ops.departures': "Today's departures",
@@ -77,6 +78,12 @@ export default async function OpsBoardPage() {
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.costs_link']}
+            </Link>
+            <Link
+              href="/ops/claims"
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.claims_link']}
             </Link>
             <Link
               href="/ops/tm30"

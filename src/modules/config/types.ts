@@ -29,6 +29,8 @@ export interface BookingConfig {
   'booking.same_day_cutoff_hour': number;
   'booking.deposit.mode': 'off' | 'preauth';
   'booking.deposit.amount_thb': number;
+  'booking.deposit.claim_window_hours': number;
+  'booking.deposit.approval_window_hours': number;
   'booking.checkin_hour': number;
   'booking.checkout_hour': number;
   'owner_stay.charge_cleaning': boolean;

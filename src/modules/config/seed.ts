@@ -102,6 +102,22 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Pre-auth amount when mode is preauth',
       },
       {
+        key: 'booking.deposit.claim_window_hours',
+        valueType: 'int',
+        defaultValue: 48,
+        scopeableTo: 'project',
+        groupKey: 'booking',
+        description: 'Hours after check-out during which a damage claim may be filed',
+      },
+      {
+        key: 'booking.deposit.approval_window_hours',
+        valueType: 'int',
+        defaultValue: 48,
+        scopeableTo: 'project',
+        groupKey: 'booking',
+        description: 'Hours after filing during which a claim may still be approved (capturing the guest pre-authorization). Rejection is never time-barred.',
+      },
+      {
         key: 'booking.checkin_hour',
         valueType: 'int',
         defaultValue: 15,

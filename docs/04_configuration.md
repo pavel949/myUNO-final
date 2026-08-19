@@ -27,6 +27,8 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | `booking.same_day_cutoff_hour` | int (0–23) | project | `16` | Latest hour (project timezone) a same-day check-in can be booked. |
 | `booking.deposit.mode` | enum `off, preauth` | unit | `off` (confirmed Q6) | Security deposit handling. `preauth` = card pre-authorization via the licensed provider, released after check-out inspection. Funds are never held by myUNO; **deposits are never taken in cash** (that would be fund-holding). |
 | `booking.deposit.amount_thb` | money_thb | unit | `0` (confirmed Q6) | Pre-auth amount when mode is `preauth`. |
+| `booking.deposit.claim_window_hours` | int | project | `48` | Hours after check-out during which a damage claim may be filed (doc 07 F-DIS-1). Past it, the pre-authorization is released and the stay is closed. |
+| `booking.deposit.approval_window_hours` | int | project | `48` | Hours after filing during which a claim may still be **approved** — that is, the guest's pre-authorization captured. **Rejection is deliberately never time-barred:** releasing money back to a guest must always be possible, or an unresolved claim leaves their pre-authorization stranded indefinitely, which is fund-holding by neglect. |
 | `booking.checkin_hour` / `booking.checkout_hour` | int | unit | `15` / `11` | Standard times shown everywhere and used by ops scheduling. |
 | `owner_stay.charge_cleaning` | boolean | project | `true` (confirmed Q7) | Whether the post-owner-stay turnover clean is charged to the owner's statement. |
 | `owner_stay.notice_hours` | int | project | `48` | Minimum notice for an owner to book their own unit (lets ops clear conflicts). |

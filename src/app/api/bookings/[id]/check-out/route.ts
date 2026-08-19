@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createNotification } from '@/modules/comms';
+import { checkOutBooking } from '@/modules/booking';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
@@ -34,14 +35,19 @@ export async function POST(
       throw createPublicError('Access denied.', 403);
     }
 
-    if (booking.status !== 'checked_in') {
-      throw createPublicError('invalid request: booking is not checked in', 400);
+    // Through the booking module rather than an inline update: the state
+    // machine is the tested definition of this transition, and it also records
+    // `checkedOutAt` and emits `stay_checked_out`, both of which the inline
+    // version dropped.
+    let updated;
+    try {
+      updated = await checkOutBooking(prisma, booking.id);
+    } catch (error) {
+      throw createPublicError(
+        `invalid request: ${error instanceof Error ? error.message : 'booking is not checked in'}`,
+        400
+      );
     }
-
-    const updated = await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: 'checked_out' },
-    });
 
     if (booking.unit?.ownerIdentityId) {
       await createNotification(prisma, {

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createTm30Filing, createConditionReport } from '@/modules/ops';
+import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
 
 export async function POST(
@@ -60,23 +61,22 @@ export async function POST(
       );
     }
 
-    // Check status: must be confirmed to check in
-    if (booking.status !== 'confirmed') {
+    // The transition itself belongs to the booking module, not to this route.
+    // It used to be repeated here as a status check plus an inline update, which
+    // meant the state machine in booking.service.ts was tested while this was
+    // the code that actually ran — two implementations, one of them unverified.
+    // Going through the service also emits `stay_checked_in`, which the inline
+    // version silently omitted.
+    let checkedInAt: Date;
+    try {
+      const checkedIn = await checkInBooking(prisma, params.id);
+      checkedInAt = checkedIn.checkedInAt ?? new Date();
+    } catch (error) {
       return NextResponse.json(
-        { error: `Cannot check in a booking in ${booking.status} status` },
+        { error: error instanceof Error ? error.message : 'Cannot check in this booking' },
         { status: 400 }
       );
     }
-
-    // Update booking status
-    const checkedInAt = new Date();
-    await prisma.booking.update({
-      where: { id: params.id },
-      data: {
-        status: 'checked_in',
-        checkedInAt,
-      },
-    });
 
     // Create TM30 filing for each foreign guest (not Thai nationals)
     for (const guest of booking.guests) {

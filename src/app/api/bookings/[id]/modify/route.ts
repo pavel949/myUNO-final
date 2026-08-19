@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createCheckout } from '@/modules/finance';
-import { requestExtension } from '@/modules/booking';
+import { requestExtension, changeBookingDates } from '@/modules/booking';
 import { track } from '@/modules/analytics';
 
 /**
@@ -120,42 +120,52 @@ export async function POST(
       );
     }
 
-    // Validate availability (excluding this booking; expired unpaid holds don't block)
-    const conflicting = await prisma.booking.findFirst({
-      where: {
-        unitId: booking.unitId,
-        id: { not: bookingId },
-        startDate: { lt: newEndDate },
-        endDate: { gt: newStartDate },
-        OR: [
-          { status: { in: ['confirmed', 'checked_in'] } },
-          { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-        ],
-      },
-    });
-
-    if (conflicting) {
+    // The date change itself belongs to the booking module. This route used to
+    // repeat it inline, and the inline version was materially worse in three
+    // ways: it repriced as `nights × baseNightlyThb`, ignoring seasonal rules,
+    // length-of-stay discounts and the cleaning fee that computePriceBreakdown
+    // applies — so a change charged the wrong amount; it checked conflicts with
+    // a plain findFirst and no advisory lock, so two concurrent changes raced;
+    // and it never checked BlockedDate, so a change could move a stay onto dates
+    // the operator had closed.
+    let updated;
+    let balanceThb: number;
+    const oldTotalThb = booking.totalThb;
+    try {
+      const result = await changeBookingDates(prisma, {
+        bookingId,
+        startDate: newStartDate,
+        endDate: newEndDate,
+        actorIdentityId: user.identityId,
+      });
+      balanceThb = result.totalThb - result.previousTotalThb;
+      updated = await prisma.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+        include: { unit: true },
+      });
+    } catch (error) {
+      const code = (error as { code?: string }).code;
       return NextResponse.json(
-        { error: 'Dates are unavailable due to another booking' },
-        { status: 400 }
+        { error: error instanceof Error ? error.message : 'Could not change these dates' },
+        { status: code === 'DOUBLE_BOOK' ? 409 : 400 }
       );
     }
 
-    // Calculate new price (using the same pricing logic as booking creation)
-    // For now, use simple calculation: nights × unit price
-    const daysCount = Math.ceil(
-      (newEndDate.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // Party size is not part of the dates transition, so it is applied here —
+    // and only when asked for, so an unchanged party is left alone.
+    if (adultsCount !== undefined || childrenCount !== undefined) {
+      updated = await prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          ...(adultsCount !== undefined && { adults: adultsCount }),
+          ...(childrenCount !== undefined && { children: childrenCount }),
+        },
+        include: { unit: true },
+      });
+    }
 
-    const unit = booking.unit!;
-    const basePrice = unit.baseNightlyThb || 0;
-    const newTotalThb = daysCount * basePrice;
-
-    // Calculate balance
-    const oldTotalThb = booking.totalThb;
-    const balanceThb = newTotalThb - oldTotalThb;
-
-    // If balance > 0, guest needs to pay the difference
+    // An increase is collected through the same checkout seam as any other
+    // money, after the change has committed rather than before it.
     let checkoutUrl: string | null = null;
     if (balanceThb > 0) {
       const checkout = await createCheckout(prisma, {
@@ -166,50 +176,6 @@ export async function POST(
       });
       checkoutUrl = checkout?.checkoutUrl || null;
     }
-
-    // Update the booking atomically
-    const newAdults = adultsCount ?? booking.adults;
-    const newChildren = childrenCount ?? booking.children;
-
-    const updated = await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        startDate: newStartDate,
-        endDate: newEndDate,
-        adults: newAdults,
-        children: newChildren,
-        totalThb: newTotalThb,
-        ...(balanceThb < 0 && { refundAccruedThb: (booking.refundAccruedThb || 0) + Math.abs(balanceThb) }),
-        // Upward change: the unpaid difference is recorded so ops can collect
-        // it (doc 02 §3.1 balance_due_thb — was never written before DM-4).
-        ...(balanceThb > 0 && { balanceDueThb: (booking.balanceDueThb || 0) + balanceThb }),
-      },
-      include: { unit: true },
-    });
-
-    // Create a booking change record for audit
-    await prisma.bookingChange.create({
-      data: {
-        bookingId,
-        changeType: 'dates',
-        oldValue: {
-          startDate: booking.startDate.toISOString(),
-          endDate: booking.endDate.toISOString(),
-          adults: booking.adults,
-          children: booking.children,
-          totalThb: oldTotalThb,
-        },
-        newValue: {
-          startDate: newStartDate.toISOString(),
-          endDate: newEndDate.toISOString(),
-          adults: newAdults,
-          children: newChildren,
-          totalThb: newTotalThb,
-        },
-        priceDeltaThb: balanceThb,
-        actorIdentityId: user.identityId,
-      },
-    });
 
     // Track analytics event
     const nights = Math.ceil(
@@ -223,7 +189,7 @@ export async function POST(
       nights,
       priceDeltaThb: balanceThb,
       oldTotalThb,
-      newTotalThb,
+      newTotalThb: updated.totalThb,
     }).catch(() => null);
 
     return NextResponse.json(
@@ -231,7 +197,7 @@ export async function POST(
         booking: updated,
         pricing: {
           oldTotalThb,
-          newTotalThb,
+          newTotalThb: updated.totalThb,
           balanceThb,
           checkoutUrl,
         },

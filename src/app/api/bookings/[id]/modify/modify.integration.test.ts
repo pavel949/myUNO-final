@@ -170,8 +170,13 @@ describe('POST /api/bookings/[id]/modify', () => {
     });
     const body = await res.json();
 
-    expect(res.status).toBe(400);
-    expect(body.error).toContain('unavailable');
+    // 409, not 400: dates already taken is a conflict, and it is what the
+    // booking-creation path returns for the same condition
+    // (category-allocation.integration.test.ts). The modify route used to
+    // answer 400 because it checked conflicts inline; going through
+    // changeBookingDates made the two paths agree.
+    expect(res.status).toBe(409);
+    expect(body.error).toMatch(/already booked|unavailable/i);
   });
 
   it('rejects an unauthorized modifier with 403', async () => {

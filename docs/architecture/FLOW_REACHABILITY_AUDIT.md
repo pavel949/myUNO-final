@@ -59,9 +59,13 @@ Not reachable:
 
 ## 4. Admin panel
 
-Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. Still missing: **Tickets & Announcements**, **Compliance**, **Audit log** (every action writes audit rows; nothing reads them).
+Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. Still missing: **Tickets & Announcements**, **Compliance**.
 
 ~~**Finance is built but invisible.**~~ **Fixed:** ledger, statements and payouts are now in the sidebar. Reconciliation still sits outside the admin group at `/admin/finance/reconciliation`.
+
+`admin-nav-is-reachable.test.ts` now fails the build if an admin page directory exists with nothing linking to it — the "built but invisible" class of defect, caught structurally rather than noticed later.
+
+**Found while building the export, not fixed here (out of scope, recorded so it is not lost):** the content CSV round-trip at `/api/admin/content/export` → `importFromCSV` parses with a bare `split(',')`, so **any translation containing a comma is corrupted on import** — which is most sentences. It also has no formula-injection guard. The audit export uses the new shared `src/lib/csv.ts` (RFC 4180 quoting plus a guard against cells a spreadsheet would execute); the content export should be moved onto it together with a real parser on the import side.
 
 ## 5. Data model
 
@@ -83,12 +87,12 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 2. ~~**`/account`**~~ **Done** — profile, language, password, and notification preferences with the two obligation-carrying types fixed on.
 3. ~~**Record a cost (F-OPS-3)**~~ **Done** — `/ops/costs`. The gap was the screen, not the route; see §3.
 4. ~~**People & Roles admin**~~ **Done** — `/app/admin/people`.
-5. **Audit log viewer** — still open, and still the cheapest thing here. ~~Finance in the nav~~ done.
+5. ~~**Audit log viewer**~~ **Done** — `/app/admin/audit`, with a recorded CSV export for doc 12 §6's monthly compliance report. ~~Finance in the nav~~ done.
 6. **Announcements composer**, then **claim account (F-AUTH-4)**, then **damage claims (F-DIS-1)**.
 7. **Resident and juristic surfaces**, **MC boards**, **the remaining five ops boards**, **provider remittances**.
 8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.
 
-Items 1–4 are what stand between this and an operator being able to run a residence without a database client.
+Items 1–5 are what stood between this and an operator being able to run a residence without a database client. They are done.
 
 ---
 

@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.ledger': 'Ledger',
     'admin.nav.statements': 'Statements',
     'admin.nav.payouts': 'Payouts',
+    'admin.nav.audit': 'Audit trail',
     'admin.nav.integrations': 'Integrations',
     'admin.nav.back_to_site': '← Back to site',
   });
@@ -50,6 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/app/admin/ledger', label: labels['admin.nav.ledger'] },
     { href: '/app/admin/statements', label: labels['admin.nav.statements'] },
     { href: '/app/admin/payouts', label: labels['admin.nav.payouts'] },
+    { href: '/app/admin/audit', label: labels['admin.nav.audit'] },
     { href: '/app/admin/integrations', label: labels['admin.nav.integrations'] },
   ];
 

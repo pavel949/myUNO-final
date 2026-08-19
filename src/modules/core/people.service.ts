@@ -50,6 +50,75 @@ interface GenerateClaimLinkInput {
   ttlMinutes?: number;
 }
 
+export interface InviteIdentityInput {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  preferredLocale?: string;
+}
+
+export interface InviteIdentityResult {
+  identity: Identity;
+  /** False when the email already belonged to someone — nothing was created. */
+  created: boolean;
+  /**
+   * True when the person already has a working account. There is nothing to
+   * claim: grant them the role and they are in. Sending a claim link here
+   * would be worse than useless — it cannot be redeemed, and it invites the
+   * recipient to believe their existing password no longer works.
+   */
+  alreadyActive: boolean;
+}
+
+/**
+ * Invite a person who is not on the platform yet.
+ *
+ * This was the missing first step of F-OWN-1. The whole claim flow existed and
+ * worked — the emailed link, the landing page, the token, the password form —
+ * and **nothing could put anyone into `invited` status**, so the flow began
+ * nowhere. An owner handed over a unit could not be given a way in.
+ *
+ * Reusing an existing identity rather than creating a second one is the point:
+ * an identity is a person, global and singular (CLAUDE.md), and the same human
+ * arrives as a guest before they are ever an owner.
+ */
+export async function inviteIdentity(
+  db: PrismaClient,
+  input: InviteIdentityInput
+): Promise<InviteIdentityResult> {
+  const email = input.email.trim().toLowerCase();
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+
+  if (!email.includes('@')) throw new Error('A valid email address is required');
+  if (!firstName || !lastName) throw new Error('A first and last name are required');
+
+  const existing = await db.identity.findUnique({ where: { email } });
+  if (existing) {
+    // Never downgrade a live account to `invited`: that would suspend a working
+    // login on the strength of somebody typing a familiar address into a form.
+    return {
+      identity: existing,
+      created: false,
+      alreadyActive: existing.status !== 'invited',
+    };
+  }
+
+  const identity = await db.identity.create({
+    data: {
+      email,
+      firstName,
+      lastName,
+      ...(input.phone ? { phone: input.phone.trim() } : {}),
+      preferredLocale: input.preferredLocale || 'ru',
+      status: 'invited',
+    },
+  });
+
+  return { identity, created: true, alreadyActive: false };
+}
+
 interface ClaimIdentityInput {
   tokenHash: string;
   password: string;
@@ -256,6 +325,14 @@ export async function generateClaimLink(db: PrismaClient, input: GenerateClaimLi
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
+  // Issuing a new link kills every earlier one, as the password-reset flow
+  // already does. Otherwise every resend leaves another live key to the
+  // account lying in an old email or a forwarded chat message.
+  await db.oneTimeToken.updateMany({
+    where: { identityId, purpose: 'account_claim', consumedAt: null },
+    data: { consumedAt: new Date() },
+  });
 
   // Store the hashed token
   await db.oneTimeToken.create({

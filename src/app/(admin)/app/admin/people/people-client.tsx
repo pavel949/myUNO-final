@@ -12,6 +12,13 @@ const ROLES = [
 const PLATFORM_SCOPED_ROLES = new Set(['staff_ops', 'onsite_host']);
 
 interface Person { id: string; firstName: string; lastName: string; email: string | null; status: string }
+interface InviteResult {
+  identity: Person;
+  created: boolean;
+  alreadyActive: boolean;
+  emailed?: boolean;
+  claimUrl: string | null;
+}
 interface Assignment {
   id: string; role: string; scopeType: string; status: string;
   projectName: string | null; unitName: string | null;
@@ -36,6 +43,9 @@ export default function PeopleAdminClient({
   const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '' });
+  const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
   const search = useCallback(async () => {
     setSearching(true);
@@ -112,9 +122,101 @@ export default function PeopleAdminClient({
     setBusy(false);
   }, [selected, refresh, labels]);
 
+  const invite = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setInviteResult(null);
+    const res = await fetch('/api/admin/people/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inviteForm),
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null);
+
+    if (res?.ok) {
+      setInviteResult(payload);
+      if (!payload?.alreadyActive) setInviteForm({ firstName: '', lastName: '', email: '' });
+      // Put them straight into the list so a role can be granted immediately —
+      // an invitation with no role attached is an account that opens onto
+      // nothing.
+      if (payload?.identity) {
+        setPeople([payload.identity]);
+        setSearched(true);
+        await open(payload.identity);
+      }
+    } else {
+      setError(payload?.error ?? labels['admin.people.error']);
+    }
+    setBusy(false);
+  }, [inviteForm, labels, open]);
+
+  const canInvite =
+    inviteForm.firstName.trim() !== '' &&
+    inviteForm.lastName.trim() !== '' &&
+    inviteForm.email.includes('@') &&
+    !busy;
+
   return (
     <div>
       <h1 className="text-heading-1 font-bold text-text-ink mb-24">{labels['admin.people.title']}</h1>
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 max-w-2xl">
+        <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+          {labels['admin.people.invite']}
+        </h2>
+        <p className="text-small text-text-secondary mb-16">{labels['admin.people.invite_note']}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <input
+            value={inviteForm.firstName}
+            onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
+            placeholder={labels['admin.people.invite_first_name']}
+            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+          />
+          <input
+            value={inviteForm.lastName}
+            onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
+            placeholder={labels['admin.people.invite_last_name']}
+            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+          />
+          <input
+            type="email"
+            value={inviteForm.email}
+            onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+            placeholder={labels['admin.people.invite_email']}
+            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={invite}
+          disabled={!canInvite}
+          className="h-48 px-24 rounded-sm bg-brand-andaman text-surface-ivory font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          {labels['admin.people.invite_submit']}
+        </button>
+
+        {inviteResult?.alreadyActive ? (
+          <p className="mt-16 text-body text-text-ink">{labels['admin.people.invite_already_active']}</p>
+        ) : null}
+
+        {inviteResult?.claimUrl ? (
+          <div className="mt-16">
+            <p className="text-small text-text-secondary mb-4">
+              {inviteResult.emailed
+                ? labels['admin.people.invite_sent']
+                : labels['admin.people.invite_not_emailed']}
+            </p>
+            {/* Shown so an operator can pass it on by Telegram or WhatsApp,
+                which is how this clientele actually receives things. */}
+            <p className="text-small text-text-ink font-mono break-all">{inviteResult.claimUrl}</p>
+            <p className="text-xsmall text-text-secondary mt-4">
+              {labels['admin.people.invite_link_note']}
+            </p>
+          </div>
+        ) : null}
+      </section>
 
       <div className="flex gap-8 mb-24">
         <input

@@ -49,7 +49,8 @@ Reachable end to end: **F-AUTH-1/2** (register, login, reset), **F-GUEST-1..10**
 
 Not reachable:
 
-- **F-AUTH-4 (claim account)** — `claimAccount` has no caller. An invited owner cannot claim their account, so the invite path in F-OWN-1 step 7 ends nowhere.
+- ~~**F-AUTH-4 (claim account)**~~ — **this was wrong, and the correction matters.** The claim flow was complete all along: `/auth/claim`, `GET /api/auth/claim/[token]`, `POST /api/auth/claim`, and `people.claimIdentity` behind them. What I actually found was an *unused second implementation*, `auth.claimAccount`, which has no caller — the same duplication §1 describes, not a missing flow. I recorded a working flow as broken because I searched for one function name.
+  The real gap was at the other end and is now fixed: **nothing could put a person into `invited` status**, so the flow began nowhere. `people.inviteIdentity` plus `POST /api/admin/people/invite` and an invite panel on People & Roles close F-OWN-1 step 7. Two things came with it — issuing a new claim link now consumes every earlier one (a resend used to leave the old link live in a forwarded email), and an address that already has a working account is reported as such rather than being downgraded to `invited`.
 - ~~**F-OPS-3 (record a cost)**~~ — **this was overstated and is corrected here.** `POST /api/ledger/record-cost` did exist; what was missing was a *screen* to reach it, so an expense could only be entered by hand-crafting a request. Built at `/ops/costs`, linked from the ops board. The functions named in the original claim — `recordBookingRevenue`, `recordRefundOut` — genuinely have no route, but they are **automatic** entries that belong on the payment path, not behind a form, so their having no route is correct rather than a gap. (Revenue is in fact written, by `finance.service.ts`; `ledger.service.ts:recordBookingRevenue` is an unused second implementation of it — a smaller instance of the same duplication this audit's §1 describes.)
 - **F-OPS-5 / F-OWN-4** — no surface.
 - **F-FIN-2 (payouts and reconciliation)** — `recordOwnerPayout`, `recordProviderRemittance`, `markPayoutReconciled` have no callers; the `/app/admin/payouts` page exists but is not in the admin navigation.
@@ -89,7 +90,7 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 4. ~~**People & Roles admin**~~ **Done** — `/app/admin/people`.
 5. ~~**Audit log viewer**~~ **Done** — `/app/admin/audit`, with a recorded CSV export for doc 12 §6's monthly compliance report. ~~Finance in the nav~~ done.
 6. ~~**Announcements composer**~~ **Done** — admin-side. MC and juristic members can already post through the same route (`can()` scopes it by project); what they lack is a screen of their own, which belongs with item 7.
-   Then **claim account (F-AUTH-4)**, then **damage claims (F-DIS-1)**.
+   ~~Then **claim account (F-AUTH-4)**~~ **Done** — see §3: the claim flow was already complete and my audit was wrong; what was missing was the invitation that starts it. Next: **damage claims (F-DIS-1)**.
 7. **Resident and juristic surfaces**, **MC boards**, **the remaining five ops boards**, **provider remittances**.
 8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.
 

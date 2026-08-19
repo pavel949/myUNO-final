@@ -41,6 +41,20 @@ export default async function AdminPeoplePage() {
     'admin.people.block_warning': 'Blocking removes access immediately, everywhere.',
     'admin.people.error': 'That did not work.',
     'admin.people.scope_note': 'A project role applies to every unit in that project. Platform scope is for staff and admin only.',
+    'admin.people.invite': 'Invite someone',
+    'admin.people.invite_note':
+      'For an owner, a resident or a colleague who is not on the platform yet. They get a link to set their own password — we never set it for them.',
+    'admin.people.invite_first_name': 'First name',
+    'admin.people.invite_last_name': 'Last name',
+    'admin.people.invite_email': 'Email',
+    'admin.people.invite_submit': 'Send invitation',
+    'admin.people.invite_sent': 'Invitation sent. The link is also here, in case you want to pass it on directly:',
+    'admin.people.invite_not_emailed':
+      'We could not send the email. Give them this link directly — it works either way:',
+    'admin.people.invite_link_note':
+      'The link works once, and only until it expires. Sending a new invitation cancels this one.',
+    'admin.people.invite_already_active':
+      'That email already has a working account. Nothing was sent — grant them the role below and they are in.',
   });
 
   return <PeopleAdminClient projects={projects} labels={labels} />;

@@ -2643,6 +2643,16 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.announcements.empty', namespace: 'admin', description: 'Announcements: nothing yet', en: 'Nothing has been announced in this project yet.', ru: 'В этом проекте пока нет объявлений.', status: NR },
   { key: 'admin.announcements.error', namespace: 'admin', description: 'Announcements: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
   { key: 'admin.announcements.expired', namespace: 'admin', description: 'Announcements: expired badge', en: 'Expired', ru: 'Истекло', status: NR },
+  { key: 'admin.people.invite', namespace: 'admin', description: 'People & roles: invite heading', en: 'Invite someone', ru: 'Пригласить человека', status: NR },
+  { key: 'admin.people.invite_note', namespace: 'admin', description: 'People & roles: what an invitation does', en: 'For an owner, a resident or a colleague who is not on the platform yet. They get a link to set their own password — we never set it for them.', ru: 'Для собственника, резидента или коллеги, которого ещё нет на платформе. Он получит ссылку и сам задаст пароль — мы пароль не создаём.', status: NR },
+  { key: 'admin.people.invite_first_name', namespace: 'admin', description: 'People & roles: invite first name', en: 'First name', ru: 'Имя', status: NR },
+  { key: 'admin.people.invite_last_name', namespace: 'admin', description: 'People & roles: invite last name', en: 'Last name', ru: 'Фамилия', status: NR },
+  { key: 'admin.people.invite_email', namespace: 'admin', description: 'People & roles: invite email', en: 'Email', ru: 'Эл. почта', status: NR },
+  { key: 'admin.people.invite_submit', namespace: 'admin', description: 'People & roles: send invitation button', en: 'Send invitation', ru: 'Отправить приглашение', status: NR },
+  { key: 'admin.people.invite_sent', namespace: 'admin', description: 'People & roles: invitation sent', en: 'Invitation sent. The link is also here, in case you want to pass it on directly:', ru: 'Приглашение отправлено. Ссылка также здесь — на случай, если удобнее передать её напрямую:', status: NR },
+  { key: 'admin.people.invite_not_emailed', namespace: 'admin', description: 'People & roles: email failed but link works', en: 'We could not send the email. Give them this link directly — it works either way:', ru: 'Письмо отправить не удалось. Передайте ссылку напрямую — она работает в любом случае:', status: NR },
+  { key: 'admin.people.invite_link_note', namespace: 'admin', description: 'People & roles: how long the link lasts', en: 'The link works once, and only until it expires. Sending a new invitation cancels this one.', ru: 'Ссылка одноразовая и действует ограниченное время. Новое приглашение отменяет предыдущую ссылку.', status: NR },
+  { key: 'admin.people.invite_already_active', namespace: 'admin', description: 'People & roles: email already has an account', en: 'That email already has a working account. Nothing was sent — grant them the role below and they are in.', ru: 'У этой почты уже есть рабочий аккаунт. Ничего не отправлено — выдайте роль ниже, и доступ появится.', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [

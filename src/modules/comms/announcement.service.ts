@@ -78,6 +78,82 @@ export interface UpdateAnnouncementInput {
 }
 
 /**
+ * The projects this person may address, and the voice they would speak in.
+ *
+ * The composer existed only inside the admin panel, so a management-company
+ * member or a juristic member — the two organisations CLAUDE.md names as
+ * announcement authors alongside myUNO — could not reach it, even though the
+ * API has always scoped them correctly. They could post; they had no page.
+ */
+export async function getPostableProjects(
+  db: PrismaClient,
+  identityId: string,
+  isAdmin: boolean
+): Promise<{ id: string; name: string; postedAs: AnnouncementPostedAs }[]> {
+  if (isAdmin) {
+    const all = await db.project.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    return all.map((p) => ({ ...p, postedAs: 'myuno' as const }));
+  }
+
+  const assignments = await db.roleAssignment.findMany({
+    where: {
+      identityId,
+      status: 'active',
+      role: { in: ['staff_ops', 'mc_member', 'juristic_member'] },
+    },
+    select: {
+      role: true,
+      scopeType: true,
+      projectId: true,
+      project: { select: { id: true, name: true } },
+    },
+  });
+
+  // Platform-scoped staff address every project; everyone else only the ones
+  // they hold a role on.
+  const platformStaff = assignments.some(
+    (a) => a.role === 'staff_ops' && a.scopeType === 'platform'
+  );
+  if (platformStaff) {
+    const all = await db.project.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    return all.map((p) => ({ ...p, postedAs: 'myuno' as const }));
+  }
+
+  const byProject = new Map<string, { id: string; name: string; postedAs: AnnouncementPostedAs }>();
+  for (const assignment of assignments) {
+    if (!assignment.project) continue;
+    // Same precedence as resolvePostingAuthority, so the voice shown in the
+    // picker is the voice the post is actually signed with.
+    const postedAs: AnnouncementPostedAs =
+      assignment.role === 'staff_ops'
+        ? 'myuno'
+        : assignment.role === 'mc_member'
+          ? 'management_company'
+          : 'juristic_person';
+
+    const existing = byProject.get(assignment.project.id);
+    if (!existing || rank(postedAs) < rank(existing.postedAs)) {
+      byProject.set(assignment.project.id, {
+        id: assignment.project.id,
+        name: assignment.project.name,
+        postedAs,
+      });
+    }
+  }
+
+  return [...byProject.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const rank = (postedAs: AnnouncementPostedAs) =>
+  postedAs === 'myuno' ? 0 : postedAs === 'management_company' ? 1 : 2;
+
+/**
  * Create a draft announcement.
  * Admin/staff post as myuno; mc_member as management_company; juristic_member as juristic_person.
  */

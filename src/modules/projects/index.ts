@@ -22,6 +22,15 @@ export {
   type PublicUnitDetail,
 } from './public.service';
 
+// What a resident sees. The role existed with nowhere to go — someone living in
+// a myUNO building could not read an announcement or open the handbook.
+export {
+  getResidences,
+  type Residence,
+  type ResidenceAnnouncement,
+  type ResidenceService,
+} from './residence.service';
+
 export {
   createUnit,
   getUnit,

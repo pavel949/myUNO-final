@@ -25,13 +25,27 @@ interface Props {
   projects: { id: string; name: string }[];
   announcements: Announcement[];
   labels: Record<string, string>;
+  /**
+   * Where the project switcher navigates. The same composer serves the admin
+   * panel and the management-company / juristic portals — the difference
+   * between them is which projects they are handed, not what writing an
+   * announcement looks like.
+   */
+  basePath: string;
+  /**
+   * Which audiences this poster may address. An organisation speaks to the
+   * people in its building; only myUNO addresses its own staff.
+   */
+  audiences?: readonly string[];
 }
 
-export default function AnnouncementsAdminClient({
+export function AnnouncementsComposer({
   projectId,
   projects,
   announcements,
   labels,
+  basePath,
+  audiences = AUDIENCES,
 }: Props) {
   const router = useRouter();
 
@@ -106,7 +120,7 @@ export default function AnnouncementsAdminClient({
       <div className="mb-24">
         <select
           value={projectId}
-          onChange={(e) => router.push(`/app/admin/announcements?projectId=${e.target.value}`)}
+          onChange={(e) => router.push(`${basePath}?projectId=${e.target.value}`)}
           className="px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink"
         >
           {projects.map((p) => (
@@ -155,7 +169,7 @@ export default function AnnouncementsAdminClient({
             onChange={(e) => setAudience(e.target.value)}
             className={field}
           >
-            {AUDIENCES.map((value) => (
+            {audiences.map((value) => (
               <option key={value} value={value}>
                 {labels[`admin.announcements.audience.${value}`]}
               </option>

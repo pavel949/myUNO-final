@@ -30,18 +30,20 @@ This also violates CLAUDE.md's module rule: modules connect through one `index.t
 | **Guest (booking)** | `/search`, `/units/[id]`, `/trips` | search, unit detail, checkout, trips, trip detail | **Works** |
 | **Guest (in stay)** | `/bookings/[id]/home-space` | home space, handbook, passports, extension | **Works** |
 | **Owner** | `/owner` | portfolio, `/owner/statements/[id]` | **Partial** — no per-unit dashboard (doc 08 S8) |
-| **Resident** | — | none of its own | **Absent** — a resident has no surface at all |
+| **Resident** | `/residence` | announcements, handbook, services, tickets | **Works** — built; F-RES |
 | **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only |
 | **Provider** | `/provider` | apply, services | **Partial** — no remittances view (doc 08 §5) |
-| **MC member** | `/mc` | one page | **Thin** — doc 07 F-MC-2 expects scoped boards |
-| **Juristic member** | — | none | **Absent** — can't post announcements (doc 09 §3) |
+| **MC member** | `/mc` | overview, bookings, tickets, calendar, fee reports, announcements | **Mostly** — the "one page" verdict was wrong: it is five tabs. Announcements were the real gap and are now at `/announcements` |
+| **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
 | **Staff (ops)** | `/ops`, `/ops/tm30` | arrivals, TM30 | **Partial** — doc 08 §5 lists seven ops boards; two exist |
 | **Admin** | `/app/admin` | 15 pages | **Mostly** — see §4 |
 | **Any role** | — | `/messages`, `/tickets`, `/services` | **Works** |
 
-**Nobody has an account surface.** There is no `/account` page anywhere: no profile edit, no locale preference, no password change, no notification preferences. `NotificationPreference` exists in the schema and doc 11 specifies per-type mutes and quiet hours; nothing can set them. For a platform under PDPA, notification consent with no way to withdraw it is the gap that matters most here.
+~~**Nobody has an account surface.**~~ **Built** — `/account` carries profile, locale, password and notification preferences, with the two obligation-carrying notification types fixed on. For a platform under the PDPA, consent nobody could withdraw was the sharpest gap here.
 
-**There is no adaptive landing.** Doc 08 §5 specifies `/app` routing a person to the surface their role implies. It does not exist, so where a user lands depends on which link they happened to follow.
+**Everything anyone signed in has is now in one menu**: their stays, conversations, requests and service orders, then the surfaces their roles give them, then their account. `/services/orders` in particular did not exist — order *detail* did, so an order was findable only if you still had the link.
+
+~~**There is no adaptive landing.**~~ **Built** — `/app` routes a person by the policy in `core/landing.ts`: a stay under way wins over everything (somebody in a bed tonight needs the door code, not a portfolio), then admin, staff, management company, juristic person, provider, owner, resident. A buyer goes to the search, because doc 07 F-BUY defers the buyer surfaces to phase two (Q1) and an empty page would be a worse answer than the search they arrived from. The navbar reads the same policy, so the menu and the landing cannot disagree.
 
 ## 3. Flows
 
@@ -92,7 +94,9 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 5. ~~**Audit log viewer**~~ **Done** — `/app/admin/audit`, with a recorded CSV export for doc 12 §6's monthly compliance report. ~~Finance in the nav~~ done.
 6. ~~**Announcements composer**~~ **Done** — admin-side. MC and juristic members can already post through the same route (`can()` scopes it by project); what they lack is a screen of their own, which belongs with item 7.
    ~~Then **claim account (F-AUTH-4)**~~ **Done** — see §3: the claim flow was already complete and my audit was wrong; what was missing was the invitation that starts it. ~~Next: **damage claims (F-DIS-1)**~~ **Done** — with Q46 raised, because the deposit rail underneath it has never been connected to a booking and doc 07 and the code disagree about what the 48 hours are for.
-7. **Resident and juristic surfaces**, **MC boards**, **the remaining five ops boards**, **provider remittances**.
+7. ~~**Resident and juristic surfaces**~~ **Done** — `/residence` and `/juristic`, plus `/announcements` so the management company and the juristic person can use the composer that previously lived only inside the admin panel. `/app` is the adaptive landing doc 08 §5 specifies, and the navbar's role links now come from that same policy rather than a second hand-maintained list of role checks — which is how resident and juristic ended up with no way in. Still open: **MC boards** beyond the five tabs they have, **the remaining ops boards**, **provider remittances**.
+   **A platform-wide `reachability.test.ts` now fails the build if any page exists with nothing linking to it.** Running it the first time found five: `/juristic` and `/residence` (mine, before the navbar was wired), `/admin/finance/reconciliation` (now in the admin nav), a duplicate CRM dashboard at `/admin/crm` outside the admin shell, and `/browse`.
+   Two of those were worse than orphans. **The CRM opportunity detail page was at a route nothing could reach**: both `CrmDashboardClient` and `OpportunitiesKanban` navigate to `/app/admin/crm/opportunities/{id}`, and the page lived at `/admin/crm/opportunities/{id}` — so clicking any opportunity 404'd. The page is moved into the admin shell and the duplicate dashboard deleted. **`/browse` was Airbnb-clone scaffolding**: 220 lines of invented Russian property listings with fabricated prices and ratings, `console.log` click handlers, dead `href="#"` links, raw Tailwind greys instead of design tokens and hardcoded copy instead of content keys — three CLAUDE.md rules broken at once, unreachable, and dangerous precisely because it looked like real inventory. Deleted.
 8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.
 
 Items 1–5 are what stood between this and an operator being able to run a residence without a database client. They are done.

@@ -16,7 +16,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login?next=/admin/crm');
+    redirect('/login?next=/app/admin/crm');
   }
 
   if (!user.isAdmin) {

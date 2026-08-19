@@ -81,3 +81,12 @@ export {
   type UpdateProfileInput,
   type NotificationSetting,
 } from './account.service';
+
+// Where a person belongs when they arrive with no particular destination
+// (doc 08 §5). Pure policy — the routing rule is worth reading and testing.
+export {
+  resolveLanding,
+  availableSurfaces,
+  type Landing,
+  type LandingContext,
+} from './landing';

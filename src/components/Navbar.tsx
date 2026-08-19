@@ -22,11 +22,8 @@ export interface NavbarLabels {
   logout: string;
   myTrips: string;
   messages: string;
-  ownerDashboard: string;
-  providerPortal: string;
-  mcPortal: string;
-  opsBoard: string;
-  admin: string;
+  tickets: string;
+  orders: string;
   account: string;
   menu: string;
 }
@@ -34,11 +31,19 @@ export interface NavbarLabels {
 interface NavbarProps {
   user: NavbarUser | null;
   labels: NavbarLabels;
+  /**
+   * The surfaces this person's roles give them, resolved server-side by
+   * `core.availableSurfaces` so the menu and the `/app` landing cannot drift
+   * apart. They used to be derived here from a second, hand-maintained list of
+   * role checks, which is how resident and juristic members ended up with no
+   * way into their own portals.
+   */
+  roleLinks: { href: string; label: string }[];
   bellLabels: BellLabels;
   locale: string;
 }
 
-export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
+export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -59,21 +64,17 @@ export function Navbar({ user, labels, bellLabels, locale }: NavbarProps) {
 
   const userLinks = user
     ? [
+        // Everything anyone signed in has, whatever roles they hold: their
+        // stays, their conversations, the requests they raised, the services
+        // they ordered. Each of these was reachable only from wherever it
+        // happened to be linked, which meant an order was findable only if you
+        // still had the link.
         { href: '/trips', label: labels.myTrips },
         { href: '/messages', label: labels.messages },
-        ...(user.roles.includes('owner')
-          ? [{ href: '/owner', label: labels.ownerDashboard }]
-          : []),
-        ...(user.roles.includes('provider_member')
-          ? [{ href: '/provider', label: labels.providerPortal }]
-          : []),
-        ...(user.roles.includes('mc_member')
-          ? [{ href: '/mc', label: labels.mcPortal }]
-          : []),
-        ...(user.roles.includes('staff_ops') || user.isAdmin
-          ? [{ href: '/ops', label: labels.opsBoard }]
-          : []),
-        ...(user.isAdmin ? [{ href: '/app/admin/signals', label: labels.admin }] : []),
+        { href: '/tickets', label: labels.tickets },
+        { href: '/services/orders', label: labels.orders },
+        // Then the surfaces their roles give them (resolved server-side).
+        ...roleLinks,
         // Last, and for everyone: an account is not a role, it is the person.
         { href: '/account', label: labels.account },
       ]

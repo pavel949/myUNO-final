@@ -59,6 +59,7 @@ export {
 
 export {
   createAnnouncement,
+  getPostableProjects,
   resolvePostingAuthority,
   inStayGuestIdentityIds,
   publishAnnouncement,

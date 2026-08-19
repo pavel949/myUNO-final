@@ -32,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.ledger': 'Ledger',
     'admin.nav.statements': 'Statements',
     'admin.nav.payouts': 'Payouts',
+    'admin.nav.reconciliation': 'Reconciliation',
     'admin.nav.claims': 'Damage claims',
     'admin.nav.audit': 'Audit trail',
     'admin.nav.integrations': 'Integrations',
@@ -54,6 +55,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/app/admin/ledger', label: labels['admin.nav.ledger'] },
     { href: '/app/admin/statements', label: labels['admin.nav.statements'] },
     { href: '/app/admin/payouts', label: labels['admin.nav.payouts'] },
+    // Sits outside the admin group at /admin/finance/reconciliation and was
+    // therefore reachable only by typing it. Linked rather than moved: the
+    // route is in use and changing it would break anyone's bookmark.
+    { href: '/admin/finance/reconciliation', label: labels['admin.nav.reconciliation'] },
     { href: '/app/admin/claims', label: labels['admin.nav.claims'] },
     { href: '/app/admin/audit', label: labels['admin.nav.audit'] },
     { href: '/app/admin/integrations', label: labels['admin.nav.integrations'] },

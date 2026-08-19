@@ -2694,6 +2694,77 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'staff.claims.over_hold', namespace: 'staff', description: 'File a claim: exceeds the hold', en: 'More than the deposit held — only what was held can be taken.', ru: 'Больше удержанного депозита — списать можно только удержанную сумму.', status: NR },
   { key: 'staff.claims.note', namespace: 'staff', description: 'File a claim: a claim is not a charge', en: 'A claim is a request, not a charge. An admin reviews it before anything is taken from the guest.', ru: 'Претензия — это запрос, а не списание. Администратор рассмотрит её до того, как с гостя что-то спишут.', status: NR },
   { key: 'staff.claims.error', namespace: 'staff', description: 'File a claim: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
+
+  // Navigation entries added when every role got a surface of its own.
+  { key: 'nav.tickets', namespace: 'nav', description: 'Nav: my requests', en: 'My requests', ru: 'Мои обращения', status: NR },
+  { key: 'nav.orders', namespace: 'nav', description: 'Nav: my service orders', en: 'My orders', ru: 'Мои заказы', status: NR },
+  { key: 'nav.stay', namespace: 'nav', description: 'Nav: the stay in progress', en: 'My stay', ru: 'Моё проживание', status: NR },
+  { key: 'nav.residence', namespace: 'nav', description: 'Nav: resident surface', en: 'My residence', ru: 'Мой дом', status: NR },
+  { key: 'nav.juristic_portal', namespace: 'nav', description: 'Nav: juristic person portal', en: 'Juristic portal', ru: 'Кабинет юрлица', status: NR },
+  { key: 'admin.nav.reconciliation', namespace: 'admin', description: 'Admin nav: reconciliation board', en: 'Reconciliation', ru: 'Сверка', status: NR },
+
+  // The resident surface (F-RES). A resident could be granted the role and had
+  // nowhere to go; this is the building they live in.
+  { key: 'residence.title', namespace: 'residence', description: 'Residence: page title', en: 'My residence', ru: 'Мой дом', status: NR },
+  { key: 'residence.subtitle', namespace: 'residence', description: 'Residence: what this page is', en: 'Your building: what is happening, who to ask, and what you can order.', ru: 'Ваш дом: что происходит, к кому обратиться и что можно заказать.', status: NR },
+  { key: 'residence.none', namespace: 'residence', description: 'Residence: not a resident anywhere', en: 'You are not registered as a resident of any building yet. If that looks wrong, message the team and they will put it right.', ru: 'Вы пока не числитесь резидентом ни одного дома. Если это ошибка, напишите нам — мы поправим.', status: NR },
+  { key: 'residence.none_action', namespace: 'residence', description: 'Residence: message the team', en: 'Message the team', ru: 'Написать команде', status: NR },
+  { key: 'residence.your_home', namespace: 'residence', description: 'Residence: their units', en: 'Your home', ru: 'Ваше жильё', status: NR },
+  { key: 'residence.announcements', namespace: 'residence', description: 'Residence: announcements heading', en: 'Announcements', ru: 'Объявления', status: NR },
+  { key: 'residence.announcements_empty', namespace: 'residence', description: 'Residence: no announcements', en: 'Nothing has been announced here yet.', ru: 'Объявлений пока нет.', status: NR },
+  { key: 'residence.pinned', namespace: 'residence', description: 'Residence: pinned badge', en: 'Pinned', ru: 'Закреплено', status: NR },
+  { key: 'residence.important', namespace: 'residence', description: 'Residence: important badge', en: 'Important', ru: 'Важно', status: NR },
+  { key: 'residence.posted_by.myuno', namespace: 'residence', description: 'Residence: announcement from myUNO', en: 'from myUNO', ru: 'от myUNO', status: NR },
+  { key: 'residence.posted_by.management_company', namespace: 'residence', description: 'Residence: announcement from the MC', en: 'from the management company', ru: 'от управляющей компании', status: NR },
+  { key: 'residence.posted_by.juristic_person', namespace: 'residence', description: 'Residence: announcement from the juristic person', en: 'from the juristic person', ru: 'от юридического лица дома', status: NR },
+  { key: 'residence.handbook', namespace: 'residence', description: 'Residence: handbook heading', en: 'Building handbook', ru: 'Правила дома', status: NR },
+  { key: 'residence.handbook_empty', namespace: 'residence', description: 'Residence: no handbook yet', en: 'No handbook has been published for this building yet.', ru: 'Для этого дома правила пока не опубликованы.', status: NR },
+  { key: 'residence.services', namespace: 'residence', description: 'Residence: services heading', en: 'Services here', ru: 'Услуги в доме', status: NR },
+  { key: 'residence.services_empty', namespace: 'residence', description: 'Residence: no services', en: 'No services are available in this building yet.', ru: 'Услуги для этого дома пока не подключены.', status: NR },
+  { key: 'residence.services_all', namespace: 'residence', description: 'Residence: all services link', en: 'See all services', ru: 'Все услуги', status: NR },
+  { key: 'residence.from', namespace: 'residence', description: 'Residence: price prefix', en: 'from', ru: 'от', status: NR },
+  { key: 'residence.quote', namespace: 'residence', description: 'Residence: quote-priced service', en: 'Priced on request', ru: 'Цена по запросу', status: NR },
+  { key: 'residence.actions', namespace: 'residence', description: 'Residence: other actions heading', en: 'Anything else', ru: 'Что ещё', status: NR },
+  { key: 'residence.raise_ticket', namespace: 'residence', description: 'Residence: report a problem', en: 'Report a problem', ru: 'Сообщить о проблеме', status: NR },
+  { key: 'residence.messages', namespace: 'residence', description: 'Residence: messages link', en: 'Messages', ru: 'Сообщения', status: NR },
+  { key: 'residence.my_tickets', namespace: 'residence', description: 'Residence: my requests link', en: 'My requests', ru: 'Мои обращения', status: NR },
+
+  // The juristic person's board. Named in CLAUDE.md as one of the three voices
+  // entitled to address a building, and it had no surface at all.
+  { key: 'juristic.title', namespace: 'juristic', description: 'Juristic portal: page title', en: 'Juristic person', ru: 'Юридическое лицо дома', status: NR },
+  { key: 'juristic.subtitle', namespace: 'juristic', description: 'Juristic portal: what this page is', en: 'The common property of your building: what residents are reporting, and what you have told them.', ru: 'Общее имущество дома: что сообщают резиденты и что вы им сообщили.', status: NR },
+  { key: 'juristic.no_project', namespace: 'juristic', description: 'Juristic portal: no building yet', en: 'You are not registered against a building yet.', ru: 'Вы пока не привязаны ни к одному дому.', status: NR },
+  { key: 'juristic.project', namespace: 'juristic', description: 'Juristic portal: building picker', en: 'Building', ru: 'Дом', status: NR },
+  { key: 'juristic.announcements', namespace: 'juristic', description: 'Juristic portal: announcements heading', en: 'Announcements', ru: 'Объявления', status: NR },
+  { key: 'juristic.announcements_write', namespace: 'juristic', description: 'Juristic portal: write an announcement', en: 'Write an announcement', ru: 'Новое объявление', status: NR },
+  { key: 'juristic.announcements_empty', namespace: 'juristic', description: 'Juristic portal: nothing published', en: 'You have not published anything yet.', ru: 'Вы пока ничего не публиковали.', status: NR },
+  { key: 'juristic.published_on', namespace: 'juristic', description: 'Juristic portal: publication date prefix', en: 'Published', ru: 'Опубликовано', status: NR },
+  { key: 'juristic.draft', namespace: 'juristic', description: 'Juristic portal: draft badge', en: 'Draft', ru: 'Черновик', status: NR },
+  { key: 'juristic.tickets', namespace: 'juristic', description: 'Juristic portal: tickets heading', en: 'Reported in this building', ru: 'Обращения по дому', status: NR },
+  { key: 'juristic.tickets_empty', namespace: 'juristic', description: 'Juristic portal: no open tickets', en: 'Nothing is open right now.', ru: 'Открытых обращений нет.', status: NR },
+  { key: 'juristic.tickets_note', namespace: 'juristic', description: 'Juristic portal: who resolves tickets', en: 'Reports raised by residents and owners in this building. Operations resolve them; this is so you can see them.', ru: 'Обращения резидентов и собственников этого дома. Их решает операционная команда — здесь они видны вам.', status: NR },
+  { key: 'juristic.raised_by', namespace: 'juristic', description: 'Juristic portal: who raised it', en: 'Raised by', ru: 'Автор', status: NR },
+  { key: 'juristic.open_count', namespace: 'juristic', description: 'Juristic portal: open count suffix', en: 'open', ru: 'открыто', status: NR },
+  { key: 'juristic.messages', namespace: 'juristic', description: 'Juristic portal: messages link', en: 'Messages', ru: 'Сообщения', status: NR },
+
+  // The orders list. Order detail existed and the list did not, so an order was
+  // findable only if you still had the link.
+  { key: 'orders.title', namespace: 'orders', description: 'Orders: page title', en: 'My orders', ru: 'Мои заказы', status: NR },
+  { key: 'orders.subtitle', namespace: 'orders', description: 'Orders: what this page is', en: 'Services you have ordered — upcoming first, then everything past.', ru: 'Заказанные услуги: сначала предстоящие, затем прошедшие.', status: NR },
+  { key: 'orders.empty', namespace: 'orders', description: 'Orders: nothing ordered yet', en: 'You have not ordered anything yet.', ru: 'Вы пока ничего не заказывали.', status: NR },
+  { key: 'orders.browse', namespace: 'orders', description: 'Orders: browse services', en: 'Browse services', ru: 'Смотреть услуги', status: NR },
+  { key: 'orders.upcoming', namespace: 'orders', description: 'Orders: upcoming section', en: 'Coming up', ru: 'Предстоящие', status: NR },
+  { key: 'orders.past', namespace: 'orders', description: 'Orders: past section', en: 'Past', ru: 'Прошедшие', status: NR },
+  { key: 'orders.when', namespace: 'orders', description: 'Orders: scheduled time label', en: 'When', ru: 'Когда', status: NR },
+  { key: 'orders.provider', namespace: 'orders', description: 'Orders: provider label', en: 'Provider', ru: 'Исполнитель', status: NR },
+  { key: 'orders.total', namespace: 'orders', description: 'Orders: total label', en: 'Total', ru: 'Итого', status: NR },
+  { key: 'orders.status.placed', namespace: 'orders', description: 'Order status: placed', en: 'Placed', ru: 'Оформлен', status: NR },
+  { key: 'orders.status.paid', namespace: 'orders', description: 'Order status: paid', en: 'Paid', ru: 'Оплачен', status: NR },
+  { key: 'orders.status.accepted', namespace: 'orders', description: 'Order status: accepted', en: 'Accepted', ru: 'Принят', status: NR },
+  { key: 'orders.status.declined', namespace: 'orders', description: 'Order status: declined', en: 'Declined', ru: 'Отклонён', status: NR },
+  { key: 'orders.status.expired', namespace: 'orders', description: 'Order status: expired', en: 'Expired', ru: 'Истёк', status: NR },
+  { key: 'orders.status.fulfilled', namespace: 'orders', description: 'Order status: completed', en: 'Completed', ru: 'Выполнен', status: NR },
+  { key: 'orders.status.cancelled', namespace: 'orders', description: 'Order status: cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [

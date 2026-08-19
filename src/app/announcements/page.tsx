@@ -1,51 +1,73 @@
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
-import { listProjects } from '@/modules/projects';
+import { getPostableProjects } from '@/modules/comms';
 import { AnnouncementsComposer } from '@/components/announcements/AnnouncementsComposer';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Announcements (doc 08 §6, doc 09 §3).
+ * Announcements for the organisations that are entitled to make them.
  *
- * The in-stay home space has always rendered announcements, and **nothing in
- * the product could write one**: `createAnnouncement` and
- * `publishAnnouncement` existed, were tested, and had no caller. A residence
- * could not tell its residents the water would be off.
+ * CLAUDE.md names three voices — myUNO, the management company, and the
+ * juristic person — and the composer lived only inside the admin panel, which
+ * two of the three cannot open. The API had always scoped them correctly, so a
+ * management-company member could post and had no page to post from.
  *
- * Two steps on purpose. Writing a draft is private; publishing notifies every
- * person in the audience across the project, so it is a separate, deliberate
- * act — and one that leaves an audit entry naming who sent it.
+ * Same composer as the admin panel, deliberately: the difference between these
+ * posters is which projects they are handed and what the post is signed with,
+ * not what writing one looks like.
  */
-export default async function AdminAnnouncementsPage({
+
+/**
+ * An organisation addresses the people in its building. Only myUNO addresses
+ * myUNO's own staff, so that audience is not offered here.
+ */
+const ORG_AUDIENCES = ['everyone', 'owners', 'residents', 'guests_in_stay'] as const;
+
+export default async function AnnouncementsPage({
   searchParams,
 }: {
   searchParams: { projectId?: string };
 }) {
-  const projects = await listProjects();
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/login?next=/announcements');
+  }
+
+  // An admin has the fuller board — cross-project oversight and org posts — so
+  // send them there rather than showing them a thinner copy of it.
+  if (user.isAdmin) {
+    redirect('/app/admin/announcements');
+  }
+
+  const projects = await getPostableProjects(prisma, user.identityId, false);
+  if (projects.length === 0) {
+    redirect('/');
+  }
+
   const projectId =
     searchParams.projectId && projects.some((p) => p.id === searchParams.projectId)
       ? searchParams.projectId
-      : projects[0]?.id;
+      : projects[0].id;
 
-  const announcements = projectId
-    ? await prisma.announcement.findMany({
-        where: { projectId },
-        include: {
-          createdBy: { select: { firstName: true, lastName: true } },
-          organization: { select: { name: true } },
-        },
-        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
-        take: 100,
-      })
-    : [];
+  const announcements = await prisma.announcement.findMany({
+    where: { projectId },
+    include: {
+      createdBy: { select: { firstName: true, lastName: true } },
+      organization: { select: { name: true } },
+    },
+    orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+    take: 100,
+  });
 
   const labels = await getLabels({
     'admin.announcements.title': 'Announcements',
     'admin.announcements.subtitle':
-      'A message to everyone in a project, or to one group inside it. Write it first, then publish — publishing notifies the audience.',
+      'A message to everyone in your building, or to one group inside it. Write it first, then publish — publishing notifies the audience.',
     'admin.announcements.project': 'Project',
-    'admin.announcements.no_projects': 'Create a project first.',
+    'admin.announcements.no_projects': 'You cannot post in any project yet.',
     'admin.announcements.compose': 'Write an announcement',
     'admin.announcements.headline': 'Title',
     'admin.announcements.body': 'Message',
@@ -82,15 +104,15 @@ export default async function AdminAnnouncementsPage({
   });
 
   return (
-    <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-8">
-        {labels['admin.announcements.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.announcements.subtitle']}
-      </p>
+    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+          {labels['admin.announcements.title']}
+        </h1>
+        <p className="text-body text-text-secondary mb-24 max-w-3xl">
+          {labels['admin.announcements.subtitle']}
+        </p>
 
-      {projectId ? (
         <AnnouncementsComposer
           projectId={projectId}
           projects={projects.map((p) => ({ id: p.id, name: p.name }))}
@@ -109,11 +131,10 @@ export default async function AdminAnnouncementsPage({
             organizationName: a.organization?.name ?? null,
           }))}
           labels={labels}
-          basePath="/app/admin/announcements"
+          basePath="/announcements"
+          audiences={ORG_AUDIENCES}
         />
-      ) : (
-        <p className="text-body text-text-secondary">{labels['admin.announcements.no_projects']}</p>
-      )}
-    </div>
+      </div>
+    </main>
   );
 }

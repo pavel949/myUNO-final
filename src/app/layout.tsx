@@ -5,6 +5,22 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { availableSurfaces, type Landing } from '@/modules/core';
+import { getActiveStayId } from '@/app/actions/getActiveStay';
+import type { RoleType } from '@prisma/client';
+
+/** One content key per kind of surface, so the menu names match the landing. */
+const SURFACE_LABEL_KEYS = {
+  active_stay: 'nav.stay',
+  admin: 'nav.admin',
+  staff: 'nav.ops',
+  management_company: 'nav.mc_portal',
+  juristic: 'nav.juristic_portal',
+  provider: 'nav.provider_portal',
+  owner: 'nav.owner_dashboard',
+  resident: 'nav.residence',
+  public: 'nav.find_stay',
+} as const satisfies Record<Landing['reason'], string>;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -30,6 +46,11 @@ export default async function RootLayout({
     'nav.logout': 'Log out',
     'nav.my_trips': 'My trips',
     'nav.messages': 'Messages',
+    'nav.tickets': 'My requests',
+    'nav.orders': 'My orders',
+    'nav.stay': 'My stay',
+    'nav.residence': 'My residence',
+    'nav.juristic_portal': 'Juristic portal',
     'nav.bell_aria': 'Notifications',
     'nav.bell_empty': 'No notifications yet.',
     'nav.bell_mark_all': 'Mark all read',
@@ -41,6 +62,21 @@ export default async function RootLayout({
     'nav.account': 'Account',
     'nav.menu': 'Menu',
   });
+
+  // The surfaces this person's roles give them, from the same policy the `/app`
+  // landing redirects on — so the menu can never offer a different set of hats
+  // than the landing picks between.
+  const activeBookingId = user ? await getActiveStayId(user.identityId) : null;
+  const roleLinks = user
+    ? availableSurfaces({
+        isAdmin: user.isAdmin,
+        roles: user.roles.map((r) => r.role as RoleType),
+        activeBookingId,
+      }).map((surface) => ({
+        href: surface.path,
+        label: navLabels[SURFACE_LABEL_KEYS[surface.reason]],
+      }))
+    : [];
 
   const footerLabels = await getLabels({
     'nav.footer.brand_column': 'myUNO',
@@ -86,14 +122,12 @@ export default async function RootLayout({
             logout: navLabels['nav.logout'],
             myTrips: navLabels['nav.my_trips'],
             messages: navLabels['nav.messages'],
-            ownerDashboard: navLabels['nav.owner_dashboard'],
-            providerPortal: navLabels['nav.provider_portal'],
-            mcPortal: navLabels['nav.mc_portal'],
-            opsBoard: navLabels['nav.ops'],
-            admin: navLabels['nav.admin'],
+            tickets: navLabels['nav.tickets'],
+            orders: navLabels['nav.orders'],
             account: navLabels['nav.account'],
             menu: navLabels['nav.menu'],
           }}
+          roleLinks={roleLinks}
           bellLabels={{
             aria: navLabels['nav.bell_aria'],
             empty: navLabels['nav.bell_empty'],

@@ -20,9 +20,19 @@ export async function fetchMCDashboard(
     const bookingsRaw = await getMCBookings(prisma, mcIdentityId, projectId, organizationId, 50);
     const ticketsRaw = await getMCTickets(prisma, mcIdentityId, projectId, organizationId, 10);
 
-    // Cast to any to avoid type mismatches between Prisma and client types
-    const units = unitsRaw as any;
-    const bookings = bookingsRaw as any;
+    // Cast to any to avoid type mismatches between Prisma and client types.
+    // baseNightlyThb / totalThb are satang like every other amount in the
+    // platform (CLAUDE.md); convert to baht here, once, at the boundary to
+    // the client component (Q47 — the MC dashboard previously showed every
+    // nightly rate and booking total 100x too large).
+    const units = (unitsRaw as any[]).map((unit) => ({
+      ...unit,
+      baseNightlyThb: unit.baseNightlyThb / 100,
+    }));
+    const bookings = (bookingsRaw as any[]).map((booking) => ({
+      ...booking,
+      totalThb: booking.totalThb / 100,
+    }));
     const tickets = ticketsRaw as any;
 
     return {

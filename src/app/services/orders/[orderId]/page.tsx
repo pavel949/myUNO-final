@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
 import { buildOrderTimeline } from './order-timeline';
+import { baht, formatBreakdownValue } from './order-money';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,6 +159,9 @@ export default async function ServiceOrderDetailPage({
     fulfilled: labels['service-order.detail.fulfilled'],
   };
 
+  // `order.totalThb` itself stays satang for the isPaymentRequired check
+  // below (a sign check, not a display) — baht/formatBreakdownValue (from
+  // ./order-money) convert only at render, see that module's doc comment.
   const isPaymentRequired =
     order.status === 'placed' && order.totalThb > 0;
   const isPaid =
@@ -274,14 +278,14 @@ export default async function ServiceOrderDetailPage({
             {labels['service-order.detail.pricing']}
           </p>
           <p className="text-heading-2 font-semibold text-text-ink mb-16">
-            ฿{order.totalThb.toLocaleString()}
+            ฿{baht(order.totalThb)}
           </p>
           {order.priceBreakdown && Object.keys(order.priceBreakdown).length > 0 && (
             <div className="space-y-8 text-small text-text-secondary">
               {Object.entries(order.priceBreakdown).map(([key, value]) => (
                 <div key={key} className="flex justify-between">
                   <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                  <span>฿{Number(value).toLocaleString()}</span>
+                  <span>{formatBreakdownValue(key, value)}</span>
                 </div>
               ))}
             </div>
@@ -319,7 +323,7 @@ export default async function ServiceOrderDetailPage({
                         {payment.type.replace(/_/g, ' ')}
                       </p>
                       <p className="text-body font-semibold text-text-ink">
-                        ฿{payment.amountThb.toLocaleString()}
+                        ฿{baht(payment.amountThb)}
                       </p>
                     </div>
                     <span className="text-small text-text-secondary">
@@ -441,7 +445,7 @@ export default async function ServiceOrderDetailPage({
             )}
             {order.refundAccruedThb > 0 && (
               <p className="text-body text-status-serious mt-8">
-                Refund accrued: ฿{order.refundAccruedThb.toLocaleString()}
+                Refund accrued: ฿{baht(order.refundAccruedThb)}
               </p>
             )}
           </div>

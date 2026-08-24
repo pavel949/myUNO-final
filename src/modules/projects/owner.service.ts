@@ -181,6 +181,8 @@ export async function getOwnerDashboard(
     });
 
     combinedOccupancy += occupancyNights;
+    // Accumulated in satang (booking.totalThb's native unit); converted to
+    // baht once below (CLAUDE.md money rules; Q47).
     combinedRevenue += monthRevenue;
 
     // Find next arrival
@@ -198,7 +200,8 @@ export async function getOwnerDashboard(
       name: unit.name,
       projectId: unit.projectId,
       occupancyThisMonth: occupancyNights,
-      revenueThisMonth: monthRevenue,
+      // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+      revenueThisMonth: monthRevenue / 100,
       nextArrivalDate: nextArrival,
       bookingsCount: unit.bookings.filter((b) => b.status !== 'cancelled').length,
       openTicketsCount: unit.tickets.filter((t) => t.status !== 'closed').length,
@@ -210,7 +213,8 @@ export async function getOwnerDashboard(
     identityId: ownerIdentityId,
     units: unitData,
     combinedOccupancyThisMonth: combinedOccupancy,
-    combinedRevenueThisMonth: combinedRevenue,
+    // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+    combinedRevenueThisMonth: combinedRevenue / 100,
     alertsCount: 0, // Placeholder; extended by alerts/tickets/verification logic in later tasks
   };
 }
@@ -232,7 +236,7 @@ export async function getOwnerBookingsList(
     throw new Error(`Access denied`);
   }
 
-  return db.booking.findMany({
+  const bookings = await db.booking.findMany({
     where: {
       unitId,
       status: {
@@ -262,6 +266,9 @@ export async function getOwnerBookingsList(
     },
     take: limit,
   });
+
+  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+  return bookings.map((booking) => ({ ...booking, totalThb: booking.totalThb / 100 }));
 }
 
 /**

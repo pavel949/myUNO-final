@@ -48,7 +48,8 @@ export default async function AdminBookingsPage() {
           status: b.status,
           startDate: b.startDate.toISOString(),
           endDate: b.endDate.toISOString(),
-          totalThb: b.totalThb,
+          // Display boundary: totalThb is satang (THB x 100).
+          totalThb: Math.round(b.totalThb / 100),
           unitName: b.unit?.name || '—',
           guestName: b.guestIdentity
             ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`

@@ -127,8 +127,17 @@ describe('Owner statement detail page — scoping', () => {
     const props = (element as { props: Record<string, any> }).props
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.unitName).toBe('B-707')
-    expect(props.statement.adjustedNoiTh).toBe(34_000)
+    // OwnerStatement stores every amount in satang (34_000 = ฿340), like every
+    // other money field in the platform (CLAUDE.md). The page must convert to
+    // baht before handing figures to the client component — Q47: it
+    // previously didn't, and every statement showed 100x too large.
+    expect(props.statement.adjustedNoiTh).toBe(340)
+    expect(props.statement.grossRevenueTh).toBe(500)
+    expect(props.statement.noiTh).toBe(340)
+    expect(props.statement.ownerShareTh).toBe(340)
     expect(props.statement.lines).toHaveLength(2)
+    expect(props.statement.lines[0].amountTh).toBe(500)
+    expect(props.statement.lines[1].amountTh).toBe(60)
     // Every user-facing string arrives as a resolved content key.
     expect(props.labels['owner.statement.gross_bookings']).toBeTruthy()
     expect(props.labels['common.line_item_category.service_fee']).toBeTruthy()

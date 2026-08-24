@@ -195,8 +195,14 @@ export default function ProviderServicesClient({
                     {' · '}
                     {labels[`provider.services.price_model.${service.priceModel}`] ||
                       service.priceModel}
+                    {/* basePriceThb is satang (THB × 100) straight from the DB
+                        via /api/provider/services — convert to baht only
+                        here, at final render (money rule, CLAUDE.md "Money
+                        rules"). Note: the edit form below pre-fills and
+                        submits this same field unconverted — see the report
+                        for why that round-trip was left untouched. */}
                     {service.basePriceThb != null &&
-                      ` · ฿${service.basePriceThb.toLocaleString()}`}
+                      ` · ฿${(service.basePriceThb / 100).toLocaleString()}`}
                   </p>
                 </div>
               )}

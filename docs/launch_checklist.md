@@ -47,7 +47,7 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Item | State | Evidence / action |
 |---|---|---|
 | Structured, PII-scrubbed logging | ✅ | `src/lib/observability.ts` — JSON to stdout with a correlation id, scrubbed. Lands in the Vercel log and is searchable by the reference shown on an error page. |
-| Error alerting | ⚠️ | **Nothing pages anyone.** `reportError` is deliberately a seam with no transport, and its own comment says so rather than pretending. Attaching Sentry or a log drain is an ops decision with a cost; until it is made, a production error is discovered by a person noticing. |
+| Error alerting | ⚠️ | **The transport now exists; it needs one env var to go live.** `reportError` (`src/lib/observability.ts`) pushes every unexpected error (5xx, never the caller's own 4xx mistakes) to `ALERT_WEBHOOK_URL` — a Slack incoming-webhook URL, or anything that accepts a JSON POST with a `text` field. Unset, it stays a correct no-op (same seam pattern as payments and email); tested in `observability.test.ts`. **Set `ALERT_WEBHOOK_URL` in Vercel** (a Slack incoming webhook takes minutes to create) and production errors start paging the ops channel with no further code change. First version only: no retry, no queue, no dedup — a genuine incident storm can still flood the channel, and job-failure alerts (the scheduler, below) don't push to it yet, only request-path errors do. |
 | Uptime check on the public site and API | ❓ | Not configurable from the repository. `/api/health` exists to point a monitor at. |
 | Scheduler jobs report last run and outcome | ⚠️ | Doc 15 §5 asks for an admin health panel showing each job's last run — "a silent scheduler is a visible red light, not a mystery". The jobs exist; the panel does not. |
 | Backups and point-in-time recovery enabled | ❓ | Depends on the Supabase plan tier and is not exposed to this session. Confirm in the dashboard: daily backups on, PITR window 30 days. |
@@ -79,7 +79,7 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Who money is paid to | ✅ | `merchant.*` configuration (doc 04 §11) — legal name, tax number, bank, account, SWIFT. Editable in the admin panel; there is exactly one of it. |
 | Deposits | ⚠️ | `booking.deposit.mode = preauth` has **never placed a hold** — neither implementation was called from the booking path, and where the hold is taken and released is a founder ruling (Q46). Deposits default to `off`, so nothing is broken today; the feature simply does not work if switched on. |
 | Every role has a surface | ✅ | Guest, owner, resident, buyer, provider, MC, juristic, staff, admin — with `reachability.test.ts` failing the build if a page has nothing linking to it. |
-| Money displayed correctly everywhere | ⚠️ | Q47 — amounts are satang; some finance screens hand satang to a baht formatter and may show figures 100× too large. Needs a sweep of every money field before anyone reads a statement. |
+| Money displayed correctly everywhere | ✅ | Q47 — the full sweep is done: every producer that handed satang to a baht-expecting formatter across owner, MC, admin, guest, provider and public screens is fixed at the producer boundary, with a regression test at each. 1678 tests / 133 files green, build clean, lint clean. **Two related but distinct write-path bugs surfaced during the sweep and need a founder ruling before go-live: Q49 (a provider's own price edit) and Q50 (an admin's NOI-cap entry) both write a typed baht number straight into a satang column.** |
 | Tests, build, lint | ✅ | Recorded in the commit that adds this file. |
 
 ---
@@ -88,9 +88,9 @@ Three things below make a production launch unsafe today. They are not ranked by
 
 **Ready to pilot on cash, in one building, with staff who know the product:** yes, once the privacy notice exists and the RLS migration is deployed.
 
-**Ready for real owners' money and card payments:** no. §1 and the two ⚠️ money items in §5 stand between here and that.
+**Ready for real owners' money and card payments:** no. §1 and the Deposits row in §5 stand between here and that. Money display (Q47) is now fixed and verified.
 
-**The items only the founder can close:** Q36 (terms and privacy prose), Q45 (Mumbai or Singapore), Q15 (ombudsman), Q43(a) (permitted-use gate), Q46 (when a deposit is taken and released), and the ENCRYPTION_KEY handling in §2.
+**The items only the founder can close:** Q36 (terms and privacy prose), Q45 (Mumbai or Singapore), Q15 (ombudsman), Q43(a) (permitted-use gate), Q46 (when a deposit is taken and released), Q49 (a provider's own price edit writes baht into satang), Q50 (an admin's NOI-cap entry writes baht into satang), and the ENCRYPTION_KEY handling in §2.
 
 ---
 

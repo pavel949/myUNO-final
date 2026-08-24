@@ -73,9 +73,16 @@ export async function GET(req: NextRequest) {
 
     const total = await prisma.booking.count({ where });
 
+    // Display boundary: totalThb is stored in satang (THB x 100); convert to
+    // baht here so the client never has to know about the domain unit.
+    const bookingsForClient = bookings.map((b) => ({
+      ...b,
+      totalThb: Math.round(b.totalThb / 100),
+    }));
+
     return NextResponse.json(
       {
-        bookings,
+        bookings: bookingsForClient,
         total,
         limit,
         offset,

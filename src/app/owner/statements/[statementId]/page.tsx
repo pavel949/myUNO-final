@@ -58,6 +58,14 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     projectId: statement.unit.projectId,
   }).catch(() => null);
 
+  // Every *Th field on OwnerStatement (and its line items) is stored in
+  // satang, like every other amount in the platform (CLAUDE.md money rules).
+  // Convert to baht here, once, at the boundary to the client component —
+  // Q47: this page previously handed satang straight to a baht-expecting
+  // formatter, showing every figure on a statement 100x too large.
+  const th = (value: number): number => value / 100;
+  const thOrNull = (value: number | null): number | null => (value === null ? null : value / 100);
+
   const detail: StatementDetail = {
     id: statement.id,
     unitName: statement.unit.name,
@@ -69,28 +77,28 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     signedOffByOwnerAt: statement.signedOffByOwnerAt?.toISOString() ?? null,
     signedOffByOperatorAt: statement.signedOffByOperatorAt?.toISOString() ?? null,
 
-    grossBookingsAmountTh: statement.grossBookingsAmountTh,
-    guestPaymentsReceivedTh: statement.guestPaymentsReceivedTh,
-    serviceFeesAmountTh: statement.serviceFeesAmountTh,
-    operatingExpensesAmountTh: statement.operatingExpensesAmountTh,
-    taxesAmountTh: statement.taxesAmountTh,
-    adjustedNoiTh: statement.adjustedNoiTh,
-    distributableCashTh: statement.distributableCashTh,
-    performanceFeeAmountTh: statement.performanceFeeAmountTh,
+    grossBookingsAmountTh: thOrNull(statement.grossBookingsAmountTh),
+    guestPaymentsReceivedTh: thOrNull(statement.guestPaymentsReceivedTh),
+    serviceFeesAmountTh: thOrNull(statement.serviceFeesAmountTh),
+    operatingExpensesAmountTh: thOrNull(statement.operatingExpensesAmountTh),
+    taxesAmountTh: thOrNull(statement.taxesAmountTh),
+    adjustedNoiTh: thOrNull(statement.adjustedNoiTh),
+    distributableCashTh: thOrNull(statement.distributableCashTh),
+    performanceFeeAmountTh: thOrNull(statement.performanceFeeAmountTh),
     performanceFeeBasisText: statement.performanceFeeBasisText,
 
-    grossRevenueTh: statement.grossRevenueTh,
-    totalCostsTh: statement.totalCostsTh,
-    noiTh: statement.noiTh,
-    ownerShareTh: statement.ownerShareTh,
-    estateShareTh: statement.estateShareTh,
+    grossRevenueTh: th(statement.grossRevenueTh),
+    totalCostsTh: th(statement.totalCostsTh),
+    noiTh: th(statement.noiTh),
+    ownerShareTh: th(statement.ownerShareTh),
+    estateShareTh: th(statement.estateShareTh),
     capApplied: statement.capApplied,
 
     lines: statement.lineItems.map((line) => ({
       id: line.id,
       category: line.category,
       description: line.description,
-      amountTh: line.amountTh,
+      amountTh: th(line.amountTh),
       bookingId: line.bookingId,
       bookingStartDate: line.booking?.startDate.toISOString() ?? null,
       bookingEndDate: line.booking?.endDate.toISOString() ?? null,

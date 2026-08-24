@@ -59,6 +59,8 @@ export async function GET(
     const cover = coverMedia?.storageKey || gallery[0] || null;
     return NextResponse.json({
       ...publicUnit,
+      // Display boundary: baseNightlyThb is stored in satang (THB x 100).
+      baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
       images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
     });
   } catch (error) {

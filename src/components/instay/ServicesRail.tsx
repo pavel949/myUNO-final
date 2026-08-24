@@ -61,7 +61,10 @@ export const ServicesRail = React.forwardRef<HTMLDivElement, ServicesRailProps>(
 
               {service.basePriceThb !== null ? (
                 <p className="text-small text-text-ink tabular-nums">
-                  {labels['home.services.from']} ฿{service.basePriceThb.toLocaleString('en-US')}
+                  {/* basePriceThb is satang (THB × 100) straight from the DB
+                      via getInStayHomeSpace — convert to baht only here, at
+                      final render (money rule, CLAUDE.md "Money rules"). */}
+                  {labels['home.services.from']} ฿{(service.basePriceThb / 100).toLocaleString('en-US')}
                 </p>
               ) : null}
             </a>

@@ -49,13 +49,15 @@ export default async function OpsBoardPage() {
     'staff.ops.tickets_past_sla': 'Tickets past SLA',
   });
 
+  // Display boundary: totalThb/total_thb are stored in satang (THB x 100);
+  // convert to baht here, once, for the client board.
   const serialize = (list: typeof arrivals) =>
     list.map((b) => ({
       id: b.id,
       status: b.status,
       startDate: b.startDate.toISOString(),
       endDate: b.endDate.toISOString(),
-      totalThb: b.totalThb,
+      totalThb: Math.round(b.totalThb / 100),
       party: b.adults + b.children,
       verificationStatus: b.verificationStatus,
       unitName: b.unit?.name || '—',
@@ -118,7 +120,7 @@ export default async function OpsBoardPage() {
           pendingServiceOrders={pendingServiceOrders.map((o) => ({
             id: o.id,
             scheduledStart: o.scheduled_start.toISOString(),
-            totalThb: o.total_thb,
+            totalThb: Math.round(o.total_thb / 100),
             serviceTitle: o.service?.title || '—',
             ordererName: o.orderer
               ? `${o.orderer.firstName} ${o.orderer.lastName}`

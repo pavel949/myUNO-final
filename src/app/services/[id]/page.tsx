@@ -4,6 +4,7 @@ import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
+import { formatServicePriceLabel } from './price-label';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,9 +157,10 @@ export default async function ServiceDetailPage({
             </p>
             {service.basePriceThb !== null && (
               <p className="text-body text-text-secondary mt-4">
-                {service.priceModel === 'fixed'
-                  ? `฿${service.basePriceThb.toLocaleString()}`
-                  : `from ฿${service.basePriceThb.toLocaleString()}`}
+                {/* service.basePriceThb is satang from the DB; the raw satang
+                    value is still passed to OrderWizard below, unconverted,
+                    since it feeds order-total math — see price-label.ts. */}
+                {formatServicePriceLabel(service.priceModel, service.basePriceThb)}
               </p>
             )}
           </div>

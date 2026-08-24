@@ -53,6 +53,13 @@ function fill(template: string, params: Record<string, string | number>): string
   return result;
 }
 
+// `basePriceThb` / `totalThb` arrive from /api/services and /api/service-orders
+// as satang (THB × 100) straight from the DB — convert to baht only here, at
+// final render (money rule, CLAUDE.md "Money rules").
+export function baht(satang: number): string {
+  return (satang / 100).toLocaleString();
+}
+
 export default function ServicesClient({
   labels,
   categories,
@@ -344,7 +351,7 @@ export default function ServicesClient({
                   )}
                   {service.basePriceThb !== null && (
                     <p className="text-body font-bold text-brand-andaman mb-12">
-                      {labels['services.browse.from']} ฿{service.basePriceThb.toLocaleString()}
+                      {labels['services.browse.from']} ฿{baht(service.basePriceThb)}
                     </p>
                   )}
 
@@ -396,7 +403,7 @@ export default function ServicesClient({
                         fullWidth
                       >
                         {fill(labels['services.browse.confirm_order'], {
-                          total: ((service.basePriceThb || 0) * quantity).toLocaleString(),
+                          total: baht((service.basePriceThb || 0) * quantity),
                         })}
                       </Button>
                     </div>
@@ -440,7 +447,7 @@ export default function ServicesClient({
                   </p>
                   <p className="text-small text-text-secondary">
                     {new Date(order.scheduledStart).toLocaleString()} · ฿
-                    {order.totalThb.toLocaleString()}
+                    {baht(order.totalThb)}
                   </p>
                 </div>
                 <div className="flex items-center gap-12">

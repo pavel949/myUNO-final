@@ -67,12 +67,17 @@ export async function GET(
     }
 
     const { unit, ...rest } = booking;
+    // Display boundary: totalThb/refundAccruedThb/refundPreviewThb are all
+    // computed and stored in satang (THB x 100). Convert to baht only here,
+    // at the response boundary — the refund math above still ran in satang.
     return NextResponse.json({
       ...rest,
+      totalThb: Math.round(rest.totalThb / 100),
+      refundAccruedThb: Math.round(rest.refundAccruedThb / 100),
       unit: unit ? { id: unit.id, name: unit.name } : null,
       viewer: { isGuest, isOwner: isOwner || user.isAdmin, isStaff },
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),
-      refundPreviewThb,
+      refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
     });
   } catch (error) {
     return handleError(error);

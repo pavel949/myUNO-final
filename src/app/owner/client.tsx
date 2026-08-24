@@ -396,7 +396,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                             {labels['owner.statement.noi']}
                           </span>
                           <span className="text-sm font-medium text-text-ink">
-                            {formatCurrency(statement.noiTh || 0)}
+                            {/* OwnerStatement stores every amount in satang like the rest of
+                                the platform (CLAUDE.md); convert at this display boundary
+                                rather than trusting the raw Prisma field (Q47). */}
+                            {formatCurrency((statement.noiTh || 0) / 100)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -404,7 +407,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                             {labels['owner.statement.your_share']}
                           </span>
                           <span className="text-sm font-medium text-text-ink">
-                            {formatCurrency(statement.ownerShareTh || 0)}
+                            {formatCurrency((statement.ownerShareTh || 0) / 100)}
                           </span>
                         </div>
                       </div>

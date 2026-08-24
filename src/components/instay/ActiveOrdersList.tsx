@@ -16,12 +16,16 @@ interface ActiveOrdersListProps {
   orders: ActiveOrder[];
 }
 
-const formatCurrency = (thb: number): string => {
+// order.totalThb (below) is satang (THB × 100) straight from the DB via
+// getInStayHomeSpace — this formatter converts to baht right at final render
+// (money rule, CLAUDE.md "Money rules"). It is local to this component, so
+// the conversion lives inside it rather than at each call site.
+const formatCurrency = (satang: number): string => {
   return new Intl.NumberFormat('th-TH', {
     style: 'currency',
     currency: 'THB',
     maximumFractionDigits: 0,
-  }).format(thb);
+  }).format(satang / 100);
 };
 
 const formatDateTime = (dateStr: string): string => {

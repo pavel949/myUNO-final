@@ -99,7 +99,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           id: e.id,
           engagementType: e.engagementType,
           status: e.status,
-          noiCapAnnualThb: e.noiCapAnnualThb,
+          // Display boundary: noiCapAnnualThb is satang (THB x 100) in the
+          // domain layer — the finance module compares it directly against
+          // satang NOI totals (src/modules/finance/statement.service.ts).
+          noiCapAnnualThb: e.noiCapAnnualThb !== null ? Math.round(e.noiCapAnnualThb / 100) : null,
         }))}
         complianceRecords={unit.complianceRecords.map((r) => ({
           id: r.id,

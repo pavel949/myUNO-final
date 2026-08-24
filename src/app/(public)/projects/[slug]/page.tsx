@@ -351,7 +351,7 @@ export default async function ProjectLandingPage({
                   <p className="text-body text-text-ink font-semibold mb-12">
                     {labels['project_page.units.per_night'].replace(
                       '{price}',
-                      unit.baseNightlyThb.toLocaleString()
+                      satangToThb(unit.baseNightlyThb)
                     )}
                   </p>
                   <span className="text-brand-andaman font-semibold text-small">

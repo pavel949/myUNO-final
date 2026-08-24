@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
-import { computeOrderPreviewThb } from './order-preview';
+import { computeOrderPreviewBaht } from './order-preview';
 
 /**
  * SA-2 — the single ordering surface on the service page, super-app style:
@@ -86,7 +86,10 @@ export default function OrderWizard({
 
   const effectiveBookingId = bookingId ?? autoBookingId;
   const selfPath = `/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`;
-  const previewThb = computeOrderPreviewThb(service.priceModel, service.basePriceThb, quantity);
+  // computeOrderPreviewBaht converts the satang basePriceThb to baht for
+  // display only — the server always recomputes the real total from
+  // service.basePriceThb (satang), never this preview.
+  const previewThb = computeOrderPreviewBaht(service.priceModel, service.basePriceThb, quantity);
 
   // Quote-priced services (yacht, private chef): the concierge prices them
   // individually — hand the guest to WhatsApp (or messages) instead of a form.

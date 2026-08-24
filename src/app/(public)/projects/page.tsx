@@ -6,6 +6,7 @@ import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { getRequestLocale } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
+import { satangToThb } from './satang-to-thb';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,7 +116,7 @@ export default async function ProjectsHubPage() {
                     <p className="text-body text-text-ink font-semibold mb-16">
                       {labels['projects.hub.from_price'].replace(
                         '{price}',
-                        project.fromNightlyThb.toLocaleString()
+                        satangToThb(project.fromNightlyThb)
                       )}
                     </p>
                   ) : null}

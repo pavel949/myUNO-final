@@ -120,6 +120,8 @@ export async function revenueByChannel(
   const countedBookings = new Map<string, Set<string>>();
   for (const entry of entries) {
     const channel = entry.booking?.channel ?? 'unattributed';
+    // Accumulated in satang (the ledger's native unit) so per-entry rounding
+    // never compounds; only the total is converted to baht, once, below.
     const row = rows.get(channel) ?? { channel, revenueThb: 0, bookings: 0 };
     row.revenueThb += entry.amountThb;
     rows.set(channel, row);
@@ -131,7 +133,10 @@ export async function revenueByChannel(
     countedBookings.set(channel, seen);
   }
 
-  return [...rows.values()].sort((a, b) => b.revenueThb - a.revenueThb);
+  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+  return [...rows.values()]
+    .map((row) => ({ ...row, revenueThb: row.revenueThb / 100 }))
+    .sort((a, b) => b.revenueThb - a.revenueThb);
 }
 
 export interface RevenueSplit {
@@ -161,8 +166,9 @@ export async function revenueSplit(
   });
 
   const byType = Object.fromEntries(grouped.map((g) => [g.entryType, g._sum.amountThb ?? 0]));
+  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
   return {
-    rentalThb: byType.rental_revenue ?? 0,
-    ancillaryThb: byType.service_commission ?? 0,
+    rentalThb: (byType.rental_revenue ?? 0) / 100,
+    ancillaryThb: (byType.service_commission ?? 0) / 100,
   };
 }

@@ -58,21 +58,29 @@ export async function POST(req: NextRequest) {
 
     const nights = engine.lines.length;
 
-    // Shape consumed by the booking widget; keep engine fields alongside
+    // Display boundary: the engine computes every *_thb figure in satang
+    // (THB x 100) — the same domain unit the booking endpoint charges with.
+    // This response quotes the guest for the booking widget only (nothing
+    // here is ever sent back to a payment/booking endpoint — the widget
+    // resubmits just dates/guest counts and the server recomputes the total
+    // in satang independently), so it's safe to convert every money field
+    // to baht here, at the response boundary.
+    const toBaht = (satang: number) => Math.round(satang / 100);
     return NextResponse.json(
       {
         nights,
-        nightlyRate: nights > 0 ? Math.round(engine.subtotal_thb / nights) : 0,
-        subtotal: engine.subtotal_thb,
-        lengthOfStayDiscount: engine.los_discount_thb,
-        earlyBirdDiscount: engine.early_bird_discount_thb,
-        cleaningFee: engine.cleaning_fee_thb,
-        serviceFee: engine.service_fee_thb,
-        occupancyTax: engine.occupancy_tax_thb,
-        subtotalAfterFees:
-          engine.subtotal_thb - engine.los_discount_thb + engine.cleaning_fee_thb,
-        total: engine.total_thb,
-        lines: engine.lines,
+        nightlyRate: nights > 0 ? toBaht(Math.round(engine.subtotal_thb / nights)) : 0,
+        subtotal: toBaht(engine.subtotal_thb),
+        lengthOfStayDiscount: toBaht(engine.los_discount_thb),
+        earlyBirdDiscount: toBaht(engine.early_bird_discount_thb),
+        cleaningFee: toBaht(engine.cleaning_fee_thb),
+        serviceFee: toBaht(engine.service_fee_thb),
+        occupancyTax: toBaht(engine.occupancy_tax_thb),
+        subtotalAfterFees: toBaht(
+          engine.subtotal_thb - engine.los_discount_thb + engine.cleaning_fee_thb
+        ),
+        total: toBaht(engine.total_thb),
+        lines: engine.lines.map((line) => ({ ...line, nightly_thb: toBaht(line.nightly_thb) })),
       },
       { status: 200 }
     );

@@ -328,15 +328,16 @@ describe('MC Service', () => {
         periodEnd
       );
 
-      // Verify fee calculation: 50,000 * 12% = 6,000
+      // 50,000 satang (฿500) * 12% = 6,000 satang (฿60). The report converts
+      // to baht at the display boundary (CLAUDE.md money rules; Q47).
       expect(report.feeLines).toHaveLength(1);
-      expect(report.feeLines[0].grossAmount).toBe(50000);
+      expect(report.feeLines[0].grossAmount).toBe(500);
       expect(report.feeLines[0].feePercentage).toBe(12);
-      expect(report.feeLines[0].feeAmount).toBe(6000);
+      expect(report.feeLines[0].feeAmount).toBe(60);
 
       // Verify totals
-      expect(report.summaryThb.grossAmount).toBe(50000);
-      expect(report.summaryThb.platformFeeAmount).toBe(6000);
+      expect(report.summaryThb.grossAmount).toBe(500);
+      expect(report.summaryThb.platformFeeAmount).toBe(60);
     });
 
     it('uses default fee percentage when no override is set', async () => {
@@ -408,9 +409,10 @@ describe('MC Service', () => {
         periodEnd
       );
 
-      // Verify default 12% fee: 100,000 * 12% = 12,000
+      // 100,000 satang (฿1,000) * 12% = 12,000 satang (฿120) — converted to
+      // baht at the display boundary (CLAUDE.md money rules; Q47).
       expect(report.feeLines[0].feePercentage).toBe(12);
-      expect(report.feeLines[0].feeAmount).toBe(12000);
+      expect(report.feeLines[0].feeAmount).toBe(120);
     });
   });
 

@@ -313,5 +313,119 @@ describe('T-031: Payouts & Reconciliation', () => {
       pending = data.pendingPayouts.find(p => p.id === payout.id)
       expect(pending).toBeUndefined()
     })
+
+    // Q47: every *Thb figure the admin reconciliation board reads is stored
+    // in satang (THB x 100); getReconciliationData is the DTO boundary for
+    // that board and must hand back baht, not raw satang.
+    it('converts unmatched payment, failed refund, and pending payout amounts to baht', async () => {
+      const owner = await createIdentity()
+      const project = await createProject()
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
+      const guest = await createIdentity()
+      const admin = await createIdentity()
+
+      // Unmatched payment: no booking/service order attached.
+      const unmatchedPayment = await prismadb.payment.create({
+        data: {
+          purpose: 'stay',
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 500000, // ฿5,000
+          status: 'failed',
+        },
+      })
+
+      // A failed refund against a separate, matched payment.
+      const booking = await prismadb.booking.create({
+        data: {
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          bookingType: 'guest_stay',
+          channel: 'direct',
+          status: 'confirmed',
+          startDate: new Date('2026-01-15'),
+          endDate: new Date('2026-01-20'),
+          adults: 2,
+          children: 0,
+          totalThb: 300000, // ฿3,000
+          priceBreakdown: {},
+        },
+      })
+      const payment = await prismadb.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId: booking.id,
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 300000, // ฿3,000
+          status: 'succeeded',
+        },
+      })
+      const failedRefund = await prismadb.refund.create({
+        data: {
+          paymentId: payment.id,
+          method: 'card_provider',
+          amountThb: 100000, // ฿1,000
+          reason: 'cancellation',
+          status: 'failed',
+          initiatedByIdentityId: admin.id,
+        },
+      })
+
+      const engagement = await createUnitEngagement({
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        status: 'active',
+      })
+      const statement = await prismadb.ownerStatement.create({
+        data: {
+          unitId: unit.id,
+          ownerIdentityId: owner.id,
+          engagementId: engagement.id,
+          periodStart: new Date('2026-01-01'),
+          periodEnd: new Date('2026-01-31'),
+          status: 'signed_off',
+          grossRevenueTh: 400000,
+          totalCostsTh: 0,
+          noiTh: 400000,
+          ownerShareTh: 400000,
+          estateShareTh: 0,
+          grossBookingsAmountTh: 400000,
+          serviceFeesAmountTh: 0,
+          operatingExpensesAmountTh: 0,
+          adjustedNoiTh: 400000,
+          distributableCashTh: 400000,
+        },
+      })
+      const payout = await prismadb.payout.create({
+        data: {
+          payeeType: 'owner',
+          ownerStatementId: statement.id,
+          periodStart: statement.periodStart,
+          periodEnd: statement.periodEnd,
+          amountThb: 400000, // ฿4,000
+          method: 'bank_transfer_thb',
+          reference: 'BANK-REF-002',
+          executedOn: new Date('2026-02-05'),
+          recordedByIdentityId: admin.id,
+          status: 'recorded',
+        },
+      })
+
+      const data = await getReconciliationData()
+
+      const surfacedPayment = data.unmatchedPayments.find(p => p.id === unmatchedPayment.id)
+      expect(surfacedPayment?.amountThb).toBe(5000)
+
+      const surfacedRefund = data.failedRefunds.find(r => r.id === failedRefund.id)
+      expect(surfacedRefund?.refundAmount).toBe(1000)
+      expect(surfacedRefund?.paymentAmount).toBe(3000)
+
+      const surfacedPayout = data.pendingPayouts.find(p => p.id === payout.id)
+      expect(surfacedPayout?.amountThb).toBe(4000)
+    })
   })
 })

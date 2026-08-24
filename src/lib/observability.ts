@@ -164,6 +164,54 @@ export interface ReportedError {
 }
 
 /**
+ * Best-effort push to an ops alert channel — a Slack (or Discord/PagerDuty
+ * generic-webhook-compatible) endpoint that accepts a JSON POST with a `text`
+ * field. This is the transport `reportError`'s own comment used to say did
+ * not exist (Q47/"nothing alerts you when something breaks"). It follows the
+ * same seam pattern as the payment and email seams elsewhere in this
+ * codebase: with `ALERT_WEBHOOK_URL` unset, it is a correct no-op; set it and
+ * a real incident starts paging without a code change.
+ *
+ * Deliberately narrow for a first version: no retry, no queue, no dedup — a
+ * genuine incident storm can still flood the channel. That is a known,
+ * accepted limitation, not a silent gap, and cheaper to fix once it is a real
+ * problem than to build speculatively now (CLAUDE.md: no invented scope).
+ * Expected 4xx traffic (`fields.expected`) never pages — only failures the
+ * caller did not already classify as the caller's own mistake.
+ */
+function pushAlert(
+  errorName: string,
+  message: string,
+  fields: LogFields,
+  fingerprint: string
+): void {
+  const url = process.env.ALERT_WEBHOOK_URL;
+  if (!url) return;
+  if (process.env.LOG_SILENT === '1') return;
+  if (fields.expected === true) return;
+
+  const summary = `[myUNO] ${errorName}: ${scrubText(message).slice(0, 200)}`;
+  const payload = {
+    text: summary, // Slack/Discord read this field; other targets can read the rest.
+    ...(scrubValue({
+      correlationId: fields.correlationId ?? null,
+      route: fields.route,
+      statusCode: fields.statusCode,
+      fingerprint,
+      timestamp: new Date().toISOString(),
+    }) as Record<string, unknown>),
+  };
+
+  // Fire-and-forget: an alert transport failing must never fail the request
+  // that triggered it. The structured log line is the record of truth either way.
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
+/**
  * Record an error, scrubbed and correlated.
  *
  * Returns the correlation id so the caller can hand it to the user: an error
@@ -187,9 +235,10 @@ export function reportError(error: unknown, fields: LogFields = {}): ReportedErr
     stack: isError ? error.stack : undefined,
   });
 
-  return {
-    correlationId,
-    // Groups the same failure across requests without needing a vendor to do it.
-    fingerprint: `${name}:${scrubText(message).slice(0, 120)}`,
-  };
+  // Groups the same failure across requests without needing a vendor to do it.
+  const fingerprint = `${name}:${scrubText(message).slice(0, 120)}`;
+
+  pushAlert(name, message, fields, fingerprint);
+
+  return { correlationId, fingerprint };
 }

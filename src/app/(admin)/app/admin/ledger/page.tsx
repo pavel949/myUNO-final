@@ -36,12 +36,17 @@ export default async function AdminLedgerPage({
     take: 200,
   });
 
-  const totals = entries.reduce(
+  // Accumulated in satang (the ledger's native unit), then converted to baht
+  // once below — matches every entry's amountThb passed to the client.
+  const totalsThb = entries.reduce(
     (acc, entry) => {
       acc[entry.entryType] = (acc[entry.entryType] || 0) + entry.amountThb;
       return acc;
     },
     {} as Record<string, number>
+  );
+  const totals = Object.fromEntries(
+    Object.entries(totalsThb).map(([type, amountThb]) => [type, amountThb / 100])
   );
 
   const labels = await getLabels({
@@ -72,7 +77,8 @@ export default async function AdminLedgerPage({
           entries={entries.map((e) => ({
             id: e.id,
             entryType: e.entryType,
-            amountThb: e.amountThb,
+            // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+            amountThb: e.amountThb / 100,
             unitName: e.unit?.name || '—',
             description: e.description,
             occurredOn: e.occurredOn.toISOString(),

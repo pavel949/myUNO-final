@@ -59,7 +59,8 @@ export default async function AdminUnitsPage() {
           name: unit.name,
           projectName: unit.project?.name || '—',
           status: unit.status,
-          baseNightlyThb: unit.baseNightlyThb,
+          // Display boundary: baseNightlyThb is satang (THB x 100).
+          baseNightlyThb: Math.round(unit.baseNightlyThb / 100),
           permittedUseConfirmed: Boolean(unit.permittedUseConfirmedAt),
           coverUrl: unit.coverMedia?.storageKey || null,
           ownerName: unit.owner ? `${unit.owner.firstName} ${unit.owner.lastName}` : '—',

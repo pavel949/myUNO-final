@@ -466,18 +466,26 @@ export async function getMCFeeReport(
   // Sort by date
   feeLines.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  // Calculate totals
+  // Calculate totals in satang, the ledger's native unit, so the percentage
+  // math above stays exact — only the returned figures are converted to baht.
   const grossTotal = feeLines.reduce((sum, line) => sum + line.grossAmount, 0);
   const feeTotal = feeLines.reduce((sum, line) => sum + line.feeAmount, 0);
+
+  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
+  const feeLinesThb = feeLines.map((line) => ({
+    ...line,
+    grossAmount: line.grossAmount / 100,
+    feeAmount: line.feeAmount / 100,
+  }));
 
   return {
     organizationId,
     periodStart,
     periodEnd,
-    feeLines,
+    feeLines: feeLinesThb,
     summaryThb: {
-      grossAmount: grossTotal,
-      platformFeeAmount: feeTotal,
+      grossAmount: grossTotal / 100,
+      platformFeeAmount: feeTotal / 100,
     },
   };
 }

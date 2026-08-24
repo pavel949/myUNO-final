@@ -14,3 +14,20 @@ export function computeOrderPreviewThb(
   const qty = Math.max(1, Math.floor(quantity));
   return basePriceThb * qty;
 }
+
+/**
+ * Same preview, converted to baht for display (money rule, CLAUDE.md "Money
+ * rules"): `basePriceThb` is satang (THB × 100) straight from the DB, and
+ * despite its name computeOrderPreviewThb above returns satang too — this
+ * wrapper divides by 100 only for the on-screen total preview. Still
+ * display-only: the server always recomputes the real charge from
+ * basePriceThb, never this preview.
+ */
+export function computeOrderPreviewBaht(
+  priceModel: string,
+  basePriceThb: number | null,
+  quantity: number
+): number | null {
+  const satang = computeOrderPreviewThb(priceModel, basePriceThb, quantity);
+  return satang === null ? null : satang / 100;
+}

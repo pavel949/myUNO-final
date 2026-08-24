@@ -81,14 +81,16 @@ describe('project reports (LY-10)', () => {
       ],
     });
 
+    // Ledger entries are in satang; revenueByChannel/revenueSplit convert to
+    // baht at the display boundary (CLAUDE.md money rules; Q47).
     const channels = await revenueByChannel(db, projectId, RANGE_START, RANGE_END);
     const byChannel = Object.fromEntries(channels.map((c) => [c.channel, c]));
-    expect(byChannel.direct.revenueThb).toBe(500000);
+    expect(byChannel.direct.revenueThb).toBe(5000);
     expect(byChannel.direct.bookings).toBe(1);
-    expect(byChannel.agent.revenueThb).toBe(300000);
+    expect(byChannel.agent.revenueThb).toBe(3000);
 
     const split = await revenueSplit(db, projectId, RANGE_START, RANGE_END);
-    expect(split.rentalThb).toBe(800000);
-    expect(split.ancillaryThb).toBe(45000);
+    expect(split.rentalThb).toBe(8000);
+    expect(split.ancillaryThb).toBe(450);
   });
 });

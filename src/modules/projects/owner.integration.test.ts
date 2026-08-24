@@ -185,8 +185,9 @@ describe('Owner experience (T-033)', () => {
       const dashboard = await getOwnerDashboard(db, owner.id);
       const unitData = dashboard.units[0];
 
-      // Revenue should only count guest stays, not owner stays
-      expect(unitData.revenueThisMonth).toBe(5000); // Only the guest booking
+      // Revenue should only count guest stays, not owner stays. 5000 satang
+      // -> 50 baht, converted at the display boundary (CLAUDE.md; Q47).
+      expect(unitData.revenueThisMonth).toBe(50); // Only the guest booking
     });
   });
 
@@ -285,7 +286,8 @@ describe('Owner experience (T-033)', () => {
       const bookings = await getOwnerBookingsList(db, unit.id, owner.id);
 
       expect(bookings.length).toBeGreaterThanOrEqual(1);
-      expect(bookings[0].totalThb).toBe(5000);
+      // 5000 satang -> 50 baht, converted at the display boundary (CLAUDE.md; Q47).
+      expect(bookings[0].totalThb).toBe(50);
       expect(bookings[0].guestIdentity.firstName).toBeDefined();
     });
 

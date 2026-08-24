@@ -23,6 +23,7 @@ describe('observability', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.LOG_SILENT;
+    delete process.env.ALERT_WEBHOOK_URL;
   });
 
   describe('scrubbing free text', () => {
@@ -183,6 +184,67 @@ describe('observability', () => {
       expect(reportError(new Error('x'), { correlationId: 'abcdefgh1234' }).correlationId).toBe(
         'abcdefgh1234'
       );
+    });
+  });
+
+  describe('pushing an ops alert (Q47 — "nothing alerts you when something breaks")', () => {
+    it('is a no-op with no ALERT_WEBHOOK_URL configured', () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
+
+      reportError(new Error('DB unreachable'), { correlationId: 'abcdefgh1234' });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('POSTs a scrubbed summary to the configured webhook', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      process.env.ALERT_WEBHOOK_URL = 'https://hooks.example.com/incoming/abc';
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
+
+      reportError(new Error('no booking for guest@example.com'), {
+        correlationId: 'abcdefgh1234',
+        route: '/api/bookings',
+        statusCode: 500,
+      });
+
+      // Fire-and-forget: let the unawaited fetch promise settle before asserting.
+      await Promise.resolve();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe('https://hooks.example.com/incoming/abc');
+      const body = JSON.parse((init as RequestInit).body as string);
+      expect(body.text).toContain('Error');
+      expect(body.text).not.toContain('guest@example.com');
+      expect(body.text).toContain('[email]');
+      expect(body.correlationId).toBe('abcdefgh1234');
+      expect(body.route).toBe('/api/bookings');
+      expect(body.statusCode).toBe(500);
+    });
+
+    it('never pages for a caller-classified 4xx mistake', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      process.env.ALERT_WEBHOOK_URL = 'https://hooks.example.com/incoming/abc';
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
+
+      reportError(new Error('validation failed'), {
+        correlationId: 'abcdefgh1234',
+        statusCode: 400,
+        expected: true,
+      });
+      await Promise.resolve();
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('never throws or rejects the caller when the webhook itself fails', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      process.env.ALERT_WEBHOOK_URL = 'https://hooks.example.com/incoming/abc';
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'));
+
+      expect(() => reportError(new Error('DB unreachable'), { correlationId: 'abcdefgh1234' })).not.toThrow();
+      await Promise.resolve();
     });
   });
 

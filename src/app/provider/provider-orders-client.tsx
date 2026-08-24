@@ -101,8 +101,11 @@ export default function ProviderOrdersClient({
                     </span>
                   </p>
                   <p className="text-small text-text-secondary">
+                    {/* order.totalThb is satang (THB × 100) straight from the
+                        DB via serializeOrder — convert to baht only here, at
+                        final render (money rule, CLAUDE.md "Money rules"). */}
                     {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
-                    {order.totalThb.toLocaleString()}
+                    {(order.totalThb / 100).toLocaleString()}
                   </p>
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">

@@ -44,9 +44,13 @@ export async function GET(
       throw createPublicError('not found', 404);
     }
 
+    // Display boundary: amountThb is stored in satang (THB x 100). This
+    // response is display-only for the mock checkout page — the actual
+    // charge amount is computed server-side from the Payment record itself,
+    // never from what this endpoint returns.
     return NextResponse.json({
       sessionId: payment.id,
-      amountThb: payment.amountThb,
+      amountThb: Math.round(payment.amountThb / 100),
       status: payment.status,
       booking: payment.booking
         ? {

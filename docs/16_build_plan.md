@@ -118,7 +118,9 @@ Dependencies are strictly linear unless a task names an earlier prerequisite; �
 
 **T-042 · Hardening pass.** Rate limits, headers/CSP, error-page unification, load sanity on search/booking, accessibility audit against doc 06 §5, PII-log scrub verification. DoD: checklist in the PR description, each item evidenced. Specs: 12; 06 §5.
 
-**T-043 · Launch checklist.** Production env + secrets, domain, backups verified (restore drill), payment provider adapter (Q8 — when chosen), monitoring/alerts, legal/trust content in place (Q15/Q16 — founder-provided), TM30 process rehearsed with staff (Q10). DoD: the checklist file committed with every box ticked or explicitly waived by the founder. Specs: 15; open_questions.
+**T-043 · Launch checklist — RUN 2026-08-24, `docs/launch_checklist.md`.** Every item checked against the real environment, nothing ticked without evidence and nothing waived (waiving is the founder's signature). It found a live security defect — four tables readable through Supabase's public REST endpoint, two holding personal data — because RLS had been applied by hand in the dashboard and never entered the repository, so every table created by a migration since was born exposed. Fixed by migration plus a test that fails the build if any table lacks RLS. Three blockers remain: no privacy notice (Q36), no card provider (Q8), and the RLS migration still to be deployed to production.
+
+**T-043 original scope.** Production env + secrets, domain, backups verified (restore drill), payment provider adapter (Q8 — when chosen), monitoring/alerts, legal/trust content in place (Q15/Q16 — founder-provided), TM30 process rehearsed with staff (Q10). DoD: the checklist file committed with every box ticked or explicitly waived by the founder. Specs: 15; open_questions.
 
 ---
 

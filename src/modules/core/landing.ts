@@ -31,6 +31,7 @@ export interface Landing {
     | 'provider'
     | 'owner'
     | 'resident'
+    | 'buyer'
     | 'public';
 }
 
@@ -48,10 +49,9 @@ export interface Landing {
  * for: running it, operating a project, operating an organisation's units,
  * fulfilling orders, owning an asset, living somewhere.
  *
- * `buyer` is deliberately absent. Doc 07 F-BUY defers the buyer-facing surfaces
- * to phase two (Q1) — signals are detected and handed to Capital off-platform —
- * so a buyer has nothing authenticated to land on, and sending them to an empty
- * page would be worse than sending them to the search they came from.
+ * `buyer` sits last among the roles. Someone who is both an owner and a buyer is
+ * an owner first: the asset they already hold has money moving through it every
+ * month, and the one they are considering does not.
  */
 const PRECEDENCE: { role: RoleType; path: string; reason: Landing['reason'] }[] = [
   { role: 'staff_ops', path: '/ops', reason: 'staff' },
@@ -61,6 +61,7 @@ const PRECEDENCE: { role: RoleType; path: string; reason: Landing['reason'] }[] 
   { role: 'provider_member', path: '/provider', reason: 'provider' },
   { role: 'owner', path: '/owner', reason: 'owner' },
   { role: 'resident', path: '/residence', reason: 'resident' },
+  { role: 'buyer', path: '/buying', reason: 'buyer' },
 ];
 
 export function resolveLanding(context: LandingContext): Landing {

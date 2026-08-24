@@ -37,18 +37,15 @@ describe('where a person lands', () => {
     ['provider_member', '/provider'],
     ['owner', '/owner'],
     ['resident', '/residence'],
+    ['buyer', '/buying'],
   ] as const)('sends a %s to %s', (role, path) => {
     expect(resolveLanding({ ...base, roles: [role] }).path).toBe(path);
   });
 
-  it('sends a buyer to the search rather than to an empty page', () => {
-    // Doc 07 F-BUY defers the buyer surfaces to phase two (Q1). There is
-    // genuinely nothing authenticated for them yet, and a blank screen would be
-    // a worse answer than the search they arrived from.
-    expect(resolveLanding({ ...base, roles: ['buyer'] })).toEqual({
-      path: '/search',
-      reason: 'public',
-    });
+  it('puts an owner ahead of a buyer when someone is both', () => {
+    // The asset they already hold has money moving through it every month; the
+    // one they are considering does not.
+    expect(resolveLanding({ ...base, roles: ['buyer', 'owner'] }).reason).toBe('owner');
   });
 
   it('sends a guest between stays to the search', () => {

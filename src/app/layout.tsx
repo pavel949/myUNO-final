@@ -19,6 +19,7 @@ const SURFACE_LABEL_KEYS = {
   provider: 'nav.provider_portal',
   owner: 'nav.owner_dashboard',
   resident: 'nav.residence',
+  buyer: 'nav.buying',
   public: 'nav.find_stay',
 } as const satisfies Record<Landing['reason'], string>;
 
@@ -51,6 +52,7 @@ export default async function RootLayout({
     'nav.stay': 'My stay',
     'nav.residence': 'My residence',
     'nav.juristic_portal': 'Juristic portal',
+    'nav.buying': 'Buying',
     'nav.bell_aria': 'Notifications',
     'nav.bell_empty': 'No notifications yet.',
     'nav.bell_mark_all': 'Mark all read',

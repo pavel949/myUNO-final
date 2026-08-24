@@ -34,3 +34,10 @@ export {
   getTicketSlaHitRate,
 } from './kpi.service';
 export type { KpiSummary, KpiMetrics } from './kpi.service';
+
+// A signed-in person saying they are thinking about buying: a signal into the
+// funnel an admin already watches, and a thread so a human answers.
+export {
+  registerPurchaseInterest,
+  type PurchaseInterestInput,
+} from './buyer-interest.service';

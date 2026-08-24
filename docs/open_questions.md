@@ -278,6 +278,14 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **What was done instead:** the two new claim screens convert explicitly at the point of display and say so in a comment, so they are correct regardless of how the wider question is settled.
 - **Needs:** a sweep of every money field and every display of one, then either a `formatSatang()` helper used everywhere or a documented rule about which layer converts. This is an engineering task, not a founder decision — logged here so it is not lost.
 
+### Q48. Row-level security lived in the dashboard, not in the repository — FIXED, one action outstanding
+- **Source:** running the T-043 launch checklist against the real Supabase project. Supabase's own linter reported **four tables at ERROR level** with row-level security off: `ownership_period`, `saved_unit`, `saved_search`, `area`.
+- **Why it matters:** Supabase serves every table in `public` over its PostgREST endpoint to anyone holding the anon key — a key that ships to browsers. RLS off means those rows are readable regardless of what the application code enforces. Two of the four hold personal data: which homes a named person is watching, and the searches they saved.
+- **The root cause, which is the real finding:** Q44 records RLS being enabled across all 73 tables in August 2026. It was applied **by hand in the Supabase dashboard**, so the decision never entered the repository. Every table created by a migration afterwards was therefore born exposed, and nothing in the build noticed for months. The four tables above came from migrations 15, 19 and 20.
+- **Fixed:** `20260824000021_rls_every_table` enables RLS on every table in `public` as a loop, so it covers what exists now, stays correct replayed onto a fresh database, and needs no list maintained. `rls.integration.test.ts` fails the build if any table lacks it — the test database is built from the same migrations, so a new table without RLS fails long before it reaches a live endpoint.
+- **Still to do:** deploy that migration to production and re-run the linter to confirm the four ERROR entries are gone. Until then the tables are still readable.
+- **Unchanged from Q44:** this is a closed door, not a lock. Whether the 🔒 tables in doc 12 should also carry real policies remains a founder-and-counsel decision.
+
 ---
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

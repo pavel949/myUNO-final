@@ -2765,6 +2765,33 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'orders.status.expired', namespace: 'orders', description: 'Order status: expired', en: 'Expired', ru: 'Истёк', status: NR },
   { key: 'orders.status.fulfilled', namespace: 'orders', description: 'Order status: completed', en: 'Completed', ru: 'Выполнен', status: NR },
   { key: 'orders.status.cancelled', namespace: 'orders', description: 'Order status: cancelled', en: 'Cancelled', ru: 'Отменён', status: NR },
+
+  // The buyer surface. Doc 07 defers it to phase two (Q1); the founder overrode
+  // that. The copy is deliberately careful about ownership structure — Q41 is
+  // open and the platform holds no title facts.
+  { key: 'nav.buying', namespace: 'nav', description: 'Nav: buyer surface', en: 'Buying', ru: 'Покупка', status: NR },
+  { key: 'buying.title', namespace: 'buying', description: 'Buying: page title', en: 'Buying', ru: 'Покупка', status: NR },
+  { key: 'buying.subtitle', namespace: 'buying', description: 'Buying: what this page is', en: 'The homes you are watching, and a direct line to the team who handle purchases.', ru: 'Объекты, за которыми вы следите, и прямая связь с командой по сделкам.', status: NR },
+  { key: 'buying.watching', namespace: 'buying', description: 'Buying: saved units heading', en: 'Homes you are watching', ru: 'Вы следите за', status: NR },
+  { key: 'buying.watching_empty', namespace: 'buying', description: 'Buying: nothing saved', en: 'You have not saved any homes yet. Save one while you browse and it will appear here.', ru: 'Вы пока ничего не сохранили. Сохраните объект при просмотре — он появится здесь.', status: NR },
+  { key: 'buying.browse', namespace: 'buying', description: 'Buying: browse link', en: 'Browse homes', ru: 'Смотреть объекты', status: NR },
+  { key: 'buying.project', namespace: 'buying', description: 'Buying: project label', en: 'Project', ru: 'Проект', status: NR },
+  { key: 'buying.bedrooms', namespace: 'buying', description: 'Buying: bedrooms suffix', en: 'bedrooms', ru: 'спален', status: NR },
+  { key: 'buying.ask_title', namespace: 'buying', description: 'Buying: enquiry heading', en: 'Ask about buying', ru: 'Спросить о покупке', status: NR },
+  { key: 'buying.ask_intro', namespace: 'buying', description: 'Buying: enquiry intro', en: 'Tell us what you are looking for — a particular home, a budget, or just a question. Someone from the team replies in your messages.', ru: 'Расскажите, что вы ищете: конкретный объект, бюджет или просто вопрос. Команда ответит в ваших сообщениях.', status: NR },
+  { key: 'buying.ask_unit', namespace: 'buying', description: 'Buying: which home', en: 'About a particular home (optional)', ru: 'О конкретном объекте (необязательно)', status: NR },
+  { key: 'buying.ask_unit_none', namespace: 'buying', description: 'Buying: no specific home', en: 'Not about a specific home', ru: 'Не о конкретном объекте', status: NR },
+  { key: 'buying.ask_message', namespace: 'buying', description: 'Buying: message field', en: 'Your message', ru: 'Ваше сообщение', status: NR },
+  { key: 'buying.ask_submit', namespace: 'buying', description: 'Buying: send button', en: 'Send to the team', ru: 'Отправить команде', status: NR },
+  { key: 'buying.ask_sending', namespace: 'buying', description: 'Buying: sending state', en: 'Sending…', ru: 'Отправляем…', status: NR },
+  { key: 'buying.ask_sent', namespace: 'buying', description: 'Buying: sent confirmation', en: 'Sent. The team will reply in your messages — you will get a notification.', ru: 'Отправлено. Команда ответит в ваших сообщениях — придёт уведомление.', status: NR },
+  { key: 'buying.ask_error', namespace: 'buying', description: 'Buying: send failure', en: 'That did not send. Please try again.', ru: 'Не удалось отправить. Попробуйте ещё раз.', status: NR },
+  { key: 'buying.ask_view_thread', namespace: 'buying', description: 'Buying: open the conversation', en: 'Open the conversation', ru: 'Открыть переписку', status: NR },
+  { key: 'buying.how_title', namespace: 'buying', description: 'Buying: how it works heading', en: 'How buying works here', ru: 'Как проходит покупка', status: NR },
+  { key: 'buying.how_body', namespace: 'buying', description: 'Buying: how it works body', en: 'myUNO operates the homes. The purchase itself is handled by Ignatev Capital, who take you through due diligence and the contract.', ru: 'myUNO управляет объектами. Саму сделку ведёт Ignatev Capital: проверка объекта и договор — на их стороне.', status: NR },
+  { key: 'buying.structure_title', namespace: 'buying', description: 'Buying: ownership structure heading', en: 'About ownership structure', ru: 'О форме собственности', status: NR },
+  { key: 'buying.structure_body', namespace: 'buying', description: 'Buying: why structure is not shown on screen (Q41)', en: 'How a particular home can be owned — freehold, a company, a lease and its term — is confirmed in writing during due diligence, against the title documents. We do not display it here, because a figure on a screen is not a legal position and we will not have you rely on one.', ru: 'Форма собственности по конкретному объекту — фрихолд, компания, аренда и её срок — подтверждается письменно в ходе проверки, по документам на объект. Мы не показываем её здесь: строка на экране не является юридической позицией, и полагаться на неё нельзя.', status: NR },
+  { key: 'buying.messages', namespace: 'buying', description: 'Buying: messages link', en: 'My messages', ru: 'Мои сообщения', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [

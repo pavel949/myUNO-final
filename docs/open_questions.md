@@ -45,7 +45,19 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Source:** journey audit §4.
 - **Answer:** the owner **books their own unit like a guest at zero rent** — the `owner_stay` booking type (doc 07 F-OWN-6): blocks the dates, shows in occupancy flagged `owner_stay` (excluded from revenue-occupancy), no rent, no commission; consumed services and the turnover clean appear on the owner statement. Defaults stand: `owner_stay.charge_cleaning=true`, `owner_stay.notice_hours=48`.
 
-### Q8. Payment methods for the first loop — ANSWERED (direction set 2026-07)
+### Q8. Payment methods for the first loop — ANSWERED (provider chosen 2026-08-24)
+
+**The provider is Opn Payments (formerly Omise).** Ruled by the founder on 2026-08-24, after asking whether Stripe should be used instead.
+
+- **Why Opn over Stripe.** It is what the specs already assumed (D6), it is Thai-licensed with THB settlement into the company's Krungsri account, and it carries the local methods that matter here — PromptPay above all — which Stripe covers thinly. Stripe's better tooling does not outweigh a payer in Phuket being offered a payment method they actually use.
+- **What this does not solve, and it is worth being blunt.** **Russian-issued cards do not work with any Western processor.** Visa and Mastercard cut Russian-issued cards off from the international networks in 2022, and Mir is not accepted outside a handful of countries. For a Russian-speaking clientele this means card acceptance reaches the ones who have a card issued outside Russia — Thai, UAE, Kazakh, Georgian — and nobody else. Cash and bank transfer remain the primary rails by necessity, not by conservatism.
+- **Built:** `src/modules/finance/providers/opn.ts`, behind the existing seam. Real HTTPS calls, satang passed straight through (Opn's smallest-unit convention is ours, so there is no arithmetic to lose a factor of a hundred in), errors surfaced rather than swallowed.
+- **Two guards worth naming.** The adapter confirms a payment **only** when Opn reports `paid: true` — `status: successful` with `paid: false` is an authorised hold, and confirming it would hand over a stay nobody has been charged for. And `getPaymentProvider` refuses a **live** key outside production, so a test booking cannot become a real charge on somebody's card.
+- **Webhooks are verified by re-fetching, not by signature.** Opn does not sign webhook bodies. `verifyWebhookSignature` therefore throws instead of returning `true` — which is what the deleted Stripe adapter did unconditionally, accepting any request that reached the endpoint.
+- **Still outstanding:** the merchant account itself. Opn requires a Thai registered entity and KYC; that is an application Ignatev Estate makes, and no code substitutes for it. Once test keys exist, set `PAYMENT_PROVIDER=opn` and `OMISE_SECRET_KEY=skey_test_…` and run a charge end to end. **The adapter is written and unit-tested against a stubbed transport; it has never touched a live Opn account, and must not be called proven until that smoke test is recorded.**
+
+### Q8 (original, 2026-07) — payment methods
+
 - **Source:** doc 10; the legal rule only says "licensed", v3 left the method open.
 - **Answer:** **cash is a first-class payment method** and the primary rail for the Russian-speaking clientele in loop one. A cash booking/order carries `payment_method=cash` and records **who accepted it, when, and the receipt/чек number** (doc 02 §5.1); cash participates fully in the **owner statement and reconciliation** (docs 10, 13). Card and Thai payment methods run through the provider seam — **default licensed provider Opn (Omise)** — kept behind the mock adapter until integrated. **Crypto is explicitly not accepted** (a licensed activity, SEC/BOT — same class as FX and fund-holding) — logged as Q21, not built as a feature.
 - **Still needed:** confirm Opn/Omise commercial terms when card acceptance is switched on.

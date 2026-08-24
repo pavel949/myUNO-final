@@ -1,153 +1,40 @@
-# Payment Provider Adapters
+# Payment providers
 
-> **Status: no payment provider is implemented. The seam fails closed.**
->
-> Loop one charges cash (doc 10). The only non-cash rail is the local mock
-> checkout page, and it is refused in production.
->
-> This directory previously shipped a Stripe adapter that had no SDK behind it:
-> it returned fabricated confirmations for a hardcoded 500 THB and its
-> `verifyWebhookSignature` returned `true` for **any** signature, including when
-> a webhook secret was configured. Selecting an unimplemented provider —
-> `omise`, the one CLAUDE.md names as the default — silently fell back to the
-> mock, so a deployment configured for real payments would have accepted fake
-> ones and reported success. That adapter is deleted.
->
-> The rules now, held by `provider-seam.test.ts`:
-> - An unimplemented provider **throws**. There is no silent fallback.
-> - The mock **throws** in production.
-> - Nothing may report that money moved unless it can prove it. The mock
->   refuses to confirm, refund, or verify a signature; only `createCheckout`
->   works, because opening a session is all it can honestly do.
->
-> When a real rail is wired, implement signature verification for real and add
-> `'<provider>'` to `IMPLEMENTED_PROVIDERS` in `index.ts` — not before.
+**The seam fails closed.** A provider that is not implemented throws. The mock refuses to load in production. Nothing here can ever assert that money arrived when it did not.
 
-Planned provider strategy: Stripe, Thai payment methods (PromptPay, Alipay), Russian methods (Yandex.Kassa), and currency exchange solutions.
+> This directory previously shipped a Stripe adapter that had no SDK behind it: it fabricated confirmations with a hardcoded charge id and a hardcoded amount, and asking for `omise` quietly returned the mock instead. A deployment configured for real payments would have taken fake ones and reported success. Everything below is shaped by not repeating that.
 
-## Architecture
+## The rails, and what each one honestly is
 
-Each provider implements the `PaymentProvider` interface:
+| Rail | What it is | Status |
+|---|---|---|
+| **Cash** | Money handed over, recorded by a named staff member with a receipt/чек number. No provider involved. | Working. The primary rail for loop one (doc 10). |
+| **Bank transfer** | Money moved into the company's Krungsri account against a booking-derived reference, confirmed by a staff member against the bank statement. No provider involved. | Working. `finance.recordBankTransfer` — the honest sibling of cash, not of a provider. |
+| **Opn (Omise)** | The licensed Thai provider. Cards and local methods, THB settlement. | **Adapter written, not yet exercised against a live account.** Needs a merchant account and keys. |
+| **Mock** | Local development only. Records a payment without moving money. | Refuses to load in production. |
 
-```typescript
-interface PaymentProvider {
-  createCheckout(booking: Booking): Promise<CheckoutSession>;
-  confirmPayment(sessionId: string): Promise<PaymentConfirmation>;
-  refund(chargeId: string, amount: number): Promise<RefundResult>;
-  preauthorize(amount: number, method?: string): Promise<PreAuthResult>;
-}
-```
+## Opn — the chosen provider (Q8, ruled 2026-08-24)
 
-Provider selection via `[cfg] booking.payment.provider` (active in first loop: "mock"; Q8 decision: "stripe" / "omise" / "custom").
+Thai-licensed, settles THB into the company account, and carries the local methods that matter here — PromptPay above all. Chosen over Stripe because Stripe's better tooling does not outweigh a payer in Phuket being offered a method they actually use.
 
-## Current Providers
+**What card acceptance will and will not reach.** Russian-issued cards do not work with any Western processor: Visa and Mastercard cut them off from the international networks in 2022, and Mir is not accepted outside a handful of countries. Card acceptance reaches Russian-speaking guests holding a card issued *outside* Russia — Thai, UAE, Kazakh, Georgian — and nobody else. **Cash and transfer remain the primary rails by necessity, not by conservatism.**
 
-### 1. **Mock** (`mock.ts`)
-- Dev/test only. Renders `/checkout/[reservationId]` form.
-- Used in loop one (cash-first).
+### Switching it on
 
-### 2. **Stripe** (planned for Q8 resolution)
-- **When to use:** Card + international payments (USD, EUR, GBP).
-- **Setup:** Live merchant account → API keys in `.env`.
-- **Methods:** Visa, Mastercard, Apple Pay, Google Pay.
-- **Region:** Global; additional Thai/Russian methods via Stripe sources.
-- **Currency:** Multi-currency support (convert on client or server).
-- **File:** `stripe.ts` (to be implemented).
+1. Open an Opn merchant account. Requires a Thai registered entity and KYC — an application Ignatev Estate makes; no code substitutes for it.
+2. Set `PAYMENT_PROVIDER=opn` and `OMISE_SECRET_KEY=skey_test_…` in a non-production environment.
+3. Run a charge end to end and record the result. **Until that smoke test exists, the adapter is "written and reviewed", not "proven".**
+4. Add `card_provider` to `booking.payment.methods_enabled` (doc 04 §2).
+5. Only then set a live key, and only in production — the seam refuses a `skey_live_` key anywhere else, so a test booking cannot become a real charge.
 
-### 3. **Omise** (alternative for Q8)
-- **When to use:** Thailand-focused; strong local payment method support.
-- **Setup:** Merchant account → public/secret keys.
-- **Methods:** PromptPay (QR), TESCO Lotus Pay, Bangkok Bank, Thai Credit, Alipay, WeChat Pay, Visa, Mastercard.
-- **Region:** Thailand + Asia.
-- **Currency:** THB-native (no FX headache).
-- **File:** `omise.ts` (to be implemented).
-- **Trade-off:** Omise has higher take-rate but better Thai coverage.
+### Three things the adapter does deliberately
 
-### 4. **Yandex.Kassa** (optional for Russian owners)
-- **When to use:** Russian/CIS owners paying in RUB; AMLO compliance.
-- **Methods:** Bank card, Yandex.Wallet, Sberbank, Alfa-Bank.
-- **Currency:** RUB.
-- **File:** `yandex-kassa.ts` (future).
+- **Confirms only on `paid: true`.** Opn reports `status: successful` with `paid: false` for an authorised-but-uncaptured charge. That is a hold, not a payment, and confirming it would hand over a stay nobody has been charged for.
+- **Passes satang straight through.** Opn takes the currency's smallest unit, which is how this platform stores money — so there is no conversion between us and them, and no place to lose a factor of a hundred.
+- **Refuses to validate a webhook signature.** Opn does not sign webhook bodies. `verifyWebhookSignature` throws and points at `fetchEvent`, which re-fetches the event from the API with the secret key — the request body is a hint that something happened; the API response is what establishes that it did.
 
-### 5. **Currency Exchange Partner** (optional for multi-currency)
-- **When to use:** Owner payouts in multiple currencies without holding customer funds.
-- **Model:** Forward exchange rate quotes; customer pays THB; payout via licensed exchanger in owner's currency.
-- **Example:** Wise, OFX, SWIFT rail.
-- **File:** `currency-exchange.ts` (future, post-Q8).
+## Not doing
 
-## Decision Tree (Q8)
-
-1. **Primary use case?** Thailand-focused first-loop (cash + card).
-   - → **Omise** (best Thai coverage) OR **Stripe** (global flexibility).
-
-2. **Need Russian support for owner payouts?**
-   - Yes → Add Yandex.Kassa adapter.
-   - No → Stripe or Omise alone.
-
-3. **Multi-currency payouts to owners?**
-   - Yes → Partner with Wise/exchange provider.
-   - No → Single-currency ledger (THB).
-
-## Adapter Swap Process
-
-To switch providers (e.g., mock → Stripe):
-
-1. Edit `.env`: `PAYMENT_PROVIDER=stripe`
-2. Provide secrets: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, etc.
-3. Implement `stripe.ts` (or use pre-built):
-   ```typescript
-   import { PaymentProvider, CheckoutSession } from './types';
-   export const stripeProvider: PaymentProvider = {
-     async createCheckout(booking) { /* Stripe API call */ },
-     async confirmPayment(sessionId) { /* Verify charge */ },
-     async refund(chargeId, amount) { /* Refund via Stripe */ },
-   };
-   ```
-4. Register in `index.ts`:
-   ```typescript
-   export function getPaymentProvider(): PaymentProvider {
-     const provider = process.env.PAYMENT_PROVIDER || 'mock';
-     switch (provider) {
-       case 'stripe': return stripeProvider;
-       case 'omise': return omiseProvider;
-       default: return mockProvider;
-     }
-   }
-   ```
-5. Test `/checkout` flow in staging.
-6. Deploy to production.
-
-## Security Notes
-
-- **Card data:** Never stored by myUNO; provider's hosted checkout only (PCI compliance).
-- **Keys:** Environment-injected; never in code or .env file in repo.
-- **Webhooks:** Signature-verified (`verify()` helper per provider).
-- **Idempotency:** All operations idempotent (safe retries on network failure).
-
-## Testing Providers
-
-### Stripe Test Keys
-```
-Publishable: pk_test_...
-Secret: sk_test_...
-Card: 4242 4242 4242 4242 (exp: 12/25, CVC: 123)
-```
-
-### Omise Test Keys
-```
-Publishable: skey_test_...
-Secret: skey_test_...
-PromptPay QR: test_charge creates QR link (Omise Dashboard).
-```
-
-### Mock
-```
-Any amount, any card. Clicking "Pay" marks booking as confirmed.
-```
-
-## Roadmap
-
-- ✅ Loop 1: Mock (cash-first).
-- 🔴 Loop 2: Stripe OR Omise (Q8 decision).
-- 🔮 Loop 3: Russian methods (Yandex.Kassa if needed).
-- 🔮 Loop 4: Multi-currency payouts (Wise/exchange partner).
+- **Crypto.** A licensed activity under the SEC/BOT, same class as FX and fund-holding (Q21). Not a feature, not a roadmap item.
+- **Holding funds.** myUNO is never the custodian. Charges settle with the provider; deposits are pre-authorizations (Q6); owner payouts are recorded, manually executed transfers (Q18).
+- **FX.** Routing only, never operated (AMLO).

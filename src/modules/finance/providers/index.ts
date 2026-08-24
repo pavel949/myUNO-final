@@ -18,9 +18,10 @@
  */
 
 import { PaymentProvider, ProviderConfig } from './types';
+import { createOpnProvider } from './opn';
 
 /** Providers with a real implementation. Add to this only with the real rail. */
-const IMPLEMENTED_PROVIDERS = ['mock'] as const;
+const IMPLEMENTED_PROVIDERS = ['mock', 'opn'] as const;
 
 export class PaymentProviderUnavailableError extends Error {
   readonly code = 'PAYMENT_PROVIDER_UNAVAILABLE';
@@ -87,6 +88,29 @@ export function getPaymentProvider(): PaymentProvider {
     );
   }
 
+  if (requested === 'opn') {
+    const secretKey = process.env.OMISE_SECRET_KEY;
+    if (!secretKey) {
+      // Falling back to the mock here would be the original sin of this file:
+      // a deployment asking for real payments and quietly getting fake ones.
+      throw new PaymentProviderUnavailableError(
+        'PAYMENT_PROVIDER is "opn" but OMISE_SECRET_KEY is not set. Refusing to fall back to the mock — that would take fake payments and report success.'
+      );
+    }
+
+    // A live key in a non-production environment is how a test booking becomes
+    // a real charge on somebody's card. The key names its own mode, so this is
+    // checkable rather than a matter of care.
+    const isLiveKey = secretKey.startsWith('skey_live_');
+    if (isLiveKey && process.env.NODE_ENV !== 'production') {
+      throw new PaymentProviderUnavailableError(
+        'A live Opn key is configured outside production. Use a test key (skey_test_…) anywhere that is not production.'
+      );
+    }
+
+    return createOpnProvider({ secretKey });
+  }
+
   if (process.env.NODE_ENV === 'production') {
     throw new PaymentProviderUnavailableError(
       'The mock payment provider must never run in production — it records payments without taking money. Charge cash, or wire a real provider.'
@@ -102,11 +126,16 @@ export function getProviderConfig(): ProviderConfig {
 
   return {
     provider,
-    publicKey: process.env.STRIPE_PUBLISHABLE_KEY || process.env.OMISE_PUBLIC_KEY,
-    secretKey: process.env.STRIPE_SECRET_KEY || process.env.OMISE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || process.env.OMISE_WEBHOOK_SECRET,
+    // Opn only. The Stripe fallbacks that used to sit here were left over from
+    // the fabricating adapter this file replaced, and a half-configured Stripe
+    // key silently satisfying an Opn deployment is exactly the kind of quiet
+    // mismatch that ends in a payment nobody can trace.
+    publicKey: process.env.OMISE_PUBLIC_KEY,
+    secretKey: process.env.OMISE_SECRET_KEY,
+    webhookSecret: process.env.OMISE_WEBHOOK_SECRET,
     testMode: process.env.NODE_ENV !== 'production',
   };
 }
 
 export type { PaymentProvider, CheckoutSession, PaymentConfirmation, RefundResult } from './types';
+export { createOpnProvider, OpnConfigurationError, OpnApiError } from './opn';

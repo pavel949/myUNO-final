@@ -81,3 +81,14 @@ export {
   type DepositClaimDetails,
   type ClaimableStay,
 } from './deposits.service';
+
+// Paying by transfer into the company account. The honest sibling of cash:
+// money moves outside the system, a named person confirms it, the ledger
+// records it — nothing here pretends to authorise or capture.
+export {
+  getTransferInstructions,
+  recordBankTransfer,
+  transferReference,
+  type TransferInstructions,
+  type RecordBankTransferInput,
+} from './bank-transfer.service';

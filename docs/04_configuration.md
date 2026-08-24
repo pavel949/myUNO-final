@@ -21,7 +21,7 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | `booking.requests_block_calendar` | boolean | project | `false` | Whether un-answered requests block availability. |
 | `booking.min_nights_default` | int | unit | `2` | Default minimum stay for new units (each unit stores its own). |
 | `booking.max_advance_days` | int | project | `365` | How far ahead stays can be booked. |
-| `booking.payment.methods_enabled` | json (list) | project | `["cash"]` | Which payment methods are offered (Q8). `cash` is the loop-one primary rail for the RU clientele; add `card_provider` when the licensed provider (default **Opn/Omise**) is switched on. Crypto is not an option (Q21). |
+| `booking.payment.methods_enabled` | json (list) | project | `["cash", "bank_transfer"]` | Which payment methods are offered (Q8). `cash` is the loop-one primary rail for the RU clientele; `bank_transfer` is the rail for anyone paying from abroad, into the account in §11. Add `card_provider` when the licensed provider (default **Opn/Omise**) is switched on. Crypto is not an option (Q21). |
 | `booking.payment.cash_receipt_required` | boolean | project | `true` | Require a receipt/чек reference when cash is accepted (recorded on the `Payment`). |
 | `booking.cash_due_blocks_checkin` | boolean | project | `true` | For a cash booking, whether check-in is gated on the cash being collected and recorded (doc 07 F-GUEST-3/F-OPS-6). |
 | `booking.same_day_cutoff_hour` | int (0–23) | project | `16` | Latest hour (project timezone) a same-day check-in can be booked. |
@@ -138,3 +138,23 @@ Legal non-negotiables are constants, not parameters: the no-fund-holding rule, t
 **Search sort options** (`UNIT_SORTS`, `src/modules/browse/sort.ts`) are code, not a §8 catalog, though they look like one. A catalog entry is a key and a label; a sort entry carries the ordering itself — which column, which direction, which tie-breaker, and whether it needs a value no column holds. Making it editable would let an entry be added with no ordering behind it, and the picker would offer a sort that does nothing. Only the **labels** are editable, as `catalog.unit_sorts.<key>.label` content keys.
 
 *Every parameter above must exist as a seed row with exactly these keys — flows (doc 07), money (doc 10), and notifications (doc 11) reference them by key. ⚠ items trace to `open_questions.md` and ship with these defaults until the founder rules.*
+
+## 11. Group `merchant` — who the money is paid to
+
+The payee is a legal fact about the business, not a string in a template. It appears on transfer instructions, on receipts, and on what a guest's bank shows them — so it lives here, where the founder can correct it without a deployment, and there is exactly one of it.
+
+| Key | Type | Scope | Default | Notes |
+|---|---|---|---|---|
+| `merchant.legal_name` | string | global | `Ignatev Estate Co., Ltd` | The entity money is paid to. |
+| `merchant.tax_id` | string | global | `083-5-56602358-7` | The **company** registration / tax number. **Deliberately not the director's personal tax id** — that is his personal data and has no place on a document a guest reads. If a personal tax number is ever genuinely required on an invoice, that is a decision for the accountant, recorded here, not a default. |
+| `merchant.established_on` | string | global | *(empty)* | Date of establishment. Left empty because the founder left it blank, and a plausible date is still an invented one. |
+| `merchant.bank_name` | string | global | `Bank of Ayudhya (Krungsri)` | |
+| `merchant.bank_account_name` | string | global | `Ignatev Estate Co., Ltd` | What the payer must type as the beneficiary. |
+| `merchant.bank_account_number` | string | global | `475-1-22131-3` | Domestic transfers. |
+| `merchant.bank_swift` | string | global | `AYUDTHBK` | Transfers from outside Thailand. |
+| `merchant.bank_transfer_enabled` | boolean | project | `true` | Whether a payer may settle by transfer at all. |
+| `merchant.bank_transfer_window_hours` | int | project | `72` | How long a transfer instruction stays valid before ops chases it. |
+
+**Not a provider rail.** A transfer is the same shape as cash: money moves outside the platform, a named staff member confirms it against the bank statement, and the ledger records it in the same transaction. Nothing authorises, captures or refunds automatically, and the code does not pretend otherwise — `finance.recordBankTransfer` sits beside `recordCashPayment`, not beside `verifyAndConfirm`. Card acceptance still waits on a licensed provider (Q8).
+
+**Bank details are not public.** They are served only to the person who owes the money and to staff. An account number plus a matching amount is most of what an invoice-fraud email needs.

@@ -87,6 +87,30 @@ The seven migrations added on 2026-08-18 were applied through `scripts/supabase-
 
 Seeds (config registry, content keys, catalogs — docs 04/05) ship as idempotent seed scripts run with migrations, so a fresh environment stands up complete.
 
+### 2.7 The region question — Mumbai today, Singapore recommended (2026-08-24)
+
+Doc 15 §2 has always specified **Singapore**. The provisioned project `MyUno- final` is in **`ap-south-1` (Mumbai)**, and that mismatch is Q45.
+
+**Why it is not merely cosmetic.** Under the PDPA the privacy notice tells people where their personal data rests. The notice now published at `/legal/privacy` names Mumbai, so the platform is *accurate* today — but "accurate" and "what we intended" are different things, and passports for every foreign guest will rest wherever this lands.
+
+**The recommendation: move to Singapore (`ap-southeast-1`).** Closest to Phuket users, matches every other document, and removes an explanation nobody wants to give a Russian-speaking buyer about why their passport is in India.
+
+**Why now.** The database is small. Moving is a dump-and-restore that takes minutes. Once there are real guests, bookings and encrypted passports it becomes a migration with downtime — and the `ENCRYPTION_KEY` must travel with it *intact*, because a different key makes every stored passport permanently unreadable (§4).
+
+**Runbook, when the founder decides to move:**
+
+1. Create a new Supabase project in `ap-southeast-1`. (Provisioning billable infrastructure is a founder action, not an agent one — which is why this is a runbook and not a completed step.)
+2. Set `ENCRYPTION_KEY` on the new environment to **exactly** the existing value, before any data is written. Verify it matches before continuing; there is no recovery from getting this wrong.
+3. `prisma migrate deploy` against the new database, then confirm `prisma migrate status` reports it up to date.
+4. `pg_dump --data-only` from Mumbai, restore into Singapore. Confirm row counts match on `identity`, `booking`, `payment`, `ledger_entry` and `tm30_filing`.
+5. Re-run the RLS check from `scripts/supabase-2026-08-24-rls-and-transfer.sql` §4 — the new project starts with RLS off on everything.
+6. Swap `DATABASE_URL` in Vercel production, redeploy, and confirm a booking round-trip works.
+7. Edit the content key `legal.privacy.location_body` to name Singapore. **This is the step that keeps the privacy notice true, and it is a content edit, not a deployment.**
+8. Correct this document, and mark Q45 answered.
+9. Keep the Mumbai project paused but not deleted for a fortnight, then delete it.
+
+**If the founder decides to stay in Mumbai instead:** nothing needs to change technically — the notice already names it. Correct §2 of this document to say India, and have counsel confirm the cross-border wording reads correctly. Then mark Q45 answered that way.
+
 ## 4. Encryption key handling (before production go-live)
 
 **The non-negotiable:** The `ENCRYPTION_KEY` (AES-256-GCM, 64-hex) encrypts sensitive PII — chiefly TM30 passports (doc 12 §3). Once this key has encrypted any data in the database, **it can never be changed or lost** — a different key causes permanent decryption failure (GCM auth-tag mismatch) and the data becomes unrecoverable.

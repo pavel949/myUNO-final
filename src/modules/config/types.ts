@@ -23,7 +23,7 @@ export interface BookingConfig {
   'booking.requests_block_calendar': boolean;
   'booking.min_nights_default': number;
   'booking.max_advance_days': number;
-  'booking.payment.methods_enabled': ('cash' | 'card_provider')[];
+  'booking.payment.methods_enabled': ('cash' | 'bank_transfer' | 'card_provider')[];
   'booking.payment.cash_receipt_required': boolean;
   'booking.cash_due_blocks_checkin': boolean;
   'booking.same_day_cutoff_hour': number;
@@ -174,8 +174,32 @@ export interface CatalogConfig {
   'catalog.cancellation_policies': CatalogEntry[];
 }
 
+/**
+ * Who the money is paid to (doc 04 §11).
+ *
+ * The payee is a legal fact about the business, not a string in a template. It
+ * appears on transfer instructions, receipts and owner statements, and it is
+ * what a guest's bank sees — so it lives in configuration where the founder can
+ * correct it without a deployment, and there is exactly one of it.
+ */
+export interface MerchantConfig {
+  'merchant.legal_name': string;
+  'merchant.tax_id': string;
+  /** Empty until the founder supplies it — never guessed. */
+  'merchant.established_on': string;
+  'merchant.bank_name': string;
+  'merchant.bank_account_name': string;
+  'merchant.bank_account_number': string;
+  'merchant.bank_swift': string;
+  /** Whether a payer may settle by transfer at all. */
+  'merchant.bank_transfer_enabled': boolean;
+  /** Hours a transfer instruction stays valid before ops chase it. */
+  'merchant.bank_transfer_window_hours': number;
+}
+
 // Union of all config types
-export type AllConfig = BookingConfig &
+export type AllConfig = MerchantConfig &
+  BookingConfig &
   EngagementConfig &
   PricingConfig &
   CancellationConfig &

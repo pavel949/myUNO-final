@@ -163,11 +163,13 @@ enum PaymentPurpose {
 
 enum PaymentMethod {
   cash
+  bank_transfer
   card_provider
 }
 
 enum PaymentProvider {
   cash
+  bank_transfer
   mock
   opn
 }

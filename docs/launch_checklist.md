@@ -19,13 +19,13 @@ Run 2026-08-24 against Supabase project `MyUno- final` (`burcnghheyzbzffzgmjz`) 
 
 Three things below make a production launch unsafe today. They are not ranked by effort.
 
-**⛔ There is no privacy notice or terms.** `legal.terms.title` and `legal.privacy.title` exist as content keys; the **bodies do not** (Q36). Under the PDPA a privacy notice is what makes collecting a passport lawful, and the platform collects passports on day one for TM30. This is counsel's text, not an agent's.
+**⚠️ The privacy notice is written; counsel has not read it.** `/legal/privacy` now carries a full PDPA notice — controller, what is collected and on what basis, who else sees it, where it is held, retention, rights, complaints — written from what the system actually does rather than from a template. Every statement is checkable against the code. It is seeded as `needs_review`, which is this project's existing gate for copy nobody has approved: **Thai counsel must read it before launch**, and their edits are content changes, not code. **Terms of service are still title-only** (Q36).
 
-**⚠️ Four tables were readable through the public API.** Supabase serves every table in `public` over PostgREST to anyone holding the anon key — a key that ships to browsers. `ownership_period`, `saved_unit`, `saved_search` and `area` had row-level security **off** and were flagged at ERROR level by Supabase's own linter. Two hold personal data: which homes a named person is watching, and the searches they saved.
+**⚠️ Four tables are readable through the public API — the fix is written and waiting to be run.** Supabase serves every table in `public` over PostgREST to anyone holding the anon key — a key that ships to browsers. `ownership_period`, `saved_unit`, `saved_search` and `area` had row-level security **off** and were flagged at ERROR level by Supabase's own linter. Two hold personal data: which homes a named person is watching, and the searches they saved.
 **Root cause, which is the more important finding:** RLS was applied across the database in August 2026 **by hand in the dashboard** (doc 15 §2.3), so the decision never entered the repository. Every table created by a migration since was born exposed and nothing noticed for months.
-**Fixed in this commit** by `20260824000021_rls_every_table`, which enables RLS on every table in `public` as a migration, plus `rls.integration.test.ts`, which fails the build if any table lacks it. **The migration still has to be deployed to production** — see §2.
+**Fixed in the repository** by `20260824000021_rls_every_table`, which enables RLS on every table in `public` as a migration, plus `rls.integration.test.ts`, which fails the build if any table lacks it. Confirmed still live in production on 2026-08-24 by Supabase's linter, and the fix could not be applied from this session (Supabase writes need interactive approval). **Run `scripts/supabase-2026-08-24-rls-and-transfer.sql`, or `prisma migrate deploy`.** The script was tested twice against a database in the same state: no duplicate bookkeeping rows, zero exposed tables afterwards.
 
-**⚠️ No card payment is possible.** The provider seam has a mock adapter and no provider behind it (Q8). Cash is the intended loop-one rail and cash works, so this is only a blocker for card traffic — but everything downstream of a card is therefore untested against real money: deposits, refunds outside policy, and balance settlement on a date change.
+**⚠️ No card payment is possible, but there is now a second rail.** The provider seam still has no provider behind it (Q8), and no amount of code creates one — that is a merchant account Ignatev Estate opens with a licensed acquirer and passes KYC for. **Bank transfer is built and works**: the payer sees the company's Krungsri account and a reference tied to their booking, staff confirm the credit against the bank statement, and the ledger records it in the same transaction. Cash and transfer together cover both a guest standing at the desk and one paying from Moscow. What is still untested against real money is everything downstream of a *card*: deposits, refunds outside policy, and balance settlement on a date change.
 
 ---
 
@@ -34,9 +34,9 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Item | State | Evidence / action |
 |---|---|---|
 | Production database provisioned | ✅ | `MyUno- final`, Postgres 17.6, `ACTIVE_HEALTHY`. |
-| Migrations applied to production | ❓ | 23 migration rows were confirmed applied on 2026-08-19. The **new RLS migration is not among them** — run `prisma migrate deploy` against production, or paste the migration's SQL into the SQL editor, before launch. Verify afterwards with the linter: the four ERROR entries must be gone. |
+| Migrations applied to production | ⚠️ | 23 rows applied as of 2026-08-19; the **two new migrations are not among them**. Run `scripts/supabase-2026-08-24-rls-and-transfer.sql` or `prisma migrate deploy`, then re-run Supabase's linter — the four ERROR entries must be gone. |
 | Migration chain replays onto an empty database | ✅ | `prisma migrate deploy` run against the test database during this pass; all migrations applied, including the new one, with no manual repair. |
-| Database region matches the published privacy notice | ⛔ | **It does not.** Doc 15 §2 specifies Singapore; the project is in `ap-south-1` (**Mumbai**). This is a PDPA disclosure question before it is a latency one (Q45). Cheap to fix now — the fix is a dump-and-restore while the database is small, and it stops being cheap the moment there are real passports. Either move it or correct doc 15 and the notice. |
+| Database region matches the published privacy notice | ✅ (notice) / ⛔ (decision) | **The notice is now true**: it names Mumbai, which is where the data actually is, so nothing is misrepresented today. The *decision* is still open (Q45) — doc 15 §2 wants Singapore, and the recommendation is to move while the database is small. Runbook in doc 15 §2.7; the location is a content key, so correcting the notice after a move is an edit, not a deployment. |
 | `ENCRYPTION_KEY` generated, set identically everywhere, and written down offline | ❓ | Cannot be checked from here, and this is the one item with no second chance: change or lose it and **every stored passport becomes permanently unreadable** (doc 15 §4). Confirm it is set in Vercel production, matches staging, and exists in a physical vault — before any real guest data. |
 | Whether production already holds encrypted data | ❓ | Could not query production row counts in this session. It decides whether the key can still be rotated at all. Check `tm30_filing` before touching the key. |
 | Production connection string out of developer `.env` files | ⚠️ | Flagged earlier in this build and **not resolved**. A production credential in a developer file is a credential to rotate, not to tidy. Rotate it and set it only in Vercel. |
@@ -59,7 +59,7 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Item | State | Evidence / action |
 |---|---|---|
 | Terms of service body | ⛔ | Q36 — title key only, no prose. Counsel. |
-| Privacy notice body | ⛔ | Q36 — same, and this one gates lawful collection of passports. Must also name the database's real country (§2). |
+| Privacy notice body | ⚠️ | **Written** (`/legal/privacy`): controller, categories and lawful bases, recipients, cross-border transfer, retention, security, rights, complaints — each statement traceable to something the code does. Seeded `needs_review`, which is the counsel gate. Names Mumbai, correctly, via a content key. |
 | Legal entity facts published | ✅ | Q16 answered; `legal.entity.*` keys carry the company, DBD number, director and contact, rendered in the footer. |
 | Ombudsman credential presentation | ⛔ | Q15 open — `/trust/ombudsman` exists; how the credential is shown is a founder decision. |
 | Permitted-use gate before a unit goes live | ✅ / ⛔ | The gate exists and blocks go-live. Whether it should **refuse** without a confirmed compliance record behind it is Q43(a), still open — today a bare timestamp satisfies it. |
@@ -74,7 +74,9 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Item | State | Evidence / action |
 |---|---|---|
 | Booking loop end to end | ✅ | Search → book → pay (cash) → stay → review, covered by the suite. |
-| Card payments | ⚠️ | §1. Mock adapter only. |
+| Card payments | ⚠️ | §1. Still no provider. |
+| Bank transfer | ✅ | Payer sees the company's Krungsri account and a booking-derived reference; staff confirm against the statement; payment and ledger entry are written in one transaction. Twelve tests, including that the corporate tax number appears and the director's personal one never does. |
+| Who money is paid to | ✅ | `merchant.*` configuration (doc 04 §11) — legal name, tax number, bank, account, SWIFT. Editable in the admin panel; there is exactly one of it. |
 | Deposits | ⚠️ | `booking.deposit.mode = preauth` has **never placed a hold** — neither implementation was called from the booking path, and where the hold is taken and released is a founder ruling (Q46). Deposits default to `off`, so nothing is broken today; the feature simply does not work if switched on. |
 | Every role has a surface | ✅ | Guest, owner, resident, buyer, provider, MC, juristic, staff, admin — with `reachability.test.ts` failing the build if a page has nothing linking to it. |
 | Money displayed correctly everywhere | ⚠️ | Q47 — amounts are satang; some finance screens hand satang to a baht formatter and may show figures 100× too large. Needs a sweep of every money field before anyone reads a statement. |

@@ -194,11 +194,19 @@ export function MCDashboardClient({
     <main className="min-h-screen bg-surface-background">
       {/* Header */}
       <section className="bg-surface-paper border-b border-border-line px-24 py-16">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-4">
-            {labels['mc.portal.title']}
-          </h1>
-          <p className="text-body text-text-secondary">{labels['mc.portal.subtitle']}</p>
+        <div className="max-w-7xl mx-auto flex items-start justify-between gap-16">
+          <div>
+            <h1 className="text-heading-1 font-bold text-text-ink mb-4">
+              {labels['mc.portal.title']}
+            </h1>
+            <p className="text-body text-text-secondary">{labels['mc.portal.subtitle']}</p>
+          </div>
+          <Link
+            href="/announcements"
+            className="shrink-0 inline-flex items-center h-40 px-20 rounded-md bg-brand-andaman text-surface-ivory font-medium hover:bg-brand-deep transition-colors duration-micro"
+          >
+            {labels['mc.nav.announcements']}
+          </Link>
         </div>
       </section>
 

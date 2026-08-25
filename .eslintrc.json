@@ -2,9 +2,11 @@
   "extends": [
     "next/core-web-vitals"
   ],
+  "plugins": ["local-rules"],
   "rules": {
     "react/no-unescaped-entities": "off",
-    "@next/next/no-html-link-for-pages": "off"
+    "@next/next/no-html-link-for-pages": "off",
+    "local-rules/no-literal-ui-text": "error"
   },
   "overrides": [
     {
@@ -22,6 +24,80 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "local-rules/no-literal-ui-text": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/(admin)/app/admin/announcements/page.tsx",
+        "src/app/(admin)/app/admin/content/content-client.tsx",
+        "src/app/(admin)/app/admin/crm/opportunities/\\[id\\]/page.tsx",
+        "src/app/(admin)/app/admin/crm/pipeline-client.tsx",
+        "src/app/(admin)/app/admin/error.tsx",
+        "src/app/(admin)/app/admin/units/\\[id\\]/onboarding-client.tsx",
+        "src/app/(admin)/app/admin/units/units-client.tsx",
+        "src/app/(public)/buyers/page.tsx",
+        "src/app/(public)/developers/page.tsx",
+        "src/app/(public)/guests/access/access-client.tsx",
+        "src/app/(public)/management-companies/page.tsx",
+        "src/app/(public)/owners/page.tsx",
+        "src/app/announcements/page.tsx",
+        "src/app/auth/claim/claim-client.tsx",
+        "src/app/bookings/\\[bookingId\\]/home-space/handbook/page.tsx",
+        "src/app/components/admin/IntegrationHealthPanel.tsx",
+        "src/app/components/crm/ActivityItem.tsx",
+        "src/app/components/crm/ActivityTimeline.tsx",
+        "src/app/components/crm/CrmDashboard.tsx",
+        "src/app/components/crm/CrmDashboardClient.tsx",
+        "src/app/components/crm/OpportunitiesFilterPanel.tsx",
+        "src/app/components/crm/OpportunitiesKanban.tsx",
+        "src/app/components/crm/OpportunitiesList.tsx",
+        "src/app/components/crm/OpportunityCard.tsx",
+        "src/app/components/crm/OpportunityDetail.tsx",
+        "src/app/components/crm/OpportunityDetailClient.tsx",
+        "src/app/components/crm/QuickActivityForm.tsx",
+        "src/app/components/crm/RequirementsPanel.tsx",
+        "src/app/components/marketplace/MarketplaceGrid.tsx",
+        "src/app/components/marketplace/MarketplaceHeader.tsx",
+        "src/app/components/marketplace/ProjectCard.tsx",
+        "src/app/components/marketplace/PropertyCard.tsx",
+        "src/app/design/page.tsx",
+        "src/app/error.tsx",
+        "src/app/global-error.tsx",
+        "src/app/mc/error.tsx",
+        "src/app/opengraph-image.tsx",
+        "src/app/ops/error.tsx",
+        "src/app/owner/client.tsx",
+        "src/app/owner/error.tsx",
+        "src/app/services/\\[id\\]/order-wizard.tsx",
+        "src/app/services/\\[id\\]/page.tsx",
+        "src/app/services/orders/\\[orderId\\]/page.tsx",
+        "src/app/tickets/new/new-ticket-client.tsx",
+        "src/app/trips/\\[id\\]/booking-client.tsx",
+        "src/app/trips/trips-list.tsx",
+        "src/app/units/\\[id\\]/unit-client.tsx",
+        "src/components/Navbar.tsx",
+        "src/components/SearchBar.tsx",
+        "src/components/StateComponents.tsx",
+        "src/components/VerifyEmailBanner.tsx",
+        "src/components/instay/ActiveOrdersList.tsx",
+        "src/components/instay/AnnouncementsSection.tsx",
+        "src/components/instay/ExtendStayPanel.tsx",
+        "src/components/owner/BookingsList.tsx",
+        "src/components/owner/LatestStatementCard.tsx",
+        "src/components/owner/OpenTicketsList.tsx",
+        "src/components/owner/OwnerStayModal.tsx",
+        "src/components/owner/ProjectSwitcher.tsx",
+        "src/components/owner/SellInterestCard.tsx",
+        "src/components/units/AvailabilityPricingPanel.tsx"
+      ],
+      "rules": {
+        "local-rules/no-literal-ui-text": "off"
       }
     }
   ]

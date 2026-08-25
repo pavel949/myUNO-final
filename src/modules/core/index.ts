@@ -4,6 +4,7 @@
 
 export {
   can,
+  canWriteAvailabilityAndPricing,
   getIdentityRoles,
   hasRole,
   PERMISSIONS,
@@ -27,7 +28,16 @@ export {
   computePriceBreakdown,
   isActiveHold,
   checkAvailability,
+  getUnitBlockedDates,
+  createManualBlock,
+  removeBlockedDate,
+  getUnitPricingRules,
+  createPricingRule,
+  removePricingRule,
   type PriceBreakdown,
+  type ManualBlockReason,
+  type CreateManualBlockInput,
+  type CreatePricingRuleInput,
 } from './availability.service';
 
 export {

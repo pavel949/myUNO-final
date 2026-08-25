@@ -321,6 +321,49 @@ function scopeMatches(
 }
 
 /**
+ * Write-scope check for `units:manage_availability_and_pricing` (doc 03 §3).
+ *
+ * `can()` treats any PERMISSIONS row whose role+scope matches as a pass,
+ * regardless of that row's `access` level ('allow' vs 'read') — a
+ * simplification the matrix test documents (e.g. the owner row for this very
+ * action is commented "read-only" but `can()` returns `true` for it exactly
+ * like an 'allow' row). That has been harmless so far because nothing had
+ * built a *write* against a 'read'-only row yet. This is the first one: doc
+ * 03 marks the owner explicitly read-only for availability & pricing ("👁
+ * own units"), so creating/removing a manual block or price override must not
+ * succeed on an owner's read-only grant. Scoped narrowly to this one action
+ * rather than changing `can()`'s shared, tested behavior — the general gap
+ * (PERMISSIONS' `access` field is never actually checked) is logged as Q58
+ * in docs/open_questions.md for the founder, not silently patched everywhere.
+ */
+export async function canWriteAvailabilityAndPricing(
+  identity: Identity,
+  resource: { projectId?: string; unitId?: string }
+): Promise<boolean> {
+  if (identity.status === 'blocked') {
+    return false;
+  }
+  if (identity.isAdmin) {
+    return true;
+  }
+
+  const assignments = await prisma.roleAssignment.findMany({
+    where: {
+      identityId: identity.id,
+      status: 'active',
+      role: { in: ['staff_ops', 'mc_member'] },
+    },
+  });
+
+  return assignments.some((a) => {
+    if (a.scopeType === 'platform') return true;
+    if (a.scopeType === 'project') return Boolean(a.projectId) && a.projectId === resource.projectId;
+    if (a.scopeType === 'unit') return Boolean(a.unitId) && a.unitId === resource.unitId;
+    return false;
+  });
+}
+
+/**
  * Get all roles an identity holds in a given scope.
  */
 export async function getIdentityRoles(

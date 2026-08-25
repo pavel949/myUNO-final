@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { MOBILIZATION_STEPS } from '@/modules/core';
 import OnboardingClient from './onboarding-client';
+import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,29 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       'Permitted use is confirmed, but no permitted-use record is attached.',
     'admin.onboarding.error_generic': 'Action failed. Please try again.',
     'admin.onboarding.saving': 'Saving…',
+    'staff.calendar.title': 'Availability & pricing',
+    'staff.calendar.intro':
+      'Block this unit for maintenance or an owner stay, or set a one-off rate for a date range.',
+    'staff.calendar.loading': 'Loading…',
+    'staff.calendar.error_generic': 'Something went wrong. Please try again.',
+    'staff.calendar.saving': 'Saving…',
+    'staff.calendar.blocks_title': 'Blocked dates',
+    'staff.calendar.blocks_none': 'No blocked dates.',
+    'staff.calendar.reason.maintenance': 'Maintenance',
+    'staff.calendar.reason.owner_hold': 'Owner hold',
+    'staff.calendar.reason.other': 'Other',
+    'staff.calendar.start_date': 'Start date',
+    'staff.calendar.end_date': 'End date',
+    'staff.calendar.reason_field': 'Reason',
+    'staff.calendar.note': 'Note (optional)',
+    'staff.calendar.add_block': 'Block these dates',
+    'staff.calendar.remove': 'Remove',
+    'staff.calendar.pricing_title': 'Pricing overrides',
+    'staff.calendar.pricing_none': 'No pricing overrides.',
+    'staff.calendar.per_night': '/night',
+    'staff.calendar.nightly_rate': 'Nightly rate (THB)',
+    'staff.calendar.label': 'Label (optional)',
+    'staff.calendar.add_rule': 'Add rate',
   });
 
   const checklistByStep = Object.fromEntries(
@@ -113,6 +137,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         }))}
         permittedUseConfirmed={Boolean(unit.permittedUseConfirmedAt)}
       />
+
+      <div className="mt-32">
+        <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
+      </div>
     </div>
   );
 }

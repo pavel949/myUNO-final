@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Button, StatTile, EmptyState } from '@/components';
+import { Button, StatTile, EmptyState, MoneyAmount } from '@/components';
 import { SIGNABLE_STATEMENT_STATUSES } from '@/modules/finance';
 import type { LineItemCategory, OwnerStatementStatus } from '@prisma/client';
 
@@ -55,14 +55,12 @@ interface OwnerStatementDetailClientProps {
   labels: Record<string, string>;
 }
 
-// Same money formatting as the owner dashboard: THB integers, no decimals.
-const formatCurrency = (thb: number): string => {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    maximumFractionDigits: 0,
-  }).format(thb);
-};
+// StatementDetail's *Th fields arrive already converted to baht (the page
+// server component does the satang -> baht conversion once, at the boundary
+// — Q47). MoneyAmount's contract is satang-in, so every figure here is
+// multiplied back by 100 at the call site rather than reimplementing a
+// baht-in formatter — one shared component, one conversion rule.
+const toSatang = (baht: number): number => Math.round(baht * 100);
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('en-US', {
@@ -281,8 +279,12 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
     }
   };
 
-  const renderAmount = (amount: number, deduction?: boolean) =>
-    deduction && amount !== 0 ? `− ${formatCurrency(amount)}` : formatCurrency(amount);
+  const renderAmount = (amount: number, deduction?: boolean) => (
+    <>
+      {deduction && amount !== 0 ? '− ' : ''}
+      <MoneyAmount satang={toSatang(amount)} />
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-surface-background">
@@ -332,26 +334,38 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20">
             <StatTile
               label={labels['owner.statement.gross_bookings']}
-              value={formatCurrency(
-                statement.grossBookingsAmountTh ?? statement.grossRevenueTh
-              )}
+              value={
+                <MoneyAmount
+                  satang={toSatang(
+                    statement.grossBookingsAmountTh ?? statement.grossRevenueTh
+                  )}
+                />
+              }
               variant="revenue"
             />
             <StatTile
               label={labels['owner.statement.adjusted_noi']}
-              value={formatCurrency(statement.adjustedNoiTh ?? statement.noiTh)}
+              value={
+                <MoneyAmount
+                  satang={toSatang(statement.adjustedNoiTh ?? statement.noiTh)}
+                />
+              }
               variant="neutral"
             />
             <StatTile
               label={labels['owner.statement.distributable_cash']}
-              value={formatCurrency(
-                statement.distributableCashTh ?? statement.noiTh
-              )}
+              value={
+                <MoneyAmount
+                  satang={toSatang(
+                    statement.distributableCashTh ?? statement.noiTh
+                  )}
+                />
+              }
               variant="neutral"
             />
             <StatTile
               label={labels['owner.statement.your_share']}
-              value={formatCurrency(statement.ownerShareTh)}
+              value={<MoneyAmount satang={toSatang(statement.ownerShareTh)} />}
               variant="occupancy"
             />
           </div>
@@ -483,7 +497,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 {labels['owner.statement.your_share']}
               </span>
               <span className="text-body font-semibold text-text-ink">
-                {formatCurrency(statement.ownerShareTh)}
+                <MoneyAmount satang={toSatang(statement.ownerShareTh)} />
               </span>
             </div>
             <div className="flex justify-between gap-16">
@@ -491,7 +505,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 {labels['owner.statement.estate_share']}
               </span>
               <span className="text-body font-medium text-text-ink">
-                {formatCurrency(statement.estateShareTh)}
+                <MoneyAmount satang={toSatang(statement.estateShareTh)} />
               </span>
             </div>
             {statement.capApplied && (

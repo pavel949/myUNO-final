@@ -65,6 +65,11 @@ export default function BookingDetailClient({
   const [busy, setBusy] = useState(false);
   const [newStart, setNewStart] = useState('');
   const [newEnd, setNewEnd] = useState('');
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeTitle, setDisputeTitle] = useState('');
+  const [disputeDescription, setDisputeDescription] = useState('');
+  const [disputeSent, setDisputeSent] = useState(false);
+  const [disputeBusy, setDisputeBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -159,6 +164,37 @@ export default function BookingDetailClient({
       setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleDisputeSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!disputeTitle.trim() || !disputeDescription.trim()) return;
+    setDisputeBusy(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjectType: 'booking',
+          subjectId: bookingId,
+          title: disputeTitle.trim(),
+          description: disputeDescription.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['booking.detail.error_generic']);
+      }
+      setDisputeSent(true);
+      setDisputeOpen(false);
+      setDisputeTitle('');
+      setDisputeDescription('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
+    } finally {
+      setDisputeBusy(false);
     }
   };
 
@@ -362,6 +398,74 @@ export default function BookingDetailClient({
             <Button variant="destructive" size="sm" onClick={handleCancel} isLoading={busy}>
               {labels['booking.detail.cancel_button']}
             </Button>
+          </div>
+        )}
+
+        {/* Dispute */}
+        {booking.viewer.isGuest && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-12">
+              {labels['booking.detail.dispute_title']}
+            </h2>
+            {disputeSent && !disputeOpen && (
+              <p className="text-body text-state-success mb-12">
+                {labels['booking.detail.dispute_sent']}
+              </p>
+            )}
+            {disputeOpen ? (
+              <form onSubmit={handleDisputeSubmit} className="flex flex-col gap-12">
+                <div className="flex flex-col gap-4">
+                  <label htmlFor="dispute-title" className="text-small text-text-secondary">
+                    {labels['booking.detail.dispute_title_field']}
+                  </label>
+                  <input
+                    id="dispute-title"
+                    type="text"
+                    value={disputeTitle}
+                    onChange={(e) => setDisputeTitle(e.target.value)}
+                    maxLength={200}
+                    className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <label htmlFor="dispute-description" className="text-small text-text-secondary">
+                    {labels['booking.detail.dispute_description_field']}
+                  </label>
+                  <textarea
+                    id="dispute-description"
+                    value={disputeDescription}
+                    onChange={(e) => setDisputeDescription(e.target.value)}
+                    rows={4}
+                    maxLength={4000}
+                    className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                  />
+                </div>
+                <div className="flex gap-12">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="sm"
+                    isLoading={disputeBusy}
+                    disabled={!disputeTitle.trim() || !disputeDescription.trim()}
+                  >
+                    {labels['booking.detail.dispute_submit']}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDisputeOpen(false)}
+                    disabled={disputeBusy}
+                  >
+                    {labels['booking.detail.dispute_cancel']}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => { setDisputeOpen(true); setDisputeSent(false); }}>
+                {labels['booking.detail.dispute_open']}
+              </Button>
+            )}
           </div>
         )}
 

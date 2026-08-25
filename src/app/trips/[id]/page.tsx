@@ -44,6 +44,13 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.status.cancelled': 'Cancelled',
     'booking.detail.status.declined': 'Declined',
     'booking.detail.status.expired': 'Expired',
+    'booking.detail.dispute_title': 'Dispute this charge',
+    'booking.detail.dispute_open': 'Raise a dispute',
+    'booking.detail.dispute_title_field': 'Subject',
+    'booking.detail.dispute_description_field': 'What happened',
+    'booking.detail.dispute_submit': 'Submit dispute',
+    'booking.detail.dispute_cancel': 'Cancel',
+    'booking.detail.dispute_sent': 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
   });
 
   return (

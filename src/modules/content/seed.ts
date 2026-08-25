@@ -3,8 +3,8 @@
  * This is called during database initialization
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ensureContentKey, setTranslation } from './content.service';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { Locale } from './types';
 
 interface KeyDef {
@@ -2958,29 +2958,66 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS]) {
-    // Ensure content key exists
-    await ensureContentKey(
-      db,
-      keyDef.key,
-      keyDef.namespace,
-      keyDef.description,
-      keyDef.supportsRich || false
-    );
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS];
 
-    // Set translations for all provided locales
-    const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
+  // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
+  // one-row-per-await version (ensureContentKey + setTranslation's own
+  // findUnique-then-upsert) ran several thousand sequential round trips per
+  // call — 10-15s on a loaded runner, enough to blow past vitest's 20s
+  // hookTimeout in every beforeEach that reseeds content. A handful of
+  // multi-row upserts do the same work in well under a second.
+  const CHUNK = 300;
+
+  for (let i = 0; i < allKeys.length; i += CHUNK) {
+    const rows = allKeys.slice(i, i + CHUNK).map(
+      (k) =>
+        Prisma.sql`(${randomUUID()}, ${k.key}, ${k.namespace}, ${k.description}, ${k.supportsRich ?? false}, now(), now())`
+    );
+    await db.$executeRaw`
+      INSERT INTO content_key (id, key, namespace, description, supports_rich, created_at, updated_at)
+      VALUES ${Prisma.join(rows)}
+      ON CONFLICT (key) DO UPDATE SET
+        namespace = EXCLUDED.namespace,
+        description = EXCLUDED.description,
+        supports_rich = EXCLUDED.supports_rich,
+        updated_at = now()
+    `;
+  }
+
+  // ON CONFLICT above never touches id, so this resolves every key — new and
+  // pre-existing — to its real id in one query rather than one findUnique
+  // per (key, locale) pair.
+  const keyRows = await db.contentKey.findMany({
+    where: { key: { in: allKeys.map((k) => k.key) } },
+    select: { id: true, key: true },
+  });
+  const idByKey = new Map(keyRows.map((r) => [r.key, r.id]));
+
+  const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
+  const translationRows: { contentKeyId: string; locale: Locale; value: string; status: string }[] = [];
+  for (const keyDef of allKeys) {
+    const contentKeyId = idByKey.get(keyDef.key);
+    if (!contentKeyId) continue; // just upserted above — should always resolve
     for (const locale of locales) {
       const value = keyDef[locale];
       if (value === undefined) continue;
-      await setTranslation(
-        db,
-        keyDef.key,
-        locale,
-        value,
-        keyDef.status || 'ok',
-        identityId
-      );
+      translationRows.push({ contentKeyId, locale, value, status: keyDef.status || 'ok' });
     }
+  }
+
+  for (let i = 0; i < translationRows.length; i += CHUNK) {
+    const rows = translationRows.slice(i, i + CHUNK).map(
+      (t) =>
+        Prisma.sql`(${randomUUID()}, ${t.contentKeyId}, ${t.locale}, ${t.value}, ${t.status}, ${identityId}, now(), now())`
+    );
+    await db.$executeRaw`
+      INSERT INTO translation (id, content_key_id, locale, value, status, updated_by_identity_id, created_at, updated_at)
+      VALUES ${Prisma.join(rows)}
+      ON CONFLICT (content_key_id, locale) DO UPDATE SET
+        value = EXCLUDED.value,
+        status = EXCLUDED.status,
+        updated_by_identity_id = EXCLUDED.updated_by_identity_id,
+        updated_at = now()
+    `;
   }
 }

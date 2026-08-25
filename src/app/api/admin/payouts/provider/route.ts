@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import prismadb from '@/app/libs/prismadb'
-import { computeProviderRemittance } from '@/app/libs/payouts'
+import { computeProviderRemittance } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
 
     // Verify amount matches computed remittance for this period
     const remittance = await computeProviderRemittance(
+      prismadb,
       body.providerId,
       periodStart,
       periodEnd

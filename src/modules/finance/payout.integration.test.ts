@@ -8,7 +8,14 @@ import {
   createProvider,
   createService,
 } from '@/test/util';
-import { recordOwnerPayout, recordProviderRemittance, computeProviderRemittance, getFailedRefunds } from './payout.service';
+import {
+  recordOwnerPayout,
+  recordProviderRemittance,
+  computeProviderRemittance,
+  getReconciliationData,
+  reconcilePayout,
+  resolveFailedRefund,
+} from './payout.service';
 import { generateOwnerStatement, publishStatement } from './statement.service';
 
 /**
@@ -126,7 +133,10 @@ describe('Payouts & Reconciliation (T-031)', () => {
       const service = await createService({ providerId: provider.id });
 
       // Create service order (fulfilled). Dated inside the remittance period —
-      // computeProviderRemittance selects orders by createdAt within it.
+      // computeProviderRemittance selects orders by updatedAt within it (the
+      // best available proxy for "when it was fulfilled": doc 10 §5 remits
+      // per period on fulfilled work, and the schema has no dedicated
+      // fulfilled-at timestamp).
       await db.serviceOrder.create({
         data: {
           service_id: service.id,
@@ -136,6 +146,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
           project_id: project.id,
           unit_id: unit.id,
           createdAt: new Date('2026-07-10'),
+          updatedAt: new Date('2026-07-10'),
           scheduled_start: new Date('2026-07-10'),
           scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
@@ -148,9 +159,12 @@ describe('Payouts & Reconciliation (T-031)', () => {
       // Compute remittance
       const remittance = await computeProviderRemittance(db, provider.id, new Date('2026-07-01'), new Date('2026-07-31'));
 
-      // Should include the fulfilled order
-      expect(remittance.fulfilledOrdersTotal).toBeGreaterThanOrEqual(10000);
-      expect(remittance.netRemittance).toBeGreaterThanOrEqual(9000); // After refunds (none here)
+      // Should include the fulfilled order. Doc 10 §5: fulfilled total − take
+      // rate (10% default, matching the config `services.take_rate_pct`) −
+      // refunds (none here).
+      expect(remittance.fulfilledOrdersTotal).toBe(10000);
+      expect(remittance.takeRateThb).toBe(1000);
+      expect(remittance.netThb).toBe(9000);
     });
 
     it('deducts clawed-back refunds from remittance', async () => {
@@ -172,6 +186,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
           project_id: project.id,
           unit_id: unit.id,
           createdAt: new Date('2026-07-10'),
+          updatedAt: new Date('2026-07-10'),
           scheduled_start: new Date('2026-07-10'),
           scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
@@ -211,9 +226,10 @@ describe('Payouts & Reconciliation (T-031)', () => {
       // Compute remittance
       const remittance = await computeProviderRemittance(db, provider.id, new Date('2026-07-01'), new Date('2026-07-31'));
 
-      // Refunds should be clawed back
-      expect(remittance.refundsClawed).toBeGreaterThanOrEqual(2000);
-      expect(remittance.netRemittance).toBeLessThanOrEqual(remittance.fulfilledOrdersTotal - 2000);
+      // Refunds should be clawed back: 10000 total − 1000 take-rate (10%) − 2000 refund.
+      expect(remittance.refundsClawedBack).toBe(2000);
+      expect(remittance.takeRateThb).toBe(1000);
+      expect(remittance.netThb).toBe(7000);
     });
   });
 
@@ -246,14 +262,15 @@ describe('Payouts & Reconciliation (T-031)', () => {
         },
       });
 
-      // Get failed refunds
-      const failed = await getFailedRefunds(db);
+      // Get the reconciliation board's failed-refunds list
+      const data = await getReconciliationData(db);
 
-      expect(failed.length).toBeGreaterThan(0);
-      const found = failed.find((r) => r.id === failedRefund.id);
+      expect(data.failedRefunds.length).toBeGreaterThan(0);
+      const found = data.failedRefunds.find((r) => r.id === failedRefund.id);
       expect(found).toBeDefined();
       expect(found?.status).toBe('failed');
-      expect(found?.amountThb).toBe(5000);
+      // Satang -> baht at the board's display boundary (CLAUDE.md; Q47).
+      expect(found?.refundAmount).toBe(50);
     });
 
     it('failed refund persists until status changed', async () => {
@@ -285,18 +302,15 @@ describe('Payouts & Reconciliation (T-031)', () => {
       });
 
       // List and verify it's there
-      let failed = await getFailedRefunds(db);
-      expect(failed.some((r) => r.id === failedRefund.id)).toBe(true);
+      let data = await getReconciliationData(db);
+      expect(data.failedRefunds.some((r) => r.id === failedRefund.id)).toBe(true);
 
-      // Update status (manually simulating admin resolution)
-      await db.refund.update({
-        where: { id: failedRefund.id },
-        data: { status: 'succeeded' },
-      });
+      // Resolve it via the same function the admin route calls.
+      await resolveFailedRefund(db, failedRefund.id, 'retry');
 
-      // Verify it no longer appears
-      failed = await getFailedRefunds(db);
-      expect(failed.some((r) => r.id === failedRefund.id)).toBe(false);
+      // 'retry' resets status to 'requested', so it no longer reads as failed.
+      data = await getReconciliationData(db);
+      expect(data.failedRefunds.some((r) => r.id === failedRefund.id)).toBe(false);
     });
   });
 
@@ -327,13 +341,14 @@ describe('Payouts & Reconciliation (T-031)', () => {
       // Verify payout is in recorded status
       expect(payout.status).toBe('recorded');
 
-      // Update to reconciled (simulating bank statement match)
-      const reconciled = await db.payout.update({
-        where: { id: payout.id },
-        data: { status: 'reconciled' },
-      });
+      // Reconcile via the same function the admin route calls.
+      const reconciled = await reconcilePayout(db, payout.id);
 
       expect(reconciled.status).toBe('reconciled');
+    });
+
+    it('refuses to reconcile a payout that does not exist', async () => {
+      await expect(reconcilePayout(db, 'nonexistent-id')).rejects.toThrow('Payout not found');
     });
   });
 });

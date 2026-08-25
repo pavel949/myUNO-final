@@ -9,7 +9,7 @@ import {
   createProvider,
   createService,
 } from '@/test/util'
-import { computeProviderRemittance, getReconciliationData } from '@/app/libs/payouts'
+import { computeProviderRemittance, getReconciliationData } from '@/modules/finance'
 
 describe('T-031: Payouts & Reconciliation', () => {
   beforeEach(async () => {
@@ -24,6 +24,7 @@ describe('T-031: Payouts & Reconciliation', () => {
       const periodEnd = new Date('2026-01-31')
 
       const remittance = await computeProviderRemittance(
+        prismadb,
         provider.id,
         periodStart,
         periodEnd
@@ -107,6 +108,7 @@ describe('T-031: Payouts & Reconciliation', () => {
       })
 
       const remittance = await computeProviderRemittance(
+        prismadb,
         provider.id,
         periodStart,
         periodEnd
@@ -117,6 +119,46 @@ describe('T-031: Payouts & Reconciliation', () => {
       expect(remittance.orderCount).toBe(1)
       expect(remittance.takeRateThb).toBe(500) // 5000 * 10%
       expect(remittance.netThb).toBe(4500) // 5000 - 500
+    })
+
+    // Q34: a previous implementation of this calculation counted `accepted`
+    // orders alongside `fulfilled` ones, overstating what a provider is owed
+    // for work not yet delivered. Doc 10 §5 is explicit: "fulfilled orders'
+    // totals" — accepted-but-undelivered work is not remittable yet.
+    it('excludes accepted (not yet fulfilled) orders from remittance', async () => {
+      const provider = await createProvider({ status: 'active' })
+      const orderer = await createIdentity()
+      const periodStart = new Date('2026-01-01')
+      const periodEnd = new Date('2026-01-31')
+      const service = await createService({
+        providerId: provider.id,
+        title: 'Test Service',
+        status: 'active',
+      })
+      const project = await createProject()
+
+      await prismadb.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'guest',
+          scheduled_start: new Date('2026-01-20'),
+          scheduled_end: new Date('2026-01-20T02:00:00'),
+          status: 'accepted',
+          total_thb: 8000,
+          take_rate_pct_snapshot: 10,
+          price_breakdown: {},
+          updatedAt: new Date('2026-01-12'),
+        },
+      })
+
+      const remittance = await computeProviderRemittance(prismadb, provider.id, periodStart, periodEnd)
+
+      expect(remittance.fulfilledOrdersTotal).toBe(0)
+      expect(remittance.orderCount).toBe(0)
+      expect(remittance.netThb).toBe(0)
     })
   })
 
@@ -229,7 +271,7 @@ describe('T-031: Payouts & Reconciliation', () => {
       })
 
       // Get reconciliation data
-      let data = await getReconciliationData()
+      let data = await getReconciliationData(prismadb)
 
       // Failed refund should be visible
       const surfacedRefund = data.failedRefunds.find(r => r.id === failedRefund.id)
@@ -242,7 +284,7 @@ describe('T-031: Payouts & Reconciliation', () => {
         data: { status: 'succeeded' },
       })
 
-      data = await getReconciliationData()
+      data = await getReconciliationData(prismadb)
       const refundAfter = data.failedRefunds.find(r => r.id === failedRefund.id)
       expect(refundAfter).toBeUndefined()
     })
@@ -298,7 +340,7 @@ describe('T-031: Payouts & Reconciliation', () => {
       })
 
       // Initially should appear in pending payouts
-      let data = await getReconciliationData()
+      let data = await getReconciliationData(prismadb)
       let pending = data.pendingPayouts.find(p => p.id === payout.id)
       expect(pending).toBeDefined()
       expect(pending!.status).toBe('recorded')
@@ -309,7 +351,7 @@ describe('T-031: Payouts & Reconciliation', () => {
         data: { status: 'reconciled' },
       })
 
-      data = await getReconciliationData()
+      data = await getReconciliationData(prismadb)
       pending = data.pendingPayouts.find(p => p.id === payout.id)
       expect(pending).toBeUndefined()
     })
@@ -415,7 +457,7 @@ describe('T-031: Payouts & Reconciliation', () => {
         },
       })
 
-      const data = await getReconciliationData()
+      const data = await getReconciliationData(prismadb)
 
       const surfacedPayment = data.unmatchedPayments.find(p => p.id === unmatchedPayment.id)
       expect(surfacedPayment?.amountThb).toBe(5000)

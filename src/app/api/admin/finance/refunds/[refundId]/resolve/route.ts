@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveFailedRefund } from '@/app/libs/payouts'
+import { prisma } from '@/lib/prisma'
+import { resolveFailedRefund } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,7 @@ export async function POST(
       )
     }
 
-    const refund = await resolveFailedRefund(params.refundId, body.action)
+    const refund = await resolveFailedRefund(prisma, params.refundId, body.action)
 
     return NextResponse.json({
       success: true,

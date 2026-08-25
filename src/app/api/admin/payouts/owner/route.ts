@@ -58,6 +58,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Q18: "amount = owner share" — the statement already carries the figure
+    // this payout is meant to settle, so a typed amount that disagrees with
+    // it is either a fat-fingered entry or a payout for the wrong statement.
+    // Matches the same anti-tamper posture the provider payout route already
+    // holds itself to (CLAUDE.md: client-sent amounts are never trusted).
+    if (body.amountThb !== statement.ownerShareTh) {
+      return NextResponse.json(
+        {
+          error: 'Payout amount does not match the statement’s owner share',
+          statementOwnerShareTh: statement.ownerShareTh,
+        },
+        { status: 400 }
+      )
+    }
+
     // Check if payout already exists for this statement
     const existingPayout = await prismadb.payout.findFirst({
       where: {

@@ -110,6 +110,8 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Provisional stance (doc 05):** default locale **RU** (the clientele), user-switchable; EN complete at launch; TH keys exist from day one but may lag — fallback chain requested → EN → RU → visible key. Founder edits all three in the admin content editor.
 - **Needs from founder:** confirm RU default; who produces TH strings (staff, translator, or machine-translate-then-review — the editor supports a "needs review" flag).
 
+**Update (2026-08-25, production-readiness pass):** confirmed with real numbers. Of 1,508 content keys, Thai has a real (non-empty) row for **272 (18%)** — the other 82% silently fall back to English for a Thai reader. Not a spread across the app either: coverage clusters in catalog labels, legal pages, and the finance-reconciliation screen. This doesn't change the open question — it just replaces "largely absent" with a figure to plan against.
+
 ### Q20. Real content for the first project & services catalog — OPEN
 - **Source:** docs 07/08/09 reference The Title Legendary's amenities, rules, services and providers; the specs define the **structures and keys**, not the actual content.
 - **Needs from founder:** the project's handbook, house rules, amenity list, initial provider list (transfer, cleaning, chef, …) with terms, and photography.
@@ -147,6 +149,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 ### Q27. Dead data-model surface — build or remove? — OPEN
 - **Source:** the data-model audit (DM vertical). Several schema tables have no working feature behind them: `AuthAccount` (Google/Apple login never wired), `ProviderProject` (provider service-area scoping), `ServiceMedia` (service photo galleries), and `TicketMedia`/`ProjectMedia` have read paths but no upload paths (ticket photo evidence and project galleries cannot be created). Passport *image* upload also doesn't exist yet — when it is built, the file bytes must be encrypted and `MediaAsset.encrypted` set (the field-level encryption of passport numbers/names/DOB landed in DM-1).
 - **Blocks:** nothing in loop one.
+- **Update (2026-08-25, production-readiness pass):** re-checked and it is worse than "read paths, no upload paths" for the media models — `ProjectMedia`, `ServiceMedia`, and `TicketMedia` have **zero usage anywhere in `src/`**, reads included. There is currently no photo of anything in myUNO — no project gallery beyond seed data, no service photo, no "here's the broken AC" ticket attachment. `ProviderProject` is also confirmed fully dead: `getServicesByProvider` scopes by `providerId` alone, so a provider's visibility is global today, not per-project as the model implies.
 - **Needs from founder:** which of these become real features in loop two (OAuth login, provider service areas, service galleries, ticket photos, project gallery uploads) and which get removed from the schema. Also two spec'd shapes that still need building decisions: `MessageMedia` (message photo attachments, doc 02 §7.1) and quote-model service orders (no `quote_requested` lifecycle state exists — doc 02 §4.3).
 
 ### Q28. Layantara tariff edges — discount stacking & monthly rates beyond low season — OPEN (provisional defaults in place)
@@ -312,6 +315,50 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Why this one was more consequential than Q49:** CLAUDE.md is explicit that "a direct-managed unit without its NOI cap refuses statement generation — no guessing," and doc 07's owner-statement flow compares this cap directly against satang NOI totals computed elsewhere (`statement.service.ts`). A cap entered as baht-typed-into-satang was wrong by exactly the factor that would make a real cap look 100× smaller than intended, silently changing which statements get capped.
 - **Fixed:** the submit handler now multiplies the typed baht figure by 100; the read-only engagement list divides by 100 for display. Covered by `onboarding-client.test.tsx` (including the "leave it blank" path, which correctly still sends nothing).
 - **Still needed, not a code fix:** the same data check as Q49 — confirm no live engagement already has a cap set through this form before it is trusted for a real statement run. This session could not query production to check.
+
+### Q51. Nothing anywhere lets staff actually pay an owner or a provider — OPEN
+- **Source:** a full production-readiness pass across every role's surface (2026-08-25).
+- **The gap:** `POST /api/admin/payouts/owner` and `POST /api/admin/payouts/provider` exist and are tested, but have **zero callers anywhere in `src/app`**. The admin payouts page (`/app/admin/payouts`) and the finance reconciliation board only *list and reconcile* payouts already recorded — there is no form to start one. Q18 says "the platform records each payout... against the published statement"; today that recording has no door in.
+- **The sharper problem underneath it:** the provider payout route imports its math from `src/app/libs/payouts.ts` — the **older** of the two `computeProviderRemittance` implementations Q34 already flags as disagreeing with the canonical one in `src/modules/finance/payout.service.ts`. Wiring a "pay provider" button today, before Q34 is settled, would pay some providers the wrong amount from day one.
+- **Needs:** Q34 resolved first (which formula is right), then a payout-creation screen built against the canonical implementation only.
+
+### Q52. The disputes flow (F-DIS-2) doesn't exist — OPEN
+- **Source:** same pass as Q51.
+- **The gap:** doc 07 fully specifies F-DIS-2 — a guest or owner raising a formal dispute over a charge, a fee, or a stay. Nothing in `src/app` implements any part of it: no action to raise one, no record of one, no admin queue to resolve one. CLAUDE.md's own fee-transparency section promises "owner can dispute any fee within 30 days of statement" — today that promise has no mechanism behind it.
+- **Needs from founder:** confirm this is still in scope for loop one (it reads as a real gap, not a deferred nice-to-have, given the platform already invites the promise) and prioritize it against the rest of this list.
+
+### Q53. Staff cannot manually block a unit or set an ad-hoc price — OPEN
+- **Source:** same pass as Q51.
+- **The gap:** `BlockedDate` is written **only** by the automatic iCal-import job; `PricingRule` has **no writer anywhere in `src/`** — not a route, not an admin action. Season/markup pricing is handled separately via configuration (built, working) — this gap is specifically the manual, per-unit override: taking a unit offline for repairs, or setting a one-off rate for a specific booking. Doc 07's F-OPS-4 calls for this and it was never built.
+- **Needs from founder:** confirm scope (a small admin form on the unit page) and priority — this is a small, well-understood build once prioritized.
+
+### Q54. The `no-literal-ui-text` lint CLAUDE.md describes as enforced has never actually run — OPEN
+- **Source:** same pass as Q51.
+- **The gap:** the rule and its plugin wrapper exist on disk (`.eslintrc-rules/no-literal-ui-text.js`, `.eslintrc-rules/plugin.js`), but the committed root `.eslintrc.json` never declares the plugin or references the rule — ESLint never loads it. Every `npx eslint . --max-warnings 0` run this whole session has passed clean, but that is because the rule is inert, not because the codebase has been complying with it. CLAUDE.md states flatly that this lint "enforces" the content-key discipline; today it does not.
+- **Confirmed still needed independent of this:** at least one live route, `src/app/admin/finance/reconciliation/page.tsx` — an older duplicate of a newer, correctly-built admin screen — hardcodes English UI text directly (headings, loading/error states) with zero `t()`/`labels[...]` calls, exactly the kind of thing this lint exists to catch.
+- **Needs:** wire the rule into `.eslintrc.json` and run it once to see the real backlog before treating it as clean; separately, decide whether to delete the duplicate reconciliation page now that a correct version exists.
+
+### Q55. The design system isn't consistently followed — OPEN
+- **Source:** same pass as Q51, UI/UX pillar.
+- **The gap, four parts:**
+  1. **The CRM and buyer-marketplace screens (~30 files, docs 17–18) were built entirely outside doc 06** — hand-picked Tailwind colors instead of the brand palette, plus `dark:` variants that do nothing today since the product is light-only in loop one (doc 06 §2.5). It works; it doesn't look or feel like the rest of myUNO.
+  2. **Two components doc 06 calls for were never actually built**, so — even after this week's Q47 fix — 14 files still each reimplement their own local price-formatting helper instead of sharing one (`MoneyAmount`, doc 06 §3.1, has zero definitions anywhere), and the real `EmptyState` component is used in only 2 screens while ~15 more hand-roll a plain sentence instead.
+  3. **The booking widget — the platform's single highest-traffic, mostly-mobile screen — doesn't implement the mobile behavior it was designed to**: no bottom price bar that expands into the full form, no swipeable photo gallery (a static 4-image grid today).
+  4. **A handful of accessibility gaps**: some icon-only buttons (the marketplace favorite heart, several CRM icons) have no `aria-label`; a few admin filter/search inputs and note fields have placeholder text but no real `<label>` or `aria-label`, which fails for anyone using a screen reader.
+- **Not blocking a cash pilot.** Blocking "looks and feels like one finished product."
+- **Needs:** a scoped retrofit pass — token/color pass on the CRM+marketplace files, build and adopt `MoneyAmount` + wider `EmptyState` adoption, the mobile booking-widget behavior, and the accessibility fixes. All bounded, none architectural.
+
+### Q56. `.env.example` doesn't list everything the app actually needs — OPEN
+- **Source:** same pass as Q51.
+- **The gap:** cross-checking every `process.env.X` read in `src/` against `.env.example` turned up nine undocumented variables — most importantly the **entire Opn/Omise card-payment surface** (`OMISE_PUBLIC_KEY`, `OMISE_SECRET_KEY`, `OMISE_WEBHOOK_SECRET`, `PAYMENT_PROVIDER`), plus `BLOB_READ_WRITE_TOKEN` (media storage), `ICAL_FEED_SECRET`, `NEXT_PUBLIC_APP_URL`, `ALERT_WEBHOOK_URL`, and `LOG_SILENT`. Most degrade gracefully today (mock/no-op fallback), so nothing is broken yet — but the Opn variables become load-bearing the exact day the merchant account (Q8) is approved, and nothing currently tells whoever sets up production that they exist.
+- **Needs:** no decision, just an edit — add the nine lines with a one-sentence note each. Flagged here so it doesn't get lost before the KYC approval lands.
+
+### Q57. Small built-but-unwired items found during the production-readiness pass — OPEN
+- **Source:** same pass as Q51; grouped here because each is small on its own.
+- **MC dashboard is missing two tabs** it should have: posting announcements (the composer already correctly allows `mc_member` via `getPostableProjects`, it's just not linked from `/mc`) and ordering common-area services. Both underlying features work elsewhere — this is wiring, not building.
+- **One dead placeholder file**: `src/app/(admin)/app/admin/crm/pipeline-page-client.tsx`, a hardcoded-empty stub with a stale "TODO: create the endpoint" comment for an endpoint that was, in fact, built elsewhere (`getPipeline()` + `pipeline-client.tsx`, which is what actually renders). Not imported anywhere — harmless, just confusing. Safe to delete.
+- **`reachability.test.ts` has a blind spot worth closing**: it correctly fails the build if a `page.tsx` has nothing linking to it, but it only scans `page.tsx` files — it never checks that a `route.ts` (API endpoint) has any caller in the UI. That blind spot is exactly how the payout-creation routes in Q51 went unnoticed. Worth extending the test to flag an exported API route handler with zero references outside its own test file.
+- **Needs:** none of these need a founder decision — they're small, understood fixes, listed here only so they aren't lost before someone picks them up.
 
 ---
 

@@ -79,7 +79,7 @@ Three things below make a production launch unsafe today. They are not ranked by
 | Who money is paid to | ✅ | `merchant.*` configuration (doc 04 §11) — legal name, tax number, bank, account, SWIFT. Editable in the admin panel; there is exactly one of it. |
 | Deposits | ⚠️ | `booking.deposit.mode = preauth` has **never placed a hold** — neither implementation was called from the booking path, and where the hold is taken and released is a founder ruling (Q46). Deposits default to `off`, so nothing is broken today; the feature simply does not work if switched on. |
 | Every role has a surface | ✅ | Guest, owner, resident, buyer, provider, MC, juristic, staff, admin — with `reachability.test.ts` failing the build if a page has nothing linking to it. |
-| Money displayed correctly everywhere | ✅ | Q47 — the full sweep is done: every producer that handed satang to a baht-expecting formatter across owner, MC, admin, guest, provider and public screens is fixed at the producer boundary, with a regression test at each. 1678 tests / 133 files green, build clean, lint clean. **Two related but distinct write-path bugs surfaced during the sweep and need a founder ruling before go-live: Q49 (a provider's own price edit) and Q50 (an admin's NOI-cap entry) both write a typed baht number straight into a satang column.** |
+| Money displayed correctly everywhere | ✅ | Q47 — the full sweep is done: every producer that handed satang to a baht-expecting formatter across owner, MC, admin, guest, provider and public screens is fixed at the producer boundary, with a regression test at each. **Q49 and Q50 — the two write-path mirrors of the same bug (a provider's own price edit, an admin's NOI-cap entry) are also fixed**, both now round-trip baht-in/baht-out correctly. 1683 tests / 134 files green, build clean, lint clean. **One thing this session cannot do: audit existing `Service`/`UnitEngagement` rows for a price or cap set through either form before the fix, which may already be 100× too low** — a one-time data check, not a code task. |
 | Tests, build, lint | ✅ | Recorded in the commit that adds this file. |
 
 ---
@@ -88,9 +88,9 @@ Three things below make a production launch unsafe today. They are not ranked by
 
 **Ready to pilot on cash, in one building, with staff who know the product:** yes, once the privacy notice exists and the RLS migration is deployed.
 
-**Ready for real owners' money and card payments:** no. §1 and the Deposits row in §5 stand between here and that. Money display (Q47) is now fixed and verified.
+**Ready for real owners' money and card payments:** no. §1 and the Deposits row in §5 stand between here and that. Money display and the Q49/Q50 write-path bugs are now fixed and verified.
 
-**The items only the founder can close:** Q36 (terms and privacy prose), Q45 (Mumbai or Singapore), Q15 (ombudsman), Q43(a) (permitted-use gate), Q46 (when a deposit is taken and released), Q49 (a provider's own price edit writes baht into satang), Q50 (an admin's NOI-cap entry writes baht into satang), and the ENCRYPTION_KEY handling in §2.
+**The items only the founder can close:** Q36 (terms and privacy prose), Q45 (Mumbai or Singapore), Q15 (ombudsman), Q43(a) (permitted-use gate), Q46 (when a deposit is taken and released), and the ENCRYPTION_KEY handling in §2. **Ops has one outstanding data check**: any `Service` price or `UnitEngagement` NOI cap set through the provider/admin forms before the Q49/Q50 fix may be 100× too low — worth one query against production before trusting either for real money.
 
 ---
 

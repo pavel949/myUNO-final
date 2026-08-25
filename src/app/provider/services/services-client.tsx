@@ -92,7 +92,10 @@ export default function ProviderServicesClient({
       description: description || undefined,
       categoryKey,
       priceModel,
-      basePriceThb: priceModel === 'quote' ? undefined : Number(price),
+      // The field asks the provider for baht (matching every other money
+      // input in the platform); the API and every stored Service row are
+      // satang (CLAUDE.md money rules) — convert once, here, on the way out.
+      basePriceThb: priceModel === 'quote' ? undefined : Math.round(Number(price) * 100),
       durationMin: duration ? Number(duration) : undefined,
       advanceNoticeHours: notice ? Number(notice) : undefined,
     });
@@ -109,7 +112,9 @@ export default function ProviderServicesClient({
     setEditingId(service.id);
     setEdit({
       title: service.title,
-      price: service.basePriceThb != null ? String(service.basePriceThb) : '',
+      // Pre-fill in baht, matching the field's own label and the create form
+      // above — service.basePriceThb is satang (Q49; CLAUDE.md money rules).
+      price: service.basePriceThb != null ? String(service.basePriceThb / 100) : '',
       duration: service.durationMin != null ? String(service.durationMin) : '',
       notice: String(service.advanceNoticeHours),
     });
@@ -118,7 +123,8 @@ export default function ProviderServicesClient({
   const saveEdit = async (serviceId: string) => {
     const ok = await request(`/api/provider/services/${serviceId}`, 'PATCH', {
       title: edit.title,
-      ...(edit.price ? { basePriceThb: Number(edit.price) } : {}),
+      // Baht in, satang out — the round-trip with startEdit's pre-fill above.
+      ...(edit.price ? { basePriceThb: Math.round(Number(edit.price) * 100) } : {}),
       ...(edit.duration ? { durationMin: Number(edit.duration) } : {}),
       ...(edit.notice ? { advanceNoticeHours: Number(edit.notice) } : {}),
     });
@@ -160,6 +166,8 @@ export default function ProviderServicesClient({
                   <input
                     className={inputClass}
                     type="number"
+                    min={0.01}
+                    step="0.01"
                     value={edit.price}
                     onChange={(e) => setEdit((p) => ({ ...p, price: e.target.value }))}
                     placeholder={labels['provider.services.field_price']}
@@ -196,11 +204,10 @@ export default function ProviderServicesClient({
                     {labels[`provider.services.price_model.${service.priceModel}`] ||
                       service.priceModel}
                     {/* basePriceThb is satang (THB × 100) straight from the DB
-                        via /api/provider/services — convert to baht only
-                        here, at final render (money rule, CLAUDE.md "Money
-                        rules"). Note: the edit form below pre-fills and
-                        submits this same field unconverted — see the report
-                        for why that round-trip was left untouched. */}
+                        via /api/provider/services — convert to baht at final
+                        render (money rule, CLAUDE.md "Money rules"). The edit
+                        form above does the same conversion, both ways
+                        (Q49). */}
                     {service.basePriceThb != null &&
                       ` · ฿${(service.basePriceThb / 100).toLocaleString()}`}
                   </p>
@@ -303,6 +310,7 @@ export default function ProviderServicesClient({
               className={inputClass}
               type="number"
               min={1}
+              step="0.01"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               required={priceModel !== 'quote'}

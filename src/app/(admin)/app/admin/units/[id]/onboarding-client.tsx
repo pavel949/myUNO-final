@@ -162,7 +162,12 @@ export default function OnboardingClient({
             {engagements.map((e) => (
               <li key={e.id} className="text-body text-text-ink">
                 {e.engagementType} · {e.status}
-                {e.noiCapAnnualThb !== null && ` · ฿${e.noiCapAnnualThb.toLocaleString()}`}
+                {/* noiCapAnnualThb is satang (THB × 100), like every amount in
+                    the platform (CLAUDE.md money rules) — convert to baht at
+                    this display boundary; the form below takes and sends
+                    baht too (Q50). */}
+                {e.noiCapAnnualThb !== null &&
+                  ` · ฿${(e.noiCapAnnualThb / 100).toLocaleString()}`}
               </li>
             ))}
           </ul>
@@ -177,8 +182,11 @@ export default function OnboardingClient({
               post(`/api/admin/units/${unitId}/engagement`, {
                 engagementType: form.get('engagementType'),
                 // Sent only when given: the service requires it for
-                // direct-managed and must be allowed to say so.
-                noiCapAnnualThb: noiCap ? Number(noiCap) : undefined,
+                // direct-managed and must be allowed to say so. The field
+                // asks the admin for an annual baht figure; the API and
+                // every stored engagement are satang (CLAUDE.md money
+                // rules) — convert once, here, on the way out (Q50).
+                noiCapAnnualThb: noiCap ? Math.round(Number(noiCap) * 100) : undefined,
               })
             );
           }}
@@ -202,6 +210,7 @@ export default function OnboardingClient({
               name="noiCap"
               type="number"
               min="0"
+              step="any"
               className="block h-40 w-48 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
             <span className="block text-small text-text-secondary mt-4 max-w-xs">

@@ -233,15 +233,25 @@ export async function checkTm30Escalations(
     include: { booking: true, bookingGuest: true },
   })) as any;
 
+  // Pre-fetch escalation config once per project (avoid N+1)
+  const escalationHoursBefore =
+    ((await getConfig(db, 'compliance.tm30_escalation_hours_before', {
+      projectId,
+    })) as number | undefined) || 6;
+
+  // Pre-fetch ops lead once per project (avoid N+1)
+  const opsLead = await db.roleAssignment.findFirst({
+    where: {
+      projectId,
+      role: 'staff_ops',
+      status: 'active',
+    },
+  });
+
   for (const filing of filings) {
     checkedCount++;
 
-    // Get escalation threshold
-    const escalationHoursBefore =
-      ((await getConfig(db, 'compliance.tm30_escalation_hours_before', {
-        projectId,
-      })) as number | undefined) || 6;
-
+    // Use cached escalation threshold config
     const escalationThreshold = new Date(filing.dueAt.getTime() - escalationHoursBefore * 60 * 60 * 1000);
 
     if (now >= escalationThreshold && !filing.escalatedAt) {
@@ -254,15 +264,7 @@ export async function checkTm30Escalations(
         },
       });
 
-      // Notify admin/ops
-      const opsLead = await db.roleAssignment.findFirst({
-        where: {
-          projectId,
-          role: 'staff_ops',
-          status: 'active',
-        },
-      });
-
+      // Notify admin/ops using cached ops lead
       if (opsLead) {
         await createNotification(db, {
           identityId: opsLead.identityId,

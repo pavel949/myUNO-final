@@ -6,7 +6,9 @@ export interface EmailMessage {
 
 export async function sendEmail(message: EmailMessage): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || 'noreply@myuno.io';
+  // Use Resend's pre-verified test domain if EMAIL_FROM not set (works without domain verification)
+  // Switch to your verified domain once available: hello@yourdomain.com
+  const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
   if (!apiKey) {
     // Development fallback: log that an email would have gone out (no contents to avoid leaking reset links)

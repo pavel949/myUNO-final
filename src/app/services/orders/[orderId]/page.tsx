@@ -130,6 +130,11 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.confirmed_paid': 'Payment received — your order is confirmed. The provider will be in touch.',
     'service-order.detail.confirmed_cash': 'Order placed — pay in cash when the service is delivered. Our staff will record the receipt.',
     'services.detail.back': 'Back to services',
+    'service-order.detail.phone_label': 'Phone',
+    'service-order.detail.email_label': 'Email',
+    'service-order.detail.vetted_badge': 'Vetted',
+    'service-order.detail.receipt_label': 'Receipt',
+    'service-order.detail.refund_accrued': 'Refund accrued',
     'services.order.pay': 'Pay',
     'services.wizard.error_generic': 'Could not place the order. Please try again.',
   });
@@ -332,7 +337,7 @@ export default async function ServiceOrderDetailPage({
                   </div>
                   {payment.receiptNumber && (
                     <p className="text-small text-text-secondary">
-                      Receipt: {payment.receiptNumber}
+                      ${labels['service-order.detail.receipt_label']}: {payment.receiptNumber}
                     </p>
                   )}
                 </div>
@@ -352,7 +357,7 @@ export default async function ServiceOrderDetailPage({
             </p>
             {order.provider.vetted && (
               <span className="inline-flex items-center gap-4 px-8 py-4 bg-status-good bg-opacity-10 text-status-good rounded-full text-small font-semibold">
-                ✓ Vetted
+                {labels['service-order.detail.vetted_badge']}
               </span>
             )}
           </div>
@@ -364,7 +369,7 @@ export default async function ServiceOrderDetailPage({
           <div className="space-y-12">
             {order.provider.phone && (
               <div>
-                <p className="text-small text-text-secondary mb-4">Phone</p>
+                <p className="text-small text-text-secondary mb-4">{labels['service-order.detail.phone_label']}</p>
                 <a
                   href={`tel:${order.provider.phone}`}
                   className="text-body text-brand-deep hover:underline"
@@ -375,7 +380,7 @@ export default async function ServiceOrderDetailPage({
             )}
             {order.provider.email && (
               <div>
-                <p className="text-small text-text-secondary mb-4">Email</p>
+                <p className="text-small text-text-secondary mb-4">{labels['service-order.detail.email_label']}</p>
                 <a
                   href={`mailto:${order.provider.email}`}
                   className="text-body text-brand-deep hover:underline"
@@ -445,7 +450,7 @@ export default async function ServiceOrderDetailPage({
             )}
             {order.refundAccruedThb > 0 && (
               <p className="text-body text-status-serious mt-8">
-                Refund accrued: ฿{baht(order.refundAccruedThb)}
+                {labels['service-order.detail.refund_accrued']}: ฿{baht(order.refundAccruedThb)}
               </p>
             )}
           </div>

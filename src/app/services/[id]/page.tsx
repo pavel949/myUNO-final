@@ -71,6 +71,7 @@ export default async function ServiceDetailPage({
     'services.detail.advance_notice_none': 'None',
     'services.detail.about_provider': 'About the provider',
     'services.detail.order': 'Order this service',
+    'services.detail.photos': 'Photos',
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
     'services.wizard.when': 'When',
@@ -202,7 +203,7 @@ export default async function ServiceDetailPage({
         {/* Gallery */}
         {service.mediaUrls.length > 0 && (
           <div className="mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">Photos</h2>
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
               {service.mediaUrls.map((url, idx) => (
                 <Image

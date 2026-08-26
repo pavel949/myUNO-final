@@ -47,6 +47,7 @@ export default async function OwnerPage() {
     'owner.sections.tickets': 'Open Tickets',
     'owner.stay.book_action': 'Stay in My Unit',
     'owner.stay.error': 'Failed to book owner stay',
+    'owner.alert.action_view': 'View',
   });
 
   return <OwnerDashboardClient {...data} labels={labels} />;

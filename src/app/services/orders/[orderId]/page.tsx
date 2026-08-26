@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
@@ -101,6 +102,10 @@ export default async function ServiceOrderDetailPage({
   }
 
   const labels = await getLabels({
+    'service-order.breadcrumb_home': 'Home',
+    'service-order.breadcrumb_services': 'Services',
+    'service-order.breadcrumb_orders': 'Orders',
+    'service-order.breadcrumb_detail': 'Order Details',
     'service-order.detail.title': 'Service Order',
     'service-order.detail.order_id': 'Order ID',
     'service-order.detail.status': 'Status',
@@ -173,8 +178,17 @@ export default async function ServiceOrderDetailPage({
     order.payments.some((p) => p.status === 'completed') ||
     order.status === 'fulfilled';
 
+  const breadcrumbs = [
+    { label: labels['service-order.breadcrumb_home'], href: '/' },
+    { label: labels['service-order.breadcrumb_services'], href: '/services' },
+    { label: labels['service-order.breadcrumb_orders'], href: '/services/orders' },
+    { label: labels['service-order.breadcrumb_detail'], current: true },
+  ];
+
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-background">
+      <Breadcrumb items={breadcrumbs} />
+      <div className="p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         {confirmationNote && (
           <div className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-24">
@@ -472,6 +486,7 @@ export default async function ServiceOrderDetailPage({
             />
           )}
         </div>
+      </div>
       </div>
     </main>
   );

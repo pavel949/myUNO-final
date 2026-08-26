@@ -5,6 +5,7 @@ export interface FooterLabels {
   home: string;
   residences: string;
   trust: string;
+  about: string;
   audienceColumn: string;
   owners: string;
   guests: string;
@@ -32,6 +33,7 @@ export function Footer({ labels }: FooterProps) {
         { href: '/', label: labels.home },
         { href: '/projects', label: labels.residences },
         { href: '/trust', label: labels.trust },
+        { href: '/about', label: labels.about },
       ],
     },
     {

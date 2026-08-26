@@ -242,7 +242,6 @@ const API_DEBT = new Set([
   '/api/provider/me',
   '/api/provider/orders',
   '/api/service-orders/[id]/detail',
-  '/api/service-orders/[id]/rate',
   '/api/services/[id]',
   '/api/tm30/[id]/passport',
   '/api/tm30/queue',

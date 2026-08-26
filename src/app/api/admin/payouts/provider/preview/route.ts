@@ -14,8 +14,14 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser()
-    if (!currentUser || !currentUser.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 })
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    if (!currentUser.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 401 })
     }
 
     const { searchParams } = new URL(req.url)

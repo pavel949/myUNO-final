@@ -11,9 +11,15 @@ export async function GET(
   try {
     const currentUser = await getCurrentUser()
 
-    if (!currentUser || !currentUser.isAdmin) {
+    if (!currentUser) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    if (!currentUser.isAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
         { status: 401 }
       )
     }

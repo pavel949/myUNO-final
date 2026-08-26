@@ -877,7 +877,7 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Official concierge services for myUNO properties',
         contactEmail: 'services@myuno.io',
         contactPhone: '+66954243332',
-        status: 'vetted',
+        status: 'active',
         vetted_at: new Date(),
         categoryKeys: ['transfer', 'cleaning', 'chef', 'flowers'],
       },
@@ -911,7 +911,6 @@ export async function seedConfig(db: PrismaClient) {
         basePriceThb: 800,
         durationMin: 30,
         advanceNoticeHours: 4,
-        status: 'active' as const,
       },
       {
         provider_id: provider.id,
@@ -928,7 +927,6 @@ export async function seedConfig(db: PrismaClient) {
         basePriceThb: 1200,
         durationMin: 120,
         advanceNoticeHours: 24,
-        status: 'active' as const,
       },
       {
         provider_id: provider.id,
@@ -941,11 +939,10 @@ export async function seedConfig(db: PrismaClient) {
         descriptionEn: 'On-demand private chef for in-unit dining',
         descriptionRu: 'Приготовление еды в номере по требованию',
         descriptionTh: 'การประกอบอาหารที่ห้องพัก',
-        priceModel: 'hourly' as const,
+        priceModel: 'per_hour' as const,
         basePriceThb: 500,
         durationMin: 120,
         advanceNoticeHours: 48,
-        status: 'active' as const,
       },
       {
         provider_id: provider.id,
@@ -962,7 +959,6 @@ export async function seedConfig(db: PrismaClient) {
         basePriceThb: 300,
         durationMin: 15,
         advanceNoticeHours: 0,
-        status: 'active' as const,
       },
     ];
 

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
@@ -121,10 +122,12 @@ export default async function ServiceDetailPage({
         {/* Cover image */}
         {service.coverUrl && (
           <div className="mb-24 rounded-lg overflow-hidden bg-surface-paper">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={`/api/uploads/${service.coverUrl}`}
               alt={service.title}
+              width={640}
+              height={384}
+              priority
               className="w-full h-64 md:h-96 object-cover"
             />
           </div>
@@ -202,11 +205,12 @@ export default async function ServiceDetailPage({
             <h2 className="text-heading-2 font-semibold text-text-ink mb-12">Photos</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
               {service.mediaUrls.map((url, idx) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   key={idx}
                   src={`/api/uploads/${url}`}
                   alt={`${service.title} ${idx + 1}`}
+                  width={320}
+                  height={160}
                   className="w-full h-40 object-cover rounded-lg"
                 />
               ))}

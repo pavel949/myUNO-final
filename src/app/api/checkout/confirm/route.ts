@@ -8,12 +8,29 @@ import { track } from '@/modules/analytics';
 
 /**
  * POST /api/checkout/confirm
- * Confirm a pending payment and flip booking to confirmed.
- * Mock provider always confirms; a real provider webhook (signature-verified)
- * replaces this at live-payments go-live.
  *
- * Auth: the caller must be the payer of the session (or an admin) — an
- * unauthenticated confirm would let anyone mark a booking paid.
+ * **Purpose:** Confirm a pending payment and transition booking from pending_payment → confirmed.
+ *
+ * **Flow:**
+ * 1. Guest completes payment in checkout (mock or real provider)
+ * 2. Client calls this endpoint with sessionId
+ * 3. This endpoint:
+ *    a. Verifies the payer (guest or admin only)
+ *    b. Calls financeService.verifyAndConfirm() which:
+ *       - Updates payment.status = 'succeeded'
+ *       - Updates booking.status = 'pending_payment' → 'confirmed'
+ *       - Creates rental_revenue ledger entry (doc 10 §2)
+ *       - Creates booking communication thread
+ *    c. Calls notifyBookingConfirmed() which:
+ *       - Sends in-app notifications to guest and owner
+ *       - Sends confirmation email to guest
+ *
+ * **Auth:** The caller must be the payer of the session (or an admin).
+ * Unauthenticated confirm would allow anyone to mark a booking paid.
+ *
+ * **Idempotency:** Safe to call multiple times; second call returns confirmed=false.
+ * Mock provider always confirms; a real provider webhook (signature-verified)
+ * replaces this at live-payments go-live (Q8).
  */
 export async function POST(req: NextRequest) {
   let sessionId: string | null = null;
@@ -44,10 +61,13 @@ export async function POST(req: NextRequest) {
       throw createPublicError('Access denied.', 403);
     }
 
+    // **CRITICAL: Verify payment and transition booking to confirmed**
     const result = await financeService.verifyAndConfirm(prisma, sessionId);
 
-    // First confirmation of a stay payment → notify guest + owner, email guest
+    // **Notify stakeholders only on first confirmation**
+    // Idempotent: if already confirmed, result.confirmed = false and notification is skipped
     if (result.confirmed && result.payment?.bookingId) {
+      // Send in-app notifications to guest and owner, plus confirmation email to guest
       await notifyBookingConfirmed(prisma, result.payment.bookingId);
     }
 

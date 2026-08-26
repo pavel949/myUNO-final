@@ -1,23 +1,9 @@
-import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import BookingsAdminClient from './bookings-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminBookingsPage() {
-  const bookings = await prisma.booking.findMany({
-    include: {
-      unit: { select: { name: true } },
-      guestIdentity: { select: { id: true, firstName: true, lastName: true, status: true } },
-      payments: {
-        where: { status: 'succeeded', purpose: 'stay' },
-        select: { id: true, method: true, receiptRef: true },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
-
   const labels = await getLabels({
     'admin.bookings.title': 'Bookings',
     'admin.bookings.empty': 'No bookings yet.',
@@ -35,6 +21,9 @@ export default async function AdminBookingsPage() {
     'admin.bookings.guest_note': 'Guest note',
     'admin.bookings.internal_note': 'Internal note',
     'admin.bookings.internal_note_save': 'Save note',
+    'admin.bookings.loading': 'Loading...',
+    'admin.bookings.showing': 'Showing bookings...',
+    'admin.bookings.load_more': 'Load more',
   });
 
   return (
@@ -42,28 +31,7 @@ export default async function AdminBookingsPage() {
       <h1 className="text-heading-1 font-bold text-text-ink mb-24">
         {labels['admin.bookings.title']}
       </h1>
-      <BookingsAdminClient
-        bookings={bookings.map((b) => ({
-          id: b.id,
-          status: b.status,
-          startDate: b.startDate.toISOString(),
-          endDate: b.endDate.toISOString(),
-          // Display boundary: totalThb is satang (THB x 100).
-          totalThb: Math.round(b.totalThb / 100),
-          unitName: b.unit?.name || '—',
-          guestName: b.guestIdentity
-            ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`
-            : '—',
-          paid: b.payments.length > 0,
-          receiptRef: b.payments[0]?.receiptRef || null,
-          guestIdentityId: b.guestIdentity?.id || null,
-          guestInvited: b.guestIdentity?.status === 'invited',
-          channel: b.channel,
-          guestNote: b.guestNote,
-          internalNote: b.internalNote,
-        }))}
-        labels={labels}
-      />
+      <BookingsAdminClient labels={labels} />
     </div>
   );
 }

@@ -7,10 +7,24 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
+ *
+ * **Purpose:** Record a cash payment and transition booking from pending_payment → confirmed.
  * The loop-one primary payment rail (doc 10 §1, flow F-OPS-6): staff record
  * a cash payment against a pending booking — capturing who took the money,
  * when, and the receipt (чек) reference — which flips the booking to
  * confirmed and writes the append-only ledger revenue entry.
+ *
+ * **Flow:**
+ * 1. Staff calls this endpoint with receiptRef (e.g., check number)
+ * 2. This endpoint:
+ *    a. Verifies the booking is pending_payment
+ *    b. Calls financeService.recordCashPayment() which:
+ *       - Creates a Payment record with status='succeeded'
+ *       - Updates booking.status = 'pending_payment' → 'confirmed'
+ *       - Creates rental_revenue ledger entry (doc 10 §2)
+ *    c. Calls notifyBookingConfirmed() which:
+ *       - Sends in-app notifications to guest and owner
+ *       - Sends confirmation email to guest
  *
  * Body: { receiptRef: string }
  * Amount is ALWAYS the booking's server-stored total — never client-sent.

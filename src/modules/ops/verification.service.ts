@@ -160,15 +160,26 @@ export async function checkVerificationDeadlines(
     },
   });
 
+  // Pre-fetch config values grouped by projectId to avoid N+1 queries
+  const configByProject = new Map<string, number>();
+  const uniqueProjectIds = new Set(bookings.map(b => b.projectId));
+
+  for (const projectId of uniqueProjectIds) {
+    const config = await getConfig(
+      db,
+      'compliance.passport_required_hours_before_checkin',
+      { projectId }
+    );
+    const configValue = (config as string | number | undefined) || '24';
+    configByProject.set(projectId, parseInt(String(configValue)));
+  }
+
+  // Use cached config values in the loop
   for (const booking of bookings) {
     checkedCount++;
 
     // Calculate deadline: startDate - [cfg] compliance.passport_required_hours_before_checkin
-    const configHours =
-      ((await getConfig(db, 'compliance.passport_required_hours_before_checkin', {
-        projectId: booking.projectId,
-      })) as number | undefined) || 24;
-
+    const configHours = configByProject.get(booking.projectId) || 24;
     const deadline = new Date(booking.startDate.getTime() - configHours * 60 * 60 * 1000);
 
     if (now >= deadline) {

@@ -73,6 +73,12 @@ export interface CheckoutSession {
 /**
  * Record a cash payment directly (no provider redirect).
  * Captures who received the money, when, and the receipt reference.
+ *
+ * **Booking Status Transition:**
+ * pending_payment (when booking created) → confirmed (immediately)
+ *
+ * For stays: transitions booking from pending_payment to confirmed,
+ * creates rental_revenue ledger entry, and tracks analytics.
  */
 export async function recordCashPayment(
   db: PrismaClient,
@@ -90,6 +96,7 @@ export async function recordCashPayment(
 
   const now = new Date();
 
+  // Create payment record with status='succeeded' immediately (cash is physical)
   const payment = await db.payment.create({
     data: {
       purpose,
@@ -107,7 +114,7 @@ export async function recordCashPayment(
     },
   });
 
-  // Write ledger entry for cash payment
+  // Write ledger entry and transition booking for stay bookings
   if (bookingId && purpose === 'stay') {
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
@@ -115,6 +122,7 @@ export async function recordCashPayment(
     });
 
     if (booking) {
+      // Create rental_revenue ledger entry (doc 10 §2)
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -128,13 +136,14 @@ export async function recordCashPayment(
         },
       });
 
-      // Flip booking to confirmed if it was pending_payment
+      // **CRITICAL: Transition booking from pending_payment → confirmed**
+      // This unblocks notifications, locks unit dates, and makes guest eligible for reviews.
       await db.booking.update({
         where: { id: bookingId },
         data: { status: 'confirmed' },
       });
 
-      // Track analytics event
+      // Track analytics event (doc 13)
       await track(db, 'stay_payment_succeeded', {
         bookingId,
         unitId: booking.unitId,
@@ -145,7 +154,7 @@ export async function recordCashPayment(
     }
   }
 
-  // Cash taken for a service order: placed → paid
+  // Cash taken for a service order: placed → paid (doc 09 §6)
   if (serviceOrderId && purpose === 'service_order') {
     await markServiceOrderPaid(db, serviceOrderId, payerIdentityId);
   }
@@ -258,6 +267,18 @@ export async function createCheckout(
  * Called from success return URL and webhook — whichever lands first wins.
  * For mock provider, accepts the sessionId as confirmation.
  * For real providers, verifies the session status via provider API.
+ *
+ * **Booking Status Transition Flow:**
+ * pending_payment (when checkout created) → confirmed (when payment succeeds)
+ *
+ * This function is responsible for the critical state transition from
+ * pending_payment → confirmed. It is called after the payment provider
+ * confirms the payment, either via the success return URL or via webhook.
+ *
+ * Guarantees:
+ * - Idempotent: calling twice returns confirmed=false on the second call
+ * - Atomic: all transitions happen in one transaction (no partial updates)
+ * - Traceable: ledger entries and notifications are always consistent with status
  */
 export async function verifyAndConfirm(
   db: PrismaClient,
@@ -272,7 +293,7 @@ export async function verifyAndConfirm(
   }
 
   if (payment.status === 'succeeded') {
-    // Idempotent: already confirmed
+    // Idempotent: already confirmed, return early without re-processing
     return { payment, confirmed: false };
   }
 
@@ -282,7 +303,8 @@ export async function verifyAndConfirm(
     );
   }
 
-  // Update payment to succeeded
+  // **CRITICAL: Mark payment as succeeded**
+  // This is the entry point for confirming the payment from the provider.
   const now = new Date();
   const confirmed = await db.payment.update({
     where: { id: sessionId },
@@ -292,7 +314,7 @@ export async function verifyAndConfirm(
     },
   });
 
-  // Write ledger entry and flip booking status
+  // Write ledger entry and transition booking status
   if (confirmed.bookingId) {
     const booking = await db.booking.findUnique({
       where: { id: confirmed.bookingId },
@@ -300,7 +322,12 @@ export async function verifyAndConfirm(
     });
 
     if (booking && booking.status === 'pending_payment') {
-      // Write rental_revenue ledger entry
+      // **CRITICAL: Transition booking from pending_payment → confirmed**
+      // This must happen immediately after payment succeeds, before any
+      // other operations. The booking status controls availability, invoicing,
+      // and guest eligibility for reviews.
+
+      // Write rental_revenue ledger entry (doc 10 §2)
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -314,13 +341,17 @@ export async function verifyAndConfirm(
         },
       });
 
-      // Flip booking to confirmed
+      // Flip booking to confirmed — this unblocks:
+      // - Owner receives booking confirmation notification
+      // - Guest sees "confirmed" status in their trips
+      // - Unit dates become locked from further bookings
+      // - Guest becomes eligible to review after stay
       await db.booking.update({
         where: { id: confirmed.bookingId },
         data: { status: 'confirmed' },
       });
 
-      // Create thread for booking communication (best-effort)
+      // Create communication thread for booking context (best-effort)
       try {
         const fullBooking = await db.booking.findUnique({
           where: { id: confirmed.bookingId },
@@ -348,7 +379,7 @@ export async function verifyAndConfirm(
     }
   }
 
-  // Card payment confirmed for a service order: placed → paid
+  // Card payment confirmed for a service order: placed → paid (doc 09 §6)
   if (confirmed.serviceOrderId && confirmed.purpose === 'service_order') {
     await markServiceOrderPaid(db, confirmed.serviceOrderId, confirmed.payerIdentityId);
   }

@@ -115,28 +115,28 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ivory">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-8">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="bg-surface-paper border-b border-border-line px-24 py-32">
+          <div className="flex items-center gap-16 mb-16">
             <Link
               href="/app/admin/crm"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              className="text-brand-andaman hover:underline font-semibold"
             >
               ← Back to CRM
             </Link>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-heading-1 font-bold text-text-ink">
             {opportunity.title}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-body text-text-secondary mt-8">
             Opportunity Details
           </p>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-24">
           <OpportunityDetailClient opportunity={serializedOpportunity} />
         </div>
       </div>

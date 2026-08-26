@@ -696,7 +696,7 @@ export async function seedConfig(db: PrismaClient) {
       {
         key: 'comms.whatsapp_number',
         valueType: 'string',
-        defaultValue: '',
+        defaultValue: '+66954243332',
         scopeableTo: 'project',
         groupKey: 'notify',
         description:

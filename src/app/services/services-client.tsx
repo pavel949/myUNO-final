@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
@@ -320,10 +321,11 @@ export default function ServicesClient({
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden"
               >
                 {service.coverUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={service.coverUrl}
                     alt={service.title}
+                    width={640}
+                    height={360}
                     className="aspect-video w-full object-cover"
                   />
                 )}

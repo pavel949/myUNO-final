@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -248,10 +249,12 @@ export default function UnitDetailClient({
           <div className="lg:col-span-2">
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden mb-32">
               {unit.images && unit.images.length > 0 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={unit.images[0]}
                   alt={unit.name}
+                  width={640}
+                  height={360}
+                  priority
                   className="aspect-video w-full object-cover"
                 />
               ) : (
@@ -260,11 +263,12 @@ export default function UnitDetailClient({
               {unit.images && unit.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-4 p-8">
                   {unit.images.slice(1, 5).map((image) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       key={image}
                       src={image}
                       alt={unit.name}
+                      width={160}
+                      height={90}
                       className="aspect-video w-full object-cover rounded-sm"
                     />
                   ))}

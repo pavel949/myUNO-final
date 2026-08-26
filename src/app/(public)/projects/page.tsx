@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getLabels } from '@/lib/i18n';
 import { listPublicProjects } from '@/modules/projects';
 import { t } from '@/modules/content';
@@ -88,10 +89,11 @@ export default async function ProjectsHubPage() {
                 className="bg-white border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
               >
                 {project.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={project.coverUrl}
                     alt={project.name}
+                    width={640}
+                    height={224}
                     className="w-full h-56 object-cover"
                   />
                 ) : (

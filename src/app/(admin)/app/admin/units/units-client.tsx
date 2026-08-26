@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
@@ -103,12 +104,12 @@ export default function UnitsAdminClient({
           className="flex flex-col lg:flex-row lg:items-center gap-16 py-16 border-b border-border-line last:border-b-0"
         >
           {unit.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={unit.coverUrl}
               alt={unit.name}
-              className="w-40 h-40 rounded-md object-cover shrink-0"
-              style={{ width: '72px', height: '48px' }}
+              width={72}
+              height={48}
+              className="rounded-md object-cover shrink-0"
             />
           ) : (
             <div

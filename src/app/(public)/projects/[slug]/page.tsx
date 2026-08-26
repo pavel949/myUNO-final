@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
@@ -181,11 +182,12 @@ export default async function ProjectLandingPage({
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory">
         {project.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={project.coverUrl}
             alt={project.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            fill
+            priority
+            className="absolute inset-0 object-cover opacity-30"
           />
         ) : null}
         <div className="relative max-w-4xl mx-auto text-center py-64 px-24">
@@ -330,10 +332,11 @@ export default async function ProjectLandingPage({
                 className="bg-white border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
               >
                 {unit.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={unit.coverUrl}
                     alt={unit.name}
+                    width={640}
+                    height={176}
                     className="w-full h-44 object-cover"
                   />
                 ) : (

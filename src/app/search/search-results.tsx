@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
 
@@ -335,10 +336,11 @@ export default function SearchResults({
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
               >
                 {unit.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={unit.coverUrl}
                     alt={unit.name}
+                    width={640}
+                    height={360}
                     className="aspect-video w-full object-cover"
                   />
                 ) : (

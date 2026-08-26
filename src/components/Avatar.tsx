@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -28,19 +29,27 @@ export const Avatar: React.FC<AvatarProps> = ({
   const sizeClass = sizeClasses[size];
 
   if (src) {
+    const sizeMap: Record<AvatarSize, number> = {
+      xs: 24,
+      sm: 32,
+      md: 40,
+      lg: 64,
+      xl: 80,
+    };
+    const dimension = sizeMap[size];
+
     return (
-      <>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt || 'Avatar'}
-          className={`
-            rounded-full object-cover
-            ${sizeClass}
-            ${className || ''}
-          `}
-        />
-      </>
+      <Image
+        src={src}
+        alt={alt || 'Avatar'}
+        width={dimension}
+        height={dimension}
+        className={`
+          rounded-full object-cover
+          ${sizeClass}
+          ${className || ''}
+        `}
+      />
     );
   }
 

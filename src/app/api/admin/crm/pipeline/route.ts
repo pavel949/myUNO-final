@@ -5,6 +5,38 @@ import prismadb from '@/app/libs/prismadb'
 
 export const dynamic = 'force-dynamic'
 
+export interface GetCrmPipelineResponse {
+  success: boolean
+  pipeline: Array<{
+    stage: CrmLifecycleStage
+    count: number
+    totalValue: number
+    avgValue: number
+    profiles: Array<{
+      id: string
+      email: string | null
+      stage: CrmLifecycleStage
+      leadScore: number | null
+      totalValue: number
+    }>
+  }>
+  totals: {
+    totalProfiles: number
+    totalValue: number
+    stageDistribution: Array<{
+      stage: CrmLifecycleStage
+      count: number
+      percentage: string
+    }>
+  }
+  pagination: {
+    limit: number
+    offset: number
+    total: number
+    hasMore: boolean
+  }
+}
+
 const STAGE_ORDER = [
   'contact',
   'guest',
@@ -32,7 +64,7 @@ interface PipelineStage {
   }>
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const currentUser = await getCurrentUser()
 
@@ -43,7 +75,12 @@ export async function GET() {
       )
     }
 
-    // Fetch all profiles with their related identity and opportunities
+    // Pagination params
+    const url = new URL(req.url)
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
+    const offset = parseInt(url.searchParams.get('offset') || '0')
+
+    // Fetch paginated profiles with their related identity and opportunities
     const profiles = await prismadb.crmProfile.findMany({
       include: {
         identity: {
@@ -58,7 +95,13 @@ export async function GET() {
           },
         },
       },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
     })
+
+    // Get total count for pagination
+    const total = await prismadb.crmProfile.count()
 
     // Group by lifecycle stage and compute metrics
     const stageMap = new Map<CrmLifecycleStage, PipelineStage>()
@@ -119,6 +162,12 @@ export async function GET() {
       success: true,
       pipeline,
       totals,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + limit < total,
+      },
     })
   } catch (error) {
     console.error('[CRM PIPELINE]', error)

@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { createUnit, listUnits } from '@/modules/projects';
+import { createUnit } from '@/modules/projects';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
   try {
     const projectId = req.nextUrl.searchParams.get('projectId');
     const status = req.nextUrl.searchParams.get('status');
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '50'), 100);
+    const offset = parseInt(req.nextUrl.searchParams.get('offset') || '0');
 
     if (!projectId) {
       return NextResponse.json(
@@ -70,8 +72,32 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const unitList = await listUnits(projectId, status as any);
-    return NextResponse.json(unitList);
+    const units = await prisma.unit.findMany({
+      where: {
+        projectId,
+        ...(status && { status: status as any }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    });
+
+    const total = await prisma.unit.count({
+      where: {
+        projectId,
+        ...(status && { status: status as any }),
+      },
+    });
+
+    return NextResponse.json({
+      items: units,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + limit < total,
+      },
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch units' },

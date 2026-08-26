@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -10,7 +10,7 @@ interface AdminBooking {
   startDate: string;
   endDate: string;
   totalThb: number;
-  unitName: string;
+  unitName: string | null;
   guestName: string;
   paid: boolean;
   receiptRef: string | null;
@@ -33,19 +33,74 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function BookingsAdminClient({
-  bookings,
   labels,
 }: {
-  bookings: AdminBooking[];
   labels: Labels;
 }) {
   const router = useRouter();
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
   const [guestLink, setGuestLink] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState<string>('');
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const limit = 50;
+
+  const fetchBookings = async (newOffset: number) => {
+    try {
+      setIsLoadingMore(newOffset > 0);
+      if (newOffset === 0) setLoading(true);
+
+      const response = await fetch(`/api/admin/bookings?limit=${limit}&offset=${newOffset}`);
+      if (!response.ok) {
+        throw new Error(labels['admin.bookings.error_generic']);
+      }
+
+      const data = await response.json();
+      if (newOffset === 0) {
+        setBookings(data.items);
+      } else {
+        setBookings((prev) => [...prev, ...data.items]);
+      }
+      setTotal(data.pagination.total);
+      setHasMore(data.pagination.hasMore);
+      setOffset(newOffset);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+        <p className="text-body text-text-secondary">{labels['admin.bookings.loading'] || 'Loading...'}</p>
+      </div>
+    );
+  }
+
+  if (bookings.length === 0) {
+    return (
+      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+        <p className="text-body text-text-secondary">{labels['admin.bookings.empty']}</p>
+      </div>
+    );
+  }
 
   const channels = [...new Set(bookings.map((b) => b.channel))].sort();
   const visible = channelFilter
@@ -128,6 +183,11 @@ export default function BookingsAdminClient({
 
   return (
     <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+      <div className="mb-16">
+        <p className="text-small text-text-secondary mb-16">
+          {labels['admin.bookings.showing'] || `Showing ${visible.length} of ${total} bookings`}
+        </p>
+      </div>
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
           <p className="text-body text-state-error">{error}</p>
@@ -292,6 +352,18 @@ export default function BookingsAdminClient({
           )}
         </div>
       ))}
+      {hasMore && (
+        <div className="mt-24 flex justify-center">
+          <Button
+            size="md"
+            variant="secondary"
+            onClick={() => fetchBookings(offset + limit)}
+            isLoading={isLoadingMore}
+          >
+            {labels['admin.bookings.load_more'] || 'Load more'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

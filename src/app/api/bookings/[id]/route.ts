@@ -66,6 +66,20 @@ export async function GET(
       }
     }
 
+    // Check if the guest has already reviewed this stay
+    let hasReview = false;
+    if (isGuest) {
+      const existingReview = await prisma.review.findFirst({
+        where: {
+          target_type: 'stay',
+          target_id: params.id,
+          author_identity_id: user.identityId,
+        },
+        select: { id: true },
+      });
+      hasReview = !!existingReview;
+    }
+
     const { unit, ...rest } = booking;
     // Display boundary: totalThb/refundAccruedThb/refundPreviewThb are all
     // computed and stored in satang (THB x 100). Convert to baht only here,
@@ -78,6 +92,7 @@ export async function GET(
       viewer: { isGuest, isOwner: isOwner || user.isAdmin, isStaff },
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),
       refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
+      hasReview,
     });
   } catch (error) {
     return handleError(error);

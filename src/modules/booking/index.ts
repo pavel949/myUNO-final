@@ -58,3 +58,11 @@ export {
   type WriteGuestReviewInput,
   type GuestReputation,
 } from './guest-review.service';
+
+// Stay reviews by guests — the input side of the rating system.
+// Built on the polymorphic Review with target_type 'stay'.
+export {
+  writeStayReview,
+  getStayReviewEligibility,
+  type WriteStayReviewInput,
+} from './stay-review.service';

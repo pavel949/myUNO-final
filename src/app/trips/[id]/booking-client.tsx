@@ -28,6 +28,7 @@ interface BookingDetail {
   viewer: { isGuest: boolean; isOwner: boolean; isStaff: boolean };
   cancellable: boolean;
   refundPreviewThb: number | null;
+  hasReview?: boolean;
 }
 
 type Labels = Record<string, string>;
@@ -70,6 +71,11 @@ export default function BookingDetailClient({
   const [disputeDescription, setDisputeDescription] = useState('');
   const [disputeSent, setDisputeSent] = useState(false);
   const [disputeBusy, setDisputeBusy] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -164,6 +170,35 @@ export default function BookingDetailClient({
       setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleReviewSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setReviewBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/stay-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: reviewRating,
+          comment: reviewComment.trim() || undefined,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['booking.detail.error_generic']);
+      }
+      setReviewSubmitted(true);
+      setReviewOpen(false);
+      setReviewRating(5);
+      setReviewComment('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['booking.detail.review_error']);
+    } finally {
+      setReviewBusy(false);
     }
   };
 
@@ -400,6 +435,93 @@ export default function BookingDetailClient({
             </Button>
           </div>
         )}
+
+        {/* Review */}
+        {booking.viewer.isGuest &&
+          new Date(booking.endDate) < new Date() &&
+          !booking.hasReview && (
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+              <h2 className="text-heading-3 font-bold text-text-ink mb-12">
+                {labels['booking.detail.review_title']}
+              </h2>
+              {reviewSubmitted && !reviewOpen && (
+                <p className="text-body text-state-success mb-12">
+                  {labels['booking.detail.review_submitted']}
+                </p>
+              )}
+              {reviewOpen ? (
+                <form onSubmit={handleReviewSubmit} className="flex flex-col gap-12">
+                  <div className="flex flex-col gap-8">
+                    <label className="text-small text-text-secondary">
+                      {labels['booking.detail.review_rating_label']}
+                    </label>
+                    <div className="flex gap-8">
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <button
+                          key={rating}
+                          type="button"
+                          onClick={() => setReviewRating(rating)}
+                          className={`text-32 transition-colors ${
+                            rating <= reviewRating ? 'text-state-warning' : 'text-text-stone'
+                          } hover:text-state-warning`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <label htmlFor="review-comment" className="text-small text-text-secondary">
+                      {labels['booking.detail.review_comment_label']}
+                    </label>
+                    <textarea
+                      id="review-comment"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      rows={4}
+                      maxLength={500}
+                      placeholder="What did you enjoy most? Any suggestions?"
+                      className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-12">
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      size="sm"
+                      isLoading={reviewBusy}
+                    >
+                      {labels['booking.detail.review_submit']}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setReviewOpen(false);
+                        setReviewRating(5);
+                        setReviewComment('');
+                      }}
+                      disabled={reviewBusy}
+                    >
+                      {labels['booking.detail.review_cancel']}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setReviewOpen(true);
+                    setReviewSubmitted(false);
+                  }}
+                >
+                  {labels['booking.detail.review_button']}
+                </Button>
+              )}
+            </div>
+          )}
 
         {/* Dispute */}
         {booking.viewer.isGuest && (

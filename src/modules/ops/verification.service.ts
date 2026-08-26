@@ -170,7 +170,8 @@ export async function checkVerificationDeadlines(
       'compliance.passport_required_hours_before_checkin',
       { projectId }
     );
-    configByProject.set(projectId, parseInt((config as string | number | undefined) || '24'));
+    const configValue = (config as string | number | undefined) || '24';
+    configByProject.set(projectId, parseInt(String(configValue)));
   }
 
   // Use cached config values in the loop

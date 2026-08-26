@@ -337,7 +337,7 @@ export default async function ServiceOrderDetailPage({
                   </div>
                   {payment.receiptNumber && (
                     <p className="text-small text-text-secondary">
-                      ${labels['service-order.detail.receipt_label']}: {payment.receiptNumber}
+                      {labels['service-order.detail.receipt_label']}: {payment.receiptNumber}
                     </p>
                   )}
                 </div>

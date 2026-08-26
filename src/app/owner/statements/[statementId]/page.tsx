@@ -154,7 +154,7 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'owner.statement.signoff_owner_signed': 'Signed by you',
     'owner.statement.signoff_operator_signed': 'Signed by myUNO',
     'owner.statement.signoff_awaiting_owner': 'Awaiting your signature',
-    'owner.statement.signoff_awaiting_operator': 'Awaiting myUNO's signature',
+    'owner.statement.signoff_awaiting_operator': 'Awaiting myUNO\'s signature',
     'owner.statement.signoff_approved': 'Approved',
     'owner.statement.signoff_error':
       'We could not record your sign-off. Please try again.',

@@ -32,15 +32,20 @@ async function checkContentReviewGate() {
       return true;
     }
 
-    const reviewPending = await prisma.content.findMany({
-      where: { needs_review: true },
+    const reviewPending = await prisma.translation.findMany({
+      where: { status: 'needs_review' },
       select: {
-        key: true,
-        namespace: true,
-        value_en: true,
-        created_at: true,
+        locale: true,
+        value: true,
+        createdAt: true,
+        contentKey: {
+          select: {
+            key: true,
+            namespace: true,
+          },
+        },
       },
-      orderBy: { namespace: 'asc' },
+      orderBy: { contentKey: { namespace: 'asc' } },
     });
 
     if (reviewPending.length === 0) {
@@ -50,21 +55,22 @@ async function checkContentReviewGate() {
 
     // Content pending review found
     const summary = reviewPending.reduce((acc, item) => {
-      acc[item.namespace] = (acc[item.namespace] || 0) + 1;
+      const ns = item.contentKey.namespace;
+      acc[ns] = (acc[ns] || 0) + 1;
       return acc;
     }, {});
 
     console.error('\n❌ DEPLOYMENT BLOCKED: Content pending founder review\n');
-    console.error(`Found ${reviewPending.length} content keys marked needs_review:\n`);
+    console.error(`Found ${reviewPending.length} translations marked needs_review:\n`);
 
     Object.entries(summary).forEach(([ns, count]) => {
-      console.error(`  • ${ns}: ${count} key(s)`);
+      console.error(`  • ${ns}: ${count} translation(s)`);
     });
 
-    console.error('\nReview required keys:');
+    console.error('\nReview required translations:');
     reviewPending.forEach((item) => {
-      const preview = item.value_en?.slice(0, 50).replace(/\n/g, ' ') || '[empty]';
-      console.error(`  - ${item.key} (${item.namespace}): "${preview}..."`);
+      const preview = item.value.slice(0, 50).replace(/\n/g, ' ') || '[empty]';
+      console.error(`  - ${item.contentKey.key} (${item.locale}): "${preview}..."`);
     });
 
     console.error(`\n→ Action: Review and approve in Admin Content Editor`);

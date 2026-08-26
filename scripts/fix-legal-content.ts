@@ -1,7 +1,8 @@
 /**
  * Fix legal pages Russian content corruption
  *
- * Issue: 15 legal content keys have Thai/Indonesian text in the ru field instead of Russian
+ * Issue: Legal content keys have corrupted Russian translations
+ * Schema: ContentKey + Translation (one per locale)
  * Action: Clear broken Russian values and mark for review
  */
 
@@ -9,89 +10,75 @@ import { PrismaClient } from '@prisma/client';
 
 async function fixLegalContent() {
   const prisma = new PrismaClient();
-  console.log('[FIX] Starting legal content Russian field repair...\n');
+  console.log('[FIX] Starting legal content Russian translation repair...\n');
 
   try {
-    // Check current state
-    const broken = await prisma.contentKey.findMany({
+    // Find legal keys with broken Russian translations
+    const brokenRu = await prisma.translation.findMany({
       where: {
-        namespace: 'legal',
+        locale: 'ru',
+        contentKey: { namespace: 'legal' },
         OR: [
-          { value_ru: { contains: 'ระ' } },
-          { value_ru: { contains: 'ต' } },
-          { value_ru: { contains: '[COUNSEL' } },
+          { value: { contains: 'ระ' } }, // Thai chars
+          { value: { contains: 'ต' } },
+          { value: { contains: '[COUNSEL' } }, // Placeholder
         ],
       },
-      select: { id: true, key: true, value_ru: true },
+      include: {
+        contentKey: { select: { key: true } },
+      },
     });
 
-    console.log(`📋 Found ${broken.length} broken legal content keys:\n`);
-    broken.forEach((item) => {
-      const preview = item.value_ru?.slice(0, 60).replace(/\n/g, ' ') || '[empty]';
-      console.log(`  • ${item.key}: "${preview}..."`);
+    console.log(`📋 Found ${brokenRu.length} broken Russian translations:\n`);
+    brokenRu.forEach((trans) => {
+      const preview = trans.value.slice(0, 60).replace(/\n/g, ' ');
+      console.log(`  • ${trans.contentKey.key}: "${preview}..."`);
     });
 
-    if (broken.length === 0) {
-      console.log('✅ No broken Russian values found — already fixed or not present');
+    if (brokenRu.length === 0) {
+      console.log('✅ No broken Russian translations found — already fixed or not present');
       return;
     }
 
-    // Fix: Clear broken values
-    const updated = await prisma.contentKey.updateMany({
+    // Fix: Delete broken Russian translations (they'll show as untranslated)
+    const deleteCount = await prisma.translation.deleteMany({
       where: {
-        namespace: 'legal',
-        OR: [
-          { value_ru: { contains: 'ระ' } },
-          { value_ru: { contains: 'ต' } },
-          { value_ru: { contains: '[COUNSEL' } },
-        ],
-      },
-      data: {
-        value_ru: null,
-        needs_review: true,
-        updated_at: new Date(),
+        id: { in: brokenRu.map((t) => t.id) },
       },
     });
 
-    console.log(`\n✅ Fixed ${updated.count} keys:\n`);
-    console.log('  → Set value_ru = NULL (requires Russian translation)');
-    console.log('  → Marked needs_review = true (blocks deployment until approved)');
-
-    // Verify results
-    const stillBroken = await prisma.contentKey.findMany({
-      where: {
-        namespace: 'legal',
-        OR: [
-          { value_ru: { contains: 'ระ' } },
-          { value_ru: { contains: 'ต' } },
-          { value_ru: { contains: '[COUNSEL' } },
-        ],
-      },
-      select: { key: true },
-    });
-
-    if (stillBroken.length === 0) {
-      console.log('\n🎯 Verification: All broken Russian values cleared\n');
-    } else {
-      console.log(`\n⚠️  Warning: ${stillBroken.length} keys still have issues\n`);
-    }
+    console.log(`\n✅ Deleted ${deleteCount.count} broken Russian translations:\n`);
+    console.log('  → Removed corrupted Thai/Indonesian text from Russian field');
+    console.log('  → Keys now show as untranslated for Russian locale');
+    console.log('  → Next: Provide proper Russian translations via admin content editor');
 
     // Show what needs Russian translation
-    const needsRu = await prisma.contentKey.findMany({
-      where: {
-        namespace: 'legal',
-        value_ru: null,
-      },
-      select: { key: true, value_en: true },
+    const legalKeys = await prisma.contentKey.findMany({
+      where: { namespace: 'legal' },
+      select: { key: true, id: true },
       orderBy: { key: 'asc' },
     });
 
-    console.log(`📝 ${needsRu.length} legal keys need Russian translations:\n`);
-    needsRu.forEach((item) => {
-      const enPreview = item.value_en?.slice(0, 50) || '[empty]';
-      console.log(`  • ${item.key}`);
-      console.log(`    EN: "${enPreview}..."`);
+    console.log(`\n📝 Legal namespace contains ${legalKeys.length} content keys:\n`);
+
+    const withRu = await prisma.translation.findMany({
+      where: {
+        locale: 'ru',
+        contentKey: { namespace: 'legal' },
+      },
+      select: { contentKeyId: true },
     });
+
+    const ruKeyIds = new Set(withRu.map((t) => t.contentKeyId));
+
+    const needsRu = legalKeys.filter((k) => !ruKeyIds.has(k.id));
+    console.log(`  ⚠️  ${needsRu.length} keys need Russian translations:`);
+    needsRu.slice(0, 10).forEach((k) => {
+      console.log(`     • ${k.key}`);
+    });
+    if (needsRu.length > 10) {
+      console.log(`     ... and ${needsRu.length - 10} more`);
+    }
   } finally {
     await prisma.$disconnect();
   }

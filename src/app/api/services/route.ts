@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getRequestLocale } from '@/lib/i18n';
+import { pickLocalizedServiceCopy } from '@/modules/services';
 
 // This GET uses no dynamic request API, so without this Next.js would cache
 // its response at build time — the catalog would never reflect DB changes.
@@ -32,11 +34,12 @@ export async function GET(_req: NextRequest) {
       serviceCount: services.length,
     }).catch(() => null);
 
+    const locale = getRequestLocale();
+
     return NextResponse.json({
       services: services.map((s) => ({
         id: s.id,
-        title: s.title,
-        description: s.description,
+        ...pickLocalizedServiceCopy(s, locale),
         categoryKey: s.categoryKey,
         priceModel: s.priceModel,
         basePriceThb: s.basePriceThb,

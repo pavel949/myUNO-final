@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextResponse } from 'next/server'
-import { getReconciliationData } from '@/app/libs/payouts'
+import { prisma } from '@/lib/prisma'
+import { getReconciliationData } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export async function GET() {
       )
     }
 
-    const data = await getReconciliationData()
+    const data = await getReconciliationData(prisma)
 
     return NextResponse.json(data)
   } catch (error) {

@@ -250,7 +250,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['home.active_orders']}
             </h2>
-            <ActiveOrdersList orders={activeOrders} />
+            <ActiveOrdersList orders={activeOrders} labels={labels} />
           </div>
         )}
 

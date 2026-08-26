@@ -696,7 +696,7 @@ export async function seedConfig(db: PrismaClient) {
       {
         key: 'comms.whatsapp_number',
         valueType: 'string',
-        defaultValue: '',
+        defaultValue: '+66954243332',
         scopeableTo: 'project',
         groupKey: 'notify',
         description:
@@ -864,4 +864,108 @@ export async function seedConfig(db: PrismaClient) {
   });
 
   console.log('✓ Configuration parameters seeded');
+
+  // Seed a vetted service provider with sample services
+  const existingProvider = await db.provider.findFirst({
+    where: { name: 'myUNO Services' },
+  });
+
+  if (!existingProvider) {
+    const provider = await db.provider.create({
+      data: {
+        name: 'myUNO Services',
+        description: 'Official concierge services for myUNO properties',
+        contactEmail: 'services@myuno.io',
+        contactPhone: '+66954243332',
+        status: 'active',
+        vetted_at: new Date(),
+        categoryKeys: ['transfer', 'cleaning', 'chef', 'flowers'],
+      },
+    });
+
+    // Associate provider with the demo project
+    const project = await db.project.findFirst();
+    if (project) {
+      await db.providerProject.create({
+        data: {
+          provider_id: provider.id,
+          project_id: project.id,
+        },
+      });
+    }
+
+    // Seed sample services
+    const services = [
+      {
+        provider_id: provider.id,
+        categoryKey: 'transfer',
+        title: 'Airport Transfer',
+        titleEn: 'Airport Transfer',
+        titleRu: 'Трансфер из аэропорта',
+        titleTh: 'บริการรับ-ส่งสนามบิน',
+        description: 'Door-to-door airport pickup and dropoff',
+        descriptionEn: 'Door-to-door airport pickup and dropoff',
+        descriptionRu: 'Доставка в аэропорт и обратно',
+        descriptionTh: 'บริการรับส่งสนามบิน',
+        priceModel: 'fixed' as const,
+        basePriceThb: 800,
+        durationMin: 30,
+        advanceNoticeHours: 4,
+      },
+      {
+        provider_id: provider.id,
+        categoryKey: 'cleaning',
+        title: 'Extra Cleaning',
+        titleEn: 'Extra Cleaning',
+        titleRu: 'Дополнительная уборка',
+        titleTh: 'บริการทำความสะอาดเพิ่มเติม',
+        description: 'Professional mid-stay or post-stay cleaning',
+        descriptionEn: 'Professional mid-stay or post-stay cleaning',
+        descriptionRu: 'Профессиональная уборка во время проживания или после',
+        descriptionTh: 'บริการทำความสะอาดระหว่างหรือหลังการเข้าพัก',
+        priceModel: 'fixed' as const,
+        basePriceThb: 1200,
+        durationMin: 120,
+        advanceNoticeHours: 24,
+      },
+      {
+        provider_id: provider.id,
+        categoryKey: 'chef',
+        title: 'Private Chef Service',
+        titleEn: 'Private Chef Service',
+        titleRu: 'Услуга частного повара',
+        titleTh: 'บริการเชฟส่วนตัว',
+        description: 'On-demand private chef for in-unit dining',
+        descriptionEn: 'On-demand private chef for in-unit dining',
+        descriptionRu: 'Приготовление еды в номере по требованию',
+        descriptionTh: 'การประกอบอาหารที่ห้องพัก',
+        priceModel: 'per_hour' as const,
+        basePriceThb: 500,
+        durationMin: 120,
+        advanceNoticeHours: 48,
+      },
+      {
+        provider_id: provider.id,
+        categoryKey: 'flowers',
+        title: 'Fresh Flower Delivery',
+        titleEn: 'Fresh Flower Delivery',
+        titleRu: 'Доставка свежих цветов',
+        titleTh: 'บริการส่งดอกไม้สดใหม่',
+        description: 'Daily or as-needed fresh flower arrangements',
+        descriptionEn: 'Daily or as-needed fresh flower arrangements',
+        descriptionRu: 'Ежедневные или по мере необходимости букеты свежих цветов',
+        descriptionTh: 'การจัดดอกไม้สดใหม่ทุกวันหรือตามความต้องการ',
+        priceModel: 'fixed' as const,
+        basePriceThb: 300,
+        durationMin: 15,
+        advanceNoticeHours: 0,
+      },
+    ];
+
+    for (const serviceData of services) {
+      await db.service.create({ data: serviceData });
+    }
+
+    console.log('✓ Service provider and sample services seeded');
+  }
 }

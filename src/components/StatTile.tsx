@@ -4,7 +4,7 @@ import React from 'react';
 
 interface StatTileProps {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   secondary?: string;
   variant?: 'occupancy' | 'revenue' | 'neutral';
   /** Optional delta chip / adornment rendered under the value (doc 06 §3.2). */

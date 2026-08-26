@@ -6,6 +6,7 @@ export { ServiceCategoryIcon, SERVICE_CATEGORY_ICON_NAMES } from './ServiceCateg
 export { Avatar } from './Avatar';
 export { Badge, VerifiedBadge } from './Badge';
 export { EmptyState, LoadingState, ErrorState } from './StateComponents';
+export { MoneyAmount, type MoneyAmountProps } from './MoneyAmount';
 export { RoleContextBanner } from './RoleContextBanner';
 export { LegalEntityBlock } from './LegalEntityBlock';
 

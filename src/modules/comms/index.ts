@@ -73,3 +73,12 @@ export {
   type UpdateAnnouncementInput,
   type PostingAuthority,
 } from './announcement.service';
+
+export {
+  raiseDispute,
+  decideDispute,
+  getOpenDisputes,
+  getDisputeDetail,
+  type RaiseDisputeInput,
+  type DecideDisputeInput,
+} from './dispute.service';

@@ -85,6 +85,12 @@ describe('audit trail', () => {
         entityType: 'ConfigParameter',
         entityId: 'booking.hold_minutes',
       });
+      // logAudit() stamps `at` with the wall clock, which this DB column
+      // stores to millisecond precision — two calls back-to-back can tie,
+      // making "newest first" ordering ambiguous rather than wrong. A real
+      // gap here is what makes the two entries actually ordered, the same
+      // way two real audited actions never land in the same millisecond.
+      await new Promise((resolve) => setTimeout(resolve, 5));
       await logAudit({
         actorIdentityId: actorId,
         action: 'roles:revoke',

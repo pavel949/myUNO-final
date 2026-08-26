@@ -103,3 +103,183 @@ describe('every page can be reached', () => {
     expect(missing, 'a role with no surface is a role nobody can use').toEqual([]);
   });
 });
+
+/**
+ * Every API route must have a caller.
+ *
+ * `reachability.test.ts` above only ever scanned `page.tsx` files — an
+ * exported `route.ts` handler with zero references outside its own file was
+ * invisible to it. That blind spot is exactly how the payout-creation routes
+ * (Q51) shipped tested and correct, with no screen anywhere that called them.
+ * This block closes it the same way: read the sources, don't render them.
+ *
+ * Matching an API route's caller is fuzzier than a page's, because a caller
+ * often builds the URL from parts rather than writing it out:
+ *   - an exact literal, `fetch('/api/notifications')` — the simple case.
+ *   - a superstring, `href={`/api/admin/audit/export${queryString(...)}`}` —
+ *     the route text still appears, just followed by more string, not a
+ *     delimiter; `$` (a continuing template) is accepted as a valid follow-on
+ *     character for exactly this reason.
+ *   - a *dispatcher* call, where the final path segment is chosen at runtime
+ *     rather than written in the URL text — a bare variable
+ *     (`` `/api/bookings/${bookingId}/${path}` `` with `path` set to
+ *     `'checkin'` elsewhere) or a ternary
+ *     (`` `/api/admin/people/${id}/${blocked ? 'block' : 'unblock'}` ``).
+ *     Neither is a literal substring match. A route is credited as wired by
+ *     a dispatcher only when the SAME FILE both calls this exact resource
+ *     prefix as a template ending in an open `/${`, and separately contains
+ *     the route's last segment as a quoted string literal — scoped to one
+ *     file, not the whole codebase, so an unrelated file using a common word
+ *     (`'owner'` as a role name, say) can't hide a truly unwired route. This
+ *     is deliberately the weaker, file-scoped check, not a global grep.
+ */
+
+const API_ROOT = APP_ROOT;
+const apiFiles = files; // already collected from APP_ROOT above
+const apiRouteFiles = apiFiles.filter((path) => path.endsWith('/route.ts'));
+const apiCallerFiles = apiFiles.filter((path) => !path.endsWith('/route.ts'));
+const apiCallerSources = [
+  ...apiCallerFiles.map((path) => readFileSync(path, 'utf8')),
+  ...componentSources,
+];
+
+function routeOfApi(routeFilePath: string): string {
+  const relative = routeFilePath.slice(API_ROOT.length).replace(/\/route\.ts$/, '');
+  return relative === '' ? '/' : relative;
+}
+
+function escapeLiteral(seg: string): string {
+  return seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function apiSegPattern(seg: string): string {
+  return /^\[.+\]$/.test(seg) ? "[^/`\"']+" : escapeLiteral(seg);
+}
+
+function apiSearchPattern(route: string): RegExp {
+  const escaped = route.split('/').map(apiSegPattern).join('/');
+  return new RegExp('[`"\']' + escaped + "[`\"'?#/$]");
+}
+
+function isWiredByDispatcher(route: string): boolean {
+  const segs = route.split('/').filter(Boolean);
+  const lastSeg = segs[segs.length - 1];
+  if (!lastSeg || /^\[.+\]$/.test(lastSeg)) return false;
+  const prefixPattern = segs.slice(0, -1).map(apiSegPattern).join('/');
+  const dispatcherCallPattern = new RegExp('[`"\']/' + prefixPattern + '/\\$\\{');
+  const actionLiteralPattern = new RegExp(`['"\`]${escapeLiteral(lastSeg)}['"\`]`);
+  return apiCallerSources.some(
+    (text) => dispatcherCallPattern.test(text) && actionLiteralPattern.test(text)
+  );
+}
+
+const apiRoutes = apiRouteFiles.map(routeOfApi);
+
+/**
+ * Hit without an in-app link, by design: schedulers, uptime monitors, AI
+ * crawler conventions, and secret-token URLs handed to external tools.
+ */
+const API_ENTRY_POINTS = new Set([
+  '/api/cron/check-tm30-escalations',
+  '/api/cron/check-verification-deadlines',
+  '/api/cron/expire-service-orders',
+  '/api/cron/retention-jobs',
+  '/api/cron/rollup-metrics',
+  '/api/cron/run-all',
+  '/api/cron/sync-ical-imports',
+  '/api/health',
+  '/llms.txt',
+  // Handed to an external calendar app as a secret-token URL (doc: admin
+  // integrations page); never linked from inside the product.
+  '/api/units/[unitId]/ical/export',
+  // Marketing/QR-code entry onto a project's vanity URL, typed or scanned,
+  // the same as the parent /[vanitySlug] route it extends.
+  '/[vanitySlug]/guest',
+]);
+
+/**
+ * Confirmed, real gaps as of this pass (2026-08-25) — not exempted because
+ * they're fine, exempted because fixing ~40 unwired routes is a separate,
+ * much larger initiative than closing this test's blind spot. Tracked in
+ * `docs/open_questions.md` Q59 so the debt isn't lost. Wiring one — deleting
+ * it here — should shrink this list, never grow it back.
+ */
+const API_DEBT = new Set([
+  // Admin screens whose backend exists with no UI caller anywhere (Q59).
+  '/api/admin/compliance-checklists/[id]',
+  '/api/admin/compliance-checklists',
+  '/api/admin/config/[paramKey]/history',
+  '/api/admin/content/export',
+  '/api/admin/content/import',
+  '/api/admin/content/namespace/[namespace]',
+  '/api/admin/contracts',
+  '/api/admin/crm/activities',
+  '/api/admin/crm/pipeline',
+  '/api/admin/crm/profiles/[profileId]/transition',
+  '/api/admin/fees/[contractId]',
+  '/api/admin/fees/calculate',
+  '/api/admin/incidents/[id]',
+  '/api/admin/incidents',
+  '/api/admin/operational-kpis',
+  '/api/admin/organizations/[organizationId]',
+  '/api/admin/organizations',
+  '/api/admin/prospecting/[id]/transition',
+  '/api/admin/prospecting',
+  '/api/admin/reports/attribution',
+  '/api/admin/service-orders',
+  '/api/admin/statements/[statementId]/line-items',
+  '/api/admin/units/[id]/status',
+  // Guest/owner/provider-facing routes with no caller found.
+  '/api/auth/verify-email',
+  '/api/bookings/[id]/record-transfer',
+  '/api/bookings/[id]/transfer-instructions',
+  '/api/bookings/[id]/verify-passports',
+  '/api/content/translate',
+  '/api/crm/dashboard/next-actions',
+  '/api/crm/dashboard/summary',
+  '/api/messages/[messageId]/flag-as-purchase',
+  '/api/profile/export',
+  '/api/provider/me',
+  '/api/provider/orders',
+  '/api/service-orders/[id]/detail',
+  '/api/services/[id]',
+  '/api/tm30/[id]/passport',
+  '/api/tm30/queue',
+  // The client-side analytics beacon (doc 13) — server code calls track()
+  // directly; nothing in the browser ever POSTs here.
+  '/api/track',
+  // SSE endpoints that exist and work, but the frontend they were built for
+  // polls instead (NotificationBell polls /api/notifications every 30s) —
+  // built, never adopted.
+  '/api/notifications/stream',
+  '/api/threads/[threadId]/stream',
+]);
+
+describe('every API route can be reached', () => {
+  it('has a caller, an external trigger, or a tracked reason it does not yet', () => {
+    const orphans = apiRoutes.filter((route) => {
+      if (API_ENTRY_POINTS.has(route) || API_DEBT.has(route)) return false;
+      const pattern = apiSearchPattern(route);
+      if (apiCallerSources.some((source) => pattern.test(source))) return false;
+      return !isWiredByDispatcher(route);
+    });
+
+    expect(
+      orphans,
+      'these API routes exist and nothing calls them; wire them up, add them to API_DEBT with a reason, or delete them'
+    ).toEqual([]);
+  });
+
+  it('does not let API_DEBT quietly collect routes that got wired since', () => {
+    const stillOrphaned = [...API_DEBT].filter((route) => {
+      const pattern = apiSearchPattern(route);
+      if (apiCallerSources.some((source) => pattern.test(source))) return false;
+      return !isWiredByDispatcher(route);
+    });
+
+    expect(
+      stillOrphaned.length,
+      'every API_DEBT entry should still be genuinely unwired — remove any that a later change wired up'
+    ).toBe(API_DEBT.size);
+  });
+});

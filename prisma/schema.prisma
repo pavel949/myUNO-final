@@ -792,6 +792,7 @@ model Identity {
   refundsPaidBy             Refund[]                    @relation("refundPaidBy")
   refundsInitiatedBy        Refund[]                    @relation("refundInitiatedBy")
   ledgerEntriesCreated      LedgerEntry[]               @relation("ledgerEntryCreator")
+  disputesDecided           Dispute[]                   @relation("disputeDecidedBy")
   notifications             Notification[]
   notificationPreferences   NotificationPreference[]
   threadParticipants        ThreadParticipant[]
@@ -1226,6 +1227,7 @@ model Refund {
   paidBackBy    Identity?     @relation(name: "refundPaidBy", fields: [paidBackByIdentityId], references: [id])
   initiatedBy   Identity      @relation(name: "refundInitiatedBy", fields: [initiatedByIdentityId], references: [id])
   ledgerEntries LedgerEntry[]
+  disputes      Dispute[]
 
   @@index([paymentId])
   @@index([status])
@@ -1257,6 +1259,7 @@ model LedgerEntry {
   refund    Refund?         @relation(fields: [refundId], references: [id], onDelete: SetNull)
   statement OwnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
   createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
+  disputes  Dispute[]
 
   @@index([unitId, occurredOn])
   @@index([projectId, occurredOn])
@@ -2003,6 +2006,7 @@ model Ticket {
   thread   Thread?       @relation(fields: [threadId], references: [id], onDelete: SetNull)
   events   TicketEvent[]
   media    TicketMedia[]
+  dispute  Dispute?
 
   @@index([projectId, status])
   @@index([assigneeIdentityId, slaDueAt])
@@ -2041,6 +2045,45 @@ model TicketMedia {
   @@unique([ticketId, mediaId])
   @@index([ticketId, position])
   @@map("ticket_media")
+}
+
+enum DisputeSubjectType {
+  booking
+  service_order
+  statement
+}
+
+// F-DIS-2 (doc 07 §8): "any party from a booking/order/statement raises a
+// dispute" → a Ticket(category=complaint, priority=high) whose thread is the
+// record — but a plain ticket has nowhere to hold *what* is disputed or the
+// money that comes out of the decision. This is that thin wrapper: one row
+// per ticket, naming the disputed record and, once decided, the refund or
+// ledger adjustment the admin's written decision produced. Money always
+// travels through the existing finance seam (refund / ledgerEntry); this
+// table only references the result, never creates money itself.
+model Dispute {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ticketId    String             @unique @map("ticket_id")
+  subjectType DisputeSubjectType @map("subject_type")
+  subjectId   String             @map("subject_id")
+
+  resolutionAmountThb Int?      @map("resolution_amount_thb")
+  refundId            String?   @map("refund_id")
+  ledgerEntryId       String?   @map("ledger_entry_id")
+  decidedByIdentityId String?   @map("decided_by_identity_id")
+  decidedAt           DateTime? @map("decided_at")
+
+  // Relations
+  ticket      Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  refund      Refund?      @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  ledgerEntry LedgerEntry? @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
+  decidedBy   Identity?    @relation(name: "disputeDecidedBy", fields: [decidedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([subjectType, subjectId])
+  @@map("dispute")
 }
 
 model Announcement {

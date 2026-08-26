@@ -1,4 +1,4 @@
-import { PrismaClient, Unit } from '@prisma/client';
+import { PrismaClient, Unit, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
 import {
   getConfig,
   type SeasonPeriod,
@@ -411,4 +411,218 @@ export async function checkAvailability(
   }
 
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Manual availability & pricing overrides (doc 07 F-OPS-4, Q53)
+//
+// `BlockedDate` was, until now, written only by the automatic iCal-import job
+// (`src/modules/integrations/ical-import.ts`, reason `ota_import`) and
+// `PricingRule` had no writer anywhere. Staff had no way to take a unit
+// offline for maintenance/an owner stay, or to set a one-off rate for a
+// specific booking window — the flow doc 07 F-OPS-4 describes.
+//
+// Both writers land in the exact rows `resolveNightlyPrice` and
+// `checkAvailability` above already read, and the ones `booking.service.ts`'s
+// `claimDates` transaction already refuses bookings against — so a manual
+// override takes effect on the very next availability check or booking
+// attempt, through the one resolution path every caller shares. No second
+// code path, no "guest can still book a maintenance week" gap.
+// ---------------------------------------------------------------------------
+
+/** Reasons a human can select. `ota_import` is written only by the iCal job. */
+export type ManualBlockReason = Exclude<BlockedDateReason, 'ota_import'>;
+
+export interface CreateManualBlockInput {
+  unitId: string;
+  startDate: Date;
+  endDate: Date;
+  reason: ManualBlockReason;
+  note?: string;
+  createdByIdentityId: string;
+}
+
+/**
+ * List a unit's blocked date ranges (manual and OTA-imported alike),
+ * most recent first.
+ */
+export async function getUnitBlockedDates(
+  db: PrismaClient,
+  unitId: string
+): Promise<BlockedDate[]> {
+  return db.blockedDate.findMany({
+    where: { unitId },
+    orderBy: { startDate: 'desc' },
+  });
+}
+
+/**
+ * Manually block a unit's availability for a date range (maintenance, an
+ * owner stay, or another operational reason — doc 07 F-OPS-4).
+ *
+ * Takes the same per-unit advisory lock `claimDates` (booking.service.ts) and
+ * `importICalEvents` (ical-import.ts) take, and checks for the same active
+ * bookings `findBlockingConflict` does: a block never silently overrides a
+ * guest who is already confirmed or mid-checkout on those dates — the
+ * platform calendar is the single record, so the conflict is surfaced to the
+ * caller (`BOOKING_CONFLICT`) rather than the guest's stay quietly vanishing
+ * under a maintenance block.
+ */
+export async function createManualBlock(
+  db: PrismaClient,
+  input: CreateManualBlockInput
+): Promise<BlockedDate> {
+  const { unitId, startDate, endDate, reason, note, createdByIdentityId } = input;
+
+  if (!(startDate < endDate)) {
+    throw new Error('endDate must be after startDate');
+  }
+
+  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { id: true } });
+  if (!unit) {
+    throw new Error(`Unit ${unitId} not found`);
+  }
+
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+
+    const now = new Date();
+    const conflicting = await tx.booking.findFirst({
+      where: {
+        unitId,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: now } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (conflicting) {
+      const err = new Error(
+        'Cannot block these dates — an active booking overlaps them. Cancel or move the booking first.'
+      );
+      (err as Error & { code?: string; bookingId?: string }).code = 'BOOKING_CONFLICT';
+      (err as Error & { code?: string; bookingId?: string }).bookingId = conflicting.id;
+      throw err;
+    }
+
+    return tx.blockedDate.create({
+      data: {
+        unitId,
+        startDate,
+        endDate,
+        reason,
+        note: note || null,
+        createdByIdentityId,
+      },
+    });
+  });
+}
+
+/**
+ * Remove a blocked date range (frees the dates immediately — the next
+ * availability check reads through to no block, per `checkAvailability`).
+ */
+export async function removeBlockedDate(
+  db: PrismaClient,
+  blockedDateId: string
+): Promise<BlockedDate> {
+  const block = await db.blockedDate.findUnique({ where: { id: blockedDateId } });
+  if (!block) {
+    throw new Error(`BlockedDate ${blockedDateId} not found`);
+  }
+  await db.blockedDate.delete({ where: { id: blockedDateId } });
+  return block;
+}
+
+export interface CreatePricingRuleInput {
+  unitId: string;
+  startDate: Date;
+  endDate: Date;
+  /** Satang (THB × 100) — every amount in the platform is (CLAUDE.md money rules). */
+  nightlyThb: number;
+  label?: string;
+  minNightsOverride?: number;
+}
+
+/** List a unit's per-night price overrides, most recent first. */
+export async function getUnitPricingRules(
+  db: PrismaClient,
+  unitId: string
+): Promise<PricingRule[]> {
+  return db.pricingRule.findMany({
+    where: { unitId },
+    orderBy: { startDate: 'desc' },
+  });
+}
+
+/**
+ * Set a one-off nightly rate for a unit over a date range (doc 07 F-OPS-4) —
+ * the manual, per-unit override `resolveNightlyPrice` above checks *first*,
+ * ahead of the season/category configuration path (doc 04 §4).
+ *
+ * Refuses a range that overlaps an existing rule for the same unit:
+ * `resolveNightlyPrice`'s `pricingRule.findFirst` has no `orderBy`, so two
+ * overlapping rules would resolve to whichever Postgres happens to return
+ * first — an ambiguity worth refusing at write time rather than leaving as a
+ * silent race for guests to hit.
+ */
+export async function createPricingRule(
+  db: PrismaClient,
+  input: CreatePricingRuleInput
+): Promise<PricingRule> {
+  const { unitId, startDate, endDate, nightlyThb, label, minNightsOverride } = input;
+
+  if (!(startDate < endDate)) {
+    throw new Error('endDate must be after startDate');
+  }
+  if (!Number.isInteger(nightlyThb) || nightlyThb <= 0) {
+    throw new Error('nightlyThb must be a positive integer number of satang');
+  }
+  if (minNightsOverride !== undefined && (!Number.isInteger(minNightsOverride) || minNightsOverride <= 0)) {
+    throw new Error('minNightsOverride must be a positive integer');
+  }
+
+  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { id: true } });
+  if (!unit) {
+    throw new Error(`Unit ${unitId} not found`);
+  }
+
+  const overlapping = await db.pricingRule.findFirst({
+    where: {
+      unitId,
+      startDate: { lt: endDate },
+      endDate: { gt: startDate },
+    },
+    select: { id: true },
+  });
+  if (overlapping) {
+    throw new Error('A pricing rule already covers part of this date range for this unit');
+  }
+
+  return db.pricingRule.create({
+    data: {
+      unitId,
+      startDate,
+      endDate,
+      nightlyThb,
+      label: label || null,
+      minNightsOverride: minNightsOverride ?? null,
+    },
+  });
+}
+
+/** Remove a price override (the night falls back through the doc 04 §4 chain). */
+export async function removePricingRule(
+  db: PrismaClient,
+  pricingRuleId: string
+): Promise<PricingRule> {
+  const rule = await db.pricingRule.findUnique({ where: { id: pricingRuleId } });
+  if (!rule) {
+    throw new Error(`PricingRule ${pricingRuleId} not found`);
+  }
+  await db.pricingRule.delete({ where: { id: pricingRuleId } });
+  return rule;
 }

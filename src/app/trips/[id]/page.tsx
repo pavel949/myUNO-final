@@ -23,6 +23,14 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.receipt': 'Receipt',
     'booking.detail.home_space': 'Open my home space',
     'booking.detail.passports': 'Pre-arrival: add passports',
+    'booking.detail.review_title': 'Share your experience',
+    'booking.detail.review_button': 'Write a review',
+    'booking.detail.review_rating_label': 'How would you rate your stay?',
+    'booking.detail.review_comment_label': 'Tell us more (optional)',
+    'booking.detail.review_submit': 'Submit review',
+    'booking.detail.review_cancel': 'Cancel',
+    'booking.detail.review_submitted': 'Thank you! Your review has been published.',
+    'booking.detail.review_error': 'We could not save your review. Please try again.',
     'booking.detail.cancel_title': 'Cancel this trip',
     'booking.detail.cancel_button': 'Cancel booking',
     'booking.detail.cancel_confirm':
@@ -44,6 +52,13 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.status.cancelled': 'Cancelled',
     'booking.detail.status.declined': 'Declined',
     'booking.detail.status.expired': 'Expired',
+    'booking.detail.dispute_title': 'Dispute this charge',
+    'booking.detail.dispute_open': 'Raise a dispute',
+    'booking.detail.dispute_title_field': 'Subject',
+    'booking.detail.dispute_description_field': 'What happened',
+    'booking.detail.dispute_submit': 'Submit dispute',
+    'booking.detail.dispute_cancel': 'Cancel',
+    'booking.detail.dispute_sent': 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
   });
 
   return (

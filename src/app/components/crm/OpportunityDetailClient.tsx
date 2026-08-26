@@ -49,14 +49,14 @@ interface OpportunityDetailClientProps {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  new: 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200',
-  qualified: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  discovery: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-  proposal: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  negotiation: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  nurture: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  won: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  lost: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  new: 'bg-surface-paper text-text-ink',
+  qualified: 'bg-state-success-soft text-state-success',
+  discovery: 'bg-state-info-soft text-state-info',
+  proposal: 'bg-state-warning-soft text-state-warning',
+  negotiation: 'bg-state-warning-soft text-state-warning',
+  nurture: 'bg-state-info-soft text-state-info',
+  won: 'bg-state-success-soft text-state-success',
+  lost: 'bg-state-error-soft text-state-error',
 };
 
 const STAGE_LABELS: Record<string, string> = {
@@ -106,19 +106,19 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
   const weightedValue = ((opportunity.valueThb ?? 0) * opportunity.probability) / 100;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-24">
       {/* Main Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
         {/* Contact Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
             Contact
           </h2>
           {opportunity.contact ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
+            <div className="space-y-16">
+              <div className="flex items-center gap-12">
                 {opportunity.contact.avatar ? (
-                  <div className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden">
+                  <div className="relative w-40 h-40 flex-shrink-0 rounded-full overflow-hidden">
                     <Image
                       src={opportunity.contact.avatar}
                       alt={opportunity.contact.name}
@@ -127,60 +127,60 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0 flex items-center justify-center">
-                    <span className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                  <div className="w-40 h-40 rounded-full bg-border-line flex-shrink-0 flex items-center justify-center">
+                    <span className="text-heading-2 font-bold text-text-stone">
                       {opportunity.contact.name?.[0]?.toUpperCase() || '?'}
                     </span>
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">
+                  <p className="text-body font-semibold text-text-ink">
                     {opportunity.contact.name}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-small text-text-secondary">
                     {opportunity.contact.email}
                   </p>
                 </div>
               </div>
               {opportunity.contact.phone && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Phone:</span> {opportunity.contact.phone}
+                <div className="text-small text-text-secondary">
+                  <span className="font-semibold text-text-ink">Phone:</span> {opportunity.contact.phone}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-gray-600 dark:text-gray-400">No contact assigned</p>
+            <p className="text-body text-text-secondary">No contact assigned</p>
           )}
         </div>
 
         {/* Stage & Status Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
             Pipeline Status
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-16">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Stage</p>
-              <span className={`inline-block px-3 py-1 rounded-full font-medium ${STAGE_COLORS[opportunity.stage]}`}>
+              <p className="text-small text-text-secondary mb-8">Stage</p>
+              <span className={`inline-block px-12 py-4 rounded-full font-semibold text-small ${STAGE_COLORS[opportunity.stage]}`}>
                 {STAGE_LABELS[opportunity.stage]}
               </span>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Days in Stage</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-8">Days in Stage</p>
+              <p className="text-heading-2 font-semibold text-text-ink">
                 {daysInStage}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Probability</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+              <p className="text-small text-text-secondary mb-8">Probability</p>
+              <div className="flex items-center gap-8">
+                <div className="flex-1 bg-border-line h-8 rounded-full overflow-hidden">
                   <div
-                    className="bg-blue-500 h-full rounded-full"
+                    className="bg-brand-andaman h-full rounded-full"
                     style={{ width: `${opportunity.probability}%` }}
                   />
                 </div>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-body font-semibold text-text-ink">
                   {opportunity.probability}%
                 </span>
               </div>
@@ -189,20 +189,20 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
         </div>
 
         {/* Value Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
             Deal Value
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-16">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expected Value</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">Expected Value</p>
+              <p className="text-heading-1 font-semibold text-text-ink">
                 {formatCurrency(opportunity.valueThb ?? 0)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Weighted Value</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <p className="text-small text-text-secondary mb-4">Weighted Value</p>
+              <p className="text-heading-2 font-semibold text-brand-andaman">
                 {formatCurrency(weightedValue)}
               </p>
             </div>
@@ -211,71 +211,71 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
       </div>
 
       {/* Details Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+        <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           Opportunity Details
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Source</p>
-            <p className="text-gray-900 dark:text-white">
+            <p className="text-small text-text-secondary mb-4">Source</p>
+            <p className="text-body text-text-ink">
               {opportunity.source || 'Not specified'}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Type</p>
-            <p className="text-gray-900 dark:text-white capitalize">
+            <p className="text-small text-text-secondary mb-4">Type</p>
+            <p className="text-body text-text-ink capitalize">
               {opportunity.type}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expected Close Date</p>
-            <p className="text-gray-900 dark:text-white">
+            <p className="text-small text-text-secondary mb-4">Expected Close Date</p>
+            <p className="text-body text-text-ink">
               {formatDate(opportunity.expectedCloseAt)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Next Action Date</p>
-            <p className="text-gray-900 dark:text-white">
+            <p className="text-small text-text-secondary mb-4">Next Action Date</p>
+            <p className="text-body text-text-ink">
               {formatDate(opportunity.nextActionAt)}
             </p>
           </div>
           {opportunity.project && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Project</p>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">Project</p>
+              <p className="text-body text-text-ink">
                 {opportunity.project.name}
               </p>
             </div>
           )}
           {opportunity.unit && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Unit</p>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">Unit</p>
+              <p className="text-body text-text-ink">
                 {opportunity.unit.name}
               </p>
             </div>
           )}
           {opportunity.assignedTo && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Assigned To</p>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">Assigned To</p>
+              <p className="text-body text-text-ink">
                 {opportunity.assignedTo.name}
               </p>
             </div>
           )}
           {opportunity.stage === 'lost' && opportunity.lostReason && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Loss Reason</p>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">Loss Reason</p>
+              <p className="text-body text-text-ink">
                 {opportunity.lostReason}
               </p>
             </div>
           )}
           {opportunity.externalPartner && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">External Partner</p>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-small text-text-secondary mb-4">External Partner</p>
+              <p className="text-body text-text-ink">
                 {opportunity.externalPartner}
               </p>
             </div>
@@ -285,28 +285,28 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
 
       {/* Activities Section */}
       {opportunity.activities && opportunity.activities.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
             Recent Activities
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-16">
             {opportunity.activities.map((activity) => (
               <div
                 key={activity.id}
-                className="border-l-4 border-blue-500 pl-4 py-2"
+                className="border-l-4 border-brand-andaman pl-16 py-8"
               >
-                <div className="flex items-baseline justify-between mb-1">
-                  <span className="font-medium text-gray-900 dark:text-white capitalize">
+                <div className="flex items-baseline justify-between mb-4">
+                  <span className="text-body font-semibold text-text-ink capitalize">
                     {activity.type}
                   </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-small text-text-secondary">
                     {formatDate(activity.createdAt)}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <p className="text-small text-text-secondary mb-4">
                   {activity.subject}
                 </p>
-                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+                <div className="flex items-center gap-16 text-small text-text-stone">
                   {activity.identity && (
                     <span>By {activity.identity.name}</span>
                   )}

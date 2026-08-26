@@ -35,4 +35,48 @@ describe('ActiveOrdersList money display', () => {
     render(<ActiveOrdersList orders={[]} />);
     expect(screen.getByText('No active orders')).toBeInTheDocument();
   });
+
+  it('shows rate button for fulfilled orders without ratings', () => {
+    render(
+      <ActiveOrdersList
+        orders={[
+          {
+            id: 'order-1',
+            serviceId: 'svc-1',
+            serviceName: 'Laundry service',
+            status: 'fulfilled',
+            totalThb: 150000, // ฿1,500
+            scheduledStart: '2026-09-01T10:00:00.000Z',
+            scheduledEnd: '2026-09-01T11:00:00.000Z',
+            hasRating: false,
+          },
+        ]}
+      />
+    );
+    expect(screen.getByText('Rate this service')).toBeInTheDocument();
+  });
+
+  it('shows star rating for orders that have been rated', () => {
+    render(
+      <ActiveOrdersList
+        orders={[
+          {
+            id: 'order-1',
+            serviceId: 'svc-1',
+            serviceName: 'Spa service',
+            status: 'fulfilled',
+            totalThb: 200000, // ฿2,000
+            scheduledStart: '2026-09-01T10:00:00.000Z',
+            scheduledEnd: '2026-09-01T11:00:00.000Z',
+            hasRating: true,
+            rating: 4,
+          },
+        ]}
+      />
+    );
+    expect(screen.getByText('You rated:')).toBeInTheDocument();
+    // Should show 4 filled stars and 1 empty star
+    const stars = screen.getByText('★★★★☆');
+    expect(stars).toBeInTheDocument();
+  });
 });

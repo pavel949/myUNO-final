@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getRequestLocale } from '@/lib/i18n';
+import { pickLocalizedServiceCopy } from '@/modules/services';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,10 +55,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       categoryKey: service.categoryKey,
     }).catch(() => null);
 
+    const locale = getRequestLocale();
+
     return NextResponse.json({
       id: service.id,
-      title: service.title,
-      description: service.description,
+      ...pickLocalizedServiceCopy(service, locale),
       titleRu: service.titleRu,
       titleEn: service.titleEn,
       titleTh: service.titleTh,

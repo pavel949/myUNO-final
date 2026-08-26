@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import { reconcilePayout } from '@/app/libs/payouts'
+import { prisma } from '@/lib/prisma'
+import { reconcilePayout } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,7 @@ export async function PUT(
     const payoutId = params.payoutId
 
     // Mark payout as reconciled
-    const payout = await reconcilePayout(payoutId)
+    const payout = await reconcilePayout(prisma, payoutId)
 
     return NextResponse.json({
       success: true,

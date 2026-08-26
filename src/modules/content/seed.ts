@@ -3,8 +3,8 @@
  * This is called during database initialization
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ensureContentKey, setTranslation } from './content.service';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { Locale } from './types';
 
 interface KeyDef {
@@ -1645,6 +1645,13 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'booking.detail.status.cancelled', namespace: 'booking', description: 'Status label: cancelled', en: 'Cancelled', ru: 'Отменено', status: NR },
   { key: 'booking.detail.status.declined', namespace: 'booking', description: 'Status label: declined', en: 'Declined', ru: 'Отклонено', status: NR },
   { key: 'booking.detail.status.expired', namespace: 'booking', description: 'Status label: expired', en: 'Expired', ru: 'Истекло', status: NR },
+  { key: 'booking.detail.dispute_title', namespace: 'booking', description: 'Dispute section heading', en: 'Dispute this charge', ru: 'Оспорить платёж', status: NR },
+  { key: 'booking.detail.dispute_open', namespace: 'booking', description: 'Open the dispute form button', en: 'Raise a dispute', ru: 'Подать спор', status: NR },
+  { key: 'booking.detail.dispute_title_field', namespace: 'booking', description: 'Dispute form: subject field label', en: 'Subject', ru: 'Тема', status: NR },
+  { key: 'booking.detail.dispute_description_field', namespace: 'booking', description: 'Dispute form: description field label', en: 'What happened', ru: 'Что произошло', status: NR },
+  { key: 'booking.detail.dispute_submit', namespace: 'booking', description: 'Dispute form: submit button', en: 'Submit dispute', ru: 'Отправить спор', status: NR },
+  { key: 'booking.detail.dispute_cancel', namespace: 'booking', description: 'Dispute form: cancel button', en: 'Cancel', ru: 'Отмена', status: NR },
+  { key: 'booking.detail.dispute_sent', namespace: 'booking', description: 'Dispute form: submitted confirmation', en: 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.', ru: 'Спор отправлен нашей команде — вы можете отслеживать его статус в заявке, которая была открыта.', status: NR },
 
   // Mock checkout page
   { key: 'payments.checkout.title', namespace: 'payments', description: 'Checkout page title', en: 'Complete payment', ru: 'Завершите оплату', status: NR },
@@ -1851,6 +1858,14 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.statement.signoff_awaiting_operator', namespace: 'owner', description: 'Statement sign-off: waiting on myUNO', en: 'Awaiting myUNO’s signature', ru: 'Ожидает подписи myUNO', th: 'รอลายเซ็นของ myUNO', status: NR },
   { key: 'owner.statement.signoff_approved', namespace: 'owner', description: 'Statement sign-off: both signatures recorded', en: 'Approved', ru: 'Утверждён', th: 'อนุมัติแล้ว', status: NR },
   { key: 'owner.statement.signoff_error', namespace: 'owner', description: 'Statement sign-off failed', en: 'We could not record your sign-off. Please try again.', ru: 'Не удалось записать вашу подпись. Попробуйте ещё раз.', th: 'เราไม่สามารถบันทึกการลงนามของคุณได้ กรุณาลองใหม่อีกครั้ง', status: NR },
+  { key: 'owner.statement.dispute_title', namespace: 'owner', description: 'Statement detail: dispute section heading', en: 'Dispute this statement', ru: 'Оспорить отчёт', status: NR },
+  { key: 'owner.statement.dispute_open', namespace: 'owner', description: 'Statement detail: open the dispute form button', en: 'Raise a dispute', ru: 'Подать спор', status: NR },
+  { key: 'owner.statement.dispute_title_field', namespace: 'owner', description: 'Statement detail: dispute subject field', en: 'Subject', ru: 'Тема', status: NR },
+  { key: 'owner.statement.dispute_description_field', namespace: 'owner', description: 'Statement detail: dispute description field', en: 'What looks wrong', ru: 'Что вызывает вопросы', status: NR },
+  { key: 'owner.statement.dispute_submit', namespace: 'owner', description: 'Statement detail: dispute submit button', en: 'Submit dispute', ru: 'Отправить спор', status: NR },
+  { key: 'owner.statement.dispute_cancel', namespace: 'owner', description: 'Statement detail: dispute cancel button', en: 'Cancel', ru: 'Отмена', status: NR },
+  { key: 'owner.statement.dispute_sent', namespace: 'owner', description: 'Statement detail: dispute submitted confirmation', en: 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.', ru: 'Спор отправлен нашей команде — вы можете отслеживать его статус в заявке, которая была открыта.', status: NR },
+  { key: 'owner.statement.dispute_error', namespace: 'owner', description: 'Statement detail: dispute submit failure', en: 'That did not work. Please try again.', ru: 'Не получилось. Попробуйте ещё раз.', status: NR },
   { key: 'owner.statement.signoff_already_signed', namespace: 'owner', description: 'Owner already signed this statement', en: 'You have already signed this statement.', ru: 'Вы уже подписали этот отчёт.', th: 'คุณได้ลงนามในรายงานนี้แล้ว', status: NR },
   { key: 'owner.statement.signoff_timeout', namespace: 'owner', description: 'Sign-off request timed out', en: 'The request took too long. Please try again.', ru: 'Запрос занял слишком много времени. Попробуйте ещё раз.', th: 'คำขอใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง', status: NR },
 
@@ -1866,6 +1881,48 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'finance.reconciliation.empty', namespace: 'finance', description: 'Reconciliation board empty state', en: 'No reconciliation data', ru: 'Нет данных согласования', th: 'ไม่มีข้อมูลการสมานฉันท์', status: NR },
   { key: 'finance.reconciliation.all_clear', namespace: 'finance', description: 'Reconciliation board all clear title', en: 'All Clear', ru: 'Всё в порядке', th: 'ทั้งหมดชัดเจน', status: NR },
   { key: 'finance.reconciliation.no_issues', namespace: 'finance', description: 'Reconciliation board all clear description', en: 'No unmatched payments, failed refunds, or pending payouts.', ru: 'Нет непопадающих платежей, неудачных возвратов или ожидающих платежей.', th: 'ไม่มีการชำระเงินที่ไม่ตรงกัน การคืนเงินที่ล้มเหลว หรือการชำระเงินที่อยู่ในสถานะรอดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.loading', namespace: 'finance', description: 'Reconciliation board loading state', en: 'Loading...', ru: 'Загрузка...', th: 'กำลังโหลด...', status: NR },
+  { key: 'finance.reconciliation.error_title', namespace: 'finance', description: 'Reconciliation board error state heading', en: 'Error', ru: 'Ошибка', th: 'ข้อผิดพลาด', status: NR },
+  { key: 'finance.reconciliation.no_data', namespace: 'finance', description: 'Reconciliation board: no data returned', en: 'No reconciliation data available.', ru: 'Данные для согласования отсутствуют.', th: 'ไม่มีข้อมูลการสมานฉันท์ให้ใช้งาน', status: NR },
+  { key: 'finance.reconciliation.col_amount', namespace: 'finance', description: 'Reconciliation table column: amount', en: 'Amount', ru: 'Сумма', th: 'จำนวนเงิน', status: NR },
+  { key: 'finance.reconciliation.col_method', namespace: 'finance', description: 'Reconciliation table column: payment method', en: 'Method', ru: 'Способ', th: 'วิธีการ', status: NR },
+  { key: 'finance.reconciliation.col_purpose', namespace: 'finance', description: 'Reconciliation table column: payment purpose', en: 'Purpose', ru: 'Назначение', th: 'วัตถุประสงค์', status: NR },
+  { key: 'finance.reconciliation.col_payer', namespace: 'finance', description: 'Reconciliation table column: payer', en: 'Payer', ru: 'Плательщик', th: 'ผู้ชำระเงิน', status: NR },
+  { key: 'finance.reconciliation.col_status', namespace: 'finance', description: 'Reconciliation table column: status', en: 'Status', ru: 'Статус', th: 'สถานะ', status: NR },
+  { key: 'finance.reconciliation.col_created', namespace: 'finance', description: 'Reconciliation table column: created date', en: 'Created', ru: 'Создано', th: 'สร้างเมื่อ', status: NR },
+  { key: 'finance.reconciliation.col_type', namespace: 'finance', description: 'Reconciliation table column: payout type', en: 'Type', ru: 'Тип', th: 'ประเภท', status: NR },
+  { key: 'finance.reconciliation.col_reference', namespace: 'finance', description: 'Reconciliation table column: payout reference', en: 'Reference', ru: 'Референс', th: 'อ้างอิง', status: NR },
+  { key: 'finance.reconciliation.col_executed', namespace: 'finance', description: 'Reconciliation table column: payout executed date', en: 'Executed', ru: 'Исполнено', th: 'ดำเนินการแล้ว', status: NR },
+  { key: 'finance.reconciliation.col_recorded_by', namespace: 'finance', description: 'Reconciliation table column: who recorded the payout', en: 'Recorded By', ru: 'Записал', th: 'บันทึกโดย', status: NR },
+  { key: 'finance.reconciliation.col_action', namespace: 'finance', description: 'Reconciliation table column: row action', en: 'Action', ru: 'Действие', th: 'การดำเนินการ', status: NR },
+  { key: 'finance.reconciliation.refund_amount', namespace: 'finance', description: 'Failed refund card label: refund amount', en: 'Refund Amount', ru: 'Сумма возврата', th: 'จำนวนเงินคืน', status: NR },
+  { key: 'finance.reconciliation.reason', namespace: 'finance', description: 'Failed refund card label: reason', en: 'Reason', ru: 'Причина', th: 'เหตุผล', status: NR },
+  { key: 'finance.reconciliation.initiated_by', namespace: 'finance', description: 'Failed refund card label: who initiated the refund', en: 'Initiated By', ru: 'Инициировал', th: 'เริ่มต้นโดย', status: NR },
+
+  // Manual availability & pricing overrides (doc 07 F-OPS-4, Q53) — shared by
+  // the staff ops calendar and the admin unit workspace.
+  { key: 'staff.calendar.title', namespace: 'staff', description: 'Availability/pricing panel heading', en: 'Availability & pricing', ru: 'Доступность и цены', status: NR },
+  { key: 'staff.calendar.intro', namespace: 'staff', description: 'Availability/pricing panel intro', en: 'Block this unit for maintenance or an owner stay, or set a one-off rate for a date range.', ru: 'Заблокируйте юнит на техобслуживание или проживание владельца, либо установите разовый тариф на период.', status: NR },
+  { key: 'staff.calendar.loading', namespace: 'staff', description: 'Availability/pricing panel loading state', en: 'Loading…', ru: 'Загрузка…', status: NR },
+  { key: 'staff.calendar.error_generic', namespace: 'staff', description: 'Availability/pricing panel generic error', en: 'Something went wrong. Please try again.', ru: 'Что-то пошло не так. Попробуйте ещё раз.', status: NR },
+  { key: 'staff.calendar.saving', namespace: 'staff', description: 'Availability/pricing panel saving/busy state', en: 'Saving…', ru: 'Сохранение…', status: NR },
+  { key: 'staff.calendar.blocks_title', namespace: 'staff', description: 'Blocked dates section heading', en: 'Blocked dates', ru: 'Заблокированные даты', status: NR },
+  { key: 'staff.calendar.blocks_none', namespace: 'staff', description: 'No blocked dates empty state', en: 'No blocked dates.', ru: 'Заблокированных дат нет.', status: NR },
+  { key: 'staff.calendar.reason.maintenance', namespace: 'staff', description: 'Block reason: maintenance', en: 'Maintenance', ru: 'Техобслуживание', status: NR },
+  { key: 'staff.calendar.reason.owner_hold', namespace: 'staff', description: 'Block reason: owner hold', en: 'Owner hold', ru: 'Резерв владельца', status: NR },
+  { key: 'staff.calendar.reason.other', namespace: 'staff', description: 'Block reason: other', en: 'Other', ru: 'Другое', status: NR },
+  { key: 'staff.calendar.start_date', namespace: 'staff', description: 'Start date field label', en: 'Start date', ru: 'Дата начала', status: NR },
+  { key: 'staff.calendar.end_date', namespace: 'staff', description: 'End date field label', en: 'End date', ru: 'Дата окончания', status: NR },
+  { key: 'staff.calendar.reason_field', namespace: 'staff', description: 'Reason select field label', en: 'Reason', ru: 'Причина', status: NR },
+  { key: 'staff.calendar.note', namespace: 'staff', description: 'Optional note field label', en: 'Note (optional)', ru: 'Заметка (необязательно)', status: NR },
+  { key: 'staff.calendar.add_block', namespace: 'staff', description: 'Add blocked-date button', en: 'Block these dates', ru: 'Заблокировать даты', status: NR },
+  { key: 'staff.calendar.remove', namespace: 'staff', description: 'Remove a block/rule button', en: 'Remove', ru: 'Удалить', status: NR },
+  { key: 'staff.calendar.pricing_title', namespace: 'staff', description: 'Pricing overrides section heading', en: 'Pricing overrides', ru: 'Переопределение цен', status: NR },
+  { key: 'staff.calendar.pricing_none', namespace: 'staff', description: 'No pricing overrides empty state', en: 'No pricing overrides.', ru: 'Переопределений цен нет.', status: NR },
+  { key: 'staff.calendar.per_night', namespace: 'staff', description: 'Suffix after a nightly rate figure', en: '/night', ru: '/ночь', status: NR },
+  { key: 'staff.calendar.nightly_rate', namespace: 'staff', description: 'Nightly rate field label', en: 'Nightly rate (THB)', ru: 'Цена за ночь (THB)', status: NR },
+  { key: 'staff.calendar.label', namespace: 'staff', description: 'Optional label field for a pricing rule', en: 'Label (optional)', ru: 'Название (необязательно)', status: NR },
+  { key: 'staff.calendar.add_rule', namespace: 'staff', description: 'Add pricing rule button', en: 'Add rate', ru: 'Добавить тариф', status: NR },
 
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
@@ -2202,6 +2259,28 @@ const ADMIN_S3_KEYS: KeyDef[] = [
   { key: 'admin.services.status_rejected', namespace: 'admin', description: 'Service status: rejected', en: 'Rejected', ru: 'Отклонено', status: NR },
   { key: 'admin.services.reason_placeholder', namespace: 'admin', description: 'Input placeholder: rejection reason', en: 'Rejection reason', ru: 'Причина отклонения', status: NR },
   { key: 'admin.services.error_generic', namespace: 'admin', description: 'Service action error', en: 'Action failed. Please try again.', ru: 'Действие не выполнено. Попробуйте ещё раз.', status: NR },
+  { key: 'admin.services.create_title', namespace: 'admin', description: 'Admin create-service form heading', en: 'Add a service', ru: 'Добавить услугу', status: NR },
+  { key: 'admin.services.create_subtitle', namespace: 'admin', description: 'Admin create-service form explanation', en: 'Add a service directly on behalf of an existing, vetted provider. It goes live immediately — no separate approval step.', ru: 'Добавьте услугу от имени уже проверенного поставщика. Она сразу становится доступной — без отдельного одобрения.', status: NR },
+  { key: 'admin.services.field_provider', namespace: 'admin', description: 'Admin create-service: provider field', en: 'Provider', ru: 'Поставщик', status: NR },
+  { key: 'admin.services.provider_empty', namespace: 'admin', description: 'Admin create-service: no active providers', en: 'No active, vetted providers yet.', ru: 'Активных проверенных поставщиков пока нет.', status: NR },
+  { key: 'admin.services.field_category', namespace: 'admin', description: 'Admin create-service: category field', en: 'Category', ru: 'Категория', status: NR },
+  { key: 'admin.services.field_title_en', namespace: 'admin', description: 'Admin create-service: English title field', en: 'Title (English)', ru: 'Название (английский)', status: NR },
+  { key: 'admin.services.field_title_ru', namespace: 'admin', description: 'Admin create-service: Russian title field', en: 'Title (Russian)', ru: 'Название (русский)', status: NR },
+  { key: 'admin.services.field_title_th', namespace: 'admin', description: 'Admin create-service: Thai title field', en: 'Title (Thai, optional)', ru: 'Название (тайский, необязательно)', status: NR },
+  { key: 'admin.services.field_description_en', namespace: 'admin', description: 'Admin create-service: English description field', en: 'Description (English)', ru: 'Описание (английский)', status: NR },
+  { key: 'admin.services.field_description_ru', namespace: 'admin', description: 'Admin create-service: Russian description field', en: 'Description (Russian)', ru: 'Описание (русский)', status: NR },
+  { key: 'admin.services.field_description_th', namespace: 'admin', description: 'Admin create-service: Thai description field', en: 'Description (Thai, optional)', ru: 'Описание (тайский, необязательно)', status: NR },
+  { key: 'admin.services.field_price_model', namespace: 'admin', description: 'Admin create-service: price model field', en: 'Price model', ru: 'Модель цены', status: NR },
+  { key: 'admin.services.field_price', namespace: 'admin', description: 'Admin create-service: price field', en: 'Price (THB)', ru: 'Цена (THB)', status: NR },
+  { key: 'admin.services.field_duration', namespace: 'admin', description: 'Admin create-service: duration field', en: 'Duration (minutes)', ru: 'Длительность (минуты)', status: NR },
+  { key: 'admin.services.field_notice', namespace: 'admin', description: 'Admin create-service: advance notice field', en: 'Advance notice (hours)', ru: 'Уведомление заранее (часы)', status: NR },
+  { key: 'admin.services.price_model.fixed', namespace: 'admin', description: 'Admin create-service: price model fixed', en: 'Fixed price', ru: 'Фиксированная цена', status: NR },
+  { key: 'admin.services.price_model.per_hour', namespace: 'admin', description: 'Admin create-service: price model per hour', en: 'Per hour', ru: 'За час', status: NR },
+  { key: 'admin.services.price_model.per_person', namespace: 'admin', description: 'Admin create-service: price model per person', en: 'Per person', ru: 'За человека', status: NR },
+  { key: 'admin.services.price_model.quote', namespace: 'admin', description: 'Admin create-service: price model quote', en: 'Individual quote', ru: 'Индивидуальный расчёт', status: NR },
+  { key: 'admin.services.create_submit', namespace: 'admin', description: 'Admin create-service: submit button', en: 'Add service', ru: 'Добавить услугу', status: NR },
+  { key: 'admin.services.create_working', namespace: 'admin', description: 'Admin create-service: submitting state', en: 'Adding…', ru: 'Добавление…', status: NR },
+  { key: 'admin.services.create_success', namespace: 'admin', description: 'Admin create-service: success message', en: 'Service added and live on the marketplace.', ru: 'Услуга добавлена и доступна на маркетплейсе.', status: NR },
 ];
 
 const SERVICE_DETAIL_KEYS: KeyDef[] = [
@@ -2674,6 +2753,87 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.claims.window_closed', namespace: 'admin', description: 'Damage claims: approval window has passed', en: 'The window to approve this has passed. It can still be rejected, which releases the guest’s money.', ru: 'Срок одобрения истёк. Претензию всё ещё можно отклонить — деньги гостя будут разблокированы.', status: NR },
   { key: 'admin.claims.window_note', namespace: 'admin', description: 'Damage claims: why rejection never expires', en: 'Rejecting is never time-barred: a guest’s money must never sit held because nobody got to the claim.', ru: 'Отклонение доступно всегда: деньги гостя не должны оставаться заблокированными из-за того, что до претензии не дошли руки.', status: NR },
   { key: 'admin.claims.error', namespace: 'admin', description: 'Damage claims: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
+
+  // Disputes (doc 07 F-DIS-2, Q52)
+  { key: 'admin.nav.disputes', namespace: 'admin', description: 'Admin nav: disputes', en: 'Disputes', ru: 'Споры', status: NR },
+  { key: 'admin.disputes.title', namespace: 'admin', description: 'Disputes: page title', en: 'Disputes', ru: 'Споры', status: NR },
+  { key: 'admin.disputes.subtitle', namespace: 'admin', description: 'Disputes: what this page is', en: 'Open disputes, most recently raised first. A decision closes the underlying ticket and, if you enter an amount, moves the money through a refund or a ledger adjustment.', ru: 'Открытые споры, недавние сверху. Решение закрывает связанную заявку и, если указана сумма, проводит деньги через возврат или корректировку в реестре.', status: NR },
+  { key: 'admin.disputes.empty', namespace: 'admin', description: 'Disputes: nothing open', en: 'No open disputes.', ru: 'Открытых споров нет.', status: NR },
+  { key: 'admin.disputes.subject.booking', namespace: 'admin', description: 'Disputes: subject type booking', en: 'Booking', ru: 'Бронирование', status: NR },
+  { key: 'admin.disputes.subject.service_order', namespace: 'admin', description: 'Disputes: subject type service order', en: 'Service order', ru: 'Заказ услуги', status: NR },
+  { key: 'admin.disputes.subject.statement', namespace: 'admin', description: 'Disputes: subject type statement', en: 'Statement', ru: 'Отчёт', status: NR },
+  { key: 'admin.disputes.raised_by', namespace: 'admin', description: 'Disputes: who raised it', en: 'Raised by', ru: 'Подал', status: NR },
+  { key: 'admin.disputes.unit', namespace: 'admin', description: 'Disputes: unit label', en: 'Unit', ru: 'Объект', status: NR },
+  { key: 'admin.disputes.raised_at', namespace: 'admin', description: 'Disputes: when raised', en: 'Raised', ru: 'Подан', status: NR },
+  { key: 'admin.disputes.description', namespace: 'admin', description: 'Disputes: description label', en: 'Description', ru: 'Описание', status: NR },
+  { key: 'admin.disputes.amount', namespace: 'admin', description: 'Disputes: resolution amount field', en: 'Resolution amount (THB, optional)', ru: 'Сумма решения (THB, необязательно)', status: NR },
+  { key: 'admin.disputes.amount_hint', namespace: 'admin', description: 'Disputes: amount field hint', en: 'Leave blank if no money is owed.', ru: 'Оставьте пустым, если деньги не причитаются.', status: NR },
+  { key: 'admin.disputes.note', namespace: 'admin', description: 'Disputes: decision note field', en: 'Decision (the raiser may be shown this)', ru: 'Решение (может быть показано подавшему)', status: NR },
+  { key: 'admin.disputes.note_required', namespace: 'admin', description: 'Disputes: note is required to decide', en: 'A decision note is required.', ru: 'Необходимо указать решение.', status: NR },
+  { key: 'admin.disputes.decide', namespace: 'admin', description: 'Disputes: record decision action', en: 'Record decision', ru: 'Зафиксировать решение', status: NR },
+  { key: 'admin.disputes.working', namespace: 'admin', description: 'Disputes: working state', en: 'Working…', ru: 'Выполняем…', status: NR },
+  { key: 'admin.disputes.error', namespace: 'admin', description: 'Disputes: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
+
+  // Payouts (Q51)
+  { key: 'admin.payouts.title', namespace: 'admin', description: 'Payouts: page title', en: 'Payouts', ru: 'Выплаты', status: NR },
+  { key: 'admin.payouts.empty', namespace: 'admin', description: 'Payouts: none recorded', en: 'No payouts recorded.', ru: 'Выплат не зафиксировано.', status: NR },
+  { key: 'admin.payouts.reference', namespace: 'admin', description: 'Payouts: reference column', en: 'Reference', ru: 'Референс', status: NR },
+  { key: 'admin.payouts.amount', namespace: 'admin', description: 'Payouts: amount column', en: 'Amount (฿)', ru: 'Сумма (฿)', status: NR },
+  { key: 'admin.payouts.status', namespace: 'admin', description: 'Payouts: status column', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'admin.payouts.recorded_by', namespace: 'admin', description: 'Payouts: recorded-by column', en: 'Recorded By', ru: 'Кем зафиксировано', status: NR },
+  { key: 'admin.payouts.record_title', namespace: 'admin', description: 'Payouts: record-a-payout section heading', en: 'Record a payout', ru: 'Зафиксировать выплату', status: NR },
+  { key: 'admin.payouts.owner_tab', namespace: 'admin', description: 'Payouts: owner form heading', en: 'Owner payout', ru: 'Выплата владельцу', status: NR },
+  { key: 'admin.payouts.provider_tab', namespace: 'admin', description: 'Payouts: provider form heading', en: 'Provider payout', ru: 'Выплата поставщику', status: NR },
+  { key: 'admin.payouts.owner_statement', namespace: 'admin', description: 'Payouts: statement select label', en: 'Statement', ru: 'Отчёт', status: NR },
+  { key: 'admin.payouts.period_to', namespace: 'admin', description: 'Payouts: date-range separator word', en: 'to', ru: 'по', status: NR },
+  { key: 'admin.payouts.owner_statement_empty', namespace: 'admin', description: 'Payouts: no eligible statement', en: 'No signed-off statement is waiting for a payout.', ru: 'Нет подписанных отчётов, ожидающих выплаты.', status: NR },
+  { key: 'admin.payouts.owner_share', namespace: 'admin', description: 'Payouts: locked owner-share amount label', en: 'Owner share (locked to the statement)', ru: 'Доля владельца (зафиксирована в отчёте)', status: NR },
+  { key: 'admin.payouts.provider_field', namespace: 'admin', description: 'Payouts: provider select label', en: 'Provider', ru: 'Поставщик', status: NR },
+  { key: 'admin.payouts.provider_empty', namespace: 'admin', description: 'Payouts: no active providers', en: 'No active providers.', ru: 'Активных поставщиков нет.', status: NR },
+  { key: 'admin.payouts.period_start', namespace: 'admin', description: 'Payouts: period start field', en: 'Period start', ru: 'Начало периода', status: NR },
+  { key: 'admin.payouts.period_end', namespace: 'admin', description: 'Payouts: period end field', en: 'Period end', ru: 'Конец периода', status: NR },
+  { key: 'admin.payouts.compute', namespace: 'admin', description: 'Payouts: compute remittance button', en: 'Compute remittance', ru: 'Рассчитать перевод', status: NR },
+  { key: 'admin.payouts.computing', namespace: 'admin', description: 'Payouts: computing state', en: 'Computing…', ru: 'Расчёт…', status: NR },
+  { key: 'admin.payouts.net_amount', namespace: 'admin', description: 'Payouts: net remittance figure label', en: 'Net remittance', ru: 'Итого к переводу', status: NR },
+  { key: 'admin.payouts.fulfilled_total', namespace: 'admin', description: 'Payouts: fulfilled-orders total label', en: 'Fulfilled orders total', ru: 'Итого по выполненным заказам', status: NR },
+  { key: 'admin.payouts.take_rate', namespace: 'admin', description: 'Payouts: take-rate figure label', en: 'myUNO take rate', ru: 'Комиссия myUNO', status: NR },
+  { key: 'admin.payouts.refunds_clawed_back', namespace: 'admin', description: 'Payouts: refunds-clawed-back figure label', en: 'Refunds clawed back', ru: 'Удержано по возвратам', status: NR },
+  { key: 'admin.payouts.reference_field', namespace: 'admin', description: 'Payouts: reference input label', en: 'Reference (bank transfer ref, receipt no.)', ru: 'Референс (номер перевода, чека)', status: NR },
+  { key: 'admin.payouts.executed_on', namespace: 'admin', description: 'Payouts: paid-on date field', en: 'Paid on', ru: 'Дата выплаты', status: NR },
+  { key: 'admin.payouts.submit', namespace: 'admin', description: 'Payouts: submit button', en: 'Record payout', ru: 'Зафиксировать выплату', status: NR },
+  { key: 'admin.payouts.working', namespace: 'admin', description: 'Payouts: submitting state', en: 'Recording…', ru: 'Фиксация…', status: NR },
+  { key: 'admin.payouts.success', namespace: 'admin', description: 'Payouts: success message', en: 'Payout recorded.', ru: 'Выплата зафиксирована.', status: NR },
+  { key: 'admin.payouts.error', namespace: 'admin', description: 'Payouts: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
+  { key: 'admin.payouts.compute_first', namespace: 'admin', description: 'Payouts: hint to compute before submitting', en: 'Compute the remittance before recording.', ru: 'Сначала рассчитайте сумму перевода.', status: NR },
+
+  // Statements — generate + operator sign-off (Q60 follow-up)
+  { key: 'admin.statements.title', namespace: 'admin', description: 'Statements: page title', en: 'Monthly Statements', ru: 'Ежемесячные отчёты', status: NR },
+  { key: 'admin.statements.empty', namespace: 'admin', description: 'Statements: none yet', en: 'No statements yet.', ru: 'Отчётов пока нет.', status: NR },
+  { key: 'admin.statements.period', namespace: 'admin', description: 'Statements: period column', en: 'Period', ru: 'Период', status: NR },
+  { key: 'admin.statements.owner', namespace: 'admin', description: 'Statements: owner column', en: 'Owner', ru: 'Владелец', status: NR },
+  { key: 'admin.statements.unit', namespace: 'admin', description: 'Statements: unit column', en: 'Unit', ru: 'Объект', status: NR },
+  { key: 'admin.statements.net', namespace: 'admin', description: 'Statements: net amount column', en: 'Net (฿)', ru: 'Нетто (฿)', status: NR },
+  { key: 'admin.statements.status', namespace: 'admin', description: 'Statements: status column', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'admin.statements.action', namespace: 'admin', description: 'Statements: action column', en: 'Action', ru: 'Действие', status: NR },
+  { key: 'admin.statements.status.draft', namespace: 'admin', description: 'Statement status: draft', en: 'Draft', ru: 'Черновик', status: NR },
+  { key: 'admin.statements.status.published', namespace: 'admin', description: 'Statement status: published', en: 'Published', ru: 'Опубликован', status: NR },
+  { key: 'admin.statements.status.superseded', namespace: 'admin', description: 'Statement status: superseded', en: 'Superseded', ru: 'Заменён', status: NR },
+  { key: 'admin.statements.status.pending_owner_review', namespace: 'admin', description: 'Statement status: pending owner review', en: 'Awaiting owner', ru: 'Ожидает владельца', status: NR },
+  { key: 'admin.statements.status.signed_off', namespace: 'admin', description: 'Statement status: signed off', en: 'Signed off', ru: 'Подписан', status: NR },
+  { key: 'admin.statements.status.distributed', namespace: 'admin', description: 'Statement status: distributed', en: 'Distributed', ru: 'Выплачен', status: NR },
+  { key: 'admin.statements.sign_off', namespace: 'admin', description: 'Statements: operator sign-off button', en: 'Sign off (operator)', ru: 'Подписать (оператор)', status: NR },
+  { key: 'admin.statements.signed_off_note', namespace: 'admin', description: 'Statements: already signed note', en: 'Signed by you', ru: 'Подписано вами', status: NR },
+  { key: 'admin.statements.working', namespace: 'admin', description: 'Statements: signing in progress', en: 'Signing…', ru: 'Подписание…', status: NR },
+  { key: 'admin.statements.error', namespace: 'admin', description: 'Statements: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
+  { key: 'admin.statements.generate_title', namespace: 'admin', description: 'Statements: generate form heading', en: 'Generate a statement', ru: 'Сформировать отчёт', status: NR },
+  { key: 'admin.statements.generate_subtitle', namespace: 'admin', description: 'Statements: generate form explanation', en: 'Computes the period’s figures from bookings and the ledger — nothing here is guessed or hand-entered.', ru: 'Показатели периода рассчитываются по бронированиям и реестру — ничего не вводится вручную и не додумывается.', status: NR },
+  { key: 'admin.statements.field_unit', namespace: 'admin', description: 'Statements: unit field', en: 'Unit', ru: 'Объект', status: NR },
+  { key: 'admin.statements.unit_empty', namespace: 'admin', description: 'Statements: no unit with an active engagement', en: 'No unit has an active engagement yet.', ru: 'Ни у одного объекта пока нет активного договора управления.', status: NR },
+  { key: 'admin.statements.field_period_start', namespace: 'admin', description: 'Statements: period start field', en: 'Period start', ru: 'Начало периода', status: NR },
+  { key: 'admin.statements.field_period_end', namespace: 'admin', description: 'Statements: period end field', en: 'Period end', ru: 'Конец периода', status: NR },
+  { key: 'admin.statements.generate_submit', namespace: 'admin', description: 'Statements: generate submit button', en: 'Generate', ru: 'Сформировать', status: NR },
+  { key: 'admin.statements.generate_working', namespace: 'admin', description: 'Statements: generating state', en: 'Generating…', ru: 'Формирование…', status: NR },
+  { key: 'admin.statements.generate_success', namespace: 'admin', description: 'Statements: generate success message', en: 'Statement generated as a draft.', ru: 'Отчёт сформирован как черновик.', status: NR },
   { key: 'staff.ops.claims_link', namespace: 'staff', description: 'Ops board: link to damage claims', en: 'Damage claims', ru: 'Претензии по ущербу', status: NR },
   { key: 'staff.claims.title', namespace: 'staff', description: 'File a claim: page title', en: 'Damage claims', ru: 'Претензии по ущербу', status: NR },
   { key: 'staff.claims.subtitle', namespace: 'staff', description: 'File a claim: what this page is', en: 'Stays that have just checked out. Raise a claim while the window is open — after that the guest’s deposit is released automatically.', ru: 'Недавно выехавшие гости. Претензию можно подать, пока открыт срок, — затем депозит автоматически разблокируется.', status: NR },
@@ -2857,29 +3017,66 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  for (const keyDef of [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS]) {
-    // Ensure content key exists
-    await ensureContentKey(
-      db,
-      keyDef.key,
-      keyDef.namespace,
-      keyDef.description,
-      keyDef.supportsRich || false
-    );
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS];
 
-    // Set translations for all provided locales
-    const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
+  // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
+  // one-row-per-await version (ensureContentKey + setTranslation's own
+  // findUnique-then-upsert) ran several thousand sequential round trips per
+  // call — 10-15s on a loaded runner, enough to blow past vitest's 20s
+  // hookTimeout in every beforeEach that reseeds content. A handful of
+  // multi-row upserts do the same work in well under a second.
+  const CHUNK = 300;
+
+  for (let i = 0; i < allKeys.length; i += CHUNK) {
+    const rows = allKeys.slice(i, i + CHUNK).map(
+      (k) =>
+        Prisma.sql`(${randomUUID()}, ${k.key}, ${k.namespace}, ${k.description}, ${k.supportsRich ?? false}, now(), now())`
+    );
+    await db.$executeRaw`
+      INSERT INTO content_key (id, key, namespace, description, supports_rich, created_at, updated_at)
+      VALUES ${Prisma.join(rows)}
+      ON CONFLICT (key) DO UPDATE SET
+        namespace = EXCLUDED.namespace,
+        description = EXCLUDED.description,
+        supports_rich = EXCLUDED.supports_rich,
+        updated_at = now()
+    `;
+  }
+
+  // ON CONFLICT above never touches id, so this resolves every key — new and
+  // pre-existing — to its real id in one query rather than one findUnique
+  // per (key, locale) pair.
+  const keyRows = await db.contentKey.findMany({
+    where: { key: { in: allKeys.map((k) => k.key) } },
+    select: { id: true, key: true },
+  });
+  const idByKey = new Map(keyRows.map((r) => [r.key, r.id]));
+
+  const locales: Locale[] = ['ru', 'en', 'th', 'zh'];
+  const translationRows: { contentKeyId: string; locale: Locale; value: string; status: string }[] = [];
+  for (const keyDef of allKeys) {
+    const contentKeyId = idByKey.get(keyDef.key);
+    if (!contentKeyId) continue; // just upserted above — should always resolve
     for (const locale of locales) {
       const value = keyDef[locale];
       if (value === undefined) continue;
-      await setTranslation(
-        db,
-        keyDef.key,
-        locale,
-        value,
-        keyDef.status || 'ok',
-        identityId
-      );
+      translationRows.push({ contentKeyId, locale, value, status: keyDef.status || 'ok' });
     }
+  }
+
+  for (let i = 0; i < translationRows.length; i += CHUNK) {
+    const rows = translationRows.slice(i, i + CHUNK).map(
+      (t) =>
+        Prisma.sql`(${randomUUID()}, ${t.contentKeyId}, ${t.locale}, ${t.value}, ${t.status}, ${identityId}, now(), now())`
+    );
+    await db.$executeRaw`
+      INSERT INTO translation (id, content_key_id, locale, value, status, updated_by_identity_id, created_at, updated_at)
+      VALUES ${Prisma.join(rows)}
+      ON CONFLICT (content_key_id, locale) DO UPDATE SET
+        value = EXCLUDED.value,
+        status = EXCLUDED.status,
+        updated_by_identity_id = EXCLUDED.updated_by_identity_id,
+        updated_at = now()
+    `;
   }
 }

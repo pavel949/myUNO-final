@@ -17,11 +17,10 @@
  * the comment early and leaves the rest of the file as a syntax error — the
  * whole rule then fails to load.
  *
- * STATUS: drafted, not wired. `.eslintrc.json` registers neither a plugin nor a
- * rules directory for it, so `npm run lint` never loads this file. See
- * IMPLEMENTATION_GUIDE.md before enabling it — turning it on surfaces existing
- * violations (the admin screens are not localized yet) and will fail the build
- * until those are either localized or scoped out.
+ * STATUS: wired in. `.eslintrc.json` registers this via `eslint-plugin-local-rules`
+ * (`eslint-local-rules.js` at the repo root re-exports this file) as
+ * `local-rules/no-literal-ui-text`, set to "error". See IMPLEMENTATION_GUIDE.md
+ * for the wiring details.
  */
 module.exports = {
   meta: {
@@ -45,6 +44,15 @@ module.exports = {
           return;
         }
 
+        const trimmed = node.value.trim();
+
+        // A separator glyph or symbol — "·", "→", "%", "0%", "3 3" — carries no
+        // language to translate; it is punctuation/digits, not prose. Anything
+        // with an actual letter still gets caught, in any script (RU/EN/TH/中文).
+        if (!/\p{L}/u.test(trimmed)) {
+          return;
+        }
+
         // Ignore text in specific safe contexts (props, style objects, etc.)
         const parent = node.parent;
         if (!parent) return;
@@ -56,16 +64,13 @@ module.exports = {
         }
 
         // Report: literal text found as JSX child
+        // NOTE: no `fix()` here on purpose. Auto-replacing with a placeholder
+        // key (e.g. `{t('todo.key_not_yet_defined')}`) is not a safe autofix —
+        // it would silently swap real UI text for a broken, undefined key.
+        // A human must pick the real content key (doc 05 §1).
         context.report({
           node,
           message: `Hardcoded text "${node.value.trim()}" found. Use content layer: wrap in t() call referencing a content key from doc 05. Example: {t('namespace.key')}`,
-          fix(fixer) {
-            // Provide a minimal fix suggestion: wrap in placeholder
-            return fixer.replaceText(
-              node,
-              `{t('todo.key_not_yet_defined')}`
-            );
-          },
         });
       },
 
@@ -77,9 +82,25 @@ module.exports = {
         }
 
         const attrName = node.name.name;
-        // Allow technical attributes
+        // Allow technical attributes: DOM/React plumbing, and the SVG
+        // presentation/geometry attributes every chart and icon in this
+        // codebase sets directly (viewBox, d, stroke-*, text-anchor, ...) —
+        // none of these are language a reader translates, they're drawing
+        // instructions and are legitimately literal.
+        const TECHNICAL_ATTRS = new Set([
+          'className', 'id', 'htmlFor', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
+          'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
+          'variant', 'size',
+          // SVG
+          'fill', 'stroke', 'strokeWidth', 'strokeLinecap', 'strokeLinejoin', 'strokeDasharray',
+          'viewBox', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'width',
+          'height', 'points', 'transform', 'preserveAspectRatio', 'textAnchor', 'dominantBaseline',
+          'gradientUnits', 'offset', 'stopColor', 'stopOpacity', 'clipPath', 'clipRule', 'fillRule',
+          'xmlns', 'xmlnsXlink', 'gradientTransform', 'spreadMethod', 'markerWidth', 'markerHeight',
+          'markerUnits', 'orient', 'refX', 'refY', 'patternUnits', 'patternContentUnits',
+        ]);
         if (
-          ['className', 'id', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value'].includes(attrName) ||
+          TECHNICAL_ATTRS.has(attrName) ||
           attrName.startsWith('data-') ||
           attrName.startsWith('aria-') ||
           attrName.startsWith('on')
@@ -87,14 +108,19 @@ module.exports = {
           return;
         }
 
-        // For non-technical props that carry text, flag them
         const value = node.value.value;
-        if (typeof value === 'string' && value.trim() && value.trim().length > 1) {
-          context.report({
-            node,
-            message: `Hardcoded text in prop "${attrName}": "${value}". Move to content layer via a key.`,
-          });
-        }
+        if (typeof value !== 'string') return;
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.length <= 1) return;
+
+        // A value with no letters (a glyph, a number, a CSS/SVG shorthand like
+        // "3 3" or "0 0 24 24") is not prose a reader needs translated.
+        if (!/\p{L}/u.test(trimmed)) return;
+
+        context.report({
+          node,
+          message: `Hardcoded text in prop "${attrName}": "${value}". Move to content layer via a key.`,
+        });
       },
     };
   },

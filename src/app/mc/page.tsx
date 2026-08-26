@@ -46,6 +46,7 @@ export default async function MCPortalPage() {
   const labels = await getLabels({
     'mc.portal.title': 'Management Company Portal',
     'mc.portal.subtitle': 'Manage your units, bookings, and operations',
+    'mc.nav.announcements': 'Post an announcement',
     'mc.tabs.overview': 'Overview',
     'mc.tabs.bookings': 'Bookings',
     'mc.tabs.tickets': 'Tickets',

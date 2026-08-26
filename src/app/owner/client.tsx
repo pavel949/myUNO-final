@@ -11,6 +11,7 @@ import {
   OpenTicketsList,
   SellInterestCard,
   OwnerStayModal,
+  MoneyAmount,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
@@ -78,14 +79,6 @@ interface OwnerDashboardClientProps {
   statements: OwnerStatement[];
   labels: Record<string, string>;
 }
-
-const formatCurrency = (thb: number): string => {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    maximumFractionDigits: 0,
-  }).format(thb);
-};
 
 const monthLabel = (period: string): string => {
   // period is 'YYYY-MM'
@@ -246,7 +239,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           />
           <StatTile
             label={labels['owner.dashboard.revenue_this_month']}
-            value={formatCurrency(revenueNow)}
+            value={<MoneyAmount satang={revenueNow * 100} />}
             variant="revenue"
             delta={
               <DeltaChip
@@ -397,9 +390,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           </span>
                           <span className="text-sm font-medium text-text-ink">
                             {/* OwnerStatement stores every amount in satang like the rest of
-                                the platform (CLAUDE.md); convert at this display boundary
-                                rather than trusting the raw Prisma field (Q47). */}
-                            {formatCurrency((statement.noiTh || 0) / 100)}
+                                the platform (CLAUDE.md) — MoneyAmount's contract is satang-in,
+                                so the raw Prisma field goes straight in, no manual /100 (Q47). */}
+                            <MoneyAmount satang={statement.noiTh || 0} />
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -407,7 +400,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                             {labels['owner.statement.your_share']}
                           </span>
                           <span className="text-sm font-medium text-text-ink">
-                            {formatCurrency((statement.ownerShareTh || 0) / 100)}
+                            <MoneyAmount satang={statement.ownerShareTh || 0} />
                           </span>
                         </div>
                       </div>
@@ -499,7 +492,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                         {labels['owner.units.revenue']}
                       </span>
                       <span className="text-body font-medium text-text-ink">
-                        {formatCurrency(unit.revenueThisMonth)}
+                        <MoneyAmount satang={unit.revenueThisMonth * 100} />
                       </span>
                     </div>
                     <div className="flex justify-between">

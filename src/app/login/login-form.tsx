@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { GoogleLoginButton } from './google-login-button';
 
 interface LoginFormLabels {
   email: string;
@@ -14,6 +15,8 @@ interface LoginFormLabels {
   noAccount: string;
   registerLink: string;
   forgotPassword: string;
+  googleButton: string;
+  divider: string;
 }
 
 export function LoginForm({ labels }: { labels: LoginFormLabels }) {
@@ -54,6 +57,17 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-24">
+      <GoogleLoginButton label={labels.googleButton} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border-line"></div>
+        </div>
+        <div className="relative flex justify-center text-small">
+          <span className="px-8 bg-surface-paper text-text-secondary">{labels.divider}</span>
+        </div>
+      </div>
+
       <Input
         label={labels.email}
         type="email"

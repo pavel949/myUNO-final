@@ -22,6 +22,8 @@ export default async function LoginPage() {
     'auth.login.no_account': "Don't have an account?",
     'auth.login.register_link': 'Sign up',
     'auth.login.forgot_password': 'Forgot your password?',
+    'auth.login.google_button': 'Continue with Google',
+    'auth.login.divider': 'Or continue with email',
   });
 
   return (
@@ -41,6 +43,8 @@ export default async function LoginPage() {
               noAccount: labels['auth.login.no_account'],
               registerLink: labels['auth.login.register_link'],
               forgotPassword: labels['auth.login.forgot_password'],
+              googleButton: labels['auth.login.google_button'],
+              divider: labels['auth.login.divider'],
             }}
           />
         </Suspense>

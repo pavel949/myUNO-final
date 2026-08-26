@@ -34,6 +34,8 @@ export interface InStayHomeSpaceData {
     totalThb: number;
     scheduledStart: string;
     scheduledEnd: string;
+    hasRating?: boolean;
+    rating?: number;
   }>;
   announcements: Array<{
     id: string;
@@ -111,12 +113,14 @@ export async function getInStayHomeSpace(
     throw new Error('Access denied');
   }
 
-  // Fetch active service orders for this booking
+  // Fetch active and completed service orders for this booking
+  // Active: placed, paid, accepted
+  // Completed: fulfilled (eligible for rating)
   const activeOrders = await db.serviceOrder.findMany({
     where: {
       booking_id: bookingId,
       status: {
-        in: ['placed', 'paid', 'accepted'],
+        in: ['placed', 'paid', 'accepted', 'fulfilled'],
       },
     },
     include: {
@@ -132,6 +136,39 @@ export async function getInStayHomeSpace(
       createdAt: 'desc',
     },
     take: 10,
+  });
+
+  // For each fulfilled order, check if it has a rating
+  const orderIds = activeOrders.map((o) => o.id);
+  const reviews = await db.review.findMany({
+    where: {
+      target_type: 'service_order',
+      target_id: {
+        in: orderIds,
+      },
+      author_identity_id: guestIdentityId,
+    },
+    select: {
+      target_id: true,
+      rating: true,
+    },
+  });
+
+  const reviewMap = new Map(reviews.map((r) => [r.target_id, r]));
+
+  const activeOrdersWithRatings = activeOrders.map((order) => {
+    const review = reviewMap.get(order.id);
+    return {
+      id: order.id,
+      serviceId: order.service_id,
+      serviceName: order.service.title,
+      status: order.status,
+      totalThb: order.total_thb,
+      scheduledStart: order.scheduled_start.toISOString(),
+      scheduledEnd: order.scheduled_end.toISOString(),
+      hasRating: !!review,
+      rating: review?.rating,
+    };
   });
 
   // Announcements this guest is actually an audience for.
@@ -204,15 +241,7 @@ export async function getInStayHomeSpace(
       unit: booking.unit,
       guest: booking.guests[0] || null,
     },
-    activeOrders: activeOrders.map((order) => ({
-      id: order.id,
-      serviceId: order.service_id,
-      serviceName: order.service.title,
-      status: order.status,
-      totalThb: order.total_thb,
-      scheduledStart: order.scheduled_start.toISOString(),
-      scheduledEnd: order.scheduled_end.toISOString(),
-    })),
+    activeOrders: activeOrdersWithRatings,
     announcements: announcements.map((a) => ({
       id: a.id,
       title: a.title,

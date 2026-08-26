@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Button } from '@/components';
+import { ServiceOrderRatingModal } from './ServiceOrderRatingModal';
 
 interface ActiveOrder {
   id: string;
@@ -10,10 +12,13 @@ interface ActiveOrder {
   totalThb: number;
   scheduledStart: string;
   scheduledEnd: string;
+  hasRating?: boolean;
+  rating?: number;
 }
 
 interface ActiveOrdersListProps {
   orders: ActiveOrder[];
+  labels?: Record<string, string>;
 }
 
 // order.totalThb (below) is satang (THB × 100) straight from the DB via
@@ -59,8 +64,14 @@ const getStatusColor = (status: string): string => {
   }
 };
 
+const renderStars = (rating: number): string => {
+  return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+};
+
 export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersListProps>(
-  ({ orders }, ref) => {
+  ({ orders, labels = {} }, ref) => {
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
     if (!orders || orders.length === 0) {
       return (
         <div ref={ref} className="text-center py-32 bg-surface-paper-soft rounded-md">
@@ -82,7 +93,7 @@ export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersLis
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-16 text-small text-text-secondary">
+            <div className="grid grid-cols-2 gap-16 text-small text-text-secondary mb-16">
               <div>
                 <span className="font-medium">Scheduled:</span>
                 <p>{formatDateTime(order.scheduledStart)}</p>
@@ -92,8 +103,44 @@ export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersLis
                 <p>{formatCurrency(order.totalThb)}</p>
               </div>
             </div>
+
+            {/* Rating section for fulfilled orders */}
+            {order.status === 'fulfilled' && (
+              <div className="flex items-center justify-between pt-12 border-t border-border-line">
+                {order.hasRating ? (
+                  <div className="flex items-center gap-8">
+                    <span className="text-small text-text-secondary">
+                      {labels['home.order.you_rated'] ?? 'You rated:'}
+                    </span>
+                    <span className="text-body font-medium text-brand-sun">{renderStars(order.rating || 0)}</span>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setSelectedOrderId(order.id)}
+                  >
+                    {labels['home.order.rate_button'] ?? 'Rate this service'}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         ))}
+
+        {/* Rating modal */}
+        {selectedOrderId && (
+          <ServiceOrderRatingModal
+            orderId={selectedOrderId}
+            labels={labels}
+            onClose={() => setSelectedOrderId(null)}
+            onSuccess={() => {
+              setSelectedOrderId(null);
+              // Trigger a page refresh to update the order rating
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     );
   }

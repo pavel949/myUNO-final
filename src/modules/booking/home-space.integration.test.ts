@@ -268,4 +268,102 @@ describe('In-stay home space — stay project scope (T-034)', () => {
       expect(data.secondaryRoles).toEqual([]);
     });
   });
+
+  describe('service order ratings (S6)', () => {
+    it('includes fulfilled service orders eligible for rating', async () => {
+      const { project, unit, guest, booking } = await stayIn();
+      const admin = await createIdentity();
+      const provider = await vettedProvider();
+
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        title: 'Laundry Service',
+        priceModel: 'fixed',
+        basePriceThb: 1000,
+        status: 'active',
+      });
+
+      // Create fulfilled order
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: unit.id,
+          booking_id: booking.id,
+          orderer_identity_id: guest.id,
+          orderer_role: 'guest',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-09-01'),
+          scheduled_end: new Date('2026-09-02'),
+          quantity: 1,
+          price_breakdown: { base: 1000 },
+          total_thb: 1000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+      const orders = data.activeOrders;
+
+      expect(orders.length).toBeGreaterThan(0);
+      const fulfilledOrder = orders.find((o) => o.id === order.id);
+      expect(fulfilledOrder).toBeDefined();
+      expect(fulfilledOrder?.status).toBe('fulfilled');
+      expect(fulfilledOrder?.hasRating).toBe(false);
+    });
+
+    it('includes the rating when a guest has rated a service order', async () => {
+      const { project, unit, guest, booking } = await stayIn();
+      const provider = await vettedProvider();
+
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        title: 'Spa Service',
+        priceModel: 'fixed',
+        basePriceThb: 2000,
+        status: 'active',
+      });
+
+      // Create fulfilled order
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: unit.id,
+          booking_id: booking.id,
+          orderer_identity_id: guest.id,
+          orderer_role: 'guest',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-09-01'),
+          scheduled_end: new Date('2026-09-02'),
+          quantity: 1,
+          price_breakdown: { base: 2000 },
+          total_thb: 2000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      // Add a rating
+      await db.review.create({
+        data: {
+          target_type: 'service_order',
+          target_id: order.id,
+          author_identity_id: guest.id,
+          rating: 5,
+          comment: 'Excellent service!',
+          status: 'published',
+        },
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+      const ratedOrder = data.activeOrders.find((o) => o.id === order.id);
+
+      expect(ratedOrder?.hasRating).toBe(true);
+      expect(ratedOrder?.rating).toBe(5);
+    });
+  });
 });

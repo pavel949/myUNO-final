@@ -45,6 +45,8 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'home.services.title': 'Services for your stay',
     'home.services.vetted': 'Vetted',
     'home.services.from': 'from',
+    'home.order.rate_button': 'Rate this service',
+    'home.order.you_rated': 'You rated:',
     'home.extend.title': 'Stay longer',
     'home.extend.description':
       'Choose a new check-out date. We will check the calendar and price the extra nights before anything is charged.',
@@ -58,6 +60,16 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'home.role.owner': 'owner',
     'home.role.resident': 'resident',
     'home.role.buyer': 'buyer',
+    'services.rating.title': 'Rate this service',
+    'services.rating.question': 'How would you rate this service?',
+    'services.rating.comment_label': 'Tell us more (optional)',
+    'services.rating.comment_placeholder': 'Share your feedback...',
+    'services.rating.error_select': 'Please select a rating',
+    'services.rating.error_submit': 'Failed to submit rating',
+    'services.rating.error_generic': 'An error occurred',
+    'services.rating.button_cancel': 'Cancel',
+    'services.rating.button_submit': 'Submit Rating',
+    'services.rating.button_submitting': 'Submitting...',
   });
 
   // Project-specific shuttle schedule (content key; empty until the founder

@@ -1,5 +1,41 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
 import { getConfig, assertCatalogKeys } from '@/modules/config';
+import type { Locale } from '@/modules/content/types';
+
+/**
+ * A service's title/description are per-service data, not content keys
+ * (doc 05: "things users type... provider service descriptions... are data
+ * and are shown as written") — but a service authored with RU/EN/TH fields
+ * filled in should still show the visitor's own language rather than always
+ * the single fallback `title`/`description` the record was created with.
+ * Falls back to the base field for services (most of them, today) that only
+ * ever had one language entered.
+ */
+export function pickLocalizedServiceCopy(
+  service: {
+    title: string;
+    description: string | null;
+    titleRu?: string | null;
+    titleEn?: string | null;
+    titleTh?: string | null;
+    descriptionRu?: string | null;
+    descriptionEn?: string | null;
+    descriptionTh?: string | null;
+  },
+  locale: Locale
+): { title: string; description: string | null } {
+  const byLocale: Record<Locale, { title?: string | null; description?: string | null }> = {
+    ru: { title: service.titleRu, description: service.descriptionRu },
+    en: { title: service.titleEn, description: service.descriptionEn },
+    th: { title: service.titleTh, description: service.descriptionTh },
+    zh: {},
+  };
+  const localized = byLocale[locale] || {};
+  return {
+    title: localized.title || service.title,
+    description: localized.description || service.description,
+  };
+}
 
 export interface CreateServiceInput {
   providerId: string;

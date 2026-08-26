@@ -37,6 +37,7 @@ export {
   approveService,
   rejectService,
   getServiceAverageRating,
+  pickLocalizedServiceCopy,
   type CreateServiceInput,
   type UpdateServiceInput,
 } from './service.service';

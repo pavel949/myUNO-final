@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Input } from '@/components';
+import { Button } from '@/components';
 
 interface ServiceOrderRatingModalProps {
   orderId: string;

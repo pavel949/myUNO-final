@@ -297,3 +297,213 @@ describe('Owner Statement Generation', () => {
     expect(data.error).toContain('not found')
   })
 })
+
+// Ported from the now-deleted src/modules/finance/statement.service.ts and
+// its test suite (T-030) — that module computed revenue from ledger entries
+// via recordBookingRevenue(), a write path nothing in production ever calls;
+// this route reads gross revenue from Booking.totalThb directly, which is
+// what real bookings actually produce. Same split formulas, same golden
+// numbers, exercised through the code path that is actually live.
+describe('Owner Statement Generation — golden numbers', () => {
+  async function setUp(engagementType: 'direct_managed' | 'via_management_company' | 'owner_direct', noiCapAnnualThb?: number) {
+    const admin = await createIdentity({ isAdmin: true })
+    const owner = await createIdentity()
+    const project = await createProject()
+    const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
+    await db.unitEngagement.create({
+      data: {
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        engagementType,
+        status: 'active',
+        ...(noiCapAnnualThb !== undefined ? { noiCapAnnualThb } : {}),
+      },
+    })
+    mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+    return { admin, owner, project, unit }
+  }
+
+  async function generate(unitId: string, periodStart: string, periodEnd: string) {
+    const res = await generatePost(post({ unitId, periodStart, periodEnd }))
+    const body = await res.json()
+    return { res, body }
+  }
+
+  it('generates a statement with NOI above cap: cap bites', async () => {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    const { owner, project, unit } = await setUp('direct_managed', 10_000)
+
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-05'),
+      endDate: new Date('2026-07-10'),
+      status: 'confirmed',
+      totalThb: 10_000,
+    })
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-15'),
+      endDate: new Date('2026-07-20'),
+      status: 'confirmed',
+      totalThb: 5_000,
+    })
+    const staff = await createIdentity()
+    await db.ledgerEntry.create({
+      data: {
+        unitId: unit.id,
+        entryType: 'cleaning_cost',
+        amountThb: -2000,
+        occurredOn: new Date('2026-07-25'),
+        description: 'Post-checkout clean',
+        createdByIdentityId: staff.id,
+      },
+    })
+
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(200)
+
+    // Revenue 15000, costs 2000, NOI 13000; cap pro-rata (10000*31/365)=849;
+    // owner MIN(13000,849)=849; estate MAX(0,13000-849)=12151.
+    const statement = await db.ownerStatement.findUnique({ where: { id: body.statement.id } })
+    expect(statement!.grossRevenueTh).toBe(15_000)
+    expect(statement!.totalCostsTh).toBe(2_000)
+    expect(statement!.noiTh).toBe(13_000)
+    expect(statement!.capApplied).toBe(true)
+    expect(statement!.ownerShareTh).toBe(849)
+    expect(statement!.estateShareTh).toBe(12_151)
+    expect(statement!.status).toBe('draft')
+  })
+
+  it('does not let the cap bite when NOI is below it', async () => {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    const { owner, project, unit } = await setUp('direct_managed', 100_000)
+
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-05'),
+      endDate: new Date('2026-07-10'),
+      status: 'confirmed',
+      totalThb: 5_000,
+    })
+    const staff = await createIdentity()
+    await db.ledgerEntry.create({
+      data: {
+        unitId: unit.id,
+        entryType: 'maintenance_cost',
+        amountThb: -1000,
+        occurredOn: new Date('2026-07-15'),
+        description: 'Repair',
+        createdByIdentityId: staff.id,
+      },
+    })
+
+    const { body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    const statement = await db.ownerStatement.findUnique({ where: { id: body.statement.id } })
+
+    // Cap pro-rata (100000*31/365)=8493; owner MIN(4000,8493)=4000 (no bite).
+    expect(statement!.noiTh).toBe(4_000)
+    expect(statement!.capApplied).toBe(false)
+    expect(statement!.ownerShareTh).toBe(4_000)
+    expect(statement!.estateShareTh).toBe(0)
+  })
+
+  it('refuses to generate for a direct-managed unit with no NOI cap', async () => {
+    await resetDb()
+    const { unit } = await setUp('direct_managed')
+
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(400)
+    expect(body.error).toMatch(/noi_cap_annual_thb/i)
+  })
+
+  it('deducts the MC platform fee for a via_management_company unit', async () => {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    await setGlobalConfig('engagement.via_mc.platform_fee_pct', 20)
+    const { owner, project, unit } = await setUp('via_management_company')
+
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-05'),
+      endDate: new Date('2026-07-15'),
+      status: 'confirmed',
+      totalThb: 10_000,
+    })
+    const staff = await createIdentity()
+    await db.ledgerEntry.create({
+      data: {
+        unitId: unit.id,
+        entryType: 'utilities_cost',
+        amountThb: -1000,
+        occurredOn: new Date('2026-07-20'),
+        description: 'Water bill',
+        createdByIdentityId: staff.id,
+      },
+    })
+
+    const { body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    const statement = await db.ownerStatement.findUnique({ where: { id: body.statement.id } })
+
+    // NOI 9000; MC fee 9000*20%=1800; owner 9000-1800=7200; estate 1800.
+    expect(statement!.noiTh).toBe(9_000)
+    expect(statement!.ownerShareTh).toBe(7_200)
+    expect(statement!.estateShareTh).toBe(1_800)
+    expect(statement!.capApplied).toBe(false)
+  })
+
+  it('deducts the booking fee for an owner_direct unit', async () => {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    await setGlobalConfig('engagement.owner_direct.booking_fee_pct', 5)
+    const { owner, project, unit } = await setUp('owner_direct')
+
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-01'),
+      endDate: new Date('2026-07-10'),
+      status: 'confirmed',
+      totalThb: 12_000,
+    })
+    await createBooking({
+      unitId: unit.id,
+      projectId: project.id,
+      guestIdentityId: owner.id,
+      startDate: new Date('2026-07-20'),
+      endDate: new Date('2026-07-28'),
+      status: 'confirmed',
+      totalThb: 8_000,
+    })
+    const staff = await createIdentity()
+    await db.ledgerEntry.create({
+      data: {
+        unitId: unit.id,
+        entryType: 'cleaning_cost',
+        amountThb: -2000,
+        occurredOn: new Date('2026-07-30'),
+        description: 'Cleans',
+        createdByIdentityId: staff.id,
+      },
+    })
+
+    const { body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    const statement = await db.ownerStatement.findUnique({ where: { id: body.statement.id } })
+
+    // NOI 18000; booking fee 18000*5%=900; owner 18000-900=17100; estate 900.
+    expect(statement!.noiTh).toBe(18_000)
+    expect(statement!.ownerShareTh).toBe(17_100)
+    expect(statement!.estateShareTh).toBe(900)
+    expect(statement!.capApplied).toBe(false)
+  })
+})

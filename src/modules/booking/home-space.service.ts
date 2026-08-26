@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
-import { listPublicServices } from '@/modules/services';
+import { listPublicServices, pickLocalizedServiceCopy } from '@/modules/services';
 import { getProjectAnnouncements } from '@/modules/comms';
+import { getRequestLocale } from '@/lib/i18n';
 
 export interface InStayHomeSpaceData {
   booking: {
@@ -153,6 +154,7 @@ export async function getInStayHomeSpace(
   // The rail is scoped to this stay's project by the services module itself,
   // so a guest is never shown a service another project's providers offer.
   const services = await listPublicServices(db, booking.unit.projectId);
+  const locale = getRequestLocale();
 
   // Every other hat this viewer wears on this unit or project. Unit ownership
   // lives on the unit row rather than in RoleAssignment, so it is read
@@ -186,7 +188,7 @@ export async function getInStayHomeSpace(
     secondaryRoles,
     services: services.map((s) => ({
       id: s.id,
-      title: s.title,
+      title: pickLocalizedServiceCopy(s, locale).title,
       categoryKey: s.categoryKey,
       basePriceThb: s.basePriceThb ?? null,
       priceModel: s.priceModel,

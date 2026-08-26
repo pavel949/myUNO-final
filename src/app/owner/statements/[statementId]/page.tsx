@@ -153,6 +153,15 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'owner.statement.signoff_approved': 'Approved',
     'owner.statement.signoff_error':
       'We could not record your sign-off. Please try again.',
+    'owner.statement.dispute_title': 'Dispute this statement',
+    'owner.statement.dispute_open': 'Raise a dispute',
+    'owner.statement.dispute_title_field': 'Subject',
+    'owner.statement.dispute_description_field': 'What looks wrong',
+    'owner.statement.dispute_submit': 'Submit dispute',
+    'owner.statement.dispute_cancel': 'Cancel',
+    'owner.statement.dispute_sent':
+      'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
+    'owner.statement.dispute_error': 'That did not work. Please try again.',
     'common.status.statement.draft': 'Draft',
     'common.status.statement.published': 'Published',
     'common.status.statement.superseded': 'Superseded',

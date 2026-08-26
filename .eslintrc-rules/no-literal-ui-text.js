@@ -88,7 +88,7 @@ module.exports = {
         // none of these are language a reader translates, they're drawing
         // instructions and are legitimately literal.
         const TECHNICAL_ATTRS = new Set([
-          'className', 'id', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
+          'className', 'id', 'htmlFor', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
           'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
           'variant', 'size',
           // SVG

@@ -1,25 +1,5 @@
 import { PrismaClient, Payout } from '@prisma/client';
-import { track } from '@/modules/analytics';
 import { getConfig } from '@/modules/config';
-
-export interface RecordOwnerPayoutInput {
-  ownerStatementId: string;
-  amountThb: number;
-  method: 'bank_transfer_thb' | 'other';
-  reference: string;
-  executedOn: Date;
-  recordedByIdentityId: string;
-}
-
-export interface ProviderRemittanceInput {
-  providerId: string;
-  periodStart: Date;
-  periodEnd: Date;
-  amountThb: number;
-  reference: string;
-  executedOn: Date;
-  recordedByIdentityId: string;
-}
 
 export interface RemittanceReport {
   providerId: string;
@@ -31,102 +11,6 @@ export interface RemittanceReport {
   netThb: number;
   orderCount: number;
   refundCount: number;
-}
-
-/**
- * Record an owner payout (manual in loop one).
- * Links to the published statement that triggered it.
- */
-export async function recordOwnerPayout(db: PrismaClient, input: RecordOwnerPayoutInput): Promise<Payout> {
-  const { ownerStatementId, amountThb, method, reference, executedOn, recordedByIdentityId } = input;
-
-  // Verify statement exists and is published
-  const statement = await db.ownerStatement.findUnique({
-    where: { id: ownerStatementId },
-  });
-
-  if (!statement) {
-    throw new Error(`Statement ${ownerStatementId} not found`);
-  }
-
-  if (statement.status !== 'published') {
-    throw new Error(`Can only payout published statements; statement is ${statement.status}`);
-  }
-
-  // Create payout record
-  const payout = await db.payout.create({
-    data: {
-      payeeType: 'owner',
-      ownerStatementId,
-      amountThb,
-      method,
-      reference,
-      executedOn,
-      recordedByIdentityId,
-      status: 'recorded',
-    },
-  });
-
-  // Track analytics event
-  // Get owner identity and project from statement
-  const statementWithDetails = await db.ownerStatement.findUnique({
-    where: { id: ownerStatementId },
-    select: {
-      ownerIdentityId: true,
-      unit: { select: { projectId: true } },
-    },
-  });
-
-  if (statementWithDetails) {
-    await track(db, 'owner_payout_recorded', {
-      payoutId: payout.id,
-      statementId: ownerStatementId,
-      identityId: statementWithDetails.ownerIdentityId,
-      projectId: statementWithDetails.unit?.projectId,
-      amountThb,
-      method,
-    });
-  }
-
-  return payout;
-}
-
-/**
- * Record a provider remittance payout (manual in loop one).
- * Computed from fulfilled service orders in the period minus take-rate and clawed-back refunds.
- */
-export async function recordProviderRemittance(
-  db: PrismaClient,
-  input: ProviderRemittanceInput
-): Promise<Payout> {
-  const { providerId, periodStart, periodEnd, amountThb, reference, executedOn, recordedByIdentityId } = input;
-
-  // Verify provider exists
-  const provider = await db.provider.findUnique({
-    where: { id: providerId },
-  });
-
-  if (!provider) {
-    throw new Error(`Provider ${providerId} not found`);
-  }
-
-  // Create payout record
-  const payout = await db.payout.create({
-    data: {
-      payeeType: 'provider',
-      providerId,
-      periodStart,
-      periodEnd,
-      amountThb,
-      method: 'bank_transfer_thb',
-      reference,
-      executedOn,
-      recordedByIdentityId,
-      status: 'recorded',
-    },
-  });
-
-  return payout;
 }
 
 /**

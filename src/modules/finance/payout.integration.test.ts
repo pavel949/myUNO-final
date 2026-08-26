@@ -9,120 +9,24 @@ import {
   createService,
 } from '@/test/util';
 import {
-  recordOwnerPayout,
-  recordProviderRemittance,
   computeProviderRemittance,
   getReconciliationData,
   reconcilePayout,
   resolveFailedRefund,
 } from './payout.service';
-import { generateOwnerStatement, publishStatement } from './statement.service';
-
-/**
- * Give a unit an owner and an active owner_direct engagement so a statement can
- * be generated for it. Statement generation refuses units with no owner/engagement.
- */
-async function seedStatementUnit() {
-  const project = await createProject();
-  const owner = await createIdentity();
-  const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
-  await db.unitEngagement.create({
-    data: {
-      unitId: unit.id,
-      ownerIdentityId: owner.id,
-      engagementType: 'owner_direct',
-      status: 'active',
-    },
-  });
-  return { project, owner, unit };
-}
 
 describe('Payouts & Reconciliation (T-031)', () => {
   beforeEach(async () => {
     await resetDb();
   });
 
-  describe('owner payout recording', () => {
-    it('records payout linked to published statement', async () => {
-      const { unit } = await seedStatementUnit();
-      const staff = await createIdentity();
-
-      // Create and publish a statement
-      const statement = await generateOwnerStatement(db, {
-        unitId: unit.id,
-        periodStart: new Date('2026-07-01'),
-        periodEnd: new Date('2026-07-31'),
-      });
-
-      await publishStatement(db, statement.id, staff.id);
-
-      // Record payout
-      const payout = await recordOwnerPayout(db, {
-        ownerStatementId: statement.id,
-        amountThb: 10000,
-        method: 'bank_transfer_thb',
-        reference: 'KRUNGSRI-123456',
-        executedOn: new Date('2026-08-05'),
-        recordedByIdentityId: staff.id,
-      });
-
-      expect(payout.payeeType).toBe('owner');
-      expect(payout.ownerStatementId).toBe(statement.id);
-      expect(payout.amountThb).toBe(10000);
-      expect(payout.method).toBe('bank_transfer_thb');
-      expect(payout.reference).toBe('KRUNGSRI-123456');
-      expect(payout.status).toBe('recorded');
-    });
-
-    it('refuses payout when statement not published', async () => {
-      const { unit } = await seedStatementUnit();
-      const staff = await createIdentity();
-
-      // Create draft statement (don't publish)
-      const statement = await generateOwnerStatement(db, {
-        unitId: unit.id,
-        periodStart: new Date('2026-07-01'),
-        periodEnd: new Date('2026-07-31'),
-      });
-
-      // Attempt payout on draft statement
-      await expect(
-        recordOwnerPayout(db, {
-          ownerStatementId: statement.id,
-          amountThb: 10000,
-          method: 'bank_transfer_thb',
-          reference: 'KRUNGSRI-123456',
-          executedOn: new Date('2026-08-05'),
-          recordedByIdentityId: staff.id,
-        })
-      ).rejects.toThrow('Can only payout published statements');
-    });
-  });
-
-  describe('provider remittance recording', () => {
-    it('records provider remittance payout', async () => {
-      const staff = await createIdentity();
-      const provider = await createProvider();
-
-      // Record remittance
-      const payout = await recordProviderRemittance(db, {
-        providerId: provider.id,
-        periodStart: new Date('2026-07-01'),
-        periodEnd: new Date('2026-07-31'),
-        amountThb: 50000,
-        reference: 'REMIT-001',
-        executedOn: new Date('2026-08-10'),
-        recordedByIdentityId: staff.id,
-      });
-
-      expect(payout.payeeType).toBe('provider');
-      expect(payout.providerId).toBe(provider.id);
-      expect(payout.amountThb).toBe(50000);
-      expect(payout.periodStart).toEqual(new Date('2026-07-01'));
-      expect(payout.periodEnd).toEqual(new Date('2026-07-31'));
-      expect(payout.status).toBe('recorded');
-    });
-  });
+  // Owner-payout and provider-remittance *recording* used to be tested here
+  // via recordOwnerPayout()/recordProviderRemittance() (src/modules/finance/
+  // payout.service.ts) — both confirmed to have zero production callers and
+  // deleted alongside them. The routes that actually record a payout
+  // (POST /api/admin/payouts/owner, POST /api/admin/payouts/provider) build
+  // the Payout row inline with their own, stricter validation and are
+  // covered by src/app/api/admin/payouts/payouts.integration.test.ts.
 
   describe('remittance math computation', () => {
     it('computes remittance: fulfilled orders - refunds', async () => {
@@ -316,26 +220,17 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
   describe('payout reconciliation workflow', () => {
     it('records payout as unreconciled, then marks reconciled', async () => {
-      const { unit } = await seedStatementUnit();
       const staff = await createIdentity();
 
-      // Create and publish statement
-      const statement = await generateOwnerStatement(db, {
-        unitId: unit.id,
-        periodStart: new Date('2026-07-01'),
-        periodEnd: new Date('2026-07-31'),
-      });
-
-      await publishStatement(db, statement.id, staff.id);
-
-      // Record payout
-      const payout = await recordOwnerPayout(db, {
-        ownerStatementId: statement.id,
-        amountThb: 10000,
-        method: 'bank_transfer_thb',
-        reference: 'KRUNGSRI-123456',
-        executedOn: new Date('2026-08-05'),
-        recordedByIdentityId: staff.id,
+      const payout = await db.payout.create({
+        data: {
+          payeeType: 'owner',
+          amountThb: 10000,
+          method: 'bank_transfer_thb',
+          reference: 'KRUNGSRI-123456',
+          executedOn: new Date('2026-08-05'),
+          recordedByIdentityId: staff.id,
+        },
       });
 
       // Verify payout is in recorded status

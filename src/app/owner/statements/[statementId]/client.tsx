@@ -121,6 +121,12 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
     statement.signedOffByOperatorAt
   );
   const [approvedAt, setApprovedAt] = useState<string | null>(statement.approvedAt);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeTitle, setDisputeTitle] = useState('');
+  const [disputeDescription, setDisputeDescription] = useState('');
+  const [disputeSent, setDisputeSent] = useState(false);
+  const [disputeBusy, setDisputeBusy] = useState(false);
+  const [disputeError, setDisputeError] = useState<string | null>(null);
 
   // Group the line items by category and total each group; the breakdown rows
   // open onto their own group, so a figure is never shown without its sources.
@@ -276,6 +282,39 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
       }
     } finally {
       setSigningOff(false);
+    }
+  };
+
+  const handleDisputeSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!disputeTitle.trim() || !disputeDescription.trim()) return;
+    setDisputeBusy(true);
+    setDisputeError(null);
+    try {
+      const response = await fetch('/api/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjectType: 'statement',
+          subjectId: statement.id,
+          title: disputeTitle.trim(),
+          description: disputeDescription.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['owner.statement.dispute_error']);
+      }
+      setDisputeSent(true);
+      setDisputeOpen(false);
+      setDisputeTitle('');
+      setDisputeDescription('');
+    } catch (err) {
+      setDisputeError(
+        err instanceof Error ? err.message : labels['owner.statement.dispute_error']
+      );
+    } finally {
+      setDisputeBusy(false);
     }
   };
 
@@ -592,6 +631,86 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
               >
                 {signOffError}
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Dispute */}
+        <div className="mb-40">
+          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            {labels['owner.statement.dispute_title']}
+          </h2>
+          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+            {disputeSent && !disputeOpen && (
+              <p className="text-body text-state-success mb-16">
+                {labels['owner.statement.dispute_sent']}
+              </p>
+            )}
+            {disputeOpen ? (
+              <form onSubmit={handleDisputeSubmit} className="flex flex-col gap-12">
+                <div className="flex flex-col gap-4">
+                  <label htmlFor="statement-dispute-title" className="text-small text-text-secondary">
+                    {labels['owner.statement.dispute_title_field']}
+                  </label>
+                  <input
+                    id="statement-dispute-title"
+                    type="text"
+                    value={disputeTitle}
+                    onChange={(e) => setDisputeTitle(e.target.value)}
+                    maxLength={200}
+                    className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <label
+                    htmlFor="statement-dispute-description"
+                    className="text-small text-text-secondary"
+                  >
+                    {labels['owner.statement.dispute_description_field']}
+                  </label>
+                  <textarea
+                    id="statement-dispute-description"
+                    value={disputeDescription}
+                    onChange={(e) => setDisputeDescription(e.target.value)}
+                    rows={4}
+                    maxLength={4000}
+                    className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                  />
+                </div>
+                {disputeError && (
+                  <p role="alert" className="text-body text-state-error">
+                    {disputeError}
+                  </p>
+                )}
+                <div className="flex gap-12">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    isLoading={disputeBusy}
+                    disabled={!disputeTitle.trim() || !disputeDescription.trim()}
+                  >
+                    {labels['owner.statement.dispute_submit']}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setDisputeOpen(false)}
+                    disabled={disputeBusy}
+                  >
+                    {labels['owner.statement.dispute_cancel']}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setDisputeOpen(true);
+                  setDisputeSent(false);
+                }}
+              >
+                {labels['owner.statement.dispute_open']}
+              </Button>
             )}
           </div>
         </div>

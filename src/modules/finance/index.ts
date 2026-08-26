@@ -30,17 +30,6 @@ export {
 } from './ledger.service';
 
 export {
-  generateOwnerStatement,
-  publishStatement,
-  getStatement,
-  listStatements,
-  listDraftStatements,
-  getLatestPublishedStatement,
-  type StatementGenerationInput,
-  type OwnerStatementData,
-} from './statement.service';
-
-export {
   getStatementSignOffState,
   hasSignedOff,
   recordStatementSignOff,
@@ -56,14 +45,10 @@ export {
 } from './statement-signoff.service';
 
 export {
-  recordOwnerPayout,
-  recordProviderRemittance,
   computeProviderRemittance,
   getReconciliationData,
   reconcilePayout,
   resolveFailedRefund,
-  type RecordOwnerPayoutInput,
-  type ProviderRemittanceInput,
   type RemittanceReport,
 } from './payout.service';
 

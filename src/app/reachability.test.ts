@@ -228,8 +228,6 @@ const API_DEBT = new Set([
   '/api/admin/reports/attribution',
   '/api/admin/service-orders',
   '/api/admin/statements/[statementId]/line-items',
-  '/api/admin/statements/[statementId]/sign-off',
-  '/api/admin/statements/generate',
   '/api/admin/units/[id]/status',
   // Guest/owner/provider-facing routes with no caller found.
   '/api/auth/verify-email',

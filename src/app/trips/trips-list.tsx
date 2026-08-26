@@ -94,7 +94,7 @@ export default function TripsList({ labels }: TripsListProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text-ink">{labels['booking.trips.title']}</h1>
           <p className="text-text-secondary">
-            {trips.length} booking{trips.length !== 1 ? 's' : ''}
+            {trips.length} {trips.length === 1 ? labels['booking.trips.count_singular'] : labels['booking.trips.count_plural']}
           </p>
         </div>
 

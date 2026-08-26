@@ -2,6 +2,8 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { getLabels } from '@/lib/i18n';
 import { fetchHandbookContent } from '@/app/actions/getHandbookContent';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
@@ -19,17 +21,35 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
 
   const { projectName, handbookContent } = await fetchHandbookContent(params.bookingId);
 
+  const labels = await getLabels({
+    'booking.handbook.breadcrumb_home': 'Home',
+    'booking.handbook.breadcrumb_trips': 'My Trips',
+    'booking.handbook.breadcrumb_handbook': 'Property Handbook',
+    'booking.handbook.back_link': '← Back',
+    'booking.handbook.title': 'Property Handbook',
+    'booking.handbook.empty_state': 'No handbook content available. Please contact the property management.',
+  });
+
+  const breadcrumbs = [
+    { label: labels['booking.handbook.breadcrumb_home'], href: '/' },
+    { label: labels['booking.handbook.breadcrumb_trips'], href: '/trips' },
+    { label: projectName, href: `/bookings/${params.bookingId}` },
+    { label: labels['booking.handbook.breadcrumb_handbook'], current: true },
+  ];
+
   return (
     <div className="min-h-screen bg-surface-background">
+      <Breadcrumb items={breadcrumbs} />
+
       {/* Header */}
       <div className="bg-brand-andaman text-surface-ivory py-24 px-24 mb-32">
         <div className="max-w-4xl mx-auto">
           <Link href={`/bookings/${params.bookingId}/home-space`}>
             <Button variant="secondary" size="sm">
-              ← Back
+              {labels['booking.handbook.back_link']}
             </Button>
           </Link>
-          <h1 className="text-heading-1 font-bold text-surface-ivory mt-16">Property Handbook</h1>
+          <h1 className="text-heading-1 font-bold text-surface-ivory mt-16">{labels['booking.handbook.title']}</h1>
           <p className="text-body text-surface-ivory mt-8">{projectName}</p>
         </div>
       </div>
@@ -37,14 +57,6 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-24 py-32">
         <div className="prose prose-invert max-w-none">
-          {/*
-            The handbook body is rendered as text, never as HTML. It is
-            admin-editable content out of the database, so injecting it with
-            dangerouslySetInnerHTML let an editor put script into every guest's
-            in-stay page. `whitespace-pre-wrap` already preserves the line
-            breaks the old newline-to-break substitution was there for, so
-            React's default escaping costs us nothing.
-          */}
           {handbookContent ? (
             <div className="text-body text-text-ink whitespace-pre-wrap">
               {handbookContent}
@@ -52,7 +64,7 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
           ) : (
             <div className="bg-surface-paper border border-border-line rounded-md p-24">
               <p className="text-body text-text-secondary text-center">
-                No handbook content available. Please contact the property management.
+                {labels['booking.handbook.empty_state']}
               </p>
             </div>
           )}

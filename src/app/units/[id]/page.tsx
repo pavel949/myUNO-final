@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { publicPageAlternates, unitJsonLd, serializeJsonLd } from '@/lib/seo';
 import { getPublicUnitById } from '@/modules/projects';
@@ -64,6 +65,8 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
   const jsonLd = unitJsonLd({ ...unit, description });
 
   const labels = await getLabels({
+    'units.breadcrumb_home': 'Home',
+    'units.breadcrumb_detail': 'Unit Details',
     'listing.loading': 'Loading unit details…',
     'listing.not_found': 'Unit not found',
     'listing.back_to_results': '← Back to results',
@@ -114,8 +117,14 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'catalog.cancellation_policies.strict.label': 'Strict',
   });
 
+  const breadcrumbs = [
+    { label: labels['units.breadcrumb_home'], href: '/' },
+    { label: labels['units.breadcrumb_detail'], current: true },
+  ];
+
   return (
     <Suspense>
+      <Breadcrumb items={breadcrumbs} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}

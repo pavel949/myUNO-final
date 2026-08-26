@@ -8,6 +8,8 @@ export default async function TripsPage() {
   const labels = await getLabels({
     'booking.trips.loading': 'Loading your trips...',
     'booking.trips.title': 'My Trips',
+    'booking.trips.count_singular': 'booking',
+    'booking.trips.count_plural': 'bookings',
     'booking.trips.empty_title': 'No trips yet. Ready for your first adventure?',
     'booking.trips.empty_action': 'Search Stays',
     'booking.trips.check_in': 'Check-in',

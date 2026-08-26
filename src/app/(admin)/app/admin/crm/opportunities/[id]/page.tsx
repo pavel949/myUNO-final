@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
+import { getLabels } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { OpportunityDetailClient } from '@/app/components/crm/OpportunityDetailClient';
 
@@ -114,8 +116,25 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     })),
   };
 
+  const labels = await getLabels({
+    'admin.crm.opportunities.breadcrumb_home': 'Home',
+    'admin.crm.opportunities.breadcrumb_admin': 'Admin',
+    'admin.crm.opportunities.breadcrumb_crm': 'CRM',
+    'admin.crm.opportunities.breadcrumb_detail': 'Opportunity',
+    'admin.crm.opportunities.back_link': 'Back to CRM',
+    'admin.crm.opportunities.details_heading': 'Opportunity Details',
+  });
+
+  const breadcrumbs = [
+    { label: labels['admin.crm.opportunities.breadcrumb_home'], href: '/' },
+    { label: labels['admin.crm.opportunities.breadcrumb_admin'], href: '/app/admin' },
+    { label: labels['admin.crm.opportunities.breadcrumb_crm'], href: '/app/admin/crm' },
+    { label: labels['admin.crm.opportunities.breadcrumb_detail'], current: true },
+  ];
+
   return (
     <div className="min-h-screen bg-surface-ivory">
+      <Breadcrumb items={breadcrumbs} />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-surface-paper border-b border-border-line px-24 py-32">
@@ -124,14 +143,14 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
               href="/app/admin/crm"
               className="text-brand-andaman hover:underline font-semibold"
             >
-              ← Back to CRM
+              ← {labels['admin.crm.opportunities.back_link']}
             </Link>
           </div>
           <h1 className="text-heading-1 font-bold text-text-ink">
             {opportunity.title}
           </h1>
           <p className="text-body text-text-secondary mt-8">
-            Opportunity Details
+            {labels['admin.crm.opportunities.details_heading']}
           </p>
         </div>
 

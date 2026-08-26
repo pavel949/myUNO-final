@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { MOBILIZATION_STEPS } from '@/modules/core';
@@ -31,6 +32,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
   if (!unit) notFound();
 
   const labels = await getLabels({
+    'admin.units.breadcrumb_home': 'Home',
+    'admin.units.breadcrumb_admin': 'Admin',
+    'admin.units.breadcrumb_units': 'Units',
+    'admin.units.breadcrumb_detail': 'Unit Details',
     'admin.onboarding.title': 'Onboarding',
     'admin.onboarding.back': 'All units',
     'admin.onboarding.step': 'Step',
@@ -92,8 +97,16 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     unit.mobilizationChecklist.map((item) => [item.step, item])
   );
 
+  const breadcrumbs = [
+    { label: labels['admin.units.breadcrumb_home'], href: '/' },
+    { label: labels['admin.units.breadcrumb_admin'], href: '/app/admin' },
+    { label: labels['admin.units.breadcrumb_units'], href: '/app/admin/units' },
+    { label: labels['admin.units.breadcrumb_detail'], current: true },
+  ];
+
   return (
     <div>
+      <Breadcrumb items={breadcrumbs} />
       <Link href="/app/admin/units" className="text-small text-text-secondary hover:underline">
         ← {labels['admin.onboarding.back']}
       </Link>

@@ -5,24 +5,10 @@ import SearchResults from './search-results';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * English fallbacks for the sort picker, keyed off the one catalog so a new
- * sort option cannot appear in the API without a label here.
- */
-const SORT_LABEL_FALLBACKS: Record<string, string> = {
-  recommended: 'Recommended',
-  price_asc: 'Price: low to high',
-  price_desc: 'Price: high to low',
-  bedrooms_desc: 'Most bedrooms',
-  capacity_desc: 'Sleeps the most',
-  top_rated: 'Top rated',
-};
-
 export default async function SearchPage() {
+  // Fetch all sort labels from the content layer (no fallbacks — labelKey must exist)
   const sortLabels = await getLabels(
-    Object.fromEntries(
-      UNIT_SORTS.map((sort) => [sort.labelKey, SORT_LABEL_FALLBACKS[sort.key] ?? sort.key])
-    )
+    Object.fromEntries(UNIT_SORTS.map((sort) => [sort.labelKey, sort.key]))
   );
 
   const labels = await getLabels({

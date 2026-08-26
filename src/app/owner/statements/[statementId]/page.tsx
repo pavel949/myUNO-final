@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { track } from '@/modules/analytics';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { OwnerStatementDetailClient, type StatementDetail } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -106,6 +107,10 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
   };
 
   const labels = await getLabels({
+    'owner.statement.breadcrumb_home': 'Home',
+    'owner.statement.breadcrumb_dashboard': 'Dashboard',
+    'owner.statement.breadcrumb_statements': 'Statements',
+    'owner.statement.breadcrumb_detail': 'Statement',
     'owner.statement.back': 'Back to dashboard',
     'owner.statement.detail_title': 'Statement',
     'owner.statement.unit': 'Unit',
@@ -149,7 +154,7 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'owner.statement.signoff_owner_signed': 'Signed by you',
     'owner.statement.signoff_operator_signed': 'Signed by myUNO',
     'owner.statement.signoff_awaiting_owner': 'Awaiting your signature',
-    'owner.statement.signoff_awaiting_operator': 'Awaiting myUNO’s signature',
+    'owner.statement.signoff_awaiting_operator': 'Awaiting myUNO\'s signature',
     'owner.statement.signoff_approved': 'Approved',
     'owner.statement.signoff_error':
       'We could not record your sign-off. Please try again.',
@@ -176,5 +181,17 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'common.line_item_category.performance_fee': 'Performance fee',
   });
 
-  return <OwnerStatementDetailClient statement={detail} labels={labels} />;
+  const breadcrumbs = [
+    { label: labels['owner.statement.breadcrumb_home'], href: '/' },
+    { label: labels['owner.statement.breadcrumb_dashboard'], href: '/owner' },
+    { label: labels['owner.statement.breadcrumb_statements'], href: '/owner/statements' },
+    { label: labels['owner.statement.breadcrumb_detail'], current: true },
+  ];
+
+  return (
+    <>
+      <Breadcrumb items={breadcrumbs} />
+      <OwnerStatementDetailClient statement={detail} labels={labels} />
+    </>
+  );
 }

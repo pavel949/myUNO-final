@@ -211,7 +211,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                     {alert.actionUrl && (
                       <Link href={alert.actionUrl}>
                         <Button variant="secondary" size="sm">
-                          View
+                          {labels['owner.alert.action_view']}
                         </Button>
                       </Link>
                     )}

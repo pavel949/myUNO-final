@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
@@ -56,6 +57,9 @@ export default async function ServiceDetailPage({
   }
 
   const labels = await getLabels({
+    'services.breadcrumb_home': 'Home',
+    'services.breadcrumb_services': 'Services',
+    'services.breadcrumb_detail': 'Service Details',
     'services.detail.title': 'Service',
     'services.detail.by_provider': 'By {provider}',
     'services.detail.vetted_badge': 'Vetted',
@@ -71,6 +75,7 @@ export default async function ServiceDetailPage({
     'services.detail.advance_notice_none': 'None',
     'services.detail.about_provider': 'About the provider',
     'services.detail.order': 'Order this service',
+    'services.detail.photos': 'Photos',
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
     'services.wizard.when': 'When',
@@ -116,8 +121,16 @@ export default async function ServiceDetailPage({
     quote: labels['services.detail.quote'],
   };
 
+  const breadcrumbs = [
+    { label: labels['services.breadcrumb_home'], href: '/' },
+    { label: labels['services.breadcrumb_services'], href: '/services' },
+    { label: labels['services.breadcrumb_detail'], current: true },
+  ];
+
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-background">
+      <Breadcrumb items={breadcrumbs} />
+      <div className="p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         {/* Cover image */}
         {service.coverUrl && (
@@ -202,7 +215,7 @@ export default async function ServiceDetailPage({
         {/* Gallery */}
         {service.mediaUrls.length > 0 && (
           <div className="mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">Photos</h2>
+            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
               {service.mediaUrls.map((url, idx) => (
                 <Image
@@ -240,6 +253,7 @@ export default async function ServiceDetailPage({
             </Link>
           </div>
         </div>
+      </div>
       </div>
     </main>
   );

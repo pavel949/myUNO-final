@@ -41,15 +41,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   );
 };
 
-export const LoadingState: React.FC<{ message?: string }> = ({
-  message = 'Loading...',
+interface LoadingStateProps {
+  message?: string;
+  labels?: Record<string, string>;
+}
+
+export const LoadingState: React.FC<LoadingStateProps> = ({
+  message,
+  labels = {},
 }) => {
+  const displayMessage = message || labels['ui.state.loading_default'] || 'Loading...';
   return (
     <div className="flex flex-col items-center justify-center py-80 px-16">
       <div className="animate-spin mb-24">
         <div className="w-56 h-56 border-4 border-border-line border-t-brand-andaman rounded-full" />
       </div>
-      <p className="text-body text-text-stone">{message}</p>
+      <p className="text-body text-text-stone">{displayMessage}</p>
     </div>
   );
 };
@@ -58,12 +65,14 @@ interface ErrorStateProps {
   title: string;
   description?: string;
   onRetry?: () => void;
+  labels?: Record<string, string>;
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
   title,
   description,
   onRetry,
+  labels = {},
 }) => {
   return (
     <div className="flex flex-col items-center justify-center py-80 px-16 text-center">
@@ -84,7 +93,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       {description && <p className="text-body text-text-stone mb-24">{description}</p>}
       {onRetry && (
         <Button onClick={onRetry} variant="primary">
-          Retry
+          {labels['ui.state.error_retry'] || 'Retry'}
         </Button>
       )}
     </div>

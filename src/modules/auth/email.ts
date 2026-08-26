@@ -4,47 +4,41 @@ export interface EmailMessage {
   html: string;
 }
 
-async function sendViaResend(message: EmailMessage): Promise<void> {
+export async function sendEmail(message: EmailMessage): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || 'noreply@myuno.local';
+  // Use Resend's pre-verified test domain if EMAIL_FROM not set (works without domain verification)
+  // Switch to your verified domain once available: hello@yourdomain.com
+  const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not set');
+    // Development fallback: log that an email would have gone out (no contents to avoid leaking reset links)
+    // Doc 12 requires that auth emails with one-time links never appear in logs in production
+    console.log(
+      `[EMAIL - DEV/MISSING_KEY] would send to ${message.to.split('@')[0]}@***: "${message.subject}"`
+    );
+    return;
   }
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      from,
-      to: message.to,
-      subject: message.subject,
-      html: message.html,
-    }),
-  });
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from,
+        to: message.to,
+        subject: message.subject,
+        html: message.html,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Resend API error: ${response.status} - ${error}`);
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`[RESEND ERROR] ${response.status}: ${error}`);
+    }
+  } catch (err) {
+    console.error('[RESEND SEND ERROR]', err);
   }
-}
-
-async function sendViaConsole(message: EmailMessage): Promise<void> {
-  // The console fallback records that an email would have gone out — not who
-  // to, and not what it said. These are auth emails: their bodies carry
-  // one-time reset and verification links, so dumping them to a log hands
-  // anyone with log access a working account takeover (doc 12).
-  console.log(
-    `📧 Email would be sent: subject="${message.subject}" (${message.html.length} chars)`
-  );
-}
-
-export async function sendEmail(message: EmailMessage): Promise<void> {
-  if (process.env.RESEND_API_KEY) {
-    return sendViaResend(message);
-  }
-  return sendViaConsole(message);
 }

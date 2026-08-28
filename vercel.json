@@ -1,16 +1,50 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/check-tm30-escalations",
-      "schedule": "0 9 * * *"
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment mode. Set to 'production' for Vercel deployments.",
+      "value": "production",
+      "required": true
     },
-    {
-      "path": "/api/cron/run-all",
-      "schedule": "0 3 * * *"
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection string to Supabase. MUST use the session pooler (port 5432), not transaction mode (port 6543). Use format: postgresql://user:password@db.*.pooler.supabase.com:5432/postgres",
+      "required": true
     },
-    {
-      "path": "/api/cron/sync-ical-imports",
-      "schedule": "0 12 * * *"
+    "SESSION_SECRET": {
+      "description": "Session signing secret for NextAuth. Generate with: openssl rand -base64 32",
+      "required": true
+    },
+    "ENCRYPTION_KEY": {
+      "description": "AES-256-GCM key for PII field encryption. Generate with: openssl rand -hex 32. CRITICAL: Once set, this key cannot change without losing all encrypted data.",
+      "required": true
+    },
+    "NEXTAUTH_SECRET": {
+      "description": "NextAuth signing secret (same as SESSION_SECRET).",
+      "required": true
+    },
+    "NEXTAUTH_URL": {
+      "description": "Base URL for the application (e.g., https://myuno-final.vercel.app)",
+      "required": true
+    },
+    "CRON_SECRET": {
+      "description": "Bearer token for protecting /api/cron/* routes. Generate with: openssl rand -hex 24",
+      "required": true
+    },
+    "RESEND_API_KEY": {
+      "description": "API key for Resend email service. Optional: if unset, emails log to console instead.",
+      "required": false
+    },
+    "EMAIL_FROM": {
+      "description": "Email sender address. Defaults to Resend's test domain (onboarding@resend.dev). Once your domain is verified in Resend, set to your custom domain.",
+      "required": false
+    },
+    "CONTENT_REVIEW_GATE_ENABLED": {
+      "description": "Enable/disable content review deployment gate. Set to 'true' to block deployments with review-pending content.",
+      "value": "true",
+      "required": false
     }
-  ]
+  },
+  "regions": ["sin1"]
 }

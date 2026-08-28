@@ -109,16 +109,27 @@ export async function register(input: RegisterInput) {
   });
 
   const verifyUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify?token=${token}`;
-  await sendEmail({
-    to: email,
-    subject: 'Verify your email',
-    html: `
-      <p>Welcome, ${firstName}!</p>
-      <p><a href="${verifyUrl}">Click here to verify your email</a></p>
-      <p>Or copy this link: ${verifyUrl}</p>
-      <p>This link expires in ${ttlMinutes} minutes.</p>
-    `,
-  });
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: 'Verify your email',
+      html: `
+        <p>Welcome, ${firstName}!</p>
+        <p><a href="${verifyUrl}">Click here to verify your email</a></p>
+        <p>Or copy this link: ${verifyUrl}</p>
+        <p>This link expires in ${ttlMinutes} minutes.</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error('Failed to send verification email:', {
+      to: email,
+      error: emailError instanceof Error ? emailError.message : String(emailError),
+      resendKeySet: !!process.env.RESEND_API_KEY,
+    });
+    // Don't throw — let registration succeed even if email fails
+    // The identity was created successfully; email is best-effort
+  }
 
   return identity;
 }

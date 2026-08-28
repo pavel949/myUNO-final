@@ -16,6 +16,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
     console.log(
       `[EMAIL - DEV/MISSING_KEY] would send to ${message.to.split('@')[0]}@***: "${message.subject}"`
     );
+    console.warn('[EMAIL] RESEND_API_KEY is not set. Emails will not be delivered. Set RESEND_API_KEY in environment variables.');
     return;
   }
 
@@ -37,8 +38,12 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
     if (!response.ok) {
       const error = await response.text();
       console.error(`[RESEND ERROR] ${response.status}: ${error}`);
+      throw new Error(`Resend API error ${response.status}: ${error}`);
     }
+
+    console.log(`[EMAIL SENT] to ${message.to.split('@')[0]}@***: "${message.subject}"`);
   } catch (err) {
-    console.error('[RESEND SEND ERROR]', err);
+    console.error('[RESEND SEND ERROR]', err instanceof Error ? err.message : String(err));
+    throw err;
   }
 }

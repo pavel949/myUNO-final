@@ -77,9 +77,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Register error:', error);
+    console.error('Register error:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      body: { firstName, lastName, email, locale },
+      env: {
+        database_url_set: !!process.env.DATABASE_URL,
+        node_env: process.env.NODE_ENV,
+      },
+    });
     return NextResponse.json(
-      { error: 'Registration failed' },
+      { error: 'Registration failed', details: error instanceof Error ? error.message : undefined },
       { status: 500 }
     );
   }

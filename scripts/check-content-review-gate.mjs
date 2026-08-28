@@ -32,6 +32,20 @@ async function checkContentReviewGate() {
       return true;
     }
 
+    // Pre-check database connectivity before querying
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (connError) {
+      console.warn('[CONTENT GATE] ⚠️  Database unreachable; skipping gate check');
+      // In production, connectivity errors block deployment (fail early)
+      // In development, allow the build to proceed
+      if (ENV === 'production') {
+        console.error('[CONTENT GATE] ❌ Production deployment blocked due to database connectivity');
+        return false;
+      }
+      return true;
+    }
+
     const reviewPending = await prisma.translation.findMany({
       where: { status: 'needs_review' },
       select: {

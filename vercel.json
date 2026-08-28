@@ -1,16 +1,6 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/check-tm30-escalations",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/run-all",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/sync-ical-imports",
-      "schedule": "0 12 * * *"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
+  "regions": ["sin1"]
 }

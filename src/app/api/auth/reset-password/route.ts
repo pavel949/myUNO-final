@@ -28,9 +28,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Password reset error:', error);
+    console.error('Password reset error:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      env: {
+        database_url_set: !!process.env.DATABASE_URL,
+        node_env: process.env.NODE_ENV,
+      },
+    });
     return NextResponse.json(
-      { error: 'Password reset failed' },
+      { error: 'Password reset failed', details: error instanceof Error ? error.message : undefined },
       { status: 500 }
     );
   }

@@ -66,6 +66,8 @@ export {
   sendPostStayPrompts,
 } from './lifecycle.jobs';
 
+export { remindUnansweredRequests } from './notify-request-reminder';
+
 // Reviews of the guest, after their stay — the other direction from stay
 // reviews. Built on the polymorphic Review with target_type 'guest'.
 export {

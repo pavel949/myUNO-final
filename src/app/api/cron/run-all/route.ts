@@ -6,6 +6,7 @@ import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
 import {
   expireHolds,
   autoDeclineRequests,
+  remindUnansweredRequests,
   sendPrearrivalReminders,
   sendPostStayPrompts,
 } from '@/modules/booking';
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest) {
   try {
     const expired = await expireHolds(prisma);
     const declined = await autoDeclineRequests(prisma);
-    results.bookingLifecycle = `ok (${expired} holds expired, ${declined} requests auto-declined)`;
+    const reminded = await remindUnansweredRequests(prisma);
+    results.bookingLifecycle = `ok (${expired} holds expired, ${declined} requests auto-declined, ${reminded} request reminders)`;
   } catch (error) {
     console.error('[Cron run-all] booking lifecycle failed:', error);
     results.bookingLifecycle = 'failed';

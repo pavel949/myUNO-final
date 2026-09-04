@@ -29,7 +29,8 @@ describe('what a resident can see', () => {
         identityId: residentId,
         role: 'resident',
         scopeType: scope.unitId ? 'unit' : 'project',
-        projectId: scope.projectId ?? null,
+        // Unit scope requires the project as well (doc 02 §2.8).
+        projectId: scope.projectId ?? projectId,
         unitId: scope.unitId ?? null,
         status: 'active',
       },

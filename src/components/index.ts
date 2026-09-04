@@ -14,6 +14,8 @@ export { LegalEntityBlock } from './LegalEntityBlock';
 // screen markup so every guest surface shares one implementation.
 export { UnitCard, type UnitCardProps } from './UnitCard';
 export { Pagination, type PaginationProps } from './Pagination';
+export { PriceBreakdown, type PriceLine, type PriceBreakdownProps } from './PriceBreakdown';
+export { BookingWidget, type BookingWidgetProps } from './BookingWidget';
 
 // Owner components
 export { StatTile, ProjectSwitcher, BookingsList, LatestStatementCard, OpenTicketsList, SellInterestCard, OwnerStayModal } from './owner';

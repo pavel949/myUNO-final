@@ -10,6 +10,11 @@ export { MoneyAmount, type MoneyAmountProps } from './MoneyAmount';
 export { RoleContextBanner } from './RoleContextBanner';
 export { LegalEntityBlock } from './LegalEntityBlock';
 
+// Canonical booking/listing components (doc 06 §3) — extracted from inline
+// screen markup so every guest surface shares one implementation.
+export { UnitCard, type UnitCardProps } from './UnitCard';
+export { Pagination, type PaginationProps } from './Pagination';
+
 // Owner components
 export { StatTile, ProjectSwitcher, BookingsList, LatestStatementCard, OpenTicketsList, SellInterestCard, OwnerStayModal } from './owner';
 

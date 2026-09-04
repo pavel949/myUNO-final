@@ -75,6 +75,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
+    'staff.ops.announcements_link': 'Post announcement →',
     'staff.ops.arrivals': "Today's arrivals",
     'staff.ops.booking_requests': 'Booking requests',
     'staff.ops.requests_open_inbox': 'Open inbox →',
@@ -260,6 +261,12 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.requests_link']}
+            </Link>
+            <Link
+              href="/announcements"
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.announcements_link']}
             </Link>
           </div>
         </div>

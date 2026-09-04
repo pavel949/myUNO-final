@@ -27,7 +27,7 @@ Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on bra
 | **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, `/mc/calendar` + unit pricing, fee reports (period picker + CSV export), announcements | **Works** — F-MC-2 boards on `/mc` tabs; dedicated sub-routes for TM30, mobilization, requests, costs, calendar index |
 | **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
 | **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, `/ops/mobilization`, `/ops/calendar`, unit calendar | **Works** — F-OPS-4 calendar/pricing at `/ops/calendar/[unitId]` + MC `/mc/units/[unitId]` |
-| **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Mostly** — see §4 |
+| **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Works** — doc 08 §6 sections built and linked in sidebar; reconciliation at `/admin/finance/reconciliation` |
 | **Any role** | — | `/messages`, `/tickets`, `/services` | **Works** |
 
 ~~**Nobody has an account surface.**~~ **Built** — `/account` carries profile, locale, password and notification preferences, with the two obligation-carrying notification types fixed on. For a platform under the PDPA, consent nobody could withdraw was the sharpest gap here.

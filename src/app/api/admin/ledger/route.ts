@@ -6,24 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user?.identityId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin role
-    const isAdmin = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-      select: { isAdmin: true },
-    });
-
-    if (!isAdmin?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const { searchParams } = new URL(req.url);
     const unitId = searchParams.get('unitId');

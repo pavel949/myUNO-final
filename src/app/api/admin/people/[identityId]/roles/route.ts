@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAction } from '@/app/libs/onboardingGuard';
 
 /**
  * What roles this person holds, and where.
@@ -13,10 +13,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 export const dynamic = 'force-dynamic';
 
 export async function GET(_req: Request, { params }: { params: { identityId: string } }) {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await requireAction('people:view');
+  if (!guard.ok) return guard.error;
 
   const [identity, assignments] = await Promise.all([
     prisma.identity.findUnique({

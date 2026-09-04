@@ -4,6 +4,8 @@ import Link from 'next/link';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
+import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
+import type { BookingRequestBreakdownLine } from '@/modules/booking';
 
 interface McBookingRequestRow {
   id: string;
@@ -16,6 +18,9 @@ interface McBookingRequestRow {
   guestName: string;
   unitId: string;
   unitName: string;
+  nights: number;
+  completedStayCount: number;
+  breakdownLines: BookingRequestBreakdownLine[];
 }
 
 export default function McRequestsClient({
@@ -45,7 +50,7 @@ export default function McRequestsClient({
       {requests.map((request) => {
         const party = request.adults + request.children;
         return (
-          <li key={request.id} className="p-20 flex flex-col md:flex-row md:items-center gap-16">
+          <li key={request.id} className="p-20 flex flex-col lg:flex-row lg:items-start gap-16">
             <div className="flex-1 min-w-0">
               <p className="text-body font-semibold text-text-ink">
                 {request.guestName}
@@ -62,7 +67,7 @@ export default function McRequestsClient({
               <p className="text-small text-text-secondary mt-4">
                 {new Date(request.startDate).toLocaleDateString()} —{' '}
                 {new Date(request.endDate).toLocaleDateString()} · {party}{' '}
-                {labels['mc.requests.guests']} · ฿{request.totalThb.toLocaleString()}
+                {labels['mc.requests.guests']}
               </p>
               {request.requestExpiresAt ? (
                 <p className="text-small text-state-warning mt-4">
@@ -70,6 +75,12 @@ export default function McRequestsClient({
                   {new Date(request.requestExpiresAt).toLocaleString()}
                 </p>
               ) : null}
+              <BookingRequestInboxDetails
+                nights={request.nights}
+                completedStayCount={request.completedStayCount}
+                breakdownLines={request.breakdownLines}
+                labels={labels}
+              />
             </div>
             <BookingRequestRespondActions
               bookingId={request.id}

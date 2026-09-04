@@ -41,6 +41,13 @@ export {
 } from './request-decline-reasons';
 
 export {
+  enrichBookingRequestInbox,
+  summarizePriceBreakdown,
+  type BookingRequestBreakdownLine,
+  type BookingRequestInboxItem,
+} from './request-inbox-enrichment';
+
+export {
   computeRefundPercentage,
   computeRefundAmount,
   DEFAULT_POLICIES,

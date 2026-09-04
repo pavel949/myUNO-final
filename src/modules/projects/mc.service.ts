@@ -1,4 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import {
+  enrichBookingRequestInbox,
+  type BookingRequestInboxItem,
+} from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { getProjectIcalConflictAlerts } from '@/modules/integrations';
 import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
@@ -163,24 +167,7 @@ export async function getMCBookings(
   return bookings;
 }
 
-export interface McBookingRequest {
-  id: string;
-  startDate: Date;
-  endDate: Date;
-  totalThb: number;
-  requestExpiresAt: Date | null;
-  adults: number;
-  children: number;
-  guestIdentity: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  unit: {
-    id: string;
-    name: string;
-  };
-}
+export type McBookingRequest = BookingRequestInboxItem;
 
 /**
  * Pending booking requests for MC-managed units (doc 07 F-OPS-5 / F-MC-2).
@@ -224,7 +211,7 @@ export async function getMcBookingRequests(
     return [];
   }
 
-  return db.booking.findMany({
+  return enrichBookingRequestInbox(db, await db.booking.findMany({
     where: {
       unitId: { in: unitIds },
       status: 'requested',
@@ -237,6 +224,7 @@ export async function getMcBookingRequests(
       requestExpiresAt: true,
       adults: true,
       children: true,
+      priceBreakdown: true,
       guestIdentity: {
         select: {
           id: true,
@@ -253,7 +241,7 @@ export async function getMcBookingRequests(
     },
     orderBy: [{ requestExpiresAt: 'asc' }, { startDate: 'asc' }],
     take: 50,
-  });
+  }));
 }
 
 /**

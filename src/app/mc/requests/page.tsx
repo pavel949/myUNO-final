@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getMcBookingRequests } from '@/modules/projects';
 import { getBookingDeclineReasonOptions } from '@/modules/booking';
 import { getMCProjectScopes } from '@/app/libs/projectScope';
+import { bookingRequestInboxLabelDrafts } from '@/lib/bookingRequestInboxLabels';
 import McRequestsClient from './requests-client';
 
 export const dynamic = 'force-dynamic';
@@ -85,6 +86,7 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
   )}`;
 
   const labels = await getLabels({
+    ...bookingRequestInboxLabelDrafts,
     'mc.requests.title': 'Booking requests',
     'mc.requests.back': '← MC portal',
     'mc.requests.context': 'Portfolio context',
@@ -147,6 +149,9 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
             guestName: `${request.guestIdentity.firstName} ${request.guestIdentity.lastName}`,
             unitId: request.unit.id,
             unitName: request.unit.name,
+            nights: request.nights,
+            completedStayCount: request.completedStayCount,
+            breakdownLines: request.breakdownLines,
           }))}
           labels={labels}
         />

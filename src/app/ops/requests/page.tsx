@@ -14,6 +14,7 @@ import {
   resolveOpsProjectContext,
   validatedActiveProjectId,
 } from '@/app/libs/opsProjectContext';
+import { bookingRequestInboxLabelDrafts } from '@/lib/bookingRequestInboxLabels';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,7 @@ export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageP
   ]);
 
   const labels = await getLabels({
+    ...bookingRequestInboxLabelDrafts,
     'staff.ops.requests_title': 'Booking requests',
     'staff.ops.requests_back': '← Ops board',
     'staff.ops.requests_empty': 'No pending booking requests.',
@@ -112,6 +114,9 @@ export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageP
             unitId: request.unit.id,
             unitName: request.unit.name,
             unitCalendarHref: opsHref(`/ops/calendar/${request.unit.id}`, validActiveProjectId),
+            nights: request.nights,
+            completedStayCount: request.completedStayCount,
+            breakdownLines: request.breakdownLines,
           }))}
           labels={labels}
         />

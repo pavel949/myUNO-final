@@ -16,6 +16,7 @@ import {
   resolveOpsProjectContext,
   validatedActiveProjectId,
 } from '@/app/libs/opsProjectContext';
+import { bookingRequestInboxLabelDrafts } from '@/lib/bookingRequestInboxLabels';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
   const switcherBasePath = '/ops';
 
   const labels = await getLabels({
+    ...bookingRequestInboxLabelDrafts,
     'staff.ops.title': 'Ops board',
     'staff.ops.context.switcher': 'Project context',
     'staff.ops.context.all_projects': 'All projects',
@@ -158,6 +160,22 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
       requestExpiresAt: b.requestExpiresAt ? b.requestExpiresAt.toISOString() : null,
     }));
 
+  const serializeRequests = (list: typeof pendingRequests) =>
+    list.map((booking) => ({
+      id: booking.id,
+      startDate: booking.startDate.toISOString(),
+      endDate: booking.endDate.toISOString(),
+      totalThb: Math.round(booking.totalThb / 100),
+      party: booking.adults + booking.children,
+      unitId: booking.unit.id,
+      unitName: booking.unit.name,
+      guestName: `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`,
+      requestExpiresAt: booking.requestExpiresAt ? booking.requestExpiresAt.toISOString() : null,
+      nights: booking.nights,
+      completedStayCount: booking.completedStayCount,
+      breakdownLines: booking.breakdownLines,
+    }));
+
   return (
     <main className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
@@ -229,7 +247,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
           mobilizationUnits={mobilizationUnits}
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}
-          pendingRequests={serialize(pendingRequests)}
+          pendingRequests={serializeRequests(pendingRequests)}
           pendingPayment={serialize(pendingPayment)}
           pendingServiceOrders={pendingServiceOrders.map((o) => ({
             id: o.id,

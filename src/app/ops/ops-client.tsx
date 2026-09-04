@@ -7,6 +7,8 @@ import { Button } from '@/components/Button';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
+import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
+import type { BookingRequestBreakdownLine } from '@/modules/booking';
 
 interface OpsBooking {
   id: string;
@@ -21,6 +23,21 @@ interface OpsBooking {
   guestName: string;
   paid: boolean;
   requestExpiresAt: string | null;
+}
+
+interface OpsRequestBooking {
+  id: string;
+  startDate: string;
+  endDate: string;
+  totalThb: number;
+  party: number;
+  unitId: string;
+  unitName: string;
+  guestName: string;
+  requestExpiresAt: string | null;
+  nights: number;
+  completedStayCount: number;
+  breakdownLines: BookingRequestBreakdownLine[];
 }
 
 interface OpsServiceOrder {
@@ -104,7 +121,7 @@ export default function OpsBoardClient({
   mobilizationUnits: OpsMobilizationUnit[];
   arrivals: OpsBooking[];
   departures: OpsBooking[];
-  pendingRequests: OpsBooking[];
+  pendingRequests: OpsRequestBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
   openTickets: OpsTicket[];
@@ -217,36 +234,38 @@ export default function OpsBoardClient({
     error_generic: labels['staff.ops.error_generic'],
   };
 
-  const RequestRow = ({ booking }: { booking: OpsBooking }) => (
-    <div className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0">
+  const RequestRow = ({ booking }: { booking: OpsRequestBooking }) => (
+    <div className="flex flex-col lg:flex-row lg:items-start gap-16 py-16 border-b border-border-line last:border-b-0">
       <div className="flex-1 min-w-0">
         <p className="text-body font-semibold text-text-ink">
           {booking.guestName}
           <span className="text-text-secondary font-normal">
             {' · '}
-            {booking.unitId ? (
-              <Link
-                href={`/ops/calendar/${booking.unitId}`}
-                className="text-brand-andaman hover:underline"
-              >
-                {booking.unitName}
-              </Link>
-            ) : (
-              booking.unitName
-            )}
+            <Link
+              href={`/ops/calendar/${booking.unitId}`}
+              className="text-brand-andaman hover:underline"
+            >
+              {booking.unitName}
+            </Link>
           </span>
         </p>
-        <p className="text-small text-text-secondary">
+        <p className="text-small text-text-secondary mt-4">
           {new Date(booking.startDate).toLocaleDateString()} —{' '}
           {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
-          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
+          {labels['staff.ops.guest'].toLowerCase()}
         </p>
         {booking.requestExpiresAt ? (
-          <p className="text-small text-state-warning">
+          <p className="text-small text-state-warning mt-4">
             {labels['staff.ops.request_expires']}:{' '}
             {new Date(booking.requestExpiresAt).toLocaleString()}
           </p>
         ) : null}
+        <BookingRequestInboxDetails
+          nights={booking.nights}
+          completedStayCount={booking.completedStayCount}
+          breakdownLines={booking.breakdownLines}
+          labels={labels}
+        />
       </div>
       <BookingRequestRespondActions
         bookingId={booking.id}

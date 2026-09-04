@@ -1,10 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { getTm30OnTimeRate } from '@/modules/analytics';
+import {
+  enrichBookingRequestInbox,
+  type BookingRequestInboxItem,
+} from '@/modules/booking';
 
 export interface OpsBoardData {
   arrivals: OpsBooking[];
   departures: OpsBooking[];
-  pendingRequests: OpsBooking[];
+  pendingRequests: BookingRequestInboxItem[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
   openTickets: OpsTicket[];
@@ -33,18 +37,7 @@ export interface OpsBooking {
   payments: { id: string }[];
 }
 
-export interface OpsBookingRequest {
-  id: string;
-  startDate: Date;
-  endDate: Date;
-  totalThb: number;
-  adults: number;
-  children: number;
-  requestExpiresAt: Date | null;
-  projectName: string;
-  unit: { id: string; name: string };
-  guestIdentity: { firstName: string; lastName: string };
-}
+export interface OpsBookingRequest extends BookingRequestInboxItem {}
 
 const opsBookingRequestSelect = {
   id: true,
@@ -54,9 +47,10 @@ const opsBookingRequestSelect = {
   adults: true,
   children: true,
   requestExpiresAt: true,
+  priceBreakdown: true,
   project: { select: { name: true } },
   unit: { select: { id: true, name: true } },
-  guestIdentity: { select: { firstName: true, lastName: true } },
+  guestIdentity: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
 interface OpsServiceOrder {
@@ -175,7 +169,7 @@ export async function getOpsBoard(
     },
   };
 
-  const [arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
+  const [arrivals, departures, pendingRequestsRaw, pendingPayment, pendingServiceOrders, openTickets, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
     db.booking.findMany({
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
@@ -199,7 +193,7 @@ export async function getOpsBoard(
         ...(projectFilter ? { projectId: projectFilter } : {}),
         status: 'requested',
       },
-      select: bookingSelect,
+      select: opsBookingRequestSelect,
       orderBy: [{ requestExpiresAt: 'asc' }, { createdAt: 'asc' }],
       take: 50,
     }),
@@ -261,6 +255,8 @@ export async function getOpsBoard(
       },
     }),
   ]);
+
+  const pendingRequests = await enrichBookingRequestInbox(db, pendingRequestsRaw);
 
   return {
     arrivals,
@@ -341,7 +337,7 @@ export async function getOpsMobilizationQueue(
 export async function getOpsBookingRequests(
   db: PrismaClient,
   scope?: OpsBoardScope
-): Promise<OpsBookingRequest[]> {
+): Promise<BookingRequestInboxItem[]> {
   if (scope && (!scope.projectIds || scope.projectIds.length === 0)) {
     return [];
   }
@@ -360,16 +356,5 @@ export async function getOpsBookingRequests(
     take: 100,
   });
 
-  return rows.map((row) => ({
-    id: row.id,
-    startDate: row.startDate,
-    endDate: row.endDate,
-    totalThb: row.totalThb,
-    adults: row.adults,
-    children: row.children,
-    requestExpiresAt: row.requestExpiresAt,
-    projectName: row.project.name,
-    unit: row.unit,
-    guestIdentity: row.guestIdentity,
-  }));
+  return enrichBookingRequestInbox(db, rows);
 }

@@ -189,6 +189,7 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/retention-jobs',
   '/api/cron/rollup-metrics',
   '/api/cron/run-all',
+  '/api/cron/run-frequent',
   '/api/cron/sync-ical-imports',
   '/api/health',
   // Google redirects the browser here after consent — never an in-app link.

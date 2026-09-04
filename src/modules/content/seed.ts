@@ -2991,6 +2991,38 @@ const STATUS_LABEL_KEYS: KeyDef[] = [
   { key: 'common.line_item_category.performance_fee', namespace: 'common', description: 'Statement line category: performance fee', en: 'Performance fee', ru: 'Комиссия за результат', th: 'ค่าธรรมเนียมตามผลงาน', status: NR },
 ];
 
+const SCHEDULER_KEYS: KeyDef[] = [
+  { key: 'admin.nav.scheduler', namespace: 'admin', description: 'Admin nav: scheduler health', en: 'Scheduler', ru: 'Планировщик', status: NR },
+  { key: 'admin.scheduler.title', namespace: 'admin', description: 'Scheduler health: page title', en: 'Scheduler', ru: 'Планировщик', status: NR },
+  { key: 'admin.scheduler.subtitle', namespace: 'admin', description: 'Scheduler health: what this page is', en: 'Each background job’s last run. A job that has not run when it should is a red light, not a mystery.', ru: 'Последний запуск каждой фоновой задачи. Задача, которая не отработала вовремя — красный сигнал, а не загадка.', status: NR },
+  { key: 'admin.scheduler.headline.ok', namespace: 'admin', description: 'Scheduler health: all jobs on time', en: 'All jobs have run on time.', ru: 'Все задачи отработали вовремя.', status: NR },
+  { key: 'admin.scheduler.headline.attention', namespace: 'admin', description: 'Scheduler health: count of jobs that need attention', en: 'Need attention: {count}', ru: 'Требуют внимания: {count}', status: NR },
+  { key: 'admin.scheduler.col.job', namespace: 'admin', description: 'Scheduler health: job column', en: 'Job', ru: 'Задача', status: NR },
+  { key: 'admin.scheduler.col.status', namespace: 'admin', description: 'Scheduler health: status column', en: 'Status', ru: 'Статус', status: NR },
+  { key: 'admin.scheduler.col.last_run', namespace: 'admin', description: 'Scheduler health: last run column', en: 'Last run', ru: 'Последний запуск', status: NR },
+  { key: 'admin.scheduler.col.outcome', namespace: 'admin', description: 'Scheduler health: last outcome column', en: 'Last outcome', ru: 'Результат', status: NR },
+  { key: 'admin.scheduler.col.summary', namespace: 'admin', description: 'Scheduler health: detail column', en: 'Detail', ru: 'Подробности', status: NR },
+  { key: 'admin.scheduler.timezone_note', namespace: 'admin', description: 'Scheduler health: timezone', en: 'Times are Phuket time (UTC+7).', ru: 'Время указано по Пхукету (UTC+7).', status: NR },
+  { key: 'admin.scheduler.status.ok', namespace: 'admin', description: 'Scheduler health: on schedule', en: 'On schedule', ru: 'По расписанию', status: NR },
+  { key: 'admin.scheduler.status.failed', namespace: 'admin', description: 'Scheduler health: last run failed', en: 'Last run failed', ru: 'Последний запуск не удался', status: NR },
+  { key: 'admin.scheduler.status.silent', namespace: 'admin', description: 'Scheduler health: overdue', en: 'Overdue — has not run', ru: 'Просрочено — не запускалась', status: NR },
+  { key: 'admin.scheduler.status.never', namespace: 'admin', description: 'Scheduler health: never run', en: 'Never run', ru: 'Никогда не запускалась', status: NR },
+  { key: 'admin.scheduler.outcome.ok', namespace: 'admin', description: 'Scheduler health: succeeded', en: 'Succeeded', ru: 'Успешно', status: NR },
+  { key: 'admin.scheduler.outcome.failed', namespace: 'admin', description: 'Scheduler health: failed outcome', en: 'Failed', ru: 'Ошибка', status: NR },
+  { key: 'admin.scheduler.empty_summary', namespace: 'admin', description: 'Scheduler health: empty cell', en: '—', ru: '—', status: NR },
+  { key: 'admin.scheduler.never_hint', namespace: 'admin', description: 'Scheduler health: why never-run appears', en: 'No recorded run. Either the scheduler is not firing, or this job has not been invoked since tracking began.', ru: 'Нет записанного запуска. Либо планировщик не срабатывает, либо задача не вызывалась с начала учёта.', status: NR },
+  { key: 'admin.scheduler.job.booking_lifecycle', namespace: 'admin', description: 'Scheduler job: hold expiry', en: 'Hold expiry and request auto-decline', ru: 'Истечение холдов и автоотклонение заявок', status: NR },
+  { key: 'admin.scheduler.job.tm30_escalations', namespace: 'admin', description: 'Scheduler job: TM30', en: 'TM30 filing escalations', ru: 'Эскалации TM30', status: NR },
+  { key: 'admin.scheduler.job.ical_sync', namespace: 'admin', description: 'Scheduler job: iCal', en: 'iCal import sync', ru: 'Синхронизация iCal', status: NR },
+  { key: 'admin.scheduler.job.verification_deadlines', namespace: 'admin', description: 'Scheduler job: verification', en: 'Pre-arrival verification deadlines', ru: 'Сроки верификации до заезда', status: NR },
+  { key: 'admin.scheduler.job.retention', namespace: 'admin', description: 'Scheduler job: retention', en: 'Retention and PDPA deletions', ru: 'Удаление по срокам хранения (PDPA)', status: NR },
+  { key: 'admin.scheduler.job.metrics_rollup', namespace: 'admin', description: 'Scheduler job: rollup', en: 'Nightly metric rollup', ru: 'Ночной расчёт метрик', status: NR },
+  { key: 'admin.scheduler.job.guest_lifecycle', namespace: 'admin', description: 'Scheduler job: guest messages', en: 'Pre-arrival and post-stay messages', ru: 'Сообщения до заезда и после выезда', status: NR },
+  { key: 'admin.scheduler.job.service_order_expiry', namespace: 'admin', description: 'Scheduler job: service orders', en: 'Stale service-order expiry', ru: 'Истечение просроченных заказов услуг', status: NR },
+  { key: 'admin.scheduler.cadence.frequent', namespace: 'admin', description: 'Scheduler cadence: frequent slot', en: 'Every 15 minutes', ru: 'Каждые 15 минут', status: NR },
+  { key: 'admin.scheduler.cadence.nightly', namespace: 'admin', description: 'Scheduler cadence: nightly slot', en: 'Nightly', ru: 'Раз в сутки', status: NR },
+];
+
 
 export async function seedContent(
   db: PrismaClient,
@@ -3017,7 +3049,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS];
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS];
 
   // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
   // one-row-per-await version (ensureContentKey + setTranslation's own

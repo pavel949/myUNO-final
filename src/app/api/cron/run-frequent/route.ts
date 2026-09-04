@@ -3,27 +3,24 @@ import { prisma } from '@/lib/prisma';
 import {
   isCronAuthorized,
   cronUnauthorized,
-  runNightlyJobs,
+  runFrequentJobs,
   dispatchFailed,
 } from '@/jobs';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Nightly dispatcher (Vercel Hobby cron slot 2). Covers verification
- * deadlines, retention/PDPA, metric rollups, guest lifecycle sends, stale
- * service orders, and a defensive pass of hold expiry.
+ * Frequent dispatcher (Vercel Hobby cron slot 1). Hold expiry, TM30
+ * escalation, and iCal import — the jobs that cannot wait for tonight.
  *
- * Each job is isolated: one failing job never blocks the others. Last run
- * and outcome are written to `job_run` for the admin scheduler panel.
+ * Each job is isolated. Last run + outcome land on `job_run`.
  */
 export async function POST(req: NextRequest) {
   if (!isCronAuthorized(req)) return cronUnauthorized();
 
-  const results = await runNightlyJobs(prisma);
+  const results = await runFrequentJobs(prisma);
   const failed = dispatchFailed(results);
   return NextResponse.json({ success: !failed, results }, { status: failed ? 500 : 200 });
 }
 
-// Vercel Cron issues GET requests; same handler, same CRON_SECRET guard.
 export const GET = POST;

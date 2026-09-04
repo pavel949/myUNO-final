@@ -740,6 +740,13 @@ enum ContractStatus {
   terminated
 }
 
+/// Last-run outcome for a scheduled job (doc 15 §5). Append-only; the admin
+/// panel reads the latest row per job_key.
+enum JobRunOutcome {
+  ok
+  failed
+}
+
 // --- The spine ---
 
 model Identity {
@@ -2785,4 +2792,23 @@ model SavedSearch {
   @@index([identityId])
   @@index([alertsEnabled])
   @@map("saved_search")
+}
+
+/// One execution of a registered scheduler job (doc 14 §1, doc 15 §5).
+/// Append-only: the health panel shows the latest row per `job_key`. A job
+/// that has never written a row, or whose last success is older than its
+/// cadence, is a red light — not a mystery.
+model JobRun {
+  id         String        @id @default(uuid())
+  createdAt  DateTime      @default(now()) @map("created_at")
+  jobKey     String        @map("job_key")
+  startedAt  DateTime      @map("started_at")
+  finishedAt DateTime      @map("finished_at")
+  outcome    JobRunOutcome
+  /// Short count/status text. Never error messages — Prisma failures can carry
+  /// connection strings, and a stack can carry PII.
+  summary    String?
+
+  @@index([jobKey, startedAt])
+  @@map("job_run")
 }

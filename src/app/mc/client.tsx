@@ -38,6 +38,7 @@ interface Booking {
   endDate: Date;
   totalThb: number;
   status: string;
+  requestExpiresAt?: Date | string | null;
   guestIdentity: {
     id: string;
     firstName: string;
@@ -502,6 +503,12 @@ export function MCDashboardClient({
           </div>
           <div className="flex items-center gap-12 shrink-0">
             <Link
+              href={`/mc/requests?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
+            >
+              {labels['mc.nav.requests']}
+            </Link>
+            <Link
               href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
               className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
             >
@@ -683,6 +690,12 @@ export function MCDashboardClient({
                             >
                               {statusLabel(booking.status)}
                             </span>
+                            {booking.status === 'requested' && booking.requestExpiresAt ? (
+                              <p className="text-caption text-state-warning mt-4">
+                                {labels['mc.bookings.request_expires']}:{' '}
+                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                              </p>
+                            ) : null}
                           </td>
                           <td className="p-16">{actionForBooking(booking)}</td>
                         </tr>

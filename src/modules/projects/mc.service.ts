@@ -121,7 +121,7 @@ export async function getMCBookings(
         in: unitIds,
       },
       status: {
-        in: ['pending_payment', 'confirmed', 'checked_in', 'checked_out'],
+        in: ['requested', 'pending_payment', 'confirmed', 'checked_in', 'checked_out'],
       },
     },
     select: {
@@ -130,10 +130,14 @@ export async function getMCBookings(
       endDate: true,
       totalThb: true,
       status: true,
+      requestExpiresAt: true,
+      adults: true,
+      children: true,
       guestIdentity: {
         select: {
           id: true,
           firstName: true,
+          lastName: true,
         },
       },
       unit: {
@@ -157,6 +161,99 @@ export async function getMCBookings(
   });
 
   return bookings;
+}
+
+export interface McBookingRequest {
+  id: string;
+  startDate: Date;
+  endDate: Date;
+  totalThb: number;
+  requestExpiresAt: Date | null;
+  adults: number;
+  children: number;
+  guestIdentity: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  unit: {
+    id: string;
+    name: string;
+  };
+}
+
+/**
+ * Pending booking requests for MC-managed units (doc 07 F-OPS-5 / F-MC-2).
+ */
+export async function getMcBookingRequests(
+  db: PrismaClient,
+  mcIdentityId: string,
+  projectId: string,
+  organizationId: string
+): Promise<McBookingRequest[]> {
+  const roleAssignment = await db.roleAssignment.findFirst({
+    where: {
+      identityId: mcIdentityId,
+      role: 'mc_member',
+      projectId,
+      organizationId,
+      status: 'active',
+    },
+  });
+
+  if (!roleAssignment) {
+    throw new Error('MC member does not have access to this project/organization');
+  }
+
+  const managedUnitIds = await db.unit.findMany({
+    where: {
+      projectId,
+      engagements: {
+        some: {
+          engagementType: 'via_management_company',
+          managementOrgId: organizationId,
+          status: 'active',
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  const unitIds = managedUnitIds.map((unit) => unit.id);
+  if (unitIds.length === 0) {
+    return [];
+  }
+
+  return db.booking.findMany({
+    where: {
+      unitId: { in: unitIds },
+      status: 'requested',
+    },
+    select: {
+      id: true,
+      startDate: true,
+      endDate: true,
+      totalThb: true,
+      requestExpiresAt: true,
+      adults: true,
+      children: true,
+      guestIdentity: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+      unit: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ requestExpiresAt: 'asc' }, { startDate: 'asc' }],
+    take: 50,
+  });
 }
 
 /**

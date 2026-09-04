@@ -113,6 +113,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.nav.announcements': 'Post an announcement',
     'mc.nav.tm30': 'TM30 queue',
     'mc.nav.mobilization': 'Mobilization',
+    'mc.nav.requests': 'Booking requests',
     'mc.ical_conflicts_title': 'OTA calendar conflicts',
     'mc.ical_conflicts_hint':
       'Imported OTA bookings overlap platform stays on your managed units. The platform calendar wins — correct each OTA channel manually.',
@@ -147,6 +148,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.bookings.confirm_cash': 'Confirm ฿{amount} received',
     'mc.bookings.approve': 'Approve',
     'mc.bookings.decline': 'Decline',
+    'mc.bookings.request_expires': 'Respond by',
     'mc.bookings.confirm_decline': 'Decline this booking request? The guest will be notified.',
     'mc.bookings.error_generic': 'Action failed. Please try again.',
     'mc.tickets.title': 'Tickets',

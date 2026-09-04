@@ -66,7 +66,9 @@ export {
   getMcTm30Queue,
   getMcMobilizationQueue,
   getMcIcalConflictAlerts,
+  getMcBookingRequests,
   type McMobilizationUnit,
+  type McBookingRequest,
 } from './mc.service';
 
 // Ownership history (chain of title). `Unit.ownerIdentityId` stays the current

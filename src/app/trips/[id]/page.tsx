@@ -89,6 +89,11 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.payment_failed_body':
       'Your card was declined or the checkout was interrupted. Nothing was charged — try again before your hold expires.',
     'booking.detail.retry_payment': 'Try payment again',
+    'booking.detail.refund_processing_title': 'Your refund is being processed',
+    'booking.detail.refund_processing_body':
+      'We are returning your payment to the original card. This usually takes a few business days — if it takes longer than expected, contact our team and we will follow up.',
+    'booking.detail.refund_support': 'Contact support',
+    'booking.detail.cancelled_no_refund': 'This booking was cancelled.',
   });
 
   return (

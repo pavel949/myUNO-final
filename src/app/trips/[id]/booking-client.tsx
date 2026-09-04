@@ -19,6 +19,7 @@ interface BookingDetail {
   guestNote?: string | null;
   verificationStatus?: string | null;
   paymentFailed?: boolean;
+  refundDisplayState?: 'none' | 'processing' | 'completed';
   depositClaim?: {
     id: string;
     description: string;
@@ -67,6 +68,16 @@ function rebookHref(booking: BookingDetail): string | null {
     children: String(booking.children),
   });
   return `/units/${booking.unit.id}?${params.toString()}`;
+}
+
+function supportTicketHref(booking: BookingDetail): string | null {
+  if (!booking.project?.id || !booking.unit?.id) return null;
+  const params = new URLSearchParams({
+    projectId: booking.project.id,
+    unitId: booking.unit.id,
+    bookingId: booking.id,
+  });
+  return `/tickets/new?${params.toString()}`;
 }
 
 const statusStyles: Record<string, string> = {
@@ -855,11 +866,33 @@ export default function BookingDetailClient({
 
         {booking.status === 'cancelled' && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <p className="text-body text-text-secondary">
-              {fill(labels['booking.detail.cancelled_note'], {
-                refund: (booking.refundAccruedThb ?? 0).toLocaleString(),
-              })}
-            </p>
+            {booking.refundDisplayState === 'processing' ? (
+              <>
+                <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+                  {labels['booking.detail.refund_processing_title']}
+                </h2>
+                <p className="text-body text-text-secondary mb-12">
+                  {labels['booking.detail.refund_processing_body']}
+                </p>
+                {supportTicketHref(booking) ? (
+                  <Link href={supportTicketHref(booking)!}>
+                    <Button variant="secondary" size="sm">
+                      {labels['booking.detail.refund_support']}
+                    </Button>
+                  </Link>
+                ) : null}
+              </>
+            ) : (booking.refundAccruedThb ?? 0) > 0 ? (
+              <p className="text-body text-text-secondary">
+                {fill(labels['booking.detail.cancelled_note'], {
+                  refund: (booking.refundAccruedThb ?? 0).toLocaleString(),
+                })}
+              </p>
+            ) : (
+              <p className="text-body text-text-secondary">
+                {labels['booking.detail.cancelled_no_refund']}
+              </p>
+            )}
           </div>
         )}
       </div>

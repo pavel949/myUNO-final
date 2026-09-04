@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
-import { getActiveDepositClaimForGuest } from '@/modules/finance';
+import { getActiveDepositClaimForGuest, getBookingRefundDisplayState } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
@@ -75,6 +75,11 @@ export async function GET(
       isGuest &&
       booking.status === 'pending_payment' &&
       booking.payments.some((p) => p.status === 'failed');
+    const refundDisplayState =
+      booking.status === 'cancelled'
+        ? await getBookingRefundDisplayState(prisma, params.id)
+        : 'none';
+
     if (isGuest) {
       const existingReview = await prisma.review.findFirst({
         where: {
@@ -103,6 +108,7 @@ export async function GET(
       hasReview,
       verificationStatus: booking.verificationStatus,
       paymentFailed,
+      refundDisplayState,
       depositClaim: depositClaim
         ? {
             id: depositClaim.id,

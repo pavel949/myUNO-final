@@ -1,5 +1,5 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
-import { findOrCreateThread, addSystemMessage } from '@/modules/comms';
+import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 
 /**
@@ -434,6 +434,116 @@ export async function refund(
   });
 
   return refund;
+}
+
+/** Guest-facing refund state on a cancelled booking (doc 07 F-GUEST-8). */
+export type BookingRefundDisplayState = 'none' | 'processing' | 'completed';
+
+/**
+ * Whether a cancelled booking's refund is still in flight for the guest UI.
+ * Failed provider refunds still read as "processing" — money state never lies
+ * silently to the guest (doc 07 F-GUEST-8, doc 10 §8).
+ */
+export async function getBookingRefundDisplayState(
+  db: PrismaClient,
+  bookingId: string
+): Promise<BookingRefundDisplayState> {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { status: true, refundAccruedThb: true },
+  });
+
+  if (!booking || booking.status !== 'cancelled' || (booking.refundAccruedThb ?? 0) <= 0) {
+    return 'none';
+  }
+
+  const refunds = await db.refund.findMany({
+    where: { payment: { bookingId } },
+    select: { status: true, amountThb: true },
+  });
+
+  if (refunds.length === 0) {
+    return 'processing';
+  }
+
+  const succeededTotal = refunds
+    .filter((r) => r.status === 'succeeded')
+    .reduce((sum, r) => sum + r.amountThb, 0);
+
+  if (succeededTotal >= (booking.refundAccruedThb ?? 0)) {
+    return 'completed';
+  }
+
+  return 'processing';
+}
+
+/**
+ * Provider-side refund failure (doc 07 F-GUEST-8, doc 10 §8).
+ * Sets Refund.status=failed and alerts every admin (N-10).
+ */
+export async function markRefundFailed(
+  db: PrismaClient,
+  refundId: string,
+  failureReason?: string
+) {
+  const refundRecord = await db.refund.findUnique({
+    where: { id: refundId },
+    include: {
+      payment: {
+        include: {
+          booking: {
+            include: {
+              unit: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!refundRecord) {
+    throw new Error(`Refund ${refundId} not found`);
+  }
+
+  if (refundRecord.status === 'failed') {
+    return refundRecord;
+  }
+
+  const failed = await db.refund.update({
+    where: { id: refundId },
+    data: { status: 'failed' },
+  });
+
+  const booking = refundRecord.payment.booking;
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const reconciliationUrl = `${baseUrl}/admin/finance/reconciliation`;
+  const amountBaht = Math.round(refundRecord.amountThb / 100);
+
+  const admins = await db.identity.findMany({
+    where: { isAdmin: true, status: 'active' },
+    select: { id: true },
+  });
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification(db, {
+        identityId: admin.id,
+        type: 'finance_refund_failed',
+        titleKey: 'notify.finance.refund_failed.title',
+        bodyKey: 'notify.finance.refund_failed.body',
+        params: {
+          refund_id: refundId,
+          booking_id: booking?.id,
+          unit_name: booking?.unit?.name ?? '',
+          amount_thb: amountBaht,
+          reconciliation_url: reconciliationUrl,
+          failure_reason: failureReason ?? 'provider_declined',
+        },
+      }).catch(() => null)
+    )
+  );
+
+  return failed;
 }
 
 /**

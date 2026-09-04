@@ -1,169 +1,176 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import { ProspectingAccountType, ProspectingAccountStatus } from '@prisma/client'
-import prismadb from '@/app/libs/prismadb'
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { can } from '@/modules/core';
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { ProspectingAccountStatus, ProspectingAccountType } from '@prisma/client';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface CreateProspectingAccountRequest {
-  identityId: string
-  accountType: ProspectingAccountType
-  reasonForContact?: string
-  priority?: number
-  assignedToIdentityId?: string
-  expectedCloseAt?: string
+  identityId: string;
+  accountType: ProspectingAccountType;
+  reasonForContact?: string;
+  priority?: number;
+  assignedToIdentityId?: string;
+  expectedCloseAt?: string;
+}
+
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) {
+    return { error: NextResponse.json({ error: 'Identity not found' }, { status: 404 }) };
+  }
+
+  if (
+    !(await can({
+      identity,
+      action: 'admin:view_all',
+      resource: { resourceType: 'platform' },
+    }))
+  ) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+
+  return { user, identity };
+}
+
+const accountInclude = {
+  identity: { select: { id: true, email: true, firstName: true, lastName: true } },
+  assignedTo: { select: { id: true, email: true, firstName: true, lastName: true } },
+} as const;
+
+function serializeAccount(account: {
+  id: string;
+  identityId: string;
+  accountType: ProspectingAccountType;
+  status: ProspectingAccountStatus;
+  reasonForContact: string | null;
+  priority: number;
+  lastContactedAt: Date | null;
+  expectedCloseAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  identity: { id: string; email: string | null; firstName: string; lastName: string };
+  assignedTo: { id: string; email: string | null; firstName: string; lastName: string } | null;
+}) {
+  return {
+    id: account.id,
+    identityId: account.identityId,
+    identityName: `${account.identity.firstName} ${account.identity.lastName}`.trim(),
+    identityEmail: account.identity.email,
+    accountType: account.accountType,
+    status: account.status,
+    reasonForContact: account.reasonForContact,
+    priority: account.priority,
+    assignedTo: account.assignedTo
+      ? {
+          id: account.assignedTo.id,
+          email: account.assignedTo.email,
+          name: `${account.assignedTo.firstName} ${account.assignedTo.lastName}`.trim(),
+        }
+      : null,
+    lastContactedAt: account.lastContactedAt?.toISOString() || null,
+    expectedCloseAt: account.expectedCloseAt?.toISOString() || null,
+    createdAt: account.createdAt.toISOString(),
+    updatedAt: account.updatedAt.toISOString(),
+  };
 }
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth && auth.error) return auth.error;
+
   try {
-    const currentUser = await getCurrentUser()
+    const url = new URL(req.url);
+    const identityId = url.searchParams.get('identityId');
+    const status = url.searchParams.get('status') as ProspectingAccountStatus | null;
+    const accountType = url.searchParams.get('accountType') as ProspectingAccountType | null;
+    const assignedToId = url.searchParams.get('assignedToId');
+    const statusesParam = url.searchParams.get('statuses');
 
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    const where: {
+      identityId?: string;
+      status?: ProspectingAccountStatus | { in: ProspectingAccountStatus[] };
+      accountType?: ProspectingAccountType;
+      assignedToIdentityId?: string;
+    } = {};
+
+    if (identityId) where.identityId = identityId;
+    if (status) where.status = status;
+    if (statusesParam) {
+      where.status = {
+        in: statusesParam.split(',').filter(Boolean) as ProspectingAccountStatus[],
+      };
     }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
+    if (accountType) where.accountType = accountType;
+    if (assignedToId) where.assignedToIdentityId = assignedToId;
 
-    const url = new URL(req.url)
-    const identityId = url.searchParams.get('identityId')
-    const status = url.searchParams.get('status') as ProspectingAccountStatus | null
-    const accountType = url.searchParams.get('accountType') as ProspectingAccountType | null
-    const assignedToId = url.searchParams.get('assignedToId')
-
-    const where: any = {}
-    if (identityId) where.identityId = identityId
-    if (status) where.status = status
-    if (accountType) where.accountType = accountType
-    if (assignedToId) where.assignedToIdentityId = assignedToId
-
-    const accounts = await prismadb.prospectingAccount.findMany({
+    const accounts = await prisma.prospectingAccount.findMany({
       where,
-      include: {
-        identity: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: { expectedCloseAt: 'asc' },
-    })
+      include: accountInclude,
+      orderBy: [{ priority: 'desc' }, { expectedCloseAt: 'asc' }],
+      take: 100,
+    });
 
     return NextResponse.json({
       success: true,
-      accounts: accounts.map((account) => ({
-        id: account.id,
-        identityId: account.identityId,
-        identityName: `${account.identity.firstName} ${account.identity.lastName}`,
-        identityEmail: account.identity.email,
-        accountType: account.accountType,
-        status: account.status,
-        reasonForContact: account.reasonForContact,
-        priority: account.priority,
-        assignedTo: account.assignedTo ? {
-          id: account.assignedTo.id,
-          email: account.assignedTo.email,
-          name: `${account.assignedTo.firstName} ${account.assignedTo.lastName}`,
-        } : null,
-        lastContactedAt: account.lastContactedAt?.toISOString() || null,
-        expectedCloseAt: account.expectedCloseAt?.toISOString() || null,
-        createdAt: account.createdAt.toISOString(),
-        updatedAt: account.updatedAt.toISOString(),
-      })),
-    })
+      accounts: accounts.map(serializeAccount),
+    });
   } catch (error) {
-    console.error('[PROSPECTING GET]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[PROSPECTING GET]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth && auth.error) return auth.error;
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    const body: CreateProspectingAccountRequest = await req.json()
+    const body: CreateProspectingAccountRequest = await req.json();
 
     if (!body.identityId || !body.accountType) {
       return NextResponse.json(
         { error: 'Missing required fields: identityId, accountType' },
         { status: 400 }
-      )
+      );
     }
 
-    const validAccountTypes: ProspectingAccountType[] = ['owner', 'developer', 'institutional_partner']
+    const validAccountTypes: ProspectingAccountType[] = [
+      'owner',
+      'developer',
+      'institutional_partner',
+    ];
     if (!validAccountTypes.includes(body.accountType)) {
       return NextResponse.json(
         { error: `Invalid account type. Must be one of: ${validAccountTypes.join(', ')}` },
         { status: 400 }
-      )
+      );
     }
 
-    const identity = await prismadb.identity.findUnique({
-      where: { id: body.identityId },
-    })
-
+    const identity = await prisma.identity.findUnique({ where: { id: body.identityId } });
     if (!identity) {
-      return NextResponse.json(
-        { error: 'Identity not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
     }
 
     if (body.assignedToIdentityId) {
-      const assignee = await prismadb.identity.findUnique({
+      const assignee = await prisma.identity.findUnique({
         where: { id: body.assignedToIdentityId },
-      })
-
+      });
       if (!assignee) {
-        return NextResponse.json(
-          { error: 'Assigned person not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Assigned person not found' }, { status: 404 });
       }
     }
 
-    const expectedCloseAt = body.expectedCloseAt ? new Date(body.expectedCloseAt) : null
+    const expectedCloseAt = body.expectedCloseAt ? new Date(body.expectedCloseAt) : null;
     if (body.expectedCloseAt && isNaN(expectedCloseAt?.getTime() ?? NaN)) {
-      return NextResponse.json(
-        { error: 'Invalid date format for expectedCloseAt' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid date format for expectedCloseAt' }, { status: 400 });
     }
 
-    const account = await prismadb.prospectingAccount.create({
+    const account = await prisma.prospectingAccount.create({
       data: {
         identityId: body.identityId,
         accountType: body.accountType,
@@ -172,51 +179,12 @@ export async function POST(req: NextRequest) {
         assignedToIdentityId: body.assignedToIdentityId,
         expectedCloseAt,
       },
-      include: {
-        identity: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    })
+      include: accountInclude,
+    });
 
-    return NextResponse.json({
-      success: true,
-      account: {
-        id: account.id,
-        identityId: account.identityId,
-        identityName: `${account.identity.firstName} ${account.identity.lastName}`,
-        identityEmail: account.identity.email,
-        accountType: account.accountType,
-        status: account.status,
-        reasonForContact: account.reasonForContact,
-        priority: account.priority,
-        assignedTo: account.assignedTo ? {
-          id: account.assignedTo.id,
-          email: account.assignedTo.email,
-          name: `${account.assignedTo.firstName} ${account.assignedTo.lastName}`,
-        } : null,
-        expectedCloseAt: account.expectedCloseAt?.toISOString() || null,
-        createdAt: account.createdAt.toISOString(),
-      },
-    })
+    return NextResponse.json({ success: true, account: serializeAccount(account) });
   } catch (error) {
-    console.error('[PROSPECTING POST]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[PROSPECTING POST]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

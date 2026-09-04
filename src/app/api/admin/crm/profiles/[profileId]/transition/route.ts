@@ -1,12 +1,11 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import { CrmLifecycleStage } from '@prisma/client'
-import prismadb from '@/app/libs/prismadb'
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { can } from '@/modules/core';
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { CrmLifecycleStage } from '@prisma/client';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-// Lifecycle progression: contact → guest → repeat → prospect → investor → buyer → owner → managed
-// Sideways: can regress in funnel or move to seller/former_client
 const VALID_TRANSITIONS: Record<CrmLifecycleStage, CrmLifecycleStage[]> = {
   contact: ['guest', 'prospect'],
   guest: ['repeat', 'prospect', 'contact'],
@@ -18,59 +17,54 @@ const VALID_TRANSITIONS: Record<CrmLifecycleStage, CrmLifecycleStage[]> = {
   managed: ['owner', 'seller'],
   seller: ['owner', 'former_client'],
   former_client: ['contact', 'guest'],
-}
+};
 
 interface TransitionRequest {
-  to_stage: CrmLifecycleStage
-  reason: string
-  notes?: Record<string, unknown>
+  to_stage: CrmLifecycleStage;
+  reason: string;
+  notes?: Record<string, unknown>;
 }
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { profileId: string } }
 ) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+
+  if (
+    !(await can({
+      identity,
+      action: 'admin:view_all',
+      resource: { resourceType: 'platform' },
+    }))
+  ) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    const profileId = params.profileId
-    const body: TransitionRequest = await req.json()
+    const body: TransitionRequest = await req.json();
 
     if (!body.to_stage || !body.reason) {
       return NextResponse.json(
         { error: 'Missing required fields: to_stage, reason' },
         { status: 400 }
-      )
+      );
     }
 
-    // Fetch current profile
-    const profile = await prismadb.crmProfile.findUnique({
-      where: { id: profileId },
-    })
+    const profile = await prisma.crmProfile.findUnique({
+      where: { id: params.profileId },
+    });
 
     if (!profile) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const currentStage = profile.lifecycleStage
+    const currentStage = profile.lifecycleStage;
 
-    // Validate transition
     if (!VALID_TRANSITIONS[currentStage]?.includes(body.to_stage)) {
       return NextResponse.json(
         {
@@ -78,41 +72,36 @@ export async function POST(
           validTargets: VALID_TRANSITIONS[currentStage] || [],
         },
         { status: 400 }
-      )
+      );
     }
 
-    // Update profile with new stage and audit fields
-    const updatedProfile = await prismadb.crmProfile.update({
-      where: { id: profileId },
+    const updatedProfile = await prisma.crmProfile.update({
+      where: { id: params.profileId },
       data: {
         lifecycleStage: body.to_stage,
         lifecycleChangedAt: new Date(),
         lifecycleChangeReason: body.reason,
-        lifecycleChangeApprovedBy: currentUser.identityId,
+        lifecycleChangeApprovedBy: user.identityId,
       },
-    })
+    });
 
-    // Create audit log entry
-    await prismadb.lifecycleTransitionLog.create({
+    await prisma.lifecycleTransitionLog.create({
       data: {
-        profileId,
+        profileId: params.profileId,
         fromStage: currentStage,
         toStage: body.to_stage,
         reason: body.reason,
-        approvedByIdentityId: currentUser.identityId,
+        approvedByIdentityId: user.identityId,
       },
-    })
+    });
 
     return NextResponse.json({
       success: true,
       profile: updatedProfile,
       message: `Transitioned from ${currentStage} to ${body.to_stage}`,
-    })
+    });
   } catch (error) {
-    console.error('[CRM TRANSITION]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[CRM TRANSITION]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -19,6 +19,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.title': 'myUNO Admin',
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.crm': 'CRM & Pipeline',
+    'admin.nav.prospecting': 'Prospecting',
+    'admin.nav.kpis': 'Operational KPIs',
     'admin.nav.units': 'Projects & Units',
     'admin.nav.projects': 'Projects',
     'admin.nav.config': 'Pricing & Config',
@@ -48,6 +50,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const items = [
     { href: '/app/admin', label: labels['admin.nav.dashboard'] },
     { href: '/app/admin/crm', label: labels['admin.nav.crm'] },
+    { href: '/app/admin/prospecting', label: labels['admin.nav.prospecting'] },
+    { href: '/app/admin/operational-kpis', label: labels['admin.nav.kpis'] },
     { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
     { href: '/app/admin/units', label: labels['admin.nav.units'] },
     { href: '/app/admin/people', label: labels['admin.nav.people'] },

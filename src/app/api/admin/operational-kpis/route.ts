@@ -1,60 +1,66 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import { KPIStatus } from '@prisma/client'
-import prismadb from '@/app/libs/prismadb'
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { can } from '@/modules/core';
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { KPIStatus } from '@prisma/client';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface CreateKPIRequest {
-  unitId: string
-  metricName: string
-  periodStart: string
-  periodEnd: string
-  targetValue?: number
-  actualValue?: number
-  status?: KPIStatus
+  unitId: string;
+  metricName: string;
+  periodStart: string;
+  periodEnd: string;
+  targetValue?: number;
+  actualValue?: number;
+  status?: KPIStatus;
+}
+
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) {
+    return { error: NextResponse.json({ error: 'Identity not found' }, { status: 404 }) };
+  }
+
+  if (
+    !(await can({
+      identity,
+      action: 'admin:view_all',
+      resource: { resourceType: 'platform' },
+    }))
+  ) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+
+  return { user, identity };
 }
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth && auth.error) return auth.error;
+
   try {
-    const currentUser = await getCurrentUser()
+    const url = new URL(req.url);
+    const unitId = url.searchParams.get('unitId');
+    const metricName = url.searchParams.get('metricName');
+    const status = url.searchParams.get('status') as KPIStatus | null;
 
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
+    const where: { unitId?: string; metricName?: string; status?: KPIStatus } = {};
+    if (unitId) where.unitId = unitId;
+    if (metricName) where.metricName = metricName;
+    if (status) where.status = status;
 
-    const url = new URL(req.url)
-    const unitId = url.searchParams.get('unitId')
-    const metricName = url.searchParams.get('metricName')
-    const status = url.searchParams.get('status') as KPIStatus | null
-
-    const where: any = {}
-    if (unitId) where.unitId = unitId
-    if (metricName) where.metricName = metricName
-    if (status) where.status = status
-
-    const kpis = await prismadb.operationalKpi.findMany({
+    const kpis = await prisma.operationalKpi.findMany({
       where,
       include: {
-        unit: {
-          select: {
-            id: true,
-            name: true,
-            projectId: true,
-          },
-        },
+        unit: { select: { id: true, name: true, projectId: true } },
       },
       orderBy: [{ unitId: 'asc' }, { createdAt: 'desc' }],
-    })
+      take: 100,
+    });
 
     return NextResponse.json({
       success: true,
@@ -70,91 +76,57 @@ export async function GET(req: NextRequest) {
         status: kpi.status,
         createdAt: kpi.createdAt.toISOString(),
       })),
-    })
+    });
   } catch (error) {
-    console.error('[OPERATIONAL KPIS GET]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[OPERATIONAL KPIS GET]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth && auth.error) return auth.error;
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    const body: CreateKPIRequest = await req.json()
+    const body: CreateKPIRequest = await req.json();
 
     if (!body.unitId || !body.metricName || !body.periodStart || !body.periodEnd) {
       return NextResponse.json(
         { error: 'Missing required fields: unitId, metricName, periodStart, periodEnd' },
         { status: 400 }
-      )
+      );
     }
 
-    // Validate dates
-    const startDate = new Date(body.periodStart)
-    const endDate = new Date(body.periodEnd)
+    const startDate = new Date(body.periodStart);
+    const endDate = new Date(body.periodEnd);
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid date format' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
 
     if (startDate > endDate) {
-      return NextResponse.json(
-        { error: 'periodStart must be before periodEnd' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'periodStart must be before periodEnd' }, { status: 400 });
     }
 
-    // Verify unit exists
-    const unit = await prismadb.unit.findUnique({
-      where: { id: body.unitId },
-    })
-
+    const unit = await prisma.unit.findUnique({ where: { id: body.unitId } });
     if (!unit) {
-      return NextResponse.json(
-        { error: 'Unit not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
-    const kpi = await prismadb.operationalKpi.create({
+    const kpi = await prisma.operationalKpi.create({
       data: {
         unitId: body.unitId,
         metricName: body.metricName,
         periodStart: startDate,
         periodEnd: endDate,
-        targetValue: body.targetValue ? parseFloat(body.targetValue.toString()) : null,
-        actualValue: body.actualValue ? parseFloat(body.actualValue.toString()) : null,
+        targetValue: body.targetValue ?? null,
+        actualValue: body.actualValue ?? null,
         status: body.status || 'on_track',
       },
       include: {
-        unit: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        unit: { select: { id: true, name: true } },
       },
-    })
+    });
 
     return NextResponse.json({
       success: true,
@@ -170,12 +142,9 @@ export async function POST(req: NextRequest) {
         status: kpi.status,
         createdAt: kpi.createdAt.toISOString(),
       },
-    })
+    });
   } catch (error) {
-    console.error('[OPERATIONAL KPIS POST]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[OPERATIONAL KPIS POST]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

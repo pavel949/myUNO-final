@@ -1,41 +1,10 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextResponse } from 'next/server'
-import { CrmLifecycleStage } from '@prisma/client'
-import prismadb from '@/app/libs/prismadb'
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { can } from '@/modules/core';
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { CrmLifecycleStage } from '@prisma/client';
 
-export const dynamic = 'force-dynamic'
-
-export interface GetCrmPipelineResponse {
-  success: boolean
-  pipeline: Array<{
-    stage: CrmLifecycleStage
-    count: number
-    totalValue: number
-    avgValue: number
-    profiles: Array<{
-      id: string
-      email: string | null
-      stage: CrmLifecycleStage
-      leadScore: number | null
-      totalValue: number
-    }>
-  }>
-  totals: {
-    totalProfiles: number
-    totalValue: number
-    stageDistribution: Array<{
-      stage: CrmLifecycleStage
-      count: number
-      percentage: string
-    }>
-  }
-  pagination: {
-    limit: number
-    offset: number
-    total: number
-    hasMore: boolean
-  }
-}
+export const dynamic = 'force-dynamic';
 
 const STAGE_ORDER = [
   'contact',
@@ -48,71 +17,61 @@ const STAGE_ORDER = [
   'managed',
   'seller',
   'former_client',
-] as const
+] as const;
 
 interface PipelineStage {
-  stage: CrmLifecycleStage
-  count: number
-  totalValue: number
-  avgValue: number
+  stage: CrmLifecycleStage;
+  count: number;
+  totalValue: number;
+  avgValue: number;
   profiles: Array<{
-    id: string
-    email: string | null
-    stage: CrmLifecycleStage
-    leadScore: number | null
-    totalValue: number
-  }>
+    id: string;
+    email: string | null;
+    stage: CrmLifecycleStage;
+    leadScore: number | null;
+    totalValue: number;
+  }>;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+
+  if (
+    !(await can({
+      identity,
+      action: 'admin:view_all',
+      resource: { resourceType: 'platform' },
+    }))
+  ) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    const currentUser = await getCurrentUser()
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '50'), 100);
+    const offset = parseInt(req.nextUrl.searchParams.get('offset') || '0');
 
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    // Pagination params
-    const url = new URL(req.url)
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
-    const offset = parseInt(url.searchParams.get('offset') || '0')
-
-    // Fetch paginated profiles with their related identity and opportunities
-    const profiles = await prismadb.crmProfile.findMany({
+    const profiles = await prisma.crmProfile.findMany({
       include: {
         identity: {
           select: {
             id: true,
             email: true,
-            crmOpportunities: {
-              select: {
-                valueThb: true,
-              },
-            },
+            crmOpportunities: { select: { valueThb: true } },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
-    })
+    });
 
-    // Get total count for pagination
-    const total = await prismadb.crmProfile.count()
+    const total = await prisma.crmProfile.count();
 
-    // Group by lifecycle stage and compute metrics
-    const stageMap = new Map<CrmLifecycleStage, PipelineStage>()
-
-    // Initialize all stages
+    const stageMap = new Map<CrmLifecycleStage, PipelineStage>();
     for (const stage of STAGE_ORDER) {
       stageMap.set(stage as CrmLifecycleStage, {
         stage: stage as CrmLifecycleStage,
@@ -120,40 +79,34 @@ export async function GET(req: Request) {
         totalValue: 0,
         avgValue: 0,
         profiles: [],
-      })
+      });
     }
 
-    // Aggregate data
     for (const profile of profiles) {
-      const stage = profile.lifecycleStage
-      const stageData = stageMap.get(stage)!
+      const stage = profile.lifecycleStage;
+      const stageData = stageMap.get(stage)!;
+      const profileValue = profile.identity.crmOpportunities.reduce(
+        (sum, opp) => sum + (opp.valueThb ?? 0),
+        0
+      );
 
-      // Calculate total value from opportunities linked to this identity
-      const profileValue = profile.identity.crmOpportunities.reduce((sum, opp) => {
-        return sum + (opp.valueThb ?? 0)
-      }, 0)
-
-      stageData.count += 1
-      stageData.totalValue += profileValue
-
+      stageData.count += 1;
+      stageData.totalValue += profileValue;
       stageData.profiles.push({
         id: profile.id,
         email: profile.identity?.email || null,
         stage: profile.lifecycleStage,
         leadScore: profile.leadScore,
         totalValue: profileValue,
-      })
+      });
     }
 
-    // Calculate averages and convert to array
     const pipeline: PipelineStage[] = Array.from(stageMap.values()).map((stage) => ({
       ...stage,
       avgValue: stage.count > 0 ? Math.round(stage.totalValue / stage.count) : 0,
-      // Sort profiles by value descending within each stage
       profiles: stage.profiles.sort((a, b) => b.totalValue - a.totalValue),
-    }))
+    }));
 
-    // Calculate totals across pipeline
     const totals = {
       totalProfiles: profiles.length,
       totalValue: pipeline.reduce((sum, stage) => sum + stage.totalValue, 0),
@@ -162,7 +115,7 @@ export async function GET(req: Request) {
         count: stage.count,
         percentage: profiles.length > 0 ? ((stage.count / profiles.length) * 100).toFixed(1) : '0',
       })),
-    }
+    };
 
     return NextResponse.json({
       success: true,
@@ -174,12 +127,9 @@ export async function GET(req: Request) {
         total,
         hasMore: offset + limit < total,
       },
-    })
+    });
   } catch (error) {
-    console.error('[CRM PIPELINE]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[CRM PIPELINE]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

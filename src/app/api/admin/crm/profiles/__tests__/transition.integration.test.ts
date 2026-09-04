@@ -132,6 +132,6 @@ describe('CRM Lifecycle Transition API', () => {
       params: { profileId: testProfile.id },
     })
 
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
   })
 })

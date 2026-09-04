@@ -18,6 +18,7 @@ interface BookingDetail {
   refundAccruedThb?: number | null;
   guestNote?: string | null;
   verificationStatus?: string | null;
+  paymentFailed?: boolean;
   depositClaim?: {
     id: string;
     description: string;
@@ -480,6 +481,32 @@ export default function BookingDetailClient({
                   {labels['booking.detail.passports']}
                 </Button>
               </Link>
+            </div>
+          )}
+
+        {/* Card payment failed (F-GUEST-3) */}
+        {booking.viewer.isGuest &&
+          booking.status === 'pending_payment' &&
+          booking.paymentFailed && (
+            <div className="bg-state-warning-soft border border-state-warning rounded-lg p-24 mb-24">
+              <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+                {labels['booking.detail.payment_failed_title']}
+              </h2>
+              <p className="text-body text-text-secondary mb-12">
+                {labels['booking.detail.payment_failed_body']}
+              </p>
+              {booking.holdExpiresAt ? (
+                <p className="text-small mb-12">
+                  <SlaCountdown
+                    deadline={booking.holdExpiresAt}
+                    leftTemplate={labels['booking.detail.hold_expires']}
+                    overdueLabel={labels['booking.detail.hold_expired']}
+                  />
+                </p>
+              ) : null}
+              <Button onClick={handlePayCard} isLoading={busy} size="sm">
+                {labels['booking.detail.retry_payment']}
+              </Button>
             </div>
           )}
 

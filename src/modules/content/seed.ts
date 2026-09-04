@@ -1740,6 +1740,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'booking.detail.declined_title', namespace: 'booking', description: 'Declined request: screen title', en: 'This request was not approved', ru: 'Заявка не одобрена', th: 'คำขอไม่ได้รับการอนุมัติ', status: NR },
   { key: 'booking.detail.declined_body', namespace: 'booking', description: 'Declined request: explanation + re-request hint', en: 'The host could not accept these dates. No charge was made — you can submit a new request or pick different dates.', ru: 'Хозяин не смог принять эти даты. Списаний не было — вы можете подать новую заявку или выбрать другие даты.', th: 'เจ้าของไม่สามารถรับวันที่เหล่านี้ได้ ไม่มีการเรียกเก็บเงิน — คุณสามารถยื่นคำขอใหม่หรือเลือกวันที่อื่น', status: NR },
   { key: 'booking.detail.book_again', namespace: 'booking', description: 'Expired/declined: re-book CTA', en: 'Try booking again', ru: 'Забронировать снова', th: 'ลองจองอีกครั้ง', status: NR },
+  { key: 'booking.detail.payment_failed_title', namespace: 'booking', description: 'Card payment failed banner title', en: 'Payment did not go through', ru: 'Оплата не прошла', th: 'การชำระเงินไม่สำเร็จ', status: NR },
+  { key: 'booking.detail.payment_failed_body', namespace: 'booking', description: 'Card payment failed banner body', en: 'Your card was declined or the checkout was interrupted. Nothing was charged — try again before your hold expires.', ru: 'Карта отклонена или оплата прервана. Списаний не было — попробуйте снова, пока не истёк срок резерва.', th: 'บัตรถูกปฏิเสธหรือการชำระเงินถูกขัดจังหวะ ไม่มีการเรียกเก็บเงิน — ลองอีกครั้งก่อนการจองหมดเวลา', status: NR },
+  { key: 'booking.detail.retry_payment', namespace: 'booking', description: 'Retry card payment button', en: 'Try payment again', ru: 'Повторить оплату', th: 'ลองชำระเงินอีกครั้ง', status: NR },
 
   // Mock checkout page
   { key: 'payments.checkout.title', namespace: 'payments', description: 'Checkout page title', en: 'Complete payment', ru: 'Завершите оплату', status: NR },
@@ -1754,7 +1757,12 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'payments.checkout.success_title', namespace: 'payments', description: 'Checkout success title', en: 'Payment confirmed', ru: 'Оплата подтверждена', status: NR },
   { key: 'payments.checkout.success_body', namespace: 'payments', description: 'Checkout success body', en: 'Your booking is confirmed. Taking you to your trip…', ru: 'Бронирование подтверждено. Открываем вашу поездку…', status: NR },
   { key: 'payments.checkout.error_generic', namespace: 'payments', description: 'Checkout generic error', en: 'Payment failed. Please try again.', ru: 'Оплата не прошла. Попробуйте ещё раз.', status: NR },
+  { key: 'payments.checkout.decline_simulate', namespace: 'payments', description: 'Mock checkout: simulate card declined', en: 'Simulate card declined', ru: 'Симулировать отказ карты', th: 'จำลองบัตรถูกปฏิเสธ', status: NR },
+  { key: 'payments.checkout.back_to_trip', namespace: 'payments', description: 'Checkout failure: return to trip', en: 'Back to your trip', ru: 'К поездке', th: 'กลับไปที่การเดินทาง', status: NR },
   { key: 'payments.checkout.test_note', namespace: 'payments', description: 'Checkout footer test note', en: 'No real payment is charged in test mode.', ru: 'В тестовом режиме настоящие платежи не списываются.', status: NR },
+  { key: 'listing.conflict_title', namespace: 'listing', description: 'Booking conflict: title', en: 'Those dates are no longer available', ru: 'Эти даты уже заняты', th: 'วันที่เหล่านี้ไม่ว่างแล้ว', status: NR },
+  { key: 'listing.conflict_body', namespace: 'listing', description: 'Booking conflict: body with re-search hint', en: 'Someone else booked this home while you were checking out. Nothing was charged — search again for open dates.', ru: 'Пока вы оформляли бронь, эти даты заняли. Списаний не было — найдите другие свободные даты.', th: 'มีคนจองบ้านนี้ระหว่างที่คุณกำลังชำระเงิน ไม่มีการเรียกเก็บเงิน — ค้นหาวันที่ว่างอีกครั้ง', status: NR },
+  { key: 'listing.search_again', namespace: 'listing', description: 'Booking conflict: search again CTA', en: 'Search again', ru: 'Искать снова', th: 'ค้นหาอีกครั้ง', status: NR },
 
   // Ops board + TM30 queue (staff surfaces)
   { key: 'nav.ops', namespace: 'nav', description: 'Navbar link: ops board', en: 'Ops', ru: 'Операции', status: NR },

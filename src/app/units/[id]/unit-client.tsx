@@ -69,6 +69,9 @@ export interface UnitDetailLabels {
   pickDates: string;
   errorPrice: string;
   errorBooking: string;
+  conflictTitle: string;
+  conflictBody: string;
+  searchAgain: string;
   amenitiesTitle: string;
   amenityLabels: Record<string, string>;
   policyLabels: Record<string, string>;
@@ -96,6 +99,7 @@ export default function UnitDetailClient({
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [datesConflict, setDatesConflict] = useState(false);
   const [bookingType, setBookingType] = useState<'instant' | 'request'>('instant');
   const [guestNote, setGuestNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_provider'>('cash');
@@ -165,6 +169,7 @@ export default function UnitDetailClient({
 
     setSubmitting(true);
     setError(null);
+    setDatesConflict(false);
 
     try {
       const response = await fetch('/api/bookings', {
@@ -186,6 +191,11 @@ export default function UnitDetailClient({
       if (response.status === 401) {
         const next = `${pathname}?${searchParams?.toString() || ''}`;
         router.push(`/login?next=${encodeURIComponent(next)}`);
+        return;
+      }
+
+      if (response.status === 409) {
+        setDatesConflict(true);
         return;
       }
 
@@ -452,7 +462,21 @@ export default function UnitDetailClient({
                 />
               </div>
 
-              {error && (
+              {datesConflict ? (
+                <div className="bg-state-warning-soft border border-state-warning rounded-lg p-16 mb-16">
+                  <h3 className="text-body font-bold text-text-ink mb-8">
+                    {labels.conflictTitle}
+                  </h3>
+                  <p className="text-small text-text-secondary mb-12">{labels.conflictBody}</p>
+                  <Link href={backToSearch}>
+                    <Button variant="secondary" size="sm">
+                      {labels.searchAgain}
+                    </Button>
+                  </Link>
+                </div>
+              ) : null}
+
+              {error && !datesConflict && (
                 <div className="bg-state-error/10 border border-state-error rounded-lg p-12 mb-16">
                   <p className="text-small text-state-error">{error}</p>
                 </div>

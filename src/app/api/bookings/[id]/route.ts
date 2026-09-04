@@ -71,6 +71,10 @@ export async function GET(
     // Check if the guest has already reviewed this stay
     let hasReview = false;
     let depositClaim: Awaited<ReturnType<typeof getActiveDepositClaimForGuest>> = null;
+    const paymentFailed =
+      isGuest &&
+      booking.status === 'pending_payment' &&
+      booking.payments.some((p) => p.status === 'failed');
     if (isGuest) {
       const existingReview = await prisma.review.findFirst({
         where: {
@@ -98,6 +102,7 @@ export async function GET(
       refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
       hasReview,
       verificationStatus: booking.verificationStatus,
+      paymentFailed,
       depositClaim: depositClaim
         ? {
             id: depositClaim.id,

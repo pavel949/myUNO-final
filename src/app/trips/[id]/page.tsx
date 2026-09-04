@@ -85,6 +85,10 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.declined_body':
       'The host could not accept these dates. No charge was made — you can submit a new request or pick different dates.',
     'booking.detail.book_again': 'Try booking again',
+    'booking.detail.payment_failed_title': 'Payment did not go through',
+    'booking.detail.payment_failed_body':
+      'Your card was declined or the checkout was interrupted. Nothing was charged — try again before your hold expires.',
+    'booking.detail.retry_payment': 'Try payment again',
   });
 
   return (

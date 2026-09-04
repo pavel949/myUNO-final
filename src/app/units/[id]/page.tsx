@@ -99,6 +99,10 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'listing.pick_dates': 'Choose dates on the search page to see the price.',
     'listing.error_price': 'Failed to calculate price',
     'listing.error_booking': 'Booking failed',
+    'listing.conflict_title': 'Those dates are no longer available',
+    'listing.conflict_body':
+      'Someone else booked this home while you were checking out. Nothing was charged — search again for open dates.',
+    'listing.search_again': 'Search again',
     'listing.amenities': 'Amenities',
     'catalog.amenities.wifi.label': 'Wi-Fi',
     'catalog.amenities.pool.label': 'Pool',
@@ -164,6 +168,9 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           pickDates: labels['listing.pick_dates'],
           errorPrice: labels['listing.error_price'],
           errorBooking: labels['listing.error_booking'],
+          conflictTitle: labels['listing.conflict_title'],
+          conflictBody: labels['listing.conflict_body'],
+          searchAgain: labels['listing.search_again'],
           amenitiesTitle: labels['listing.amenities'],
           amenityLabels: {
             wifi: labels['catalog.amenities.wifi.label'],

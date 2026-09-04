@@ -10,8 +10,9 @@ import {
 export const dynamic = 'force-dynamic';
 
 /**
- * Frequent dispatcher (Vercel Hobby cron slot 1). Hold expiry, TM30
- * escalation, and iCal import — the jobs that cannot wait for tonight.
+ * Daytime dispatcher (Vercel Hobby daily slot). Hold expiry, TM30
+ * escalation, and iCal import. Hobby cannot fire more than once per day;
+ * the matching night slot is `/api/cron/run-all`.
  *
  * Each job is isolated. Last run + outcome land on `job_run`.
  */

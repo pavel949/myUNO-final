@@ -3019,7 +3019,7 @@ const SCHEDULER_KEYS: KeyDef[] = [
   { key: 'admin.scheduler.job.metrics_rollup', namespace: 'admin', description: 'Scheduler job: rollup', en: 'Nightly metric rollup', ru: 'Ночной расчёт метрик', status: NR },
   { key: 'admin.scheduler.job.guest_lifecycle', namespace: 'admin', description: 'Scheduler job: guest messages', en: 'Pre-arrival and post-stay messages', ru: 'Сообщения до заезда и после выезда', status: NR },
   { key: 'admin.scheduler.job.service_order_expiry', namespace: 'admin', description: 'Scheduler job: service orders', en: 'Stale service-order expiry', ru: 'Истечение просроченных заказов услуг', status: NR },
-  { key: 'admin.scheduler.cadence.frequent', namespace: 'admin', description: 'Scheduler cadence: frequent slot', en: 'Every 15 minutes', ru: 'Каждые 15 минут', status: NR },
+  { key: 'admin.scheduler.cadence.frequent', namespace: 'admin', description: 'Scheduler cadence: daytime daily slot (Hobby cannot fire more than once per day)', en: 'Daily, afternoon (Phuket)', ru: 'Раз в сутки, днём (Пхукет)', status: NR },
   { key: 'admin.scheduler.cadence.nightly', namespace: 'admin', description: 'Scheduler cadence: nightly slot', en: 'Nightly', ru: 'Раз в сутки', status: NR },
 ];
 

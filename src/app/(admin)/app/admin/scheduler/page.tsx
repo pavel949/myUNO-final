@@ -54,7 +54,7 @@ export default async function AdminSchedulerPage() {
     'admin.scheduler.job.metrics_rollup': 'Nightly metric rollup',
     'admin.scheduler.job.guest_lifecycle': 'Pre-arrival and post-stay messages',
     'admin.scheduler.job.service_order_expiry': 'Stale service-order expiry',
-    'admin.scheduler.cadence.frequent': 'Every 15 minutes',
+    'admin.scheduler.cadence.frequent': 'Daily, afternoon (Phuket)',
     'admin.scheduler.cadence.nightly': 'Nightly',
   });
 

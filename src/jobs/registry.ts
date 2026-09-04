@@ -5,14 +5,15 @@
  * health panel lists this set even when no row has ever been written — a job
  * that has never run is a red light, not an empty table.
  *
- * Cadence matches `vercel.json` (Hobby allows two cron slots):
- *   frequent — `/api/cron/run-frequent` every 15 minutes
+ * Cadence matches `vercel.json`. The production project is on Vercel Hobby,
+ * which refuses any cron that would fire more than once per day (a 15-minute
+ * expression fails the deploy). Two daily slots:
+ *   frequent — `/api/cron/run-frequent` at 07:00 UTC (14:00 ICT)
  *   nightly  — `/api/cron/run-all` at 19:00 UTC (02:00 ICT)
  *
- * Doc 15 asks for hold expiry every 5 minutes. The two-slot ceiling packs
- * holds, TM30 and iCal into the 15-minute slot (the same constraint the
- * nightly dispatcher already documents). Silence thresholds are 2× cadence
- * so one missed tick is a warning, two is overdue.
+ * Doc 15 asks for hold expiry every 5 minutes and iCal every 15. That cadence
+ * needs a Pro plan. Until then both slots are daily; silence thresholds are
+ * 2× a day so one missed tick is a warning, two is overdue.
  */
 
 export const JOB_KEYS = {
@@ -37,24 +38,23 @@ export interface JobDefinition {
   maxSilenceMs: number;
 }
 
-const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const JOBS: readonly JobDefinition[] = [
   {
     key: JOB_KEYS.bookingLifecycle,
     cadence: 'frequent',
-    maxSilenceMs: 2 * FIFTEEN_MIN_MS,
+    maxSilenceMs: 2 * DAY_MS,
   },
   {
     key: JOB_KEYS.tm30Escalations,
     cadence: 'frequent',
-    maxSilenceMs: 2 * FIFTEEN_MIN_MS,
+    maxSilenceMs: 2 * DAY_MS,
   },
   {
     key: JOB_KEYS.icalSync,
     cadence: 'frequent',
-    maxSilenceMs: 2 * FIFTEEN_MIN_MS,
+    maxSilenceMs: 2 * DAY_MS,
   },
   {
     key: JOB_KEYS.verificationDeadlines,

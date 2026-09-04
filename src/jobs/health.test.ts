@@ -77,13 +77,33 @@ describe('evaluateJobHealth', () => {
     expect(health.status).toBe('failed');
   });
 
-  it('keeps a nightly job green for a day, not for 15 minutes', () => {
+  it('keeps a daily job green for a day, not for an hour', () => {
     const health = evaluateJobHealth(
       nightly,
       run({ finishedAt: new Date(NOW.getTime() - 20 * 60 * 60 * 1000) }),
       NOW
     );
     expect(health.status).toBe('ok');
+  });
+});
+
+describe('Vercel Hobby cron schedules', () => {
+  it('only schedules once-per-day crons — anything more frequent fails the deploy', () => {
+    const vercel = JSON.parse(
+      readFileSync(join(process.cwd(), 'vercel.json'), 'utf8')
+    ) as { crons: Array<{ path: string; schedule: string }> };
+    expect(vercel.crons.length).toBeGreaterThan(0);
+    for (const cron of vercel.crons) {
+      const parts = cron.schedule.trim().split(/\s+/);
+      expect(parts, cron.path).toHaveLength(5);
+      const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+      // Hobby: "this cron expression would run more than once per day"
+      expect(minute, cron.path).toMatch(/^\d+$/);
+      expect(hour, cron.path).toMatch(/^\d+$/);
+      expect(dayOfMonth, cron.path).toBe('*');
+      expect(month, cron.path).toBe('*');
+      expect(dayOfWeek, cron.path).toBe('*');
+    }
   });
 });
 

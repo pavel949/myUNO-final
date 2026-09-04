@@ -124,8 +124,8 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
 }
 
 /**
- * Frequent slot (Hobby cron #1): holds, TM30 SLA, iCal import.
- * Scheduled every 15 minutes at `/api/cron/run-frequent`.
+ * Frequent slot: holds, TM30 SLA, iCal import.
+ * Scheduled daily at `/api/cron/run-frequent` (Hobby cannot fire more often).
  */
 export async function runFrequentJobs(db: PrismaClient): Promise<JobDispatchResult> {
   const results: JobDispatchResult = {};
@@ -143,17 +143,23 @@ export async function runFrequentJobs(db: PrismaClient): Promise<JobDispatchResu
 }
 
 /**
- * Nightly slot (Hobby cron #2): verification, retention, rollup, guest
- * messages, stale service orders. Scheduled at `/api/cron/run-all`.
+ * Nightly slot: verification, retention, rollup, guest messages, stale
+ * service orders. Scheduled at `/api/cron/run-all`.
  *
- * Booking lifecycle stays here as well so a missed frequent tick still
- * expires holds before the next night.
+ * Booking lifecycle, TM30 and iCal run here as well so a missed daytime
+ * tick still expires holds before the next night.
  */
 export async function runNightlyJobs(db: PrismaClient): Promise<JobDispatchResult> {
   const results: JobDispatchResult = {};
 
   const booking = await runBookingLifecycleJob(db);
   mark(results, JOB_KEYS.bookingLifecycle, booking.ok, booking.summary);
+
+  const tm30 = await runTm30EscalationsJob(db);
+  mark(results, JOB_KEYS.tm30Escalations, tm30.ok, tm30.summary);
+
+  const ical = await runIcalSyncJob(db);
+  mark(results, JOB_KEYS.icalSync, ical.ok, ical.summary);
 
   const verification = await runVerificationDeadlinesJob(db);
   mark(results, JOB_KEYS.verificationDeadlines, verification.ok, verification.summary);

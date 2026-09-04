@@ -3,7 +3,7 @@
  * Scheduled job to check and escalate TM30 filings approaching their deadline.
  * Requires CRON_SECRET bearer token.
  *
- * Prefer `/api/cron/run-frequent` in production (Hobby has two cron slots).
+ * Prefer `/api/cron/run-frequent` in production (daytime daily slot).
  * This route remains for a manual invoke of TM30 alone.
  */
 

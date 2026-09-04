@@ -18,6 +18,15 @@ import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
 
+function fill(template: string, params?: Record<string, string>): string {
+  if (!params) return template;
+  let output = template;
+  for (const [key, value] of Object.entries(params)) {
+    output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  }
+  return output;
+}
+
 interface UnitData {
   id: string;
   name: string;
@@ -158,6 +167,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     emptyLabel: labels['owner.trends.empty'],
   };
 
+  const resolveLabel = (key: string, params?: Record<string, string>) =>
+    fill(labels[key] || key, params);
+
   return (
     <div className="min-h-screen bg-surface-background">
       <div className="max-w-6xl mx-auto px-24 py-40">
@@ -204,9 +216,11 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   <div className="flex items-start justify-between gap-12">
                     <div>
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {alert.title}
+                        {resolveLabel(alert.titleKey, alert.titleParams)}
                       </h3>
-                      <p className="text-body text-text-secondary">{alert.description}</p>
+                      <p className="text-body text-text-secondary">
+                        {resolveLabel(alert.descriptionKey, alert.descriptionParams)}
+                      </p>
                       <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
                     </div>
                     {alert.actionUrl && (

@@ -342,8 +342,10 @@ export interface OwnerAlert {
   severity: 'warning' | 'critical';
   unitId: string;
   unitName: string;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
+  titleParams?: Record<string, string>;
+  descriptionParams?: Record<string, string>;
   createdAt: Date;
   actionUrl?: string;
 }
@@ -422,8 +424,11 @@ export async function getOwnerAlerts(
           severity: 'critical',
           unitId: filing.booking.unit.id,
           unitName: filing.booking.unit.name,
-          title: 'TM30 Filing Overdue',
-          description: `TM30 filing for guest arrival on ${filing.booking.startDate.toLocaleDateString()} is overdue`,
+          titleKey: 'owner.alert.tm30_overdue.title',
+          descriptionKey: 'owner.alert.tm30_overdue.body',
+          descriptionParams: {
+            date: filing.booking.startDate.toLocaleDateString(),
+          },
           createdAt: filing.booking.startDate,
           actionUrl: `/ops/tm30`,
         });
@@ -437,8 +442,8 @@ export async function getOwnerAlerts(
         severity: 'critical',
         unitId: filing.booking.unit.id,
         unitName: filing.booking.unit.name,
-        title: 'TM30 Filing Escalated',
-        description: 'An escalation has been flagged for this TM30 filing',
+        titleKey: 'owner.alert.tm30_escalated.title',
+        descriptionKey: 'owner.alert.tm30_escalated.body',
         createdAt: filing.escalatedAt,
         actionUrl: `/ops/tm30`,
       });
@@ -454,8 +459,8 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: unit.id,
         unitName: unit.name,
-        title: 'Unit is Paused',
-        description: 'This unit is currently paused and not accepting bookings',
+        titleKey: 'owner.alert.unit_paused.title',
+        descriptionKey: 'owner.alert.unit_paused.body',
         createdAt: new Date(),
       });
     }
@@ -486,8 +491,15 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: record.unit.id,
         unitName: record.unit.name,
-        title: `${record.recordType} Expiring Soon`,
-        description: `Your ${record.recordType} expires on ${record.expiresOn.toLocaleDateString()}`,
+        titleKey: 'owner.alert.compliance_expiry.title',
+        descriptionKey: 'owner.alert.compliance_expiry.body',
+        titleParams: {
+          recordType: record.recordType,
+        },
+        descriptionParams: {
+          recordType: record.recordType,
+          date: record.expiresOn.toLocaleDateString(),
+        },
         createdAt: now,
       });
     }
@@ -514,8 +526,8 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: ticket.unit.id,
         unitName: ticket.unit.name,
-        title: 'Ticket SLA Breached',
-        description: 'An open ticket has exceeded its SLA deadline',
+        titleKey: 'owner.alert.ticket_sla.title',
+        descriptionKey: 'owner.alert.ticket_sla.body',
         createdAt: now,
         actionUrl: `/tickets/${ticket.id}`,
       });

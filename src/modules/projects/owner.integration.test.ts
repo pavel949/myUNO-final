@@ -294,6 +294,8 @@ describe('Owner experience (T-033)', () => {
       const ticketAlert = alerts.find((alert) => alert.type === 'ticket_sla_breach');
 
       expect(ticketAlert).toBeDefined();
+      expect(ticketAlert?.titleKey).toBe('owner.alert.ticket_sla.title');
+      expect(ticketAlert?.descriptionKey).toBe('owner.alert.ticket_sla.body');
       expect(ticketAlert?.actionUrl).toBe(`/tickets/${ticket.id}`);
     });
   });

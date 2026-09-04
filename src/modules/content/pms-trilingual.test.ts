@@ -59,6 +59,8 @@ const PMS_KEY_MATCHERS: Array<(key: string, namespace: string) => boolean> = [
   (_, ns) => ns === 'trust',
   (_, ns) => ns === 'area',
   (_, ns) => ns === 'order',
+  (_, ns) => ns === 'audience',
+  (_, ns) => ns === 'buying',
 ];
 
 function isPmsKey(key: string, namespace: string): boolean {
@@ -90,6 +92,11 @@ describe('PMS content keys are trilingual (EN/RU/TH)', () => {
 
   it('every PMS key defines an explicit th: translation', () => {
     const missing = pmsKeys.filter((d) => !d.hasTh).map((d) => d.key);
+    expect(missing, `Add th: to ${missing.slice(0, 5).join(', ')}…`).toEqual([]);
+  });
+
+  it('every single-line seed key defines an explicit th: translation (platform-wide)', () => {
+    const missing = defs.filter((d) => !d.hasTh).map((d) => d.key);
     expect(missing, `Add th: to ${missing.slice(0, 5).join(', ')}…`).toEqual([]);
   });
 });

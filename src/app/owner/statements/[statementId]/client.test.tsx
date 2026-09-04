@@ -42,6 +42,8 @@ const baseStatement: StatementDetail = {
   capApplied: false,
 
   lines: [],
+  payout: null,
+  questionThreadId: null,
 };
 
 const labels: Record<string, string> = {
@@ -61,6 +63,11 @@ const labels: Record<string, string> = {
   'owner.statement.back': 'Back to dashboard',
   'owner.statement.signoff_awaiting_owner': 'Awaiting your signature',
   'owner.statement.signoff_awaiting_operator': "Awaiting myUNO's signature",
+  'owner.statement.payout_title': 'Payout',
+  'owner.statement.payout_pending': 'No payout recorded yet.',
+  'owner.statement.question_title': 'Question this statement',
+  'owner.statement.question_hint': 'Ask about a line item.',
+  'owner.statement.question_open': 'Ask a question',
   'common.status.statement.published': 'Published',
 };
 

@@ -348,6 +348,7 @@ enum ThreadContextType {
   ticket
   unit
   general
+  statement
 }
 
 enum MessageKind {

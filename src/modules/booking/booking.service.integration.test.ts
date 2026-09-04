@@ -1023,6 +1023,11 @@ describe('booking.service — integration tests', () => {
       expect(expired?.status).toBe('expired');
       expect(expired?.holdExpiresAt).toBeNull();
 
+      const notification = await db.notification.findFirst({
+        where: { type: 'stay_hold_expired', identityId: guest1.id },
+      });
+      expect(notification).toBeTruthy();
+
       const notExpired = await db.booking.findUnique({ where: { id: booking2.id } });
       expect(notExpired?.status).toBe('pending_payment');
       expect(notExpired?.holdExpiresAt).toBeDefined();
@@ -1114,6 +1119,11 @@ describe('booking.service — integration tests', () => {
       expect(autoDeclined?.status).toBe('declined');
       expect(autoDeclined?.cancellationReason).toBe('auto_declined_timeout');
       expect(autoDeclined?.requestExpiresAt).toBeNull();
+
+      const notification = await db.notification.findFirst({
+        where: { type: 'stay_request_declined', identityId: guest1.id },
+      });
+      expect(notification).toBeTruthy();
 
       const notDeclined = await db.booking.findUnique({ where: { id: booking2.id } });
       expect(notDeclined?.status).toBe('requested');

@@ -1,5 +1,6 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
+import { createNotification } from '@/modules/comms';
 import { computePriceBreakdown } from '@/modules/core';
 import {
   formatDeclineCancellationReason,
@@ -1040,6 +1041,9 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
       status: 'pending_payment',
       holdExpiresAt: { lte: now },
     },
+    include: {
+      unit: { select: { name: true } },
+    },
   });
 
   const expired = await db.booking.updateMany({
@@ -1053,7 +1057,9 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
     },
   });
 
-  // Track analytics events for each expired booking
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+  // Track analytics events and notify guests (N-04) for each expired booking
   for (const booking of expiredBookings) {
     const nights = Math.ceil(
       (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -1066,6 +1072,20 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
       nights,
       totalThb: booking.totalThb,
     }).catch(() => null);
+
+    await createNotification(db, {
+      identityId: booking.guestIdentityId,
+      type: 'stay_hold_expired',
+      titleKey: 'notify.stay.hold_expired.title',
+      bodyKey: 'notify.stay.hold_expired.body',
+      params: {
+        booking_id: booking.id,
+        unit_name: booking.unit.name,
+        start_date: booking.startDate.toISOString().split('T')[0],
+        end_date: booking.endDate.toISOString().split('T')[0],
+        trips_url: `${baseUrl}/trips/${booking.id}`,
+      },
+    }).catch(() => null);
   }
 
   return expired.count;
@@ -1075,6 +1095,16 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
  * Auto-decline request-to-book bookings past their deadline (scheduler job).
  */
 export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date()) {
+  const toDecline = await db.booking.findMany({
+    where: {
+      status: 'requested',
+      requestExpiresAt: { lte: now },
+    },
+    include: {
+      unit: { select: { name: true } },
+    },
+  });
+
   const declined = await db.booking.updateMany({
     where: {
       status: 'requested',
@@ -1087,6 +1117,33 @@ export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date
       cancelledAt: now,
     },
   });
+
+  for (const booking of toDecline) {
+    await createNotification(db, {
+      identityId: booking.guestIdentityId,
+      type: 'stay_request_declined',
+      titleKey: 'notify.stay_request_declined.title',
+      bodyKey: 'notify.stay_request_declined.body',
+      params: {
+        booking_id: booking.id,
+        unit_name: booking.unit.name,
+        start_date: booking.startDate.toISOString().split('T')[0],
+        end_date: booking.endDate.toISOString().split('T')[0],
+      },
+    }).catch(() => null);
+
+    const nights = Math.ceil(
+      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    await track(db, 'stay_request_declined', {
+      bookingId: booking.id,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      identityId: booking.guestIdentityId,
+      nights,
+      totalThb: booking.totalThb,
+    }).catch(() => null);
+  }
 
   return declined.count;
 }

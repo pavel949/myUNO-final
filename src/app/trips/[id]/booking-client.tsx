@@ -53,6 +53,21 @@ function fill(template: string, params: Record<string, string | number>): string
   return result;
 }
 
+function formatDateParam(iso: string): string {
+  return iso.split('T')[0];
+}
+
+function rebookHref(booking: BookingDetail): string | null {
+  if (!booking.unit?.id) return null;
+  const params = new URLSearchParams({
+    startDate: formatDateParam(booking.startDate),
+    endDate: formatDateParam(booking.endDate),
+    adults: String(booking.adults),
+    children: String(booking.children),
+  });
+  return `/units/${booking.unit.id}?${params.toString()}`;
+}
+
 const statusStyles: Record<string, string> = {
   pending_payment: 'bg-state-warning-soft text-state-warning',
   confirmed: 'bg-state-success-soft text-state-success',
@@ -317,6 +332,7 @@ export default function BookingDetailClient({
     labels[`booking.detail.status.${booking.status}`] || booking.status.replace(/_/g, ' ');
   const stayStartedOrConfirmed = ['confirmed', 'checked_in'].includes(booking.status);
   const upcoming = new Date(booking.startDate) > new Date();
+  const rebookUrl = rebookHref(booking);
 
   return (
     <div className="min-h-screen bg-surface-background p-24 md:p-32">
@@ -397,6 +413,42 @@ export default function BookingDetailClient({
         {error && (
           <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
             <p className="text-body text-state-error">{error}</p>
+          </div>
+        )}
+
+        {/* Expired hold (F-GUEST-3) or declined request (F-GUEST-4) */}
+        {booking.viewer.isGuest && booking.status === 'expired' && (
+          <div className="bg-surface-ivory border border-border-line rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+              {labels['booking.detail.expired_title']}
+            </h2>
+            <p className="text-body text-text-secondary mb-16">
+              {labels['booking.detail.expired_body']}
+            </p>
+            {rebookUrl ? (
+              <Link href={rebookUrl}>
+                <Button variant="secondary" size="sm">
+                  {labels['booking.detail.book_again']}
+                </Button>
+              </Link>
+            ) : null}
+          </div>
+        )}
+        {booking.viewer.isGuest && booking.status === 'declined' && (
+          <div className="bg-surface-ivory border border-border-line rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+              {labels['booking.detail.declined_title']}
+            </h2>
+            <p className="text-body text-text-secondary mb-16">
+              {labels['booking.detail.declined_body']}
+            </p>
+            {rebookUrl ? (
+              <Link href={rebookUrl}>
+                <Button variant="secondary" size="sm">
+                  {labels['booking.detail.book_again']}
+                </Button>
+              </Link>
+            ) : null}
           </div>
         )}
 

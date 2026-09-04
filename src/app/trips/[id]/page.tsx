@@ -78,6 +78,13 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.verification_pending_title': 'Prepare your arrival',
     'booking.detail.verification_pending_body':
       'Add passport details for everyone staying before check-in so we can file TM30 on time.',
+    'booking.detail.expired_title': 'This reservation has expired',
+    'booking.detail.expired_body':
+      'Payment was not completed in time, so these dates were released. Nothing was charged — try booking again if the villa is still free.',
+    'booking.detail.declined_title': 'This request was not approved',
+    'booking.detail.declined_body':
+      'The host could not accept these dates. No charge was made — you can submit a new request or pick different dates.',
+    'booking.detail.book_again': 'Try booking again',
   });
 
   return (

@@ -15,7 +15,7 @@
 | Styling | Tailwind, theme generated from doc 06 tokens |
 | Auth | NextAuth-pattern JWT-session auth (credentials + optional OAuth), custom claim/verify flows |
 | Realtime | SSE + in-process pub/sub bus seams (Redis-swappable, legacy-proven) |
-| Jobs | A scheduler process (cron-style: holds expiry, request auto-decline, statements, retention, digests, iCal sync, rollups) — one `jobs/` registry, each job idempotent |
+| Jobs | A scheduler process (cron-style: holds expiry, request auto-decline, statements, retention, digests, iCal sync, rollups) — one `src/jobs/` registry, each job idempotent; last run + outcome on `job_run`, surfaced at `/app/admin/scheduler` |
 | Storage | S3-compatible object storage behind the media seam |
 | Email | Resend-compatible adapter with console fallback |
 | Tests | Vitest: unit + API/integration (dedicated test DB) + component (jsdom/RTL) — the legacy clone's proven three-tier setup |

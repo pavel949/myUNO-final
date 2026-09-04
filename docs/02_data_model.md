@@ -751,6 +751,9 @@ One row per claim on a booking's deposit pre-auth (doc 10 Q6 — deposits are pr
 ### `MetricDaily` — the analytics rollup (doc 13 §2)
 Derived table, one row per unit × day, materialized nightly by the rollup cron: `nights_available`, `nights_occupied`, `owner_stay_nights`, `rental_revenue_cents`, plus project/unit FKs. Rebuildable from source tables at any time; never a source of truth.
 
+### `JobRun` — one execution of a registered scheduler job (doc 15 §5)
+Append-only. Fields: `job_key` (registry name, not free text) · `started_at` · `finished_at` · `outcome` enum `ok, failed` · `summary` (short count text; never an error message — those can carry connection strings or PII). The admin health panel shows the latest row per `job_key`; a key with no row is displayed as never-run, not omitted. Not a source of business truth — bookings, filings and rollups remain the source; this table is only “did the job fire”.
+
 ## 11. What deliberately does NOT exist in loop one
 
 To keep scope honest: no wishlist/saved-search, no community feed/marketplace tables (the home-space social layer is phase 2 per v3 §30.4 — the `Thread`/`Announcement` shapes are its foundation), no meter readings, no multi-currency amounts (THB only), no channel-manager entities beyond `IntegrationAccount` + iCal blocks, no service-desk escalation matrices beyond `sla_due_at` + escalation events, no buyer-transaction records (Capital-led, Q1). Each returns as a module addition without touching the spine.

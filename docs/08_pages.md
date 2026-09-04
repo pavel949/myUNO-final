@@ -92,6 +92,7 @@ S14 composition, admin-only (doc 03). Sections:
 10. **Signals** — the buyer funnel (F-BUY): signal rows, strength, evidence links, status actions.
 11. **Compliance** — TM30 ledger (all filings + escalations), per-unit compliance records, retention job status (passport auto-deletion, doc 12).
 12. **Audit log** — the append-only record, filterable by actor/entity.
+13. **Scheduler** — last run and outcome for every registered background job (doc 15 §5). A job that has never run, last failed, or is overdue is a visible red light. *(Built: `/app/admin/scheduler`.)*
 
 Every list ships empty/loading/error states; every destructive action uses `ConfirmDialog`; every edit writes audit rows.
 

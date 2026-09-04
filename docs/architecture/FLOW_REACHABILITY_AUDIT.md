@@ -68,6 +68,7 @@ Stay notification fan-out now wired end-to-end for the booking lifecycle slices 
 | N-12 | `stay_checkout_reminder` | Departure day 08:00 cron → guest | ✅ |
 | N-07b | `stay_checkin_instructions` | Verification complete, T-24h cron → guest | ✅ |
 | N-14 | `stay_post_stay` | Check-out + 7d re-engage cron → guest | ✅ |
+| N-17 | `stay_owner_stay_booked` | Owner stay booked → ops/MC | ✅ |
 | N-26 reminder | `order.new` (half-SLA body) | Unanswered service order → provider | ✅ |
 | N-27 | `order_review_prompt` | Fulfilled + 12h cron → orderer | ✅ |
 

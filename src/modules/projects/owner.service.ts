@@ -3,6 +3,7 @@ import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
 import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
+import { notifyOwnerStayBooked } from './notify-owner-stay';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -107,6 +108,8 @@ export async function bookOwnerStay(db: PrismaClient, input: OwnerStayInput): Pr
       status: 'confirmed',
     },
   });
+
+  await notifyOwnerStayBooked(db, booking.id);
 
   return booking;
 }

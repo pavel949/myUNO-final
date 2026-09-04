@@ -28,8 +28,19 @@ describe('Owner experience (T-033)', () => {
   describe('owner-stay booking', () => {
     it('books an owner stay in their own unit', async () => {
       const owner = await createIdentity();
+      const ops = await createIdentity();
       const project = await createProject();
       const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      await db.roleAssignment.create({
+        data: {
+          identityId: ops.id,
+          role: 'staff_ops',
+          scopeType: 'project',
+          projectId: project.id,
+          status: 'active',
+        },
+      });
 
       // Book owner stay
       const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h from now
@@ -46,6 +57,12 @@ describe('Owner experience (T-033)', () => {
       expect(booking.totalThb).toBe(0); // Zero rent
       expect(booking.status).toBe('confirmed'); // Auto-confirmed
       expect(booking.guestIdentityId).toBe(owner.id);
+
+      const opsAlert = await db.notification.findFirst({
+        where: { identityId: ops.id, type: 'stay_owner_stay_booked' },
+      });
+      expect(opsAlert?.titleKey).toBe('notify.stay_owner_stay_booked.title');
+      expect(opsAlert?.bodyKey).toBe('notify.stay_owner_stay_booked.body');
     });
 
     it('refuses owner stay if not enough notice', async () => {

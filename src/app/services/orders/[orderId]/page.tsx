@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
 import OrderDisputePanel from './order-dispute-panel';
+import OrderNoShowPanel from './order-no-show-panel';
 import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
@@ -154,6 +155,20 @@ export default async function ServiceOrderDetailPage({
       'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
     'service-order.detail.dispute_error': 'That did not work. Please try again.',
     'service-order.detail.dispute_view_ticket': 'View the ticket',
+    'service-order.detail.failed': 'Failed',
+    'service-order.detail.no_show_title': 'Provider did not show up',
+    'service-order.detail.no_show_hint':
+      'If the provider accepted but did not arrive for the scheduled time, report a no-show. We will refund you per our policy and open a ticket for our team.',
+    'service-order.detail.no_show_open': 'Report provider no-show',
+    'service-order.detail.no_show_note_label': 'What happened (optional)',
+    'service-order.detail.no_show_note_placeholder': 'e.g. Waited 30 minutes, no call or arrival…',
+    'service-order.detail.no_show_submit': 'Submit report',
+    'service-order.detail.no_show_cancel': 'Cancel',
+    'service-order.detail.no_show_confirm':
+      'Report this as a provider no-show? A refund will be issued and our team will follow up.',
+    'service-order.detail.no_show_error': 'Could not submit the report. Please try again.',
+    'service-order.detail.no_show_done':
+      'No-show reported. Any refund due is being processed — our team has opened a ticket.',
   });
 
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
@@ -171,6 +186,7 @@ export default async function ServiceOrderDetailPage({
     declined: labels['service-order.detail.declined'],
     fulfilled: labels['service-order.detail.fulfilled'],
     cancelled: labels['service-order.detail.cancelled'],
+    failed: labels['service-order.detail.failed'],
   };
 
   const timeline = buildOrderTimeline(order.status);
@@ -191,6 +207,8 @@ export default async function ServiceOrderDetailPage({
     order.status === 'fulfilled';
 
   const isOrderer = order.orderer.id === user.identityId;
+  const slotStarted = new Date() >= new Date(order.scheduledStart);
+  const canReportNoShow = isOrderer && order.status === 'accepted' && slotStarted;
   const disputableStatuses = ['accepted', 'fulfilled', 'closed', 'failed'];
   const canDispute =
     isOrderer && disputableStatuses.includes(order.status);
@@ -489,6 +507,19 @@ export default async function ServiceOrderDetailPage({
             )}
             {order.refundAccruedThb > 0 && (
               <p className="text-body text-status-serious mt-8">
+                {labels['service-order.detail.refund_accrued']}: ฿{baht(order.refundAccruedThb)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {canReportNoShow && <OrderNoShowPanel orderId={order.id} labels={labels} />}
+
+        {order.status === 'failed' && isOrderer && (
+          <div className="bg-state-warning-soft border border-state-warning rounded-lg p-24 mb-24">
+            <p className="text-body text-state-warning">{labels['service-order.detail.no_show_done']}</p>
+            {order.refundAccruedThb > 0 && (
+              <p className="text-small text-text-secondary mt-8">
                 {labels['service-order.detail.refund_accrued']}: ฿{baht(order.refundAccruedThb)}
               </p>
             )}

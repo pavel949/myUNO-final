@@ -29,6 +29,7 @@ import { POST as accept } from './accept/route';
 import { POST as decline } from './decline/route';
 import { POST as fulfil } from './fulfil/route';
 import { POST as cancel } from './cancel/route';
+import { POST as reportNoShow } from './no-show/route';
 
 function post(body?: unknown): NextRequest {
   return new NextRequest('http://localhost/api/service-orders/x', {
@@ -261,6 +262,41 @@ describe('service-order lifecycle routes (S1)', () => {
       expect(res.status).toBe(200);
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
       expect(order?.status).toBe('fulfilled');
+    });
+
+    it('orderer can report provider no-show after the slot starts (F-PROV-3)', async () => {
+      asStaff();
+      await recordCash(post({ receiptRef: 'r-ns' }), { params: { id: orderId } });
+
+      asProviderMember();
+      await accept(post(), { params: { id: orderId } });
+
+      await db.serviceOrder.update({
+        where: { id: orderId },
+        data: {
+          scheduled_start: new Date(Date.now() - 60 * 60 * 1000),
+          scheduled_end: new Date(Date.now() - 30 * 60 * 1000),
+        },
+      });
+
+      asOrderer();
+      const res = await reportNoShow(post({ note: 'Nobody came' }), {
+        params: { id: orderId },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.status).toBe('failed');
+      expect(body.ticketId).toBeTruthy();
+
+      const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
+      expect(order?.status).toBe('failed');
+      expect(order?.refund_accrued_thb).toBe(80000);
+
+      const ticket = await db.ticket.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(ticket?.priority).toBe('high');
     });
   });
 

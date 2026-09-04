@@ -59,6 +59,10 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.dispute_submit': 'Submit dispute',
     'booking.detail.dispute_cancel': 'Cancel',
     'booking.detail.dispute_sent': 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
+    'booking.detail.hold_expires':
+      'Your reservation is held for {time} more — complete payment to confirm.',
+    'booking.detail.hold_expired':
+      'Your payment hold has expired — these dates may no longer be available.',
   });
 
   return (

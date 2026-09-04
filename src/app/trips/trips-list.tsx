@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { SlaCountdown } from '@/components/SlaCountdown';
 
 interface Booking {
   id: string;
@@ -9,6 +10,7 @@ interface Booking {
   startDate: string;
   endDate: string;
   totalThb: number;
+  holdExpiresAt?: string | null;
   guestNote?: string;
   unit: {
     id: string;
@@ -171,6 +173,15 @@ export default function TripsList({ labels }: TripsListProps) {
                       <p className="text-sm text-state-warning font-semibold mb-2">
                         {labels['booking.trips.payment_pending']}
                       </p>
+                      {trip.holdExpiresAt ? (
+                        <p className="text-sm mb-2">
+                          <SlaCountdown
+                            deadline={trip.holdExpiresAt}
+                            leftTemplate={labels['booking.trips.hold_expires']}
+                            overdueLabel={labels['booking.trips.hold_expired']}
+                          />
+                        </p>
+                      ) : null}
                       <button
                         onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}`); }}
                         className="px-4 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep text-sm"

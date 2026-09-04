@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { SlaCountdown } from '@/components/SlaCountdown';
 
 interface BookingDetail {
   id: string;
@@ -13,6 +14,7 @@ interface BookingDetail {
   adults: number;
   children: number;
   totalThb: number;
+  holdExpiresAt?: string | null;
   refundAccruedThb?: number | null;
   guestNote?: string | null;
   unit: { id: string; name: string } | null;
@@ -371,6 +373,15 @@ export default function BookingDetailClient({
               <p className="text-body text-state-warning font-semibold mb-12">
                 {labels['booking.detail.awaiting_payment']}
               </p>
+              {booking.holdExpiresAt ? (
+                <p className="text-small mb-12">
+                  <SlaCountdown
+                    deadline={booking.holdExpiresAt}
+                    leftTemplate={labels['booking.detail.hold_expires']}
+                    overdueLabel={labels['booking.detail.hold_expired']}
+                  />
+                </p>
+              ) : null}
               <Button onClick={handlePayCard} isLoading={busy} size="sm">
                 {labels['booking.detail.pay_card']}
               </Button>

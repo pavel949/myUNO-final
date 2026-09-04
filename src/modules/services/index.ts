@@ -20,6 +20,7 @@ export {
   declineServiceOrder,
   fulfillServiceOrder,
   cancelServiceOrder,
+  reportProviderNoShow,
   rateServiceOrder,
   getServiceOrder,
   getServiceOrdersByProvider,

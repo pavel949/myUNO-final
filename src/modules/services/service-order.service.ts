@@ -1,6 +1,6 @@
 import { PrismaClient, ServiceOrderStatus, RoleType, RefundReason } from '@prisma/client';
 import { getConfig } from '@/modules/config';
-import { createNotification } from '@/modules/comms';
+import { createNotification, raiseTicket } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
@@ -431,6 +431,110 @@ export async function fulfillServiceOrder(
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
   });
+}
+
+/**
+ * Orderer reports that the provider did not show (doc 07 F-PROV-3).
+ * accepted → failed, refund per `[cfg] service.provider_no_show_refund_pct`,
+ * auto-ticket for ops, provider notified.
+ */
+export async function reportProviderNoShow(
+  db: PrismaClient,
+  serviceOrderId: string,
+  reportedByIdentityId: string,
+  note?: string
+): Promise<{ ticketId: string; refundThb: number }> {
+  const order = await db.serviceOrder.findUnique({
+    where: { id: serviceOrderId },
+    include: { service: true, provider: true, payments: true },
+  });
+
+  if (!order) {
+    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
+  }
+
+  if (order.orderer_identity_id !== reportedByIdentityId) {
+    throw new Error('Only the orderer can report a provider no-show');
+  }
+
+  if (order.status !== 'accepted') {
+    throw new Error(`Cannot report no-show for an order in ${order.status} status`);
+  }
+
+  const now = new Date();
+  if (now < order.scheduled_start) {
+    throw new Error('The scheduled time has not started yet');
+  }
+
+  const refundPct =
+    ((await getConfig(db, 'service.provider_no_show_refund_pct', {
+      projectId: order.project_id,
+    })) as number | undefined) ?? 100;
+
+  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
+
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: reportedByIdentityId,
+    reason: 'provider_no_show',
+    targetRefundThb: refundTargetThb,
+  });
+
+  await db.serviceOrder.update({
+    where: { id: serviceOrderId },
+    data: {
+      status: 'failed',
+      cancellation_reason: note?.trim() || 'provider_no_show',
+      refund_accrued_thb: issuedRefundThb,
+    },
+  });
+
+  const serviceTitle = order.service?.title || 'Service';
+  const { id: ticketId } = await raiseTicket(db, {
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    raisedByIdentityId: reportedByIdentityId,
+    raisedByRole: order.orderer_role,
+    categoryKey: 'complaint',
+    title: `Provider no-show: ${serviceTitle}`,
+    description:
+      note?.trim() ||
+      `Order ${order.id}: the provider did not arrive for the scheduled service.`,
+    priority: 'high',
+  });
+
+  await createNotification(db, {
+    identityId: order.orderer_identity_id,
+    type: 'order_failed_no_show',
+    titleKey: 'order.no_show.title',
+    bodyKey: 'order.no_show.body',
+    params: {
+      service_title: serviceTitle,
+      refund_thb: issuedRefundThb,
+    },
+  });
+
+  await notifyProviderMembers(db, order.provider_id, {
+    type: 'order_failed_no_show',
+    titleKey: 'order.provider_no_show.title',
+    bodyKey: 'order.provider_no_show.body',
+    params: {
+      order_id: order.id,
+      service_title: serviceTitle,
+    },
+  });
+
+  await track(db, 'service_order_no_show', {
+    serviceOrderId: order.id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+    refundThb: issuedRefundThb,
+  });
+
+  return { ticketId, refundThb: issuedRefundThb };
 }
 
 /**

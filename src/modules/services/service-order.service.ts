@@ -370,7 +370,7 @@ export async function declineServiceOrder(
 
 /**
  * Mark a service order as fulfilled.
- * Transitions accepted → fulfilled. Prompts for review.
+ * Transitions accepted → fulfilled. Review prompt (N-27) is sent by cron 12h later.
  */
 export async function fulfillServiceOrder(
   db: PrismaClient,
@@ -394,21 +394,10 @@ export async function fulfillServiceOrder(
     throw new Error(`Cannot fulfill order in ${order.status} status`);
   }
 
+  const fulfilledAt = new Date();
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
-    data: { status: 'fulfilled' },
-  });
-
-  // Prompt orderer for review (N-27)
-  await createNotification(db, {
-    identityId: order.orderer_identity_id,
-    type: 'order_review_prompt',
-    titleKey: 'order.review_prompt.title',
-    bodyKey: 'order.review_prompt.body',
-    params: {
-      order_id: order.id,
-      service_title: order.service?.title || 'Service',
-    },
+    data: { status: 'fulfilled', fulfilled_at: fulfilledAt },
   });
 
   // Record commission on fulfillment (S5)

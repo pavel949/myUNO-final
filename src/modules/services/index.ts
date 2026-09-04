@@ -29,7 +29,7 @@ export {
   type ServiceOrderDetails,
 } from './service-order.service';
 
-export { remindUnansweredServiceOrders } from './notify-order-reminder';
+export { remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from './notify-order-reminder';
 
 export {
   createService,

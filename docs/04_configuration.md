@@ -114,6 +114,7 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `notify.prearrival_days_before` | int | project | `5` | Days before check-in the pre-arrival reminder is sent (passports for TM30 + the home-space link) — LY-8. |
 | `notify.review_prompt_days_after` | int | project | `1` | Days after check-out the review prompt (with the green-season return offer) is sent — LY-8. |
 | `notify.post_stay_days_after` | int | project | `7` | Days after check-out the post-stay re-engage email (book direct next time) is sent — N-14. |
+| `notify.service_review_prompt_hours_after` | int | global | `12` | Hours after service-order fulfilment the review prompt is sent — N-27. |
 | `auth.token_ttl_minutes.password_reset` / `.email_verify` / `.account_claim` | int | global | `60` / `1440` / `10080` | One-time token validity. |
 | `i18n.default_locale` | enum `ru,en,th,zh` | global | `ru` ⚠ Q19 | New-visitor default language (zh added with Q23 — LY-3). |
 | `analytics.buyer_signal.repeat_stay_threshold` | int | global | `2` | Completed stays after which a `repeat_stay` signal fires (doc 13 §4). |

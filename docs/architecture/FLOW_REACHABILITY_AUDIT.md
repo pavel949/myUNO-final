@@ -48,7 +48,7 @@ Not reachable / partial:
 - ~~**F-OPS-5 / F-OWN-4**~~ — **built (2026-09-04 correction).** F-OPS-5: `/ops/requests` and `/mc/requests` — party, dates, breakdown, approve/decline with reason keys (`respond` API + `getOpsBookingRequests` / MC inbox). F-OWN-4: owner dashboard and unit detail link to `/tickets/new?unitId=…` and `/services?projectId=…&unitId=…`.
 - ~~**F-FIN-2 (payouts and reconciliation)**~~ — **built:** `/app/admin/payouts` (in admin nav) records owner and provider payouts; `/admin/finance/reconciliation` board linked from payouts; provider portal `/provider/remittances` (F-PROV-4).
 - ~~**F-DIS-1 deposit rail (Q46)**~~ — **wired (2026-09-04):** `ensureDepositPreauthOnStayConfirmed` on all confirmation paths; `voidDepositPreauthIfClean` on checkout. Claims UI at `/ops/claims` + `/app/admin/claims` unchanged.
-- **F-DIS-2 (disputes)** — still a ticket flow with no surface of its own.
+- ~~**F-DIS-2 (disputes)**~~ — **built (Q52):** `POST /api/disputes`, `/app/admin/disputes` in admin nav, guest raise from trips.
 - **F-MC-2** — beyond the single `/mc` page.
 - ~~**Announcements**~~ — **built** (`/app/admin/announcements`, `POST /api/announcements` + publish/withdraw). Two scoping bugs surfaced underneath the missing composer and are fixed with it: the home space rendered *every* published announcement regardless of `audience`, so an owners-only notice appeared on a guest's screen and an expired one never went away; and publishing to `guests_in_stay` notified **nobody**, because the audience resolved through a `guest` role row that booking has never written — the publish succeeded and reached zero people. In-stay membership now derives from the booking. `postedAs` is resolved server-side from the poster's role and is not accepted from the request: it is the signature on a building-wide broadcast, and a client-chosen value would let staff speak as the juristic person.
 
@@ -69,14 +69,15 @@ Stay notification fan-out now wired end-to-end for the booking lifecycle slices 
 | N-07b | `stay_checkin_instructions` | Verification complete, T-24h cron → guest | ✅ |
 | N-14 | `stay_post_stay` | Check-out + 7d re-engage cron → guest | ✅ |
 | N-26 reminder | `order.new` (half-SLA body) | Unanswered service order → provider | ✅ |
+| N-27 | `order_review_prompt` | Fulfilled + 12h cron → orderer | ✅ |
 
 Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; Opn `createCheckout` + `verifyAndConfirm` + `POST /api/webhooks/opn` when `PAYMENT_PROVIDER=opn`. Cash rail (F-OPS-6) unchanged.
 
-**Guest lifecycle notification catalog complete (N-02…N-14 wired).** Service order N-27 review prompt still open.
+**Stay + service order notification catalog complete (N-02…N-14, N-26/27 wired).**
 
 ## 4. Admin panel
 
-Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. **Announcements is now built** (`/app/admin/announcements`) — draft, then publish as a separate deliberate act, with withdraw. Still missing: **Tickets**, **Compliance**.
+Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. **Announcements is now built** (`/app/admin/announcements`) — draft, then publish as a separate deliberate act, with withdraw. **Tickets** (`/app/admin/tickets`) — cross-project SLA board with acknowledge/resolve actions. **Compliance** (`/app/admin/compliance`) — TM30 ledger, unit records needing attention, retention posture. **Disputes** (`/app/admin/disputes`) — F-DIS-2 arbiter queue.
 
 ~~**Finance is built but invisible.**~~ **Fixed:** ledger, statements and payouts are now in the sidebar. Reconciliation still sits outside the admin group at `/admin/finance/reconciliation`.
 

@@ -702,6 +702,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Days after check-out the post-stay re-engage email (book direct next time) is sent — N-14',
       },
       {
+        key: 'notify.service_review_prompt_hours_after',
+        valueType: 'int',
+        defaultValue: 12,
+        scopeableTo: 'global',
+        groupKey: 'notify',
+        description: 'Hours after fulfilment the service-order review prompt is sent — N-27',
+      },
+      {
         key: 'comms.whatsapp_number',
         valueType: 'string',
         defaultValue: '+66954243332',

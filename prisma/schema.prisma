@@ -1619,6 +1619,7 @@ model ServiceOrder {
   cancelled_by_identity_id String?            @map("cancelled_by_identity_id")
   cancellation_reason      String?            @map("cancellation_reason")
   expired_at               DateTime?          @map("expired_at")
+  fulfilled_at             DateTime?          @map("fulfilled_at")
   refund_accrued_thb       Int                @default(0) @map("refund_accrued_thb")
 
   // Notes

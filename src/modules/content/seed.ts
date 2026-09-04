@@ -803,9 +803,9 @@ const COMMON_KEYS: KeyDef[] = [
     key: 'order.review_prompt.body',
     namespace: 'order',
     description: 'Notification body: prompt to review',
-    ru: 'Поделитесь своим мнением о {{service_title}}',
-    en: 'Share your feedback on {{service_title}}',
-    th: 'แชร์ความคิดเห็นของคุณเกี่ยวกับ {{service_title}}',
+    ru: 'Поделитесь своим мнением о {{service_title}} — откройте заказ: {{order_url}}',
+    en: 'Share your feedback on {{service_title}} — open your order: {{order_url}}',
+    th: 'แชร์ความคิดเห็นของคุณเกี่ยวกับ {{service_title}} — เปิดคำสั่งซื้อ: {{order_url}}',
   },
 
   // TM30 Immigration filing (doc 07 F-OPS-2)

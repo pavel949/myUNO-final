@@ -1,6 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { createNotification } from '@/modules/comms';
 import { notifyProviderMembers } from './provider-notify';
+
+const HOUR_MS = 60 * 60 * 1000;
 
 /**
  * Half-SLA reminder for unanswered service orders (doc 11 N-26).
@@ -88,4 +91,66 @@ export async function remindUnansweredServiceOrders(
   }
 
   return reminded;
+}
+
+/**
+ * Send review prompts (N-27) for fulfilled service orders past the configured
+ * delay (default 12h). Skips orders that already have a review or prompt.
+ */
+export async function sendServiceOrderReviewPrompts(
+  db: PrismaClient,
+  now: Date = new Date()
+): Promise<number> {
+  const hoursAfter =
+    ((await getConfig(db, 'notify.service_review_prompt_hours_after')) as number | null) ?? 12;
+  const cutoff = new Date(now.getTime() - hoursAfter * HOUR_MS);
+
+  const candidates = await db.serviceOrder.findMany({
+    where: {
+      status: 'fulfilled',
+      fulfilled_at: { not: null, lte: cutoff },
+    },
+    include: {
+      service: { select: { title: true } },
+    },
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  let sent = 0;
+
+  for (const order of candidates) {
+    const existingReview = await db.review.findFirst({
+      where: {
+        target_type: 'service_order',
+        target_id: order.id,
+        author_identity_id: order.orderer_identity_id,
+      },
+      select: { id: true },
+    });
+    if (existingReview) continue;
+
+    const alreadyPrompted = await db.notification.findFirst({
+      where: {
+        type: 'order_review_prompt',
+        params: { path: ['order_id'], equals: order.id },
+      },
+      select: { id: true },
+    });
+    if (alreadyPrompted) continue;
+
+    await createNotification(db, {
+      identityId: order.orderer_identity_id,
+      type: 'order_review_prompt',
+      titleKey: 'order.review_prompt.title',
+      bodyKey: 'order.review_prompt.body',
+      params: {
+        order_id: order.id,
+        service_title: order.service?.title || 'Service',
+        order_url: `${baseUrl}/services/orders/${order.id}`,
+      },
+    });
+    sent += 1;
+  }
+
+  return sent;
 }

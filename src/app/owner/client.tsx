@@ -566,7 +566,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12 mb-16">
-                    <h3 className="text-heading-3 font-semibold text-text-ink">{unit.name}</h3>
+                    <h3 className="text-heading-3 font-semibold text-text-ink">
+                      <Link
+                        href={`/owner/units/${unit.id}`}
+                        className="hover:text-brand-andaman hover:underline"
+                      >
+                        {unit.name}
+                      </Link>
+                    </h3>
                     <Sparkline
                       values={trends.sparklines[unit.id] || []}
                       max={1}
@@ -603,6 +610,12 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       <span className="text-body font-medium text-text-ink">{unit.openTicketsCount}</span>
                     </div>
                     <div className="pt-12 flex flex-col gap-8">
+                      <Link
+                        href={`/owner/units/${unit.id}`}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.units.view_detail']} →
+                      </Link>
                       <Link
                         href={ticketHref(unit)}
                         className="text-small font-semibold text-brand-andaman hover:underline"

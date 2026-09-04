@@ -17,6 +17,7 @@ import {
   getOwnerPortfolioShape,
   getOwnerProjects,
   getOwnerStatements,
+  getOwnerUnitDashboard,
 } from './owner.service';
 
 describe('Owner experience (T-033)', () => {
@@ -485,6 +486,29 @@ describe('Owner experience (T-033)', () => {
       await statementFor(unit.id, owner.id, engagement.id, 'published', '2026-06-01');
 
       expect(await getOwnerStatements(db, stranger.id)).toEqual([]);
+    });
+  });
+
+  describe('getOwnerUnitDashboard', () => {
+    it('returns unit-scoped dashboard data for the owner', async () => {
+      const owner = await createIdentity();
+      const stranger = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Villa A' });
+      const otherUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Villa B' });
+
+      const dashboard = await getOwnerUnitDashboard(db, owner.id, unit.id);
+
+      expect(dashboard).not.toBeNull();
+      expect(dashboard!.unit.name).toBe('Villa A');
+      expect(dashboard!.summary.id).toBe(unit.id);
+      expect(dashboard!.bookings).toEqual([]);
+
+      const denied = await getOwnerUnitDashboard(db, stranger.id, unit.id);
+      expect(denied).toBeNull();
+
+      const missing = await getOwnerUnitDashboard(db, owner.id, otherUnit.id);
+      expect(missing?.unit.id).toBe(otherUnit.id);
     });
   });
 });

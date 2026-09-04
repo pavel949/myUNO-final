@@ -49,6 +49,7 @@ export {
   getOwnerAlerts,
   getOwnerComplianceSummary,
   getOwnerStatements,
+  getOwnerUnitDashboard,
   type OwnerDashboardData,
   type OwnerStayInput,
   type OwnerAlert,

@@ -2,6 +2,7 @@ import { PrismaClient, Booking, OwnerStatement, TicketStatus } from '@prisma/cli
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
+import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -655,4 +656,94 @@ export async function getOwnerStatements(
   });
 
   return allStatements;
+}
+
+export interface OwnerUnitDashboardData {
+  unit: {
+    id: string;
+    name: string;
+    projectId: string;
+    projectName: string;
+  };
+  summary: OwnerDashboardData['units'][number];
+  bookings: Awaited<ReturnType<typeof getOwnerBookingsList>>;
+  alerts: OwnerAlert[];
+  compliance: OwnerComplianceStatus | null;
+  statements: OwnerStatement[];
+  sparkline: number[];
+  trends: {
+    prevMonth: { nights: number; revenueThb: number } | null;
+  };
+}
+
+/**
+ * Per-unit owner dashboard (doc 06 S7/S8, doc 07 F-OWN-2).
+ * Returns null when the unit is missing or not owned by the caller.
+ */
+export async function getOwnerUnitDashboard(
+  db: PrismaClient,
+  ownerIdentityId: string,
+  unitId: string
+): Promise<OwnerUnitDashboardData | null> {
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: {
+      id: true,
+      name: true,
+      projectId: true,
+      ownerIdentityId: true,
+      project: { select: { name: true } },
+    },
+  });
+
+  if (!unit || unit.ownerIdentityId !== ownerIdentityId) {
+    return null;
+  }
+
+  const [dashboard, bookings, alerts, complianceSummary, statements, sparkDots] = await Promise.all([
+    getOwnerDashboard(db, ownerIdentityId),
+    getOwnerBookingsList(db, unitId, ownerIdentityId, 10),
+    getOwnerAlerts(db, ownerIdentityId),
+    getOwnerComplianceSummary(db, ownerIdentityId),
+    getOwnerStatements(db, ownerIdentityId),
+    getUnitOccupancySparklines(db, [unitId], 30),
+  ]);
+
+  const summary = dashboard.units.find((row) => row.id === unitId);
+  if (!summary) {
+    return null;
+  }
+
+  const now = new Date();
+  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+  const monthly = await getMetricsSeries(db, {
+    unitIds: [unitId],
+    from,
+    to: now,
+    groupBy: 'month',
+  });
+  const prevPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+    .toISOString()
+    .slice(0, 7);
+  const prev = monthly.find((point) => point.period === prevPeriod);
+
+  return {
+    unit: {
+      id: unit.id,
+      name: unit.name,
+      projectId: unit.projectId,
+      projectName: unit.project.name,
+    },
+    summary,
+    bookings,
+    alerts: alerts.filter((alert) => alert.unitId === unitId),
+    compliance: complianceSummary.find((row) => row.unitId === unitId) ?? null,
+    statements: statements.filter((statement) => statement.unitId === unitId),
+    sparkline: (sparkDots[unitId] || []).map((dot) => (dot.occupied ? 1 : 0)),
+    trends: {
+      prevMonth: prev
+        ? { nights: prev.nightsOccupied, revenueThb: prev.rentalRevenueThb }
+        : null,
+    },
+  };
 }

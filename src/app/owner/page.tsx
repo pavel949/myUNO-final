@@ -42,6 +42,7 @@ export default async function OwnerPage() {
     'owner.units.revenue': 'Revenue',
     'owner.units.bookings': 'Bookings',
     'owner.units.open_tickets': 'Open tickets',
+    'owner.units.view_detail': 'Unit dashboard',
     'owner.units.last30': 'Occupancy, last 30 nights',
     'owner.sections.bookings': 'Recent Bookings',
     'owner.sections.statement': 'Latest Statement',

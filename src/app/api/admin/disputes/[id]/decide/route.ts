@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { decideDispute } from '@/modules/comms';
 import { logAudit } from '@/modules/audit';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
@@ -12,10 +12,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await getCurrentUser();
-    if (!user || !user.isAdmin) {
-      throw createPublicError('unauthorized', 401);
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const body = await req.json();
     const { resolutionAmountThb, decisionNote } = body ?? {};
@@ -35,13 +33,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const dispute = await decideDispute(prisma, {
       disputeId: params.id,
-      decidedByIdentityId: user.identityId,
+      decidedByIdentityId: guard.actorIdentityId,
       resolutionAmountThb,
       decisionNote: decisionNote.slice(0, 2000),
     });
 
     await logAudit({
-      actorIdentityId: user.identityId,
+      actorIdentityId: guard.actorIdentityId,
       action: 'disputes:decide',
       entityType: 'Dispute',
       entityId: dispute.id,

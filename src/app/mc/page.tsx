@@ -96,6 +96,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.nav.announcements': 'Post an announcement',
     'mc.nav.tm30': 'TM30 queue',
     'mc.nav.mobilization': 'Mobilization',
+    'mc.nav.calendar': 'Unit calendars',
     'mc.nav.requests': 'Booking requests',
     'mc.nav.services': 'Order services',
     'mc.nav.costs': 'Record a cost',

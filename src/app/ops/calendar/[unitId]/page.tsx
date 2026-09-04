@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { opsHref } from '@/app/libs/opsProjectContext';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
@@ -50,7 +51,10 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
   return (
     <main className="min-h-screen bg-surface-background">
       <section className="max-w-4xl mx-auto px-24 py-32">
-        <Link href="/ops" className="text-small font-semibold text-brand-andaman hover:underline">
+        <Link
+          href={opsHref('/ops/calendar', unit.projectId)}
+          className="text-small font-semibold text-brand-andaman hover:underline"
+        >
           {labels['staff.ops.calendar.back']}
         </Link>
         <h1 className="text-heading-1 font-bold text-text-ink mt-12">

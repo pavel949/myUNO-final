@@ -54,7 +54,10 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
   return (
     <main className="min-h-screen bg-surface-background">
       <section className="max-w-4xl mx-auto px-24 py-32">
-        <Link href="/mc" className="text-small font-semibold text-brand-andaman hover:underline">
+        <Link
+          href={`/mc/calendar?projectId=${encodeURIComponent(unit.projectId)}`}
+          className="text-small font-semibold text-brand-andaman hover:underline"
+        >
           {labels['mc.units.calendar.back']}
         </Link>
         <h1 className="text-heading-1 font-bold text-text-ink mt-12">

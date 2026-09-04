@@ -4,6 +4,8 @@ import { getMCFeeReport } from '@/modules/projects';
 import { requireMcMember } from '@/app/libs/mcGuard';
 import { handleError } from '@/app/libs/errorHandler';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/mc/fee-report — platform fee report for an MC portfolio context (F-MC-2).
  *

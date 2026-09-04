@@ -19,6 +19,8 @@ export default async function LoginPage() {
     'auth.login.password': 'Password',
     'auth.login.submit': 'Log in',
     'auth.login.error_generic': 'Login failed. Please try again.',
+    'auth.login.error_invalid_credentials': 'Invalid email or password.',
+    'auth.login.error_rate_limited': 'Too many attempts. Please try again shortly.',
     'auth.login.no_account': "Don't have an account?",
     'auth.login.register_link': 'Sign up',
     'auth.login.forgot_password': 'Forgot your password?',
@@ -27,12 +29,12 @@ export default async function LoginPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-background flex items-start justify-center px-24 py-64">
-      <div className="w-full max-w-md bg-surface-paper border border-border-line rounded-lg p-32">
-        <h1 className="text-heading-2 font-bold text-text-ink mb-8">
+    <main className="min-h-screen bg-surface-ivory flex items-center justify-center px-16 py-32 sm:px-24 sm:py-48">
+      <div className="w-full max-w-xl bg-surface-paper border border-border-line rounded-lg shadow-card p-24 sm:p-32">
+        <h1 className="text-heading-2 font-bold text-text-ink mb-12">
           {labels['auth.login.title']}
         </h1>
-        <p className="text-body text-text-secondary mb-32">{labels['auth.login.subtitle']}</p>
+        <p className="text-body text-text-secondary mb-24">{labels['auth.login.subtitle']}</p>
         <Suspense>
           <LoginForm
             labels={{
@@ -40,6 +42,8 @@ export default async function LoginPage() {
               password: labels['auth.login.password'],
               submit: labels['auth.login.submit'],
               errorGeneric: labels['auth.login.error_generic'],
+              errorInvalidCredentials: labels['auth.login.error_invalid_credentials'],
+              errorRateLimited: labels['auth.login.error_rate_limited'],
               noAccount: labels['auth.login.no_account'],
               registerLink: labels['auth.login.register_link'],
               forgotPassword: labels['auth.login.forgot_password'],

@@ -8,10 +8,11 @@ import {
   autoDeclineRequests,
   remindUnansweredRequests,
   sendPrearrivalReminders,
+  sendCheckoutReminders,
   sendPostStayPrompts,
 } from '@/modules/booking';
 import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
-import { expireStaleServiceOrders } from '@/modules/services';
+import { expireStaleServiceOrders, remindUnansweredServiceOrders } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 
 export const dynamic = 'force-dynamic';
@@ -71,8 +72,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const prearrival = await sendPrearrivalReminders(prisma);
+    const checkout = await sendCheckoutReminders(prisma);
     const postStay = await sendPostStayPrompts(prisma);
-    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${postStay} post-stay)`;
+    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${checkout} checkout, ${postStay} post-stay)`;
   } catch (error) {
     console.error('[Cron run-all] guest lifecycle sends failed:', error);
     results.guestLifecycle = 'failed';
@@ -80,8 +82,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const slaHours = (await getConfig(prisma, 'service.accept_sla_hours')) as number | null;
+    const orderReminded = await remindUnansweredServiceOrders(prisma);
     const result = await expireStaleServiceOrders(prisma, slaHours ?? 12);
-    results.serviceOrderExpiry = `ok (${result.expired} expired, ${result.refunded} refunded)`;
+    results.serviceOrderExpiry = `ok (${orderReminded} reminded, ${result.expired} expired, ${result.refunded} refunded)`;
   } catch (error) {
     console.error('[Cron run-all] service order expiry failed:', error);
     results.serviceOrderExpiry = 'failed';

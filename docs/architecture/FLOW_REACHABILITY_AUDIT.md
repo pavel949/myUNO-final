@@ -26,7 +26,7 @@ Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on bra
 | **Provider** | `/provider` | apply, services, `/provider/remittances` (F-PROV-4) | **Works** — remittance report + payout history in provider nav |
 | **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports, announcements | **Mostly** — request inbox built; deeper MC-2 ops boards still open |
 | **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
-| **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, unit calendar, mobilization | **Mostly** — S12 core columns exist; F-OPS-4 pricing/calendar upkeep is partial |
+| **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, unit calendar, mobilization | **Mostly** — F-OPS-4 calendar/pricing UI at `/ops/calendar/[unitId]` + MC `/mc/units/[unitId]` |
 | **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Mostly** — see §4 |
 | **Any role** | — | `/messages`, `/tickets`, `/services` | **Works** |
 
@@ -65,10 +65,12 @@ Stay notification fan-out now wired end-to-end for the booking lifecycle slices 
 | N-34 reminder | `stay_request_reminder` | Half-SLA cron if still unanswered | ✅ |
 | N-08 | `stay_verification_failed` | Passport deadline job | ✅ (pre-existing) |
 | N-10 | `finance_refund_failed` | Provider refund void + admin alert | ✅ |
+| N-12 | `stay_checkout_reminder` | Departure day 08:00 cron → guest | ✅ |
+| N-26 reminder | `order.new` (half-SLA body) | Unanswered service order → provider | ✅ |
 
 Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; Opn `createCheckout` + `verifyAndConfirm` + `POST /api/webhooks/opn` when `PAYMENT_PROVIDER=opn`. Cash rail (F-OPS-6) unchanged.
 
-**Still open in notifications:** N-07 pre-arrival (job exists — verify guest UX), checkout reminders (N-12), half-SLA on service orders (N-26).
+**Still open in notifications:** N-07b check-in instructions (T-24h after verification), N-14 post-stay re-engage (7d).
 
 ## 4. Admin panel
 

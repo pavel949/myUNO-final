@@ -9,7 +9,7 @@ import {
   sendPrearrivalReminders,
   sendPostStayPrompts,
 } from '@/modules/booking';
-import { autoCloseResolvedTickets } from '@/modules/comms';
+import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { expireStaleServiceOrders } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 
@@ -92,6 +92,14 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[Cron run-all] ticket auto-close failed:', error);
     results.ticketAutoClose = 'failed';
+  }
+
+  try {
+    const breached = await checkAndTrackSLABreaches(prisma);
+    results.ticketSlaBreaches = `ok (${breached} escalated)`;
+  } catch (error) {
+    console.error('[Cron run-all] ticket SLA breach tracking failed:', error);
+    results.ticketSlaBreaches = 'failed';
   }
 
   const failed = Object.values(results).includes('failed');

@@ -548,7 +548,7 @@ export function MCDashboardClient({
                           </div>
                         </div>
                         <Link
-                          href={`/units/${unit.id}`}
+                          href={`/mc/units/${unit.id}`}
                           className="text-brand-andaman font-semibold hover:underline"
                         >
                           {labels['mc.units.manage']} →

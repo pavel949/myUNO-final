@@ -1,7 +1,56 @@
 import { PrismaClient, TicketStatus, TicketPriority, TicketEventType, RoleType } from '@prisma/client';
-import { assertCatalogKeys } from '@/modules/config';
+import { assertCatalogKeys, getConfig, type ConfigKey } from '@/modules/config';
 import { publishMessage } from './thread.bus';
 import { track } from '@/modules/analytics';
+
+const SLA_HOURS_BY_PRIORITY: Record<TicketPriority, ConfigKey> = {
+  urgent: 'tickets.sla_hours.urgent',
+  high: 'tickets.sla_hours.high',
+  normal: 'tickets.sla_hours.normal',
+  low: 'tickets.sla_hours.low',
+};
+
+const DEFAULT_SLA_HOURS: Record<TicketPriority, number> = {
+  urgent: 4,
+  high: 24,
+  normal: 72,
+  low: 168,
+};
+
+async function resolveTicketSlaDueAt(
+  db: PrismaClient,
+  projectId: string,
+  unitId: string | undefined,
+  priority: TicketPriority
+): Promise<Date> {
+  const slaHours =
+    (await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId, unitId })) ??
+    DEFAULT_SLA_HOURS[priority];
+  return new Date(Date.now() + slaHours * 60 * 60 * 1000);
+}
+
+async function resolveDefaultAssigneeIdentityId(
+  db: PrismaClient,
+  projectId: string
+): Promise<string | null> {
+  const assigneeMode =
+    (await getConfig(db, 'tickets.default_assignee', { projectId })) ?? 'project_ops_lead';
+  if (assigneeMode === 'unassigned') {
+    return null;
+  }
+
+  const opsLead = await db.roleAssignment.findFirst({
+    where: {
+      projectId,
+      role: 'staff_ops',
+      status: 'active',
+    },
+    select: { identityId: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return opsLead?.identityId ?? null;
+}
 
 export interface RaiseTicketInput {
   projectId: string;
@@ -43,11 +92,13 @@ export async function raiseTicket(
 ): Promise<{ id: string; threadId: string }> {
   const { projectId, unitId, raisedByIdentityId, raisedByRole, categoryKey, title, description, priority = 'normal' } = input;
 
-  // In a full implementation, fetch config for default assignee and SLA hours
-  // For now, leave assignee null and slaEmaAt null (will be implemented with config service in next phase)
-
   // Category must exist in the doc 04 §8 catalog (DM-3)
   await assertCatalogKeys(db, 'catalog.ticket_categories', categoryKey, { projectId });
+
+  const [slaDueAt, assigneeIdentityId] = await Promise.all([
+    resolveTicketSlaDueAt(db, projectId, unitId, priority),
+    resolveDefaultAssigneeIdentityId(db, projectId),
+  ]);
 
   const ticket = await db.ticket.create({
     data: {
@@ -60,6 +111,8 @@ export async function raiseTicket(
       description,
       priority,
       status: 'open',
+      slaDueAt,
+      assigneeIdentityId,
     },
   });
 
@@ -93,6 +146,14 @@ export async function raiseTicket(
     newStatus: 'open',
     note: 'Ticket created',
   });
+
+  if (assigneeIdentityId) {
+    await recordTicketEvent(db, ticket.id, 'assignment', raisedByIdentityId, {
+      assignedTo: assigneeIdentityId,
+      previousAssignee: null,
+      autoAssigned: true,
+    });
+  }
 
   // Track analytics event for ticket raised
   await track(db, 'ticket_raised', {
@@ -373,13 +434,23 @@ export async function getReporterTickets(
 export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number> {
   const now = new Date();
 
-  // Find open tickets with slaDueAt in the past that haven't been marked as breached
+  const activeStatuses: TicketStatus[] = [
+    'open',
+    'acknowledged',
+    'in_progress',
+    'waiting_reporter',
+  ];
+
+  // Find active tickets with slaDueAt in the past that have not yet been escalated.
   const breachedTickets = await db.ticket.findMany({
     where: {
-      status: { not: 'closed' },
+      status: { in: activeStatuses },
       slaDueAt: { lt: now },
-      // Track only once per ticket by checking a breach_tracked_at field or similar
-      // For now, track all matching tickets
+      events: {
+        none: {
+          eventType: 'sla_escalation',
+        },
+      },
     },
     select: {
       id: true,
@@ -398,6 +469,12 @@ export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number
   for (const ticket of breachedTickets) {
     // Calculate hours to resolve (from creation to now, but should have been resolved by slaDueAt)
     const hoursElapsed = (now.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
+
+    await recordTicketEvent(db, ticket.id, 'sla_escalation', null, {
+      escalatedAt: now.toISOString(),
+      priority: ticket.priority,
+      hoursElapsed: Math.round(hoursElapsed),
+    });
 
     // Track the SLA breach event
     await track(db, 'ticket_sla_breached', {

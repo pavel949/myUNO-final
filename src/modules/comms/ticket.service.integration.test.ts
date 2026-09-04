@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createRoleAssignment } from '@/test/util';
 import * as ticketService from './ticket.service';
 
 describe('ticket.service — integration tests', () => {
@@ -60,6 +60,44 @@ describe('ticket.service — integration tests', () => {
       expect(events).toHaveLength(1);
       expect(events[0]?.eventType).toBe('status_change');
       expect(events[0]?.data?.newStatus).toBe('open');
+    });
+
+    it('sets slaDueAt from priority config and auto-assigns project ops lead', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const opsLead = await createIdentity({ firstName: 'Ops', lastName: 'Lead' });
+      await createRoleAssignment({
+        identityId: opsLead.id,
+        role: 'staff_ops',
+        scopeType: 'project',
+        projectId: project.id,
+      });
+
+      const before = Date.now();
+      const result = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Leaking pipe',
+        priority: 'urgent',
+      });
+      const after = Date.now();
+
+      const ticket = await db.ticket.findUnique({ where: { id: result.id } });
+      expect(ticket?.assigneeIdentityId).toBe(opsLead.id);
+      expect(ticket?.slaDueAt).toBeDefined();
+
+      const slaMs = ticket!.slaDueAt!.getTime() - before;
+      expect(slaMs).toBeGreaterThanOrEqual(4 * 60 * 60 * 1000 - 1000);
+      expect(slaMs).toBeLessThanOrEqual(4 * 60 * 60 * 1000 + (after - before) + 1000);
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId: result.id, eventType: 'assignment' },
+      });
+      expect(events).toHaveLength(1);
+      expect(events[0]?.data?.assignedTo).toBe(opsLead.id);
+      expect(events[0]?.data?.autoAssigned).toBe(true);
     });
   });
 
@@ -380,6 +418,41 @@ describe('ticket.service — integration tests', () => {
     });
   });
 
+  describe('checkAndTrackSLABreaches', () => {
+    it('records one sla_escalation event per breached active ticket', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Overdue ticket',
+        priority: 'urgent',
+      });
+
+      await db.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: 'in_progress',
+          slaDueAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+      });
+
+      const firstRun = await ticketService.checkAndTrackSLABreaches(db);
+      const secondRun = await ticketService.checkAndTrackSLABreaches(db);
+
+      expect(firstRun).toBe(1);
+      expect(secondRun).toBe(0);
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId, eventType: 'sla_escalation' },
+      });
+      expect(events).toHaveLength(1);
+    });
+  });
+
   describe('autoCloseResolvedTickets', () => {
     it('auto-closes resolved tickets older than configured grace period', async () => {
       const project = await createProject();
@@ -439,7 +512,7 @@ describe('ticket.service — integration tests', () => {
       });
       await db.ticket.update({
         where: { id: freshTicketId },
-        data: { resolvedAt: new Date('2026-01-10T00:00:00Z') },
+        data: { resolvedAt: new Date('2026-01-18T00:00:00Z') },
       });
 
       const closedCount = await ticketService.autoCloseResolvedTickets(

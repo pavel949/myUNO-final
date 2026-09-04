@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma'
 import {
   getStatementSignOffState,
   hasSignedOff,
@@ -55,7 +55,7 @@ export async function PUT(
     }
 
     const statement = await getStatementSignOffState(
-      prismadb,
+      prisma,
       params.statementId
     )
 
@@ -110,7 +110,7 @@ export async function PUT(
     }
 
     const updated = await recordStatementSignOff(
-      prismadb,
+      prisma,
       params.statementId,
       body.actor
     )

@@ -1444,6 +1444,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'auth.login.password', namespace: 'auth', description: 'Login field: password', en: 'Password', ru: 'Пароль', status: NR },
   { key: 'auth.login.submit', namespace: 'auth', description: 'Login submit button', en: 'Log in', ru: 'Войти', status: NR },
   { key: 'auth.login.error_generic', namespace: 'auth', description: 'Login generic error', en: 'Login failed. Please try again.', ru: 'Не удалось войти. Попробуйте ещё раз.', status: NR },
+  { key: 'auth.login.error_invalid_credentials', namespace: 'auth', description: 'Login invalid credentials error', en: 'Invalid email or password.', ru: 'Неверная почта или пароль.', status: NR },
+  { key: 'auth.login.error_rate_limited', namespace: 'auth', description: 'Login temporary lockout error', en: 'Too many attempts. Please try again shortly.', ru: 'Слишком много попыток. Повторите вход чуть позже.', status: NR },
   { key: 'auth.login.no_account', namespace: 'auth', description: 'Login: no account prompt', en: "Don't have an account?", ru: 'Ещё нет аккаунта?', status: NR },
   { key: 'auth.login.register_link', namespace: 'auth', description: 'Login: link to register', en: 'Sign up', ru: 'Зарегистрироваться', status: NR },
   { key: 'auth.login.forgot_password', namespace: 'auth', description: 'Login: forgot password link', en: 'Forgot your password?', ru: 'Забыли пароль?', status: NR },

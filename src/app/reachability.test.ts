@@ -188,6 +188,8 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/run-all',
   '/api/cron/sync-ical-imports',
   '/api/health',
+  // Google redirects the browser here after consent — never an in-app link.
+  '/api/auth/callback/google',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin
   // integrations page); never linked from inside the product.

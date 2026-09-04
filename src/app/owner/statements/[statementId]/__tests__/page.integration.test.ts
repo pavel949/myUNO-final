@@ -34,7 +34,22 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
+import React from 'react'
 import OwnerStatementDetailPage from '../page'
+
+/** The page returns <>Breadcrumb, Client</>; statement props live on the client. */
+function clientProps(element: React.ReactElement) {
+  const children = React.Children.toArray(element.props.children)
+  const client = children.find(
+    (child): child is React.ReactElement<{ statement: Record<string, unknown>; labels: Record<string, string> }> =>
+      React.isValidElement(child) &&
+      Boolean((child.props as { statement?: unknown }).statement)
+  )
+  if (!client) {
+    throw new Error('expected OwnerStatementDetailClient in the page tree')
+  }
+  return client.props
+}
 
 describe('Owner statement detail page — scoping', () => {
   let owner: Awaited<ReturnType<typeof createIdentity>>
@@ -124,7 +139,7 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    const props = clientProps(element as React.ReactElement)
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.unitName).toBe('B-707')
     // OwnerStatement stores every amount in satang (34_000 = ฿340), like every
@@ -167,7 +182,7 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    const props = clientProps(element as React.ReactElement)
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.status).toBe('pending_owner_review')
   })

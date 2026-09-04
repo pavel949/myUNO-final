@@ -67,11 +67,12 @@ Stay notification fan-out now wired end-to-end for the booking lifecycle slices 
 | N-10 | `finance_refund_failed` | Provider refund void + admin alert | ✅ |
 | N-12 | `stay_checkout_reminder` | Departure day 08:00 cron → guest | ✅ |
 | N-07b | `stay_checkin_instructions` | Verification complete, T-24h cron → guest | ✅ |
+| N-14 | `stay_post_stay` | Check-out + 7d re-engage cron → guest | ✅ |
 | N-26 reminder | `order.new` (half-SLA body) | Unanswered service order → provider | ✅ |
 
 Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; Opn `createCheckout` + `verifyAndConfirm` + `POST /api/webhooks/opn` when `PAYMENT_PROVIDER=opn`. Cash rail (F-OPS-6) unchanged.
 
-**Still open in notifications:** N-14 post-stay re-engage (7d after checkout — `stay_post_stay` type exists but is misused for owner checkout alert).
+**Guest lifecycle notification catalog complete (N-02…N-14 wired).** Service order N-27 review prompt still open.
 
 ## 4. Admin panel
 

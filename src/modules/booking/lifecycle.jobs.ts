@@ -10,8 +10,8 @@ import { createNotification } from '@/modules/comms';
  *   the way into the home space (doc 07 F-GUEST-6 pre-arrival step).
  * - Check-in instructions (N-07b): verification complete, T−24h → guest.
  * - Checkout day (08:00 project time, N-12): departure instructions to guest.
- * - Post-stay (T + notify.review_prompt_days_after): review prompt with the
- *   green-season return offer (doc 11).
+ * - Post-stay review (T + notify.review_prompt_days_after): review prompt (N-13).
+ * - Post-stay re-engage (T + notify.post_stay_days_after): direct-booking nudge (N-14).
  *
  * Idempotency: one notification of the type per booking, guarded by the
  * booking_id kept in Notification.params — reruns and overlapping cron
@@ -43,7 +43,7 @@ function hourInTimezone(date: Date, timeZone: string): number {
 async function alreadySent(
   db: PrismaClient,
   identityId: string,
-  type: 'stay_prearrival_passports' | 'stay_checkout_reminder' | 'stay_review_prompt',
+  type: 'stay_prearrival_passports' | 'stay_checkout_reminder' | 'stay_review_prompt' | 'stay_post_stay',
   bookingId: string
 ): Promise<boolean> {
   const existing = await db.notification.findFirst({
@@ -309,6 +309,72 @@ export async function sendPostStayPrompts(
         booking_id: booking.id,
         unit_name: booking.unit.name,
         project_name: booking.unit.project.name,
+      },
+    });
+    sent += 1;
+  }
+
+  return sent;
+}
+
+/**
+ * Send the post-stay re-engage nudge (N-14) — thank-you + book-direct CTA —
+ * for stays checked out at least notify.post_stay_days_after days ago (default 7).
+ */
+export async function sendPostStayReengage(
+  db: PrismaClient,
+  now: Date = new Date()
+): Promise<number> {
+  const candidates = await db.booking.findMany({
+    where: {
+      status: { in: ['checked_out', 'completed'] },
+      bookingType: 'guest_stay',
+      checkedOutAt: {
+        not: null,
+        gte: new Date(now.getTime() - 21 * DAY_MS),
+        lte: now,
+      },
+    },
+    include: {
+      unit: {
+        select: {
+          name: true,
+          project: { select: { id: true, name: true, slug: true } },
+        },
+      },
+    },
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  let sent = 0;
+
+  for (const booking of candidates) {
+    const daysAfter =
+      (await getConfig(db, 'notify.post_stay_days_after', {
+        projectId: booking.projectId,
+      })) ?? 7;
+    const daysSince =
+      (now.getTime() - (booking.checkedOutAt as Date).getTime()) / DAY_MS;
+    if (daysSince < daysAfter) continue;
+
+    if (await alreadySent(db, booking.guestIdentityId, 'stay_post_stay', booking.id)) {
+      continue;
+    }
+
+    const searchUrl = booking.unit.project.slug
+      ? `${baseUrl}/search?project=${booking.unit.project.slug}`
+      : `${baseUrl}/search`;
+
+    await createNotification(db, {
+      identityId: booking.guestIdentityId,
+      type: 'stay_post_stay',
+      titleKey: 'notify.stay_post_stay.title',
+      bodyKey: 'notify.stay_post_stay.body',
+      params: {
+        booking_id: booking.id,
+        unit_name: booking.unit.name,
+        project_name: booking.unit.project.name,
+        search_url: searchUrl,
       },
     });
     sent += 1;

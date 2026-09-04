@@ -116,6 +116,12 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
     }
     return { valid: true };
   },
+  'notify.post_stay_days_after': (value: any) => {
+    if (!Number.isInteger(value) || value <= 0 || value > 30) {
+      return { valid: false, error: 'must be a positive integer of days (max 30)' };
+    }
+    return { valid: true };
+  },
 };
 
 /**

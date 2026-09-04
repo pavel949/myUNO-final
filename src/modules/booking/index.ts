@@ -66,6 +66,7 @@ export {
   sendCheckinInstructions,
   sendCheckoutReminders,
   sendPostStayPrompts,
+  sendPostStayReengage,
 } from './lifecycle.jobs';
 
 export { remindUnansweredRequests } from './notify-request-reminder';

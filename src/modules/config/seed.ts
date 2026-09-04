@@ -694,6 +694,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Days after check-out the review prompt (with the green-season offer) is sent',
       },
       {
+        key: 'notify.post_stay_days_after',
+        valueType: 'int',
+        defaultValue: 7,
+        scopeableTo: 'project',
+        groupKey: 'notify',
+        description: 'Days after check-out the post-stay re-engage email (book direct next time) is sent — N-14',
+      },
+      {
         key: 'comms.whatsapp_number',
         valueType: 'string',
         defaultValue: '+66954243332',

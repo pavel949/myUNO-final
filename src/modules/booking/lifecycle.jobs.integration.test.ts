@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
-import { sendPrearrivalReminders, sendCheckinInstructions, sendCheckoutReminders, sendPostStayPrompts } from './lifecycle.jobs';
+import { sendPrearrivalReminders, sendCheckinInstructions, sendCheckoutReminders, sendPostStayPrompts, sendPostStayReengage } from './lifecycle.jobs';
 
 describe('guest lifecycle jobs (LY-8)', () => {
   const NOW = new Date('2026-08-01T09:00:00Z');
@@ -247,6 +247,41 @@ describe('guest lifecycle jobs (LY-8)', () => {
       });
 
       expect(await sendPostStayPrompts(db, NOW)).toBe(0);
+    });
+  });
+
+  describe('sendPostStayReengage (N-14)', () => {
+    it('fires after the 7-day offset, once, and skips too-recent checkouts', async () => {
+      await createBooking({
+        unitId,
+        projectId,
+        guestIdentityId: guestId,
+        status: 'checked_out',
+        startDate: new Date('2026-07-25'),
+        endDate: new Date('2026-07-29'),
+        checkedOutAt: new Date('2026-07-24T10:00:00Z'), // 8 days before NOW
+      });
+      const recentGuest = await createIdentity();
+      const recentUnit = await createUnit({ projectId, status: 'live' });
+      await createBooking({
+        unitId: recentUnit.id,
+        projectId,
+        guestIdentityId: recentGuest.id,
+        status: 'checked_out',
+        startDate: new Date('2026-07-28'),
+        endDate: new Date('2026-08-01'),
+        checkedOutAt: new Date('2026-08-01T08:00:00Z'),
+      });
+
+      expect(await sendPostStayReengage(db, NOW)).toBe(1);
+      expect(await sendPostStayReengage(db, NOW)).toBe(0);
+
+      const notifications = await db.notification.findMany({
+        where: { type: 'stay_post_stay' },
+      });
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].identityId).toBe(guestId);
+      expect((notifications[0].params as { search_url?: string }).search_url).toContain('/search');
     });
   });
 });

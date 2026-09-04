@@ -90,7 +90,7 @@ export async function POST(
     if (booking.unit?.ownerIdentityId) {
       await createNotification(prisma, {
         identityId: booking.unit.ownerIdentityId,
-        type: 'stay_post_stay',
+        type: 'stay_modified_ops',
         titleKey: 'notify.stay_checked_out.title',
         bodyKey: 'notify.stay_checked_out.body',
         params: { unit_name: booking.unit.name },

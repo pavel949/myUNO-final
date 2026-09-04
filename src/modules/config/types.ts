@@ -149,6 +149,7 @@ export interface OtherConfig {
   'comms.whatsapp_number': string;
   'notify.prearrival_days_before': number;
   'notify.review_prompt_days_after': number;
+  'notify.post_stay_days_after': number;
 }
 
 // Catalogs — taxonomies (doc 04 §8)

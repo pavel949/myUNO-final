@@ -11,6 +11,7 @@ import {
   sendCheckinInstructions,
   sendCheckoutReminders,
   sendPostStayPrompts,
+  sendPostStayReengage,
 } from '@/modules/booking';
 import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { expireStaleServiceOrders, remindUnansweredServiceOrders } from '@/modules/services';
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
     const checkin = await sendCheckinInstructions(prisma);
     const checkout = await sendCheckoutReminders(prisma);
     const postStay = await sendPostStayPrompts(prisma);
-    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${checkin} check-in, ${checkout} checkout, ${postStay} post-stay)`;
+    const reengage = await sendPostStayReengage(prisma);
+    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${checkin} check-in, ${checkout} checkout, ${postStay} review, ${reengage} re-engage)`;
   } catch (error) {
     console.error('[Cron run-all] guest lifecycle sends failed:', error);
     results.guestLifecycle = 'failed';

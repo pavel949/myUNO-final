@@ -221,8 +221,6 @@ const API_DEBT = new Set([
   '/api/admin/crm/profiles/[profileId]/transition',
   '/api/admin/fees/[contractId]',
   '/api/admin/fees/calculate',
-  '/api/admin/incidents/[id]',
-  '/api/admin/incidents',
   '/api/admin/operational-kpis',
   '/api/admin/organizations/[organizationId]',
   '/api/admin/organizations',

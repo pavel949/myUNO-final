@@ -1,6 +1,7 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 
 /**
  * Shared post-payment transition for service orders: placed → paid.
@@ -142,6 +143,8 @@ export async function recordCashPayment(
         where: { id: bookingId },
         data: { status: 'confirmed' },
       });
+
+      await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
 
       // Track analytics event (doc 13)
       await track(db, 'stay_payment_succeeded', {
@@ -350,6 +353,12 @@ export async function verifyAndConfirm(
         where: { id: confirmed.bookingId },
         data: { status: 'confirmed' },
       });
+
+      await ensureDepositPreauthOnStayConfirmed(
+        db,
+        confirmed.bookingId,
+        booking.unitId
+      ).catch(() => null);
 
       // Create communication thread for booking context (best-effort)
       try {

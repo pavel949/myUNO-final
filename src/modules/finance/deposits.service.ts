@@ -193,7 +193,22 @@ export async function scheduleDepositPreauthIfConfigured(
 
   if (mode !== 'preauth' || !amountThb || amountThb <= 0) return null;
 
+  const existing = await db.depositPreauth.findUnique({ where: { bookingId } });
+  if (existing) return existing;
+
   return scheduleDepositPreauth(db, bookingId, amountThb as number);
+}
+
+/**
+ * Place a deposit pre-authorization when a stay becomes confirmed (Q46 / doc 04).
+ * Idempotent — safe to call from every confirmation path.
+ */
+export async function ensureDepositPreauthOnStayConfirmed(
+  db: PrismaClient,
+  bookingId: string,
+  unitId: string
+): Promise<DepositPreauth | null> {
+  return scheduleDepositPreauthIfConfigured(db, bookingId, unitId);
 }
 
 /**

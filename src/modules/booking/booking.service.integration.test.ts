@@ -627,6 +627,52 @@ describe('booking.service — integration tests', () => {
       expect(confirmed.holdExpiresAt).toBeNull();
     });
 
+    it('schedules deposit preauth on confirm when unit config mode=preauth (Q46)', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      await db.configOverride.create({
+        data: {
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 'preauth',
+          updatedByIdentityId: guest.id,
+        },
+      });
+      await db.configOverride.create({
+        data: {
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: guest.id,
+        },
+      });
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      await bookingService.confirmBooking(db, { bookingId: booking.id });
+
+      const preauth = await db.depositPreauth.findUnique({ where: { bookingId: booking.id } });
+      expect(preauth).not.toBeNull();
+      expect(preauth?.amountThb).toBe(5000);
+      expect(preauth?.status).toBe('authorized');
+    });
+
     it('rejects confirmation when not in pending_payment status', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);

@@ -4,6 +4,7 @@ import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
+import { ensureDepositPreauthOnStayConfirmed, voidDepositPreauthIfClean } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
@@ -520,6 +521,8 @@ export async function confirmBooking(
     totalThb: updated.totalThb,
   }).catch(() => null);
 
+  await ensureDepositPreauthOnStayConfirmed(db, updated.id, updated.unitId).catch(() => null);
+
   return updated;
 }
 
@@ -639,6 +642,8 @@ export async function checkOutBooking(
     projectId: checkedOut.projectId,
     identityId: checkedOut.guestIdentityId,
   }).catch(() => null);
+
+  await voidDepositPreauthIfClean(db, bookingId).catch(() => null);
 
   return checkedOut;
 }

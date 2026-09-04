@@ -8,7 +8,7 @@ import {
   resetDb,
 } from '@/test/util';
 import { createConflictNotifications } from './ical-import';
-import { getUnitIcalConflictAlerts } from './unit-ical-conflicts';
+import { getUnitIcalConflictAlerts, getProjectIcalConflictAlerts } from './unit-ical-conflicts';
 
 describe('getUnitIcalConflictAlerts', () => {
   beforeEach(async () => {
@@ -45,6 +45,8 @@ describe('getUnitIcalConflictAlerts', () => {
     const alerts = await getUnitIcalConflictAlerts(db, unit.id);
     expect(alerts).toHaveLength(1);
     expect(alerts[0]?.bookingId).toBe(booking.id);
+    expect(alerts[0]?.unitId).toBe(unit.id);
+    expect(alerts[0]?.unitName).toBe('Villa 1');
     expect(alerts[0]?.guestName).toBe('Alex Guest');
     expect(alerts[0]?.startDate).toBe('2026-09-12');
     expect(alerts[0]?.endDate).toBe('2026-09-14');
@@ -79,5 +81,61 @@ describe('getUnitIcalConflictAlerts', () => {
 
     const alerts = await getUnitIcalConflictAlerts(db, unit.id);
     expect(alerts).toHaveLength(0);
+  });
+
+  it('returns project-scoped conflicts for the ops board', async () => {
+    await createIdentity({ firstName: 'Ops', lastName: 'Admin', isAdmin: true });
+    const guest = await createIdentity({ firstName: 'Alex', lastName: 'Guest' });
+    const projectA = await createProject({ name: 'Project A', status: 'live' });
+    const projectB = await createProject({ name: 'Project B', status: 'live' });
+    const unitA = await createUnit({ projectId: projectA.id, name: 'Unit A', status: 'live' });
+    const unitB = await createUnit({ projectId: projectB.id, name: 'Unit B', status: 'live' });
+
+    const bookingA = await createBooking({
+      unitId: unitA.id,
+      projectId: projectA.id,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-09-10'),
+      endDate: new Date('2026-09-15'),
+    });
+    const bookingB = await createBooking({
+      unitId: unitB.id,
+      projectId: projectB.id,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-09-20'),
+      endDate: new Date('2026-09-25'),
+    });
+
+    await createConflictNotifications(db, unitA.id, [
+      {
+        event: {
+          uid: 'ota-a',
+          summary: 'Airbnb',
+          dtStart: new Date('2026-09-11'),
+          dtEnd: new Date('2026-09-13'),
+        },
+        conflictingBooking: bookingA,
+      },
+    ]);
+    await createConflictNotifications(db, unitB.id, [
+      {
+        event: {
+          uid: 'ota-b',
+          summary: 'Airbnb',
+          dtStart: new Date('2026-09-21'),
+          dtEnd: new Date('2026-09-23'),
+        },
+        conflictingBooking: bookingB,
+      },
+    ]);
+
+    const scoped = await getProjectIcalConflictAlerts(db, { projectIds: [projectA.id] });
+    expect(scoped).toHaveLength(1);
+    expect(scoped[0]?.unitName).toBe('Unit A');
+
+    const empty = await getProjectIcalConflictAlerts(db, { projectIds: [] });
+    expect(empty).toEqual([]);
   });
 });

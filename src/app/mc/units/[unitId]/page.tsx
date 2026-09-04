@@ -5,7 +5,7 @@ import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
-import UnitIcalConflictBanner from '@/components/units/UnitIcalConflictBanner';
+import UnitIcalConflictBanner, { UNIT_ICAL_CALENDAR_SURFACES } from '@/components/units/UnitIcalConflictBanner';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getUnitIcalConflictAlerts, listIntegrationAccounts } from '@/modules/integrations';
@@ -64,7 +64,11 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
           {unit.project.name} — {labels['mc.units.calendar.subtitle']}
         </p>
         <div className="mt-24">
-          <UnitIcalConflictBanner conflicts={conflictAlerts} labels={labels} />
+          <UnitIcalConflictBanner
+            conflicts={conflictAlerts}
+            labels={labels}
+            calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.mc}
+          />
           <UnitIntegrationHealthStrip
             accounts={integrationAccounts.map((account) => ({
               integrationKey: account.integrationKey,

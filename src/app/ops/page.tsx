@@ -6,6 +6,8 @@ import { getLabels } from '@/lib/i18n';
 import { getOpsBoard, getOpsMobilizationQueue } from '@/modules/ops';
 import OpsBoardClient from './ops-client';
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
+import UnitIcalConflictBanner, { UNIT_ICAL_CALENDAR_SURFACES } from '@/components/units/UnitIcalConflictBanner';
+import { getProjectIcalConflictAlerts } from '@/modules/integrations';
 import {
   loadOpsSwitcherProjects,
   opsBoardScope,
@@ -49,6 +51,12 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
   const mobilizationUnits = await getOpsMobilizationQueue(
     prisma,
     opsBoardScope(opsContext, validActiveProjectId)
+  );
+
+  const boardScope = opsBoardScope(opsContext, validActiveProjectId);
+  const icalConflicts = await getProjectIcalConflictAlerts(
+    prisma,
+    boardScope ? { projectIds: boardScope.projectIds } : undefined
   );
 
   const switcherBasePath = '/ops';
@@ -109,6 +117,11 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.mobilization_progress': '{completed} of {total} steps done',
     'staff.ops.mobilization_next': 'Next step',
     'staff.ops.mobilization_open': 'Open checklist →',
+    'staff.ops.ical_conflicts_title': 'OTA calendar conflicts',
+    'staff.ops.ical_conflicts_hint':
+      'Imported OTA bookings overlap platform stays. The platform calendar wins — correct each OTA channel manually.',
+    'staff.calendar.conflict_body_with_unit':
+      '{unit_name} · {guest_name}: {start_date} — {end_date} clashes with an OTA import',
     'tickets.status.open': 'Open',
     'tickets.status.acknowledged': 'Acknowledged',
     'tickets.status.in_progress': 'In progress',
@@ -190,6 +203,12 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             </div>
           </div>
         </div>
+
+        <UnitIcalConflictBanner
+          conflicts={icalConflicts}
+          labels={labels}
+          calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.ops}
+        />
 
         <OpsBoardClient
           viewerIdentityId={user.identityId}

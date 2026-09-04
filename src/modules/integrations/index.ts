@@ -32,6 +32,7 @@ export {
 
 export {
   getUnitIcalConflictAlerts,
+  getProjectIcalConflictAlerts,
   type UnitIcalConflictAlert,
 } from './unit-ical-conflicts';
 

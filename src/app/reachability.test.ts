@@ -189,6 +189,7 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/rollup-metrics',
   '/api/cron/run-all',
   '/api/cron/sync-ical-imports',
+  '/api/webhooks/opn',
   '/api/health',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin

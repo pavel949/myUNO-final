@@ -90,3 +90,5 @@ export {
   type TransferInstructions,
   type RecordBankTransferInput,
 } from './bank-transfer.service';
+
+export { processOpnEvent, type OpnWebhookEvent } from './provider-webhook.service';

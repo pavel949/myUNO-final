@@ -2,6 +2,7 @@ import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
+import { getPaymentProvider } from './providers';
 
 /**
  * Shared post-payment transition for service orders: placed → paid.
@@ -441,6 +442,43 @@ export async function refund(
       description: `Refund requested: ${reason}`,
     },
   });
+
+  if (
+    payment.provider === 'opn' &&
+    payment.providerSessionId &&
+    process.env.PAYMENT_PROVIDER === 'opn'
+  ) {
+    try {
+      const provider = getPaymentProvider();
+      const result = await provider.refund({
+        chargeId: payment.providerSessionId,
+        amount: amountThb,
+        reason,
+      });
+
+      const updated = await db.refund.update({
+        where: { id: refund.id },
+        data: {
+          providerRefundId: result.refundId,
+          ...(result.status === 'failed' ? { status: 'failed' } : {}),
+        },
+      });
+
+      if (result.status === 'failed') {
+        await markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
+        return updated;
+      }
+
+      return updated;
+    } catch (error) {
+      await markRefundFailed(
+        db,
+        refund.id,
+        error instanceof Error ? error.message : 'provider_error'
+      ).catch(() => null);
+      throw error;
+    }
+  }
 
   return refund;
 }

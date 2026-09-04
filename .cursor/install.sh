@@ -52,7 +52,8 @@ SESSION_SECRET=${SESSION_SECRET}
 NEXTAUTH_SECRET=${SESSION_SECRET}
 NEXTAUTH_URL=http://localhost:3000
 
-NODE_ENV=development
+# NODE_ENV is intentionally unset: Next.js sets it per command. Pinning it to
+# development here would break 'npm run build'.
 CONTENT_REVIEW_GATE_ENABLED=false
 
 ENCRYPTION_KEY=${ENCRYPTION_KEY}

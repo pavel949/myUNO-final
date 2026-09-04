@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPublicError } from '@/app/libs/errorHandler';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * Load a service order and establish the caller's relationship to it.
@@ -28,11 +28,17 @@ export async function loadOrderForUser(orderId: string, user: CurrentUser) {
     (r) => r.role === 'provider_member' && r.providerId === order.provider_id
   );
   const isStaff = hasProjectStaffAccess(user, order.project_id);
+  const isManagedMc = order.unit_id
+    ? await hasManagedUnitMcAccess(user, {
+        projectId: order.project_id,
+        unitId: order.unit_id,
+      })
+    : false;
   const isAdmin = user.isAdmin;
 
-  if (!isOrderer && !isProviderMember && !isStaff && !isAdmin) {
+  if (!isOrderer && !isProviderMember && !isStaff && !isManagedMc && !isAdmin) {
     throw createPublicError('not found', 404);
   }
 
-  return { order, isOrderer, isProviderMember, isStaff, isAdmin };
+  return { order, isOrderer, isProviderMember, isStaff, isManagedMc, isAdmin };
 }

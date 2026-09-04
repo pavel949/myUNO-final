@@ -30,6 +30,24 @@ describe('getOpsBoard', () => {
       unitId: unitA.id,
       projectId: projectA.id,
       guestIdentityId: guestA.id,
+      status: 'requested',
+      startDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
+      endDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      totalThb: 80_000,
+    });
+    await createBooking({
+      unitId: unitB.id,
+      projectId: projectB.id,
+      guestIdentityId: guestB.id,
+      status: 'requested',
+      startDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
+      endDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      totalThb: 90_000,
+    });
+    await createBooking({
+      unitId: unitA.id,
+      projectId: projectA.id,
+      guestIdentityId: guestA.id,
       status: 'pending_payment',
       startDate: now,
       endDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
@@ -137,6 +155,8 @@ describe('getOpsBoard', () => {
     const scoped = await getOpsBoard(db, now, { projectIds: [projectA.id] });
     expect(scoped.arrivals).toHaveLength(1);
     expect(scoped.arrivals[0]?.unit.name).toBe('Unit A');
+    expect(scoped.pendingRequests).toHaveLength(1);
+    expect(scoped.pendingRequests[0]?.unit.name).toBe('Unit A');
     expect(scoped.pendingPayment).toHaveLength(1);
     expect(scoped.pendingPayment[0]?.unit.name).toBe('Unit A');
     expect(scoped.pendingServiceOrders).toHaveLength(1);
@@ -146,6 +166,7 @@ describe('getOpsBoard', () => {
     expect(scoped.slaMetrics.ticketsWithOpenSLA).toBe(1);
 
     const unscoped = await getOpsBoard(db, now);
+    expect(unscoped.pendingRequests.length).toBe(2);
     expect(unscoped.pendingPayment.length).toBe(2);
     expect(unscoped.pendingServiceOrders.length).toBe(2);
     expect(unscoped.openTickets.length).toBe(2);
@@ -156,6 +177,7 @@ describe('getOpsBoard', () => {
     const scoped = await getOpsBoard(db, new Date('2026-08-15T10:00:00Z'), { projectIds: [] });
     expect(scoped.arrivals).toEqual([]);
     expect(scoped.departures).toEqual([]);
+    expect(scoped.pendingRequests).toEqual([]);
     expect(scoped.pendingPayment).toEqual([]);
     expect(scoped.pendingServiceOrders).toEqual([]);
     expect(scoped.openTickets).toEqual([]);

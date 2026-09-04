@@ -145,6 +145,7 @@ interface MCDashboardClientProps {
 
 // doc 06 §3.4 status → color mapping, state tokens only
 const bookingStatusStyle: Record<string, string> = {
+  requested: 'bg-state-warning-soft text-state-warning',
   confirmed: 'bg-state-success-soft text-state-success',
   checked_in: 'bg-state-info-soft text-state-info',
   checked_out: 'bg-surface-ivory text-text-stone',
@@ -362,6 +363,33 @@ export function MCDashboardClient({
   };
 
   const actionForBooking = (booking: Booking) => {
+    if (booking.status === 'requested') {
+      return (
+        <div className="flex items-center gap-8">
+          <Button
+            size="sm"
+            variant="sun"
+            onClick={() => void postBookingAction(booking.id, 'respond', { action: 'approve' })}
+            isLoading={busyBookingId === booking.id}
+          >
+            {labels['mc.bookings.approve']}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              if (window.confirm(labels['mc.bookings.confirm_decline'])) {
+                void postBookingAction(booking.id, 'respond', { action: 'decline' });
+              }
+            }}
+            isLoading={busyBookingId === booking.id}
+          >
+            {labels['mc.bookings.decline']}
+          </Button>
+        </div>
+      );
+    }
+
     if (booking.status === 'pending_payment') {
       const receiptRef = (bookingReceipts[booking.id] || '').trim();
       return (

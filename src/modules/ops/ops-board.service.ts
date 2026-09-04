@@ -4,6 +4,7 @@ import { getTm30OnTimeRate } from '@/modules/analytics';
 export interface OpsBoardData {
   arrivals: OpsBooking[];
   departures: OpsBooking[];
+  pendingRequests: OpsBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
   openTickets: OpsTicket[];
@@ -26,6 +27,7 @@ interface OpsBooking {
   adults: number;
   children: number;
   verificationStatus: string;
+  requestExpiresAt: Date | null;
   unit: { id: string; name: string };
   guestIdentity: { firstName: string; lastName: string };
   payments: { id: string }[];
@@ -111,6 +113,7 @@ export async function getOpsBoard(
     return {
       arrivals: [],
       departures: [],
+      pendingRequests: [],
       pendingPayment: [],
       pendingServiceOrders: [],
       openTickets: [],
@@ -137,6 +140,7 @@ export async function getOpsBoard(
     adults: true,
     children: true,
     verificationStatus: true,
+    requestExpiresAt: true,
     unit: { select: { id: true, name: true } },
     guestIdentity: { select: { firstName: true, lastName: true } },
     payments: {
@@ -145,7 +149,7 @@ export async function getOpsBoard(
     },
   };
 
-  const [arrivals, departures, pendingPayment, pendingServiceOrders, openTickets, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
+  const [arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
     db.booking.findMany({
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
@@ -163,6 +167,15 @@ export async function getOpsBoard(
       },
       select: bookingSelect,
       orderBy: { endDate: 'asc' },
+    }),
+    db.booking.findMany({
+      where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
+        status: 'requested',
+      },
+      select: bookingSelect,
+      orderBy: [{ requestExpiresAt: 'asc' }, { createdAt: 'asc' }],
+      take: 50,
     }),
     db.booking.findMany({
       where: {
@@ -226,6 +239,7 @@ export async function getOpsBoard(
   return {
     arrivals,
     departures,
+    pendingRequests,
     pendingPayment,
     pendingServiceOrders,
     openTickets,

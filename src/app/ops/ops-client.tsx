@@ -17,6 +17,7 @@ interface OpsBooking {
   unitName: string;
   guestName: string;
   paid: boolean;
+  requestExpiresAt: string | null;
 }
 
 interface OpsServiceOrder {
@@ -75,6 +76,7 @@ export default function OpsBoardClient({
   viewerIdentityId,
   arrivals,
   departures,
+  pendingRequests,
   pendingPayment,
   pendingServiceOrders,
   openTickets,
@@ -83,6 +85,7 @@ export default function OpsBoardClient({
   viewerIdentityId: string;
   arrivals: OpsBooking[];
   departures: OpsBooking[];
+  pendingRequests: OpsBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
   openTickets: OpsTicket[];
@@ -185,6 +188,68 @@ export default function OpsBoardClient({
     void ticketAction(ticket.id, 'status', { newStatus, note });
   };
 
+  const respondToRequest = async (bookingId: string, action: 'approve' | 'decline') => {
+    if (
+      action === 'decline' &&
+      !window.confirm(labels['staff.ops.confirm_decline_request'])
+    ) {
+      return;
+    }
+    await act(bookingId, 'respond', { action });
+  };
+
+  const RequestRow = ({ booking }: { booking: OpsBooking }) => (
+    <div className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-body font-semibold text-text-ink">
+          {booking.guestName}
+          <span className="text-text-secondary font-normal">
+            {' · '}
+            {booking.unitId ? (
+              <Link
+                href={`/ops/calendar/${booking.unitId}`}
+                className="text-brand-andaman hover:underline"
+              >
+                {booking.unitName}
+              </Link>
+            ) : (
+              booking.unitName
+            )}
+          </span>
+        </p>
+        <p className="text-small text-text-secondary">
+          {new Date(booking.startDate).toLocaleDateString()} —{' '}
+          {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
+          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
+        </p>
+        {booking.requestExpiresAt ? (
+          <p className="text-small text-state-warning">
+            {labels['staff.ops.request_expires']}:{' '}
+            {new Date(booking.requestExpiresAt).toLocaleString()}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-8">
+        <Button
+          size="sm"
+          variant="sun"
+          onClick={() => void respondToRequest(booking.id, 'approve')}
+          isLoading={busyId === booking.id}
+        >
+          {labels['staff.ops.approve_request']}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void respondToRequest(booking.id, 'decline')}
+          isLoading={busyId === booking.id}
+        >
+          {labels['staff.ops.decline_request']}
+        </Button>
+      </div>
+    </div>
+  );
+
   const Row = ({
     booking,
     action,
@@ -265,6 +330,19 @@ export default function OpsBoardClient({
           <p className="text-body text-state-error">{error}</p>
         </div>
       )}
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+          {labels['staff.ops.booking_requests']}
+        </h2>
+        {pendingRequests.length === 0 ? (
+          <p className="text-body text-text-secondary py-8">{labels['staff.ops.requests_empty']}</p>
+        ) : (
+          pendingRequests.map((booking) => (
+            <RequestRow key={booking.id} booking={booking} />
+          ))
+        )}
+      </section>
 
       <Section
         title={labels['staff.ops.arrivals']}

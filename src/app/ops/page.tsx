@@ -20,7 +20,7 @@ export default async function OpsBoardPage() {
     redirect('/');
   }
 
-  const { arrivals, departures, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } = await getOpsBoard(
+  const { arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } = await getOpsBoard(
     prisma,
     new Date(),
     user.isAdmin ? undefined : { projectIds: staffProjectIds }
@@ -32,6 +32,12 @@ export default async function OpsBoardPage() {
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.arrivals': "Today's arrivals",
+    'staff.ops.booking_requests': 'Booking requests',
+    'staff.ops.requests_empty': 'No pending booking requests.',
+    'staff.ops.approve_request': 'Approve',
+    'staff.ops.decline_request': 'Decline',
+    'staff.ops.confirm_decline_request': 'Decline this booking request? The guest will be notified.',
+    'staff.ops.request_expires': 'Respond by',
     'staff.ops.departures': "Today's departures",
     'staff.ops.pending_cash': 'Awaiting payment (record cash)',
     'staff.ops.empty': 'Nothing here right now.',
@@ -94,6 +100,7 @@ export default async function OpsBoardPage() {
         ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`
         : '—',
       paid: b.payments.length > 0,
+      requestExpiresAt: b.requestExpiresAt ? b.requestExpiresAt.toISOString() : null,
     }));
 
   return (
@@ -146,6 +153,7 @@ export default async function OpsBoardPage() {
           viewerIdentityId={user.identityId}
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}
+          pendingRequests={serialize(pendingRequests)}
           pendingPayment={serialize(pendingPayment)}
           pendingServiceOrders={pendingServiceOrders.map((o) => ({
             id: o.id,

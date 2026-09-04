@@ -11,6 +11,7 @@ import BookingRequestInboxDetails from '@/components/booking/BookingRequestInbox
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
 import ArrivalPassportCaptureModal from '@/components/ops/ArrivalPassportCaptureModal';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
+import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 
 interface OpsBooking {
   id: string;
@@ -134,6 +135,7 @@ export default function OpsBoardClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [passportBooking, setPassportBooking] = useState<OpsBooking | null>(null);
   const [checkinBooking, setCheckinBooking] = useState<OpsBooking | null>(null);
+  const [checkoutBooking, setCheckoutBooking] = useState<OpsBooking | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -469,18 +471,27 @@ export default function OpsBoardClient({
         onComplete={() => router.refresh()}
       />
 
+      <CheckOutConditionReportModal
+        bookingId={checkoutBooking?.id ?? null}
+        guestName={checkoutBooking?.guestName ?? ''}
+        unitName={checkoutBooking?.unitName ?? ''}
+        labels={labels}
+        onClose={() => setCheckoutBooking(null)}
+        onComplete={() => router.refresh()}
+      />
+
       <Section
         title={labels['staff.ops.departures']}
         bookings={departures}
         action={(booking) => (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => act(booking.id, 'check-out')}
-            isLoading={busyId === booking.id}
-          >
-            {labels['staff.ops.check_out']}
-          </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setCheckoutBooking(booking)}
+              isLoading={busyId === booking.id}
+            >
+              {labels['staff.ops.check_out']}
+            </Button>
         )}
       />
 

@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, StatTile } from '@/components';
+import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
+import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 import UnitIcalConflictBanner, {
   UNIT_ICAL_CALENDAR_SURFACES,
 } from '@/components/units/UnitIcalConflictBanner';
@@ -216,6 +218,9 @@ export function MCDashboardClient({
   const [busyServiceOrderId, setBusyServiceOrderId] = useState<string | null>(null);
   const [serviceOrderError, setServiceOrderError] = useState<string | null>(null);
   const [serviceOrderReceipts, setServiceOrderReceipts] = useState<Record<string, string>>({});
+  const [checkinBooking, setCheckinBooking] = useState<Booking | null>(null);
+  const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
+  const [serviceUnitId, setServiceUnitId] = useState(units[0]?.id ?? '');
 
   const tabs = [
     { key: 'overview' as const, label: labels['mc.tabs.overview'] },
@@ -442,7 +447,7 @@ export function MCDashboardClient({
       return (
         <Button
           size="sm"
-          onClick={() => void postBookingAction(booking.id, 'checkin')}
+          onClick={() => setCheckinBooking(booking)}
           isLoading={busyBookingId === booking.id}
         >
           {labels['mc.bookings.check_in']}
@@ -455,7 +460,7 @@ export function MCDashboardClient({
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => void postBookingAction(booking.id, 'check-out')}
+          onClick={() => setCheckoutBooking(booking)}
           isLoading={busyBookingId === booking.id}
         >
           {labels['mc.bookings.check_out']}
@@ -519,6 +524,12 @@ export function MCDashboardClient({
               className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
             >
               {labels['mc.nav.tm30']}
+            </Link>
+            <Link
+              href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`}
+              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
+            >
+              {labels['mc.nav.services']}
             </Link>
             <Link
               href="/announcements"
@@ -792,6 +803,39 @@ export function MCDashboardClient({
             <h2 className="text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.service_orders.title']}
             </h2>
+            <div className="bg-surface-paper border border-border-line rounded-lg p-20 mb-20">
+              <p className="text-body text-text-secondary mb-12">
+                {labels['mc.service_orders.order_hint']}
+              </p>
+              {units.length > 0 ? (
+                <div className="flex flex-col sm:flex-row gap-12 items-stretch sm:items-end">
+                  <label className="flex-1 block">
+                    <span className="text-small text-text-secondary">
+                      {labels['mc.service_orders.unit_label']}
+                    </span>
+                    <select
+                      value={serviceUnitId}
+                      onChange={(event) => setServiceUnitId(event.target.value)}
+                      className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                    >
+                      {units.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Link
+                    href={`/services?projectId=${encodeURIComponent(dashboard.projectId)}&unitId=${encodeURIComponent(serviceUnitId)}&context=mc`}
+                    className="inline-flex items-center justify-center h-48 px-20 rounded-md bg-brand-andaman text-surface-ivory font-semibold hover:bg-brand-deep transition-colors"
+                  >
+                    {labels['mc.service_orders.browse']}
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-small text-text-secondary">{labels['mc.units.empty']}</p>
+              )}
+            </div>
             {serviceOrderError && (
               <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
                 <p className="text-small text-state-error">{serviceOrderError}</p>
@@ -991,6 +1035,24 @@ export function MCDashboardClient({
           </div>
         )}
       </section>
+
+      <CheckInConditionReportModal
+        bookingId={checkinBooking?.id ?? null}
+        guestName={checkinBooking?.guestIdentity.firstName ?? ''}
+        unitName={checkinBooking?.unit.name ?? ''}
+        labels={labels}
+        onClose={() => setCheckinBooking(null)}
+        onComplete={() => router.refresh()}
+      />
+
+      <CheckOutConditionReportModal
+        bookingId={checkoutBooking?.id ?? null}
+        guestName={checkoutBooking?.guestIdentity.firstName ?? ''}
+        unitName={checkoutBooking?.unit.name ?? ''}
+        labels={labels}
+        onClose={() => setCheckoutBooking(null)}
+        onComplete={() => router.refresh()}
+      />
     </main>
   );
 }

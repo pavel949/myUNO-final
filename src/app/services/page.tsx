@@ -42,6 +42,8 @@ export default async function ServicesPage() {
     'services.browse.stay_banner_link': 'Back to your home space',
     'services.browse.owner_banner': 'Ordering for your unit at {unit}, {project}',
     'services.browse.owner_banner_link': 'Back to owner dashboard',
+    'services.browse.mc_banner': 'Ordering for managed unit {unit}, {project}',
+    'services.browse.mc_banner_link': 'Back to MC portal',
     'services.browse.empty': 'No services available yet — check back soon.',
     'services.browse.vetted': 'Vetted',
     'services.browse.from': 'from',

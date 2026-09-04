@@ -73,6 +73,7 @@ export default function ServicesClient({
   const bookingId = searchParams?.get('bookingId');
   const unitId = searchParams?.get('unitId');
   const projectId = searchParams?.get('projectId');
+  const orderContext = searchParams?.get('context');
 
   const [services, setServices] = useState<MarketService[]>([]);
   const [orders, setOrders] = useState<MyOrder[]>([]);
@@ -288,16 +289,23 @@ export default function ServicesClient({
         {!bookingId && unitId && unitContext && (unitContext.unitName || unitContext.projectName) && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
             <p className="text-body text-text-ink">
-              {fill(labels['services.browse.owner_banner'], {
-                unit: unitContext.unitName ?? '—',
-                project: unitContext.projectName ?? '—',
-              })}
+              {fill(
+                orderContext === 'mc'
+                  ? labels['services.browse.mc_banner']
+                  : labels['services.browse.owner_banner'],
+                {
+                  unit: unitContext.unitName ?? '—',
+                  project: unitContext.projectName ?? '—',
+                }
+              )}
             </p>
             <Link
-              href="/owner"
+              href={orderContext === 'mc' ? '/mc' : '/owner'}
               className="text-small font-semibold text-brand-andaman hover:underline"
             >
-              {labels['services.browse.owner_banner_link']}
+              {orderContext === 'mc'
+                ? labels['services.browse.mc_banner_link']
+                : labels['services.browse.owner_banner_link']}
             </Link>
           </div>
         )}

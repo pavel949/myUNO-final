@@ -10,7 +10,14 @@ import {
   getUnitMobilizationChecklist,
   isMobilizationComplete,
   initializeMobilizationChecklist,
+  getAdminComplianceOverview,
 } from './index';
+import {
+  createBooking,
+  createBookingGuest,
+  createIdentity,
+} from '@/test/util';
+import { createTm30Filing } from '@/modules/ops';
 
 describe('Compliance & Mobilization', () => {
   beforeEach(async () => {
@@ -262,6 +269,55 @@ describe('Compliance & Mobilization', () => {
       });
 
       expect(engagement!.noiCapAnnualThb).toBeNull();
+    });
+  });
+
+  describe('getAdminComplianceOverview', () => {
+    it('aggregates TM30 counts, attention records, and retention posture', async () => {
+      const project = await createProject();
+      const otherProject = await createProject({ name: 'Other Project' });
+      const unit = await createUnit(project.id);
+      const guestIdentity = await createIdentity();
+
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guestIdentity.id,
+        checkedOutAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      });
+
+      const bookingGuest = await createBookingGuest({
+        bookingId: booking.id,
+        fullName: 'John Doe',
+        nationality: 'US',
+        passportNumber: 'AB123456',
+      });
+
+      await createTm30Filing(db, {
+        bookingId: booking.id,
+        bookingGuestId: bookingGuest.id,
+      });
+
+      await createComplianceRecord(db, {
+        unitId: unit.id,
+        recordType: 'permitted_use',
+      });
+
+      const overview = await getAdminComplianceOverview(db, { projectId: project.id });
+
+      expect(overview.tm30Counts.pending).toBe(1);
+      expect(overview.tm30Filings).toHaveLength(1);
+      expect(overview.tm30Filings[0].unitName).toBe(unit.name);
+      expect(overview.complianceRecords).toHaveLength(1);
+      expect(overview.complianceRecords[0].recordType).toBe('permitted_use');
+      expect(overview.retention.passportsEligibleForScrub).toBeGreaterThanOrEqual(1);
+      expect(overview.retention.passportRetentionDays).toBeGreaterThan(0);
+
+      const otherOverview = await getAdminComplianceOverview(db, {
+        projectId: otherProject.id,
+      });
+      expect(otherOverview.tm30Filings).toHaveLength(0);
+      expect(otherOverview.complianceRecords).toHaveLength(0);
     });
   });
 });

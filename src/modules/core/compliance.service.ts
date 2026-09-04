@@ -1,4 +1,5 @@
 import { PrismaClient, ComplianceRecordStatus, ComplianceRecordType } from '@prisma/client';
+import { getConfig } from '@/modules/config';
 
 export interface CreateComplianceRecordInput {
   unitId: string;
@@ -330,4 +331,155 @@ export async function initializeMobilizationChecklist(
     skipDuplicates: true,
   });
   return { created: count };
+}
+
+export interface AdminComplianceOverview {
+  tm30Counts: Record<string, number>;
+  tm30Filings: Array<{
+    id: string;
+    status: string;
+    dueAt: Date;
+    filedAt: Date | null;
+    escalatedAt: Date | null;
+    guestNationality: string | null;
+    guestNameEncrypted: string | null;
+    unitName: string;
+    projectName: string;
+    projectId: string;
+    bookingId: string;
+  }>;
+  complianceRecords: Array<{
+    id: string;
+    recordType: string;
+    status: string;
+    expiresOn: Date | null;
+    unitId: string;
+    unitName: string;
+    projectName: string;
+  }>;
+  retention: {
+    passportRetentionDays: number;
+    passportsEligibleForScrub: number;
+    mediaPendingDeletion: number;
+    lastJobCompletedAt: string | null;
+  };
+}
+
+/**
+ * Admin compliance overview (doc 08 §6 §11): TM30 ledger, unit records,
+ * and retention job posture.
+ */
+export async function getAdminComplianceOverview(
+  db: PrismaClient,
+  options?: { projectId?: string }
+): Promise<AdminComplianceOverview> {
+  const projectFilter = options?.projectId
+    ? { booking: { projectId: options.projectId } }
+    : {};
+
+  const [passportDays, warningDays] = await Promise.all([
+    getConfig(db, 'retention.passport_media_days_after_checkout'),
+    getConfig(db, 'compliance.expiry_warning_days'),
+  ]);
+  const passportRetentionDays = typeof passportDays === 'number' ? passportDays : 30;
+  const expiryWarningDays = typeof warningDays === 'number' ? warningDays : 30;
+  const passportCutoff = new Date(Date.now() - passportRetentionDays * 24 * 60 * 60 * 1000);
+  const expiryCutoff = new Date(Date.now() + expiryWarningDays * 24 * 60 * 60 * 1000);
+
+  const [tm30Grouped, tm30Filings, records, passportsEligibleForScrub, mediaPendingDeletion, lastRetentionJob] =
+    await Promise.all([
+      db.tm30Filing.groupBy({
+        by: ['status'],
+        where: projectFilter,
+        _count: { _all: true },
+      }),
+      db.tm30Filing.findMany({
+        where: projectFilter,
+        include: {
+          booking: {
+            select: {
+              id: true,
+              projectId: true,
+              unit: { select: { name: true } },
+              project: { select: { name: true } },
+            },
+          },
+          bookingGuest: { select: { fullName: true, nationality: true } },
+        },
+        orderBy: [{ status: 'asc' }, { dueAt: 'asc' }],
+        take: 50,
+      }),
+      db.complianceRecord.findMany({
+        where: {
+          ...(options?.projectId ? { unit: { projectId: options.projectId } } : {}),
+          OR: [
+            { status: { in: ['pending', 'failed'] } },
+            {
+              expiresOn: {
+                lte: expiryCutoff,
+                gte: new Date(),
+              },
+            },
+          ],
+        },
+        include: {
+          unit: { select: { id: true, name: true, project: { select: { name: true } } } },
+        },
+        orderBy: [{ expiresOn: 'asc' }, { createdAt: 'desc' }],
+        take: 40,
+      }),
+      db.bookingGuest.count({
+        where: {
+          OR: [{ passportNumber: { not: '' } }, { passportMediaId: { not: null } }],
+          booking: {
+            checkedOutAt: { not: null, lte: passportCutoff },
+            ...(options?.projectId ? { projectId: options.projectId } : {}),
+          },
+        },
+      }),
+      db.mediaAsset.count({
+        where: { deleteAfter: { lte: new Date() } },
+      }),
+      db.auditLog.findFirst({
+        where: { action: 'retention_jobs_completed' },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      }),
+    ]);
+
+  const tm30Counts = Object.fromEntries(
+    tm30Grouped.map((row) => [row.status, row._count._all])
+  );
+
+  return {
+    tm30Counts,
+    tm30Filings: tm30Filings.map((filing) => ({
+      id: filing.id,
+      status: filing.status,
+      dueAt: filing.dueAt,
+      filedAt: filing.filedAt,
+      escalatedAt: filing.escalatedAt,
+      guestNationality: filing.bookingGuest.nationality,
+      guestNameEncrypted: filing.bookingGuest.fullName,
+      unitName: filing.booking.unit.name,
+      projectName: filing.booking.project.name,
+      projectId: filing.booking.projectId,
+      bookingId: filing.booking.id,
+    })),
+    complianceRecords: records.map((record) => ({
+      id: record.id,
+      recordType: record.recordType,
+      status: record.status,
+      expiresOn: record.expiresOn,
+      unitId: record.unit.id,
+      unitName: record.unit.name,
+      projectName: record.unit.project.name,
+    })),
+    retention: {
+      passportRetentionDays,
+      passportsEligibleForScrub,
+      mediaPendingDeletion,
+      lastJobCompletedAt: lastRetentionJob?.createdAt.toISOString() ?? null,
+    },
+  };
 }

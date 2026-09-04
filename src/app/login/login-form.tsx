@@ -60,7 +60,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
         return;
       }
 
-      const next = searchParams.get('next');
+      const next = searchParams?.get('next');
       router.push(next && next.startsWith('/') ? next : '/');
       router.refresh();
     } catch {

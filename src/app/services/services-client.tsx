@@ -70,13 +70,13 @@ export default function ServicesClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const bookingId = searchParams.get('bookingId');
+  const bookingId = searchParams?.get('bookingId');
 
   const [services, setServices] = useState<MarketService[]>([]);
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [loggedIn, setLoggedIn] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    searchParams.get('category')
+    searchParams?.get('category') || null
   );
   const [stay, setStay] = useState<StayContext | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export default function ServicesClient({
 
   const selectCategory = (key: string | null) => {
     setSelectedCategory(key);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (key) params.set('category', key);
     else params.delete('category');
     router.replace(`/services${params.size ? `?${params}` : ''}`, { scroll: false });

@@ -22,40 +22,36 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   }, [error]);
 
   return (
-    <html lang="en">
-      <body className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="max-w-md text-center">
-            <h1 className="text-3xl font-bold mb-4">
-              {error.digest ? `Error ${error.digest}` : 'Something went wrong'}
-            </h1>
+    <main className="min-h-screen bg-surface-background flex items-center justify-center px-24">
+      <div className="max-w-md w-full bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+        <h1 className="text-heading-2 font-bold text-text-ink mb-12">
+          {error.digest ? `Error ${error.digest}` : 'Something went wrong'}
+        </h1>
 
-            <p className="text-gray-600 dark:text-gray-400 mb-8 text-base">
-              {error.message || 'An unexpected error occurred in the root layout. Our team has been notified.'}
-            </p>
+        <p className="text-body text-text-secondary mb-24">
+          {error.message || 'An unexpected error occurred in the root layout. Please try again.'}
+        </p>
 
-            <div className="flex gap-4 justify-center">
-              <Button onClick={() => reset()}>
-                Try again
-              </Button>
-              <Button
-                onClick={() => (window.location.href = '/')}
-              >
-                Back to home
-              </Button>
-            </div>
-
-            {/* Development: show error details. */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-8 p-4 bg-red-50 dark:bg-red-950 rounded border border-red-200 dark:border-red-800 text-left">
-                <p className="text-xs font-mono text-red-600 dark:text-red-300 whitespace-pre-wrap break-words">
-                  {error.stack}
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="flex gap-12 justify-center">
+          <Button onClick={() => reset()}>
+            Try again
+          </Button>
+          <Button
+            onClick={() => (window.location.href = '/')}
+            variant="secondary"
+          >
+            Back to home
+          </Button>
         </div>
-      </body>
-    </html>
+
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-16 p-12 bg-state-error-soft rounded border border-state-error text-left">
+            <p className="text-small text-state-error whitespace-pre-wrap break-words">
+              {error.stack}
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

@@ -101,10 +101,10 @@ export default function UnitDetailClient({
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_provider'>('cash');
   const [submitting, setSubmitting] = useState(false);
 
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
-  const adults = parseInt(searchParams.get('adults') || '1');
-  const children = parseInt(searchParams.get('children') || '0');
+  const startDate = searchParams?.get('startDate');
+  const endDate = searchParams?.get('endDate');
+  const adults = parseInt(searchParams?.get('adults') || '1');
+  const children = parseInt(searchParams?.get('children') || '0');
 
   const backToSearch = `/search?${new URLSearchParams({
     startDate: startDate || '',
@@ -184,7 +184,7 @@ export default function UnitDetailClient({
       });
 
       if (response.status === 401) {
-        const next = `${pathname}?${searchParams.toString()}`;
+        const next = `${pathname}?${searchParams?.toString() || ''}`;
         router.push(`/login?next=${encodeURIComponent(next)}`);
         return;
       }

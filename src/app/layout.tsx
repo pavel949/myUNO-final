@@ -29,6 +29,10 @@ export const metadata: Metadata = {
   description: 'Operating platform for serviced living in Phuket',
 };
 
+// Root layout reads per-request cookies/session-derived navigation state.
+// Mark dynamic to avoid static prerender trying to evaluate request-bound hooks.
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: {

@@ -19,9 +19,9 @@ export default function NewTicketClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectId = searchParams.get('projectId');
-  const unitId = searchParams.get('unitId');
-  const bookingId = searchParams.get('bookingId');
+  const projectId = searchParams?.get('projectId');
+  const unitId = searchParams?.get('unitId');
+  const bookingId = searchParams?.get('bookingId');
 
   const [categoryKey, setCategoryKey] = useState('maintenance');
   const [title, setTitle] = useState('');

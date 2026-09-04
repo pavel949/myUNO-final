@@ -104,6 +104,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.context.switcher': 'Switch project portfolio context',
     'mc.nav.announcements': 'Post an announcement',
     'mc.nav.tm30': 'TM30 queue',
+    'mc.nav.mobilization': 'Mobilization',
     'mc.tabs.overview': 'Overview',
     'mc.tabs.bookings': 'Bookings',
     'mc.tabs.tickets': 'Tickets',

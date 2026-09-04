@@ -584,6 +584,84 @@ export interface McTm30QueueItem {
   arrival: Date;
 }
 
+export interface McMobilizationUnit {
+  id: string;
+  name: string;
+  status: string;
+  projectId: string;
+  projectName: string;
+  completedSteps: number;
+  totalSteps: number;
+  nextStep: string | null;
+}
+
+/**
+ * Units in mobilization for an MC portfolio (doc 07 F-OWN-1 via MC path).
+ */
+export async function getMcMobilizationQueue(
+  db: PrismaClient,
+  mcIdentityId: string,
+  projectId: string,
+  organizationId: string
+): Promise<McMobilizationUnit[]> {
+  const roleAssignment = await db.roleAssignment.findFirst({
+    where: {
+      identityId: mcIdentityId,
+      role: 'mc_member',
+      projectId,
+      organizationId,
+      status: 'active',
+    },
+  });
+
+  if (!roleAssignment) {
+    throw new Error('MC member does not have access to this project/organization');
+  }
+
+  const units = await db.unit.findMany({
+    where: {
+      projectId,
+      status: { in: ['draft', 'mobilizing'] },
+      engagements: {
+        some: {
+          engagementType: 'via_management_company',
+          managementOrgId: organizationId,
+          status: { in: ['draft', 'active'] },
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      projectId: true,
+      project: { select: { name: true } },
+      mobilizationChecklist: {
+        select: { step: true, completedAt: true },
+        orderBy: { step: 'asc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 25,
+  });
+
+  return units.map((unit) => {
+    const totalSteps = unit.mobilizationChecklist.length || 7;
+    const completedSteps = unit.mobilizationChecklist.filter((item) => item.completedAt).length;
+    const nextItem = unit.mobilizationChecklist.find((item) => !item.completedAt);
+    return {
+      id: unit.id,
+      name: unit.name,
+      status: unit.status,
+      projectId: unit.projectId,
+      projectName: unit.project.name,
+      completedSteps,
+      totalSteps,
+      nextStep: nextItem?.step ?? null,
+    };
+  });
+}
+
 /**
  * TM30 queue for MC-managed units (doc 03, F-MC-2 / F-OPS-2).
  */

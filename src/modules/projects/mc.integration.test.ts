@@ -8,6 +8,7 @@ import {
   getMCDashboard,
   getMCFeeReport,
   getMcTm30Queue,
+  getMcMobilizationQueue,
 } from './mc.service';
 
 describe('MC Service', () => {
@@ -725,6 +726,93 @@ describe('MC Service', () => {
       expect(queue).toHaveLength(1);
       expect(queue[0].id).toBe(managedFiling.id);
       expect(queue[0].unitName).toBe(managedUnit.name);
+    });
+  });
+
+  describe('getMcMobilizationQueue', () => {
+    it('returns mobilizing units only for the MC organization portfolio', async () => {
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
+        data: {
+          name: 'MC Org',
+          orgType: 'management_company',
+          projectId: project.id,
+          contactEmail: 'mc@test.com',
+          contactPhone: '555-0002',
+        },
+      });
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
+        data: {
+          identityId: mcIdentity.id,
+          role: 'mc_member',
+          scopeType: 'project',
+          projectId: project.id,
+          organizationId: mcOrg.id,
+        },
+      });
+
+      const owner = await createIdentity();
+      const mobilizingUnit = await createUnit({
+        projectId: project.id,
+        ownerIdentityId: owner.id,
+        name: 'Mob Villa',
+        status: 'mobilizing',
+      });
+      const liveUnit = await createUnit({
+        projectId: project.id,
+        ownerIdentityId: owner.id,
+        name: 'Live Villa',
+        status: 'live',
+      });
+      const otherMcUnit = await createUnit({
+        projectId: project.id,
+        ownerIdentityId: owner.id,
+        name: 'Other MC',
+        status: 'mobilizing',
+      });
+
+      const createEngagement = async (unitId: string, orgId: string) => {
+        await db.unitEngagement.create({
+          data: {
+            unitId,
+            engagementType: 'via_management_company',
+            ownerIdentityId: owner.id,
+            managementOrgId: orgId,
+            status: 'draft',
+          },
+        });
+      };
+
+      await createEngagement(mobilizingUnit.id, mcOrg.id);
+      await createEngagement(liveUnit.id, mcOrg.id);
+      const otherOrg = await db.organization.create({
+        data: {
+          name: 'Other MC',
+          orgType: 'management_company',
+          projectId: project.id,
+          contactEmail: 'other@test.com',
+          contactPhone: '555-0003',
+        },
+      });
+      await createEngagement(otherMcUnit.id, otherOrg.id);
+
+      await db.mobilizationChecklistItem.createMany({
+        data: [
+          { unitId: mobilizingUnit.id, step: 'qualify', status: 'done' },
+          { unitId: mobilizingUnit.id, step: 'mandate', status: 'pending' },
+        ],
+      });
+      await db.mobilizationChecklistItem.update({
+        where: { unitId_step: { unitId: mobilizingUnit.id, step: 'qualify' } },
+        data: { completedAt: new Date() },
+      });
+
+      const queue = await getMcMobilizationQueue(db, mcIdentity.id, project.id, mcOrg.id);
+      expect(queue).toHaveLength(1);
+      expect(queue[0].name).toBe('Mob Villa');
+      expect(queue[0].completedSteps).toBe(1);
+      expect(queue[0].nextStep).toBe('mandate');
     });
   });
 });

@@ -105,3 +105,30 @@ export async function canAccessTm30Filing(
   }
   return hasManagedUnitMcAccess(user, input);
 }
+
+/** MC member with a via-MC engagement may run mobilization on their units (doc 03). */
+export async function canAccessMcMobilizationUnit(
+  user: CurrentUser,
+  input: { projectId: string; unitId: string }
+): Promise<boolean> {
+  if (user.isAdmin) {
+    return true;
+  }
+
+  const organizationIds = getMCOrganizationIdsForProject(user, input.projectId);
+  if (organizationIds.length === 0) {
+    return false;
+  }
+
+  const engagement = await prisma.unitEngagement.findFirst({
+    where: {
+      unitId: input.unitId,
+      engagementType: 'via_management_company',
+      managementOrgId: { in: organizationIds },
+      status: { in: ['draft', 'active'] },
+    },
+    select: { id: true },
+  });
+
+  return Boolean(engagement);
+}

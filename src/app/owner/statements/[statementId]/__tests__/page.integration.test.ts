@@ -124,7 +124,12 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    // The page includes the design-system breadcrumb beside the client detail
+    // component. Read the client element rather than coupling this test to the
+    // fragment's wrapper shape.
+    const children = (element as { props: { children?: unknown } }).props.children
+    const detailElement = Array.isArray(children) ? children[1] : children
+    const props = (detailElement as { props: Record<string, any> }).props
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.unitName).toBe('B-707')
     // OwnerStatement stores every amount in satang (34_000 = ฿340), like every
@@ -167,7 +172,9 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    const children = (element as { props: { children?: unknown } }).props.children
+    const detailElement = Array.isArray(children) ? children[1] : children
+    const props = (detailElement as { props: Record<string, any> }).props
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.status).toBe('pending_owner_review')
   })

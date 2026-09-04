@@ -86,7 +86,7 @@ async function issueServiceOrderRefunds(input: {
     } else {
       // For cash/manual rails this records the refund obligation; a real
       // operator payout marks it succeeded later through finance flows.
-      await input.db.refund.create({
+      const refund = await input.db.refund.create({
         data: {
           paymentId: payment.id,
           method: 'cash',
@@ -94,6 +94,17 @@ async function issueServiceOrderRefunds(input: {
           reason: input.reason,
           status: 'requested',
           initiatedByIdentityId: input.initiatedByIdentityId,
+        },
+      });
+      await input.db.ledgerEntry.create({
+        data: {
+          entryType: 'refund_out',
+          amountThb: -refundAmount,
+          serviceOrderId: input.serviceOrderId,
+          paymentId: payment.id,
+          refundId: refund.id,
+          occurredOn: new Date(),
+          description: `Service-order refund requested: ${input.reason}`,
         },
       });
     }

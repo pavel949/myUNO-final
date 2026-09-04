@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { logTm30PassportAccess, decryptPassportNumber, safeDecrypt } from '@/modules/ops';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 export async function GET(
   _req: NextRequest,
@@ -17,14 +18,6 @@ export async function GET(
     const user = await getCurrentUser();
     if (!user?.identityId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get the filing
@@ -45,17 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    // Check authorization: staff only
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        projectId: filing.booking.projectId,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!isStaff) {
+    if (!hasProjectStaffAccess(user, filing.booking.projectId)) {
       return NextResponse.json(
         { error: 'Only staff can access passport data' },
         { status: 403 }
@@ -63,7 +46,7 @@ export async function GET(
     }
 
     // Log access
-    await logTm30PassportAccess(prisma, params.id, currentUser.id, 'viewed_passport_details');
+    await logTm30PassportAccess(prisma, params.id, user.identityId, 'viewed_passport_details');
 
     // Decrypt passport for response
     const decryptedPassport = filing.bookingGuest?.passportNumber

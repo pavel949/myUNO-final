@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getTransferInstructions } from '@/modules/finance';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * Where to send the money for this booking.
@@ -28,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-  const isStaff = user.isAdmin || user.roles.some((r) => r.role === 'staff_ops' || r.role === 'onsite_host');
+  const isStaff = hasProjectStaffAccess(user, booking.projectId);
   if (booking.guestIdentityId !== user.identityId && !isStaff) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

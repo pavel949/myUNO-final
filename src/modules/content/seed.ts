@@ -1795,6 +1795,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.sections.bookings', namespace: 'owner', description: 'Section heading: recent bookings', en: 'Recent Bookings', ru: 'Последние бронирования', status: NR },
   { key: 'owner.sections.statement', namespace: 'owner', description: 'Section heading: latest statement', en: 'Latest Statement', ru: 'Последний отчёт', status: NR },
   { key: 'owner.sections.tickets', namespace: 'owner', description: 'Section heading: open tickets', en: 'Open Tickets', ru: 'Открытые заявки', status: NR },
+  { key: 'owner.switcher.select_project', namespace: 'owner', description: 'Owner project switcher placeholder', en: 'Select project', ru: 'Выберите проект', th: 'เลือกโครงการ', status: NR },
+  { key: 'owner.switcher.unit_singular', namespace: 'owner', description: 'Owner project switcher unit counter singular', en: 'unit', ru: 'юнит', th: 'ยูนิต', status: NR },
+  { key: 'owner.switcher.unit_plural', namespace: 'owner', description: 'Owner project switcher unit counter plural', en: 'units', ru: 'юнитов', th: 'ยูนิต', status: NR },
   { key: 'owner.stay.error', namespace: 'owner', description: 'Owner stay booking error', en: 'Failed to book owner stay', ru: 'Не удалось забронировать собственное проживание', status: NR },
 
   // Owner compliance & alerts (doc 08 D2)
@@ -1929,6 +1932,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', status: NR },
+  { key: 'mc.context.active', namespace: 'mc', description: 'Active MC project context label', en: 'Active context', ru: 'Активный контекст', th: 'บริบทที่ใช้งานอยู่', status: NR },
+  { key: 'mc.context.switcher', namespace: 'mc', description: 'MC context switcher helper label', en: 'Switch project portfolio context', ru: 'Переключить контекст проекта и управляющей компании', th: 'สลับบริบทพอร์ตโครงการ', status: NR },
   { key: 'mc.tabs.overview', namespace: 'mc', description: 'Tab: overview', en: 'Overview', ru: 'Обзор', status: NR },
   { key: 'mc.tabs.bookings', namespace: 'mc', description: 'Tab: bookings', en: 'Bookings', ru: 'Бронирования', status: NR },
   { key: 'mc.tabs.tickets', namespace: 'mc', description: 'Tab: tickets', en: 'Tickets', ru: 'Заявки', status: NR },

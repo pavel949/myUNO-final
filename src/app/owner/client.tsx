@@ -180,6 +180,11 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               projects={projects}
               selectedProjectId={selectedProjectId || projects[0]?.id || null}
               onProjectChange={setSelectedProjectId}
+              labels={{
+                selectProject: labels['owner.switcher.select_project'],
+                unitSingular: labels['owner.switcher.unit_singular'],
+                unitPlural: labels['owner.switcher.unit_plural'],
+              }}
             />
           </div>
         )}

@@ -15,12 +15,22 @@ interface ProjectSwitcherProps {
   projects: Project[];
   selectedProjectId: string | null;
   onProjectChange: (projectId: string) => void;
+  labels?: {
+    selectProject: string;
+    unitSingular: string;
+    unitPlural: string;
+  };
 }
 
 export const ProjectSwitcher = React.forwardRef<HTMLDivElement, ProjectSwitcherProps>(
-  ({ projects, selectedProjectId, onProjectChange }, ref) => {
+  ({ projects, selectedProjectId, onProjectChange, labels }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const selectedProject = projects.find((p) => p.id === selectedProjectId);
+    const uiLabels = {
+      selectProject: labels?.selectProject ?? 'Select project',
+      unitSingular: labels?.unitSingular ?? 'unit',
+      unitPlural: labels?.unitPlural ?? 'units',
+    };
 
     const handleSelect = (projectId: string) => {
       onProjectChange(projectId);
@@ -34,7 +44,7 @@ export const ProjectSwitcher = React.forwardRef<HTMLDivElement, ProjectSwitcherP
           className="flex items-center justify-between w-full px-24 py-16 bg-surface-paper border border-border-line rounded-md hover:border-border-line-2 transition-colors"
         >
           <span className="text-body font-medium text-text-ink">
-            {selectedProject?.name || 'Select project'}
+            {selectedProject?.name || uiLabels.selectProject}
           </span>
           <svg
             className={`w-20 h-20 text-text-secondary transition-transform ${
@@ -63,7 +73,8 @@ export const ProjectSwitcher = React.forwardRef<HTMLDivElement, ProjectSwitcherP
                 <div className="flex justify-between items-center">
                   <span>{project.name}</span>
                   <span className="text-small text-text-secondary">
-                    {project._count.units} unit{project._count.units !== 1 ? 's' : ''}
+                    {project._count.units}{' '}
+                    {project._count.units === 1 ? uiLabels.unitSingular : uiLabels.unitPlural}
                   </span>
                 </div>
               </button>

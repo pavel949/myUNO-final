@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { getStaysOpenToClaim } from '@/modules/finance';
 import FileClaimClient from './file-claim-client';
+import { getStaffProjectIds } from '@/app/libs/projectScope';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +21,15 @@ export default async function OpsClaimsPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/claims');
 
-  const isStaff = user.roles.some((role) => role.role === 'staff_ops' || role.role === 'onsite_host');
-  if (!isStaff && !user.isAdmin) redirect('/');
+  const staffProjectIds = getStaffProjectIds(user);
+  const isStaff = user.isAdmin || staffProjectIds.length > 0;
+  if (!isStaff) redirect('/');
 
-  const stays = await getStaysOpenToClaim(prisma);
+  const stays = user.isAdmin
+    ? await getStaysOpenToClaim(prisma)
+    : (await Promise.all(staffProjectIds.map((projectId) => getStaysOpenToClaim(prisma, projectId))))
+        .flat()
+        .sort((a, b) => a.checkedOutAt.getTime() - b.checkedOutAt.getTime());
 
   const labels = await getLabels({
     'staff.claims.title': 'Damage claims',

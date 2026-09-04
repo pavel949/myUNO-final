@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { safeDecrypt } from '@/modules/ops';
 import Tm30QueueClient from './tm30-client';
+import { getStaffProjectIds } from '@/app/libs/projectScope';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +14,18 @@ export default async function Tm30QueuePage() {
   if (!user) {
     redirect('/login?next=/ops/tm30');
   }
-  const isStaff = user.roles.some((role) => role.role === 'staff_ops');
-  if (!isStaff && !user.isAdmin) {
+  const staffProjectIds = getStaffProjectIds(user);
+  const isStaff = user.isAdmin || staffProjectIds.length > 0;
+  if (!isStaff) {
     redirect('/');
   }
 
-  // SLA-sorted queue across all projects (doc 07 F-OPS-2)
+  // SLA-sorted queue for the operator's projects (doc 07 F-OPS-2)
   const filings = await prisma.tm30Filing.findMany({
-    where: { status: { in: ['pending', 'escalated', 'failed'] } },
+    where: {
+      status: { in: ['pending', 'escalated', 'failed'] },
+      ...(user.isAdmin ? {} : { booking: { projectId: { in: staffProjectIds } } }),
+    },
     include: {
       booking: {
         select: {

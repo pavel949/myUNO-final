@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPublicError } from '@/app/libs/errorHandler';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * Load a service order and establish the caller's relationship to it.
@@ -26,7 +27,7 @@ export async function loadOrderForUser(orderId: string, user: CurrentUser) {
   const isProviderMember = user.roles.some(
     (r) => r.role === 'provider_member' && r.providerId === order.provider_id
   );
-  const isStaff = user.roles.some((r) => r.role === 'staff_ops');
+  const isStaff = hasProjectStaffAccess(user, order.project_id);
   const isAdmin = user.isAdmin;
 
   if (!isOrderer && !isProviderMember && !isStaff && !isAdmin) {

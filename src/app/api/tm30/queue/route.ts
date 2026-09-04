@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getTm30Queue } from '@/modules/ops';
 import { getConfig } from '@/modules/config';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,49 +18,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Check authorization: staff only
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!isStaff) {
-      return NextResponse.json(
-        { error: 'Only staff can view TM30 queue' },
-        { status: 403 }
-      );
-    }
-
     // Get projectId from query params
     const projectId = req.nextUrl.searchParams.get('projectId');
     if (!projectId) {
       return NextResponse.json({ error: 'projectId required' }, { status: 400 });
     }
 
-    // Verify staff has access to this project
-    const projectAccess = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        projectId,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!projectAccess) {
+    if (!hasProjectStaffAccess(user, projectId)) {
       return NextResponse.json(
-        { error: 'No access to this project' },
+        { error: 'Only staff can view TM30 queue' },
         { status: 403 }
       );
     }

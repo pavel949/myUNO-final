@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { getOpsBoard } from '@/modules/ops';
 import OpsBoardClient from './ops-client';
+import { getStaffProjectIds } from '@/app/libs/projectScope';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,12 +14,17 @@ export default async function OpsBoardPage() {
   if (!user) {
     redirect('/login?next=/ops');
   }
-  const isStaff = user.roles.some((role) => role.role === 'staff_ops');
-  if (!isStaff && !user.isAdmin) {
+  const staffProjectIds = getStaffProjectIds(user);
+  const isStaff = user.isAdmin || staffProjectIds.length > 0;
+  if (!isStaff) {
     redirect('/');
   }
 
-  const { arrivals, departures, pendingPayment, pendingServiceOrders, slaMetrics } = await getOpsBoard(prisma);
+  const { arrivals, departures, pendingPayment, pendingServiceOrders, slaMetrics } = await getOpsBoard(
+    prisma,
+    new Date(),
+    user.isAdmin ? undefined : { projectIds: staffProjectIds }
+  );
 
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',

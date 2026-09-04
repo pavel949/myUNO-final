@@ -76,9 +76,11 @@ describe('service-order lifecycle routes (S1)', () => {
   let providerId: string;
   let otherProviderId: string;
   let orderId: string;
+  let projectId: string;
 
   async function makeOrder(opts?: { daysAhead?: number }) {
     const project = await createProject({ status: 'live' });
+    projectId = project.id;
     const provider = await createProvider({ status: 'active' });
     await db.provider.update({
       where: { id: provider.id },
@@ -126,8 +128,14 @@ describe('service-order lifecycle routes (S1)', () => {
   const asOrderer = () => mockGetCurrentUser.mockResolvedValue(userOf(orderer));
   const asStaff = () =>
     mockGetCurrentUser.mockResolvedValue(
-      userOf(staff, { roles: [{ role: 'staff_ops' }] })
+      userOf(staff, { roles: [{ role: 'staff_ops', projectId }] })
     );
+  const asOffProjectStaff = async () => {
+    const otherProject = await createProject({ status: 'live' });
+    mockGetCurrentUser.mockResolvedValue(
+      userOf(staff, { roles: [{ role: 'staff_ops', projectId: otherProject.id }] })
+    );
+  };
   const asProviderMember = (pid?: string) =>
     mockGetCurrentUser.mockResolvedValue(
       userOf(providerMember, {
@@ -161,6 +169,14 @@ describe('service-order lifecycle routes (S1)', () => {
         params: { id: orderId },
       });
       expect(res.status).toBe(403);
+    });
+
+    it('staff from another project cannot record cash', async () => {
+      await asOffProjectStaff();
+      const res = await recordCash(post({ receiptRef: 'x' }), {
+        params: { id: orderId },
+      });
+      expect(res.status).toBe(404);
     });
 
     it('rejects a second payment', async () => {

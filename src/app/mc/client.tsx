@@ -92,6 +92,15 @@ interface FeeReport {
   summaryThb: { grossAmount: number; platformFeeAmount: number };
 }
 
+interface MCContextOption {
+  key: string;
+  projectId: string;
+  organizationId: string;
+  projectName: string;
+  organizationName: string;
+  href: string;
+}
+
 interface MCDashboardClientProps {
   dashboard: DashboardData;
   units: Unit[];
@@ -99,6 +108,8 @@ interface MCDashboardClientProps {
   tickets: Ticket[];
   feeReport?: FeeReport | null;
   labels: Record<string, string>;
+  contexts: MCContextOption[];
+  activeContextKey: string;
 }
 
 // doc 06 §3.4 status → color mapping, state tokens only
@@ -147,6 +158,8 @@ export function MCDashboardClient({
   tickets,
   feeReport,
   labels,
+  contexts,
+  activeContextKey,
 }: MCDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tickets' | 'calendar' | 'reports'>('overview');
 
@@ -189,6 +202,8 @@ export function MCDashboardClient({
         },
       ],
     }));
+  const activeContext =
+    contexts.find((context) => context.key === activeContextKey) ?? contexts[0];
 
   return (
     <main className="min-h-screen bg-surface-background">
@@ -200,6 +215,30 @@ export function MCDashboardClient({
               {labels['mc.portal.title']}
             </h1>
             <p className="text-body text-text-secondary">{labels['mc.portal.subtitle']}</p>
+            <p className="text-small text-text-secondary mt-8">
+              {labels['mc.context.active']}:{' '}
+              {activeContext?.projectName} · {activeContext?.organizationName}
+            </p>
+            {contexts.length > 1 && (
+              <div className="mt-12">
+                <p className="text-small text-text-secondary mb-8">{labels['mc.context.switcher']}</p>
+                <div className="flex flex-wrap gap-8">
+                  {contexts.map((context) => (
+                    <Link
+                      key={context.key}
+                      href={context.href}
+                      className={`inline-flex items-center rounded-full px-12 py-6 text-small border transition-colors ${
+                        context.key === activeContextKey
+                          ? 'bg-brand-andaman-soft text-brand-andaman border-brand-andaman'
+                          : 'bg-surface-paper text-text-secondary border-border-line hover:text-text-ink'
+                      }`}
+                    >
+                      {context.projectName} · {context.organizationName}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <Link
             href="/announcements"

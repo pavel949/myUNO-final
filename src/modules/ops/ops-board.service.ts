@@ -12,6 +12,10 @@ export interface OpsBoardData {
   };
 }
 
+export interface OpsBoardScope {
+  projectIds?: string[];
+}
+
 interface OpsBooking {
   id: string;
   status: string;
@@ -42,13 +46,60 @@ function dayRange(date: Date): { from: Date; to: Date } {
   return { from, to };
 }
 
+async function getScopedTm30OnTimeRate(
+  db: PrismaClient,
+  from: Date,
+  to: Date,
+  scope?: OpsBoardScope
+): Promise<number> {
+  if (!scope?.projectIds?.length) {
+    return getTm30OnTimeRate(db, { from, to });
+  }
+  if (scope.projectIds.length === 1) {
+    return getTm30OnTimeRate(db, { from, to, projectId: scope.projectIds[0] });
+  }
+
+  const arrivals = await db.booking.findMany({
+    where: {
+      projectId: { in: scope.projectIds },
+      startDate: { gte: from, lte: to },
+      guests: { some: { nationality: { not: 'TH' } } },
+    },
+    select: {
+      startDate: true,
+      tm30Filings: {
+        select: { filedAt: true },
+        orderBy: { filedAt: 'asc' },
+        take: 1,
+      },
+    },
+  });
+
+  if (arrivals.length === 0) return 100;
+  const onTime = arrivals.filter((arrival) => {
+    const filing = arrival.tm30Filings[0]?.filedAt;
+    if (!filing) return false;
+    const diffHours =
+      (new Date(filing).getTime() - new Date(arrival.startDate).getTime()) / (1000 * 60 * 60);
+    return diffHours <= 24;
+  }).length;
+  return Math.round((onTime / arrivals.length) * 100);
+}
+
 /**
  * Get today's operations board data: arrivals, departures, pending payments, pending service orders, SLA metrics
  */
-export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Promise<OpsBoardData> {
+export async function getOpsBoard(
+  db: PrismaClient,
+  date: Date = new Date(),
+  scope?: OpsBoardScope
+): Promise<OpsBoardData> {
   const { from, to } = dayRange(date);
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days
+  const projectFilter = scope?.projectIds?.length
+    ? { in: scope.projectIds }
+    : undefined;
 
   const bookingSelect = {
     id: true,
@@ -70,6 +121,7 @@ export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Pr
   const [arrivals, departures, pendingPayment, pendingServiceOrders, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
     db.booking.findMany({
       where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
         startDate: { gte: from, lt: to },
         status: { in: ['confirmed', 'pending_payment'] },
       },
@@ -77,19 +129,29 @@ export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Pr
       orderBy: { startDate: 'asc' },
     }),
     db.booking.findMany({
-      where: { endDate: { gte: from, lt: to }, status: 'checked_in' },
+      where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
+        endDate: { gte: from, lt: to },
+        status: 'checked_in',
+      },
       select: bookingSelect,
       orderBy: { endDate: 'asc' },
     }),
     db.booking.findMany({
-      where: { status: 'pending_payment' },
+      where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
+        status: 'pending_payment',
+      },
       select: bookingSelect,
       orderBy: { startDate: 'asc' },
       take: 50,
     }),
     // Service orders awaiting cash (placed = not yet paid) — F-OPS-6 for services
     db.serviceOrder.findMany({
-      where: { status: 'placed' },
+      where: {
+        ...(projectFilter ? { project_id: projectFilter } : {}),
+        status: 'placed',
+      },
       select: {
         id: true,
         scheduled_start: true,
@@ -101,10 +163,11 @@ export async function getOpsBoard(db: PrismaClient, date: Date = new Date()): Pr
       take: 50,
     }),
     // TM30 on-time rate for the last 7 days
-    getTm30OnTimeRate(db, { from: sevenDaysAgo, to: now }),
+    getScopedTm30OnTimeRate(db, sevenDaysAgo, now, scope),
     // Count tickets with open SLA (status not closed/resolved or past slaDueAt)
     db.ticket.count({
       where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
         slaDueAt: { not: null },
         status: { in: ['open', 'acknowledged', 'in_progress'] },
         OR: [

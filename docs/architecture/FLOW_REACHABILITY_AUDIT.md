@@ -2,26 +2,17 @@
 
 **What this is.** Every flow in doc 07, every role in doc 03, and every model in doc 02, checked against what the running application can actually reach. Method as before: a function that exists but nothing calls is recorded as **unreachable, not as built**. Tests passing is not evidence a user can get there.
 
-Verified 2026-08-19 against `main` at `92aeeb1`.
+Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on branch `cursor/design-md-login-polish-c326` (PMS parity pass) — §1 headline corrected, §2 role table updated, §3 flows/notifications/payments brought current. Structural tests (`state-machine-is-wired.test.ts`, `reachability.test.ts`) are the live evidence; this document is commentary on them.
 
 ---
 
 ## 1. The headline
 
-**The booking state machine is not connected to the application.**
+~~**The booking state machine is not connected to the application.**~~ **Corrected (2026-09-04): the stay state machine is wired.** `state-machine-is-wired.test.ts` fails the build if any route sets `checked_in` / `checked_out` / `completed` / `no_show` by hand, and requires `checkInBooking`, `checkOutBooking`, and `changeBookingDates` to be called from API routes. `POST /api/bookings/[id]/modify` delegates to `changeBookingDates` (server-computed repricing, advisory lock, `BlockedDate` check).
 
-`src/modules/booking/booking.service.ts` defines the transitions doc 02 §3.1 specifies — `confirmBooking`, `checkInBooking`, `checkOutBooking`, `completeBooking`, `markNoShow`. Each is tested. **None has a single caller anywhere in `src/app`.**
+**What remains true from the original audit:** many routes still write to Prisma directly for non-transition work — that is not automatically wrong, but it is why Q37's duplication warning stays relevant. New transitions must go through `src/modules/booking/index.ts`, not inline `prisma.booking.update`.
 
-The routes do the work themselves. `POST /api/bookings/[id]/checkin` calls `prisma.booking.update(...)` inline, then `createTm30Filing` and `createConditionReport` directly. Four route files set `booking.status` by hand, and **31 of 144 route files write to Prisma directly**.
-
-Two consequences, and the second is the serious one:
-
-1. **The guards in the state machine never run in production.** Whatever the service validates about a transition, the route doesn't.
-2. **There are two implementations of every stay transition, and only one is tested.** The tested one is the one nobody runs. This is the drift Q37 already warns about, at a larger scale — and it means green tests are weaker evidence than they look for anything on the stay path.
-
-This also violates CLAUDE.md's module rule: modules connect through one `index.ts` interface, and business logic lives in `src/modules/*`, not in route handlers.
-
-**I contributed to this.** `changeBookingDates`, which I wrote earlier in this session for date changes, has **no caller** — `POST /api/bookings/[id]/modify` does its own conflict check with `prisma.booking.findFirst` rather than calling it. I built the same unreachable pattern I had just finished criticising in the onboarding audit.
+**Historical note (Aug 2026):** the original §1 was accurate when written; the reconnect landed in item 6 below before this refresh.
 
 ## 2. Reachability by role
 
@@ -29,14 +20,14 @@ This also violates CLAUDE.md's module rule: modules connect through one `index.t
 |---|---|---|---|
 | **Guest (booking)** | `/search`, `/units/[id]`, `/trips` | search, unit detail, checkout, trips, trip detail | **Works** |
 | **Guest (in stay)** | `/bookings/[id]/home-space` | home space, handbook, passports, extension | **Works** |
-| **Owner** | `/owner` | portfolio, `/owner/statements/[id]` | **Partial** — no per-unit dashboard (doc 08 S8) |
+| **Owner** | `/owner` | portfolio, unit detail, statements, raise ticket / book service (F-OWN-4) | **Mostly** — per-unit dashboard (doc 08 S8) still thin; F-OWN-4 quick actions work |
 | **Resident** | `/residence` | announcements, handbook, services, tickets | **Works** — built; F-RES |
-| **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only |
-| **Provider** | `/provider` | apply, services | **Partial** — no remittances view (doc 08 §5) |
-| **MC member** | `/mc` | overview, bookings, tickets, calendar, fee reports, announcements | **Mostly** — the "one page" verdict was wrong: it is five tabs. Announcements were the real gap and are now at `/announcements` |
+| **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only (Q1) |
+| **Provider** | `/provider` | apply, services, `/provider/remittances` (F-PROV-4) | **Works** — remittance report + payout history in provider nav |
+| **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports, announcements | **Mostly** — request inbox built; deeper MC-2 ops boards still open |
 | **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
-| **Staff (ops)** | `/ops`, `/ops/tm30` | arrivals, TM30 | **Partial** — doc 08 §5 lists seven ops boards; two exist |
-| **Admin** | `/app/admin` | 15 pages | **Mostly** — see §4 |
+| **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, unit calendar, mobilization | **Mostly** — S12 core columns exist; F-OPS-4 pricing/calendar upkeep is partial |
+| **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Mostly** — see §4 |
 | **Any role** | — | `/messages`, `/tickets`, `/services` | **Works** |
 
 ~~**Nobody has an account surface.**~~ **Built** — `/account` carries profile, locale, password and notification preferences, with the two obligation-carrying notification types fixed on. For a platform under the PDPA, consent nobody could withdraw was the sharpest gap here.
@@ -47,19 +38,37 @@ This also violates CLAUDE.md's module rule: modules connect through one `index.t
 
 ## 3. Flows
 
-Reachable end to end: **F-AUTH-1/2** (register, login, reset), **F-GUEST-1..10** (search through review, extension, cancellation), **F-SVC-1..4** (marketplace, orders, quotes), **F-PROV-1/2** (apply, vetting, services), **F-OPS-1/2** (check-in, TM30), **F-FIN-1** (statements, admin-side), **F-OWN-1** (onboarding — wired in this PR).
+Reachable end to end: **F-AUTH-1/2** (register, login, reset), **F-GUEST-1..10** (search through review, extension, cancellation, modification), **F-SVC-1..4** (marketplace, orders, quotes), **F-PROV-1..4** (apply, vetting, services, remittances), **F-OPS-1..6** (board, TM30, costs, claims, request inbox, cash payment), **F-OWN-1/3/4** (onboarding, statements, ticket/service for own unit), **F-FIN-1/2** (statements; payouts + reconciliation board), **F-DIS-1** (damage claims + deposit preauth on confirm).
 
-Not reachable:
+Not reachable / partial:
 
 - ~~**F-AUTH-4 (claim account)**~~ — **this was wrong, and the correction matters.** The claim flow was complete all along: `/auth/claim`, `GET /api/auth/claim/[token]`, `POST /api/auth/claim`, and `people.claimIdentity` behind them. What I actually found was an *unused second implementation*, `auth.claimAccount`, which has no caller — the same duplication §1 describes, not a missing flow. I recorded a working flow as broken because I searched for one function name.
   The real gap was at the other end and is now fixed: **nothing could put a person into `invited` status**, so the flow began nowhere. `people.inviteIdentity` plus `POST /api/admin/people/invite` and an invite panel on People & Roles close F-OWN-1 step 7. Two things came with it — issuing a new claim link now consumes every earlier one (a resend used to leave the old link live in a forwarded email), and an address that already has a working account is reported as such rather than being downgraded to `invited`.
 - ~~**F-OPS-3 (record a cost)**~~ — **this was overstated and is corrected here.** `POST /api/ledger/record-cost` did exist; what was missing was a *screen* to reach it, so an expense could only be entered by hand-crafting a request. Built at `/ops/costs`, linked from the ops board. The functions named in the original claim — `recordBookingRevenue`, `recordRefundOut` — genuinely have no route, but they are **automatic** entries that belong on the payment path, not behind a form, so their having no route is correct rather than a gap. (Revenue is in fact written, by `finance.service.ts`; `ledger.service.ts:recordBookingRevenue` is an unused second implementation of it — a smaller instance of the same duplication this audit's §1 describes.)
-- **F-OPS-5 / F-OWN-4** — no surface.
-- **F-FIN-2 (payouts and reconciliation)** — `recordOwnerPayout`, `recordProviderRemittance`, `markPayoutReconciled` have no callers; the `/app/admin/payouts` page exists but is not in the admin navigation.
-- ~~**F-DIS-1 (damage claims)**~~ — **built**: staff file at `/ops/claims`, an admin decides at `/app/admin/claims`. What that surfaced is larger than the missing screens and is logged as **Q46**: there were *two* implementations of the deposit rail (`src/app/libs/deposits.ts` and `src/modules/finance/deposits.service.ts`), **neither called from the booking path** — so `booking.deposit.mode = preauth` has never placed a hold on anything. The duplication is now resolved to one implementation in the module, and two real defects in the surviving path are fixed: approving captured the **whole** hold rather than the claimed amount, and captured **without a ledger entry** — money moved with no record, in a ledger CLAUDE.md calls append-only. Rejection is no longer time-barred, so an unattended claim cannot strand a guest's money. Where the hold is taken and released is a founder ruling (Q46), so the rail is deliberately still not wired to booking.
+- ~~**F-OPS-5 / F-OWN-4**~~ — **built (2026-09-04 correction).** F-OPS-5: `/ops/requests` and `/mc/requests` — party, dates, breakdown, approve/decline with reason keys (`respond` API + `getOpsBookingRequests` / MC inbox). F-OWN-4: owner dashboard and unit detail link to `/tickets/new?unitId=…` and `/services?projectId=…&unitId=…`.
+- ~~**F-FIN-2 (payouts and reconciliation)**~~ — **built:** `/app/admin/payouts` (in admin nav) records owner and provider payouts; `/admin/finance/reconciliation` board linked from payouts; provider portal `/provider/remittances` (F-PROV-4).
+- ~~**F-DIS-1 deposit rail (Q46)**~~ — **wired (2026-09-04):** `ensureDepositPreauthOnStayConfirmed` on all confirmation paths; `voidDepositPreauthIfClean` on checkout. Claims UI at `/ops/claims` + `/app/admin/claims` unchanged.
 - **F-DIS-2 (disputes)** — still a ticket flow with no surface of its own.
 - **F-MC-2** — beyond the single `/mc` page.
 - ~~**Announcements**~~ — **built** (`/app/admin/announcements`, `POST /api/announcements` + publish/withdraw). Two scoping bugs surfaced underneath the missing composer and are fixed with it: the home space rendered *every* published announcement regardless of `audience`, so an owners-only notice appeared on a guest's screen and an expired one never went away; and publishing to `guests_in_stay` notified **nobody**, because the audience resolved through a `guest` role row that booking has never written — the publish succeeded and reached zero people. In-stay membership now derives from the booking. `postedAs` is resolved server-side from the poster's role and is not accepted from the request: it is the signature on a building-wide broadcast, and a client-chosen value would let staff speak as the juristic person.
+
+### 3.1 Notification catalog (doc 11) — PMS parity pass 2026-09-04
+
+Stay notification fan-out now wired end-to-end for the booking lifecycle slices below (content keys EN/RU/TH in `seed.ts`; integration tests per slice):
+
+| ID | Type | Trigger | Status |
+|---|---|---|---|
+| N-03 | `stay_new_booking_ops` | Booking confirmed → ops/MC | ✅ |
+| N-09 | `stay_cancelled` | Cancel → guest + owner/ops | ✅ |
+| N-11 | `stay_modified_ops` | Date change → guest + ops/MC/owner | ✅ |
+| N-33/34 | `stay_request_placed` / `stay_request_received` | Request-to-book created | ✅ |
+| N-34 reminder | `stay_request_reminder` | Half-SLA cron if still unanswered | ✅ |
+| N-08 | `stay_verification_failed` | Passport deadline job | ✅ (pre-existing) |
+| N-10 | `finance_refund_failed` | Provider refund void + admin alert | ✅ |
+
+Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; Opn `createCheckout` + `verifyAndConfirm` + `POST /api/webhooks/opn` when `PAYMENT_PROVIDER=opn`. Cash rail (F-OPS-6) unchanged.
+
+**Still open in notifications:** N-07 pre-arrival (job exists — verify guest UX), checkout reminders (N-12), half-SLA on service orders (N-26).
 
 ## 4. Admin panel
 
@@ -94,10 +103,9 @@ Everything else in doc 02 is exercised. The spine — project → unit → ident
 5. ~~**Audit log viewer**~~ **Done** — `/app/admin/audit`, with a recorded CSV export for doc 12 §6's monthly compliance report. ~~Finance in the nav~~ done.
 6. ~~**Announcements composer**~~ **Done** — admin-side. MC and juristic members can already post through the same route (`can()` scopes it by project); what they lack is a screen of their own, which belongs with item 7.
    ~~Then **claim account (F-AUTH-4)**~~ **Done** — see §3: the claim flow was already complete and my audit was wrong; what was missing was the invitation that starts it. ~~Next: **damage claims (F-DIS-1)**~~ **Done** — with Q46 raised, because the deposit rail underneath it has never been connected to a booking and doc 07 and the code disagree about what the 48 hours are for.
-7. ~~**Resident and juristic surfaces**~~ **Done** — `/residence` and `/juristic`, plus `/announcements` so the management company and the juristic person can use the composer that previously lived only inside the admin panel. `/app` is the adaptive landing doc 08 §5 specifies, and the navbar's role links now come from that same policy rather than a second hand-maintained list of role checks — which is how resident and juristic ended up with no way in. Still open: **MC boards** beyond the five tabs they have, **the remaining ops boards**, **provider remittances**.
-   **A platform-wide `reachability.test.ts` now fails the build if any page exists with nothing linking to it.** Running it the first time found five: `/juristic` and `/residence` (mine, before the navbar was wired), `/admin/finance/reconciliation` (now in the admin nav), a duplicate CRM dashboard at `/admin/crm` outside the admin shell, and `/browse`.
-   Two of those were worse than orphans. **The CRM opportunity detail page was at a route nothing could reach**: both `CrmDashboardClient` and `OpportunitiesKanban` navigate to `/app/admin/crm/opportunities/{id}`, and the page lived at `/admin/crm/opportunities/{id}` — so clicking any opportunity 404'd. The page is moved into the admin shell and the duplicate dashboard deleted. **`/browse` was Airbnb-clone scaffolding**: 220 lines of invented Russian property listings with fabricated prices and ratings, `console.log` click handlers, dead `href="#"` links, raw Tailwind greys instead of design tokens and hardcoded copy instead of content keys — three CLAUDE.md rules broken at once, unreachable, and dangerous precisely because it looked like real inventory. Deleted.
-8. **T-043 launch checklist** — the only build-plan task with nothing committed against it.
+7. ~~**Resident and juristic surfaces**~~ **Done** — `/residence` and `/juristic`, plus `/announcements`. Still open: **F-OPS-4** (pricing/calendar upkeep UI), **F-MC-2** deeper boards, **F-DIS-2** dispute surface.
+8. ~~**PMS notification + payment parity (2026-09)**~~ **Done** — N-03/09/11/33/34/N-10 fan-out; Opn checkout + webhook; Q46 deposit preauth on confirm.
+9. **T-043 launch checklist** — track in `T-043_LAUNCH_CHECKLIST.md`.
 
 Items 1–5 are what stood between this and an operator being able to run a residence without a database client. They are done.
 

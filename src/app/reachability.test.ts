@@ -235,7 +235,6 @@ const API_DEBT = new Set([
   '/api/auth/verify-email',
   '/api/bookings/[id]/record-transfer',
   '/api/bookings/[id]/transfer-instructions',
-  '/api/bookings/[id]/verify-passports',
   '/api/content/translate',
   '/api/crm/dashboard/next-actions',
   '/api/crm/dashboard/summary',

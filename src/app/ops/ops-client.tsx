@@ -9,6 +9,7 @@ import BookingRequestRespondActions, {
 } from '@/components/booking/BookingRequestRespondActions';
 import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
+import ArrivalPassportCaptureModal from '@/components/ops/ArrivalPassportCaptureModal';
 
 interface OpsBooking {
   id: string;
@@ -130,6 +131,7 @@ export default function OpsBoardClient({
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [passportBooking, setPassportBooking] = useState<OpsBooking | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -426,15 +428,34 @@ export default function OpsBoardClient({
         title={labels['staff.ops.arrivals']}
         bookings={arrivals}
         action={(booking) => (
-          <Button
-            size="sm"
-            onClick={() => act(booking.id, 'checkin')}
-            isLoading={busyId === booking.id}
-            disabled={!booking.paid}
-          >
-            {labels['staff.ops.check_in']}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-8">
+            {booking.verificationStatus !== 'passports_received' ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setPassportBooking(booking)}
+              >
+                {labels['staff.ops.capture_passports']}
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              onClick={() => act(booking.id, 'checkin')}
+              isLoading={busyId === booking.id}
+              disabled={!booking.paid}
+            >
+              {labels['staff.ops.check_in']}
+            </Button>
+          </div>
         )}
+      />
+
+      <ArrivalPassportCaptureModal
+        bookingId={passportBooking?.id ?? null}
+        guestName={passportBooking?.guestName ?? ''}
+        labels={labels}
+        onClose={() => setPassportBooking(null)}
+        onComplete={() => router.refresh()}
       />
 
       <Section

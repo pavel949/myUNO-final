@@ -41,6 +41,7 @@ interface UnitData {
     title: string;
     status: string;
     createdAt: string;
+    unitName: string;
   }>;
   latestStatementId: string | null;
 }
@@ -156,6 +157,15 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   const filteredUnits = selectedProjectId
     ? dashboard.units.filter((u) => u.projectId === selectedProjectId)
     : dashboard.units;
+  const portfolioOpenTickets = filteredUnits
+    .flatMap((unit) =>
+      unit.openTickets.map((ticket) => ({
+        ...ticket,
+        unitName: ticket.unitName || unit.name,
+      }))
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   const occupancyNow = shape.isPortfolio
     ? dashboard.combinedOccupancyThisMonth
@@ -561,6 +571,30 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.tickets']}
+              </h2>
+              <OpenTicketsList
+                count={filteredUnits.reduce((acc, unit) => acc + unit.openTicketsCount, 0)}
+                tickets={portfolioOpenTickets}
+                labels={{
+                  empty: labels['owner.tickets.empty'],
+                  waitingCount: labels['owner.tickets.waiting_count'],
+                  view: labels['owner.tickets.view'],
+                  status: {
+                    open: labels['tickets.status.open'],
+                    acknowledged: labels['tickets.status.acknowledged'],
+                    in_progress: labels['tickets.status.in_progress'],
+                    waiting_reporter: labels['tickets.status.waiting_reporter'],
+                    resolved: labels['tickets.status.resolved'],
+                    closed: labels['tickets.status.closed'],
+                    cancelled: labels['tickets.status.cancelled'],
+                  },
+                }}
+              />
             </div>
 
             {/* Portfolio: Sell Interest Card */}

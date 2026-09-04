@@ -271,6 +271,7 @@ describe('Owner experience (T-033)', () => {
       expect(dashboard.units[0].openTickets.map((ticket) => ticket.status)).toEqual(
         expect.arrayContaining(['open', 'acknowledged', 'in_progress', 'waiting_reporter'])
       );
+      expect(dashboard.units[0].openTickets.every((ticket) => ticket.unitName === unit.name)).toBe(true);
     });
   });
 

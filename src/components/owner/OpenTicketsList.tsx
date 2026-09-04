@@ -8,6 +8,7 @@ interface Ticket {
   title: string;
   status: string;
   createdAt: string;
+  unitName?: string;
 }
 
 interface OpenTicketsListProps {
@@ -80,6 +81,9 @@ export const OpenTicketsList = React.forwardRef<HTMLDivElement, OpenTicketsListP
                 <div className="flex justify-between items-start gap-16">
                   <div className="flex-1">
                     <p className="text-body font-medium text-text-ink">{ticket.title}</p>
+                    {ticket.unitName ? (
+                      <p className="text-small text-text-secondary mt-4">{ticket.unitName}</p>
+                    ) : null}
                   </div>
                   <span className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${styles.bg} ${styles.text}`}>
                     {labels.status[ticket.status] || ticket.status}

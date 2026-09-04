@@ -26,6 +26,7 @@ export interface OwnerDashboardData {
       title: string;
       status: TicketStatus;
       createdAt: Date;
+      unitName: string;
     }[];
     latestStatementId: string | null;
   }[];
@@ -229,6 +230,7 @@ export async function getOwnerDashboard(
           title: ticket.title,
           status: ticket.status,
           createdAt: ticket.createdAt,
+          unitName: unit.name,
         })),
       latestStatementId: unit.statements[0]?.id || null,
     };

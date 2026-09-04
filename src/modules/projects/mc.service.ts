@@ -572,3 +572,59 @@ export async function getMCFeeReport(
     },
   };
 }
+
+export interface McTm30QueueItem {
+  id: string;
+  status: string;
+  dueAt: Date;
+  guestNameEncrypted: string | null;
+  guestNationality: string | null;
+  unitName: string;
+  projectName: string;
+  arrival: Date;
+}
+
+/**
+ * TM30 queue for MC-managed units (doc 03, F-MC-2 / F-OPS-2).
+ */
+export async function getMcTm30Queue(
+  db: PrismaClient,
+  mcIdentityId: string,
+  projectId: string,
+  organizationId: string
+): Promise<McTm30QueueItem[]> {
+  const units = await getMCManagedUnits(db, mcIdentityId, projectId, organizationId);
+  const unitIds = units.map((unit) => unit.id);
+  if (unitIds.length === 0) {
+    return [];
+  }
+
+  const filings = await db.tm30Filing.findMany({
+    where: {
+      status: { in: ['pending', 'escalated', 'failed'] },
+      booking: { unitId: { in: unitIds } },
+    },
+    include: {
+      booking: {
+        select: {
+          startDate: true,
+          unit: { select: { name: true } },
+          project: { select: { name: true } },
+        },
+      },
+      bookingGuest: { select: { fullName: true, nationality: true } },
+    },
+    orderBy: { dueAt: 'asc' },
+  });
+
+  return filings.map((filing) => ({
+    id: filing.id,
+    status: filing.status,
+    dueAt: filing.dueAt,
+    guestNameEncrypted: filing.bookingGuest.fullName,
+    guestNationality: filing.bookingGuest.nationality,
+    unitName: filing.booking.unit.name,
+    projectName: filing.booking.project.name,
+    arrival: filing.booking.startDate,
+  }));
+}

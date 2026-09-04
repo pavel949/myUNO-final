@@ -137,4 +137,91 @@ describe('TM30 filing scoped authorization', () => {
     );
     expect(response.status).toBe(403);
   });
+
+  it('allows MC member with managed-unit engagement to mark filing as filed', async () => {
+    const owner = await createIdentity({ firstName: 'Owner' });
+    const mcMember = await createIdentity({ firstName: 'MC' });
+    const project = await db.project.findUnique({ where: { id: projectId } });
+    const unit = await createUnit({ projectId: project!.id, ownerIdentityId: owner.id, status: 'live' });
+    const mcOrg = await db.organization.create({
+      data: {
+        name: 'MC',
+        orgType: 'management_company',
+        projectId: projectId,
+        contactEmail: 'mc@test.com',
+        contactPhone: '555-0099',
+      },
+    });
+    await db.unitEngagement.create({
+      data: {
+        unitId: unit.id,
+        engagementType: 'via_management_company',
+        ownerIdentityId: owner.id,
+        managementOrgId: mcOrg.id,
+        status: 'active',
+      },
+    });
+    await db.roleAssignment.create({
+      data: {
+        identityId: mcMember.id,
+        role: 'mc_member',
+        scopeType: 'project',
+        projectId,
+        organizationId: mcOrg.id,
+      },
+    });
+
+    const guest = await createIdentity({ firstName: 'Guest2' });
+    const booking = await createBooking({
+      unitId: unit.id,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'checked_in',
+    });
+    const bookingGuest = await db.bookingGuest.create({
+      data: {
+        bookingId: booking.id,
+        fullName: encrypt('Anna Guest'),
+        passportNumber: encrypt('XY9876543'),
+        dateOfBirth: encrypt('1992-02-02'),
+        nationality: 'RU',
+        isLead: true,
+      },
+    });
+    const mcFiling = await db.tm30Filing.create({
+      data: {
+        bookingId: booking.id,
+        bookingGuestId: bookingGuest.id,
+        dueAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        status: 'pending',
+      },
+    });
+
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: mcMember.id,
+      email: mcMember.email,
+      firstName: 'MC',
+      lastName: 'Member',
+      isAdmin: false,
+      roles: [
+        {
+          role: 'mc_member',
+          projectId,
+          unitId: null,
+          organizationId: mcOrg.id,
+          providerId: null,
+        },
+      ],
+    });
+
+    const response = await markFiled(
+      new NextRequest(`http://localhost/api/tm30/${mcFiling.id}/file`, {
+        method: 'POST',
+        body: JSON.stringify({ receiptMediaId: null }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: mcFiling.id } }
+    );
+    expect(response.status).toBe(200);
+  });
 });

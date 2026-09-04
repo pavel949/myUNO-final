@@ -7,6 +7,7 @@ import {
   getMCServiceOrders,
   getMCDashboard,
   getMCFeeReport,
+  getMcTm30Queue,
 } from './mc.service';
 
 describe('MC Service', () => {
@@ -638,6 +639,92 @@ describe('MC Service', () => {
       expect(dashboard.unitsCount).toBe(2);
       expect(dashboard.bookingsThisMonth).toBe(1);
       expect(dashboard.openTicketsCount).toBe(1);
+    });
+  });
+
+  describe('getMcTm30Queue', () => {
+    it('returns pending TM30 filings only for MC-managed units', async () => {
+      const project = await createProject();
+      const otherProject = await createProject({ name: 'Other' });
+      const mcOrg = await db.organization.create({
+        data: {
+          name: 'MC Org',
+          orgType: 'management_company',
+          projectId: project.id,
+          contactEmail: 'mc@test.com',
+          contactPhone: '555-0002',
+        },
+      });
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
+        data: {
+          identityId: mcIdentity.id,
+          role: 'mc_member',
+          scopeType: 'project',
+          projectId: project.id,
+          organizationId: mcOrg.id,
+        },
+      });
+
+      const owner = await createIdentity();
+      const managedUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const unmanagedUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+      const otherUnit = await createUnit({ projectId: otherProject.id, ownerIdentityId: owner.id });
+
+      await db.unitEngagement.create({
+        data: {
+          unitId: managedUnit.id,
+          engagementType: 'via_management_company',
+          ownerIdentityId: owner.id,
+          managementOrgId: mcOrg.id,
+          status: 'active',
+        },
+      });
+
+      const guest = await createIdentity();
+      const createFiling = async (unitId: string, projectId: string) => {
+        const booking = await db.booking.create({
+          data: {
+            unitId,
+            projectId,
+            guestIdentityId: guest.id,
+            bookingType: 'guest_stay',
+            channel: 'direct',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+            adults: 1,
+            children: 0,
+            totalThb: 5000,
+            status: 'checked_in',
+          },
+        });
+        const bookingGuest = await db.bookingGuest.create({
+          data: {
+            bookingId: booking.id,
+            fullName: 'Guest',
+            nationality: 'US',
+            passportNumber: 'AB123',
+            isLead: true,
+          },
+        });
+        return db.tm30Filing.create({
+          data: {
+            bookingId: booking.id,
+            bookingGuestId: bookingGuest.id,
+            dueAt: new Date(Date.now() + 12 * 60 * 60 * 1000),
+            status: 'pending',
+          },
+        });
+      };
+
+      const managedFiling = await createFiling(managedUnit.id, project.id);
+      await createFiling(unmanagedUnit.id, project.id);
+      await createFiling(otherUnit.id, otherProject.id);
+
+      const queue = await getMcTm30Queue(db, mcIdentity.id, project.id, mcOrg.id);
+      expect(queue).toHaveLength(1);
+      expect(queue[0].id).toBe(managedFiling.id);
+      expect(queue[0].unitName).toBe(managedUnit.name);
     });
   });
 });

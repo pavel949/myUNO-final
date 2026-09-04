@@ -94,3 +94,14 @@ export function hasProjectStaffAccess(user: CurrentUser, projectId: string): boo
     (assignment) => STAFF_ROLES.has(assignment.role) && assignment.projectId === projectId
   );
 }
+
+/** Staff or MC member with an active managed-unit engagement may file TM30 (doc 03). */
+export async function canAccessTm30Filing(
+  user: CurrentUser,
+  input: { projectId: string; unitId: string }
+): Promise<boolean> {
+  if (user.isAdmin || hasProjectStaffAccess(user, input.projectId)) {
+    return true;
+  }
+  return hasManagedUnitMcAccess(user, input);
+}

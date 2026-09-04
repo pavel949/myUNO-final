@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { markTm30FilingFiled } from '@/modules/ops';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
 export async function POST(
   req: NextRequest,
@@ -23,16 +23,16 @@ export async function POST(
     // Get the filing
     const filing = await prisma.tm30Filing.findUnique({
       where: { id: params.id },
-      include: { booking: true },
+      include: { booking: { select: { projectId: true, unitId: true } } },
     });
 
     if (!filing) {
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    if (!hasProjectStaffAccess(user, filing.booking.projectId)) {
+    if (!(await canAccessTm30Filing(user, filing.booking))) {
       return NextResponse.json(
-        { error: 'Only staff can file TM30' },
+        { error: 'Only staff or MC members with unit scope can file TM30' },
         { status: 403 }
       );
     }

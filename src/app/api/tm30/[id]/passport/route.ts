@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { logTm30PassportAccess, decryptPassportNumber, safeDecrypt } from '@/modules/ops';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
 export async function GET(
   _req: NextRequest,
@@ -38,9 +38,9 @@ export async function GET(
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    if (!hasProjectStaffAccess(user, filing.booking.projectId)) {
+    if (!(await canAccessTm30Filing(user, filing.booking))) {
       return NextResponse.json(
-        { error: 'Only staff can access passport data' },
+        { error: 'Only staff or MC members with unit scope can access passport data' },
         { status: 403 }
       );
     }

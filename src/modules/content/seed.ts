@@ -2013,6 +2013,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // MC portal (doc 06 S13, dataviz §3.5)
   { key: 'mc.portal.title', namespace: 'mc', description: 'MC portal page title', en: 'Management Company Portal', ru: 'Портал управляющей компании', th: 'พอร์ทัลบริษัทบริหาร', status: NR },
+  { key: 'mc.nav.tm30', namespace: 'mc', description: 'MC portal: link to TM30 queue', en: 'TM30 queue', ru: 'Очередь TM30', th: 'คิว TM30', status: NR },
+  { key: 'mc.tm30.title', namespace: 'mc', description: 'MC TM30 queue page title', en: 'TM30 queue', ru: 'Очередь TM30', th: 'คิว TM30', status: NR },
+  { key: 'mc.tm30.back', namespace: 'mc', description: 'MC TM30 queue: back link', en: '← MC portal', ru: '← Портал УК', th: '← พอร์ทัล MC', status: NR },
+  { key: 'mc.tm30.context', namespace: 'mc', description: 'MC TM30 queue: portfolio context label', en: 'Portfolio context', ru: 'Контекст портфеля', th: 'บริบทพอร์ตโฟลิโอ', status: NR },
   { key: 'mc.portal.subtitle', namespace: 'mc', description: 'MC portal subtitle', en: 'Manage your units, bookings, and operations', ru: 'Управляйте юнитами, бронированиями и операциями', th: 'จัดการยูนิต การจอง และงานปฏิบัติการของคุณ', status: NR },
   { key: 'mc.context.active', namespace: 'mc', description: 'Active MC project context label', en: 'Active context', ru: 'Активный контекст', th: 'บริบทที่ใช้งานอยู่', status: NR },
   { key: 'mc.context.switcher', namespace: 'mc', description: 'MC context switcher helper label', en: 'Switch project portfolio context', ru: 'Переключить контекст проекта и управляющей компании', th: 'สลับบริบทพอร์ตโครงการ', status: NR },

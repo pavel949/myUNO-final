@@ -63,6 +63,7 @@ export {
   getMCDashboard,
   getMCFeeReport,
   getMCServiceOrders,
+  getMcTm30Queue,
 } from './mc.service';
 
 // Ownership history (chain of title). `Unit.ownerIdentityId` stays the current

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmActivityType } from '@prisma/client';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import { addActivity } from '@/modules/crm';
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const body = await req.json();
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const activity = await addActivity(prisma, {
       identityId: body.identityId,
       opportunityId: body.opportunityId,
-      createdByIdentityId: user.identityId,
+      createdByIdentityId: guard.actorIdentityId,
       type: body.type,
       subject: body.subject,
       body: body.body,

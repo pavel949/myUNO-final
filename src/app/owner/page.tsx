@@ -1,6 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { fetchOwnerDashboard } from '@/app/actions/getOwnerDashboard';
+import { getActiveStayBanner } from '@/app/actions/getActiveStay';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { resolveOwnerPortalPath } from '@/modules/projects';
@@ -20,6 +21,7 @@ export default async function OwnerPage() {
   }
 
   const data = await fetchOwnerDashboard(user.identityId);
+  const activeStay = await getActiveStayBanner(user.identityId);
   const ownerPath = resolveOwnerPortalPath(data.shape, data.dashboard.units);
   if (ownerPath !== '/owner') {
     redirect(ownerPath);
@@ -89,7 +91,9 @@ export default async function OwnerPage() {
       'We connect you with qualified buyers. Share your interest and we will explore options together.',
     'owner.sell_interest.action': 'Express interest',
     'owner.statements.view_all': 'View all statements',
+    'owner.role_context': 'You are staying at {unit}. This page is your owner dashboard.',
+    'owner.role_context.stay_link': 'Go to your stay',
   });
 
-  return <OwnerDashboardClient {...data} labels={labels} locale={locale} />;
+  return <OwnerDashboardClient {...data} labels={labels} locale={locale} activeStay={activeStay} />;
 }

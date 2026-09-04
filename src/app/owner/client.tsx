@@ -12,6 +12,7 @@ import {
   SellInterestCard,
   OwnerStayModal,
   MoneyAmount,
+  RoleContextBanner,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
@@ -95,6 +96,7 @@ interface OwnerDashboardClientProps {
   statements: OwnerStatement[];
   labels: Record<string, string>;
   locale: string;
+  activeStay?: { bookingId: string; unitName: string } | null;
 }
 
 export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
@@ -108,6 +110,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   statements,
   labels,
   locale,
+  activeStay,
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     shape.isPortfolio ? projects[0]?.id || null : null
@@ -221,6 +224,16 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           </h1>
           <p className="text-body text-text-secondary">{labels['owner.dashboard.subtitle']}</p>
         </div>
+
+        {activeStay ? (
+          <RoleContextBanner
+            message={(labels['owner.role_context'] ?? '').replace('{unit}', activeStay.unitName)}
+            action={{
+              label: labels['owner.role_context.stay_link'],
+              href: `/bookings/${activeStay.bookingId}/home-space`,
+            }}
+          />
+        ) : null}
 
         {/* Portfolio: Project Switcher */}
         {shape.isPortfolio && (

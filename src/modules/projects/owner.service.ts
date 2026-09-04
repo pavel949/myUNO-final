@@ -4,6 +4,7 @@ import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/module
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
 import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
 import { notifyOwnerStayBooked } from './notify-owner-stay';
+import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -110,6 +111,7 @@ export async function bookOwnerStay(db: PrismaClient, input: OwnerStayInput): Pr
   });
 
   await notifyOwnerStayBooked(db, booking.id);
+  await scheduleOwnerStayTurnoverClean(db, booking.id);
 
   return booking;
 }

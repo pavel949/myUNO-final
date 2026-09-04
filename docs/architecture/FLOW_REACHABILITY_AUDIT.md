@@ -20,7 +20,7 @@ Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on bra
 |---|---|---|---|
 | **Guest (booking)** | `/search`, `/units/[id]`, `/trips` | search, unit detail, checkout, trips, trip detail | **Works** |
 | **Guest (in stay)** | `/bookings/[id]/home-space` | home space, handbook, passports, extension | **Works** |
-| **Owner** | `/owner` or `/owner/units/[id]` | portfolio, unit detail, statements, raise ticket / book service (F-OWN-4) | **Mostly** — single-unit adaptive landing (doc 06 S7) redirects to unit dashboard; F-OWN-4 quick actions work |
+| **Owner** | `/owner` or `/owner/units/[id]` | portfolio, unit detail, statements, raise ticket / book service (F-OWN-4), owner stay + turnover clean (F-OWN-6) | **Works** — single-unit adaptive landing (doc 06 S7) redirects to unit dashboard; RoleContextBanner during active stay |
 | **Resident** | `/residence` | announcements, handbook, services, tickets | **Works** — built; F-RES |
 | **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only (Q1) |
 | **Provider** | `/provider` | apply, services, `/provider/remittances` (F-PROV-4) | **Works** — remittance report + payout history in provider nav |
@@ -68,7 +68,7 @@ Stay notification fan-out now wired end-to-end for the booking lifecycle slices 
 | N-12 | `stay_checkout_reminder` | Departure day 08:00 cron → guest | ✅ |
 | N-07b | `stay_checkin_instructions` | Verification complete, T-24h cron → guest | ✅ |
 | N-14 | `stay_post_stay` | Check-out + 7d re-engage cron → guest | ✅ |
-| N-17 | `stay_owner_stay_booked` | Owner stay booked → ops/MC | ✅ |
+| N-17 | `stay_owner_stay_booked` | Owner stay booked → ops/MC; turnover clean scheduled | ✅ |
 | N-26 reminder | `order.new` (half-SLA body) | Unanswered service order → provider | ✅ |
 | N-27 | `order_review_prompt` | Fulfilled + 12h cron → orderer | ✅ |
 

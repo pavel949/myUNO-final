@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getActiveStayBanner } from '@/app/actions/getActiveStay';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getOwnerUnitDashboard } from '@/modules/projects';
@@ -23,6 +24,7 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
   }
 
   const data = await getOwnerUnitDashboard(prisma, user.identityId, params.unitId);
+  const activeStay = await getActiveStayBanner(user.identityId);
   if (!data) {
     notFound();
   }
@@ -97,10 +99,13 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
       'We connect you with qualified buyers. Share your interest and we will explore options together.',
     'owner.sell_interest.action': 'Express interest',
     'owner.statements.view_all': 'View all statements',
+    'owner.role_context': 'You are staying at {unit}. This page is your owner dashboard.',
+    'owner.role_context.stay_link': 'Go to your stay',
   })) as Record<string, string>;
 
   return (
     <OwnerUnitDashboardClient
+      activeStay={activeStay}
       unit={data.unit}
       summary={{
         ...data.summary,

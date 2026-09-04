@@ -3,11 +3,14 @@ import type { OwnerStatementStatus } from '@prisma/client';
 import {
   db,
   resetDb,
+  setGlobalConfig,
   createIdentity,
   createProject,
   createUnit,
   createBooking,
   createUnitEngagement,
+  createProvider,
+  createService,
 } from '@/test/util';
 import {
   bookOwnerStay,
@@ -63,6 +66,74 @@ describe('Owner experience (T-033)', () => {
       });
       expect(opsAlert?.titleKey).toBe('notify.stay_owner_stay_booked.title');
       expect(opsAlert?.bodyKey).toBe('notify.stay_owner_stay_booked.body');
+    });
+
+    it('schedules turnover cleaning service order when charge_cleaning is enabled', async () => {
+      await setGlobalConfig('owner_stay.charge_cleaning', true);
+
+      const owner = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const provider = await createProvider({ status: 'active' });
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { vetted_at: new Date() },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
+        basePriceThb: 15_000,
+      });
+      await db.serviceProject.create({
+        data: { service_id: service.id, project_id: project.id },
+      });
+
+      const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const endDate = new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const booking = await bookOwnerStay(db, {
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        startDate,
+        endDate,
+      });
+
+      const order = await db.serviceOrder.findFirst({
+        where: { booking_id: booking.id },
+      });
+      expect(order).toBeTruthy();
+      expect(order?.total_thb).toBe(15_000);
+      expect(order?.orderer_role).toBe('owner');
+    });
+
+    it('records ledger cleaning cost when no cleaning service is catalogued', async () => {
+      await setGlobalConfig('owner_stay.charge_cleaning', true);
+      await setGlobalConfig('pricing.cleaning_fee_thb', 8_000);
+
+      const owner = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const endDate = new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const booking = await bookOwnerStay(db, {
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        startDate,
+        endDate,
+      });
+
+      const entry = await db.ledgerEntry.findFirst({
+        where: {
+          unitId: unit.id,
+          entryType: 'cleaning_cost',
+          description: { contains: booking.id },
+        },
+      });
+      expect(entry?.amountThb).toBe(8_000);
     });
 
     it('refuses owner stay if not enough notice', async () => {

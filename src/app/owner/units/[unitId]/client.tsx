@@ -11,6 +11,7 @@ import {
   OwnerStayModal,
   MoneyAmount,
   SellInterestCard,
+  RoleContextBanner,
 } from '@/components';
 import { DeltaChip, Sparkline } from '@/components/viz';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
@@ -74,6 +75,7 @@ interface OwnerUnitDashboardClientProps {
   };
   labels: Record<string, string>;
   locale: string;
+  activeStay?: { bookingId: string; unitName: string } | null;
 }
 
 interface OwnerContractView {
@@ -98,6 +100,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
   trends,
   labels,
   locale,
+  activeStay,
 }) => {
   const [showOwnerStayModal, setShowOwnerStayModal] = useState(false);
   const [ownerStayLoading, setOwnerStayLoading] = useState(false);
@@ -185,6 +188,16 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           </div>
           <Sparkline values={sparkline} max={1} title={labels['owner.units.last30']} />
         </div>
+
+        {activeStay ? (
+          <RoleContextBanner
+            message={(labels['owner.role_context'] ?? '').replace('{unit}', activeStay.unitName)}
+            action={{
+              label: labels['owner.role_context.stay_link'],
+              href: `/bookings/${activeStay.bookingId}/home-space`,
+            }}
+          />
+        ) : null}
 
         {alerts.length > 0 && (
           <div className="mb-40">

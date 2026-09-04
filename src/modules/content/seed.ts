@@ -910,6 +910,22 @@ const COMMON_KEYS: KeyDef[] = [
     th: 'เข้าพักในหน่วยของฉัน',
   },
   {
+    key: 'owner.role_context',
+    namespace: 'owner',
+    description: 'Role context banner on owner dashboard during an active stay ({unit})',
+    ru: 'Вы сейчас проживаете в {unit}. Здесь — кабинет владельца.',
+    en: 'You are staying at {unit}. This page is your owner dashboard.',
+    th: 'คุณกำลังเข้าพักที่ {unit} หน้านี้คือแดชบอร์ดเจ้าของ',
+  },
+  {
+    key: 'owner.role_context.stay_link',
+    namespace: 'owner',
+    description: 'Role context banner: link to in-stay home space',
+    ru: 'Перейти к проживанию',
+    en: 'Go to your stay',
+    th: 'ไปที่การเข้าพักของคุณ',
+  },
+  {
     key: 'owner.stay.modal_title',
     namespace: 'owner',
     description: 'Modal title for booking owner stay',

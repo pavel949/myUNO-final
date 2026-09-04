@@ -12,6 +12,52 @@ interface PermissionEntry {
 }
 
 /**
+ * Legacy/compatibility action names still used at API call-sites.
+ *
+ * These route-level names predate the matrix vocabulary in doc 03. Mapping them
+ * once here keeps `can()` deterministic and gives us one seam for safely
+ * retiring old names route-by-route.
+ */
+const ACTION_ALIASES: Record<string, string> = {
+  'bookings:list': 'stays:view_booking',
+  'units:list': 'units:view_full_record',
+  'units:view': 'units:view_full_record',
+  'units:update': 'units:edit_listing',
+  'projects:create': 'projects:edit_and_set_live',
+  'projects:list': 'projects:edit_and_set_live',
+  'projects:update': 'projects:edit_and_set_live',
+  'projects:view': 'projects:edit_and_set_live',
+  'config:view': 'admin:edit_configuration',
+  'config:edit': 'admin:edit_configuration',
+  'content:view': 'admin:edit_content_keys',
+  'content:edit': 'admin:edit_content_keys',
+  'compliance:confirm_permitted_use': 'compliance:manage_compliance_records',
+};
+
+/**
+ * Canonical actions intentionally admin-only.
+ *
+ * `can()` grants admins before consulting this table, so these remain denied to
+ * every non-admin role by design and still count as known (not typos).
+ */
+const ADMIN_ONLY_ACTIONS = new Set([
+  'projects:edit_and_set_live',
+  'services:vet_activate_suspend_providers',
+  'money:generate_publish_owner_statements',
+  'money:record_payouts_and_reconcile',
+  'money:issue_refunds_outside_policy',
+  'reviews:hide_review_moderation',
+  'admin:edit_content_keys',
+  'admin:edit_configuration',
+  'admin:view_audit_log',
+  // Legacy route guard names kept admin-only until all callers migrate.
+  'people:view',
+  'people:edit',
+  'admin:view_all',
+  'admin:modify',
+]);
+
+/**
  * PERMISSIONS table — mirrors doc 03 §3 row-for-row.
  * Format: action, role, access level (allow/read), scope/resource hints.
  * Special conditions are checked in the can() function.
@@ -214,6 +260,19 @@ export const PERMISSIONS: PermissionEntry[] = [
   { action: 'admin:view_analytics_and_signals', role: 'juristic_member', access: 'read', scope: 'project_level_stats' },
 ];
 
+const KNOWN_ACTIONS = new Set<string>([
+  ...PERMISSIONS.map((entry) => entry.action),
+  ...ADMIN_ONLY_ACTIONS,
+]);
+
+export function resolvePermissionAction(action: string): string {
+  return ACTION_ALIASES[action] ?? action;
+}
+
+export function isKnownPermissionAction(action: string): boolean {
+  return KNOWN_ACTIONS.has(resolvePermissionAction(action));
+}
+
 interface CanContext {
   identity: Identity;
   action: string;
@@ -236,6 +295,7 @@ interface CanContext {
  */
 export async function can(context: CanContext): Promise<boolean> {
   const { identity, action, resource } = context;
+  const resolvedAction = resolvePermissionAction(action);
 
   // Rule 1: Blocked identities cannot do anything
   if (identity.status === 'blocked') {
@@ -248,7 +308,11 @@ export async function can(context: CanContext): Promise<boolean> {
   }
 
   // Rule 3: Check role-based permissions
-  const relevantPermissions = PERMISSIONS.filter((p) => p.action === action);
+  if (!isKnownPermissionAction(resolvedAction)) {
+    return false;
+  }
+
+  const relevantPermissions = PERMISSIONS.filter((p) => p.action === resolvedAction);
 
   if (relevantPermissions.length === 0) {
     // No permission entries for this action = deny by default

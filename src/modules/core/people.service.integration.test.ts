@@ -110,6 +110,56 @@ describe('People & roles service', () => {
         })
       ).rejects.toThrow('not found');
     });
+
+    it('requires projectId for project-scoped roles', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+      const user = await createIdentity({
+        firstName: 'Proj',
+        lastName: 'Scoped',
+        email: 'proj-scoped@example.com',
+      });
+
+      await expect(
+        grantRole(prisma, {
+          identityId: user.id,
+          role: 'owner',
+          scopeType: 'project',
+          grantedByIdentityId: admin.id,
+        })
+      ).rejects.toThrow('projectId is required');
+    });
+
+    it('reactivates an existing revoked role assignment instead of creating a duplicate', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+      const user = await createIdentity({
+        firstName: 'Regrant',
+        lastName: 'User',
+        email: 'regrant@example.com',
+      });
+
+      const first = await grantRole(prisma, {
+        identityId: user.id,
+        role: 'guest',
+        scopeType: 'platform',
+        grantedByIdentityId: admin.id,
+      });
+
+      await revokeRole(prisma, { roleAssignmentId: first.id });
+
+      const second = await grantRole(prisma, {
+        identityId: user.id,
+        role: 'guest',
+        scopeType: 'platform',
+        grantedByIdentityId: admin.id,
+      });
+
+      expect(second.id).toBe(first.id);
+      expect(second.status).toBe('active');
+      const count = await prisma.roleAssignment.count({
+        where: { identityId: user.id, role: 'guest', scopeType: 'platform' },
+      });
+      expect(count).toBe(1);
+    });
   });
 
   describe('revokeRole', () => {

@@ -76,7 +76,7 @@ export default async function AdminDashboardPage() {
       value: `${pendingPayment} / ${bookings}`,
     },
     { href: '/ops', label: labels['admin.dashboard.tickets'], value: String(openTickets) },
-    { href: '/app/admin', label: labels['admin.dashboard.people'], value: String(identities) },
+    { href: '/app/admin/people', label: labels['admin.dashboard.people'], value: String(identities) },
   ];
 
   const kpiTiles = [

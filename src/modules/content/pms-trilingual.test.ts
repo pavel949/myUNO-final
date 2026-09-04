@@ -16,6 +16,8 @@ const PMS_KEY_MATCHERS: Array<(key: string, namespace: string) => boolean> = [
   (key) => key.startsWith('owner.'),
   (key) => key.startsWith('ops.'),
   (key) => key.startsWith('mc.'),
+  (_, ns) => ns === 'staff',
+  (key) => key.startsWith('staff.'),
 ];
 
 function isPmsKey(key: string, namespace: string): boolean {

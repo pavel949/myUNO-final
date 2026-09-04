@@ -237,13 +237,10 @@ const API_DEBT = new Set([
   '/api/bookings/[id]/record-transfer',
   '/api/bookings/[id]/transfer-instructions',
   '/api/content/translate',
-  '/api/crm/dashboard/next-actions',
-  '/api/crm/dashboard/summary',
   '/api/messages/[messageId]/flag-as-purchase',
   '/api/profile/export',
   '/api/provider/me',
   '/api/provider/orders',
-  '/api/service-orders/[id]/detail',
   '/api/services/[id]',
   '/api/tm30/queue',
   // The client-side analytics beacon (doc 13) — server code calls track()

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { fetchOwnerDashboard } from '@/app/actions/getOwnerDashboard';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { resolveOwnerPortalPath } from '@/modules/projects';
 import { OwnerDashboardClient } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,11 @@ export default async function OwnerPage() {
   }
 
   const data = await fetchOwnerDashboard(user.identityId);
+  const ownerPath = resolveOwnerPortalPath(data.shape, data.dashboard.units);
+  if (ownerPath !== '/owner') {
+    redirect(ownerPath);
+  }
+
   const locale = getRequestLocale();
 
   const labels = await getLabels({

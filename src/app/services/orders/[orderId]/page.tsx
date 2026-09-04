@@ -84,13 +84,10 @@ export default async function ServiceOrderDetailPage({
   try {
     // Forward the caller's cookies — the detail API authenticates with them;
     // a bare server-side fetch would always 401 and soft-404 this page.
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/service-orders/${orderId}/detail`,
-      {
-        cache: 'no-store',
-        headers: { cookie: cookies().toString() },
-      }
-    );
+    const res = await fetch(`/api/service-orders/${orderId}/detail`, {
+      cache: 'no-store',
+      headers: { cookie: cookies().toString() },
+    });
     if (res.ok) {
       order = await res.json();
     } else if (res.status === 403) {

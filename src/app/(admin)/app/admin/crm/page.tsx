@@ -2,6 +2,7 @@ import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getPipeline } from '@/modules/crm';
 import CrmPipelineClient from './pipeline-client';
+import CrmDashboardPanel from './crm-dashboard-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,12 +30,21 @@ export default async function CrmPage() {
     'admin.crm.create': 'Create',
     'admin.crm.empty': 'No active opportunities.',
     'admin.crm.error': 'CRM action failed.',
+    'admin.crm.dashboard.loading': 'Loading pipeline summary…',
+    'admin.crm.dashboard.error': 'Could not load CRM dashboard summary.',
+    'admin.crm.dashboard.total_deals': 'Active opportunities',
+    'admin.crm.dashboard.pipeline_value': 'Pipeline value',
+    'admin.crm.dashboard.weighted_forecast': 'Weighted forecast',
+    'admin.crm.dashboard.win_rate': 'Win rate',
+    'admin.crm.dashboard.overdue_title': 'Overdue follow-ups',
+    'admin.crm.dashboard.overdue_count': '{count} tasks past due',
   });
 
   return (
     <div>
       <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['admin.crm.title']}</h1>
       <p className="text-body text-text-secondary mb-24">{labels['admin.crm.subtitle']}</p>
+      <CrmDashboardPanel labels={labels} />
       <CrmPipelineClient
         opportunities={opportunities.map((item) => ({
           ...item,

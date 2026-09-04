@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import { resolveLanding } from '@/modules/core';
+import { getOwnerPortfolioShape, singleOwnerUnitId } from '@/modules/projects';
+import { prisma } from '@/lib/prisma';
 import type { RoleType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -26,10 +28,25 @@ export default async function AppLandingPage() {
 
   const activeBookingId = await getActiveStayId(user.identityId);
 
+  const isOwner = user.roles.some((r) => r.role === 'owner');
+  let ownerUnitId: string | null = null;
+  if (isOwner) {
+    const shape = await getOwnerPortfolioShape(prisma, user.identityId);
+    if (!shape.isPortfolio) {
+      const unit = await prisma.unit.findFirst({
+        where: { ownerIdentityId: user.identityId },
+        select: { id: true },
+        orderBy: { name: 'asc' },
+      });
+      ownerUnitId = singleOwnerUnitId(shape, unit ? [unit] : []);
+    }
+  }
+
   const landing = resolveLanding({
     isAdmin: user.isAdmin,
     roles: user.roles.map((r) => r.role as RoleType),
     activeBookingId,
+    ownerUnitId,
   });
 
   redirect(landing.path);

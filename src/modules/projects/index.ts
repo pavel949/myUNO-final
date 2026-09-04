@@ -57,6 +57,11 @@ export {
 } from './owner.service';
 
 export {
+  resolveOwnerPortalPath,
+  singleOwnerUnitId,
+} from './owner-landing';
+
+export {
   getMCManagedUnits,
   getMCBookings,
   getMCTickets,

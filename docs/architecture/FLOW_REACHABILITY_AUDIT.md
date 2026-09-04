@@ -20,11 +20,11 @@ Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on bra
 |---|---|---|---|
 | **Guest (booking)** | `/search`, `/units/[id]`, `/trips` | search, unit detail, checkout, trips, trip detail | **Works** |
 | **Guest (in stay)** | `/bookings/[id]/home-space` | home space, handbook, passports, extension | **Works** |
-| **Owner** | `/owner` | portfolio, unit detail, statements, raise ticket / book service (F-OWN-4) | **Mostly** — per-unit dashboard (doc 08 S8) still thin; F-OWN-4 quick actions work |
+| **Owner** | `/owner` or `/owner/units/[id]` | portfolio, unit detail, statements, raise ticket / book service (F-OWN-4) | **Mostly** — single-unit adaptive landing (doc 06 S7) redirects to unit dashboard; F-OWN-4 quick actions work |
 | **Resident** | `/residence` | announcements, handbook, services, tickets | **Works** — built; F-RES |
 | **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only (Q1) |
 | **Provider** | `/provider` | apply, services, `/provider/remittances` (F-PROV-4) | **Works** — remittance report + payout history in provider nav |
-| **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports, announcements | **Mostly** — request inbox built; deeper MC-2 ops boards still open |
+| **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports, announcements | **Mostly** — tabbed F-MC-2 boards on `/mc`; dedicated sub-routes for TM30, mobilization, requests |
 | **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
 | **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, unit calendar, mobilization | **Mostly** — F-OPS-4 calendar/pricing UI at `/ops/calendar/[unitId]` + MC `/mc/units/[unitId]` |
 | **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Mostly** — see §4 |

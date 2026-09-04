@@ -203,6 +203,7 @@ export function createOpnProvider(options: OpnAdapterOptions): PaymentProvider &
         return_uri: params.returnUrl,
         description: `myUNO booking ${params.bookingId}`,
         'metadata[bookingId]': params.bookingId,
+        ...(params.paymentId ? { 'metadata[paymentId]': params.paymentId } : {}),
       });
 
       if (!charge.authorize_uri) {

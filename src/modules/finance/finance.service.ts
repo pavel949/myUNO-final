@@ -2,7 +2,7 @@ import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
-import { getPaymentProvider } from './providers';
+import { getPaymentProvider, getProviderConfig } from './providers';
 
 /**
  * Shared post-payment transition for service orders: placed → paid.
@@ -236,8 +236,12 @@ export async function createCheckout(
     amountThb,
   } = input;
 
-  // For loop-one, use mock provider by default
-  const provider = 'mock';
+  const { provider: providerName } = getProviderConfig();
+
+  const payer = await db.identity.findUnique({
+    where: { id: payerIdentityId },
+    select: { email: true, firstName: true, lastName: true },
+  });
 
   const payment = await db.payment.create({
     data: {
@@ -246,22 +250,47 @@ export async function createCheckout(
       serviceOrderId,
       payerIdentityId,
       method: 'card_provider',
-      provider,
+      provider: providerName === 'opn' ? 'opn' : 'mock',
       amountThb,
       status: 'pending',
     },
   });
 
-  // Generate a sessionId for tracking
-  const sessionId = payment.id;
-
-  // Mock provider returns a local checkout page
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const checkoutUrl = `${baseUrl}/checkout/${sessionId}`;
+  const returnUrl = `${baseUrl}/checkout/${payment.id}`;
+  const cancelUrl = bookingId
+    ? `${baseUrl}/trips/${bookingId}`
+    : serviceOrderId
+      ? `${baseUrl}/services/orders/${serviceOrderId}`
+      : `${baseUrl}/trips`;
+
+  if (providerName === 'opn' && process.env.PAYMENT_PROVIDER === 'opn') {
+    const provider = getPaymentProvider();
+    const session = await provider.createCheckout({
+      bookingId: bookingId ?? serviceOrderId ?? payment.id,
+      amount: amountThb,
+      guestEmail: payer?.email ?? '',
+      guestName: payer ? `${payer.firstName} ${payer.lastName}`.trim() : 'Guest',
+      returnUrl,
+      cancelUrl,
+      paymentId: payment.id,
+    });
+
+    await db.payment.update({
+      where: { id: payment.id },
+      data: { providerSessionId: session.id },
+    });
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: payment.id,
+      paymentId: payment.id,
+    };
+  }
 
   return {
-    checkoutUrl,
-    sessionId,
+    checkoutUrl: returnUrl,
+    sessionId: payment.id,
     paymentId: payment.id,
   };
 }
@@ -305,6 +334,21 @@ export async function verifyAndConfirm(
     throw new Error(
       `Cannot confirm payment with status ${payment.status}`
     );
+  }
+
+  if (
+    payment.provider === 'opn' &&
+    payment.providerSessionId &&
+    process.env.PAYMENT_PROVIDER === 'opn'
+  ) {
+    const provider = getPaymentProvider();
+    const confirmation = await provider.confirmPayment(payment.providerSessionId);
+    if (confirmation.status !== 'confirmed') {
+      throw new Error('Payment was not confirmed by the provider');
+    }
+    if (confirmation.amount !== payment.amountThb) {
+      throw new Error('Payment amount does not match the provider charge');
+    }
   }
 
   // **CRITICAL: Mark payment as succeeded**

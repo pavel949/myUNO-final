@@ -7,6 +7,8 @@ export {
   canWriteAvailabilityAndPricing,
   getIdentityRoles,
   hasRole,
+  isKnownPermissionAction,
+  resolvePermissionAction,
   PERMISSIONS,
   type AccessLevel,
 } from './permissions';

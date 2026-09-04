@@ -48,6 +48,11 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
  * 8. Creates session cookie and redirects to /app
  */
 export async function GET(request: NextRequest) {
+  const loginRedirect = (reason: string) =>
+    NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(reason)}`, request.nextUrl.origin)
+    );
+
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
@@ -56,11 +61,11 @@ export async function GET(request: NextRequest) {
   if (error) {
     const errorDesc = searchParams.get('error_description') || error;
     console.warn('Google OAuth error:', errorDesc);
-    return NextResponse.redirect(`/auth/login?error=${encodeURIComponent(errorDesc)}`);
+    return loginRedirect(errorDesc);
   }
 
   if (!code) {
-    return NextResponse.redirect('/auth/login?error=missing_authorization_code');
+    return loginRedirect('missing_authorization_code');
   }
 
   try {
@@ -72,7 +77,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/google`,
+        redirect_uri: `${process.env.NEXTAUTH_URL || request.nextUrl.origin}/api/auth/callback/google`,
         grant_type: 'authorization_code',
       }),
     });
@@ -80,9 +85,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const error = await tokenResponse.text();
       console.error('Google token exchange failed:', error);
-      return NextResponse.redirect(
-        '/auth/login?error=' + encodeURIComponent('Token exchange failed. Please try again.')
-      );
+      return loginRedirect('Token exchange failed. Please try again.');
     }
 
     const tokenData: GoogleTokenResponse = await tokenResponse.json();
@@ -92,9 +95,7 @@ export async function GET(request: NextRequest) {
 
     if (!googleUser.email) {
       console.error('Google user has no email:', googleUser);
-      return NextResponse.redirect(
-        '/auth/login?error=' + encodeURIComponent('Google account has no email. Please use a different account.')
-      );
+      return loginRedirect('Google account has no email. Please use a different account.');
     }
 
     // Step 3: Find or create identity
@@ -118,9 +119,7 @@ export async function GET(request: NextRequest) {
         },
       });
     } else if (identity.status === 'blocked') {
-      return NextResponse.redirect(
-        '/auth/login?error=' + encodeURIComponent('This account has been blocked.')
-      );
+      return loginRedirect('This account has been blocked.');
     }
 
     // Step 4: Upsert auth account (link Google ID to identity)
@@ -153,8 +152,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Google auth callback error:', error);
-    return NextResponse.redirect(
-      '/auth/login?error=' + encodeURIComponent('Authentication failed. Please try again.')
-    );
+    return loginRedirect('Authentication failed. Please try again.');
   }
 }

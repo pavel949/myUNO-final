@@ -4,6 +4,7 @@ import {
   getMCManagedUnits,
   getMCBookings,
   getMCTickets,
+  getMCServiceOrders,
   getMCDashboard,
   getMCFeeReport,
 } from './mc.service';
@@ -254,6 +255,140 @@ describe('MC Service', () => {
       expect(bookings).toHaveLength(1);
       expect(bookings[0].id).toBe(booking1.id);
       expect(bookings[0].totalThb).toBe(10000);
+    });
+  });
+
+  describe('getMCServiceOrders', () => {
+    it('returns only active service orders on MC-managed units', async () => {
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
+        data: {
+          name: 'Test MC',
+          orgType: 'management_company',
+          projectId: project.id,
+          contactEmail: 'mc@test.com',
+          contactPhone: '555-0001',
+        },
+      });
+
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
+        data: {
+          identityId: mcIdentity.id,
+          role: 'mc_member',
+          scopeType: 'project',
+          projectId: project.id,
+          organizationId: mcOrg.id,
+        },
+      });
+
+      const owner = await createIdentity();
+      const managedUnit = await createUnit({
+        projectId: project.id,
+        ownerIdentityId: owner.id,
+      });
+      await db.unitEngagement.create({
+        data: {
+          unitId: managedUnit.id,
+          engagementType: 'via_management_company',
+          ownerIdentityId: owner.id,
+          managementOrgId: mcOrg.id,
+          status: 'active',
+        },
+      });
+
+      const unmanagedUnit = await createUnit({
+        projectId: project.id,
+        ownerIdentityId: owner.id,
+      });
+      await db.unitEngagement.create({
+        data: {
+          unitId: unmanagedUnit.id,
+          engagementType: 'direct_managed',
+          ownerIdentityId: owner.id,
+          status: 'active',
+        },
+      });
+
+      const provider = await db.provider.create({
+        data: {
+          name: 'Provider',
+          contactEmail: 'provider@test.com',
+          contactPhone: '555-0001',
+          categoryKeys: ['cleaning'],
+          status: 'active',
+        },
+      });
+      const service = await db.service.create({
+        data: {
+          provider_id: provider.id,
+          categoryKey: 'cleaning',
+          title: 'Cleaning',
+          status: 'active',
+          priceModel: 'fixed',
+          basePriceThb: 5000,
+        },
+      });
+      const orderer = await createIdentity();
+
+      const managedOrder = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: managedUnit.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'guest',
+          status: 'placed',
+          scheduled_start: new Date('2026-08-20T09:00:00Z'),
+          scheduled_end: new Date('2026-08-20T11:00:00Z'),
+          quantity: 1,
+          price_breakdown: { base_thb: 5000, quantity: 1, total_thb: 5000 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: unmanagedUnit.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'guest',
+          status: 'placed',
+          scheduled_start: new Date('2026-08-21T09:00:00Z'),
+          scheduled_end: new Date('2026-08-21T11:00:00Z'),
+          quantity: 1,
+          price_breakdown: { base_thb: 5000, quantity: 1, total_thb: 5000 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          unit_id: managedUnit.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'guest',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-22T09:00:00Z'),
+          scheduled_end: new Date('2026-08-22T11:00:00Z'),
+          quantity: 1,
+          price_breakdown: { base_thb: 5000, quantity: 1, total_thb: 5000 },
+          total_thb: 5000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      const orders = await getMCServiceOrders(db, mcIdentity.id, project.id, mcOrg.id);
+      expect(orders).toHaveLength(1);
+      expect(orders[0].id).toBe(managedOrder.id);
+      expect(orders[0].status).toBe('placed');
     });
   });
 

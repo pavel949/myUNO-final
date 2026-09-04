@@ -209,11 +209,13 @@ export async function getMCTickets(
         in: unitIds,
       },
       status: {
-        not: 'closed',
+        in: ['open', 'acknowledged', 'in_progress', 'waiting_reporter'],
       },
     },
     select: {
       id: true,
+      projectId: true,
+      unitId: true,
       title: true,
       description: true,
       status: true,
@@ -221,6 +223,13 @@ export async function getMCTickets(
       createdAt: true,
       updatedAt: true,
       raisedBy: {
+        select: {
+          id: true,
+          firstName: true,
+        },
+      },
+      assigneeIdentityId: true,
+      assignee: {
         select: {
           id: true,
           firstName: true,
@@ -241,6 +250,80 @@ export async function getMCTickets(
   });
 
   return tickets;
+}
+
+/**
+ * Get service orders for MC-managed units in a project.
+ */
+export async function getMCServiceOrders(
+  db: PrismaClient,
+  mcIdentityId: string,
+  projectId: string,
+  organizationId: string,
+  limit: number = 50,
+  offset: number = 0
+) {
+  const roleAssignment = await db.roleAssignment.findFirst({
+    where: {
+      identityId: mcIdentityId,
+      role: 'mc_member',
+      projectId,
+      organizationId,
+      status: 'active',
+    },
+  });
+
+  if (!roleAssignment) {
+    throw new Error('MC member does not have access to this project/organization');
+  }
+
+  const managedUnitIds = await db.unit.findMany({
+    where: {
+      projectId,
+      engagements: {
+        some: {
+          engagementType: 'via_management_company',
+          managementOrgId: organizationId,
+          status: 'active',
+        },
+      },
+    },
+    select: { id: true },
+  });
+  const unitIds = managedUnitIds.map((unit) => unit.id);
+
+  return db.serviceOrder.findMany({
+    where: {
+      project_id: projectId,
+      unit_id: { in: unitIds },
+      status: {
+        in: ['placed', 'paid', 'accepted'],
+      },
+    },
+    select: {
+      id: true,
+      status: true,
+      scheduled_start: true,
+      total_thb: true,
+      note_to_provider: true,
+      service: {
+        select: { id: true, title: true },
+      },
+      orderer: {
+        select: { id: true, firstName: true, lastName: true },
+      },
+      unit: {
+        select: { id: true, name: true },
+      },
+      payments: {
+        where: { status: 'succeeded' },
+        select: { id: true },
+      },
+    },
+    orderBy: { scheduled_start: 'asc' },
+    skip: offset,
+    take: limit,
+  });
 }
 
 /**
@@ -307,7 +390,7 @@ export async function getMCDashboard(
         in: units.map((u) => u.id),
       },
       status: {
-        not: 'closed',
+        in: ['open', 'acknowledged', 'in_progress', 'waiting_reporter'],
       },
     },
   });

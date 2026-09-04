@@ -49,12 +49,19 @@ interface Booking {
 
 interface Ticket {
   id: string;
+  projectId: string;
+  unitId: string | null;
   title: string;
   description?: string | null;
   status: string;
   priority: string;
   createdAt: Date;
   updatedAt: Date;
+  assigneeIdentityId?: string | null;
+  assignee?: {
+    id: string;
+    firstName: string;
+  } | null;
   raisedBy: {
     id: string;
     firstName: string;
@@ -93,6 +100,28 @@ interface FeeReport {
   summaryThb: { grossAmount: number; platformFeeAmount: number };
 }
 
+interface ServiceOrder {
+  id: string;
+  status: string;
+  scheduledStart: Date | string;
+  totalThb: number;
+  noteToProvider?: string | null;
+  paid: boolean;
+  service: {
+    id: string;
+    title: string;
+  } | null;
+  orderer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  unit: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 interface MCContextOption {
   key: string;
   projectId: string;
@@ -107,6 +136,7 @@ interface MCDashboardClientProps {
   units: Unit[];
   bookings: Booking[];
   tickets: Ticket[];
+  serviceOrders: ServiceOrder[];
   feeReport?: FeeReport | null;
   labels: Record<string, string>;
   contexts: MCContextOption[];
@@ -119,6 +149,9 @@ const bookingStatusStyle: Record<string, string> = {
   checked_in: 'bg-state-info-soft text-state-info',
   checked_out: 'bg-surface-ivory text-text-stone',
   pending_payment: 'bg-state-warning-soft text-state-warning',
+  placed: 'bg-state-warning-soft text-state-warning',
+  paid: 'bg-state-info-soft text-state-info',
+  accepted: 'bg-state-info-soft text-state-info',
 };
 
 const ticketStatusStyle: Record<string, string> = {
@@ -157,21 +190,30 @@ export function MCDashboardClient({
   units,
   bookings,
   tickets,
+  serviceOrders,
   feeReport,
   labels,
   contexts,
   activeContextKey,
 }: MCDashboardClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tickets' | 'calendar' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'bookings' | 'tickets' | 'service_orders' | 'calendar' | 'reports'
+  >('overview');
   const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
+  const [busyTicketId, setBusyTicketId] = useState<string | null>(null);
+  const [ticketError, setTicketError] = useState<string | null>(null);
+  const [busyServiceOrderId, setBusyServiceOrderId] = useState<string | null>(null);
+  const [serviceOrderError, setServiceOrderError] = useState<string | null>(null);
+  const [serviceOrderReceipts, setServiceOrderReceipts] = useState<Record<string, string>>({});
 
   const tabs = [
     { key: 'overview' as const, label: labels['mc.tabs.overview'] },
     { key: 'bookings' as const, label: labels['mc.tabs.bookings'] },
     { key: 'tickets' as const, label: labels['mc.tabs.tickets'] },
+    { key: 'service_orders' as const, label: labels['mc.tabs.service_orders'] },
     { key: 'calendar' as const, label: labels['mc.tabs.calendar'] },
     { key: 'reports' as const, label: labels['mc.tabs.reports'] },
   ];
@@ -238,6 +280,57 @@ export function MCDashboardClient({
       );
     } finally {
       setBusyBookingId(null);
+    }
+  };
+
+  const postTicketAction = async (ticketId: string, path: string, body?: unknown) => {
+    setBusyTicketId(ticketId);
+    setTicketError(null);
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || labels['mc.tickets.error_generic']);
+      }
+      router.refresh();
+    } catch (error) {
+      setTicketError(error instanceof Error ? error.message : labels['mc.tickets.error_generic']);
+    } finally {
+      setBusyTicketId(null);
+    }
+  };
+
+  const ticketStatusAction = (ticket: Ticket) => {
+    if (ticket.status === 'open') return 'acknowledged';
+    if (ticket.status === 'acknowledged') return 'in_progress';
+    if (ticket.status === 'in_progress' || ticket.status === 'waiting_reporter') return 'resolved';
+    return null;
+  };
+
+  const postServiceOrderAction = async (orderId: string, path: string, body?: unknown) => {
+    setBusyServiceOrderId(orderId);
+    setServiceOrderError(null);
+    try {
+      const response = await fetch(`/api/service-orders/${orderId}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || labels['mc.service_orders.error_generic']);
+      }
+      router.refresh();
+    } catch (error) {
+      setServiceOrderError(
+        error instanceof Error ? error.message : labels['mc.service_orders.error_generic']
+      );
+    } finally {
+      setBusyServiceOrderId(null);
     }
   };
 
@@ -523,6 +616,11 @@ export function MCDashboardClient({
             <h2 className="text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.tickets.title']}
             </h2>
+            {ticketError && (
+              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
+                <p className="text-small text-state-error">{ticketError}</p>
+              </div>
+            )}
             <div className="space-y-16">
               {tickets.length === 0 ? (
                 <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
@@ -559,6 +657,154 @@ export function MCDashboardClient({
                     <p className="text-small text-text-secondary">
                       {ticket.unit.name} · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
                     </p>
+                    <div className="mt-12 flex flex-wrap items-center gap-8">
+                      {ticket.assigneeIdentityId !== dashboard.identityId && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => void postTicketAction(ticket.id, 'assign')}
+                          isLoading={busyTicketId === ticket.id}
+                        >
+                          {labels['mc.tickets.assign_me']}
+                        </Button>
+                      )}
+                      {ticket.assigneeIdentityId && (
+                        <span className="text-small text-text-secondary">
+                          {labels['mc.tickets.assigned_to']} {ticket.assignee?.firstName || '—'}
+                        </span>
+                      )}
+                      {ticketStatusAction(ticket) && (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            void postTicketAction(ticket.id, 'status', {
+                              newStatus: ticketStatusAction(ticket),
+                            })
+                          }
+                          isLoading={busyTicketId === ticket.id}
+                        >
+                          {ticket.status === 'open'
+                            ? labels['mc.tickets.acknowledge']
+                            : ticket.status === 'acknowledged'
+                              ? labels['mc.tickets.start']
+                              : labels['mc.tickets.resolve']}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Calendar Tab — month heat strip per unit */}
+        {activeTab === 'service_orders' && (
+          <div>
+            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
+              {labels['mc.service_orders.title']}
+            </h2>
+            {serviceOrderError && (
+              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
+                <p className="text-small text-state-error">{serviceOrderError}</p>
+              </div>
+            )}
+            <div className="space-y-16">
+              {serviceOrders.length === 0 ? (
+                <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
+                  <p className="text-text-secondary">{labels['mc.service_orders.empty']}</p>
+                </div>
+              ) : (
+                serviceOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-surface-paper border border-border-line rounded-lg p-20"
+                  >
+                    <div className="flex items-start justify-between gap-12">
+                      <div>
+                        <h3 className="text-heading-3 font-bold text-text-ink">
+                          {order.service?.title || labels['mc.service_orders.unknown_service']}
+                        </h3>
+                        <p className="text-small text-text-secondary mt-4">
+                          {order.unit?.name || labels['mc.service_orders.unknown_unit']} ·{' '}
+                          {order.orderer
+                            ? `${order.orderer.firstName} ${order.orderer.lastName}`
+                            : labels['mc.service_orders.unknown_orderer']}
+                        </p>
+                        <p className="text-small text-text-secondary mt-4">
+                          {new Date(order.scheduledStart).toLocaleString()} · ฿
+                          {order.totalThb.toLocaleString()}
+                        </p>
+                        {order.noteToProvider && (
+                          <p className="text-small text-text-secondary mt-4">
+                            {labels['mc.service_orders.note']} {order.noteToProvider}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+                          bookingStatusStyle[order.status] || 'bg-surface-ivory text-text-stone'
+                        }`}
+                      >
+                        {statusLabel(order.status)}
+                      </span>
+                    </div>
+                    <div className="mt-12 flex flex-wrap items-center gap-8">
+                      {order.status === 'placed' && (
+                        <>
+                          <input
+                            type="text"
+                            value={serviceOrderReceipts[order.id] || ''}
+                            onChange={(event) =>
+                              setServiceOrderReceipts((previous) => ({
+                                ...previous,
+                                [order.id]: event.target.value,
+                              }))
+                            }
+                            placeholder={labels['mc.service_orders.receipt_placeholder']}
+                            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+                            style={{ width: '150px' }}
+                          />
+                          <Button
+                            size="sm"
+                            variant="sun"
+                            onClick={() => {
+                              const receiptRef = (serviceOrderReceipts[order.id] || '').trim();
+                              if (!receiptRef) return;
+                              if (
+                                window.confirm(
+                                  fill(labels['mc.service_orders.confirm_cash'], {
+                                    amount: order.totalThb.toLocaleString(),
+                                  })
+                                )
+                              ) {
+                                void postServiceOrderAction(order.id, 'record-cash-payment', {
+                                  receiptRef,
+                                });
+                              }
+                            }}
+                            isLoading={busyServiceOrderId === order.id}
+                            disabled={!(serviceOrderReceipts[order.id] || '').trim()}
+                          >
+                            {labels['mc.service_orders.record_cash']}
+                          </Button>
+                        </>
+                      )}
+                      {['placed', 'paid', 'accepted'].includes(order.status) && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            if (window.confirm(labels['mc.service_orders.confirm_cancel'])) {
+                              void postServiceOrderAction(order.id, 'cancel');
+                            }
+                          }}
+                          isLoading={busyServiceOrderId === order.id}
+                        >
+                          {labels['mc.service_orders.cancel']}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

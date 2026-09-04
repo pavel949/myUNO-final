@@ -23,9 +23,9 @@ async function resolveTicketSlaDueAt(
   unitId: string | undefined,
   priority: TicketPriority
 ): Promise<Date> {
+  const configuredHours = await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId, unitId });
   const slaHours =
-    (await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId, unitId })) ??
-    DEFAULT_SLA_HOURS[priority];
+    typeof configuredHours === 'number' ? configuredHours : DEFAULT_SLA_HOURS[priority];
   return new Date(Date.now() + slaHours * 60 * 60 * 1000);
 }
 

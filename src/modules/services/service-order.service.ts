@@ -1,8 +1,8 @@
-import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
+import { PrismaClient, ServiceOrderStatus, RoleType, RefundReason } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
-import { recordServiceCommission } from '@/modules/finance';
+import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 
 export interface CreateServiceOrderInput {
@@ -31,6 +31,79 @@ export interface ServiceOrderDetails {
   scheduledStart: Date;
   scheduledEnd: Date;
   [key: string]: any;
+}
+
+async function issueServiceOrderRefunds(input: {
+  db: PrismaClient;
+  serviceOrderId: string;
+  initiatedByIdentityId: string;
+  reason: RefundReason;
+  targetRefundThb: number;
+}) {
+  if (input.targetRefundThb <= 0) {
+    return { issuedRefundThb: 0, recordsCreated: 0 };
+  }
+
+  const succeededPayments = await input.db.payment.findMany({
+    where: {
+      serviceOrderId: input.serviceOrderId,
+      status: 'succeeded',
+      purpose: 'service_order',
+    },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  let remaining = input.targetRefundThb;
+  let issuedRefundThb = 0;
+  let recordsCreated = 0;
+
+  for (const payment of succeededPayments) {
+    if (remaining <= 0) {
+      break;
+    }
+
+    const alreadyRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
+    const refundableOnPayment = Math.max(0, payment.amountThb - alreadyRefunded);
+    const refundAmount = Math.min(refundableOnPayment, remaining);
+    if (refundAmount <= 0) {
+      continue;
+    }
+
+    if (payment.method === 'card_provider') {
+      await requestPaymentRefund(
+        input.db,
+        payment.id,
+        refundAmount,
+        input.reason,
+        input.initiatedByIdentityId
+      );
+    } else {
+      // For cash/manual rails this records the refund obligation; a real
+      // operator payout marks it succeeded later through finance flows.
+      await input.db.refund.create({
+        data: {
+          paymentId: payment.id,
+          method: 'cash',
+          amountThb: refundAmount,
+          reason: input.reason,
+          status: 'requested',
+          initiatedByIdentityId: input.initiatedByIdentityId,
+        },
+      });
+    }
+
+    issuedRefundThb += refundAmount;
+    recordsCreated += 1;
+    remaining -= refundAmount;
+  }
+
+  return { issuedRefundThb, recordsCreated };
 }
 
 /**
@@ -203,42 +276,21 @@ export async function declineServiceOrder(
   }
 
   // Find paid payment if any
-  const paidPayment = order.payments.find((p) => p.status === 'succeeded');
-
-  // If paid, initiate refund
-  if (paidPayment) {
-    await db.refund.create({
-      data: {
-        paymentId: paidPayment.id,
-        method: 'cash', // cash-first in loop one
-        amountThb: paidPayment.amountThb,
-        reason: 'provider_no_show', // Decline is treated as provider no-show
-        status: 'succeeded',
-        paidBackByIdentityId: null,
-        // A provider decline is triggered by the Provider (not an Identity); the
-        // refund's initiator must be a real Identity, so record the orderer, who
-        // is the refund's beneficiary and always present on the order.
-        initiatedByIdentityId: order.orderer_identity_id,
-      },
-    });
-
-    // Write ledger entry
-    await db.ledgerEntry.create({
-      data: {
-        entryType: 'refund_out',
-        amountThb: -paidPayment.amountThb,
-        serviceOrderId: order.id,
-        paymentId: paidPayment.id,
-        occurredOn: new Date(),
-        description: `Service order declined by provider: ${reason || 'no reason'}`,
-      },
-    });
-  }
+  const paidAmount = order.payments
+    .filter((payment) => payment.status === 'succeeded')
+    .reduce((sum, payment) => sum + payment.amountThb, 0);
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: order.orderer_identity_id,
+    reason: 'provider_no_show',
+    targetRefundThb: paidAmount,
+  });
 
   // Update order status
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
-    data: { status: 'declined' },
+    data: { status: 'declined', refund_accrued_thb: issuedRefundThb },
   });
 
   // Track analytics event
@@ -365,37 +417,14 @@ export async function cancelServiceOrder(
   const refundPct =
     order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 100 : 0;
 
-  const refundThb = Math.round((order.total_thb * refundPct) / 100);
-
-  // Find paid payment if any
-  const paidPayment = order.payments.find((p) => p.status === 'succeeded');
-
-  // If paid and refund > 0, create refund
-  if (paidPayment && refundThb > 0) {
-    await db.refund.create({
-      data: {
-        paymentId: paidPayment.id,
-        method: 'cash',
-        amountThb: refundThb,
-        reason: 'cancellation',
-        status: 'succeeded',
-        paidBackByIdentityId: null,
-        initiatedByIdentityId: cancelledByIdentityId,
-      },
-    });
-
-    // Write ledger entry
-    await db.ledgerEntry.create({
-      data: {
-        entryType: 'refund_out',
-        amountThb: -refundThb,
-        serviceOrderId: order.id,
-        paymentId: paidPayment.id,
-        occurredOn: now,
-        description: `Service order cancelled: ${reason || 'no reason'} (refund ${refundPct}%)`,
-      },
-    });
-  }
+  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: cancelledByIdentityId,
+    reason: 'cancellation',
+    targetRefundThb: refundTargetThb,
+  });
 
   // Update order
   await db.serviceOrder.update({
@@ -405,7 +434,7 @@ export async function cancelServiceOrder(
       cancelled_at: now,
       cancelled_by_identity_id: cancelledByIdentityId,
       cancellation_reason: reason,
-      refund_accrued_thb: refundThb,
+      refund_accrued_thb: issuedRefundThb,
     },
   });
 
@@ -419,7 +448,7 @@ export async function cancelServiceOrder(
     params: {
       order_id: order.id,
       service_title: order.service?.title || 'Service',
-      refund_thb: refundThb,
+      refund_thb: issuedRefundThb,
     },
   });
 
@@ -431,7 +460,7 @@ export async function cancelServiceOrder(
     params: {
       order_id: order.id,
       service_title: order.service?.title || 'Service',
-      refund_thb: refundThb,
+      refund_thb: issuedRefundThb,
     },
   });
 
@@ -577,12 +606,18 @@ export async function expireStaleServiceOrders(
       },
     });
 
-    // Refund any successful payment
-    if (order.payments.some((p) => p.status === 'succeeded')) {
+    const { issuedRefundThb } = await issueServiceOrderRefunds({
+      db,
+      serviceOrderId: order.id,
+      initiatedByIdentityId: order.orderer_identity_id,
+      reason: 'provider_no_show',
+      targetRefundThb: order.total_thb,
+    });
+    if (issuedRefundThb > 0) {
       await db.serviceOrder.update({
         where: { id: order.id },
         data: {
-          refund_accrued_thb: order.total_thb,
+          refund_accrued_thb: issuedRefundThb,
         },
       });
       refunded++;

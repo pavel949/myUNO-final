@@ -117,9 +117,12 @@ export async function getUnitIcalConflictAlerts(
  */
 export async function getProjectIcalConflictAlerts(
   db: PrismaClient,
-  scope?: { projectIds?: string[] }
+  scope?: { projectIds?: string[]; unitIds?: string[] }
 ): Promise<UnitIcalConflictAlert[]> {
-  if (scope && (!scope.projectIds || scope.projectIds.length === 0)) {
+  if (scope?.projectIds && scope.projectIds.length === 0) {
+    return [];
+  }
+  if (scope?.unitIds && scope.unitIds.length === 0) {
     return [];
   }
 
@@ -129,6 +132,7 @@ export async function getProjectIcalConflictAlerts(
       ...(scope?.projectIds?.length
         ? { projectId: { in: scope.projectIds } }
         : {}),
+      ...(scope?.unitIds?.length ? { unitId: { in: scope.unitIds } } : {}),
     },
     select: {
       id: true,

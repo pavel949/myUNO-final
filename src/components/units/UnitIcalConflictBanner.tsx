@@ -38,12 +38,16 @@ export default function UnitIcalConflictBanner({
     return null;
   }
 
-  const titleKey = labels['staff.ops.ical_conflicts_title']
-    ? 'staff.ops.ical_conflicts_title'
-    : 'staff.calendar.conflict_title';
-  const hintKey = labels['staff.ops.ical_conflicts_hint']
-    ? 'staff.ops.ical_conflicts_hint'
-    : 'staff.calendar.conflict_hint';
+  const titleKey = labels['mc.ical_conflicts_title']
+    ? 'mc.ical_conflicts_title'
+    : labels['staff.ops.ical_conflicts_title']
+      ? 'staff.ops.ical_conflicts_title'
+      : 'staff.calendar.conflict_title';
+  const hintKey = labels['mc.ical_conflicts_hint']
+    ? 'mc.ical_conflicts_hint'
+    : labels['staff.ops.ical_conflicts_hint']
+      ? 'staff.ops.ical_conflicts_hint'
+      : 'staff.calendar.conflict_hint';
   const bodyKey = labels['staff.calendar.conflict_body_with_unit']
     ? 'staff.calendar.conflict_body_with_unit'
     : 'staff.calendar.conflict_body';

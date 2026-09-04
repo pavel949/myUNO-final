@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, StatTile } from '@/components';
+import UnitIcalConflictBanner, {
+  UNIT_ICAL_CALENDAR_SURFACES,
+} from '@/components/units/UnitIcalConflictBanner';
+import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
 import {
   HBarStack,
   MonthHeatStrip,
@@ -137,6 +141,7 @@ interface MCDashboardClientProps {
   bookings: Booking[];
   tickets: Ticket[];
   serviceOrders: ServiceOrder[];
+  icalConflicts: UnitIcalConflictAlert[];
   feeReport?: FeeReport | null;
   labels: Record<string, string>;
   contexts: MCContextOption[];
@@ -192,6 +197,7 @@ export function MCDashboardClient({
   bookings,
   tickets,
   serviceOrders,
+  icalConflicts,
   feeReport,
   labels,
   contexts,
@@ -516,6 +522,16 @@ export function MCDashboardClient({
           </div>
         </div>
       </section>
+
+      {icalConflicts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-24 pt-24">
+          <UnitIcalConflictBanner
+            conflicts={icalConflicts}
+            labels={labels}
+            calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.mc}
+          />
+        </section>
+      )}
 
       {/* Navigation Tabs */}
       <section className="bg-surface-paper border-b border-border-line sticky top-0 z-10">

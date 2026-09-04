@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import {
   getMCManagedUnits,
   getMCBookings,
@@ -9,6 +9,7 @@ import {
   getMCFeeReport,
   getMcTm30Queue,
   getMcMobilizationQueue,
+  getMcIcalConflictAlerts,
 } from './mc.service';
 
 describe('MC Service', () => {
@@ -813,6 +814,92 @@ describe('MC Service', () => {
       expect(queue[0].name).toBe('Mob Villa');
       expect(queue[0].completedSteps).toBe(1);
       expect(queue[0].nextStep).toBe('mandate');
+    });
+  });
+
+  describe('getMcIcalConflictAlerts', () => {
+    it('returns OTA conflicts only for MC-managed units', async () => {
+      const project = await createProject();
+      const mcOrg = await db.organization.create({
+        data: {
+          name: 'MC Org',
+          orgType: 'management_company',
+          projectId: project.id,
+          contactEmail: 'mc@test.com',
+          contactPhone: '555-0002',
+        },
+      });
+      const mcIdentity = await createIdentity();
+      await db.roleAssignment.create({
+        data: {
+          identityId: mcIdentity.id,
+          role: 'mc_member',
+          scopeType: 'project',
+          projectId: project.id,
+          organizationId: mcOrg.id,
+        },
+      });
+      await createIdentity({ firstName: 'Ops', lastName: 'Admin', isAdmin: true });
+
+      const owner = await createIdentity();
+      const managedUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Managed' });
+      const otherUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Other' });
+      const guest = await createIdentity({ firstName: 'Alex', lastName: 'Guest' });
+
+      await db.unitEngagement.create({
+        data: {
+          unitId: managedUnit.id,
+          engagementType: 'via_management_company',
+          ownerIdentityId: owner.id,
+          managementOrgId: mcOrg.id,
+          status: 'active',
+        },
+      });
+
+      const managedBooking = await createBooking({
+        unitId: managedUnit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        status: 'confirmed',
+        startDate: new Date('2026-09-10'),
+        endDate: new Date('2026-09-15'),
+      });
+      const otherBooking = await createBooking({
+        unitId: otherUnit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        status: 'confirmed',
+        startDate: new Date('2026-09-20'),
+        endDate: new Date('2026-09-25'),
+      });
+
+      const { createConflictNotifications } = await import('@/modules/integrations/ical-import');
+      await createConflictNotifications(db, managedUnit.id, [
+        {
+          event: {
+            uid: 'ota-managed',
+            summary: 'Airbnb',
+            dtStart: new Date('2026-09-11'),
+            dtEnd: new Date('2026-09-13'),
+          },
+          conflictingBooking: managedBooking,
+        },
+      ]);
+      await createConflictNotifications(db, otherUnit.id, [
+        {
+          event: {
+            uid: 'ota-other',
+            summary: 'Airbnb',
+            dtStart: new Date('2026-09-21'),
+            dtEnd: new Date('2026-09-23'),
+          },
+          conflictingBooking: otherBooking,
+        },
+      ]);
+
+      const alerts = await getMcIcalConflictAlerts(db, mcIdentity.id, project.id, mcOrg.id);
+      expect(alerts).toHaveLength(1);
+      expect(alerts[0]?.unitName).toBe('Managed');
     });
   });
 });

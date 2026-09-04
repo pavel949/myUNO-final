@@ -65,6 +65,7 @@ export {
   getMCServiceOrders,
   getMcTm30Queue,
   getMcMobilizationQueue,
+  getMcIcalConflictAlerts,
   type McMobilizationUnit,
 } from './mc.service';
 

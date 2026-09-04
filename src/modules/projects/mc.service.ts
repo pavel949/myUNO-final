@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { getProjectIcalConflictAlerts } from '@/modules/integrations';
+import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
 
 /**
  * Get all units managed by an MC member.
@@ -705,4 +707,18 @@ export async function getMcTm30Queue(
     projectName: filing.booking.project.name,
     arrival: filing.booking.startDate,
   }));
+}
+
+/**
+ * OTA calendar conflicts for MC-managed units (F-OPS-4 / F-MC-2).
+ */
+export async function getMcIcalConflictAlerts(
+  db: PrismaClient,
+  mcIdentityId: string,
+  projectId: string,
+  organizationId: string
+): Promise<UnitIcalConflictAlert[]> {
+  const units = await getMCManagedUnits(db, mcIdentityId, projectId, organizationId);
+  const unitIds = units.map((unit) => unit.id);
+  return getProjectIcalConflictAlerts(db, { unitIds });
 }

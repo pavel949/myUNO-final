@@ -6,6 +6,7 @@ import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { MCDashboardClient } from './client';
 import { getMCProjectScopes } from '@/app/libs/projectScope';
+import { getMcIcalConflictAlerts } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,13 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     activeContext.organizationId
   );
 
+  const icalConflicts = await getMcIcalConflictAlerts(
+    prisma,
+    user.identityId,
+    activeContext.projectId,
+    activeContext.organizationId
+  );
+
   // Current-month fee report for the reports tab
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -105,6 +113,11 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.nav.announcements': 'Post an announcement',
     'mc.nav.tm30': 'TM30 queue',
     'mc.nav.mobilization': 'Mobilization',
+    'mc.ical_conflicts_title': 'OTA calendar conflicts',
+    'mc.ical_conflicts_hint':
+      'Imported OTA bookings overlap platform stays on your managed units. The platform calendar wins — correct each OTA channel manually.',
+    'staff.calendar.conflict_body_with_unit':
+      '{unit_name} · {guest_name}: {start_date} — {end_date} clashes with an OTA import',
     'mc.tabs.overview': 'Overview',
     'mc.tabs.bookings': 'Bookings',
     'mc.tabs.tickets': 'Tickets',
@@ -197,6 +210,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
   return (
     <MCDashboardClient
       {...data}
+      icalConflicts={icalConflicts}
       feeReport={feeReport as never}
       labels={labels}
       contexts={contexts}

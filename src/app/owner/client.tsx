@@ -78,13 +78,8 @@ interface OwnerDashboardClientProps {
   complianceSummary: OwnerComplianceStatus[];
   statements: OwnerStatement[];
   labels: Record<string, string>;
+  locale: string;
 }
-
-const monthLabel = (period: string): string => {
-  // period is 'YYYY-MM'
-  const d = new Date(`${period}-01T00:00:00Z`);
-  return d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
-};
 
 export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   dashboard,
@@ -96,6 +91,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   complianceSummary,
   statements,
   labels,
+  locale,
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     shape.isPortfolio ? projects[0]?.id || null : null
@@ -269,7 +265,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </h3>
               <BarChart
                 data={trends.monthly.map((p) => ({
-                  label: monthLabel(p.period),
+                  label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
+                    month: 'short',
+                    timeZone: 'UTC',
+                  }),
                   value: p.rentalRevenueThb,
                 }))}
                 color={CHART_SERIES[0]}
@@ -284,7 +283,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </h3>
               <LineChart
                 data={trends.monthly.map((p) => ({
-                  label: monthLabel(p.period),
+                  label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
+                    month: 'short',
+                    timeZone: 'UTC',
+                  }),
                   value: Math.round(p.occupancyPct),
                 }))}
                 max={100}
@@ -430,7 +432,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.bookings']}
               </h2>
-              <BookingsList bookings={bookings} />
+              <BookingsList
+                bookings={bookings}
+                locale={locale}
+                labels={{
+                  empty: labels['owner.bookings.empty'],
+                  unknownNationality: labels['owner.bookings.unknown_nationality'],
+                }}
+              />
             </div>
 
             {/* Single Unit: Latest Statement */}
@@ -446,7 +455,23 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
-              <OpenTicketsList count={currentUnit?.openTicketsCount || 0} />
+              <OpenTicketsList
+                count={currentUnit?.openTicketsCount || 0}
+                labels={{
+                  empty: labels['owner.tickets.empty'],
+                  waitingCount: labels['owner.tickets.waiting_count'],
+                  view: labels['owner.tickets.view'],
+                  status: {
+                    open: labels['tickets.status.open'],
+                    acknowledged: labels['tickets.status.acknowledged'],
+                    in_progress: labels['tickets.status.in_progress'],
+                    waiting_reporter: labels['tickets.status.waiting_reporter'],
+                    resolved: labels['tickets.status.resolved'],
+                    closed: labels['tickets.status.closed'],
+                    cancelled: labels['tickets.status.cancelled'],
+                  },
+                }}
+              />
             </div>
 
             {/* Owner Stay Action */}

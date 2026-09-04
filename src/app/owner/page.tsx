@@ -2,7 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { fetchOwnerDashboard } from '@/app/actions/getOwnerDashboard';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { OwnerDashboardClient } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,7 @@ export default async function OwnerPage() {
   }
 
   const data = await fetchOwnerDashboard(user.identityId);
+  const locale = getRequestLocale();
 
   const labels = await getLabels({
     'owner.dashboard.title': 'Owner Dashboard',
@@ -51,7 +52,19 @@ export default async function OwnerPage() {
     'owner.stay.book_action': 'Stay in My Unit',
     'owner.stay.error': 'Failed to book owner stay',
     'owner.alert.action_view': 'View',
+    'owner.bookings.empty': 'No bookings yet',
+    'owner.bookings.unknown_nationality': 'Unknown',
+    'owner.tickets.empty': 'No open tickets',
+    'owner.tickets.waiting_count': '{count} requests waiting for attention',
+    'owner.tickets.view': 'View',
+    'tickets.status.open': 'Open',
+    'tickets.status.acknowledged': 'Acknowledged',
+    'tickets.status.in_progress': 'In progress',
+    'tickets.status.waiting_reporter': 'Waiting for you',
+    'tickets.status.resolved': 'Resolved',
+    'tickets.status.closed': 'Closed',
+    'tickets.status.cancelled': 'Cancelled',
   });
 
-  return <OwnerDashboardClient {...data} labels={labels} />;
+  return <OwnerDashboardClient {...data} labels={labels} locale={locale} />;
 }

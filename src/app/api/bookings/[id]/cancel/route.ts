@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { cancelBooking, computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
 import { refund as requestCardProviderRefund } from '@/modules/finance';
+import { notifyBookingCancelled } from '@/app/libs/bookingCancelled';
 
 async function issueCancellationRefunds(input: {
   bookingId: string;
@@ -163,6 +164,8 @@ export async function POST(
       initiatedByIdentityId: user.identityId,
       totalRefundThb: refundAmountThb,
     });
+
+    await notifyBookingCancelled(prisma, bookingId, refundAmountThb);
 
     return NextResponse.json(
       {

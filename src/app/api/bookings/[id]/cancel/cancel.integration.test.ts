@@ -82,6 +82,19 @@ describe('POST /api/bookings/[id]/cancel', () => {
     expect(res.status).toBe(200);
     expect(body.booking.status).toBe('cancelled');
     expect(body.refund.amountThb).toBe(8000);
+
+    const guestAlert = await db.notification.findFirst({
+      where: { identityId: guest.id, type: 'stay_cancelled' },
+    });
+    expect(guestAlert).not.toBeNull();
+    expect(guestAlert?.titleKey).toBe('notify.stay_cancelled.title');
+    expect(guestAlert?.bodyKey).toBe('notify.stay_cancelled.body');
+
+    const ownerAlert = await db.notification.findFirst({
+      where: { identityId: owner.id, type: 'stay_cancelled' },
+    });
+    expect(ownerAlert).not.toBeNull();
+    expect(ownerAlert?.titleKey).toBe('notify.stay_cancelled.owner_title');
   });
 
   it('never leaks the guest password hash in the response', async () => {
@@ -234,6 +247,11 @@ describe('POST /api/bookings/[id]/cancel', () => {
     expect(res.status).toBe(200);
     expect(body.booking.status).toBe('cancelled');
     expect(body.refund.amountThb).toBe(0);
+
+    const guestAlert = await db.notification.findFirst({
+      where: { identityId: guest.id, type: 'stay_cancelled' },
+    });
+    expect(guestAlert?.bodyKey).toBe('notify.stay_cancelled.body_no_refund');
   });
 
   it('rejects an unauthorized canceller with 403', async () => {

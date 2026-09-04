@@ -191,6 +191,11 @@ describe('booking.service — integration tests', () => {
       expect(booking.status).toBe('requested');
       expect(booking.holdExpiresAt).toBeNull();
       expect(booking.requestExpiresAt).toBeDefined();
+
+      const guestAlert = await db.notification.findFirst({
+        where: { identityId: guest.id, type: 'stay_request_placed' },
+      });
+      expect(guestAlert).not.toBeNull();
     });
 
     it('prevents double-booking with confirmed reservation', async () => {

@@ -1,6 +1,7 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
 import { createNotification } from '@/modules/comms';
+import { notifyBookingRequested } from './notify-requested';
 import { computePriceBreakdown } from '@/modules/core';
 import {
   formatDeclineCancellationReason,
@@ -362,6 +363,8 @@ export async function createBooking(
       nights,
       totalThb,
     }).catch(() => null);
+
+    await notifyBookingRequested(db, booking.id, requestHours).catch(() => null);
   }
 
   return booking;

@@ -10,6 +10,7 @@ export async function loadTicketForUser(ticketId: string, user: CurrentUser) {
       id: true,
       projectId: true,
       unitId: true,
+        status: true,
       raisedByIdentityId: true,
       assigneeIdentityId: true,
     },

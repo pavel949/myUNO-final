@@ -239,6 +239,65 @@ describe('ticket API scope — management company', () => {
     expect(statusResponse.status).toBe(403);
   });
 
+  it('allows reporter to cancel own active ticket', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: guest.id,
+      email: guest.email,
+      firstName: 'Guest',
+      lastName: 'Reporter',
+      isAdmin: false,
+      roles: [],
+    });
+
+    const response = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'cancelled' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    expect(response.status).toBe(200);
+
+    const ticket = await db.ticket.findUnique({ where: { id: ticketId } });
+    expect(ticket?.status).toBe('cancelled');
+  });
+
+  it('allows reporter to reopen own resolved ticket', async () => {
+    await db.ticket.update({
+      where: { id: ticketId },
+      data: {
+        status: 'resolved',
+        resolvedAt: new Date(),
+        resolutionNote: 'Initial fix',
+      },
+    });
+
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: guest.id,
+      email: guest.email,
+      firstName: 'Guest',
+      lastName: 'Reporter',
+      isAdmin: false,
+      roles: [],
+    });
+
+    const response = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'in_progress', note: 'Issue still persists' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    expect(response.status).toBe(200);
+
+    const ticket = await db.ticket.findUnique({ where: { id: ticketId } });
+    expect(ticket?.status).toBe('in_progress');
+    expect(ticket?.resolvedAt).toBeNull();
+    expect(ticket?.resolutionNote).toBeNull();
+  });
+
   it('allows unit owner to read ticket but not transition status', async () => {
     mockGetCurrentUser.mockResolvedValue({
       identityId: owner.id,

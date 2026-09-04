@@ -102,11 +102,13 @@ export default function TicketDetailClient({
   ticket,
   labels,
   canManage,
+  isReporter,
   viewerIdentityId,
 }: {
   ticket: TicketDetailView;
   labels: Record<string, string>;
   canManage: boolean;
+  isReporter: boolean;
   viewerIdentityId: string;
 }) {
   const router = useRouter();
@@ -151,6 +153,17 @@ export default function TicketDetailClient({
       return;
     }
     void runAction('status', { newStatus, note });
+  };
+
+  const runReporterAction = (newStatus: 'cancelled' | 'in_progress') => {
+    if (newStatus === 'cancelled') {
+      if (!window.confirm(labels['tickets.detail.cancel_confirm'])) return;
+      void runAction('status', { newStatus });
+      return;
+    }
+
+    const note = (window.prompt(labels['tickets.detail.reopen_prompt']) || '').trim();
+    void runAction('status', { newStatus, ...(note ? { note } : {}) });
   };
 
   return (
@@ -220,6 +233,26 @@ export default function TicketDetailClient({
               {action.label}
             </Button>
           ))}
+        </div>
+      ) : null}
+
+      {!canManage && isReporter ? (
+        <div className="mt-16 flex flex-wrap items-center gap-8">
+          {['open', 'acknowledged', 'in_progress', 'waiting_reporter'].includes(ticket.status) ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              isLoading={busy}
+              onClick={() => runReporterAction('cancelled')}
+            >
+              {labels['tickets.detail.cancel']}
+            </Button>
+          ) : null}
+          {ticket.status === 'resolved' ? (
+            <Button size="sm" isLoading={busy} onClick={() => runReporterAction('in_progress')}>
+              {labels['tickets.detail.reopen']}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

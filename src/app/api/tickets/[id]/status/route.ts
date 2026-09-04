@@ -16,7 +16,7 @@ const ALLOWED_STATUSES = new Set<TicketStatus>([
   'cancelled',
 ]);
 
-/** POST /api/tickets/[id]/status — scoped operator status transition. */
+/** POST /api/tickets/[id]/status — scoped status transition (operator + reporter self-service). */
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -27,10 +27,7 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
-    const { canManage } = await loadTicketForUser(params.id, user);
-    if (!canManage) {
-      throw createPublicError('Access denied.', 403);
-    }
+    const { canManage, isReporter, ticket } = await loadTicketForUser(params.id, user);
 
     const body = await req.json().catch(() => ({}));
     const newStatus = body?.newStatus as TicketStatus | undefined;
@@ -41,6 +38,21 @@ export async function POST(
     }
     if (newStatus === 'resolved' && !note) {
       throw createPublicError('invalid request: resolution note required', 400);
+    }
+    if (!canManage) {
+      // Reporter self-service: can cancel their own active ticket and can reopen
+      // their own resolved ticket. All operator transitions stay protected.
+      const canReporterCancel =
+        isReporter &&
+        newStatus === 'cancelled' &&
+        ['open', 'acknowledged', 'in_progress', 'waiting_reporter'].includes(ticket.status);
+      const canReporterReopen =
+        isReporter &&
+        newStatus === 'in_progress' &&
+        ticket.status === 'resolved';
+      if (!canReporterCancel && !canReporterReopen) {
+        throw createPublicError('Access denied.', 403);
+      }
     }
 
     await updateTicketStatus(prisma, {

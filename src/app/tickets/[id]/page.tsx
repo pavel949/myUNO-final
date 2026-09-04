@@ -28,9 +28,11 @@ export default async function TicketDetailPage({
   }
 
   let canManage = false;
+  let isReporter = false;
   try {
     const scope = await loadTicketForUser(params.id, user);
     canManage = scope.canManage;
+    isReporter = scope.isReporter;
   } catch (error) {
     if (isStatusError(error, 404)) {
       notFound();
@@ -77,6 +79,10 @@ export default async function TicketDetailPage({
     'tickets.detail.resolve': 'Resolve',
     'tickets.detail.resolve_note_prompt': 'Describe the resolution for the reporter',
     'tickets.detail.resolve_note_required': 'Resolution note is required to resolve a ticket.',
+    'tickets.detail.cancel': 'Cancel request',
+    'tickets.detail.cancel_confirm': 'Cancel this request?',
+    'tickets.detail.reopen': 'Reopen request',
+    'tickets.detail.reopen_prompt': 'What still needs to be fixed? (optional)',
     'tickets.detail.error_generic': 'Action failed. Please try again.',
     'tickets.detail.event_opened': 'Request opened with status {status}.',
     'tickets.detail.event_status_changed': 'Status changed from {from} to {to}.',
@@ -133,6 +139,7 @@ export default async function TicketDetailPage({
           ticket={detail}
           labels={labels}
           canManage={canManage}
+          isReporter={isReporter}
           viewerIdentityId={user.identityId}
         />
       </div>

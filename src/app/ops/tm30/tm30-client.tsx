@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import Tm30FilingDetailDrawer from '@/components/ops/Tm30FilingDetailDrawer';
@@ -41,16 +41,48 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function Tm30QueueClient({
-  filings,
+  filings: initialFilings,
   labels,
+  queueProjectId,
 }: {
   filings: QueueFiling[];
   labels: Labels;
+  /** When set, refresh the list from GET /api/tm30/queue after actions. */
+  queueProjectId?: string | null;
 }) {
   const router = useRouter();
+  const [filings, setFilings] = useState(initialFilings);
   const [activeFiling, setActiveFiling] = useState<QueueFiling | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const reloadFromApi = async () => {
+    if (!queueProjectId) return;
+    const response = await fetch(`/api/tm30/queue?projectId=${encodeURIComponent(queueProjectId)}`);
+    if (!response.ok) return;
+    const data = await response.json();
+    if (Array.isArray(data.queue)) {
+      setFilings(
+        data.queue.map((row: QueueFiling) => ({
+          id: row.id,
+          status: row.status,
+          dueAt: row.dueAt,
+          guestName: row.guestName,
+          nationality: row.nationality,
+          unitName: row.unitName,
+          projectName: row.projectName,
+          arrival: row.arrival,
+        }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (queueProjectId) {
+      void reloadFromApi();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only refetch when project changes
+  }, [queueProjectId]);
 
   const markFiled = async (filing: QueueFiling) => {
     if (!window.confirm(fill(labels['staff.tm30.file_confirm'], { guest: filing.guestName }))) {
@@ -68,7 +100,11 @@ export default function Tm30QueueClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['staff.tm30.error_generic']);
       }
-      router.refresh();
+      if (queueProjectId) {
+        await reloadFromApi();
+      } else {
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['staff.tm30.error_generic']);
     } finally {

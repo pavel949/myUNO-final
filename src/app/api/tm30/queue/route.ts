@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getTm30Queue } from '@/modules/ops';
+import { safeDecrypt } from '@/modules/ops';
 import { getConfig } from '@/modules/config';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get projectId from query params
     const projectId = req.nextUrl.searchParams.get('projectId');
     if (!projectId) {
       return NextResponse.json({ error: 'projectId required' }, { status: 400 });
@@ -31,10 +30,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get TM30 queue sorted by due date
-    const filings = await getTm30Queue(prisma, projectId);
+    const filings = await prisma.tm30Filing.findMany({
+      where: {
+        status: { in: ['pending', 'escalated', 'failed'] },
+        booking: { projectId },
+      },
+      include: {
+        booking: {
+          select: {
+            id: true,
+            startDate: true,
+            unit: { select: { name: true } },
+            project: { select: { name: true } },
+          },
+        },
+        bookingGuest: { select: { fullName: true, nationality: true } },
+      },
+      orderBy: { dueAt: 'asc' },
+    });
 
-    // Enrich with escalation info
     const now = new Date();
     const escalationHoursBefore =
       ((await getConfig(prisma, 'compliance.tm30_escalation_hours_before', {
@@ -53,7 +67,14 @@ export async function GET(req: NextRequest) {
       );
 
       return {
-        ...filing,
+        id: filing.id,
+        status: filing.status,
+        dueAt: filing.dueAt.toISOString(),
+        guestName: safeDecrypt(filing.bookingGuest?.fullName) || '—',
+        nationality: filing.bookingGuest?.nationality || '—',
+        unitName: filing.booking?.unit?.name || '—',
+        projectName: filing.booking?.project?.name || '—',
+        arrival: filing.booking?.startDate?.toISOString() || null,
         minutesUntilEscalation,
         minutesUntilDue,
         isEscalated: filing.status === 'escalated',

@@ -1,14 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { prisma } from '@/lib/prisma';
-import {
-  getProviderForIdentity,
-  getServiceOrdersByProvider,
-} from '@/modules/services';
-import { getConfig } from '@/modules/config';
+import { getProviderForIdentity } from '@/modules/services';
 import { getLabels } from '@/lib/i18n';
-import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
+import { prisma } from '@/lib/prisma';
 import ProviderOrdersClient from './provider-orders-client';
+import ProviderApplicationStatus from './provider-application-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,28 +31,16 @@ export default async function ProviderPage() {
       'provider.application.title': 'Your application',
       'provider.application.note':
         'We review every provider before their services go live. You will be notified as soon as there is a decision.',
+      'provider.application.loading': 'Loading your application…',
+      'provider.application.error': 'Could not load your application status.',
       [`provider.status.${application.status}`]: application.status,
     });
-    return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
-          {statusLabels['provider.application.title']}
-        </h2>
-        <p className="text-body font-semibold text-brand-andaman mb-8">
-          {application.name} — {statusLabels[`provider.status.${application.status}`]}
-        </p>
-        <p className="text-body text-text-secondary">
-          {statusLabels['provider.application.note']}
-        </p>
-      </div>
-    );
+    return <ProviderApplicationStatus labels={statusLabels} />;
   }
 
-  const [orders, slaHours, labels] = await Promise.all([
-    getServiceOrdersByProvider(prisma, memberProviderId),
-    getConfig(prisma, 'service.accept_sla_hours'),
-    getLabels({
+  const labels = await getLabels({
       'provider.orders.title': 'Order queue',
+      'provider.orders.loading': 'Loading your orders…',
       'provider.orders.empty': 'No orders yet — they will appear here the moment a customer books you.',
       'provider.orders.accept': 'Accept',
       'provider.orders.decline': 'Decline',
@@ -75,21 +59,7 @@ export default async function ProviderPage() {
       'services.order_status.expired': 'Expired',
       'services.order_status.failed': 'Failed',
       'services.order_status.closed': 'Closed',
-    }),
-  ]);
+    });
 
-  const hours = (slaHours as number) ?? 12;
-  const queue = orders.map((order) => ({
-    ...serializeOrder(order),
-    scheduledStart: order.scheduled_start.toISOString(),
-    scheduledEnd: order.scheduled_end ? order.scheduled_end.toISOString() : null,
-    createdAt: order.createdAt.toISOString(),
-    noteToProvider: order.note_to_provider ?? null,
-    acceptDeadline:
-      order.status === 'placed' || order.status === 'paid'
-        ? new Date(order.createdAt.getTime() + hours * 60 * 60 * 1000).toISOString()
-        : null,
-  }));
-
-  return <ProviderOrdersClient orders={queue} labels={labels} />;
+  return <ProviderOrdersClient labels={labels} />;
 }

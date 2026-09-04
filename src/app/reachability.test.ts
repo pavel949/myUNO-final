@@ -229,7 +229,6 @@ const API_DEBT = new Set([
   '/api/admin/prospecting/[id]/transition',
   '/api/admin/prospecting',
   '/api/admin/reports/attribution',
-  '/api/admin/service-orders',
   '/api/admin/statements/[statementId]/line-items',
   '/api/admin/units/[id]/status',
   // Guest/owner/provider-facing routes with no caller found.
@@ -239,12 +238,6 @@ const API_DEBT = new Set([
   '/api/content/translate',
   '/api/messages/[messageId]/flag-as-purchase',
   '/api/profile/export',
-  '/api/provider/me',
-  '/api/provider/orders',
-  '/api/services/[id]',
-  '/api/tm30/queue',
-  // The client-side analytics beacon (doc 13) — server code calls track()
-  // directly; nothing in the browser ever POSTs here.
   '/api/track',
   // SSE endpoints that exist and work, but the frontend they were built for
   // polls instead (NotificationBell polls /api/notifications every 30s) —

@@ -75,6 +75,8 @@ Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; 
 
 **Stay + service order notification catalog complete (N-02…N-14, N-26/27 wired).**
 
+**API debt reduction (2026-09 PMS pass):** admin service-orders board, CRM dashboard summary, provider portal (`/api/provider/me` + `/api/provider/orders`), TM30 queue refresh, service detail — 8 routes removed from `API_DEBT` since the audit refresh.
+
 ## 4. Admin panel
 
 Doc 08 §6 specifies twelve sections. **People & Roles is now built** (`/app/admin/people`) — search, grant, revoke, block, with the roles a person already holds shown before you add another. **The audit log is now readable** (`/app/admin/audit`) — filter by action, area, record, person or date range, page through it, export the filtered view as CSV. The export is itself audited (`audit:export`); browsing is not, because an entry per page view buries the actions that matter under the act of looking at them. **Announcements is now built** (`/app/admin/announcements`) — draft, then publish as a separate deliberate act, with withdraw. **Tickets** (`/app/admin/tickets`) — cross-project SLA board with acknowledge/resolve actions. **Compliance** (`/app/admin/compliance`) — TM30 ledger, unit records needing attention, retention posture. **Disputes** (`/app/admin/disputes`) — F-DIS-2 arbiter queue.

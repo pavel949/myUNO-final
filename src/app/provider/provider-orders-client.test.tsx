@@ -24,7 +24,7 @@ describe('ProviderOrdersClient money display', () => {
   it('renders the order total converted to baht, not raw satang', () => {
     render(
       <ProviderOrdersClient
-        orders={[
+        initialOrders={[
           {
             id: 'order-1',
             status: 'placed',

@@ -126,7 +126,7 @@ describe('GET /api/tm30/queue', () => {
     expect(allowed.status).toBe(200);
     const allowedBody = await allowed.json();
     expect(allowedBody.total).toBe(1);
-    expect(allowedBody.queue[0]?.bookingId).toBe(bookingA.id);
+    expect(allowedBody.queue[0]?.guestName).toBe('Guest A');
 
     const denied = await GET(
       new NextRequest(`http://localhost/api/tm30/queue?projectId=${projectB.id}`)

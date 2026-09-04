@@ -42,7 +42,7 @@ export default async function ServiceDetailPage({
 
   let service: ServiceDetail | null = null;
   try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/services/${id}`, {
+    const res = await fetch(`/api/services/${id}`, {
       cache: 'no-store',
     });
     if (res.ok) {

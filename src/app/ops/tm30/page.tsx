@@ -150,6 +150,7 @@ export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps
             arrival: f.booking?.startDate.toISOString() || null,
           }))}
           labels={labels}
+          queueProjectId={validActiveProjectId}
         />
       </div>
     </main>

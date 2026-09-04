@@ -75,7 +75,7 @@ Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; 
 
 **Stay + service order notification catalog complete (N-02…N-14, N-26/27 wired).**
 
-**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status, MC fee report API — **28+ routes** removed from `API_DEBT` since the audit refresh.
+**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status, MC fee report API, admin payouts + statement generate (`prisma` + `requireAdmin`) — **all `src/app/api/**/route.ts` files** now off legacy `prismadb`.
 
 ## 4. Admin panel
 

@@ -94,6 +94,19 @@ export async function getOpsBoard(
   date: Date = new Date(),
   scope?: OpsBoardScope
 ): Promise<OpsBoardData> {
+  if (scope && (!scope.projectIds || scope.projectIds.length === 0)) {
+    return {
+      arrivals: [],
+      departures: [],
+      pendingPayment: [],
+      pendingServiceOrders: [],
+      slaMetrics: {
+        tm30OnTimeRate7d: 100,
+        ticketsWithOpenSLA: 0,
+      },
+    };
+  }
+
   const { from, to } = dayRange(date);
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days

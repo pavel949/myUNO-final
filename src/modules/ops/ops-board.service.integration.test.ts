@@ -135,4 +135,14 @@ describe('getOpsBoard', () => {
     expect(unscoped.pendingServiceOrders.length).toBe(2);
     expect(unscoped.slaMetrics.ticketsWithOpenSLA).toBe(2);
   });
+
+  it('returns an empty board when called with an explicit empty scope', async () => {
+    const scoped = await getOpsBoard(db, new Date('2026-08-15T10:00:00Z'), { projectIds: [] });
+    expect(scoped.arrivals).toEqual([]);
+    expect(scoped.departures).toEqual([]);
+    expect(scoped.pendingPayment).toEqual([]);
+    expect(scoped.pendingServiceOrders).toEqual([]);
+    expect(scoped.slaMetrics.tm30OnTimeRate7d).toBe(100);
+    expect(scoped.slaMetrics.ticketsWithOpenSLA).toBe(0);
+  });
 });

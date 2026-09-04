@@ -17,6 +17,16 @@ interface BookingDetail {
   holdExpiresAt?: string | null;
   refundAccruedThb?: number | null;
   guestNote?: string | null;
+  verificationStatus?: string | null;
+  depositClaim?: {
+    id: string;
+    description: string;
+    claimedAmountThb: number;
+    status: string;
+    filedAt: string;
+    responseDeadlineAt: string;
+    canDispute: boolean;
+  } | null;
   unit: { id: string; name: string } | null;
   project: { id: string; name: string } | null;
   payments: {
@@ -73,6 +83,11 @@ export default function BookingDetailClient({
   const [disputeDescription, setDisputeDescription] = useState('');
   const [disputeSent, setDisputeSent] = useState(false);
   const [disputeBusy, setDisputeBusy] = useState(false);
+  const [claimDisputeOpen, setClaimDisputeOpen] = useState(false);
+  const [claimDisputeTitle, setClaimDisputeTitle] = useState('');
+  const [claimDisputeDescription, setClaimDisputeDescription] = useState('');
+  const [claimDisputeSent, setClaimDisputeSent] = useState(false);
+  const [claimDisputeBusy, setClaimDisputeBusy] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -235,6 +250,38 @@ export default function BookingDetailClient({
     }
   };
 
+  const handleClaimDisputeSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!booking?.depositClaim || !claimDisputeTitle.trim() || !claimDisputeDescription.trim()) {
+      return;
+    }
+    setClaimDisputeBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/deposit-claims/${booking.depositClaim.id}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: claimDisputeTitle.trim(),
+          description: claimDisputeDescription.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['booking.detail.error_generic']);
+      }
+      setClaimDisputeSent(true);
+      setClaimDisputeOpen(false);
+      setClaimDisputeTitle('');
+      setClaimDisputeDescription('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
+    } finally {
+      setClaimDisputeBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-surface-background p-32">
@@ -352,6 +399,37 @@ export default function BookingDetailClient({
             <p className="text-body text-state-error">{error}</p>
           </div>
         )}
+
+        {/* Pre-arrival verification (F-GUEST-5) */}
+        {booking.viewer.isGuest &&
+          ['confirmed', 'pending_payment'].includes(booking.status) &&
+          booking.verificationStatus &&
+          booking.verificationStatus !== 'not_required' &&
+          booking.verificationStatus !== 'passports_received' && (
+            <div
+              className={`rounded-lg p-24 mb-24 border ${
+                booking.verificationStatus === 'failed'
+                  ? 'bg-state-warning-soft border-state-warning'
+                  : 'bg-state-info-soft border-state-info'
+              }`}
+            >
+              <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+                {booking.verificationStatus === 'failed'
+                  ? labels['booking.detail.verification_failed_title']
+                  : labels['booking.detail.verification_pending_title']}
+              </h2>
+              <p className="text-body text-text-secondary mb-12">
+                {booking.verificationStatus === 'failed'
+                  ? labels['booking.detail.verification_failed_body']
+                  : labels['booking.detail.verification_pending_body']}
+              </p>
+              <Link href={`/bookings/${booking.id}/passports`}>
+                <Button variant="secondary" size="sm">
+                  {labels['booking.detail.passports']}
+                </Button>
+              </Link>
+            </div>
+          )}
 
         {/* Payment */}
         <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
@@ -533,6 +611,100 @@ export default function BookingDetailClient({
               )}
             </div>
           )}
+
+        {/* Damage claim (F-DIS-1 guest path) */}
+        {booking.viewer.isGuest && booking.depositClaim && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-12">
+              {labels['booking.detail.deposit_claim_title']}
+            </h2>
+            <p className="text-body text-text-secondary mb-12">
+              {fill(labels['booking.detail.deposit_claim_body'], {
+                amount: booking.depositClaim.claimedAmountThb.toLocaleString(),
+                description: booking.depositClaim.description,
+              })}
+            </p>
+            {['filed', 'disputed'].includes(booking.depositClaim.status) &&
+              new Date(booking.depositClaim.responseDeadlineAt) > new Date() && (
+                <p className="text-small mb-12">
+                  <SlaCountdown
+                    deadline={booking.depositClaim.responseDeadlineAt}
+                    leftTemplate={labels['booking.detail.deposit_claim_window']}
+                    overdueLabel={labels['booking.detail.hold_expired']}
+                  />
+                </p>
+              )}
+            {booking.depositClaim.status === 'disputed' || claimDisputeSent ? (
+              <p className="text-body text-state-success">
+                {labels['booking.detail.deposit_claim_disputed']}
+              </p>
+            ) : booking.depositClaim.status === 'filed' && booking.depositClaim.canDispute ? (
+              claimDisputeOpen ? (
+                <form onSubmit={handleClaimDisputeSubmit} className="flex flex-col gap-12">
+                  <div className="flex flex-col gap-4">
+                    <label htmlFor="claim-dispute-title" className="text-small text-text-secondary">
+                      {labels['booking.detail.dispute_title_field']}
+                    </label>
+                    <input
+                      id="claim-dispute-title"
+                      type="text"
+                      value={claimDisputeTitle}
+                      onChange={(e) => setClaimDisputeTitle(e.target.value)}
+                      maxLength={200}
+                      className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <label
+                      htmlFor="claim-dispute-description"
+                      className="text-small text-text-secondary"
+                    >
+                      {labels['booking.detail.dispute_description_field']}
+                    </label>
+                    <textarea
+                      id="claim-dispute-description"
+                      value={claimDisputeDescription}
+                      onChange={(e) => setClaimDisputeDescription(e.target.value)}
+                      rows={4}
+                      maxLength={4000}
+                      className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-12">
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      size="sm"
+                      isLoading={claimDisputeBusy}
+                      disabled={!claimDisputeTitle.trim() || !claimDisputeDescription.trim()}
+                    >
+                      {labels['booking.detail.deposit_claim_dispute']}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setClaimDisputeOpen(false)}
+                      disabled={claimDisputeBusy}
+                    >
+                      {labels['booking.detail.dispute_cancel']}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => setClaimDisputeOpen(true)}>
+                  {labels['booking.detail.deposit_claim_dispute']}
+                </Button>
+              )
+            ) : ['approved', 'rejected'].includes(booking.depositClaim.status) ? (
+              <p className="text-body text-text-secondary">
+                {fill(labels['booking.detail.deposit_claim_resolved'], {
+                  status: booking.depositClaim.status,
+                })}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {/* Dispute */}
         {booking.viewer.isGuest && (

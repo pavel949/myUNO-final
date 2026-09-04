@@ -67,8 +67,11 @@ export {
   rejectClaim,
   getClaimsAwaitingResolution,
   getStaysOpenToClaim,
+  getActiveDepositClaimForGuest,
+  disputeDepositClaim,
   type DepositClaimInput,
   type DepositClaimDetails,
+  type DepositClaimGuestView,
   type ClaimableStay,
 } from './deposits.service';
 

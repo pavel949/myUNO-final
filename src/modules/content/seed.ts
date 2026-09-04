@@ -843,6 +843,22 @@ const COMMON_KEYS: KeyDef[] = [
     en: 'Guest {{guest_name}} at {{unit_name}} did not provide passport information by the deadline. Staff can request details at check-in.',
     th: 'แขก {{guest_name}} ที่ {{unit_name}} ไม่ได้ให้ข้อมูลหนังสือเดินทางตามกำหนด พนักงานสามารถขอรายละเอียดได้ระหว่างเช็คอิน',
   },
+  {
+    key: 'notify.stay.damage_claim.title',
+    namespace: 'notify',
+    description: 'Notification: damage claim opened (N-28)',
+    ru: 'Претензия по ущербу по вашему проживанию',
+    en: 'Damage claim on your stay',
+    th: 'เคลมความเสียหายจากการเข้าพักของคุณ',
+  },
+  {
+    key: 'notify.stay.damage_claim.body',
+    namespace: 'notify',
+    description: 'Notification: damage claim details with response window (N-28)',
+    ru: 'По проживанию в {{unit_name}} подана претензия на ฿{{amount_thb}}. Описание: {{description}}. У вас {{hours}} часов, чтобы оспорить претензию, прежде чем сумма может быть списана с преавторизованного депозита.',
+    en: 'A claim of ฿{{amount_thb}} was filed for your stay at {{unit_name}}. Details: {{description}}. You have {{hours}} hours to dispute before the amount may be taken from your pre-authorized deposit.',
+    th: 'มีการยื่นเคลม ฿{{amount_thb}} สำหรับการเข้าพักที่ {{unit_name}} รายละเอียด: {{description}} คุณมีเวลา {{hours}} ชั่วโมงในการโต้แย้งก่อนที่จำนวนเงินอาจถูกหักจากเงินมัดจำที่อนุมัติไว้ล่วงหน้า',
+  },
 
   // Owner experience (doc 07 F-OWN-2..6)
   {
@@ -1707,6 +1723,16 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'booking.detail.dispute_submit', namespace: 'booking', description: 'Dispute form: submit button', en: 'Submit dispute', ru: 'Отправить спор', status: NR },
   { key: 'booking.detail.dispute_cancel', namespace: 'booking', description: 'Dispute form: cancel button', en: 'Cancel', ru: 'Отмена', status: NR },
   { key: 'booking.detail.dispute_sent', namespace: 'booking', description: 'Dispute form: submitted confirmation', en: 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.', ru: 'Спор отправлен нашей команде — вы можете отслеживать его статус в заявке, которая была открыта.', status: NR },
+  { key: 'booking.detail.deposit_claim_title', namespace: 'booking', description: 'Deposit claim section heading', en: 'Damage claim on your deposit', ru: 'Претензия по депозиту', th: 'เคลมความเสียหายจากเงินมัดจำ', status: NR },
+  { key: 'booking.detail.deposit_claim_body', namespace: 'booking', description: 'Deposit claim: amount and description', en: 'We are claiming ฿{amount} from your pre-authorized deposit: {description}', ru: 'Мы предъявляем претензию на ฿{amount} с преавторизованного депозита: {description}', th: 'เรายื่นเคลม ฿{amount} จากเงินมัดจำที่อนุมัติไว้ล่วงหน้า: {description}', status: NR },
+  { key: 'booking.detail.deposit_claim_window', namespace: 'booking', description: 'Deposit claim: response window countdown', en: 'You have {time} left to respond before this may be charged.', ru: 'У вас осталось {time}, чтобы ответить, прежде чем сумма может быть списана.', th: 'คุณมีเวลา {time} ในการตอบกลับก่อนที่อาจมีการเรียกเก็บเงิน', status: NR },
+  { key: 'booking.detail.deposit_claim_dispute', namespace: 'booking', description: 'Deposit claim: dispute button', en: 'Dispute this claim', ru: 'Оспорить претензию', th: 'โต้แย้งเคลมนี้', status: NR },
+  { key: 'booking.detail.deposit_claim_disputed', namespace: 'booking', description: 'Deposit claim: already disputed', en: 'You have disputed this claim — our team is reviewing it.', ru: 'Вы оспорили претензию — наша команда рассматривает её.', th: 'คุณได้โต้แย้งเคลมนี้แล้ว — ทีมของเรากำลังตรวจสอบ', status: NR },
+  { key: 'booking.detail.deposit_claim_resolved', namespace: 'booking', description: 'Deposit claim: resolved status', en: 'This claim has been resolved ({status}).', ru: 'Претензия рассмотрена ({status}).', th: 'เคลมนี้ได้รับการตัดสินแล้ว ({status})', status: NR },
+  { key: 'booking.detail.verification_failed_title', namespace: 'booking', description: 'Verification failed banner title', en: 'Passport details still needed', ru: 'Нужны паспортные данные', th: 'ยังต้องการข้อมูลหนังสือเดินทาง', status: NR },
+  { key: 'booking.detail.verification_failed_body', namespace: 'booking', description: 'Verification failed banner body', en: 'The passport deadline has passed. Self check-in instructions are withheld until we have your details — add them now or our host will collect them at arrival.', ru: 'Срок предоставления паспортов истёк. Инструкции для самостоятельного заселения недоступны, пока мы не получим данные — добавьте их сейчас или хост соберёт их при заезде.', th: 'เลยกำหนดส่งข้อมูลหนังสือเดินทางแล้ว คำแนะนำเช็คอินด้วยตนเองจะไม่แสดงจนกว่าเราจะได้รับรายละเอียด — เพิ่มตอนนี้หรือเจ้าหน้าที่จะรับข้อมูลเมื่อมาถึง', status: NR },
+  { key: 'booking.detail.verification_pending_title', namespace: 'booking', description: 'Verification pending banner title', en: 'Prepare your arrival', ru: 'Подготовьтесь к заезду', th: 'เตรียมตัวก่อนเข้าพัก', status: NR },
+  { key: 'booking.detail.verification_pending_body', namespace: 'booking', description: 'Verification pending banner body', en: 'Add passport details for everyone staying before check-in so we can file TM30 on time.', ru: 'Добавьте паспортные данные всех гостей до заезда, чтобы мы вовремя подали TM30.', th: 'เพิ่มข้อมูลหนังสือเดินทางของทุกคนก่อนเช็คอิน เพื่อให้เรายื่น TM30 ได้ทันเวลา', status: NR },
 
   // Mock checkout page
   { key: 'payments.checkout.title', namespace: 'payments', description: 'Checkout page title', en: 'Complete payment', ru: 'Завершите оплату', status: NR },
@@ -1876,6 +1902,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'checkin.passports.dob', namespace: 'checkin', description: 'Field: date of birth', en: 'Date of birth', ru: 'Дата рождения', status: NR },
   { key: 'checkin.passports.submit', namespace: 'checkin', description: 'Button: add guest', en: 'Add guest', ru: 'Добавить гостя', status: NR },
   { key: 'checkin.passports.error_generic', namespace: 'checkin', description: 'Passports generic error', en: 'Could not save. Please try again.', ru: 'Не удалось сохранить. Попробуйте ещё раз.', status: NR },
+  { key: 'checkin.passports.verification_failed_title', namespace: 'checkin', description: 'Passports: verification failed banner title', en: 'Deadline missed — please add passports now', ru: 'Срок истёк — добавьте паспорта сейчас', th: 'เลยกำหนดแล้ว — กรุณาเพิ่มหนังสือเดินทางตอนนี้', status: NR },
+  { key: 'checkin.passports.verification_failed_body', namespace: 'checkin', description: 'Passports: verification failed banner body', en: 'Self check-in instructions stay withheld until we have everyone\'s passport details. Our host can also collect them when you arrive.', ru: 'Инструкции для самостоятельного заселения недоступны, пока мы не получим паспортные данные всех гостей. Хост также может собрать их при заезде.', th: 'คำแนะนำเช็คอินด้วยตนเองจะไม่แสดงจนกว่าเราจะได้รับข้อมูลหนังสือเดินทางของทุกคน เจ้าหน้าที่สามารถรับข้อมูลเมื่อคุณมาถึงได้เช่นกัน', status: NR },
 
   // Check-out notification (owner)
   { key: 'notify.stay_checked_out.title', namespace: 'notify', description: 'Notification: guest checked out (owner)', en: 'Guest checked out', ru: 'Гость выехал', status: NR },

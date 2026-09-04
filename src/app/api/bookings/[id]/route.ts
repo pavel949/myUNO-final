@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
+import { getActiveDepositClaimForGuest } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
@@ -69,6 +70,7 @@ export async function GET(
 
     // Check if the guest has already reviewed this stay
     let hasReview = false;
+    let depositClaim: Awaited<ReturnType<typeof getActiveDepositClaimForGuest>> = null;
     if (isGuest) {
       const existingReview = await prisma.review.findFirst({
         where: {
@@ -79,6 +81,7 @@ export async function GET(
         select: { id: true },
       });
       hasReview = !!existingReview;
+      depositClaim = await getActiveDepositClaimForGuest(prisma, params.id);
     }
 
     const { unit, ...rest } = booking;
@@ -94,6 +97,18 @@ export async function GET(
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),
       refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
       hasReview,
+      verificationStatus: booking.verificationStatus,
+      depositClaim: depositClaim
+        ? {
+            id: depositClaim.id,
+            description: depositClaim.description,
+            claimedAmountThb: Math.round(depositClaim.claimedAmountThb / 100),
+            status: depositClaim.status,
+            filedAt: depositClaim.filedAt.toISOString(),
+            responseDeadlineAt: depositClaim.responseDeadlineAt.toISOString(),
+            canDispute: depositClaim.canDispute,
+          }
+        : null,
     });
   } catch (error) {
     return handleError(error);

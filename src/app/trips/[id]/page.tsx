@@ -63,6 +63,21 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
       'Your reservation is held for {time} more — complete payment to confirm.',
     'booking.detail.hold_expired':
       'Your payment hold has expired — these dates may no longer be available.',
+    'booking.detail.deposit_claim_title': 'Damage claim on your deposit',
+    'booking.detail.deposit_claim_body':
+      'We are claiming ฿{amount} from your pre-authorized deposit: {description}',
+    'booking.detail.deposit_claim_window':
+      'You have {time} left to respond before this may be charged.',
+    'booking.detail.deposit_claim_dispute': 'Dispute this claim',
+    'booking.detail.deposit_claim_disputed':
+      'You have disputed this claim — our team is reviewing it.',
+    'booking.detail.deposit_claim_resolved': 'This claim has been resolved ({status}).',
+    'booking.detail.verification_failed_title': 'Passport details still needed',
+    'booking.detail.verification_failed_body':
+      'The passport deadline has passed. Self check-in instructions are withheld until we have your details — add them now or our host will collect them at arrival.',
+    'booking.detail.verification_pending_title': 'Prepare your arrival',
+    'booking.detail.verification_pending_body':
+      'Add passport details for everyone staying before check-in so we can file TM30 on time.',
   });
 
   return (

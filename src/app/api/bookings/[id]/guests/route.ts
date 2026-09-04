@@ -12,7 +12,13 @@ async function authorize(bookingId: string) {
   }
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    select: { id: true, guestIdentityId: true, status: true, projectId: true },
+    select: {
+      id: true,
+      guestIdentityId: true,
+      status: true,
+      projectId: true,
+      verificationStatus: true,
+    },
   });
   if (!booking) {
     throw createPublicError('not found', 404);
@@ -35,7 +41,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await authorize(params.id);
+    const { booking } = await authorize(params.id);
 
     const guests = await prisma.bookingGuest.findMany({
       where: { bookingId: params.id },
@@ -51,6 +57,7 @@ export async function GET(
     });
 
     return NextResponse.json({
+      verificationStatus: booking.verificationStatus,
       guests: guests.map((g) => ({
         id: g.id,
         fullName: safeDecrypt(g.fullName),

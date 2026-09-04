@@ -30,6 +30,9 @@ export default async function PassportsPage({
     'checkin.passports.dob': 'Date of birth',
     'checkin.passports.submit': 'Add guest',
     'checkin.passports.error_generic': 'Could not save. Please try again.',
+    'checkin.passports.verification_failed_title': 'Deadline missed — please add passports now',
+    'checkin.passports.verification_failed_body':
+      'Self check-in instructions stay withheld until we have everyone\'s passport details. Our host can also collect them when you arrive.',
   });
 
   return <PassportsClient bookingId={params.bookingId} labels={labels} />;

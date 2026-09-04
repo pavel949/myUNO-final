@@ -664,6 +664,11 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
+      });
+
       const reviewResult = await serviceOrderService.rateServiceOrder(
         db,
         orderResult.id,
@@ -715,6 +720,11 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
+      });
+
       await serviceOrderService.rateServiceOrder(db, orderResult.id, orderer.id, 5);
 
       await expect(
@@ -751,6 +761,11 @@ describe('service-order.service — integration tests', () => {
         priceBreakdown: {},
         totalThb: 1000,
         tookRatePctSnapshot: 15,
+      });
+
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
       });
 
       await expect(

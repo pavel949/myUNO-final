@@ -32,6 +32,20 @@ const PMS_KEY_MATCHERS: Array<(key: string, namespace: string) => boolean> = [
   (key) => key.startsWith('service-order.'),
   (_, ns) => ns === 'admin',
   (key) => key.startsWith('admin.'),
+  (_, ns) => ns === 'tickets',
+  (key) => key.startsWith('tickets.'),
+  (_, ns) => ns === 'orders',
+  (key) => key.startsWith('orders.'),
+  (_, ns) => ns === 'checkin',
+  (key) => key.startsWith('checkin.'),
+  (_, ns) => ns === 'payments',
+  (key) => key.startsWith('payments.'),
+  (_, ns) => ns === 'messages',
+  (key) => key.startsWith('messages.'),
+  (_, ns) => ns === 'guests',
+  (key) => key.startsWith('guests.'),
+  (_, ns) => ns === 'account',
+  (key) => key.startsWith('account.'),
 ];
 
 function isPmsKey(key: string, namespace: string): boolean {

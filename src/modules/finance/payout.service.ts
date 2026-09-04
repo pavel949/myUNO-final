@@ -1,6 +1,8 @@
 import { PrismaClient, Payout } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 
+export type PayoutPeriodCadence = 'weekly' | 'biweekly' | 'monthly';
+
 export interface RemittanceReport {
   providerId: string;
   periodStart: Date;
@@ -11,6 +13,126 @@ export interface RemittanceReport {
   netThb: number;
   orderCount: number;
   refundCount: number;
+}
+
+export interface ProviderRemittancePayoutRow {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  amountThb: number;
+  reference: string;
+  executedOn: string;
+  status: string;
+}
+
+export interface ProviderRemittancesView {
+  cadence: PayoutPeriodCadence;
+  currentPeriod: {
+    periodStart: string;
+    periodEnd: string;
+    remittance: RemittanceReport;
+    payoutRecorded: boolean;
+    payoutId: string | null;
+  };
+  payouts: ProviderRemittancePayoutRow[];
+}
+
+/**
+ * Resolve the active provider payout period for a cadence (doc 10 §5).
+ * Periods are half-open: [periodStart, periodEnd).
+ */
+export function resolveProviderPayoutPeriod(
+  now: Date,
+  cadence: PayoutPeriodCadence
+): { periodStart: Date; periodEnd: Date } {
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const d = now.getUTCDate();
+
+  if (cadence === 'monthly') {
+    return {
+      periodStart: new Date(Date.UTC(y, m, 1)),
+      periodEnd: new Date(Date.UTC(y, m + 1, 1)),
+    };
+  }
+
+  const today = new Date(Date.UTC(y, m, d));
+  const dow = today.getUTCDay();
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const weekStart = new Date(today);
+  weekStart.setUTCDate(today.getUTCDate() + mondayOffset);
+
+  if (cadence === 'weekly') {
+    const periodEnd = new Date(weekStart);
+    periodEnd.setUTCDate(weekStart.getUTCDate() + 7);
+    return { periodStart: weekStart, periodEnd };
+  }
+
+  const yearStart = new Date(Date.UTC(y, 0, 1));
+  const yearStartDow = yearStart.getUTCDay();
+  const daysToFirstMonday = yearStartDow === 0 ? 1 : yearStartDow === 1 ? 0 : 8 - yearStartDow;
+  const firstMonday = new Date(yearStart);
+  firstMonday.setUTCDate(1 + daysToFirstMonday);
+
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeksFromAnchor = Math.floor((weekStart.getTime() - firstMonday.getTime()) / msPerWeek);
+  const biweekBlock = Math.floor(weeksFromAnchor / 2) * 2;
+  const periodStart = new Date(firstMonday.getTime() + biweekBlock * msPerWeek);
+  const periodEnd = new Date(periodStart.getTime() + 14 * msPerWeek);
+  return { periodStart, periodEnd };
+}
+
+/**
+ * Provider portal remittance view (F-PROV-4): current-period report plus
+ * recorded payout history scoped to the caller's provider.
+ */
+export async function getProviderRemittancesView(
+  db: PrismaClient,
+  providerId: string,
+  now: Date = new Date()
+): Promise<ProviderRemittancesView> {
+  const cadenceRaw = await getConfig(db, 'services.payout_period');
+  const cadence: PayoutPeriodCadence =
+    cadenceRaw === 'biweekly' || cadenceRaw === 'monthly' ? cadenceRaw : 'weekly';
+
+  const { periodStart, periodEnd } = resolveProviderPayoutPeriod(now, cadence);
+  const remittance = await computeProviderRemittance(db, providerId, periodStart, periodEnd);
+
+  const currentPayout = await db.payout.findFirst({
+    where: {
+      providerId,
+      payeeType: 'provider',
+      periodStart,
+      periodEnd,
+    },
+    select: { id: true },
+  });
+
+  const payouts = await db.payout.findMany({
+    where: { providerId, payeeType: 'provider' },
+    orderBy: [{ executedOn: 'desc' }, { createdAt: 'desc' }],
+    take: 24,
+  });
+
+  return {
+    cadence,
+    currentPeriod: {
+      periodStart: periodStart.toISOString(),
+      periodEnd: periodEnd.toISOString(),
+      remittance,
+      payoutRecorded: Boolean(currentPayout),
+      payoutId: currentPayout?.id ?? null,
+    },
+    payouts: payouts.map((p) => ({
+      id: p.id,
+      periodStart: p.periodStart?.toISOString() ?? '',
+      periodEnd: p.periodEnd?.toISOString() ?? '',
+      amountThb: p.amountThb,
+      reference: p.reference,
+      executedOn: p.executedOn.toISOString().split('T')[0],
+      status: p.status,
+    })),
+  };
 }
 
 /**

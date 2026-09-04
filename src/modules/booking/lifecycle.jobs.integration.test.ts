@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
-import { sendPrearrivalReminders, sendCheckoutReminders, sendPostStayPrompts } from './lifecycle.jobs';
+import { sendPrearrivalReminders, sendCheckinInstructions, sendCheckoutReminders, sendPostStayPrompts } from './lifecycle.jobs';
 
 describe('guest lifecycle jobs (LY-8)', () => {
   const NOW = new Date('2026-08-01T09:00:00Z');
@@ -79,6 +79,73 @@ describe('guest lifecycle jobs (LY-8)', () => {
       });
 
       expect(await sendPrearrivalReminders(db, NOW)).toBe(0);
+    });
+  });
+
+  describe('sendCheckinInstructions (N-07b)', () => {
+    const WITHIN_24H = new Date('2026-08-04T10:00:00Z'); // 12h before check-in on Aug 5
+
+    it('fires when verification is complete and check-in is within 24h, once', async () => {
+      await createBooking({
+        unitId,
+        projectId,
+        guestIdentityId: guestId,
+        status: 'confirmed',
+        verificationStatus: 'passports_received',
+        startDate: new Date('2026-08-05T10:00:00Z'),
+        endDate: new Date('2026-08-08'),
+      });
+      const pendingUnit = await createUnit({ projectId, status: 'live' });
+      const pendingGuest = await createIdentity();
+      await createBooking({
+        unitId: pendingUnit.id,
+        projectId,
+        guestIdentityId: pendingGuest.id,
+        status: 'confirmed',
+        verificationStatus: 'pending',
+        startDate: new Date('2026-08-05T10:00:00Z'),
+        endDate: new Date('2026-08-08'),
+      });
+
+      expect(await sendCheckinInstructions(db, WITHIN_24H)).toBe(1);
+      expect(await sendCheckinInstructions(db, WITHIN_24H)).toBe(0);
+
+      const notifications = await db.notification.findMany({
+        where: {
+          type: 'stay_checkin_instructions',
+          bodyKey: 'notify.stay_checkin_instructions.body',
+        },
+      });
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].identityId).toBe(guestId);
+      expect((notifications[0].params as { home_space_url?: string }).home_space_url).toContain(
+        '/home-space'
+      );
+    });
+
+    it('sends for not_required verification and skips far-future check-ins', async () => {
+      await createBooking({
+        unitId,
+        projectId,
+        guestIdentityId: guestId,
+        status: 'confirmed',
+        verificationStatus: 'not_required',
+        startDate: new Date('2026-08-05T10:00:00Z'),
+        endDate: new Date('2026-08-08'),
+      });
+      const farUnit = await createUnit({ projectId, status: 'live' });
+      const farGuest = await createIdentity();
+      await createBooking({
+        unitId: farUnit.id,
+        projectId,
+        guestIdentityId: farGuest.id,
+        status: 'confirmed',
+        verificationStatus: 'not_required',
+        startDate: new Date('2026-08-10T10:00:00Z'),
+        endDate: new Date('2026-08-14'),
+      });
+
+      expect(await sendCheckinInstructions(db, WITHIN_24H)).toBe(1);
     });
   });
 

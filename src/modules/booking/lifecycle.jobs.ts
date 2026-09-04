@@ -8,6 +8,7 @@ import { createNotification } from '@/modules/comms';
  *
  * - Pre-arrival (T − notify.prearrival_days_before): passports reminder +
  *   the way into the home space (doc 07 F-GUEST-6 pre-arrival step).
+ * - Check-in instructions (N-07b): verification complete, T−24h → guest.
  * - Checkout day (08:00 project time, N-12): departure instructions to guest.
  * - Post-stay (T + notify.review_prompt_days_after): review prompt with the
  *   green-season return offer (doc 11).
@@ -18,7 +19,12 @@ import { createNotification } from '@/modules/comms';
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
 const CHECKOUT_REMINDER_HOUR = 8;
+
+function verificationComplete(status: string): boolean {
+  return status === 'passports_received' || status === 'not_required';
+}
 
 function dateKeyInTimezone(date: Date, timeZone: string): string {
   return date.toLocaleDateString('en-CA', { timeZone });
@@ -99,6 +105,82 @@ export async function sendPrearrivalReminders(
         unit_name: booking.unit.name,
         project_name: booking.unit.project.name,
         start_date: booking.startDate.toISOString().split('T')[0],
+        home_space_url: `${baseUrl}/bookings/${booking.id}/home-space`,
+      },
+    });
+    sent += 1;
+  }
+
+  return sent;
+}
+
+/**
+ * Send check-in instructions (N-07b) to guests whose verification is complete
+ * and whose check-in is within compliance.passport_required_hours_before_checkin
+ * (default 24h). Idempotent per booking via bodyKey guard.
+ */
+export async function sendCheckinInstructions(
+  db: PrismaClient,
+  now: Date = new Date()
+): Promise<number> {
+  const candidates = await db.booking.findMany({
+    where: {
+      status: 'confirmed',
+      bookingType: 'guest_stay',
+      verificationStatus: { in: ['passports_received', 'not_required'] },
+      startDate: { gt: now, lte: new Date(now.getTime() + 2 * DAY_MS) },
+    },
+    include: {
+      unit: {
+        select: {
+          name: true,
+          project: { select: { id: true, name: true, timezone: true } },
+        },
+      },
+    },
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  let sent = 0;
+
+  for (const booking of candidates) {
+    if (!verificationComplete(booking.verificationStatus)) continue;
+
+    const hoursBefore =
+      (await getConfig(db, 'compliance.passport_required_hours_before_checkin', {
+        projectId: booking.projectId,
+      })) ?? 24;
+    const hoursUntil = (booking.startDate.getTime() - now.getTime()) / HOUR_MS;
+    if (hoursUntil > hoursBefore || hoursUntil <= 0) continue;
+
+    const alreadySent = await db.notification.findFirst({
+      where: {
+        identityId: booking.guestIdentityId,
+        type: 'stay_checkin_instructions',
+        bodyKey: 'notify.stay_checkin_instructions.body',
+        params: { path: ['booking_id'], equals: booking.id },
+      },
+      select: { id: true },
+    });
+    if (alreadySent) continue;
+
+    const checkinHour =
+      (await getConfig(db, 'booking.checkin_hour', {
+        projectId: booking.projectId,
+        unitId: booking.unitId,
+      })) ?? 15;
+
+    await createNotification(db, {
+      identityId: booking.guestIdentityId,
+      type: 'stay_checkin_instructions',
+      titleKey: 'notify.stay_checkin_instructions.title',
+      bodyKey: 'notify.stay_checkin_instructions.body',
+      params: {
+        booking_id: booking.id,
+        unit_name: booking.unit.name,
+        project_name: booking.unit.project.name,
+        start_date: booking.startDate.toISOString().split('T')[0],
+        checkin_hour: String(checkinHour),
         home_space_url: `${baseUrl}/bookings/${booking.id}/home-space`,
       },
     });

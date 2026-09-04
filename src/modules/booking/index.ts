@@ -63,6 +63,7 @@ export {
 
 export {
   sendPrearrivalReminders,
+  sendCheckinInstructions,
   sendCheckoutReminders,
   sendPostStayPrompts,
 } from './lifecycle.jobs';

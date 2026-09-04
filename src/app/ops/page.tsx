@@ -5,29 +5,54 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { getOpsBoard } from '@/modules/ops';
 import OpsBoardClient from './ops-client';
-import { getStaffProjectIds } from '@/app/libs/projectScope';
+import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
+import {
+  loadOpsSwitcherProjects,
+  opsBoardScope,
+  opsHref,
+  resolveOpsProjectContext,
+  validatedActiveProjectId,
+} from '@/app/libs/opsProjectContext';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OpsBoardPage() {
+interface OpsBoardPageProps {
+  searchParams?: {
+    projectId?: string;
+  };
+}
+
+export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops');
   }
-  const staffProjectIds = getStaffProjectIds(user);
-  const isStaff = user.isAdmin || staffProjectIds.length > 0;
+
+  const opsContext = resolveOpsProjectContext(
+    user,
+    typeof searchParams?.projectId === 'string' ? searchParams.projectId : null
+  );
+  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
   if (!isStaff) {
     redirect('/');
   }
 
-  const { arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } = await getOpsBoard(
-    prisma,
-    new Date(),
-    user.isAdmin ? undefined : { projectIds: staffProjectIds }
+  const projects = await loadOpsSwitcherProjects(prisma, opsContext);
+  const validActiveProjectId = validatedActiveProjectId(
+    opsContext.activeProjectId,
+    projects.map((project) => project.id)
   );
+
+  const { arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } =
+    await getOpsBoard(prisma, new Date(), opsBoardScope(opsContext, validActiveProjectId));
+
+  const switcherBasePath = '/ops';
 
   const labels = await getLabels({
     'staff.ops.title': 'Ops board',
+    'staff.ops.context.switcher': 'Project context',
+    'staff.ops.context.all_projects': 'All projects',
+    'staff.ops.context.active': 'Showing',
     'staff.ops.costs_link': 'Record a cost',
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.tm30_link': 'TM30 queue →',
@@ -112,25 +137,32 @@ export default async function OpsBoardPage() {
           </h1>
           <div className="flex items-center gap-16">
             <Link
-              href="/ops/costs"
+              href={opsHref('/ops/costs', validActiveProjectId)}
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.costs_link']}
             </Link>
             <Link
-              href="/ops/claims"
+              href={opsHref('/ops/claims', validActiveProjectId)}
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.claims_link']}
             </Link>
             <Link
-              href="/ops/tm30"
+              href={opsHref('/ops/tm30', validActiveProjectId)}
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.tm30_link']}
             </Link>
           </div>
         </div>
+
+        <OpsProjectSwitcher
+          projects={projects}
+          activeProjectId={validActiveProjectId}
+          basePath={switcherBasePath}
+          labels={labels}
+        />
 
         {/* SLA health tiles */}
         <div className="mb-24">

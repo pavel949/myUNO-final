@@ -5,26 +5,60 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { safeDecrypt } from '@/modules/ops';
 import Tm30QueueClient from './tm30-client';
-import { getStaffProjectIds } from '@/app/libs/projectScope';
+import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
+import {
+  loadOpsSwitcherProjects,
+  opsHref,
+  resolveOpsProjectContext,
+  validatedActiveProjectId,
+} from '@/app/libs/opsProjectContext';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Tm30QueuePage() {
+interface Tm30QueuePageProps {
+  searchParams?: {
+    projectId?: string;
+  };
+}
+
+export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops/tm30');
   }
-  const staffProjectIds = getStaffProjectIds(user);
-  const isStaff = user.isAdmin || staffProjectIds.length > 0;
+
+  const opsContext = resolveOpsProjectContext(
+    user,
+    typeof searchParams?.projectId === 'string' ? searchParams.projectId : null
+  );
+  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
   if (!isStaff) {
     redirect('/');
   }
 
-  // SLA-sorted queue for the operator's projects (doc 07 F-OPS-2)
+  const projects = await loadOpsSwitcherProjects(prisma, opsContext);
+  const validActiveProjectId = validatedActiveProjectId(
+    opsContext.activeProjectId,
+    projects.map((project) => project.id)
+  );
+
+  const projectFilter =
+    opsContext.isAdmin && !validActiveProjectId
+      ? {}
+      : {
+          booking: {
+            projectId: {
+              in: validActiveProjectId
+                ? [validActiveProjectId]
+                : opsContext.queryProjectIds || [],
+            },
+          },
+        };
+
   const filings = await prisma.tm30Filing.findMany({
     where: {
       status: { in: ['pending', 'escalated', 'failed'] },
-      ...(user.isAdmin ? {} : { booking: { projectId: { in: staffProjectIds } } }),
+      ...projectFilter,
     },
     include: {
       booking: {
@@ -52,19 +86,33 @@ export default async function Tm30QueuePage() {
     'staff.tm30.file_action': 'Mark filed',
     'staff.tm30.file_confirm': 'Confirm the TM30 for {guest} has been filed with immigration?',
     'staff.tm30.error_generic': 'Action failed. Please try again.',
+    'staff.ops.context.switcher': 'Project context',
+    'staff.ops.context.all_projects': 'All projects',
+    'staff.ops.context.active': 'Showing',
   });
+
+  const switcherBasePath = '/ops/tm30';
 
   return (
     <main className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
-          <Link href="/ops" className="text-brand-andaman font-semibold hover:underline">
+          <Link
+            href={opsHref('/ops', validActiveProjectId)}
+            className="text-brand-andaman font-semibold hover:underline"
+          >
             {labels['staff.tm30.back']}
           </Link>
         </p>
         <h1 className="text-heading-1 font-bold text-text-ink mb-24">
           {labels['staff.tm30.title']}
         </h1>
+        <OpsProjectSwitcher
+          projects={projects}
+          activeProjectId={validActiveProjectId}
+          basePath={switcherBasePath}
+          labels={labels}
+        />
         <Tm30QueueClient
           filings={filings.map((f) => ({
             id: f.id,

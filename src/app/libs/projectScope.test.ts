@@ -4,6 +4,7 @@ import {
   getStaffProjectIds,
   hasProjectStaffAccess,
 } from './projectScope';
+import { resolveOpsProjectContext, opsHref } from './opsProjectContext';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 
 function userWithRoles(roles: CurrentUser['roles'], isAdmin = false): CurrentUser {
@@ -66,5 +67,43 @@ describe('projectScope helpers', () => {
   it('always grants project staff access to admins', () => {
     const admin = userWithRoles([], true);
     expect(hasProjectStaffAccess(admin, 'any-project')).toBe(true);
+  });
+});
+
+describe('resolveOpsProjectContext', () => {
+  it('aggregates all staff projects by default and drills into one when requested', () => {
+    const user = userWithRoles([
+      { role: 'staff_ops', projectId: 'p-1', unitId: null, organizationId: null, providerId: null },
+      { role: 'onsite_host', projectId: 'p-2', unitId: null, organizationId: null, providerId: null },
+    ]);
+
+    const all = resolveOpsProjectContext(user);
+    expect(all.queryProjectIds).toEqual(['p-1', 'p-2']);
+    expect(all.activeProjectId).toBeNull();
+
+    const one = resolveOpsProjectContext(user, 'p-2');
+    expect(one.queryProjectIds).toEqual(['p-2']);
+    expect(one.activeProjectId).toBe('p-2');
+
+    const invalid = resolveOpsProjectContext(user, 'p-9');
+    expect(invalid.queryProjectIds).toEqual(['p-1', 'p-2']);
+    expect(invalid.activeProjectId).toBeNull();
+  });
+
+  it('lets admins view all projects or filter to one', () => {
+    const admin = userWithRoles([], true);
+    const all = resolveOpsProjectContext(admin);
+    expect(all.queryProjectIds).toBeUndefined();
+    expect(all.activeProjectId).toBeNull();
+
+    const one = resolveOpsProjectContext(admin, 'project-x');
+    expect(one.queryProjectIds).toEqual(['project-x']);
+    expect(one.activeProjectId).toBe('project-x');
+  });
+
+  it('preserves projectId in ops links', () => {
+    expect(opsHref('/ops', null)).toBe('/ops');
+    expect(opsHref('/ops/tm30', 'p-1')).toBe('/ops/tm30?projectId=p-1');
+    expect(opsHref('/ops/costs?foo=1', 'p-2')).toBe('/ops/costs?foo=1&projectId=p-2');
   });
 });

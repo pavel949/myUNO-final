@@ -1675,6 +1675,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   // Ops board + TM30 queue (staff surfaces)
   { key: 'nav.ops', namespace: 'nav', description: 'Navbar link: ops board', en: 'Ops', ru: 'Операции', status: NR },
   { key: 'staff.ops.title', namespace: 'staff', description: 'Ops board title', en: 'Ops board', ru: 'Операционная панель', th: 'บอร์ดปฏิบัติการ', status: NR },
+  { key: 'staff.ops.context.switcher', namespace: 'staff', description: 'Ops project context switcher label', en: 'Project context', ru: 'Контекст проекта', th: 'บริบทโครงการ', status: NR },
+  { key: 'staff.ops.context.all_projects', namespace: 'staff', description: 'Ops project context: all projects', en: 'All projects', ru: 'Все проекты', th: 'ทุกโครงการ', status: NR },
+  { key: 'staff.ops.context.active', namespace: 'staff', description: 'Ops project context: active project prefix', en: 'Showing', ru: 'Показано', th: 'กำลังแสดง', status: NR },
   { key: 'staff.ops.tm30_link', namespace: 'staff', description: 'Link to TM30 queue', en: 'TM30 queue →', ru: 'Очередь TM30 →', th: 'คิว TM30 →', status: NR },
   { key: 'staff.ops.arrivals', namespace: 'staff', description: 'Section: today arrivals', en: "Today's arrivals", ru: 'Заезды сегодня', status: NR },
   { key: 'staff.ops.booking_requests', namespace: 'staff', description: 'Ops board: booking requests inbox section', en: 'Booking requests', ru: 'Заявки на бронирование', th: 'คำขอจอง', status: NR },
@@ -2731,6 +2734,7 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'staff.ops.calendar.title', namespace: 'staff', description: 'Ops unit calendar page title', en: 'Unit calendar', ru: 'Календарь юнита', th: 'ปฏิทินยูนิต', status: NR },
   { key: 'staff.ops.calendar.subtitle', namespace: 'staff', description: 'Ops unit calendar page subtitle', en: 'Block dates or set one-off rates for this unit.', ru: 'Заблокируйте даты или установите разовый тариф для этого юнита.', th: 'ปิดวันที่หรือตั้งอัตราราคาเฉพาะช่วงสำหรับยูนิตนี้', status: NR },
   { key: 'ops.costs.title', namespace: 'ops', description: 'Record a cost: page title', en: 'Record a cost', ru: 'Записать расход', status: NR },
+  { key: 'ops.costs.back', namespace: 'ops', description: 'Record a cost: back to ops board', en: '← Ops board', ru: '← Операционная панель', th: '← แผงปฏิบัติการ', status: NR },
   { key: 'ops.costs.intro', namespace: 'ops', description: 'Record a cost: what it affects', en: 'Costs recorded here appear on the owner statement for that unit.', ru: 'Записанные здесь расходы попадут в отчёт собственника по этому объекту.', status: NR },
   { key: 'ops.costs.unit', namespace: 'ops', description: 'Record a cost: unit field', en: 'Unit', ru: 'Объект', status: NR },
   { key: 'ops.costs.type', namespace: 'ops', description: 'Record a cost: type field', en: 'Type', ru: 'Тип', status: NR },

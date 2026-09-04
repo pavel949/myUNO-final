@@ -73,6 +73,8 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.context.active': 'Showing',
     'staff.ops.costs_link': 'Record a cost',
     'staff.ops.claims_link': 'Damage claims',
+    'staff.ops.mobilization_link': 'Mobilization →',
+    'staff.ops.calendar_link': 'Unit calendars →',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.announcements_link': 'Post announcement →',
@@ -251,6 +253,18 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.claims_link']}
+            </Link>
+            <Link
+              href={opsHref('/ops/mobilization', validActiveProjectId)}
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.mobilization_link']}
+            </Link>
+            <Link
+              href={opsHref('/ops/calendar', validActiveProjectId)}
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.calendar_link']}
             </Link>
             <Link
               href={opsHref('/ops/tm30', validActiveProjectId)}

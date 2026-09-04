@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, StatTile } from '@/components';
@@ -19,6 +19,7 @@ import {
   formatThb,
 } from '@/components/viz';
 import type { HeatDay } from '@/components/viz';
+import { toCsv } from '@/lib/csv';
 
 interface Unit {
   id: string;
@@ -145,10 +146,35 @@ interface MCDashboardClientProps {
   tickets: Ticket[];
   serviceOrders: ServiceOrder[];
   icalConflicts: UnitIcalConflictAlert[];
-  feeReport?: FeeReport | null;
+  feeReportContext: {
+    projectId: string;
+    organizationId: string;
+  };
   labels: Record<string, string>;
   contexts: MCContextOption[];
   activeContextKey: string;
+}
+
+function currentMonthValue(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthToPeriod(monthValue: string): { periodStart: string; periodEnd: string } {
+  const [year, month] = monthValue.split('-').map(Number);
+  const periodStart = new Date(year, month - 1, 1);
+  const periodEnd = new Date(year, month, 1);
+  return {
+    periodStart: periodStart.toISOString(),
+    periodEnd: periodEnd.toISOString(),
+  };
+}
+
+function formatReportPeriod(periodStart: string, periodEnd: string): string {
+  const start = new Date(periodStart);
+  const end = new Date(periodEnd);
+  end.setUTCDate(end.getUTCDate() - 1);
+  return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
 }
 
 // doc 06 §3.4 status → color mapping, state tokens only
@@ -201,7 +227,7 @@ export function MCDashboardClient({
   tickets,
   serviceOrders,
   icalConflicts,
-  feeReport,
+  feeReportContext,
   labels,
   contexts,
   activeContextKey,
@@ -210,6 +236,10 @@ export function MCDashboardClient({
   const [activeTab, setActiveTab] = useState<
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'calendar' | 'reports'
   >('overview');
+  const [reportMonth, setReportMonth] = useState(currentMonthValue);
+  const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
+  const [feeReportLoading, setFeeReportLoading] = useState(false);
+  const [feeReportError, setFeeReportError] = useState<string | null>(null);
   const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
@@ -264,6 +294,87 @@ export function MCDashboardClient({
     }));
   const activeContext =
     contexts.find((context) => context.key === activeContextKey) ?? contexts[0];
+
+  useEffect(() => {
+    if (activeTab !== 'reports') {
+      return;
+    }
+
+    let cancelled = false;
+    const { periodStart, periodEnd } = monthToPeriod(reportMonth);
+
+    (async () => {
+      setFeeReportLoading(true);
+      setFeeReportError(null);
+      try {
+        const params = new URLSearchParams({
+          projectId: feeReportContext.projectId,
+          organizationId: feeReportContext.organizationId,
+          periodStart,
+          periodEnd,
+        });
+        const response = await fetch(`/api/mc/fee-report?${params.toString()}`);
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error || labels['mc.reports.error_generic']);
+        }
+        const data = (await response.json()) as FeeReport;
+        if (!cancelled) {
+          setFeeReport(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFeeReport(null);
+          setFeeReportError(
+            error instanceof Error ? error.message : labels['mc.reports.error_generic']
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setFeeReportLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, reportMonth, feeReportContext, labels]);
+
+  const exportFeeReportCsv = () => {
+    if (!feeReport || feeReport.feeLines.length === 0) {
+      return;
+    }
+
+    const rows: (string | number)[][] = [
+      [
+        labels['mc.reports.export.date'],
+        labels['mc.reports.export.type'],
+        labels['mc.reports.export.unit'],
+        labels['mc.reports.export.description'],
+        labels['mc.reports.export.gross'],
+        labels['mc.reports.export.fee_pct'],
+        labels['mc.reports.export.fee_amount'],
+      ],
+      ...feeReport.feeLines.map((line) => [
+        new Date(line.date).toLocaleDateString(),
+        line.type,
+        line.unitName || '',
+        line.description,
+        line.grossAmount,
+        line.feePercentage,
+        line.feeAmount,
+      ]),
+    ];
+
+    const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `mc-fee-report-${reportMonth}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const fill = (template: string, params: Record<string, string | number>) => {
     let result = template;
@@ -997,16 +1108,48 @@ export function MCDashboardClient({
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
-              {labels['mc.reports.title']}
-            </h2>
-            {!feeReport ? (
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-16 mb-20">
+              <h2 className="text-heading-2 font-bold text-text-ink">
+                {labels['mc.reports.title']}
+              </h2>
+              <div className="flex flex-wrap items-end gap-12">
+                <label className="block">
+                  <span className="text-small text-text-secondary">
+                    {labels['mc.reports.period_label']}
+                  </span>
+                  <input
+                    type="month"
+                    value={reportMonth}
+                    onChange={(event) => setReportMonth(event.target.value)}
+                    className="mt-4 block h-40 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={exportFeeReportCsv}
+                  disabled={!feeReport || feeReport.feeLines.length === 0}
+                  className="h-40 px-16 rounded-md border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {labels['mc.reports.export_csv']}
+                </button>
+              </div>
+            </div>
+            {feeReportError && (
+              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
+                <p className="text-small text-state-error">{feeReportError}</p>
+              </div>
+            )}
+            {feeReportLoading ? (
+              <p className="text-body text-text-secondary">{labels['mc.reports.loading']}</p>
+            ) : !feeReport || feeReport.feeLines.length === 0 ? (
               <p className="text-body text-text-secondary">{labels['mc.reports.empty']}</p>
             ) : (
               <div>
                 <p className="text-small text-text-secondary mb-16">
-                  {new Date(feeReport.periodStart).toLocaleDateString()} —{' '}
-                  {new Date(feeReport.periodEnd).toLocaleDateString()}
+                  {formatReportPeriod(
+                    String(feeReport.periodStart),
+                    String(feeReport.periodEnd)
+                  )}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
                   <HeroNumber

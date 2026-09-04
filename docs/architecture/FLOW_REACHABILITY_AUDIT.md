@@ -24,9 +24,9 @@ Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on bra
 | **Resident** | `/residence` | announcements, handbook, services, tickets | **Works** — built; F-RES |
 | **Buyer** | `/buyers` (public marketing) | none authenticated | **Absent** — buyer signals are staff-side only (Q1) |
 | **Provider** | `/provider` | apply, services, `/provider/remittances` (F-PROV-4) | **Works** — remittance report + payout history in provider nav |
-| **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports, announcements | **Mostly** — tabbed F-MC-2 boards on `/mc`; dedicated sub-routes for TM30, mobilization, requests |
+| **MC member** | `/mc` | overview, bookings, `/mc/requests` (F-OPS-5), tickets, calendar, fee reports (period picker + CSV export), announcements | **Mostly** — tabbed F-MC-2 boards on `/mc`; dedicated sub-routes for TM30, mobilization, requests, costs |
 | **Juristic member** | `/juristic` | announcements, project tickets | **Works** — built; posts via `/announcements` |
-| **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, unit calendar, mobilization | **Mostly** — F-OPS-4 calendar/pricing UI at `/ops/calendar/[unitId]` + MC `/mc/units/[unitId]` |
+| **Staff (ops)** | `/ops` | arrivals, departures, `/ops/requests`, `/ops/tm30`, `/ops/costs`, `/ops/claims`, `/ops/mobilization`, `/ops/calendar`, unit calendar | **Mostly** — F-OPS-4 calendar/pricing UI at `/ops/calendar/[unitId]` + MC `/mc/units/[unitId]` |
 | **Admin** | `/app/admin` | 15+ pages incl. payouts + reconciliation link | **Mostly** — see §4 |
 | **Any role** | — | `/messages`, `/tickets`, `/services` | **Works** |
 
@@ -49,7 +49,7 @@ Not reachable / partial:
 - ~~**F-FIN-2 (payouts and reconciliation)**~~ — **built:** `/app/admin/payouts` (in admin nav) records owner and provider payouts; `/admin/finance/reconciliation` board linked from payouts; provider portal `/provider/remittances` (F-PROV-4).
 - ~~**F-DIS-1 deposit rail (Q46)**~~ — **wired (2026-09-04):** `ensureDepositPreauthOnStayConfirmed` on all confirmation paths; `voidDepositPreauthIfClean` on checkout. Claims UI at `/ops/claims` + `/app/admin/claims` unchanged.
 - ~~**F-DIS-2 (disputes)**~~ — **built (Q52):** `POST /api/disputes`, `/app/admin/disputes` in admin nav, guest raise from trips.
-- **F-MC-2** — beyond the single `/mc` page.
+- **F-MC-2** — fee report now has period picker + CSV export via `GET /api/mc/fee-report`; deeper boards remain on `/mc` tabs.
 - ~~**Announcements**~~ — **built** (`/app/admin/announcements`, `POST /api/announcements` + publish/withdraw). Two scoping bugs surfaced underneath the missing composer and are fixed with it: the home space rendered *every* published announcement regardless of `audience`, so an owners-only notice appeared on a guest's screen and an expired one never went away; and publishing to `guests_in_stay` notified **nobody**, because the audience resolved through a `guest` role row that booking has never written — the publish succeeded and reached zero people. In-stay membership now derives from the booking. `postedAs` is resolved server-side from the poster's role and is not accepted from the request: it is the signature on a building-wide broadcast, and a client-chosen value would let staff speak as the juristic person.
 
 ### 3.1 Notification catalog (doc 11) — PMS parity pass 2026-09-04
@@ -75,7 +75,7 @@ Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; 
 
 **Stay + service order notification catalog complete (N-02…N-14, N-26/27 wired).**
 
-**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status — **28 routes** removed from `API_DEBT` since the audit refresh.
+**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status, MC fee report API — **28+ routes** removed from `API_DEBT` since the audit refresh.
 
 ## 4. Admin panel
 

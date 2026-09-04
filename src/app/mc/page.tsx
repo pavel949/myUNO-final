@@ -1,6 +1,6 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { fetchMCDashboard, fetchMCFeeReport } from '@/app/actions/getMCDashboard';
+import { fetchMCDashboard } from '@/app/actions/getMCDashboard';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
@@ -88,23 +88,6 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     activeContext.organizationId
   );
 
-  // Current-month fee report for the reports tab
-  const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  let feeReport = null;
-  try {
-    feeReport = await fetchMCFeeReport(
-      user.identityId,
-      activeContext.projectId,
-      activeContext.organizationId,
-      periodStart,
-      periodEnd
-    );
-  } catch {
-    feeReport = null;
-  }
-
   const labels = await getLabels({
     'mc.portal.title': 'Management Company Portal',
     'mc.portal.subtitle': 'Manage your units, bookings, and operations',
@@ -180,6 +163,17 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.reports.by_unit': 'Gross & fees by unit',
     'mc.reports.net_of_fee': 'Net of fee',
     'mc.reports.platform_fee': 'Platform fee',
+    'mc.reports.period_label': 'Period',
+    'mc.reports.export_csv': 'Export CSV',
+    'mc.reports.loading': 'Loading fee report…',
+    'mc.reports.error_generic': 'Could not load fee report. Please try again.',
+    'mc.reports.export.date': 'Date',
+    'mc.reports.export.type': 'Type',
+    'mc.reports.export.unit': 'Unit',
+    'mc.reports.export.description': 'Description',
+    'mc.reports.export.gross': 'Gross (THB)',
+    'mc.reports.export.fee_pct': 'Fee %',
+    'mc.reports.export.fee_amount': 'Fee (THB)',
     'mc.chart.unit': 'Unit',
     'mc.chart.amount': 'Amount',
     'mc.chart.show_table': 'View as table',
@@ -254,7 +248,10 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     <MCDashboardClient
       {...data}
       icalConflicts={icalConflicts}
-      feeReport={feeReport as never}
+      feeReportContext={{
+        projectId: activeContext.projectId,
+        organizationId: activeContext.organizationId,
+      }}
       labels={labels}
       contexts={contexts}
       activeContextKey={activeContext.key}

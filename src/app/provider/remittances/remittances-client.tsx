@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 type Labels = Record<string, string>;
 
 interface RemittanceFigures {
@@ -19,6 +21,18 @@ interface PayoutRow {
   reference: string;
   executedOn: string;
   status: string;
+}
+
+interface RemittancesView {
+  cadence: string;
+  currentPeriod: {
+    periodStart: string;
+    periodEnd: string;
+    remittance: RemittanceFigures;
+    payoutRecorded: boolean;
+    payoutId: string | null;
+  };
+  payouts: PayoutRow[];
 }
 
 const CADENCE_KEY: Record<string, string> = {
@@ -65,25 +79,44 @@ function FigureRow({
   );
 }
 
-export default function ProviderRemittancesClient({
-  cadence,
-  currentPeriod,
-  payouts,
-  labels,
-}: {
-  cadence: string;
-  currentPeriod: {
-    periodStart: string;
-    periodEnd: string;
-    remittance: RemittanceFigures;
-    payoutRecorded: boolean;
-    payoutId: string | null;
-  };
-  payouts: PayoutRow[];
-  labels: Labels;
-}) {
-  const cadenceLabel = labels[CADENCE_KEY[cadence] ?? CADENCE_KEY.weekly];
-  const remittance = currentPeriod.remittance;
+export default function ProviderRemittancesClient({ labels }: { labels: Labels }) {
+  const [view, setView] = useState<RemittancesView | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/provider/remittances');
+        if (!response.ok) {
+          throw new Error(labels['provider.remittances.error_generic'] || 'Failed to load');
+        }
+        const data = (await response.json()) as RemittancesView;
+        if (!cancelled) {
+          setView(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : labels['provider.remittances.error_generic']);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [labels]);
+
+  if (error) {
+    return <p className="text-body text-state-error">{error}</p>;
+  }
+
+  if (!view) {
+    return <p className="text-body text-text-secondary">{labels['provider.remittances.loading']}</p>;
+  }
+
+  const cadenceLabel = labels[CADENCE_KEY[view.cadence] ?? CADENCE_KEY.weekly];
+  const remittance = view.currentPeriod.remittance;
+  const payouts = view.payouts;
 
   return (
     <div className="space-y-24">
@@ -94,18 +127,18 @@ export default function ProviderRemittancesClient({
               {labels['provider.remittances.current_period']}
             </h2>
             <p className="text-body text-text-secondary">
-              {formatPeriod(currentPeriod.periodStart, currentPeriod.periodEnd)}
+              {formatPeriod(view.currentPeriod.periodStart, view.currentPeriod.periodEnd)}
             </p>
             <p className="text-caption text-text-secondary mt-4">{cadenceLabel}</p>
           </div>
           <span
             className={`inline-flex self-start px-12 py-4 rounded-full text-caption font-semibold ${
-              currentPeriod.payoutRecorded
+              view.currentPeriod.payoutRecorded
                 ? 'bg-state-success-soft text-state-success'
                 : 'bg-state-warning-soft text-state-warning'
             }`}
           >
-            {currentPeriod.payoutRecorded
+            {view.currentPeriod.payoutRecorded
               ? labels['provider.remittances.payout_recorded']
               : labels['provider.remittances.payout_pending']}
           </span>

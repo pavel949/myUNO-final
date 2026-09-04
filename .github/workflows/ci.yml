@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main, develop]
 
 jobs:
   ci:
@@ -18,7 +17,7 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: myuno_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d myuno_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -34,7 +33,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run linter
         run: npm run lint
@@ -44,7 +43,7 @@ jobs:
           max_attempts=30
           attempt=0
           until [ $attempt -ge $max_attempts ]; do
-            if pg_isready -h localhost -p 5432 -U test; then
+            if pg_isready -h localhost -p 5432 -U test -d myuno_test; then
               echo "PostgreSQL is ready!"
               break
             fi
@@ -56,12 +55,6 @@ jobs:
             echo "PostgreSQL failed to start"
             exit 1
           fi
-
-      - name: Create test database
-        env:
-          PGPASSWORD: test
-        run: |
-          psql -h localhost -U test -c "CREATE DATABASE myuno_test;" 2>/dev/null || true
 
       # Runs the real migration chain, the same way production deploys do, and
       # before the build so the schema exists when Next.js prerenders pages that
@@ -78,11 +71,17 @@ jobs:
         run: npx prisma migrate deploy
         timeout-minutes: 5
 
+      # next build must run as a production compile. Setting NODE_ENV=development
+      # here mixed Next's prod and dev runtimes and failed prerender of /404,
+      # /500, /_not-found, /legal and /design with
+      # "<Html> should not be imported outside of pages/_document".
+      # CONTENT_REVIEW_GATE_ENABLED=false is the CI-safe way to skip the
+      # founder-review gate without poisoning NODE_ENV.
       - name: Build
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          NODE_ENV: development
+          CONTENT_REVIEW_GATE_ENABLED: 'false'
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
@@ -92,7 +91,6 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          NODE_ENV: development
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

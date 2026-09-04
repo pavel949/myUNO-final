@@ -25,8 +25,11 @@
  *
  * Prefer the session pooler. Supabase now gives direct connections IPv6-only
  * addresses unless the IPv4 add-on is enabled, and most networks — including
- * plenty of CI runners — cannot reach those, which shows up as a connection
- * timeout with no error message.
+ * Vercel functions and plenty of CI runners — cannot reach those, which shows
+ * up as P1001 "Can't reach database server at db.<ref>.supabase.co:5432".
+ * The app rewrites a direct URL to the session pooler at runtime
+ * (`src/lib/resolveDatabaseUrl.ts`); still set the pooler string in Vercel
+ * so every process (build scripts included) uses the same address.
  */
 
 import { spawnSync } from 'node:child_process'

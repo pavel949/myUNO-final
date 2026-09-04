@@ -388,9 +388,21 @@ export default function OpsBoardClient({
       )}
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
-          {labels['staff.ops.booking_requests']}
-        </h2>
+        <div className="flex items-center justify-between gap-16 mb-8">
+          <h2 className="text-heading-3 font-bold text-text-ink">
+            {labels['staff.ops.booking_requests']}
+          </h2>
+          <Link
+            href={
+              activeProjectId
+                ? `/ops/requests?projectId=${encodeURIComponent(activeProjectId)}`
+                : '/ops/requests'
+            }
+            className="text-small font-semibold text-brand-andaman hover:underline shrink-0"
+          >
+            {labels['staff.ops.requests_open_inbox']}
+          </Link>
+        </div>
         {pendingRequests.length === 0 ? (
           <p className="text-body text-text-secondary py-8">{labels['staff.ops.requests_empty']}</p>
         ) : (

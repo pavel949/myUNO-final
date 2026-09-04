@@ -72,6 +72,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.arrivals': "Today's arrivals",
     'staff.ops.booking_requests': 'Booking requests',
+    'staff.ops.requests_open_inbox': 'Open inbox →',
     'staff.ops.requests_empty': 'No pending booking requests.',
     'staff.ops.approve_request': 'Approve',
     'staff.ops.decline_request': 'Decline',

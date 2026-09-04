@@ -17,6 +17,9 @@ It looks like this:
 postgresql://postgres.abcdefgh:YOUR-PASSWORD@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
 ```
 
+The username is `postgres.` plus the project ref — not `postgres` alone. The
+session pooler rejects a bare `postgres` user even when the password is correct.
+
 Replace `YOUR-PASSWORD` with the database password. If you don't have it, use
 **Reset database password** on that page — the password is not recoverable, only
 replaceable.
@@ -107,6 +110,7 @@ https://your-domain/api/health
 | Response | Meaning |
 |---|---|
 | `{"status":"ok","db":"ok"}` | Connected. |
+| `503 {"status":"degraded","db":"pool_exhausted"}` | The session pooler has no free clients. Runtime now caps each Vercel isolate at one connection; wait for warm isolates to recycle, then redeploy this build. |
 | `503 {"status":"degraded","db":"unreachable"}` | The app cannot reach the database — wrong `DATABASE_URL`, a paused project, or no redeploy after changing it. |
 
 Then load the site itself. If pages render in **Russian**, the content layer is

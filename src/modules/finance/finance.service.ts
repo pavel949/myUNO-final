@@ -359,7 +359,7 @@ export async function verifyAndConfirm(
         });
 
         if (fullBooking) {
-          await findOrCreateThread(db, {
+          const thread = await findOrCreateThread(db, {
             contextType: 'booking',
             contextId: confirmed.bookingId,
             projectId: booking.projectId,
@@ -369,7 +369,7 @@ export async function verifyAndConfirm(
           // Post system message for booking confirmation
           await addSystemMessage(
             db,
-            confirmed.bookingId,
+            thread.id,
             `Booking confirmed. Payment received.`
           );
         }

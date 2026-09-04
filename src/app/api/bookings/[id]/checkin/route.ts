@@ -1,7 +1,7 @@
 /**
  * POST /api/bookings/[id]/checkin
  * Check in a booking: update status, create TM30 filings for foreign guests, baseline condition report.
- * Only the guest or a staff member can check in.
+ * Only the guest, scoped staff, or scoped MC member can check in.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,7 +10,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createTm30Filing, createConditionReport } from '@/modules/ops';
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 export async function POST(
   _req: NextRequest,
@@ -37,13 +37,17 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Authorization: guest or staff can check in
+    // Authorization: guest, scoped staff, or scoped MC can check in
     const isGuest = booking.guestIdentityId === user.identityId;
     const isStaff = hasProjectStaffAccess(user, booking.projectId);
+    const isManagedMc = await hasManagedUnitMcAccess(user, {
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+    });
 
-    if (!isGuest && !isStaff) {
+    if (!isGuest && !isStaff && !isManagedMc) {
       return NextResponse.json(
-        { error: 'Only guest or staff can check in' },
+        { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }
       );
     }

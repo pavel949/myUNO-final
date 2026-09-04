@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { recordCashPayment } from '@/modules/finance';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
@@ -29,7 +29,7 @@ import { hasProjectStaffAccess } from '@/app/libs/projectScope';
  *
  * Body: { receiptRef: string }
  * Amount is ALWAYS the booking's server-stored total — never client-sent.
- * Auth: staff_ops or admin only.
+ * Auth: scoped staff/admin or the scoped management company member.
  */
 export async function POST(
   req: NextRequest,
@@ -53,6 +53,7 @@ export async function POST(
         id: true,
         status: true,
         projectId: true,
+        unitId: true,
         totalThb: true,
         guestIdentityId: true,
         payments: {
@@ -67,7 +68,11 @@ export async function POST(
     }
 
     const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    if (!isStaff) {
+    const isManagedMc = await hasManagedUnitMcAccess(user, {
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+    });
+    if (!isStaff && !isManagedMc) {
       throw createPublicError('Access denied.', 403);
     }
 

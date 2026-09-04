@@ -1,4 +1,5 @@
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
+import { prisma } from '@/lib/prisma';
 
 const STAFF_ROLES = new Set(['staff_ops', 'onsite_host']);
 
@@ -38,6 +39,50 @@ export function getMCProjectScopes(user: CurrentUser): MCProjectScope[] {
     });
   }
   return scopes;
+}
+
+export function getMCOrganizationIdsForProject(
+  user: CurrentUser,
+  projectId: string
+): string[] {
+  return Array.from(
+    new Set(
+      user.roles
+        .filter(
+          (assignment) =>
+            assignment.role === 'mc_member' &&
+            assignment.projectId === projectId &&
+            Boolean(assignment.organizationId)
+        )
+        .map((assignment) => assignment.organizationId as string)
+    )
+  );
+}
+
+export async function hasManagedUnitMcAccess(
+  user: CurrentUser,
+  input: { projectId: string; unitId: string }
+): Promise<boolean> {
+  if (user.isAdmin) {
+    return true;
+  }
+
+  const organizationIds = getMCOrganizationIdsForProject(user, input.projectId);
+  if (organizationIds.length === 0) {
+    return false;
+  }
+
+  const engagement = await prisma.unitEngagement.findFirst({
+    where: {
+      unitId: input.unitId,
+      engagementType: 'via_management_company',
+      status: 'active',
+      managementOrgId: { in: organizationIds },
+    },
+    select: { id: true },
+  });
+
+  return Boolean(engagement);
 }
 
 export function hasProjectStaffAccess(user: CurrentUser, projectId: string): boolean {

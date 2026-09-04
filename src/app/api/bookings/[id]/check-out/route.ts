@@ -4,11 +4,11 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createNotification } from '@/modules/comms';
 import { checkOutBooking } from '@/modules/booking';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * POST /api/bookings/[id]/check-out
- * Check out a stay: checked_in → checked_out (staff or the guest).
+ * Check out a stay: checked_in → checked_out (guest, scoped staff, or scoped MC).
  * Notifies the owner that the unit is free for turnaround.
  */
 export async function POST(
@@ -32,7 +32,11 @@ export async function POST(
 
     const isGuest = booking.guestIdentityId === user.identityId;
     const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    if (!isGuest && !isStaff && !user.isAdmin) {
+    const isManagedMc = await hasManagedUnitMcAccess(user, {
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+    });
+    if (!isGuest && !isStaff && !isManagedMc && !user.isAdmin) {
       throw createPublicError('Access denied.', 403);
     }
 

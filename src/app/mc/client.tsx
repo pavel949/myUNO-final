@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { StatTile } from '@/components';
+import { useRouter } from 'next/navigation';
+import { Button, StatTile } from '@/components';
 import {
   HBarStack,
   MonthHeatStrip,
@@ -161,7 +162,11 @@ export function MCDashboardClient({
   contexts,
   activeContextKey,
 }: MCDashboardClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tickets' | 'calendar' | 'reports'>('overview');
+  const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
 
   const tabs = [
     { key: 'overview' as const, label: labels['mc.tabs.overview'] },
@@ -204,6 +209,107 @@ export function MCDashboardClient({
     }));
   const activeContext =
     contexts.find((context) => context.key === activeContextKey) ?? contexts[0];
+
+  const fill = (template: string, params: Record<string, string | number>) => {
+    let result = template;
+    for (const [key, value] of Object.entries(params)) {
+      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+    }
+    return result;
+  };
+
+  const postBookingAction = async (bookingId: string, path: string, body?: unknown) => {
+    setBusyBookingId(bookingId);
+    setBookingError(null);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || labels['mc.bookings.error_generic']);
+      }
+      router.refresh();
+    } catch (error) {
+      setBookingError(
+        error instanceof Error ? error.message : labels['mc.bookings.error_generic']
+      );
+    } finally {
+      setBusyBookingId(null);
+    }
+  };
+
+  const actionForBooking = (booking: Booking) => {
+    if (booking.status === 'pending_payment') {
+      const receiptRef = (bookingReceipts[booking.id] || '').trim();
+      return (
+        <div className="flex items-center gap-8">
+          <input
+            type="text"
+            value={bookingReceipts[booking.id] || ''}
+            onChange={(event) =>
+              setBookingReceipts((previous) => ({
+                ...previous,
+                [booking.id]: event.target.value,
+              }))
+            }
+            placeholder={labels['mc.bookings.receipt_placeholder']}
+            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+            style={{ width: '140px' }}
+          />
+          <Button
+            size="sm"
+            variant="sun"
+            onClick={() => {
+              if (!receiptRef) return;
+              if (
+                window.confirm(
+                  fill(labels['mc.bookings.confirm_cash'], {
+                    amount: booking.totalThb.toLocaleString(),
+                  })
+                )
+              ) {
+                void postBookingAction(booking.id, 'record-cash-payment', { receiptRef });
+              }
+            }}
+            isLoading={busyBookingId === booking.id}
+            disabled={!receiptRef}
+          >
+            {labels['mc.bookings.record_cash']}
+          </Button>
+        </div>
+      );
+    }
+
+    if (booking.status === 'confirmed') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => void postBookingAction(booking.id, 'checkin')}
+          isLoading={busyBookingId === booking.id}
+        >
+          {labels['mc.bookings.check_in']}
+        </Button>
+      );
+    }
+
+    if (booking.status === 'checked_in') {
+      return (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void postBookingAction(booking.id, 'check-out')}
+          isLoading={busyBookingId === booking.id}
+        >
+          {labels['mc.bookings.check_out']}
+        </Button>
+      );
+    }
+
+    return <span className="text-small text-text-secondary">—</span>;
+  };
 
   return (
     <main className="min-h-screen bg-surface-background">
@@ -342,6 +448,11 @@ export function MCDashboardClient({
             <h2 className="text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.bookings.title']}
             </h2>
+            {bookingError && (
+              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
+                <p className="text-small text-state-error">{bookingError}</p>
+              </div>
+            )}
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -353,12 +464,13 @@ export function MCDashboardClient({
                       <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.check_out']}</th>
                       <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.amount']}</th>
                       <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.status']}</th>
+                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.actions']}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bookings.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-24 text-text-secondary">
+                        <td colSpan={7} className="text-center p-24 text-text-secondary">
                           {labels['mc.bookings.empty']}
                         </td>
                       </tr>
@@ -394,6 +506,7 @@ export function MCDashboardClient({
                               {statusLabel(booking.status)}
                             </span>
                           </td>
+                          <td className="p-16">{actionForBooking(booking)}</td>
                         </tr>
                       ))
                     )}

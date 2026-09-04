@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getTransferInstructions } from '@/modules/finance';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * Where to send the money for this booking.
@@ -20,6 +20,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     where: { id: params.id },
     select: {
       id: true,
+      unitId: true,
       projectId: true,
       guestIdentityId: true,
       totalThb: true,
@@ -30,7 +31,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
   const isStaff = hasProjectStaffAccess(user, booking.projectId);
-  if (booking.guestIdentityId !== user.identityId && !isStaff) {
+  const isManagedMc = await hasManagedUnitMcAccess(user, {
+    projectId: booking.projectId,
+    unitId: booking.unitId,
+  });
+  if (booking.guestIdentityId !== user.identityId && !isStaff && !isManagedMc) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

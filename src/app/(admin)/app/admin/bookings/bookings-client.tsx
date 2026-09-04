@@ -48,6 +48,7 @@ export default function BookingsAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
+  const [bankRefs, setBankRefs] = useState<Record<string, string>>({});
   const [guestLink, setGuestLink] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState<string>('');
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -312,6 +313,30 @@ export default function BookingsAdminClient({
                   disabled={!(receipts[booking.id] || '').trim()}
                 >
                   {labels['admin.bookings.record_cash']}
+                </Button>
+                <input
+                  type="text"
+                  value={bankRefs[booking.id] || ''}
+                  onChange={(e) =>
+                    setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
+                  }
+                  placeholder={labels['admin.bookings.bank_ref_placeholder']}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
+                  style={{ width: '150px' }}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    act(booking.id, 'record-transfer', {
+                      amountThb: Math.round(booking.totalThb * 100),
+                      bankReference: (bankRefs[booking.id] || '').trim(),
+                    })
+                  }
+                  isLoading={busyId === booking.id}
+                  disabled={!(bankRefs[booking.id] || '').trim()}
+                >
+                  {labels['admin.bookings.record_transfer']}
                 </Button>
               </>
             )}

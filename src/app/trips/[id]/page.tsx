@@ -20,6 +20,21 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.pay_card': 'Pay by card',
     'booking.detail.pay_cash_note':
       'You can also pay in cash to our team at check-in — we will confirm your booking on the spot.',
+    'booking.detail.transfer_title': 'Pay by bank transfer',
+    'booking.detail.transfer_intro':
+      'Transfer the amount below to our company account. Quote the reference exactly so we can match your payment.',
+    'booking.detail.transfer_amount': 'Amount to transfer',
+    'booking.detail.transfer_reference': 'Payment reference',
+    'booking.detail.transfer_bank': 'Bank',
+    'booking.detail.transfer_account': 'Account number',
+    'booking.detail.transfer_account_name': 'Account name',
+    'booking.detail.transfer_swift': 'SWIFT / BIC',
+    'booking.detail.transfer_copy': 'Copy',
+    'booking.detail.transfer_copied': 'Copied',
+    'booking.detail.transfer_expires': 'Complete transfer within {time}',
+    'booking.detail.transfer_expired': 'Transfer window has passed — contact us',
+    'booking.detail.transfer_note':
+      'Use reference {reference} in your transfer. We confirm within one business day of receipt.',
     'booking.detail.receipt': 'Receipt',
     'booking.detail.home_space': 'Open my home space',
     'booking.detail.passports': 'Pre-arrival: add passports',

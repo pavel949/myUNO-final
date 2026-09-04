@@ -137,6 +137,7 @@ export default function OpsBoardClient({
   const [checkinBooking, setCheckinBooking] = useState<OpsBooking | null>(null);
   const [checkoutBooking, setCheckoutBooking] = useState<OpsBooking | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
+  const [bankRefs, setBankRefs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   const act = async (bookingId: string, path: string, body?: unknown) => {
@@ -530,6 +531,32 @@ export default function OpsBoardClient({
               disabled={!(receipts[booking.id] || '').trim()}
             >
               {labels['staff.ops.record_cash']}
+            </Button>
+            <input
+              type="text"
+              value={bankRefs[booking.id] || ''}
+              onChange={(e) =>
+                setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
+              }
+              placeholder={labels['staff.ops.bank_ref_placeholder']}
+              className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+              style={{ width: '160px' }}
+            />
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                const bankReference = (bankRefs[booking.id] || '').trim();
+                if (!bankReference) return;
+                act(booking.id, 'record-transfer', {
+                  amountThb: Math.round(booking.totalThb * 100),
+                  bankReference,
+                });
+              }}
+              isLoading={busyId === booking.id}
+              disabled={!(bankRefs[booking.id] || '').trim()}
+            >
+              {labels['staff.ops.record_transfer']}
             </Button>
           </div>
         )}

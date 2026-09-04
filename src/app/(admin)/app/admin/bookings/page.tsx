@@ -11,6 +11,8 @@ export default async function AdminBookingsPage() {
     'admin.bookings.empty': 'No bookings yet.',
     'admin.bookings.paid': 'Paid',
     'admin.bookings.record_cash': 'Record cash',
+    'admin.bookings.record_transfer': 'Record transfer',
+    'admin.bookings.bank_ref_placeholder': 'Bank ref №',
     'admin.bookings.receipt_placeholder': 'Receipt / чек №',
     'admin.bookings.cancel': 'Cancel',
     'admin.bookings.approve': 'Approve request',

@@ -55,6 +55,12 @@ export default async function AccountPage() {
     'account.saving': 'Saving…',
     'account.saved': 'Saved.',
     'account.error': 'That did not save. Please try again.',
+    'account.privacy.title': 'Your data',
+    'account.privacy.export_hint':
+      'Download a copy of the personal data we hold about you (PDPA right of access).',
+    'account.privacy.export': 'Download my data',
+    'account.privacy.exporting': 'Preparing download…',
+    'account.privacy.export_error': 'Export failed. Please try again.',
   });
 
   return <AccountClient profile={profile} labels={labels} />;

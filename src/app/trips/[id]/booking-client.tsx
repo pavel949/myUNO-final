@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import BankTransferInstructions from '@/components/booking/BankTransferInstructions';
 
 interface BookingDetail {
   id: string;
@@ -553,6 +554,7 @@ export default function BookingDetailClient({
               <Button onClick={handlePayCard} isLoading={busy} size="sm">
                 {labels['booking.detail.pay_card']}
               </Button>
+              <BankTransferInstructions bookingId={booking.id} labels={labels} />
               <p className="text-small text-text-secondary mt-12">
                 {labels['booking.detail.pay_cash_note']}
               </p>

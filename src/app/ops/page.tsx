@@ -153,6 +153,8 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.check_in': 'Check in',
     'staff.ops.check_out': 'Check out',
     'staff.ops.record_cash': 'Record cash',
+    'staff.ops.record_transfer': 'Record transfer',
+    'staff.ops.bank_ref_placeholder': 'Bank ref №',
     'staff.ops.receipt_placeholder': 'Receipt / чек №',
     'staff.ops.confirm_cash': 'Confirm ฿{amount} received',
     'staff.ops.error_generic': 'Action failed. Please try again.',

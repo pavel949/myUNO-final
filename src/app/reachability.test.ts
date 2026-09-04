@@ -232,12 +232,8 @@ const API_DEBT = new Set([
   '/api/admin/statements/[statementId]/line-items',
   '/api/admin/units/[id]/status',
   // Guest/owner/provider-facing routes with no caller found.
-  '/api/auth/verify-email',
-  '/api/bookings/[id]/record-transfer',
-  '/api/bookings/[id]/transfer-instructions',
   '/api/content/translate',
   '/api/messages/[messageId]/flag-as-purchase',
-  '/api/profile/export',
   '/api/track',
   // SSE endpoints that exist and work, but the frontend they were built for
   // polls instead (NotificationBell polls /api/notifications every 30s) —

@@ -29,14 +29,23 @@ export async function loadTicketForUser(ticketId: string, user: CurrentUser) {
           unitId: ticket.unitId,
         })
       : false;
+  const isUnitOwner =
+    ticket.unitId !== null
+      ? Boolean(
+          await prisma.unit.findFirst({
+            where: { id: ticket.unitId, ownerIdentityId: user.identityId },
+            select: { id: true },
+          })
+        )
+      : false;
   const isAdmin = user.isAdmin;
 
-  const canView = isReporter || isAssignee || isStaff || isManagedMc || isAdmin;
+  const canView = isReporter || isAssignee || isStaff || isManagedMc || isUnitOwner || isAdmin;
   const canManage = isStaff || isManagedMc || isAdmin;
 
   if (!canView) {
     throw createPublicError('not found', 404);
   }
 
-  return { ticket, canManage, isAssignee, isReporter, isStaff, isManagedMc, isAdmin };
+  return { ticket, canManage, isAssignee, isReporter, isStaff, isManagedMc, isUnitOwner, isAdmin };
 }

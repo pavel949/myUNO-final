@@ -192,4 +192,39 @@ describe('ticket API scope — management company', () => {
     );
     expect(statusResponse.status).toBe(403);
   });
+
+  it('allows unit owner to read ticket but not transition status', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: owner.id,
+      email: owner.email,
+      firstName: 'Owner',
+      lastName: 'Unit',
+      isAdmin: false,
+      roles: [
+        {
+          role: 'owner',
+          projectId,
+          unitId: null,
+          organizationId: null,
+          providerId: null,
+        },
+      ],
+    });
+
+    const detailResponse = await getTicket(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}`),
+      { params: { id: ticketId } }
+    );
+    expect(detailResponse.status).toBe(200);
+
+    const statusResponse = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'acknowledged' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    expect(statusResponse.status).toBe(403);
+  });
 });

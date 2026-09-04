@@ -23,6 +23,7 @@ import { GET } from './route';
 describe('GET /api/tickets/[id] scoped access', () => {
   let reporter: Awaited<ReturnType<typeof createIdentity>>;
   let assignee: Awaited<ReturnType<typeof createIdentity>>;
+  let owner: Awaited<ReturnType<typeof createIdentity>>;
   let staff: Awaited<ReturnType<typeof createIdentity>>;
   let outsider: Awaited<ReturnType<typeof createIdentity>>;
   let projectId: string;
@@ -34,12 +35,12 @@ describe('GET /api/tickets/[id] scoped access', () => {
 
     reporter = await createIdentity({ firstName: 'Reporter' });
     assignee = await createIdentity({ firstName: 'Assignee' });
+    owner = await createIdentity({ firstName: 'Owner' });
     staff = await createIdentity({ firstName: 'Staff' });
     outsider = await createIdentity({ firstName: 'Outsider' });
 
     const project = await createProject({ status: 'live' });
     projectId = project.id;
-    const owner = await createIdentity({ firstName: 'Owner' });
     const unit = await createUnit({ projectId, ownerIdentityId: owner.id, status: 'live' });
 
     await db.roleAssignment.create({
@@ -114,6 +115,15 @@ describe('GET /api/tickets/[id] scoped access', () => {
     const response = await requestAs({
       identityId: staff.id,
       role: 'staff_ops',
+      roleProjectId: projectId,
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it('allows unit owner to view ticket', async () => {
+    const response = await requestAs({
+      identityId: owner.id,
+      role: 'owner',
       roleProjectId: projectId,
     });
     expect(response.status).toBe(200);

@@ -2501,6 +2501,15 @@ const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
   { key: 'service-order.detail.cancellation_reason', namespace: 'service-order', description: 'Field: why order was cancelled', en: 'Cancellation Reason', ru: 'Причина отмены', status: NR },
   { key: 'service-order.detail.cancel_order', namespace: 'service-order', description: 'Button: cancel order', en: 'Cancel Order', ru: 'Отменить заказ', status: NR },
   { key: 'service-order.detail.confirm_cancellation', namespace: 'service-order', description: 'Button: confirm cancellation', en: 'Confirm Cancellation', ru: 'Подтвердить отмену', status: NR },
+  { key: 'service-order.detail.dispute_title', namespace: 'service-order', description: 'Order detail: dispute section heading', en: 'Dispute this order', ru: 'Оспорить заказ', th: 'โต้แย้งคำสั่งนี้', status: NR },
+  { key: 'service-order.detail.dispute_open', namespace: 'service-order', description: 'Order detail: open dispute form', en: 'Raise a dispute', ru: 'Подать спор', th: 'ยื่นข้อโต้แย้ง', status: NR },
+  { key: 'service-order.detail.dispute_title_field', namespace: 'service-order', description: 'Order detail: dispute subject field', en: 'Subject', ru: 'Тема', th: 'หัวข้อ', status: NR },
+  { key: 'service-order.detail.dispute_description_field', namespace: 'service-order', description: 'Order detail: dispute description field', en: 'What went wrong', ru: 'Что пошло не так', th: 'เกิดอะไรขึ้น', status: NR },
+  { key: 'service-order.detail.dispute_submit', namespace: 'service-order', description: 'Order detail: dispute submit button', en: 'Submit dispute', ru: 'Отправить спор', th: 'ส่งข้อโต้แย้ง', status: NR },
+  { key: 'service-order.detail.dispute_cancel', namespace: 'service-order', description: 'Order detail: dispute cancel button', en: 'Cancel', ru: 'Отмена', th: 'ยกเลิก', status: NR },
+  { key: 'service-order.detail.dispute_sent', namespace: 'service-order', description: 'Order detail: dispute submitted confirmation', en: 'Your dispute has been sent to our team — you can follow its status from the ticket it opened.', ru: 'Спор отправлен нашей команде — вы можете отслеживать его статус в заявке, которая была открыта.', th: 'ส่งข้อโต้แย้งถึงทีมของเราแล้ว — ติดตามสถานะได้จากคำขอที่เปิดขึ้น', status: NR },
+  { key: 'service-order.detail.dispute_error', namespace: 'service-order', description: 'Order detail: dispute submit failure', en: 'That did not work. Please try again.', ru: 'Не получилось. Попробуйте ещё раз.', th: 'ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', status: NR },
+  { key: 'service-order.detail.dispute_view_ticket', namespace: 'service-order', description: 'Order detail: link to dispute ticket', en: 'View the ticket', ru: 'Открыть заявку', th: 'ดูคำขอ', status: NR },
 ];
 
 const PROJECT_PAGE_KEYS: KeyDef[] = [

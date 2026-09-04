@@ -5,8 +5,10 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
+import OrderDisputePanel from './order-dispute-panel';
 import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,6 +144,16 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.refund_accrued': 'Refund accrued',
     'services.order.pay': 'Pay',
     'services.wizard.error_generic': 'Could not place the order. Please try again.',
+    'service-order.detail.dispute_title': 'Dispute this order',
+    'service-order.detail.dispute_open': 'Raise a dispute',
+    'service-order.detail.dispute_title_field': 'Subject',
+    'service-order.detail.dispute_description_field': 'What went wrong',
+    'service-order.detail.dispute_submit': 'Submit dispute',
+    'service-order.detail.dispute_cancel': 'Cancel',
+    'service-order.detail.dispute_sent':
+      'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
+    'service-order.detail.dispute_error': 'That did not work. Please try again.',
+    'service-order.detail.dispute_view_ticket': 'View the ticket',
   });
 
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
@@ -177,6 +189,19 @@ export default async function ServiceOrderDetailPage({
   const isPaid =
     order.payments.some((p) => p.status === 'completed') ||
     order.status === 'fulfilled';
+
+  const isOrderer = order.orderer.id === user.identityId;
+  const disputableStatuses = ['accepted', 'fulfilled', 'closed', 'failed'];
+  const canDispute =
+    isOrderer && disputableStatuses.includes(order.status);
+
+  const existingDispute =
+    canDispute
+      ? await prisma.dispute.findFirst({
+          where: { subjectType: 'service_order', subjectId: order.id },
+          select: { id: true, ticketId: true },
+        })
+      : null;
 
   const breadcrumbs = [
     { label: labels['service-order.breadcrumb_home'], href: '/' },
@@ -467,6 +492,27 @@ export default async function ServiceOrderDetailPage({
                 {labels['service-order.detail.refund_accrued']}: ฿{baht(order.refundAccruedThb)}
               </p>
             )}
+          </div>
+        )}
+
+        {canDispute && !existingDispute && (
+          <OrderDisputePanel orderId={order.id} labels={labels} />
+        )}
+
+        {existingDispute && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+              {labels['service-order.detail.dispute_title']}
+            </h2>
+            <p className="text-body text-text-secondary mb-12">
+              {labels['service-order.detail.dispute_sent']}
+            </p>
+            <Link
+              href={`/tickets/${existingDispute.ticketId}`}
+              className="text-body text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['service-order.detail.dispute_view_ticket']}
+            </Link>
           </div>
         )}
 

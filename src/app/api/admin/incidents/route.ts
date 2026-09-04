@@ -1,8 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { IncidentSeverity, IncidentStatus, IncidentType } from '@prisma/client';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,28 +11,6 @@ interface CreateIncidentRequest {
   severity: IncidentSeverity;
   description: string;
   assignedToIdentityId?: string;
-}
-
-async function requireAdmin() {
-  const user = await getCurrentUser();
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-
-  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
-  if (!identity) {
-    return { error: NextResponse.json({ error: 'Identity not found' }, { status: 404 }) };
-  }
-
-  if (
-    !(await can({
-      identity,
-      action: 'admin:view_all',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-
-  return { user, identity };
 }
 
 function serializeIncident(incident: {
@@ -85,8 +62,8 @@ const incidentInclude = {
 } as const;
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const url = new URL(req.url);
@@ -128,8 +105,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
   const { user } = auth;
 
   try {

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createNotification } from '@/modules/comms';
 import { checkOutBooking } from '@/modules/booking';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * POST /api/bookings/[id]/check-out
@@ -30,7 +31,7 @@ export async function POST(
     }
 
     const isGuest = booking.guestIdentityId === user.identityId;
-    const isStaff = user.roles.some((role) => role.role === 'staff_ops');
+    const isStaff = hasProjectStaffAccess(user, booking.projectId);
     if (!isGuest && !isStaff && !user.isAdmin) {
       throw createPublicError('Access denied.', 403);
     }

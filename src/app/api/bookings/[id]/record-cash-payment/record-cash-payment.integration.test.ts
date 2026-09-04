@@ -34,6 +34,7 @@ function makeRequest(body: unknown): NextRequest {
 describe('POST /api/bookings/[id]/record-cash-payment', () => {
   let staff: Awaited<ReturnType<typeof createIdentity>>;
   let guest: Awaited<ReturnType<typeof createIdentity>>;
+  let projectId: string;
   let bookingId: string;
 
   beforeEach(async () => {
@@ -41,6 +42,7 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
     staff = await createIdentity({ firstName: 'Ops' });
     guest = await createIdentity({ firstName: 'Guest' });
     const project = await createProject({ status: 'live' });
+    projectId = project.id;
     const unit = await createUnit({ projectId: project.id });
     const booking = await createBooking({
       unitId: unit.id,
@@ -58,7 +60,15 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
     firstName: 'Ops',
     lastName: 'User',
     isAdmin: false,
-    roles: [{ role: 'staff_ops', projectId: null, unitId: null, organizationId: null }],
+    roles: [
+      {
+        role: 'staff_ops',
+        projectId,
+        unitId: null,
+        organizationId: null,
+        providerId: null,
+      },
+    ],
   });
 
   it('records cash, confirms the booking, and writes the ledger entry', async () => {

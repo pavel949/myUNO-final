@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 const CANCELLABLE_STATUSES = ['requested', 'pending_payment', 'confirmed'];
 
@@ -46,7 +47,7 @@ export async function GET(
 
     const isGuest = booking.guestIdentityId === user.identityId;
     const isOwner = booking.unit?.ownerIdentityId === user.identityId;
-    const isStaff = user.roles.some((role) => role.role === 'staff_ops');
+    const isStaff = hasProjectStaffAccess(user, booking.projectId);
     if (!isGuest && !isOwner && !isStaff && !user.isAdmin) {
       throw createPublicError('not found', 404);
     }

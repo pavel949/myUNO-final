@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 async function authorize(bookingId: string) {
   const user = await getCurrentUser();
@@ -11,13 +12,13 @@ async function authorize(bookingId: string) {
   }
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    select: { id: true, guestIdentityId: true, status: true },
+    select: { id: true, guestIdentityId: true, status: true, projectId: true },
   });
   if (!booking) {
     throw createPublicError('not found', 404);
   }
   const isGuest = booking.guestIdentityId === user.identityId;
-  const isStaff = user.roles.some((role) => role.role === 'staff_ops');
+  const isStaff = hasProjectStaffAccess(user, booking.projectId);
   if (!isGuest && !isStaff && !user.isAdmin) {
     throw createPublicError('not found', 404);
   }

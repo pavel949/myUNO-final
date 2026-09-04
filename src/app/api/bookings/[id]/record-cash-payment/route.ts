@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { recordCashPayment } from '@/modules/finance';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
@@ -40,11 +41,6 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
-    const isStaff = user.roles.some((role) => role.role === 'staff_ops');
-    if (!isStaff && !user.isAdmin) {
-      throw createPublicError('Access denied.', 403);
-    }
-
     const body = await req.json().catch(() => ({}));
     const receiptRef = typeof body.receiptRef === 'string' ? body.receiptRef.trim() : '';
     if (!receiptRef) {
@@ -56,6 +52,7 @@ export async function POST(
       select: {
         id: true,
         status: true,
+        projectId: true,
         totalThb: true,
         guestIdentityId: true,
         payments: {
@@ -67,6 +64,11 @@ export async function POST(
 
     if (!booking) {
       throw createPublicError('not found', 404);
+    }
+
+    const isStaff = hasProjectStaffAccess(user, booking.projectId);
+    if (!isStaff) {
+      throw createPublicError('Access denied.', 403);
     }
 
     if (booking.status !== 'pending_payment') {

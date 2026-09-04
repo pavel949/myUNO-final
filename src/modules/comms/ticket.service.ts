@@ -427,6 +427,60 @@ export async function getReporterTickets(
   });
 }
 
+export type AdminTicketBoardFilter = 'active' | 'all' | TicketStatus;
+
+const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
+  'open',
+  'acknowledged',
+  'in_progress',
+  'waiting_reporter',
+];
+
+/**
+ * Cross-project ticket board for admin (doc 08 §6 §9, S14).
+ * Sorted by SLA due date, then newest first.
+ */
+export async function getAdminTicketBoard(
+  db: PrismaClient,
+  options?: {
+    projectId?: string;
+    filter?: AdminTicketBoardFilter;
+    limit?: number;
+  }
+) {
+  const filter = options?.filter ?? 'active';
+  const limit = options?.limit ?? 100;
+
+  const statusWhere =
+    filter === 'all'
+      ? {}
+      : filter === 'active'
+        ? { status: { in: ACTIVE_TICKET_STATUSES } }
+        : { status: filter };
+
+  return db.ticket.findMany({
+    where: {
+      ...(options?.projectId ? { projectId: options.projectId } : {}),
+      ...statusWhere,
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      categoryKey: true,
+      createdAt: true,
+      slaDueAt: true,
+      project: { select: { id: true, name: true } },
+      unit: { select: { id: true, name: true } },
+      raisedBy: { select: { firstName: true, lastName: true } },
+      assignee: { select: { firstName: true, lastName: true } },
+    },
+    orderBy: [{ slaDueAt: 'asc' }, { createdAt: 'desc' }],
+    take: limit,
+  });
+}
+
 /**
  * Check for SLA breaches and track analytics events.
  * Called by cron job to detect tickets where slaDueAt has passed while still open.

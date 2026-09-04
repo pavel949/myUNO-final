@@ -611,4 +611,50 @@ describe('ticket.service — integration tests', () => {
       // (not implemented yet - UI task)
     });
   });
+
+  describe('getAdminTicketBoard', () => {
+    it('returns active tickets across projects sorted by SLA', async () => {
+      const projectA = await createProject({ name: 'Alpha' });
+      const projectB = await createProject({ name: 'Beta' });
+      const reporter = await createIdentity({ firstName: 'Reporter' });
+
+      const openLate = await ticketService.raiseTicket(db, {
+        projectId: projectA.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Late SLA ticket',
+        priority: 'low',
+      });
+      const openSoon = await ticketService.raiseTicket(db, {
+        projectId: projectB.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Soon SLA ticket',
+        priority: 'urgent',
+      });
+
+      await db.ticket.update({
+        where: { id: openLate.id },
+        data: { slaDueAt: new Date(Date.now() + 48 * 60 * 60 * 1000) },
+      });
+      await db.ticket.update({
+        where: { id: openSoon.id },
+        data: { slaDueAt: new Date(Date.now() + 2 * 60 * 60 * 1000) },
+      });
+
+      const board = await ticketService.getAdminTicketBoard(db, { filter: 'active' });
+      const ids = board.map((row) => row.id);
+      expect(ids).toContain(openLate.id);
+      expect(ids).toContain(openSoon.id);
+      expect(ids.indexOf(openSoon.id)).toBeLessThan(ids.indexOf(openLate.id));
+
+      const scoped = await ticketService.getAdminTicketBoard(db, {
+        projectId: projectA.id,
+        filter: 'active',
+      });
+      expect(scoped.every((row) => row.project.id === projectA.id)).toBe(true);
+    });
+  });
 });

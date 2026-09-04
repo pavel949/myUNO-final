@@ -20,7 +20,7 @@ export default async function OpsBoardPage() {
     redirect('/');
   }
 
-  const { arrivals, departures, pendingPayment, pendingServiceOrders, slaMetrics } = await getOpsBoard(
+  const { arrivals, departures, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } = await getOpsBoard(
     prisma,
     new Date(),
     user.isAdmin ? undefined : { projectIds: staffProjectIds }
@@ -50,9 +50,26 @@ export default async function OpsBoardPage() {
     'staff.ops.confirm_cash': 'Confirm ฿{amount} received',
     'staff.ops.error_generic': 'Action failed. Please try again.',
     'staff.ops.service_pending_cash': 'Service orders awaiting cash',
+    'staff.ops.tickets_title': 'Open tickets',
+    'staff.ops.tickets_empty': 'No active tickets.',
+    'staff.ops.ticket_reported_by': 'Reported by',
+    'staff.ops.ticket_assign_me': 'Assign to me',
+    'staff.ops.ticket_assigned_to': 'Assigned to',
+    'staff.ops.ticket_acknowledge': 'Acknowledge',
+    'staff.ops.ticket_start': 'Start work',
+    'staff.ops.ticket_resolve': 'Resolve',
+    'staff.ops.ticket_view': 'View',
+    'staff.ops.ticket_due': 'SLA due',
     'staff.ops.sla_title': 'SLA health (last 7 days)',
     'staff.ops.tm30_on_time': 'TM30 on-time %',
     'staff.ops.tickets_past_sla': 'Tickets past SLA',
+    'tickets.status.open': 'Open',
+    'tickets.status.acknowledged': 'Acknowledged',
+    'tickets.status.in_progress': 'In progress',
+    'tickets.status.waiting_reporter': 'Waiting for you',
+    'tickets.status.resolved': 'Resolved',
+    'tickets.status.closed': 'Closed',
+    'tickets.status.cancelled': 'Cancelled',
   });
 
   // Display boundary: totalThb/total_thb are stored in satang (THB x 100);
@@ -131,6 +148,19 @@ export default async function OpsBoardPage() {
             ordererName: o.orderer
               ? `${o.orderer.firstName} ${o.orderer.lastName}`
               : '—',
+          }))}
+          openTickets={openTickets.map((ticket) => ({
+            id: ticket.id,
+            title: ticket.title,
+            status: ticket.status,
+            priority: ticket.priority,
+            slaDueAt: ticket.slaDueAt ? ticket.slaDueAt.toISOString() : null,
+            unitName: ticket.unit?.name || '—',
+            raisedByName: `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`,
+            assigneeIdentityId: ticket.assigneeIdentityId,
+            assigneeName: ticket.assignee
+              ? `${ticket.assignee.firstName} ${ticket.assignee.lastName}`
+              : null,
           }))}
           labels={labels}
         />

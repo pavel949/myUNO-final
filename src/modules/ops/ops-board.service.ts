@@ -6,6 +6,7 @@ export interface OpsBoardData {
   departures: OpsBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
+  openTickets: OpsTicket[];
   slaMetrics: {
     tm30OnTimeRate7d: number;
     ticketsWithOpenSLA: number;
@@ -36,6 +37,18 @@ interface OpsServiceOrder {
   total_thb: number;
   service: { title: string };
   orderer: { firstName: string; lastName: string };
+}
+
+interface OpsTicket {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  slaDueAt: Date | null;
+  unit: { name: string } | null;
+  raisedBy: { firstName: string; lastName: string };
+  assigneeIdentityId: string | null;
+  assignee: { firstName: string; lastName: string } | null;
 }
 
 function dayRange(date: Date): { from: Date; to: Date } {
@@ -100,6 +113,7 @@ export async function getOpsBoard(
       departures: [],
       pendingPayment: [],
       pendingServiceOrders: [],
+      openTickets: [],
       slaMetrics: {
         tm30OnTimeRate7d: 100,
         ticketsWithOpenSLA: 0,
@@ -131,7 +145,7 @@ export async function getOpsBoard(
     },
   };
 
-  const [arrivals, departures, pendingPayment, pendingServiceOrders, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
+  const [arrivals, departures, pendingPayment, pendingServiceOrders, openTickets, tm30OnTimeRate7d, ticketsWithOpenSLA] = await Promise.all([
     db.booking.findMany({
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
@@ -175,6 +189,25 @@ export async function getOpsBoard(
       orderBy: { scheduled_start: 'asc' },
       take: 50,
     }),
+    db.ticket.findMany({
+      where: {
+        ...(projectFilter ? { projectId: projectFilter } : {}),
+        status: { in: ['open', 'acknowledged', 'in_progress', 'waiting_reporter'] },
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        slaDueAt: true,
+        unit: { select: { name: true } },
+        raisedBy: { select: { firstName: true, lastName: true } },
+        assigneeIdentityId: true,
+        assignee: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: [{ slaDueAt: 'asc' }, { createdAt: 'desc' }],
+      take: 50,
+    }),
     // TM30 on-time rate for the last 7 days
     getScopedTm30OnTimeRate(db, sevenDaysAgo, now, scope),
     // Count tickets with open SLA (status not closed/resolved or past slaDueAt)
@@ -195,6 +228,7 @@ export async function getOpsBoard(
     departures,
     pendingPayment,
     pendingServiceOrders,
+    openTickets,
     slaMetrics: {
       tm30OnTimeRate7d,
       ticketsWithOpenSLA,

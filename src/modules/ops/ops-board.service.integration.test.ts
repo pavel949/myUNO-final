@@ -109,6 +109,19 @@ describe('getOpsBoard', () => {
     });
     await db.ticket.create({
       data: {
+        projectId: projectA.id,
+        unitId: unitA.id,
+        raisedByIdentityId: guestA.id,
+        raisedByRole: 'guest',
+        categoryKey: 'ops.test',
+        title: 'Ticket A resolved',
+        priority: 'normal',
+        status: 'resolved',
+        slaDueAt: new Date(now.getTime() - 60 * 60 * 1000),
+      },
+    });
+    await db.ticket.create({
+      data: {
         projectId: projectB.id,
         unitId: unitB.id,
         raisedByIdentityId: guestB.id,
@@ -128,11 +141,14 @@ describe('getOpsBoard', () => {
     expect(scoped.pendingPayment[0]?.unit.name).toBe('Unit A');
     expect(scoped.pendingServiceOrders).toHaveLength(1);
     expect(scoped.pendingServiceOrders[0]?.service.title).toBe('Service A');
+    expect(scoped.openTickets).toHaveLength(1);
+    expect(scoped.openTickets[0]?.title).toBe('Ticket A');
     expect(scoped.slaMetrics.ticketsWithOpenSLA).toBe(1);
 
     const unscoped = await getOpsBoard(db, now);
     expect(unscoped.pendingPayment.length).toBe(2);
     expect(unscoped.pendingServiceOrders.length).toBe(2);
+    expect(unscoped.openTickets.length).toBe(2);
     expect(unscoped.slaMetrics.ticketsWithOpenSLA).toBe(2);
   });
 
@@ -142,6 +158,7 @@ describe('getOpsBoard', () => {
     expect(scoped.departures).toEqual([]);
     expect(scoped.pendingPayment).toEqual([]);
     expect(scoped.pendingServiceOrders).toEqual([]);
+    expect(scoped.openTickets).toEqual([]);
     expect(scoped.slaMetrics.tm30OnTimeRate7d).toBe(100);
     expect(scoped.slaMetrics.ticketsWithOpenSLA).toBe(0);
   });

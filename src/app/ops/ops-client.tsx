@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/Button';
 
 interface OpsBooking {
@@ -25,6 +26,18 @@ interface OpsServiceOrder {
   ordererName: string;
 }
 
+interface OpsTicket {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  slaDueAt: string | null;
+  unitName: string;
+  raisedByName: string;
+  assigneeIdentityId: string | null;
+  assigneeName: string | null;
+}
+
 type Labels = Record<string, string>;
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -35,17 +48,40 @@ function fill(template: string, params: Record<string, string | number>): string
   return result;
 }
 
+function ticketNextStatus(status: string): string | null {
+  if (status === 'open') return 'acknowledged';
+  if (status === 'acknowledged') return 'in_progress';
+  if (status === 'in_progress' || status === 'waiting_reporter') return 'resolved';
+  return null;
+}
+
+function ticketStatusLabel(status: string, labels: Labels): string {
+  return labels[`tickets.status.${status}`] || status;
+}
+
+const ticketStatusStyle: Record<string, string> = {
+  open: 'bg-state-warning-soft text-state-warning',
+  acknowledged: 'bg-state-info-soft text-state-info',
+  in_progress: 'bg-state-info-soft text-state-info',
+  waiting_reporter: 'bg-state-warning-soft text-state-warning',
+  resolved: 'bg-state-success-soft text-state-success',
+  closed: 'bg-surface-ivory text-text-stone',
+  cancelled: 'bg-surface-ivory text-text-stone',
+};
+
 export default function OpsBoardClient({
   arrivals,
   departures,
   pendingPayment,
   pendingServiceOrders,
+  openTickets,
   labels,
 }: {
   arrivals: OpsBooking[];
   departures: OpsBooking[];
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
+  openTickets: OpsTicket[];
   labels: Labels;
 }) {
   const router = useRouter();
@@ -93,6 +129,31 @@ export default function OpsBoardClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receiptRef }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || labels['staff.ops.error_generic']);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['staff.ops.error_generic']);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const ticketAction = async (
+    ticketId: string,
+    path: 'assign' | 'status',
+    body: Record<string, unknown> = {}
+  ) => {
+    setBusyId(ticketId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
@@ -290,6 +351,87 @@ export default function OpsBoardClient({
               </div>
             </div>
           ))
+        )}
+      </section>
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+          {labels['staff.ops.tickets_title']}
+        </h2>
+        {openTickets.length === 0 ? (
+          <p className="text-body text-text-secondary py-8">{labels['staff.ops.tickets_empty']}</p>
+        ) : (
+          openTickets.map((ticket) => {
+            const nextStatus = ticketNextStatus(ticket.status);
+            const actionLabel =
+              ticket.status === 'open'
+                ? labels['staff.ops.ticket_acknowledge']
+                : ticket.status === 'acknowledged'
+                  ? labels['staff.ops.ticket_start']
+                  : labels['staff.ops.ticket_resolve'];
+
+            return (
+              <div
+                key={ticket.id}
+                className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-8">
+                    <p className="text-body font-semibold text-text-ink">{ticket.title}</p>
+                    <span
+                      className={`inline-flex items-center px-10 py-4 rounded-full text-small font-medium ${
+                        ticketStatusStyle[ticket.status] || 'bg-surface-ivory text-text-stone'
+                      }`}
+                    >
+                      {ticketStatusLabel(ticket.status, labels)}
+                    </span>
+                  </div>
+                  <p className="text-small text-text-secondary">
+                    {ticket.unitName} · {labels['staff.ops.ticket_reported_by']} {ticket.raisedByName}
+                  </p>
+                  {ticket.slaDueAt ? (
+                    <p className="text-small text-text-secondary">
+                      {labels['staff.ops.ticket_due']}: {new Date(ticket.slaDueAt).toLocaleString()}
+                    </p>
+                  ) : null}
+                  {ticket.assigneeName ? (
+                    <p className="text-small text-text-secondary">
+                      {labels['staff.ops.ticket_assigned_to']}: {ticket.assigneeName}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-8">
+                  <Link
+                    href={`/tickets/${ticket.id}`}
+                    className="text-small font-semibold text-brand-andaman hover:underline"
+                  >
+                    {labels['staff.ops.ticket_view']} →
+                  </Link>
+                  {!ticket.assigneeIdentityId ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void ticketAction(ticket.id, 'assign')}
+                      isLoading={busyId === ticket.id}
+                    >
+                      {labels['staff.ops.ticket_assign_me']}
+                    </Button>
+                  ) : null}
+                  {nextStatus ? (
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        void ticketAction(ticket.id, 'status', { newStatus: nextStatus })
+                      }
+                      isLoading={busyId === ticket.id}
+                    >
+                      {actionLabel}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
         )}
       </section>
     </div>

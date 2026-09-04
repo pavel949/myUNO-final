@@ -10,6 +10,7 @@ import BookingRequestRespondActions, {
 import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
 import ArrivalPassportCaptureModal from '@/components/ops/ArrivalPassportCaptureModal';
+import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 
 interface OpsBooking {
   id: string;
@@ -132,6 +133,7 @@ export default function OpsBoardClient({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [passportBooking, setPassportBooking] = useState<OpsBooking | null>(null);
+  const [checkinBooking, setCheckinBooking] = useState<OpsBooking | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -440,7 +442,7 @@ export default function OpsBoardClient({
             ) : null}
             <Button
               size="sm"
-              onClick={() => act(booking.id, 'checkin')}
+              onClick={() => setCheckinBooking(booking)}
               isLoading={busyId === booking.id}
               disabled={!booking.paid}
             >
@@ -455,6 +457,15 @@ export default function OpsBoardClient({
         guestName={passportBooking?.guestName ?? ''}
         labels={labels}
         onClose={() => setPassportBooking(null)}
+        onComplete={() => router.refresh()}
+      />
+
+      <CheckInConditionReportModal
+        bookingId={checkinBooking?.id ?? null}
+        guestName={checkinBooking?.guestName ?? ''}
+        unitName={checkinBooking?.unitName ?? ''}
+        labels={labels}
+        onClose={() => setCheckinBooking(null)}
         onComplete={() => router.refresh()}
       />
 

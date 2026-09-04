@@ -8,12 +8,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createTm30Filing, createConditionReport } from '@/modules/ops';
+import {
+  CHECK_IN_CHECKLIST_ITEMS,
+  formatCheckInChecklistNotes,
+  type CheckInChecklistItem,
+} from '@/modules/ops/check-in-checklist';
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
 import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -84,14 +89,28 @@ export async function POST(
       }
     }
 
+    // Optional condition report payload from staff check-in flow (F-OPS-1)
+    const body = await req.json().catch(() => ({}));
+    const notesInput = typeof body.notes === 'string' ? body.notes : '';
+    const photoMediaIds = Array.isArray(body.photoMediaIds)
+      ? body.photoMediaIds.filter((id: unknown) => typeof id === 'string')
+      : [];
+    const checklistItems = Array.isArray(body.checklistItems)
+      ? body.checklistItems.filter((item: unknown): item is CheckInChecklistItem =>
+          typeof item === 'string' &&
+          (CHECK_IN_CHECKLIST_ITEMS as readonly string[]).includes(item)
+        )
+      : [];
+
     // Create baseline condition report
     try {
       await createConditionReport(prisma, {
         unitId: booking.unitId,
         bookingId: booking.id,
         reportType: 'check_in',
-        notes: 'Check-in inspection. Photos should be attached separately.',
+        notes: formatCheckInChecklistNotes(checklistItems, notesInput),
         createdByIdentityId: user.identityId,
+        photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
       });
     } catch (error) {
       console.error(`Failed to create condition report:`, error);

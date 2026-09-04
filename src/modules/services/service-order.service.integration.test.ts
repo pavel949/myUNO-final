@@ -62,6 +62,41 @@ describe('service-order.service — integration tests', () => {
       expect(order?.note_to_provider).toBe('Please bring supplies');
     });
 
+    it('rejects a service restricted to another project', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const allowedProject = await createProject();
+      const requestedProject = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      await db.serviceProject.create({
+        data: { service_id: service.id, project_id: allowedProject.id },
+      });
+
+      await expect(
+        serviceOrderService.createServiceOrder(db, {
+          serviceId: service.id,
+          projectId: requestedProject.id,
+          ordererIdentityId: orderer.id,
+          ordererRole: 'owner',
+          scheduledStart: new Date('2026-08-01'),
+          scheduledEnd: new Date('2026-08-02'),
+          quantity: 1,
+          priceBreakdown: { base: 1000 },
+          totalThb: 1000,
+          tookRatePctSnapshot: 15,
+        })
+      ).rejects.toThrow('not available in this project');
+    });
+
     it('rejects order for inactive service', async () => {
       const orderer = await createIdentity();
       const provider = await createProvider();
@@ -725,6 +760,79 @@ describe('service-order.service — integration tests', () => {
       await expect(
         serviceOrderService.rateServiceOrder(db, orderResult.id, orderer.id, 0)
       ).rejects.toThrow('Rating must be 1-5');
+    });
+
+    it('allows only the orderer to rate a fulfilled order', async () => {
+      const orderer = await createIdentity();
+      const stranger = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1000 },
+          total_thb: 1000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await expect(
+        serviceOrderService.rateServiceOrder(db, order.id, stranger.id, 5)
+      ).rejects.toThrow('Only the orderer');
+    });
+
+    it('rejects ratings before fulfilment', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'accepted',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1000 },
+          total_thb: 1000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await expect(
+        serviceOrderService.rateServiceOrder(db, order.id, orderer.id, 5)
+      ).rejects.toThrow('Cannot rate order in accepted status');
     });
   });
 

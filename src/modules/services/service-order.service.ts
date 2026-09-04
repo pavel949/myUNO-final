@@ -160,6 +160,46 @@ export async function createServiceOrder(
     throw new Error('Provider is not vetted');
   }
 
+  const serviceProjects = await db.serviceProject.findMany({
+    where: { service_id: serviceId },
+    select: { project_id: true },
+  });
+  if (
+    serviceProjects.length > 0 &&
+    !serviceProjects.some((available) => available.project_id === projectId)
+  ) {
+    throw new Error('Service is not available in this project');
+  }
+
+  if (unitId) {
+    const unit = await db.unit.findUnique({
+      where: { id: unitId },
+      select: { projectId: true },
+    });
+    if (!unit || unit.projectId !== projectId) {
+      throw new Error('Unit does not belong to this project');
+    }
+  }
+
+  if (bookingId) {
+    const booking = await db.booking.findUnique({
+      where: { id: bookingId },
+      select: { projectId: true, unitId: true, guestIdentityId: true },
+    });
+    if (
+      !booking ||
+      booking.projectId !== projectId ||
+      booking.unitId !== unitId ||
+      booking.guestIdentityId !== ordererIdentityId
+    ) {
+      throw new Error('Booking context is invalid for this order');
+    }
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(totalThb) || totalThb <= 0) {
+    throw new Error('Order quantity and total must be positive integers');
+  }
+
   // Create order in placed status
   const order = await db.serviceOrder.create({
     data: {
@@ -551,6 +591,14 @@ export async function rateServiceOrder(
 
   if (!order) {
     throw new Error(`ServiceOrder ${serviceOrderId} not found`);
+  }
+
+  if (order.orderer_identity_id !== raterIdentityId) {
+    throw new Error('Only the orderer can rate this service order');
+  }
+
+  if (order.status !== 'fulfilled') {
+    throw new Error(`Cannot rate order in ${order.status} status`);
   }
 
   if (rating < 1 || rating > 5) {

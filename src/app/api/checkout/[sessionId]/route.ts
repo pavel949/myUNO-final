@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { canAccessPaymentSession } from '@/app/libs/bookingAccess';
 
 /**
  * GET /api/checkout/[sessionId]
@@ -40,7 +41,7 @@ export async function GET(
       },
     });
 
-    if (!payment || (payment.payerIdentityId !== user.identityId && !user.isAdmin)) {
+    if (!payment || !canAccessPaymentSession(user, payment.payerIdentityId)) {
       throw createPublicError('not found', 404);
     }
 

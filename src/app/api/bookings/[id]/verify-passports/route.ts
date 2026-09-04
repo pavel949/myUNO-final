@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData } from '@/modules/ops';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 export async function POST(
   req: NextRequest,
@@ -34,11 +34,13 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Authorization: guest or staff can capture passports
-    const isGuest = booking.guestIdentityId === user.identityId;
-    const isStaff = hasProjectStaffAccess(user, booking.projectId);
-
-    if (!isGuest && !isStaff) {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+      ownerIdentityId: booking.unit?.ownerIdentityId,
+    });
+    if (!canManageBookingGuests(access)) {
       return NextResponse.json(
         { error: 'Only guest or staff can capture passports' },
         { status: 403 }

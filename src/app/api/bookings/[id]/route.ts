@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
 import { getActiveDepositClaimForGuest, getBookingRefundDisplayState } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canViewBooking, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 const CANCELLABLE_STATUSES = ['requested', 'pending_payment', 'confirmed'];
 
@@ -46,12 +46,17 @@ export async function GET(
       throw createPublicError('not found', 404);
     }
 
-    const isGuest = booking.guestIdentityId === user.identityId;
-    const isOwner = booking.unit?.ownerIdentityId === user.identityId;
-    const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    if (!isGuest && !isOwner && !isStaff && !user.isAdmin) {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+      ownerIdentityId: booking.unit?.ownerIdentityId,
+    });
+    if (!canViewBooking(access)) {
       throw createPublicError('not found', 404);
     }
+
+    const { isGuest, isOwner, isStaff } = access;
 
     // Live refund preview from the policy snapshotted at booking time
     let refundPreviewThb: number | null = null;
@@ -102,7 +107,7 @@ export async function GET(
       totalThb: Math.round(rest.totalThb / 100),
       refundAccruedThb: Math.round(rest.refundAccruedThb / 100),
       unit: unit ? { id: unit.id, name: unit.name } : null,
-      viewer: { isGuest, isOwner: isOwner || user.isAdmin, isStaff },
+      viewer: { isGuest, isOwner, isStaff },
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),
       refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
       hasReview,

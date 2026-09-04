@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { recordCashPayment } from '@/modules/finance';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canOperateBookingAsStaff, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
@@ -67,12 +67,12 @@ export async function POST(
       throw createPublicError('not found', 404);
     }
 
-    const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    const isManagedMc = await hasManagedUnitMcAccess(user, {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
       projectId: booking.projectId,
       unitId: booking.unitId,
     });
-    if (!isStaff && !isManagedMc) {
+    if (!canOperateBookingAsStaff(access)) {
       throw createPublicError('Access denied.', 403);
     }
 

@@ -15,7 +15,7 @@ import {
 } from '@/modules/ops/check-in-checklist';
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
-import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 export async function POST(
   req: NextRequest,
@@ -42,15 +42,13 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Authorization: guest, scoped staff, or scoped MC can check in
-    const isGuest = booking.guestIdentityId === user.identityId;
-    const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    const isManagedMc = await hasManagedUnitMcAccess(user, {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
       projectId: booking.projectId,
       unitId: booking.unitId,
+      ownerIdentityId: booking.unit.ownerIdentityId,
     });
-
-    if (!isGuest && !isStaff && !isManagedMc) {
+    if (!canRecordStayTransition(access)) {
       return NextResponse.json(
         { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }

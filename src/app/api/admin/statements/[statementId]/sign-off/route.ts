@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/app/libs/onboardingGuard'
 import {
   getStatementSignOffState,
   hasSignedOff,
@@ -70,11 +71,11 @@ export async function PUT(
     // owner side belongs to the statement's owner, and an admin may record it
     // on their behalf (a signed paper statement, doc 10 sign-off gate).
     const isOwnerOfStatement = currentUser.identityId === statement.ownerIdentityId
-    if (body.actor === 'operator' && !currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden. Operator sign-off requires admin access.' },
-        { status: 403 }
-      )
+    if (body.actor === 'operator') {
+      const adminGuard = await requireAdmin()
+      if (!adminGuard.ok) {
+        return adminGuard.error
+      }
     }
     if (body.actor === 'owner' && !currentUser.isAdmin && !isOwnerOfStatement) {
       return NextResponse.json(

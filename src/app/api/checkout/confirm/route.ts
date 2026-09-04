@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { track } from '@/modules/analytics';
+import { canAccessPaymentSession } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/checkout/confirm
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       throw createPublicError('not found', 404);
     }
 
-    if (payment.payerIdentityId !== user.identityId && !user.isAdmin) {
+    if (!canAccessPaymentSession(user, payment.payerIdentityId)) {
       throw createPublicError('Access denied.', 403);
     }
 

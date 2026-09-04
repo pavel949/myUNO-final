@@ -3,31 +3,44 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 async function authorize(bookingId: string) {
   const user = await getCurrentUser();
   if (!user) {
     throw createPublicError('unauthorized', 401);
   }
-  const booking = await prisma.booking.findUnique({
+  const bookingRow = await prisma.booking.findUnique({
     where: { id: bookingId },
     select: {
       id: true,
       guestIdentityId: true,
       status: true,
       projectId: true,
+      unitId: true,
       verificationStatus: true,
+      unit: { select: { ownerIdentityId: true } },
     },
   });
-  if (!booking) {
+  if (!bookingRow) {
     throw createPublicError('not found', 404);
   }
-  const isGuest = booking.guestIdentityId === user.identityId;
-  const isStaff = hasProjectStaffAccess(user, booking.projectId);
-  if (!isGuest && !isStaff && !user.isAdmin) {
+  const access = await resolveBookingAccess(user, {
+    guestIdentityId: bookingRow.guestIdentityId,
+    projectId: bookingRow.projectId,
+    unitId: bookingRow.unitId,
+    ownerIdentityId: bookingRow.unit?.ownerIdentityId,
+  });
+  if (!canManageBookingGuests(access)) {
     throw createPublicError('not found', 404);
   }
+  const booking = {
+    id: bookingRow.id,
+    guestIdentityId: bookingRow.guestIdentityId,
+    status: bookingRow.status,
+    projectId: bookingRow.projectId,
+    verificationStatus: bookingRow.verificationStatus,
+  };
   return { user, booking };
 }
 

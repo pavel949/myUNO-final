@@ -10,7 +10,7 @@ import {
   type CheckOutChecklistItem,
 } from '@/modules/ops/check-out-checklist';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/bookings/[id]/check-out
@@ -36,13 +36,13 @@ export async function POST(
       throw createPublicError('not found', 404);
     }
 
-    const isGuest = booking.guestIdentityId === user.identityId;
-    const isStaff = hasProjectStaffAccess(user, booking.projectId);
-    const isManagedMc = await hasManagedUnitMcAccess(user, {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
       projectId: booking.projectId,
       unitId: booking.unitId,
+      ownerIdentityId: booking.unit?.ownerIdentityId,
     });
-    if (!isGuest && !isStaff && !isManagedMc && !user.isAdmin) {
+    if (!canRecordStayTransition(access)) {
       throw createPublicError('Access denied.', 403);
     }
 

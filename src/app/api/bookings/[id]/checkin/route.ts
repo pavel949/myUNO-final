@@ -128,13 +128,13 @@ export async function POST(
       },
     });
 
-    // Notify unit owner
+    // Notify unit owner that the guest has arrived (not N-03 — that fires on confirmation).
     if (booking.unit.ownerIdentityId) {
       await createNotification(prisma, {
         identityId: booking.unit.ownerIdentityId,
-        type: 'stay_new_booking_ops',
-        titleKey: 'booking.guest_checkin.title',
-        bodyKey: 'booking.guest_checkin.body',
+        type: 'stay_modified_ops',
+        titleKey: 'notify.stay_guest_checked_in.title',
+        bodyKey: 'notify.stay_guest_checked_in.body',
         params: {
           guest_name: booking.guestIdentity.firstName + ' ' + booking.guestIdentity.lastName,
           unit_name: booking.unit.name,

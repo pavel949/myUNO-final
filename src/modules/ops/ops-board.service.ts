@@ -18,7 +18,7 @@ export interface OpsBoardScope {
   projectIds?: string[];
 }
 
-interface OpsBooking {
+export interface OpsBooking {
   id: string;
   status: string;
   startDate: Date;
@@ -32,6 +32,32 @@ interface OpsBooking {
   guestIdentity: { firstName: string; lastName: string };
   payments: { id: string }[];
 }
+
+export interface OpsBookingRequest {
+  id: string;
+  startDate: Date;
+  endDate: Date;
+  totalThb: number;
+  adults: number;
+  children: number;
+  requestExpiresAt: Date | null;
+  projectName: string;
+  unit: { id: string; name: string };
+  guestIdentity: { firstName: string; lastName: string };
+}
+
+const opsBookingRequestSelect = {
+  id: true,
+  startDate: true,
+  endDate: true,
+  totalThb: true,
+  adults: true,
+  children: true,
+  requestExpiresAt: true,
+  project: { select: { name: true } },
+  unit: { select: { id: true, name: true } },
+  guestIdentity: { select: { firstName: true, lastName: true } },
+} as const;
 
 interface OpsServiceOrder {
   id: string;
@@ -307,4 +333,43 @@ export async function getOpsMobilizationQueue(
       nextStep: nextItem?.step ?? null,
     };
   });
+}
+
+/**
+ * Pending booking requests for staff ops inbox (doc 07 F-OPS-5).
+ */
+export async function getOpsBookingRequests(
+  db: PrismaClient,
+  scope?: OpsBoardScope
+): Promise<OpsBookingRequest[]> {
+  if (scope && (!scope.projectIds || scope.projectIds.length === 0)) {
+    return [];
+  }
+
+  const projectFilter = scope?.projectIds?.length
+    ? { in: scope.projectIds }
+    : undefined;
+
+  const rows = await db.booking.findMany({
+    where: {
+      ...(projectFilter ? { projectId: projectFilter } : {}),
+      status: 'requested',
+    },
+    select: opsBookingRequestSelect,
+    orderBy: [{ requestExpiresAt: 'asc' }, { createdAt: 'asc' }],
+    take: 100,
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    totalThb: row.totalThb,
+    adults: row.adults,
+    children: row.children,
+    requestExpiresAt: row.requestExpiresAt,
+    projectName: row.project.name,
+    unit: row.unit,
+    guestIdentity: row.guestIdentity,
+  }));
 }

@@ -69,6 +69,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.costs_link': 'Record a cost',
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.tm30_link': 'TM30 queue →',
+    'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.arrivals': "Today's arrivals",
     'staff.ops.booking_requests': 'Booking requests',
     'staff.ops.requests_empty': 'No pending booking requests.',
@@ -176,6 +177,12 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               className="text-brand-andaman font-semibold hover:underline"
             >
               {labels['staff.ops.tm30_link']}
+            </Link>
+            <Link
+              href={opsHref('/ops/requests', validActiveProjectId)}
+              className="text-brand-andaman font-semibold hover:underline"
+            >
+              {labels['staff.ops.requests_link']}
             </Link>
           </div>
         </div>

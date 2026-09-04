@@ -25,8 +25,8 @@ export {
   type VerificationCheckResult,
 } from './verification.service';
 
-export { getOpsBoard, getOpsMobilizationQueue } from './ops-board.service';
-export type { OpsMobilizationUnit } from './ops-board.service';
+export { getOpsBoard, getOpsMobilizationQueue, getOpsBookingRequests } from './ops-board.service';
+export type { OpsMobilizationUnit, OpsBookingRequest } from './ops-board.service';
 export type { OpsBoardData } from './ops-board.service';
 
 export {

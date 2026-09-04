@@ -9,7 +9,7 @@ import {
   db,
   resetDb,
 } from '@/test/util';
-import { getOpsBoard, getOpsMobilizationQueue } from './ops-board.service';
+import { getOpsBoard, getOpsMobilizationQueue, getOpsBookingRequests } from './ops-board.service';
 
 describe('getOpsBoard', () => {
   beforeEach(async () => {
@@ -211,5 +211,81 @@ describe('getOpsBoard', () => {
 
     const all = await getOpsMobilizationQueue(db);
     expect(all.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('getOpsBookingRequests', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('returns pending requests scoped by project, ordered by deadline', async () => {
+    const guestA = await createIdentity({ firstName: 'Guest', lastName: 'A' });
+    const guestB = await createIdentity({ firstName: 'Guest', lastName: 'B' });
+    const projectA = await createProject({ name: 'Project A', status: 'live' });
+    const projectB = await createProject({ name: 'Project B', status: 'live' });
+    const unitA = await createUnit({ projectId: projectA.id, name: 'Unit A', status: 'live' });
+    const unitB = await createUnit({ projectId: projectB.id, name: 'Unit B', status: 'live' });
+
+    const later = new Date('2026-08-20T12:00:00Z');
+    const sooner = new Date('2026-08-18T12:00:00Z');
+
+    const requestLater = await createBooking({
+      unitId: unitA.id,
+      projectId: projectA.id,
+      guestIdentityId: guestA.id,
+      status: 'requested',
+      startDate: new Date('2026-08-25T00:00:00Z'),
+      endDate: new Date('2026-08-28T00:00:00Z'),
+      totalThb: 80_000,
+    });
+    await db.booking.update({
+      where: { id: requestLater.id },
+      data: { requestExpiresAt: later },
+    });
+
+    const requestSooner = await createBooking({
+      unitId: unitA.id,
+      projectId: projectA.id,
+      guestIdentityId: guestA.id,
+      status: 'requested',
+      startDate: new Date('2026-08-22T00:00:00Z'),
+      endDate: new Date('2026-08-24T00:00:00Z'),
+      totalThb: 70_000,
+    });
+    await db.booking.update({
+      where: { id: requestSooner.id },
+      data: { requestExpiresAt: sooner },
+    });
+    await createBooking({
+      unitId: unitB.id,
+      projectId: projectB.id,
+      guestIdentityId: guestB.id,
+      status: 'requested',
+      startDate: new Date('2026-08-25T00:00:00Z'),
+      endDate: new Date('2026-08-28T00:00:00Z'),
+      totalThb: 90_000,
+    });
+    await createBooking({
+      unitId: unitA.id,
+      projectId: projectA.id,
+      guestIdentityId: guestA.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-25T00:00:00Z'),
+      endDate: new Date('2026-08-28T00:00:00Z'),
+      totalThb: 100_000,
+    });
+
+    const scoped = await getOpsBookingRequests(db, { projectIds: [projectA.id] });
+    expect(scoped).toHaveLength(2);
+    expect(scoped[0]?.unit.name).toBe('Unit A');
+    expect(scoped[0]?.requestExpiresAt?.toISOString()).toBe(sooner.toISOString());
+    expect(scoped[0]?.projectName).toBe('Project A');
+
+    const all = await getOpsBookingRequests(db);
+    expect(all).toHaveLength(3);
+
+    const empty = await getOpsBookingRequests(db, { projectIds: [] });
+    expect(empty).toEqual([]);
   });
 });

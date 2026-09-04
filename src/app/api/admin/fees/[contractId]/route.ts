@@ -1,62 +1,39 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { NextResponse } from 'next/server';
+import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: unknown,
-  { params }: { params: { contractId: string } },
+  { params }: { params: { contractId: string } }
 ) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    // Verify contract exists
-    const contract = await prismadb.managementContract.findUnique({
+    const contract = await prisma.managementContract.findUnique({
       where: { id: params.contractId },
       include: {
         unit: { select: { id: true, name: true } },
         project: { select: { id: true, name: true } },
         ownerIdentity: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
-    })
+    });
 
     if (!contract) {
-      return NextResponse.json(
-        { error: 'Contract not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
     }
 
-    // Get all earned fees for this contract
-    const fees = await prismadb.earnedFee.findMany({
+    const fees = await prisma.earnedFee.findMany({
       where: { managementContractId: params.contractId },
       orderBy: { periodStart: 'desc' },
-    })
+    });
 
-    // Calculate totals by status
-    const totals = {
-      accrued: 0,
-      invoiced: 0,
-      paid: 0,
+    const totals = { accrued: 0, invoiced: 0, paid: 0 };
+    for (const fee of fees) {
+      totals[fee.status] += fee.amount;
     }
-
-    fees.forEach((fee) => {
-      totals[fee.status] += fee.amount
-    })
 
     return NextResponse.json({
       success: true,
@@ -80,7 +57,7 @@ export async function GET(
         amount: fee.amount,
         status: fee.status,
         invoiceId: fee.invoiceId,
-        paidAt: fee.paidAt?.toISOString() || null,
+        paidAt: fee.paidAt?.toISOString() ?? null,
         createdAt: fee.createdAt.toISOString(),
       })),
       totals,
@@ -90,12 +67,9 @@ export async function GET(
         invoiced: totals.invoiced,
         paid: totals.paid,
       },
-    })
+    });
   } catch (error) {
-    console.error('[FEES GET]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[FEES GET]', error);
+    return failed(error, 'Internal server error');
   }
 }

@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.title': 'myUNO Admin',
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.crm': 'CRM & Pipeline',
+    'admin.nav.attribution': 'Attribution',
     'admin.nav.prospecting': 'Prospecting',
     'admin.nav.kpis': 'Operational KPIs',
     'admin.nav.units': 'Projects & Units',
@@ -38,6 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.people': 'People & Roles',
     'admin.nav.organizations': 'Organizations',
     'admin.nav.ledger': 'Ledger',
+    'admin.nav.contracts': 'Contracts',
     'admin.nav.statements': 'Statements',
     'admin.nav.payouts': 'Payouts',
     'admin.nav.reconciliation': 'Reconciliation',
@@ -51,6 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const items = [
     { href: '/app/admin', label: labels['admin.nav.dashboard'] },
     { href: '/app/admin/crm', label: labels['admin.nav.crm'] },
+    { href: '/app/admin/reports/attribution', label: labels['admin.nav.attribution'] },
     { href: '/app/admin/prospecting', label: labels['admin.nav.prospecting'] },
     { href: '/app/admin/operational-kpis', label: labels['admin.nav.kpis'] },
     { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
@@ -70,6 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/app/admin/content', label: labels['admin.nav.content'] },
     { href: '/app/admin/signals', label: labels['admin.nav.signals'] },
     { href: '/app/admin/ledger', label: labels['admin.nav.ledger'] },
+    { href: '/app/admin/contracts', label: labels['admin.nav.contracts'] },
     { href: '/app/admin/statements', label: labels['admin.nav.statements'] },
     { href: '/app/admin/payouts', label: labels['admin.nav.payouts'] },
     // Sits outside the admin group at /admin/finance/reconciliation and was

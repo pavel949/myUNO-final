@@ -208,17 +208,6 @@ const API_ENTRY_POINTS = new Set([
  * it here — should shrink this list, never grow it back.
  */
 const API_DEBT = new Set([
-  // Admin screens whose backend exists with no UI caller anywhere (Q59).
-  '/api/admin/config/[paramKey]/history',
-  '/api/admin/contracts',
-  '/api/admin/fees/[contractId]',
-  '/api/admin/fees/calculate',
-  '/api/admin/reports/attribution',
-  '/api/admin/statements/[statementId]/line-items',
-  // Guest/owner/provider-facing routes with no caller found.
-  '/api/content/translate',
-  '/api/messages/[messageId]/flag-as-purchase',
-  '/api/track',
   // SSE endpoints that exist and work, but the frontend they were built for
   // polls instead (NotificationBell polls /api/notifications every 30s) —
   // built, never adopted.

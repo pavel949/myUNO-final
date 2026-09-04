@@ -47,6 +47,8 @@ export default function ContentAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [preview, setPreview] = useState<Record<string, string>>({});
+  const [previewBusy, setPreviewBusy] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadNamespace = useCallback(
@@ -157,6 +159,25 @@ export default function ContentAdminClient({
     }
   };
 
+  const previewTranslation = async (key: string, locale: string) => {
+    const id = `${key}::${locale}`;
+    setPreviewBusy(id);
+    try {
+      const response = await fetch('/api/content/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, locale }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || labels['admin.content.error_generic']);
+      setPreview((prev) => ({ ...prev, [id]: String(data.value ?? '') }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['admin.content.error_generic']);
+    } finally {
+      setPreviewBusy(null);
+    }
+  };
+
   return (
     <div>
       <input
@@ -213,7 +234,22 @@ export default function ContentAdminClient({
         ) : (
           keys.map((row) => (
             <div key={row.key} className="py-16 border-b border-border-line last:border-b-0">
-              <p className="text-small font-semibold text-text-ink mb-4">{row.key}</p>
+              <div className="flex items-center justify-between gap-8 mb-4 flex-wrap">
+                <p className="text-small font-semibold text-text-ink">{row.key}</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => previewTranslation(row.key, 'en')}
+                  isLoading={previewBusy === `${row.key}::en`}
+                >
+                  {labels['admin.content.preview_en']}
+                </Button>
+              </div>
+              {preview[`${row.key}::en`] ? (
+                <p className="text-small text-text-secondary mb-8 bg-surface-background p-8 rounded-sm">
+                  {preview[`${row.key}::en`]}
+                </p>
+              ) : null}
               <p className="text-small text-text-secondary mb-12">{row.description}</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {LOCALES.map((locale) => {

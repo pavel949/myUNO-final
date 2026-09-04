@@ -37,6 +37,7 @@ export default async function AdminContentPage({
     'admin.content.import_error': 'Import failed.',
     'admin.content.import_success': 'Imported: {created} created, {updated} updated.',
     'admin.content.needs_review': 'review',
+    'admin.content.preview_en': 'Preview EN (API)',
   });
 
   return (

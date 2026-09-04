@@ -3206,7 +3206,16 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.payouts.working', namespace: 'admin', description: 'Payouts: submitting state', en: 'Recording…', ru: 'Фиксация…', status: NR },
   { key: 'admin.payouts.success', namespace: 'admin', description: 'Payouts: success message', en: 'Payout recorded.', ru: 'Выплата зафиксирована.', status: NR },
   { key: 'admin.payouts.error', namespace: 'admin', description: 'Payouts: generic failure', en: 'That did not work.', ru: 'Не получилось.', status: NR },
-  { key: 'admin.payouts.compute_first', namespace: 'admin', description: 'Payouts: hint to compute before submitting', en: 'Compute the remittance before recording.', ru: 'Сначала рассчитайте сумму перевода.', status: NR },
+  { key: 'admin.payouts.compute_first', namespace: 'admin', description: 'Payouts: hint to compute before submitting', en: 'Compute the remittance before recording.', ru: 'Сначала рассчитайте сумму перевода.', th: 'คำนวณยอดโอนก่อนบันทึก', status: NR },
+  { key: 'admin.payouts.history_title', namespace: 'admin', description: 'Payouts: history section heading', en: 'Payout history', ru: 'История выплат', th: 'ประวัติการจ่าย', status: NR },
+  { key: 'admin.payouts.reconciliation_link', namespace: 'admin', description: 'Payouts: link to reconciliation board', en: 'Open reconciliation board →', ru: 'Открыть сверку →', th: 'เปิดกระดานกระทบยอด →', status: NR },
+  { key: 'admin.payouts.payee_type', namespace: 'admin', description: 'Payouts: payee column', en: 'Payee', ru: 'Получатель', th: 'ผู้รับ', status: NR },
+  { key: 'admin.payouts.payee_owner', namespace: 'admin', description: 'Payouts: owner payee type', en: 'Owner', ru: 'Владелец', th: 'เจ้าของ', status: NR },
+  { key: 'admin.payouts.payee_provider', namespace: 'admin', description: 'Payouts: provider payee type', en: 'Provider', ru: 'Поставщик', th: 'ผู้ให้บริการ', status: NR },
+  { key: 'admin.payouts.status_recorded', namespace: 'admin', description: 'Payouts: recorded status badge', en: 'Recorded', ru: 'Зафиксировано', th: 'บันทึกแล้ว', status: NR },
+  { key: 'admin.payouts.status_reconciled', namespace: 'admin', description: 'Payouts: reconciled status badge', en: 'Reconciled', ru: 'Сверено', th: 'กระทบยอดแล้ว', status: NR },
+  { key: 'admin.payouts.reconcile', namespace: 'admin', description: 'Payouts: mark reconciled action', en: 'Mark reconciled', ru: 'Отметить сверенным', th: 'ทำเครื่องหมายว่ากระทบยอดแล้ว', status: NR },
+  { key: 'admin.payouts.action', namespace: 'admin', description: 'Payouts: action column', en: 'Action', ru: 'Действие', th: 'การดำเนินการ', status: NR },
 
   // Statements — generate + operator sign-off (Q60 follow-up)
   { key: 'admin.statements.title', namespace: 'admin', description: 'Statements: page title', en: 'Monthly Statements', ru: 'Ежемесячные отчёты', status: NR },

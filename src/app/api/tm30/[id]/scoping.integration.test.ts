@@ -22,6 +22,7 @@ vi.mock('@/lib/prisma', async () => {
 
 import { GET as getPassport } from './passport/route';
 import { POST as markFiled } from './file/route';
+import { POST as markFailed } from './fail/route';
 
 describe('TM30 filing scoped authorization', () => {
   let staff: Awaited<ReturnType<typeof createIdentity>>;
@@ -223,5 +224,35 @@ describe('TM30 filing scoped authorization', () => {
       { params: { id: mcFiling.id } }
     );
     expect(response.status).toBe(200);
+  });
+
+  it('allows onsite host in project to mark filing as failed with note', async () => {
+    asHostFor(projectId);
+    const response = await markFailed(
+      new NextRequest(`http://localhost/api/tm30/${filingId}/fail`, {
+        method: 'POST',
+        body: JSON.stringify({ failureNote: 'Portal unavailable' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: filingId } }
+    );
+    expect(response.status).toBe(200);
+
+    const filing = await db.tm30Filing.findUnique({ where: { id: filingId } });
+    expect(filing?.status).toBe('failed');
+    expect(filing?.failureNote).toBe('Portal unavailable');
+  });
+
+  it('blocks mark-failed for onsite host outside project scope', async () => {
+    asHostFor(otherProjectId);
+    const response = await markFailed(
+      new NextRequest(`http://localhost/api/tm30/${filingId}/fail`, {
+        method: 'POST',
+        body: JSON.stringify({ failureNote: 'Portal unavailable' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: filingId } }
+    );
+    expect(response.status).toBe(403);
   });
 });

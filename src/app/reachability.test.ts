@@ -244,7 +244,6 @@ const API_DEBT = new Set([
   '/api/provider/orders',
   '/api/service-orders/[id]/detail',
   '/api/services/[id]',
-  '/api/tm30/[id]/passport',
   '/api/tm30/queue',
   // The client-side analytics beacon (doc 13) — server code calls track()
   // directly; nothing in the browser ever POSTs here.

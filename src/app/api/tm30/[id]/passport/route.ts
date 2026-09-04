@@ -7,7 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { logTm30PassportAccess, decryptPassportNumber, safeDecrypt } from '@/modules/ops';
+import {
+  logTm30PassportAccess,
+  decryptPassportNumber,
+  safeDecrypt,
+  buildTm30AddressBlock,
+  TM30_IMMIGRATION_PORTAL_URL,
+} from '@/modules/ops';
 import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
 export async function GET(
@@ -27,6 +33,7 @@ export async function GET(
         booking: {
           include: {
             unit: true,
+            project: { select: { address: true, name: true } },
           },
         },
         bookingGuest: true,
@@ -53,6 +60,12 @@ export async function GET(
       ? decryptPassportNumber(filing.bookingGuest.passportNumber)
       : null;
 
+    const addressBlock = buildTm30AddressBlock({
+      unitName: filing.booking.unit.name,
+      addressSupplement: filing.booking.unit.addressSupplement,
+      projectAddress: filing.booking.project?.address,
+    });
+
     return NextResponse.json(
       {
         id: filing.id,
@@ -60,8 +73,10 @@ export async function GET(
         nationality: filing.bookingGuest?.nationality,
         passportNumber: decryptedPassport,
         dateOfBirth: safeDecrypt(filing.bookingGuest?.dateOfBirth),
-        unit: filing.booking.unit,
-        address: 'Ready to copy to immigration portal',
+        unitName: filing.booking.unit.name,
+        projectName: filing.booking.project?.name,
+        addressBlock,
+        portalUrl: TM30_IMMIGRATION_PORTAL_URL,
       },
       { status: 200 }
     );

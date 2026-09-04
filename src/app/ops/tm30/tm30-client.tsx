@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import Tm30FilingDetailDrawer from '@/components/ops/Tm30FilingDetailDrawer';
 
 interface QueueFiling {
   id: string;
@@ -47,6 +48,7 @@ export default function Tm30QueueClient({
   labels: Labels;
 }) {
   const router = useRouter();
+  const [activeFiling, setActiveFiling] = useState<QueueFiling | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,51 +85,65 @@ export default function Tm30QueueClient({
   }
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-      {error && (
-        <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
-          <p className="text-body text-state-error">{error}</p>
-        </div>
-      )}
-      {filings.map((filing) => {
-        const due = countdown(filing.dueAt, labels['staff.tm30.overdue']);
-        return (
-          <div
-            key={filing.id}
-            className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-body font-semibold text-text-ink">
-                {filing.guestName}
-                <span className="text-text-secondary font-normal">
-                  {' '}
-                  · {filing.nationality} · {filing.unitName} ({filing.projectName})
-                </span>
-              </p>
-              <p className="text-small text-text-secondary">
-                <span
-                  className={`inline-block px-8 py-2 rounded-full mr-8 ${
-                    statusStyle[filing.status] || 'bg-surface-ivory text-text-ink'
-                  }`}
-                >
-                  {labels[`staff.tm30.status.${filing.status}`] || filing.status}
-                </span>
-                {labels['staff.tm30.due']}:{' '}
-                <span className={due.overdue ? 'text-state-error font-bold' : 'text-text-ink'}>
-                  {due.text}
-                </span>
-              </p>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => markFiled(filing)}
-              isLoading={busyId === filing.id}
-            >
-              {labels['staff.tm30.file_action']}
-            </Button>
+    <>
+      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+        {error && (
+          <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
+            <p className="text-body text-state-error">{error}</p>
           </div>
-        );
-      })}
-    </div>
+        )}
+        {filings.map((filing) => {
+          const due = countdown(filing.dueAt, labels['staff.tm30.overdue']);
+          return (
+            <div
+              key={filing.id}
+              className="flex flex-col md:flex-row md:items-center gap-12 py-16 border-b border-border-line last:border-b-0"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-body font-semibold text-text-ink">
+                  {filing.guestName}
+                  <span className="text-text-secondary font-normal">
+                    {' '}
+                    · {filing.nationality} · {filing.unitName} ({filing.projectName})
+                  </span>
+                </p>
+                <p className="text-small text-text-secondary">
+                  <span
+                    className={`inline-block px-8 py-2 rounded-full mr-8 ${
+                      statusStyle[filing.status] || 'bg-surface-ivory text-text-ink'
+                    }`}
+                  >
+                    {labels[`staff.tm30.status.${filing.status}`] || filing.status}
+                  </span>
+                  {labels['staff.tm30.due']}:{' '}
+                  <span className={due.overdue ? 'text-state-error font-bold' : 'text-text-ink'}>
+                    {due.text}
+                  </span>
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-8 shrink-0">
+                <Button size="sm" variant="secondary" onClick={() => setActiveFiling(filing)}>
+                  {labels['staff.tm30.detail_action']}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => markFiled(filing)}
+                  isLoading={busyId === filing.id}
+                >
+                  {labels['staff.tm30.file_action']}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Tm30FilingDetailDrawer
+        filing={activeFiling}
+        labels={labels}
+        onClose={() => setActiveFiling(null)}
+        onComplete={() => router.refresh()}
+      />
+    </>
   );
 }

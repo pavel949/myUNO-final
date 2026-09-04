@@ -36,3 +36,8 @@ export {
   isEncrypted,
   type GuestPiiInput,
 } from './guest-pii';
+
+export {
+  buildTm30AddressBlock,
+  TM30_IMMIGRATION_PORTAL_URL,
+} from './tm30-address';

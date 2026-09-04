@@ -415,3 +415,51 @@ export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number
 
   return breachedCount;
 }
+
+/**
+ * Auto-close resolved tickets after configured grace period (doc 09 §3).
+ */
+export async function autoCloseResolvedTickets(
+  db: PrismaClient,
+  autoCloseResolvedDays: number,
+  now: Date = new Date()
+): Promise<number> {
+  const graceDays = Math.max(0, Math.floor(autoCloseResolvedDays));
+  const closeBefore = new Date(now.getTime() - graceDays * 24 * 60 * 60 * 1000);
+
+  const staleResolvedTickets = await db.ticket.findMany({
+    where: {
+      status: 'resolved',
+      resolvedAt: { not: null, lte: closeBefore },
+    },
+    select: {
+      id: true,
+      threadId: true,
+    },
+  });
+
+  for (const ticket of staleResolvedTickets) {
+    await db.ticket.update({
+      where: { id: ticket.id },
+      data: { status: 'closed' },
+    });
+
+    await recordTicketEvent(db, ticket.id, 'status_change', null, {
+      oldStatus: 'resolved',
+      newStatus: 'closed',
+      note: 'Auto-closed after resolution grace period',
+    });
+
+    if (ticket.threadId) {
+      publishMessage(ticket.threadId, {
+        id: `event-${ticket.id}-${Date.now()}`,
+        threadId: ticket.threadId,
+        body: 'Status: resolved → closed',
+        messageKind: 'system',
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  return staleResolvedTickets.length;
+}

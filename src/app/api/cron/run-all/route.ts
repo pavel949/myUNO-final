@@ -9,6 +9,7 @@ import {
   sendPrearrivalReminders,
   sendPostStayPrompts,
 } from '@/modules/booking';
+import { autoCloseResolvedTickets } from '@/modules/comms';
 import { expireStaleServiceOrders } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 
@@ -82,6 +83,15 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[Cron run-all] service order expiry failed:', error);
     results.serviceOrderExpiry = 'failed';
+  }
+
+  try {
+    const autoCloseDays = (await getConfig(prisma, 'tickets.auto_close_resolved_days')) as number | null;
+    const closed = await autoCloseResolvedTickets(prisma, autoCloseDays ?? 7);
+    results.ticketAutoClose = `ok (${closed} auto-closed)`;
+  } catch (error) {
+    console.error('[Cron run-all] ticket auto-close failed:', error);
+    results.ticketAutoClose = 'failed';
   }
 
   const failed = Object.values(results).includes('failed');

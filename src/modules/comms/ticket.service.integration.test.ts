@@ -380,6 +380,91 @@ describe('ticket.service — integration tests', () => {
     });
   });
 
+  describe('autoCloseResolvedTickets', () => {
+    it('auto-closes resolved tickets older than configured grace period', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: staleTicketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Stale resolved ticket',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'resolved',
+        actorIdentityId: staff.id,
+        note: 'Done',
+      });
+      await db.ticket.update({
+        where: { id: staleTicketId },
+        data: { resolvedAt: new Date('2026-01-01T00:00:00Z') },
+      });
+
+      const { id: freshTicketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Fresh resolved ticket',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'resolved',
+        actorIdentityId: staff.id,
+        note: 'Done',
+      });
+      await db.ticket.update({
+        where: { id: freshTicketId },
+        data: { resolvedAt: new Date('2026-01-10T00:00:00Z') },
+      });
+
+      const closedCount = await ticketService.autoCloseResolvedTickets(
+        db,
+        7,
+        new Date('2026-01-20T00:00:00Z')
+      );
+      expect(closedCount).toBe(1);
+
+      const staleTicket = await db.ticket.findUnique({ where: { id: staleTicketId } });
+      const freshTicket = await db.ticket.findUnique({ where: { id: freshTicketId } });
+      expect(staleTicket?.status).toBe('closed');
+      expect(freshTicket?.status).toBe('resolved');
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId: staleTicketId, eventType: 'status_change' },
+        orderBy: { createdAt: 'asc' },
+      });
+      const lastEvent = events[events.length - 1];
+      expect(lastEvent?.data?.oldStatus).toBe('resolved');
+      expect(lastEvent?.data?.newStatus).toBe('closed');
+      expect(lastEvent?.actorIdentityId).toBeNull();
+    });
+  });
+
   describe('Reporter visibility', () => {
     it('reporter sees all transitions in history', async () => {
       const project = await createProject();

@@ -441,6 +441,7 @@ export async function seedDemoData(db: PrismaClient) {
           identityId: ownerIdentity.id,
           role: 'owner',
           scopeType: 'unit',
+          projectId: project.id,
           unitId: unit.id,
         },
       });

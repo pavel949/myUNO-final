@@ -235,12 +235,21 @@ export interface RoleAssignmentFactoryOpts {
 }
 
 export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
+  const scopeType = opts.scopeType || 'platform';
+  let projectId = opts.projectId;
+  if (scopeType === 'unit' && opts.unitId && !projectId) {
+    const unit = await db.unit.findUnique({
+      where: { id: opts.unitId },
+      select: { projectId: true },
+    });
+    projectId = unit?.projectId;
+  }
   return db.roleAssignment.create({
     data: {
       identityId: opts.identityId,
       role: opts.role,
-      scopeType: opts.scopeType || 'platform',
-      projectId: opts.projectId,
+      scopeType,
+      projectId,
       unitId: opts.unitId,
       status: opts.status || 'active',
     },

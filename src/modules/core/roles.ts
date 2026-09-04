@@ -42,8 +42,13 @@ export async function grantRole(input: GrantRoleInput) {
     throw new Error('projectId is required for project-scoped roles');
   }
 
-  if (scopeType === 'unit' && !unitId) {
-    throw new Error('unitId is required for unit-scoped roles');
+  if (scopeType === 'unit') {
+    if (!unitId) {
+      throw new Error('unitId is required for unit-scoped roles');
+    }
+    if (!projectId) {
+      throw new Error('projectId is required for unit-scoped roles');
+    }
   }
 
   // Check that the granter is an admin (for now, simple check)
@@ -61,7 +66,7 @@ export async function grantRole(input: GrantRoleInput) {
       identityId,
       role,
       scopeType,
-      projectId: scopeType === 'project' ? projectId : null,
+      projectId: scopeType === 'platform' ? null : (projectId ?? null),
       unitId: scopeType === 'unit' ? unitId : null,
     },
   });
@@ -84,7 +89,7 @@ export async function grantRole(input: GrantRoleInput) {
       identityId,
       role,
       scopeType,
-      projectId: scopeType === 'project' ? projectId : undefined,
+      projectId: scopeType === 'platform' ? undefined : projectId,
       unitId: scopeType === 'unit' ? unitId : undefined,
       organizationId,
       providerId,
@@ -106,7 +111,7 @@ export async function revokeRole(input: RevokeRoleInput) {
       identityId,
       role,
       scopeType,
-      projectId: scopeType === 'project' ? projectId : null,
+      projectId: scopeType === 'platform' ? null : (projectId ?? null),
       unitId: scopeType === 'unit' ? unitId : null,
     },
   });

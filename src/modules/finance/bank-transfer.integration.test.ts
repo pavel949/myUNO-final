@@ -36,6 +36,8 @@ describe('paying by transfer into the company account', () => {
       projectId,
       guestIdentityId: guest.id,
       totalThb: 4_500_00,
+      status: 'pending_payment',
+      holdExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     bookingId = booking.id;
   });
@@ -147,7 +149,53 @@ describe('paying by transfer into the company account', () => {
       expect(entry).not.toBeNull();
       expect(entry!.entryType).toBe('rental_revenue');
       expect(entry!.amountThb).toBe(4_500_00);
+      expect(entry!.projectId).toBe(projectId);
       expect(entry!.description).toContain('KRUNGSRI-20260824-0042');
+    });
+
+    it('confirms a pending booking when stay transfer is recorded', async () => {
+      await recordBankTransfer(db, {
+        purpose: 'stay',
+        bookingId,
+        payerIdentityId: guestId,
+        amountThb: 4_500_00,
+        confirmedByIdentityId: staffId,
+        bankReference: 'KRUNGSRI-20260824-0043',
+      });
+
+      const booking = await db.booking.findUnique({
+        where: { id: bookingId },
+        select: { status: true, holdExpiresAt: true },
+      });
+
+      expect(booking?.status).toBe('confirmed');
+      expect(booking?.holdExpiresAt).toBeNull();
+    });
+
+    it('does not alter booking status for stay_balance payments', async () => {
+      const other = await createBooking({
+        unitId: (await db.booking.findUniqueOrThrow({ where: { id: bookingId } })).unitId,
+        projectId,
+        guestIdentityId: guestId,
+        status: 'checked_in',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-03'),
+      });
+
+      await recordBankTransfer(db, {
+        purpose: 'stay_balance',
+        bookingId: other.id,
+        payerIdentityId: guestId,
+        amountThb: 1_000_00,
+        confirmedByIdentityId: staffId,
+        bankReference: 'KRUNGSRI-20260824-0044',
+      });
+
+      const after = await db.booking.findUnique({
+        where: { id: other.id },
+        select: { status: true },
+      });
+      expect(after?.status).toBe('checked_in');
     });
 
     it('refuses without a bank reference, because an untraceable credit cannot be reconciled', async () => {

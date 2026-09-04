@@ -34,10 +34,13 @@ export async function POST(
 
     const body = await req.json().catch(() => ({}));
     const newStatus = body?.newStatus as TicketStatus | undefined;
-    const note = typeof body?.note === 'string' ? body.note.slice(0, 500) : undefined;
+    const note = typeof body?.note === 'string' ? body.note.slice(0, 500).trim() : undefined;
 
     if (!newStatus || !ALLOWED_STATUSES.has(newStatus)) {
       throw createPublicError('invalid request: unsupported status', 400);
+    }
+    if (newStatus === 'resolved' && !note) {
+      throw createPublicError('invalid request: resolution note required', 400);
     }
 
     await updateTicketStatus(prisma, {

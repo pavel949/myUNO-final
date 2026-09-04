@@ -116,6 +116,17 @@ describe('ticket.service — integration tests', () => {
         title: 'Broken AC',
       });
 
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
       // Staff resolves ticket
       await ticketService.updateTicketStatus(db, {
         ticketId,
@@ -160,6 +171,61 @@ describe('ticket.service — integration tests', () => {
           actorIdentityId: staff.id,
         })
       ).rejects.toThrow('Cannot transition from closed');
+    });
+
+    it('rejects invalid transition outside the state chart', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Test',
+      });
+
+      await expect(
+        ticketService.updateTicketStatus(db, {
+          ticketId,
+          newStatus: 'resolved',
+          actorIdentityId: staff.id,
+          note: 'Done',
+        })
+      ).rejects.toThrow('invalid transition');
+    });
+
+    it('requires resolution note when resolving', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Test',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
+      await expect(
+        ticketService.updateTicketStatus(db, {
+          ticketId,
+          newStatus: 'resolved',
+          actorIdentityId: staff.id,
+        })
+      ).rejects.toThrow('resolution note required');
     });
   });
 
@@ -221,6 +287,12 @@ describe('ticket.service — integration tests', () => {
 
       await ticketService.updateTicketStatus(db, {
         ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
         newStatus: 'resolved',
         actorIdentityId: staff.id,
         note: 'Fixed AC unit',
@@ -235,14 +307,14 @@ describe('ticket.service — integration tests', () => {
 
       expect(detail).toBeDefined();
       expect(detail?.title).toBe('Broken AC');
-      expect(detail?.events).toHaveLength(4); // creation + 3 transitions
+      expect(detail?.events).toHaveLength(5); // creation + 4 transitions
       expect(detail?.resolutionNote).toBe('Fixed AC unit');
 
       // Verify reporter can see all transitions
       const statusChangeEvents = detail?.events.filter(
         (e) => e.eventType === 'status_change'
       );
-      expect(statusChangeEvents?.length).toBe(3); // open, acknowledged, resolved
+      expect(statusChangeEvents?.length).toBe(4); // open, acknowledged, in_progress, resolved
     });
 
     it('throws when non-reporter/assignee tries to view', async () => {

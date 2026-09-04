@@ -51,7 +51,7 @@ function fill(template: string, params: Record<string, string | number>): string
 function ticketNextStatus(status: string): string | null {
   if (status === 'open') return 'acknowledged';
   if (status === 'acknowledged') return 'in_progress';
-  if (status === 'in_progress' || status === 'waiting_reporter') return 'resolved';
+  if (status === 'waiting_reporter') return 'in_progress';
   return null;
 }
 
@@ -167,6 +167,20 @@ export default function OpsBoardClient({
     } finally {
       setBusyId(null);
     }
+  };
+
+  const runTicketStatusAction = (ticket: OpsTicket, newStatus: string) => {
+    if (newStatus !== 'resolved') {
+      void ticketAction(ticket.id, 'status', { newStatus });
+      return;
+    }
+    const noteRaw = window.prompt(labels['staff.ops.ticket_resolve_note_prompt']) || '';
+    const note = noteRaw.trim();
+    if (!note) {
+      setError(labels['staff.ops.ticket_resolve_note_required']);
+      return;
+    }
+    void ticketAction(ticket.id, 'status', { newStatus, note });
   };
 
   const Row = ({
@@ -364,13 +378,29 @@ export default function OpsBoardClient({
           <p className="text-body text-text-secondary py-8">{labels['staff.ops.tickets_empty']}</p>
         ) : (
           openTickets.map((ticket) => {
-            const nextStatus = ticketNextStatus(ticket.status);
-            const actionLabel =
-              ticket.status === 'open'
-                ? labels['staff.ops.ticket_acknowledge']
-                : ticket.status === 'acknowledged'
-                  ? labels['staff.ops.ticket_start']
-                  : labels['staff.ops.ticket_resolve'];
+            const statusActions: Array<{ newStatus: string; label: string }> = [];
+            const progression = ticketNextStatus(ticket.status);
+            if (progression) {
+              statusActions.push({
+                newStatus: progression,
+                label:
+                  ticket.status === 'open'
+                    ? labels['staff.ops.ticket_acknowledge']
+                    : ticket.status === 'acknowledged'
+                      ? labels['staff.ops.ticket_start']
+                      : labels['staff.ops.ticket_resume'],
+              });
+            }
+            if (ticket.status === 'in_progress') {
+              statusActions.push({
+                newStatus: 'waiting_reporter',
+                label: labels['staff.ops.ticket_need_reporter'],
+              });
+              statusActions.push({
+                newStatus: 'resolved',
+                label: labels['staff.ops.ticket_resolve'],
+              });
+            }
 
             return (
               <div
@@ -419,17 +449,16 @@ export default function OpsBoardClient({
                       {labels['staff.ops.ticket_assign_me']}
                     </Button>
                   ) : null}
-                  {nextStatus ? (
+                  {statusActions.map((action) => (
                     <Button
+                      key={`${ticket.id}-${action.newStatus}`}
                       size="sm"
-                      onClick={() =>
-                        void ticketAction(ticket.id, 'status', { newStatus: nextStatus })
-                      }
+                      onClick={() => runTicketStatusAction(ticket, action.newStatus)}
                       isLoading={busyId === ticket.id}
                     >
-                      {actionLabel}
+                      {action.label}
                     </Button>
-                  ) : null}
+                  ))}
                 </div>
               </div>
             );

@@ -21,6 +21,16 @@ export interface UpdateTicketStatusInput {
   note?: string;
 }
 
+const ALLOWED_TICKET_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  open: ['acknowledged', 'cancelled'],
+  acknowledged: ['in_progress', 'cancelled'],
+  in_progress: ['waiting_reporter', 'resolved', 'cancelled'],
+  waiting_reporter: ['in_progress', 'cancelled'],
+  resolved: ['closed', 'in_progress'],
+  closed: [],
+  cancelled: [],
+};
+
 /**
  * Raise a new ticket.
  * Auto-creates a thread for the ticket conversation.
@@ -105,7 +115,8 @@ export async function updateTicketStatus(
   db: PrismaClient,
   input: UpdateTicketStatusInput
 ): Promise<void> {
-  const { ticketId, newStatus, actorIdentityId, note } = input;
+  const { ticketId, newStatus, actorIdentityId } = input;
+  const note = input.note?.trim();
 
   const ticket = await db.ticket.findUnique({
     where: { id: ticketId },
@@ -121,14 +132,34 @@ export async function updateTicketStatus(
   }
 
   const oldStatus = ticket.status;
+  const allowedTargets = ALLOWED_TICKET_TRANSITIONS[oldStatus];
+  if (!allowedTargets.includes(newStatus)) {
+    throw new Error(`invalid transition: ${oldStatus} -> ${newStatus}`);
+  }
+
+  if (newStatus === 'resolved' && !note) {
+    throw new Error('invalid request: resolution note required for resolved status');
+  }
 
   // Update ticket
+  const updatePayload: {
+    status: TicketStatus;
+    resolvedAt?: Date | null;
+    resolutionNote?: string | null;
+  } = { status: newStatus };
+
+  if (newStatus === 'resolved') {
+    updatePayload.resolvedAt = new Date();
+    updatePayload.resolutionNote = note;
+  } else if (oldStatus === 'resolved' && newStatus === 'in_progress') {
+    // Re-opened after reporter feedback: previous resolution no longer applies.
+    updatePayload.resolvedAt = null;
+    updatePayload.resolutionNote = null;
+  }
+
   await db.ticket.update({
     where: { id: ticketId },
-    data: {
-      status: newStatus,
-      ...(newStatus === 'resolved' && { resolvedAt: new Date(), resolutionNote: note }),
-    },
+    data: updatePayload,
   });
 
   // Record event

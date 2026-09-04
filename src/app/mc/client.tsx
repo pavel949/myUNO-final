@@ -304,11 +304,38 @@ export function MCDashboardClient({
     }
   };
 
-  const ticketStatusAction = (ticket: Ticket) => {
-    if (ticket.status === 'open') return 'acknowledged';
-    if (ticket.status === 'acknowledged') return 'in_progress';
-    if (ticket.status === 'in_progress' || ticket.status === 'waiting_reporter') return 'resolved';
-    return null;
+  const ticketStatusActions = (ticket: Ticket) => {
+    if (ticket.status === 'open') {
+      return [{ newStatus: 'acknowledged', label: labels['mc.tickets.acknowledge'] }];
+    }
+    if (ticket.status === 'acknowledged') {
+      return [{ newStatus: 'in_progress', label: labels['mc.tickets.start'] }];
+    }
+    if (ticket.status === 'in_progress') {
+      return [
+        { newStatus: 'waiting_reporter', label: labels['mc.tickets.need_reporter'] },
+        { newStatus: 'resolved', label: labels['mc.tickets.resolve'] },
+      ];
+    }
+    if (ticket.status === 'waiting_reporter') {
+      return [{ newStatus: 'in_progress', label: labels['mc.tickets.resume'] }];
+    }
+    return [];
+  };
+
+  const runTicketStatusAction = (ticket: Ticket, newStatus: string) => {
+    if (newStatus !== 'resolved') {
+      void postTicketAction(ticket.id, 'status', { newStatus });
+      return;
+    }
+
+    const noteRaw = window.prompt(labels['mc.tickets.resolve_note_prompt']) || '';
+    const note = noteRaw.trim();
+    if (!note) {
+      setTicketError(labels['mc.tickets.resolve_note_required']);
+      return;
+    }
+    void postTicketAction(ticket.id, 'status', { newStatus, note });
   };
 
   const postServiceOrderAction = async (orderId: string, path: string, body?: unknown) => {
@@ -670,23 +697,16 @@ export function MCDashboardClient({
                           {labels['mc.tickets.assigned_to']} {ticket.assignee?.firstName || '—'}
                         </span>
                       )}
-                      {ticketStatusAction(ticket) && (
+                      {ticketStatusActions(ticket).map((action) => (
                         <Button
+                          key={`${ticket.id}-${action.newStatus}`}
                           size="sm"
-                          onClick={() =>
-                            void postTicketAction(ticket.id, 'status', {
-                              newStatus: ticketStatusAction(ticket),
-                            })
-                          }
+                          onClick={() => runTicketStatusAction(ticket, action.newStatus)}
                           isLoading={busyTicketId === ticket.id}
                         >
-                          {ticket.status === 'open'
-                            ? labels['mc.tickets.acknowledge']
-                            : ticket.status === 'acknowledged'
-                              ? labels['mc.tickets.start']
-                              : labels['mc.tickets.resolve']}
+                          {action.label}
                         </Button>
-                      )}
+                      ))}
                     </div>
                   </div>
                 ))

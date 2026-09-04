@@ -121,6 +121,52 @@ describe('ticket API scope — management company', () => {
     expect(ticket?.status).toBe('acknowledged');
   });
 
+  it('rejects invalid ticket transition outside allowed state chart', async () => {
+    asMcMember({ identity: operator, projectId, organizationId: managedOrgId });
+
+    const response = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'resolved', note: 'Done' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('requires resolution note when resolving', async () => {
+    asMcMember({ identity: operator, projectId, organizationId: managedOrgId });
+
+    await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'acknowledged' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'in_progress' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+
+    const response = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'resolved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    expect(response.status).toBe(400);
+  });
+
   it('allows managed MC to assign ticket to self', async () => {
     asMcMember({ identity: operator, projectId, organizationId: managedOrgId });
 

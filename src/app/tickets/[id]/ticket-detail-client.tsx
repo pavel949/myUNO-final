@@ -45,11 +45,26 @@ const statusStyle: Record<string, string> = {
   cancelled: 'bg-surface-ivory text-text-stone',
 };
 
-function nextStatus(status: string): string | null {
-  if (status === 'open') return 'acknowledged';
-  if (status === 'acknowledged') return 'in_progress';
-  if (status === 'in_progress' || status === 'waiting_reporter') return 'resolved';
-  return null;
+function statusActionsFor(
+  status: string,
+  labels: Record<string, string>
+): Array<{ newStatus: string; label: string }> {
+  if (status === 'open') {
+    return [{ newStatus: 'acknowledged', label: labels['tickets.detail.acknowledge'] }];
+  }
+  if (status === 'acknowledged') {
+    return [{ newStatus: 'in_progress', label: labels['tickets.detail.start'] }];
+  }
+  if (status === 'in_progress') {
+    return [
+      { newStatus: 'waiting_reporter', label: labels['tickets.detail.need_reporter'] },
+      { newStatus: 'resolved', label: labels['tickets.detail.resolve'] },
+    ];
+  }
+  if (status === 'waiting_reporter') {
+    return [{ newStatus: 'in_progress', label: labels['tickets.detail.resume'] }];
+  }
+  return [];
 }
 
 function statusLabel(status: string, labels: Record<string, string>): string {
@@ -123,13 +138,20 @@ export default function TicketDetailClient({
     }
   };
 
-  const upcomingStatus = nextStatus(ticket.status);
-  const actionLabel =
-    ticket.status === 'open'
-      ? labels['tickets.detail.acknowledge']
-      : ticket.status === 'acknowledged'
-        ? labels['tickets.detail.start']
-        : labels['tickets.detail.resolve'];
+  const runStatusAction = (newStatus: string) => {
+    if (newStatus !== 'resolved') {
+      void runAction('status', { newStatus });
+      return;
+    }
+
+    const noteRaw = window.prompt(labels['tickets.detail.resolve_note_prompt']) || '';
+    const note = noteRaw.trim();
+    if (!note) {
+      setError(labels['tickets.detail.resolve_note_required']);
+      return;
+    }
+    void runAction('status', { newStatus, note });
+  };
 
   return (
     <section className="bg-surface-paper border border-border-line rounded-lg p-20">
@@ -188,15 +210,16 @@ export default function TicketDetailClient({
               {labels['tickets.detail.assign_me']}
             </Button>
           ) : null}
-          {upcomingStatus ? (
+          {statusActionsFor(ticket.status, labels).map((action) => (
             <Button
+              key={`${ticket.id}-${action.newStatus}`}
               size="sm"
               isLoading={busy}
-              onClick={() => void runAction('status', { newStatus: upcomingStatus })}
+              onClick={() => runStatusAction(action.newStatus)}
             >
-              {actionLabel}
+              {action.label}
             </Button>
-          ) : null}
+          ))}
         </div>
       ) : null}
 

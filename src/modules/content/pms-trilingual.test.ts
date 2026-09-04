@@ -12,7 +12,7 @@ const SEED_PATH = join(__dirname, 'seed.ts');
 const PMS_KEY_MATCHERS: Array<(key: string, namespace: string) => boolean> = [
   (_, ns) => ns === 'notify',
   (_, ns) => ns === 'booking',
-  (key, ns) => ns === 'email' && key.includes('stay'),
+  (_, ns) => ns === 'email',
   (key) => key.startsWith('owner.'),
   (key) => key.startsWith('ops.'),
   (key) => key.startsWith('mc.'),
@@ -46,6 +46,19 @@ const PMS_KEY_MATCHERS: Array<(key: string, namespace: string) => boolean> = [
   (key) => key.startsWith('guests.'),
   (_, ns) => ns === 'account',
   (key) => key.startsWith('account.'),
+  (_, ns) => ns === 'search',
+  (_, ns) => ns === 'catalog',
+  (_, ns) => ns === 'listing',
+  (_, ns) => ns === 'home',
+  (_, ns) => ns === 'common',
+  (_, ns) => ns === 'projects',
+  (_, ns) => ns === 'project_page',
+  (_, ns) => ns === 'auth',
+  (_, ns) => ns === 'legal',
+  (_, ns) => ns === 'landing',
+  (_, ns) => ns === 'trust',
+  (_, ns) => ns === 'area',
+  (_, ns) => ns === 'order',
 ];
 
 function isPmsKey(key: string, namespace: string): boolean {

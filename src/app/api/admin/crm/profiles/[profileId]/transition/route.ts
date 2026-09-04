@@ -1,8 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmLifecycleStage } from '@prisma/client';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,21 +28,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { profileId: string } }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
-  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
-
-  if (
-    !(await can({
-      identity,
-      action: 'admin:view_all',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const body: TransitionRequest = await req.json();
@@ -81,7 +67,7 @@ export async function POST(
         lifecycleStage: body.to_stage,
         lifecycleChangedAt: new Date(),
         lifecycleChangeReason: body.reason,
-        lifecycleChangeApprovedBy: user.identityId,
+        lifecycleChangeApprovedBy: guard.actorIdentityId,
       },
     });
 
@@ -91,7 +77,7 @@ export async function POST(
         fromStage: currentStage,
         toStage: body.to_stage,
         reason: body.reason,
-        approvedByIdentityId: user.identityId,
+        approvedByIdentityId: guard.actorIdentityId,
       },
     });
 

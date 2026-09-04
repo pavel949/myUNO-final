@@ -30,6 +30,11 @@ export {
   type SyncAllResult,
 } from './ical-sync';
 
+export {
+  getUnitIcalConflictAlerts,
+  type UnitIcalConflictAlert,
+} from './unit-ical-conflicts';
+
 export { parseICal, type ParseResult } from './ical-parse';
 
 export {

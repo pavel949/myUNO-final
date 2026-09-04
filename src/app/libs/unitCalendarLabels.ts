@@ -32,4 +32,9 @@ export const UNIT_CALENDAR_LABEL_KEYS = {
   'integrations.key.ical_airbnb': 'Airbnb iCal',
   'integrations.key.ical_booking': 'Booking.com iCal',
   'integrations.key.ical_agoda': 'Agoda iCal',
+  'staff.calendar.conflict_title': 'OTA calendar conflict',
+  'staff.calendar.conflict_hint':
+    'An imported OTA booking overlaps a platform stay. The platform calendar is authoritative — correct the OTA channel manually.',
+  'staff.calendar.conflict_body':
+    '{guest_name}: {start_date} — {end_date} clashes with an OTA import',
 } as const;

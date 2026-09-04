@@ -205,6 +205,7 @@ export async function createConflictNotifications(
         titleKey: 'notify.ops.ical_conflict.title',
         bodyKey: 'notify.ops.ical_conflict.body',
         params: {
+          unit_id: unit.id,
           unit_name: unit.name,
           booking_id: conflict.conflictingBooking.id,
           start_date: conflict.event.dtStart.toISOString().slice(0, 10),

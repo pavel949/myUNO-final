@@ -5,9 +5,10 @@ import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
+import UnitIcalConflictBanner from '@/components/units/UnitIcalConflictBanner';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
-import { listIntegrationAccounts } from '@/modules/integrations';
+import { getUnitIcalConflictAlerts, listIntegrationAccounts } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
     notFound();
   }
 
-  const [labels, locale, integrationAccounts] = await Promise.all([
+  const [labels, locale, integrationAccounts, conflictAlerts] = await Promise.all([
     getLabels({
       'mc.units.calendar.back': '← MC portal',
       'mc.units.calendar.title': 'Availability & pricing',
@@ -47,6 +48,7 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
     }),
     getRequestLocale(),
     listIntegrationAccounts(prisma, 'unit', unit.id),
+    getUnitIcalConflictAlerts(prisma, unit.id),
   ]);
 
   return (
@@ -62,6 +64,7 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
           {unit.project.name} — {labels['mc.units.calendar.subtitle']}
         </p>
         <div className="mt-24">
+          <UnitIcalConflictBanner conflicts={conflictAlerts} labels={labels} />
           <UnitIntegrationHealthStrip
             accounts={integrationAccounts.map((account) => ({
               integrationKey: account.integrationKey,

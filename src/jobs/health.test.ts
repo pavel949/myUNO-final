@@ -105,6 +105,16 @@ describe('Vercel Hobby cron schedules', () => {
       expect(dayOfWeek, cron.path).toBe('*');
     }
   });
+
+  it('does not run iCal inside the nightly dispatcher, so a slow feed cannot starve retention', () => {
+    const dispatch = readFileSync(join(process.cwd(), 'src/jobs/dispatch.ts'), 'utf8');
+    const nightly = dispatch.split('export async function runNightlyJobs')[1]?.split(
+      'export function dispatchFailed'
+    )[0];
+    expect(nightly).toBeTruthy();
+    expect(nightly).not.toContain('runIcalSyncJob');
+    expect(dispatch.split('export async function runFrequentJobs')[1]).toContain('runIcalSyncJob');
+  });
 });
 
 describe('jobsNeedingAttention', () => {

@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
 /**
  * Nightly dispatcher (Vercel Hobby daily slot). Verification deadlines,
  * retention/PDPA, metric rollups, guest lifecycle sends, stale service
- * orders, plus a defensive pass of holds, TM30 and iCal.
+ * orders, plus a defensive pass of hold expiry. iCal is the daytime slot
+ * only — a slow feed must not starve this run.
  *
  * Each job is isolated: one failing job never blocks the others. Last run
  * and outcome are written to `job_run` for the admin scheduler panel.

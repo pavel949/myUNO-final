@@ -126,6 +126,7 @@ export default async function RecordCostPage({ searchParams }: RecordCostPagePro
         />
 
         <RecordCostClient
+          embedded
           units={units.map((u) => ({ id: u.id, name: u.name, projectName: u.project?.name ?? '—' }))}
           recent={recent.map((e) => ({
             id: e.id,

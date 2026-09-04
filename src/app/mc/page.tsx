@@ -115,6 +115,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.nav.mobilization': 'Mobilization',
     'mc.nav.requests': 'Booking requests',
     'mc.nav.services': 'Order services',
+    'mc.nav.costs': 'Record a cost',
     'mc.ical_conflicts_title': 'OTA calendar conflicts',
     'mc.ical_conflicts_hint':
       'Imported OTA bookings overlap platform stays on your managed units. The platform calendar wins — correct each OTA channel manually.',

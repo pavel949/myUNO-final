@@ -526,6 +526,12 @@ export function MCDashboardClient({
               {labels['mc.nav.tm30']}
             </Link>
             <Link
+              href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
+            >
+              {labels['mc.nav.costs']}
+            </Link>
+            <Link
               href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`}
               className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
             >

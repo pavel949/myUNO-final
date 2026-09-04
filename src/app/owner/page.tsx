@@ -84,6 +84,11 @@ export default async function OwnerPage() {
     'tickets.status.resolved': 'Resolved',
     'tickets.status.closed': 'Closed',
     'tickets.status.cancelled': 'Cancelled',
+    'owner.sell_interest.card_title': 'Thinking of selling?',
+    'owner.sell_interest.card_description':
+      'We connect you with qualified buyers. Share your interest and we will explore options together.',
+    'owner.sell_interest.action': 'Express interest',
+    'owner.statements.view_all': 'View all statements',
   });
 
   return <OwnerDashboardClient {...data} labels={labels} locale={locale} />;

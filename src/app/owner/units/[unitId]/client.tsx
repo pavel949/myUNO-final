@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Button,
@@ -10,6 +10,7 @@ import {
   OpenTicketsList,
   OwnerStayModal,
   MoneyAmount,
+  SellInterestCard,
 } from '@/components';
 import { DeltaChip, Sparkline } from '@/components/viz';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
@@ -75,6 +76,17 @@ interface OwnerUnitDashboardClientProps {
   locale: string;
 }
 
+interface OwnerContractView {
+  managementFeeBasis: string;
+  managementFeeRate: number | null;
+  managementFeeFixedAmount: number | null;
+  performanceFeeEnabled: boolean;
+  performanceFeeRate: number | null;
+  performanceFeeBaseline: number | null;
+  contractStartDate: string;
+  contractEndDate: string | null;
+}
+
 export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> = ({
   unit,
   summary,
@@ -89,6 +101,28 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
 }) => {
   const [showOwnerStayModal, setShowOwnerStayModal] = useState(false);
   const [ownerStayLoading, setOwnerStayLoading] = useState(false);
+  const [contract, setContract] = useState<OwnerContractView | null>(null);
+  const [contractLoading, setContractLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setContractLoading(true);
+      try {
+        const response = await fetch(`/api/owner/units/${unit.id}/contract`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled) {
+          setContract(data.contract ?? null);
+        }
+      } finally {
+        if (!cancelled) setContractLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [unit.id]);
 
   const resolveLabel = (key: string, params?: Record<string, string>) =>
     fill(labels[key] || key, params);
@@ -116,6 +150,24 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
       setOwnerStayLoading(false);
     }
   };
+
+  const handleExpressSellInterest = async () => {
+    const response = await fetch('/api/threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contextType: 'general',
+        body: '[sell-interest]',
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      window.location.href = `/messages/${data.threadId}`;
+    }
+  };
+
+  const formatBasis = (basis: string) =>
+    labels[`owner.contract.basis.${basis}`] || basis;
 
   return (
     <div className="min-h-screen bg-surface-background">
@@ -260,6 +312,55 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
         )}
 
         <div className="space-y-32">
+          {contractLoading ? (
+            <p className="text-small text-text-secondary">{labels['owner.contract.loading']}</p>
+          ) : contract ? (
+            <div className="bg-surface-paper border border-border-line rounded-md p-24">
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.contract.title']}
+              </h2>
+              <dl className="grid md:grid-cols-2 gap-12 text-small">
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.contract.basis']}</dt>
+                  <dd className="font-medium text-text-ink">{formatBasis(contract.managementFeeBasis)}</dd>
+                </div>
+                {contract.managementFeeRate != null ? (
+                  <div>
+                    <dt className="text-text-secondary">{labels['owner.contract.rate']}</dt>
+                    <dd className="font-medium text-text-ink">
+                      {(contract.managementFeeRate * 100).toFixed(2)}%
+                    </dd>
+                  </div>
+                ) : null}
+                {contract.managementFeeFixedAmount != null ? (
+                  <div>
+                    <dt className="text-text-secondary">{labels['owner.contract.fixed']}</dt>
+                    <dd className="font-medium text-text-ink">
+                      ฿{(contract.managementFeeFixedAmount / 100).toFixed(2)}
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.contract.period']}</dt>
+                  <dd className="font-medium text-text-ink">
+                    {contract.contractStartDate}
+                    {contract.contractEndDate ? ` – ${contract.contractEndDate}` : ''}
+                  </dd>
+                </div>
+                {contract.performanceFeeEnabled ? (
+                  <div>
+                    <dt className="text-text-secondary">{labels['owner.contract.performance']}</dt>
+                    <dd className="font-medium text-text-ink">
+                      {contract.performanceFeeRate != null
+                        ? `${(contract.performanceFeeRate * 100).toFixed(2)}%`
+                        : '—'}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          ) : null}
+
           <div>
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.sections.bookings']}
@@ -283,9 +384,14 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
 
           {statements.length > 0 && (
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-                {labels['owner.statement.title']}
-              </h2>
+              <div className="flex items-center justify-between gap-16 mb-16">
+                <h2 className="text-heading-2 font-semibold text-text-ink">
+                  {labels['owner.statement.title']}
+                </h2>
+                <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
+                  {labels['owner.statements.view_all']}
+                </Link>
+              </div>
               <div className="space-y-16">
                 {statements.map((statement) => (
                   <div
@@ -374,6 +480,15 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
               </Link>
             </div>
           </div>
+
+          <SellInterestCard
+            labels={{
+              title: labels['owner.sell_interest.card_title'],
+              description: labels['owner.sell_interest.card_description'],
+              action: labels['owner.sell_interest.action'],
+            }}
+            onExpressInterest={handleExpressSellInterest}
+          />
 
           <Button
             variant="primary"

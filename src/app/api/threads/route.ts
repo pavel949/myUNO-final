@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { findOrCreateThread, sendMessage, getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
+import { createDirectInquiry } from '@/modules/analytics';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /** GET /api/threads — the caller's inbox. */
@@ -128,6 +129,10 @@ export async function POST(req: NextRequest) {
       senderIdentityId: user.identityId,
       body: body.trim(),
     });
+
+    if (body.trim().includes('sell-interest')) {
+      await createDirectInquiry(prisma, user.identityId, user.identityId, 'Owner sell-interest thread');
+    }
 
     return NextResponse.json({ threadId }, { status: 201 });
   } catch (error) {

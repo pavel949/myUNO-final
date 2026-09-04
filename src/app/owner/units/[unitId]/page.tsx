@@ -81,6 +81,22 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
     'tickets.status.resolved': 'Resolved',
     'tickets.status.closed': 'Closed',
     'tickets.status.cancelled': 'Cancelled',
+    'owner.contract.title': 'Management contract',
+    'owner.contract.basis': 'Management fee basis',
+    'owner.contract.loading': 'Loading contract terms…',
+    'owner.contract.rate': 'Management fee rate',
+    'owner.contract.fixed': 'Fixed management fee',
+    'owner.contract.period': 'Contract period',
+    'owner.contract.performance': 'Performance fee',
+    'owner.contract.basis.percentage_gop': '% of GOP',
+    'owner.contract.basis.percentage_noi': '% of NOI',
+    'owner.contract.basis.percentage_gross_booking': '% of gross bookings',
+    'owner.contract.basis.fixed': 'Fixed fee',
+    'owner.sell_interest.card_title': 'Thinking of selling?',
+    'owner.sell_interest.card_description':
+      'We connect you with qualified buyers. Share your interest and we will explore options together.',
+    'owner.sell_interest.action': 'Express interest',
+    'owner.statements.view_all': 'View all statements',
   })) as Record<string, string>;
 
   return (

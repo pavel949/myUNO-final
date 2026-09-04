@@ -418,9 +418,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Statements (D2) */}
         {statements.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-              {labels['owner.statement.title']}
-            </h2>
+            <div className="flex items-center justify-between gap-16 mb-16">
+              <h2 className="text-heading-2 font-semibold text-text-ink">
+                {labels['owner.statement.title']}
+              </h2>
+              <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
+                {labels['owner.statements.view_all']}
+              </Link>
+            </div>
             <div className="space-y-16">
               {statements.map((statement) => (
                 <div
@@ -553,7 +558,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Sell Interest Card */}
             <div>
-              <SellInterestCard onExpressInterest={handleExpressSellInterest} />
+              <SellInterestCard
+                labels={{
+                  title: labels['owner.sell_interest.card_title'],
+                  description: labels['owner.sell_interest.card_description'],
+                  action: labels['owner.sell_interest.action'],
+                }}
+                onExpressInterest={handleExpressSellInterest}
+              />
             </div>
           </div>
         ) : (
@@ -660,7 +672,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Portfolio: Sell Interest Card */}
             <div>
-              <SellInterestCard onExpressInterest={handleExpressSellInterest} />
+              <SellInterestCard
+                labels={{
+                  title: labels['owner.sell_interest.card_title'],
+                  description: labels['owner.sell_interest.card_description'],
+                  action: labels['owner.sell_interest.action'],
+                }}
+                onExpressInterest={handleExpressSellInterest}
+              />
             </div>
           </div>
         )}

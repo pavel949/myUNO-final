@@ -33,7 +33,7 @@ Supabase offers three addresses for the same database, and they are not intercha
 
 | Address | Port | Migrations | Runtime | Notes |
 |---|---|---|---|---|
-| **Session pooler** `aws-0-<region>.pooler.supabase.com` | 5432 | ✅ | ✅ | **Use this.** IPv4, behaves as ordinary Postgres |
+| **Session pooler** `aws-0-<region>.pooler.supabase.com` | 5432 | ✅ | ✅ | **Use this.** IPv4, behaves as ordinary Postgres. Username must be `postgres.<project-ref>`, not `postgres`. |
 | Transaction pooler | 6543 | ❌ | ✅ | No prepared statements or advisory locks — `prisma migrate deploy` fails |
 | Direct `db.<ref>.supabase.co` | 5432 | ✅ | ✅ | IPv6-only on new projects without the IPv4 add-on; frequently unreachable, and it fails as a silent timeout rather than an error |
 

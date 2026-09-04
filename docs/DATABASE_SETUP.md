@@ -17,6 +17,9 @@ It looks like this:
 postgresql://postgres.abcdefgh:YOUR-PASSWORD@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
 ```
 
+The username is `postgres.` plus the project ref — not `postgres` alone. The
+session pooler rejects a bare `postgres` user even when the password is correct.
+
 Replace `YOUR-PASSWORD` with the database password. If you don't have it, use
 **Reset database password** on that page — the password is not recoverable, only
 replaceable.

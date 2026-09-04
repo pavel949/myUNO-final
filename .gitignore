@@ -18,3 +18,4 @@ Thumbs.db
 *.local
 tsconfig.tsbuildinfo
 .claude/
+.vercel

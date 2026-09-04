@@ -1,7 +1,14 @@
-import { PrismaClient, Booking, OwnerStatement } from '@prisma/client';
+import { PrismaClient, Booking, OwnerStatement, TicketStatus } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
+
+const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
+  'open',
+  'acknowledged',
+  'in_progress',
+  'waiting_reporter',
+];
 
 export interface OwnerDashboardData {
   identityId: string;
@@ -204,7 +211,7 @@ export async function getOwnerDashboard(
       revenueThisMonth: monthRevenue / 100,
       nextArrivalDate: nextArrival,
       bookingsCount: unit.bookings.filter((b) => b.status !== 'cancelled').length,
-      openTicketsCount: unit.tickets.filter((t) => t.status !== 'closed').length,
+      openTicketsCount: unit.tickets.filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status)).length,
       latestStatementId: unit.statements[0]?.id || null,
     };
   });
@@ -490,7 +497,7 @@ export async function getOwnerAlerts(
   const tickets = await db.ticket.findMany({
     where: {
       unit: { id: { in: unitIds } },
-      status: { not: 'closed' },
+      status: { in: ACTIVE_TICKET_STATUSES },
     },
     select: {
       id: true,
@@ -510,7 +517,7 @@ export async function getOwnerAlerts(
         title: 'Ticket SLA Breached',
         description: 'An open ticket has exceeded its SLA deadline',
         createdAt: now,
-        actionUrl: `/tickets`,
+        actionUrl: `/tickets/${ticket.id}`,
       });
     }
   }

@@ -12,6 +12,7 @@ import {
 import {
   bookOwnerStay,
   getOwnerDashboard,
+  getOwnerAlerts,
   getOwnerBookingsList,
   getOwnerPortfolioShape,
   getOwnerProjects,
@@ -188,6 +189,112 @@ describe('Owner experience (T-033)', () => {
       // Revenue should only count guest stays, not owner stays. 5000 satang
       // -> 50 baht, converted at the display boundary (CLAUDE.md; Q47).
       expect(unitData.revenueThisMonth).toBe(50); // Only the guest booking
+    });
+
+    it('counts only active ticket statuses in openTicketsCount', async () => {
+      const owner = await createIdentity();
+      const reporter = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      await db.ticket.createMany({
+        data: [
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Open item',
+            status: 'open',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Acknowledged item',
+            status: 'acknowledged',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'In progress item',
+            status: 'in_progress',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Waiting reporter item',
+            status: 'waiting_reporter',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Resolved item',
+            status: 'resolved',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Closed item',
+            status: 'closed',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Cancelled item',
+            status: 'cancelled',
+          },
+        ],
+      });
+
+      const dashboard = await getOwnerDashboard(db, owner.id);
+      expect(dashboard.units[0].openTicketsCount).toBe(4);
+    });
+  });
+
+  describe('owner alerts', () => {
+    it('links ticket SLA alerts to ticket detail route', async () => {
+      const owner = await createIdentity();
+      const reporter = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const ticket = await db.ticket.create({
+        data: {
+          projectId: project.id,
+          unitId: unit.id,
+          raisedByIdentityId: reporter.id,
+          raisedByRole: 'guest',
+          categoryKey: 'maintenance',
+          title: 'SLA overdue ticket',
+          status: 'open',
+          slaDueAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+      });
+
+      const alerts = await getOwnerAlerts(db, owner.id);
+      const ticketAlert = alerts.find((alert) => alert.type === 'ticket_sla_breach');
+
+      expect(ticketAlert).toBeDefined();
+      expect(ticketAlert?.actionUrl).toBe(`/tickets/${ticket.id}`);
     });
   });
 

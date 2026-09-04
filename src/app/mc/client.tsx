@@ -647,10 +647,7 @@ export function MCDashboardClient({
                           {ticket.title}
                         </h3>
                       </div>
-                      <Link
-                        href={`/tickets`}
-                        className="text-brand-andaman font-semibold hover:underline"
-                      >
+                      <Link href={`/tickets/${ticket.id}`} className="text-brand-andaman font-semibold hover:underline">
                         {labels['mc.tickets.view']} →
                       </Link>
                     </div>

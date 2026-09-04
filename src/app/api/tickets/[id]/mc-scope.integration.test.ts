@@ -165,4 +165,31 @@ describe('ticket API scope — management company', () => {
     );
     expect(response.status).toBe(400);
   });
+
+  it('allows reporter to read ticket but not transition status', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: guest.id,
+      email: guest.email,
+      firstName: 'Guest',
+      lastName: 'Reporter',
+      isAdmin: false,
+      roles: [],
+    });
+
+    const detailResponse = await getTicket(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}`),
+      { params: { id: ticketId } }
+    );
+    expect(detailResponse.status).toBe(200);
+
+    const statusResponse = await updateStatus(
+      new NextRequest(`http://localhost/api/tickets/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus: 'acknowledged' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      { params: { id: ticketId } }
+    );
+    expect(statusResponse.status).toBe(403);
+  });
 });

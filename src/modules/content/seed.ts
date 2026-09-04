@@ -319,9 +319,9 @@ const COMMON_KEYS: KeyDef[] = [
     key: 'notify.stay_dates_modified.body',
     namespace: 'notify',
     description: 'Notification: stay dates modified details',
-    ru: 'Ваше бронирование было обновлено новыми датами. Проверьте детали в приложении.',
-    en: 'Your booking has been updated with new dates. Check the details in the app.',
-    th: 'การจองของคุณได้รับการอัปเดตด้วยวันที่ใหม่ โปรดตรวจสอบรายละเอียดในแอป',
+    ru: '{unit_name}: новые даты {start_date} — {end_date}. Изменение стоимости: ฿{price_delta_thb}. Подробности в поездке.',
+    en: '{unit_name}: new dates {start_date} — {end_date}. Price change: ฿{price_delta_thb}. See your trip for details.',
+    th: '{unit_name}: วันที่ใหม่ {start_date} — {end_date} การเปลี่ยนแปลงราคา: ฿{price_delta_thb} ดูรายละเอียดในการเดินทาง',
   },
 
   // Thread system messages
@@ -1442,6 +1442,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'notify.stay_request_received.body', namespace: 'notify', description: 'N-34 ops body: guest, dates, respond SLA', en: '{guest_name} requested {unit_name} ({start_date} — {end_date}), ฿{total_thb}. Respond within {request_hours} hours from the requests inbox.', ru: '{guest_name} запросил {unit_name} ({start_date} — {end_date}), ฿{total_thb}. Ответьте в течение {request_hours} часов во входящих заявок.', th: '{guest_name} ขอจอง {unit_name} ({start_date} — {end_date}) ฿{total_thb} ตอบภายใน {request_hours} ชั่วโมงจากกล่องคำขอ', status: NR },
   { key: 'notify.stay_guest_checked_in.title', namespace: 'notify', description: 'Owner feed: guest checked in', en: 'Guest checked in', ru: 'Гость заселился', th: 'แขกเช็คอินแล้ว', status: NR },
   { key: 'notify.stay_guest_checked_in.body', namespace: 'notify', description: 'Owner feed body: guest checked in at unit', en: '{guest_name} has checked in at {unit_name}.', ru: '{guest_name} заселился в {unit_name}.', th: '{guest_name} เช็คอินที่ {unit_name} แล้ว', status: NR },
+  { key: 'notify.stay_modified_ops.title', namespace: 'notify', description: 'N-11 ops alert: stay dates modified', en: 'Stay dates modified', ru: 'Даты проживания изменены', th: 'วันที่พักถูกเปลี่ยนแปลง', status: NR },
+  { key: 'notify.stay_modified_ops.body', namespace: 'notify', description: 'N-11 ops body: guest, old/new dates, price delta', en: '{guest_name} changed {unit_name} from {old_start_date} — {old_end_date} to {start_date} — {end_date}. Price delta: ฿{price_delta_thb}.', ru: '{guest_name} изменил {unit_name}: было {old_start_date} — {old_end_date}, стало {start_date} — {end_date}. Разница: ฿{price_delta_thb}.', th: '{guest_name} เปลี่ยน {unit_name} จาก {old_start_date} — {old_end_date} เป็น {start_date} — {end_date} ส่วนต่างราคา: ฿{price_delta_thb}', status: NR },
   { key: 'booking.checkin.confirmed.title', namespace: 'booking', description: 'Guest check-in confirmation notification title', en: 'You are checked in', ru: 'Вы заселились', th: 'คุณเช็คอินแล้ว', status: NR },
   { key: 'booking.checkin.confirmed.body', namespace: 'booking', description: 'Guest check-in confirmation notification body', en: 'Welcome to {unit_name}. Your home space has everything you need for your stay.', ru: 'Добро пожаловать в {unit_name}. В личном кабинете проживания — всё необходимое.', th: 'ยินดีต้อนรับสู่ {unit_name} พื้นที่ของคุณมีทุกอย่างที่ต้องการ', status: NR },
   { key: 'notify.stay_request_approved.title', namespace: 'notify', description: 'Notification: booking request approved (guest)', en: 'Booking request approved', ru: 'Заявка на бронирование одобрена', status: NR },

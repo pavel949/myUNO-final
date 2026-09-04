@@ -2,6 +2,7 @@ import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
+import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
 import {
   formatDeclineCancellationReason,
@@ -1003,6 +1004,8 @@ export async function changeBookingDates(
     bookingId,
     priceDeltaThb: result.totalThb - result.previousTotalThb,
   }).catch(() => null);
+
+  await notifyBookingModified(db, result).catch(() => null);
 
   return result;
 }

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
       return NextResponse.json({ error: 'Reversal reason required' }, { status: 400 });
     }
 
-    const reversal = await reverseLedgerEntry(prisma, entryId, reason, user.identityId);
+    const reversal = await reverseLedgerEntry(prisma, entryId, reason, guard.actorIdentityId);
 
     // Audit log the reversal
     await prisma.auditLog.create({
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
         action: 'ledger_entry_reversed',
         entityType: 'ledger_entry',
         entityId: entryId,
-        actorIdentityId: user.identityId,
+        actorIdentityId: guard.actorIdentityId,
         data: {
           reversalEntryId: reversal.id,
           reason,

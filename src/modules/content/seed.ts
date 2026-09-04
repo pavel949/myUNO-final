@@ -2126,8 +2126,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'checkin.passports.verification_failed_body', namespace: 'checkin', description: 'Passports: verification failed banner body', en: 'Self check-in instructions stay withheld until we have everyone\'s passport details. Our host can also collect them when you arrive.', ru: 'Инструкции для самостоятельного заселения недоступны, пока мы не получим паспортные данные всех гостей. Хост также может собрать их при заезде.', th: 'คำแนะนำเช็คอินด้วยตนเองจะไม่แสดงจนกว่าเราจะได้รับข้อมูลหนังสือเดินทางของทุกคน เจ้าหน้าที่สามารถรับข้อมูลเมื่อคุณมาถึงได้เช่นกัน', status: NR },
 
   // Check-out notification (owner)
-  { key: 'notify.stay_checked_out.title', namespace: 'notify', description: 'Notification: guest checked out (owner)', en: 'Guest checked out', ru: 'Гость выехал', status: NR },
-  { key: 'notify.stay_checked_out.body', namespace: 'notify', description: 'Notification body: guest checked out', en: '{unit_name} is free — ready for turnaround.', ru: '{unit_name} свободен — можно готовить к следующему заезду.', status: NR },
+  { key: 'notify.stay_checked_out.title', namespace: 'notify', description: 'Notification: guest checked out (owner)', en: 'Guest checked out', ru: 'Гость выехал', th: 'แขกเช็คเอาท์แล้ว', status: NR },
+  { key: 'notify.stay_checked_out.body', namespace: 'notify', description: 'Notification body: guest checked out', en: '{unit_name} is free — ready for turnaround.', ru: '{unit_name} свободен — можно готовить к следующему заезду.', th: '{unit_name} ว่างแล้ว — พร้อมเตรียมห้องสำหรับแขกคนถัดไป', status: NR },
 
   // Messaging + notifications bell (Phase E)
   { key: 'nav.messages', namespace: 'nav', description: 'Navbar link: messages inbox', en: 'Messages', ru: 'Сообщения', status: NR },

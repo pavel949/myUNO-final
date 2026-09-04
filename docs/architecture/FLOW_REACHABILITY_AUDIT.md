@@ -76,7 +76,7 @@ Payment seam (doc 10, excluding bank-channel per scope): mock checkout default; 
 
 **Stay + service order notification catalog complete (N-02…N-14, N-26/27 wired).**
 
-**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status, MC fee report API, admin payouts + statement generate (`prisma` + `requireAdmin`) — **all `src/app/api/**/route.ts` files** now off legacy `prismadb`.
+**API debt reduction (2026-09 PMS pass):** … content CSV export/import/namespace, compliance checklists board, unit asset status, MC fee report API, admin payouts + statement generate (`prisma` + `requireAdmin`) — **all `src/app/api/**/route.ts` files** now off legacy `prismadb`. **Booking access** centralized in `src/app/libs/bookingAccess.ts` — all `/api/bookings/[id]/*` and checkout session routes use `resolveBookingAccess` + `can*` helpers instead of scattered `isAdmin` / inline staff/MC checks.
 
 ## 4. Admin panel
 

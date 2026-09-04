@@ -29,6 +29,31 @@ describe('Security headers (T-042, doc 12)', () => {
     expect(csp).toContain("connect-src 'self'");
   });
 
+  it("keeps 'unsafe-eval' out of the production script policy", () => {
+    // Next.js dev needs eval() for React Refresh, but production must never
+    // allow it — eval is an XSS amplifier and production bundles never use it.
+    const previous = process.env.NODE_ENV;
+    try {
+      (process.env as { NODE_ENV?: string }).NODE_ENV = 'production';
+      const csp = headersFor().get('Content-Security-Policy')!;
+      expect(csp).toContain("script-src 'self' 'unsafe-inline'");
+      expect(csp).not.toContain("'unsafe-eval'");
+    } finally {
+      (process.env as { NODE_ENV?: string }).NODE_ENV = previous;
+    }
+  });
+
+  it("allows 'unsafe-eval' in development so the dev runtime can hydrate", () => {
+    const previous = process.env.NODE_ENV;
+    try {
+      (process.env as { NODE_ENV?: string }).NODE_ENV = 'development';
+      const csp = headersFor().get('Content-Security-Policy')!;
+      expect(csp).toContain("'unsafe-eval'");
+    } finally {
+      (process.env as { NODE_ENV?: string }).NODE_ENV = previous;
+    }
+  });
+
   it('requires HTTPS for a year, subdomains included', () => {
     const hsts = headersFor().get('Strict-Transport-Security')!;
     expect(hsts).toContain('max-age=31536000');

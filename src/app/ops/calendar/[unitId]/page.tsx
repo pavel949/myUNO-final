@@ -2,9 +2,12 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
-import { getLabels } from '@/lib/i18n';
+import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
+import { listIntegrationAccounts } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,34 +34,16 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
     notFound();
   }
 
-  const labels = await getLabels({
-    'staff.ops.calendar.back': '← Ops board',
-    'staff.ops.calendar.title': 'Unit calendar',
-    'staff.ops.calendar.subtitle': 'Block dates or set one-off rates for this unit.',
-    'staff.calendar.title': 'Availability & pricing',
-    'staff.calendar.intro':
-      'Block this unit for maintenance or an owner stay, or set a one-off rate for a date range.',
-    'staff.calendar.loading': 'Loading…',
-    'staff.calendar.error_generic': 'Something went wrong. Please try again.',
-    'staff.calendar.saving': 'Saving…',
-    'staff.calendar.blocks_title': 'Blocked dates',
-    'staff.calendar.blocks_none': 'No blocked dates.',
-    'staff.calendar.reason.maintenance': 'Maintenance',
-    'staff.calendar.reason.owner_hold': 'Owner hold',
-    'staff.calendar.reason.other': 'Other',
-    'staff.calendar.start_date': 'Start date',
-    'staff.calendar.end_date': 'End date',
-    'staff.calendar.reason_field': 'Reason',
-    'staff.calendar.note': 'Note (optional)',
-    'staff.calendar.add_block': 'Block these dates',
-    'staff.calendar.remove': 'Remove',
-    'staff.calendar.pricing_title': 'Pricing overrides',
-    'staff.calendar.pricing_none': 'No pricing overrides.',
-    'staff.calendar.per_night': '/night',
-    'staff.calendar.nightly_rate': 'Nightly rate (THB)',
-    'staff.calendar.label': 'Label (optional)',
-    'staff.calendar.add_rule': 'Add rate',
-  });
+  const [labels, locale, integrationAccounts] = await Promise.all([
+    getLabels({
+      'staff.ops.calendar.back': '← Ops board',
+      'staff.ops.calendar.title': 'Unit calendar',
+      'staff.ops.calendar.subtitle': 'Block dates or set one-off rates for this unit.',
+      ...UNIT_CALENDAR_LABEL_KEYS,
+    }),
+    getRequestLocale(),
+    listIntegrationAccounts(prisma, 'unit', unit.id),
+  ]);
 
   return (
     <main className="min-h-screen bg-surface-background">
@@ -73,6 +58,16 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
         <div className="mt-24">
+          <UnitIntegrationHealthStrip
+            accounts={integrationAccounts.map((account) => ({
+              integrationKey: account.integrationKey,
+              status: account.status,
+              lastSyncAt: account.lastSyncAt,
+              lastError: account.lastError,
+            }))}
+            labels={labels}
+            locale={locale}
+          />
           <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
         </div>
       </section>

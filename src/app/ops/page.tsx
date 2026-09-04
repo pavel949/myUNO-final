@@ -62,6 +62,7 @@ export default async function OpsBoardPage() {
     'staff.ops.ticket_resolve': 'Resolve',
     'staff.ops.ticket_view': 'View',
     'staff.ops.ticket_due': 'SLA due',
+    'staff.ops.ticket_calendar_link': 'Open unit calendar',
     'staff.ops.ticket_resolve_note_prompt': 'Describe the resolution for the reporter',
     'staff.ops.ticket_resolve_note_required': 'Resolution note is required to resolve a ticket.',
     'staff.ops.sla_title': 'SLA health (last 7 days)',
@@ -87,6 +88,7 @@ export default async function OpsBoardPage() {
       totalThb: Math.round(b.totalThb / 100),
       party: b.adults + b.children,
       verificationStatus: b.verificationStatus,
+      unitId: b.unit?.id || null,
       unitName: b.unit?.name || '—',
       guestName: b.guestIdentity
         ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`
@@ -160,6 +162,7 @@ export default async function OpsBoardPage() {
             status: ticket.status,
             priority: ticket.priority,
             slaDueAt: ticket.slaDueAt ? ticket.slaDueAt.toISOString() : null,
+            unitId: ticket.unit?.id || null,
             unitName: ticket.unit?.name || '—',
             raisedByName: `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`,
             assigneeIdentityId: ticket.assigneeIdentityId,

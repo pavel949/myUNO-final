@@ -26,7 +26,7 @@ interface OpsBooking {
   adults: number;
   children: number;
   verificationStatus: string;
-  unit: { name: string };
+  unit: { id: string; name: string };
   guestIdentity: { firstName: string; lastName: string };
   payments: { id: string }[];
 }
@@ -45,7 +45,7 @@ interface OpsTicket {
   status: string;
   priority: string;
   slaDueAt: Date | null;
-  unit: { name: string } | null;
+  unit: { id: string; name: string } | null;
   raisedBy: { firstName: string; lastName: string };
   assigneeIdentityId: string | null;
   assignee: { firstName: string; lastName: string } | null;
@@ -137,7 +137,7 @@ export async function getOpsBoard(
     adults: true,
     children: true,
     verificationStatus: true,
-    unit: { select: { name: true } },
+    unit: { select: { id: true, name: true } },
     guestIdentity: { select: { firstName: true, lastName: true } },
     payments: {
       where: { status: 'succeeded' as const, purpose: 'stay' as const },
@@ -200,7 +200,7 @@ export async function getOpsBoard(
         status: true,
         priority: true,
         slaDueAt: true,
-        unit: { select: { name: true } },
+        unit: { select: { id: true, name: true } },
         raisedBy: { select: { firstName: true, lastName: true } },
         assigneeIdentityId: true,
         assignee: { select: { firstName: true, lastName: true } },

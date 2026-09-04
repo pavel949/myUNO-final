@@ -850,8 +850,16 @@ export function MCDashboardClient({
             ) : (
               <div className="space-y-16">
                 {units.map((unit) => (
-                  <div key={unit.id}>
-                    <p className="text-body font-semibold text-text-ink mb-4">{unit.name}</p>
+                  <div key={unit.id} className="border border-border-line rounded-lg p-16">
+                    <div className="flex items-center justify-between gap-12 mb-8">
+                      <p className="text-body font-semibold text-text-ink">{unit.name}</p>
+                      <Link
+                        href={`/mc/units/${unit.id}`}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['mc.calendar.manage']} →
+                      </Link>
+                    </div>
                     <MonthHeatStrip
                       days={monthHeatDays(unit.id, bookings)}
                       occupiedLabel={labels['mc.calendar.occupied']}

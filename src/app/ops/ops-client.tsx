@@ -13,6 +13,7 @@ interface OpsBooking {
   totalThb: number;
   party: number;
   verificationStatus: string | null;
+  unitId: string | null;
   unitName: string;
   guestName: string;
   paid: boolean;
@@ -32,6 +33,7 @@ interface OpsTicket {
   status: string;
   priority: string;
   slaDueAt: string | null;
+  unitId: string | null;
   unitName: string;
   raisedByName: string;
   assigneeIdentityId: string | null;
@@ -194,7 +196,19 @@ export default function OpsBoardClient({
       <div className="flex-1 min-w-0">
         <p className="text-body font-semibold text-text-ink">
           {booking.guestName}
-          <span className="text-text-secondary font-normal"> · {booking.unitName}</span>
+          <span className="text-text-secondary font-normal">
+            {' · '}
+            {booking.unitId ? (
+              <Link
+                href={`/ops/calendar/${booking.unitId}`}
+                className="text-brand-andaman hover:underline"
+              >
+                {booking.unitName}
+              </Link>
+            ) : (
+              booking.unitName
+            )}
+          </span>
         </p>
         <p className="text-small text-text-secondary">
           {new Date(booking.startDate).toLocaleDateString()} —{' '}
@@ -419,7 +433,17 @@ export default function OpsBoardClient({
                     </span>
                   </div>
                   <p className="text-small text-text-secondary">
-                    {ticket.unitName} · {labels['staff.ops.ticket_reported_by']} {ticket.raisedByName}
+                    {ticket.unitId ? (
+                      <Link
+                        href={`/ops/calendar/${ticket.unitId}`}
+                        className="text-brand-andaman hover:underline"
+                      >
+                        {ticket.unitName}
+                      </Link>
+                    ) : (
+                      ticket.unitName
+                    )}{' '}
+                    · {labels['staff.ops.ticket_reported_by']} {ticket.raisedByName}
                   </p>
                   {ticket.slaDueAt ? (
                     <p className="text-small text-text-secondary">

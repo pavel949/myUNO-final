@@ -150,6 +150,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.calendar.occupied': 'Booked',
     'mc.calendar.vacant': 'Free',
     'mc.calendar.no_data': 'No data',
+    'mc.calendar.manage': 'Manage availability',
     'mc.reports.title': 'Fee Reports',
     'mc.reports.empty': 'No fee data for this period.',
     'mc.reports.gross': 'Gross revenue',

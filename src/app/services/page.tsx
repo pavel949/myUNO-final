@@ -40,6 +40,8 @@ export default async function ServicesPage() {
     'services.browse.category_empty': 'Nothing in this category yet — try another one.',
     'services.browse.stay_banner': 'Ordering for your stay at {unit}, {project}',
     'services.browse.stay_banner_link': 'Back to your home space',
+    'services.browse.owner_banner': 'Ordering for your unit at {unit}, {project}',
+    'services.browse.owner_banner_link': 'Back to owner dashboard',
     'services.browse.empty': 'No services available yet — check back soon.',
     'services.browse.vetted': 'Vetted',
     'services.browse.from': 'from',

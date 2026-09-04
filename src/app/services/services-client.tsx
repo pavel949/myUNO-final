@@ -71,6 +71,8 @@ export default function ServicesClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams?.get('bookingId');
+  const unitId = searchParams?.get('unitId');
+  const projectId = searchParams?.get('projectId');
 
   const [services, setServices] = useState<MarketService[]>([]);
   const [orders, setOrders] = useState<MyOrder[]>([]);
@@ -79,6 +81,7 @@ export default function ServicesClient({
     searchParams?.get('category') || null
   );
   const [stay, setStay] = useState<StayContext | null>(null);
+  const [unitContext, setUnitContext] = useState<StayContext | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [when, setWhen] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -132,6 +135,29 @@ export default function ServicesClient({
       cancelled = true;
     };
   }, [bookingId]);
+
+  useEffect(() => {
+    if (!unitId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/units/${unitId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setUnitContext({
+            unitName: data?.name ?? null,
+            projectName: data?.project?.name ?? null,
+          });
+        }
+      } catch {
+        // banner is optional
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [unitId]);
 
   const selectCategory = (key: string | null) => {
     setSelectedCategory(key);
@@ -206,6 +232,8 @@ export default function ServicesClient({
           scheduledStart: when,
           quantity,
           bookingId: bookingId || undefined,
+          projectId: projectId || undefined,
+          unitId: unitId || undefined,
           noteToProvider: note || undefined,
         }),
       });
@@ -253,6 +281,23 @@ export default function ServicesClient({
               className="text-small font-semibold text-brand-andaman hover:underline"
             >
               {labels['services.browse.stay_banner_link']}
+            </Link>
+          </div>
+        )}
+
+        {!bookingId && unitId && unitContext && (unitContext.unitName || unitContext.projectName) && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
+            <p className="text-body text-text-ink">
+              {fill(labels['services.browse.owner_banner'], {
+                unit: unitContext.unitName ?? '—',
+                project: unitContext.projectName ?? '—',
+              })}
+            </p>
+            <Link
+              href="/owner"
+              className="text-small font-semibold text-brand-andaman hover:underline"
+            >
+              {labels['services.browse.owner_banner_link']}
             </Link>
           </div>
         )}

@@ -1852,6 +1852,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.tickets.empty', namespace: 'owner', description: 'Owner open tickets empty state', en: 'No open tickets', ru: 'Нет открытых заявок', th: 'ไม่มีคำขอที่เปิดอยู่', status: NR },
   { key: 'owner.tickets.waiting_count', namespace: 'owner', description: 'Owner open tickets summary with {count}', en: '{count} requests waiting for attention', ru: '{count} заявок ждут внимания', th: '{count} คำขอกำลังรอการดำเนินการ', status: NR },
   { key: 'owner.tickets.view', namespace: 'owner', description: 'Owner open tickets view action', en: 'View', ru: 'Открыть', th: 'เปิดดู', status: NR },
+  { key: 'owner.actions.title', namespace: 'owner', description: 'Owner dashboard quick actions section', en: 'Quick actions', ru: 'Быстрые действия', th: 'การดำเนินการด่วน', status: NR },
+  { key: 'owner.actions.raise_ticket', namespace: 'owner', description: 'Owner: raise ticket for own unit (F-OWN-4)', en: 'Raise a request', ru: 'Создать заявку', th: 'แจ้งคำขอ', status: NR },
+  { key: 'owner.actions.book_service', namespace: 'owner', description: 'Owner: book service for own unit (F-OWN-4)', en: 'Book a service', ru: 'Заказать услугу', th: 'จองบริการ', status: NR },
   { key: 'owner.switcher.select_project', namespace: 'owner', description: 'Owner project switcher placeholder', en: 'Select project', ru: 'Выберите проект', th: 'เลือกโครงการ', status: NR },
   { key: 'owner.switcher.unit_singular', namespace: 'owner', description: 'Owner project switcher unit counter singular', en: 'unit', ru: 'юнит', th: 'ยูนิต', status: NR },
   { key: 'owner.switcher.unit_plural', namespace: 'owner', description: 'Owner project switcher unit counter plural', en: 'units', ru: 'юнитов', th: 'ยูนิต', status: NR },
@@ -2067,6 +2070,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'integrations.key.ical_airbnb', namespace: 'integrations', description: 'Integration key label: Airbnb iCal', en: 'Airbnb iCal', ru: 'Airbnb iCal', th: 'Airbnb iCal', status: NR },
   { key: 'integrations.key.ical_booking', namespace: 'integrations', description: 'Integration key label: Booking.com iCal', en: 'Booking.com iCal', ru: 'Booking.com iCal', th: 'Booking.com iCal', status: NR },
   { key: 'integrations.key.ical_agoda', namespace: 'integrations', description: 'Integration key label: Agoda iCal', en: 'Agoda iCal', ru: 'Agoda iCal', th: 'Agoda iCal', status: NR },
+  { key: 'integrations.key.payment_provider', namespace: 'integrations', description: 'Integration key label: payment provider', en: 'Payment provider', ru: 'Платёжный провайдер', th: 'ผู้ให้บริการชำระเงิน', status: NR },
+  { key: 'integrations.key.whatsapp', namespace: 'integrations', description: 'Integration key label: WhatsApp', en: 'WhatsApp', ru: 'WhatsApp', th: 'WhatsApp', status: NR },
+  { key: 'integrations.key.telegram', namespace: 'integrations', description: 'Integration key label: Telegram', en: 'Telegram', ru: 'Telegram', th: 'Telegram', status: NR },
+  { key: 'integrations.key.crm_hubspot', namespace: 'integrations', description: 'Integration key label: HubSpot CRM', en: 'HubSpot CRM', ru: 'HubSpot CRM', th: 'HubSpot CRM', status: NR },
   { key: 'mc.reports.title', namespace: 'mc', description: 'Fee reports tab title', en: 'Fee Reports', ru: 'Отчёты по комиссиям', th: 'รายงานค่าธรรมเนียม', status: NR },
   { key: 'mc.reports.empty', namespace: 'mc', description: 'Fee report empty state', en: 'No fee data for this period.', ru: 'Нет данных о комиссиях за период.', th: 'ไม่มีข้อมูลค่าธรรมเนียมสำหรับช่วงเวลานี้', status: NR },
   { key: 'mc.reports.gross', namespace: 'mc', description: 'Hero number: gross revenue', en: 'Gross revenue', ru: 'Валовая выручка', th: 'รายได้รวม', status: NR },
@@ -2160,6 +2167,17 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'admin.integrations.about_disabled', namespace: 'admin', description: 'Info: disabled status meaning', en: 'Disabled — integration manually disabled; no syncs will occur', ru: 'Отключена — интеграция выключена вручную; синхронизаций не будет', status: NR },
   { key: 'admin.integrations.about_export', namespace: 'admin', description: 'Info: iCal export path', en: 'Per-unit iCal export is available at /api/units/[unitId]/ical/export', ru: 'Экспорт iCal по юниту доступен по адресу /api/units/[unitId]/ical/export', status: NR },
   { key: 'admin.integrations.about_conflicts', namespace: 'admin', description: 'Info: conflict detection', en: 'Conflict detection is active — OTA bookings overlapping platform bookings are logged', ru: 'Обнаружение конфликтов включено — пересечения OTA-бронирований с платформенными записываются в журнал', status: NR },
+  { key: 'admin.integrations.empty', namespace: 'admin', description: 'Integrations panel empty state', en: 'No integration accounts configured', ru: 'Интеграции не настроены', th: 'ยังไม่ได้ตั้งค่าการเชื่อมต่อ', status: NR },
+  { key: 'admin.integrations.table_title', namespace: 'admin', description: 'Integrations panel table title', en: 'Integration health ({total})', ru: 'Состояние интеграций ({total})', th: 'สถานะการเชื่อมต่อ ({total})', status: NR },
+  { key: 'admin.integrations.col_integration', namespace: 'admin', description: 'Integrations table column: integration', en: 'Integration', ru: 'Интеграция', th: 'การเชื่อมต่อ', status: NR },
+  { key: 'admin.integrations.col_scope', namespace: 'admin', description: 'Integrations table column: scope', en: 'Scope', ru: 'Область', th: 'ขอบเขต', status: NR },
+  { key: 'admin.integrations.col_status', namespace: 'admin', description: 'Integrations table column: status', en: 'Status', ru: 'Статус', th: 'สถานะ', status: NR },
+  { key: 'admin.integrations.col_last_sync', namespace: 'admin', description: 'Integrations table column: last sync', en: 'Last sync', ru: 'Последняя синхронизация', th: 'ซิงก์ล่าสุด', status: NR },
+  { key: 'admin.integrations.col_error', namespace: 'admin', description: 'Integrations table column: error', en: 'Error', ru: 'Ошибка', th: 'ข้อผิดพลาด', status: NR },
+  { key: 'admin.integrations.scope_unit', namespace: 'admin', description: 'Integrations scope label for unit', en: 'Unit: {name}', ru: 'Юнит: {name}', th: 'ยูนิต: {name}', status: NR },
+  { key: 'admin.integrations.scope_project', namespace: 'admin', description: 'Integrations scope label for project', en: 'Project: {name}', ru: 'Проект: {name}', th: 'โครงการ: {name}', status: NR },
+  { key: 'admin.integrations.scope_platform', namespace: 'admin', description: 'Integrations scope label for platform', en: 'Platform', ru: 'Платформа', th: 'แพลตฟอร์ม', status: NR },
+  { key: 'admin.integrations.never_synced', namespace: 'admin', description: 'Integrations: never synced label', en: 'Never', ru: 'Никогда', th: 'ไม่เคย', status: NR },
 
   // Owners & developers audience pages — founder-authored copy adopted from
   // the myUNO landing v3 (EN + RU provided by the founder; status ok).
@@ -2287,6 +2305,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'services.browse.category_empty', namespace: 'services', description: 'Services facade: empty category state', en: 'Nothing in this category yet — try another one.', ru: 'В этой категории пока пусто — загляните в другую.', zh: '该类别暂无服务，请尝试其他类别。', status: NR },
   { key: 'services.browse.stay_banner', namespace: 'services', description: 'Services facade: stay-context banner ({unit}, {project})', en: 'Ordering for your stay at {unit}, {project}', ru: 'Заказ к вашему проживанию — {unit}, {project}', zh: '为您在 {project} {unit} 的住宿下单', status: NR },
   { key: 'services.browse.stay_banner_link', namespace: 'services', description: 'Services facade: back to home space link', en: 'Back to your home space', ru: 'Вернуться в домашнее пространство', zh: '返回您的住宿空间', status: NR },
+  { key: 'services.browse.owner_banner', namespace: 'services', description: 'Services facade: owner unit context banner', en: 'Ordering for your unit at {unit}, {project}', ru: 'Заказ для вашего юнита — {unit}, {project}', th: 'สั่งบริการสำหรับยูนิต {unit}, {project}', status: NR },
+  { key: 'services.browse.owner_banner_link', namespace: 'services', description: 'Services facade: back to owner dashboard', en: 'Back to owner dashboard', ru: 'Вернуться в кабинет владельца', th: 'กลับไปแดชบอร์ดเจ้าของ', status: NR },
 
   // Order wizard (SA-2): refine → place → pay → confirm on the service page
   { key: 'services.detail.back', namespace: 'services', description: 'Service page: back to catalog link', en: 'Back to services', ru: 'Назад к услугам', zh: '返回服务列表', status: NR },

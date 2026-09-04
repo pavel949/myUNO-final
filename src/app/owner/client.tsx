@@ -186,6 +186,31 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   const resolveLabel = (key: string, params?: Record<string, string>) =>
     fill(labels[key] || key, params);
 
+  const ticketHref = (unit: { id: string; projectId: string }) =>
+    `/tickets/new?projectId=${unit.projectId}&unitId=${unit.id}`;
+
+  const serviceHref = (unit: { id: string; projectId: string }) =>
+    `/services?projectId=${unit.projectId}&unitId=${unit.id}`;
+
+  const OwnerQuickActions = ({
+    unit,
+  }: {
+    unit: { id: string; projectId: string; name: string };
+  }) => (
+    <div className="flex flex-col sm:flex-row gap-12">
+      <Link href={ticketHref(unit)} className="flex-1">
+        <Button variant="secondary" size="md" fullWidth>
+          {labels['owner.actions.raise_ticket']}
+        </Button>
+      </Link>
+      <Link href={serviceHref(unit)} className="flex-1">
+        <Button variant="secondary" size="md" fullWidth>
+          {labels['owner.actions.book_service']}
+        </Button>
+      </Link>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-surface-background">
       <div className="max-w-6xl mx-auto px-24 py-40">
@@ -505,6 +530,15 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               />
             </div>
 
+            {currentUnit ? (
+              <div>
+                <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                  {labels['owner.actions.title']}
+                </h2>
+                <OwnerQuickActions unit={currentUnit} />
+              </div>
+            ) : null}
+
             {/* Owner Stay Action */}
             <div>
               <Button
@@ -567,6 +601,20 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                         {labels['owner.units.open_tickets']}
                       </span>
                       <span className="text-body font-medium text-text-ink">{unit.openTicketsCount}</span>
+                    </div>
+                    <div className="pt-12 flex flex-col gap-8">
+                      <Link
+                        href={ticketHref(unit)}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.actions.raise_ticket']} →
+                      </Link>
+                      <Link
+                        href={serviceHref(unit)}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.actions.book_service']} →
+                      </Link>
                     </div>
                   </div>
                 </div>

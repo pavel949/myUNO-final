@@ -11,6 +11,7 @@ interface AdminUnit {
   name: string;
   projectName: string;
   status: string;
+  assetStatus: string;
   baseNightlyThb: number;
   permittedUseConfirmed: boolean;
   coverUrl: string | null;
@@ -62,6 +63,18 @@ export default function UnitsAdminClient({
         body: JSON.stringify({ status }),
       })
     );
+
+  const setAssetStatus = (unitId: string, assetStatus: string) => {
+    const reason = window.prompt(labels['admin.units.asset_status_reason']);
+    if (!reason?.trim()) return;
+    act(unitId, () =>
+      fetch(`/api/admin/units/${unitId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: assetStatus, reason: reason.trim() }),
+      })
+    );
+  };
 
   const handleFileChosen = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -137,6 +150,11 @@ export default function UnitsAdminClient({
               ) : (
                 <span className="text-state-warning font-semibold">—</span>
               )}
+              {' · '}
+              {labels['admin.units.asset_status']}:{' '}
+              <span className="font-semibold text-text-ink">
+                {labels[`admin.units.asset_status.${unit.assetStatus}`] || unit.assetStatus}
+              </span>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-8">
@@ -169,6 +187,22 @@ export default function UnitsAdminClient({
                 {labels['admin.units.pause']}
               </Button>
             )}
+            <select
+              value={unit.assetStatus}
+              onChange={(e) => setAssetStatus(unit.id, e.target.value)}
+              disabled={busyId === unit.id}
+              className="h-36 px-8 rounded-sm border border-border-line text-small text-text-ink bg-surface-paper"
+              aria-label={labels['admin.units.asset_status']}
+            >
+              <option value="managed">{labels['admin.units.asset_status.managed']}</option>
+              <option value="verified_partner">
+                {labels['admin.units.asset_status.verified_partner']}
+              </option>
+              <option value="one_off_sourced">
+                {labels['admin.units.asset_status.one_off_sourced']}
+              </option>
+              <option value="suspended">{labels['admin.units.asset_status.suspended']}</option>
+            </select>
             <Button
               size="sm"
               variant="ghost"

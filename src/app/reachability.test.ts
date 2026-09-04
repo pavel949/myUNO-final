@@ -209,18 +209,12 @@ const API_ENTRY_POINTS = new Set([
  */
 const API_DEBT = new Set([
   // Admin screens whose backend exists with no UI caller anywhere (Q59).
-  '/api/admin/compliance-checklists/[id]',
-  '/api/admin/compliance-checklists',
   '/api/admin/config/[paramKey]/history',
-  '/api/admin/content/export',
-  '/api/admin/content/import',
-  '/api/admin/content/namespace/[namespace]',
   '/api/admin/contracts',
   '/api/admin/fees/[contractId]',
   '/api/admin/fees/calculate',
   '/api/admin/reports/attribution',
   '/api/admin/statements/[statementId]/line-items',
-  '/api/admin/units/[id]/status',
   // Guest/owner/provider-facing routes with no caller found.
   '/api/content/translate',
   '/api/messages/[messageId]/flag-as-purchase',

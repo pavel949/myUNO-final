@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
-import { getOpsBoard } from '@/modules/ops';
+import { getOpsBoard, getOpsMobilizationQueue } from '@/modules/ops';
 import OpsBoardClient from './ops-client';
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 import {
@@ -45,6 +45,11 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
 
   const { arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } =
     await getOpsBoard(prisma, new Date(), opsBoardScope(opsContext, validActiveProjectId));
+
+  const mobilizationUnits = await getOpsMobilizationQueue(
+    prisma,
+    opsBoardScope(opsContext, validActiveProjectId)
+  );
 
   const switcherBasePath = '/ops';
 
@@ -99,6 +104,11 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.sla_title': 'SLA health (last 7 days)',
     'staff.ops.tm30_on_time': 'TM30 on-time %',
     'staff.ops.tickets_past_sla': 'Tickets past SLA',
+    'staff.ops.mobilization_title': 'Mobilization',
+    'staff.ops.mobilization_empty': 'No units are currently in mobilization.',
+    'staff.ops.mobilization_progress': '{completed} of {total} steps done',
+    'staff.ops.mobilization_next': 'Next step',
+    'staff.ops.mobilization_open': 'Open checklist →',
     'tickets.status.open': 'Open',
     'tickets.status.acknowledged': 'Acknowledged',
     'tickets.status.in_progress': 'In progress',
@@ -183,6 +193,8 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
 
         <OpsBoardClient
           viewerIdentityId={user.identityId}
+          activeProjectId={validActiveProjectId}
+          mobilizationUnits={mobilizationUnits}
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}
           pendingRequests={serialize(pendingRequests)}

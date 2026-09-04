@@ -109,3 +109,11 @@ export function opsBoardScope(
   }
   return { projectIds: [] };
 }
+
+/** Whether the current ops viewer may open a unit in their project scope. */
+export function canAccessOpsUnit(context: OpsProjectContext, projectId: string): boolean {
+  if (context.isAdmin) {
+    return true;
+  }
+  return context.staffProjectIds.includes(projectId);
+}

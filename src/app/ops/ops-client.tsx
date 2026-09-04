@@ -72,8 +72,21 @@ const ticketStatusStyle: Record<string, string> = {
   cancelled: 'bg-surface-ivory text-text-stone',
 };
 
+interface OpsMobilizationUnit {
+  id: string;
+  name: string;
+  status: string;
+  projectId: string;
+  projectName: string;
+  completedSteps: number;
+  totalSteps: number;
+  nextStep: string | null;
+}
+
 export default function OpsBoardClient({
   viewerIdentityId,
+  activeProjectId,
+  mobilizationUnits,
   arrivals,
   departures,
   pendingRequests,
@@ -83,6 +96,8 @@ export default function OpsBoardClient({
   labels,
 }: {
   viewerIdentityId: string;
+  activeProjectId: string | null;
+  mobilizationUnits: OpsMobilizationUnit[];
   arrivals: OpsBooking[];
   departures: OpsBooking[];
   pendingRequests: OpsBooking[];
@@ -329,6 +344,47 @@ export default function OpsBoardClient({
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
           <p className="text-body text-state-error">{error}</p>
         </div>
+      )}
+
+      {mobilizationUnits.length > 0 && (
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+            {labels['staff.ops.mobilization_title']}
+          </h2>
+          <ul className="space-y-12">
+            {mobilizationUnits.map((unit) => {
+              const href = activeProjectId
+                ? `/ops/mobilization/${unit.id}?projectId=${encodeURIComponent(activeProjectId)}`
+                : `/ops/mobilization/${unit.id}`;
+              return (
+                <li
+                  key={unit.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 py-12 border-b border-border-line last:border-b-0"
+                >
+                  <div>
+                    <p className="text-body font-semibold text-text-ink">{unit.name}</p>
+                    <p className="text-small text-text-secondary">
+                      {unit.projectName} ·{' '}
+                      {fill(labels['staff.ops.mobilization_progress'], {
+                        completed: unit.completedSteps,
+                        total: unit.totalSteps,
+                      })}
+                      {unit.nextStep
+                        ? ` · ${labels['staff.ops.mobilization_next']}: ${unit.nextStep}`
+                        : ''}
+                    </p>
+                  </div>
+                  <Link
+                    href={href}
+                    className="text-small font-semibold text-brand-andaman hover:underline shrink-0"
+                  >
+                    {labels['staff.ops.mobilization_open']}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">

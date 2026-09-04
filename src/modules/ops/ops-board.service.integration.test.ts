@@ -9,7 +9,7 @@ import {
   db,
   resetDb,
 } from '@/test/util';
-import { getOpsBoard } from './ops-board.service';
+import { getOpsBoard, getOpsMobilizationQueue } from './ops-board.service';
 
 describe('getOpsBoard', () => {
   beforeEach(async () => {
@@ -183,5 +183,33 @@ describe('getOpsBoard', () => {
     expect(scoped.openTickets).toEqual([]);
     expect(scoped.slaMetrics.tm30OnTimeRate7d).toBe(100);
     expect(scoped.slaMetrics.ticketsWithOpenSLA).toBe(0);
+  });
+
+  it('lists mobilizing units with checklist progress, scoped by project', async () => {
+    const projectA = await createProject({ name: 'Project A' });
+    const projectB = await createProject({ name: 'Project B' });
+    const unitA = await createUnit({ projectId: projectA.id, name: 'Mob A', status: 'mobilizing' });
+    await createUnit({ projectId: projectB.id, name: 'Mob B', status: 'draft' });
+    await createUnit({ projectId: projectA.id, name: 'Live A', status: 'live' });
+
+    await db.mobilizationChecklistItem.createMany({
+      data: [
+        { unitId: unitA.id, step: 'qualify', status: 'done' },
+        { unitId: unitA.id, step: 'mandate', status: 'pending' },
+      ],
+    });
+    await db.mobilizationChecklistItem.update({
+      where: { unitId_step: { unitId: unitA.id, step: 'qualify' } },
+      data: { completedAt: new Date() },
+    });
+
+    const scoped = await getOpsMobilizationQueue(db, { projectIds: [projectA.id] });
+    expect(scoped).toHaveLength(1);
+    expect(scoped[0].name).toBe('Mob A');
+    expect(scoped[0].completedSteps).toBe(1);
+    expect(scoped[0].nextStep).toBe('mandate');
+
+    const all = await getOpsMobilizationQueue(db);
+    expect(all.length).toBeGreaterThanOrEqual(2);
   });
 });

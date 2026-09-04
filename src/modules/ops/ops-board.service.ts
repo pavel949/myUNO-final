@@ -249,3 +249,62 @@ export async function getOpsBoard(
     },
   };
 }
+
+export interface OpsMobilizationUnit {
+  id: string;
+  name: string;
+  status: string;
+  projectId: string;
+  projectName: string;
+  completedSteps: number;
+  totalSteps: number;
+  nextStep: string | null;
+}
+
+/**
+ * Units still in mobilization, with checklist progress (doc 06 S12).
+ */
+export async function getOpsMobilizationQueue(
+  db: PrismaClient,
+  scope?: OpsBoardScope
+): Promise<OpsMobilizationUnit[]> {
+  if (scope && (!scope.projectIds || scope.projectIds.length === 0)) {
+    return [];
+  }
+
+  const units = await db.unit.findMany({
+    where: {
+      status: { in: ['draft', 'mobilizing'] },
+      ...(scope?.projectIds?.length ? { projectId: { in: scope.projectIds } } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      projectId: true,
+      project: { select: { name: true } },
+      mobilizationChecklist: {
+        select: { step: true, completedAt: true },
+        orderBy: { step: 'asc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 25,
+  });
+
+  return units.map((unit) => {
+    const totalSteps = unit.mobilizationChecklist.length || 7;
+    const completedSteps = unit.mobilizationChecklist.filter((item) => item.completedAt).length;
+    const nextItem = unit.mobilizationChecklist.find((item) => !item.completedAt);
+    return {
+      id: unit.id,
+      name: unit.name,
+      status: unit.status,
+      projectId: unit.projectId,
+      projectName: unit.project.name,
+      completedSteps,
+      totalSteps,
+      nextStep: nextItem?.step ?? null,
+    };
+  });
+}

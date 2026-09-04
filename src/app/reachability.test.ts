@@ -180,6 +180,9 @@ const apiRoutes = apiRouteFiles.map(routeOfApi);
  * crawler conventions, and secret-token URLs handed to external tools.
  */
 const API_ENTRY_POINTS = new Set([
+  // OAuth providers call this endpoint directly after consent; no in-app link
+  // will ever hit it.
+  '/api/auth/callback/google',
   '/api/cron/check-tm30-escalations',
   '/api/cron/check-verification-deadlines',
   '/api/cron/expire-service-orders',

@@ -176,16 +176,87 @@ export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promis
     throw new Error(`Identity ${identityId} not found`);
   }
 
-  // Create role assignment
+  if (scopeType === 'project' && !projectId) {
+    throw new Error('projectId is required for project-scoped roles');
+  }
+
+  if (scopeType === 'unit') {
+    if (!projectId) {
+      throw new Error('projectId is required for unit-scoped roles');
+    }
+    if (!unitId) {
+      throw new Error('unitId is required for unit-scoped roles');
+    }
+  }
+
+  const normalizedProjectId = scopeType === 'platform' ? null : (projectId ?? null);
+  const normalizedUnitId = scopeType === 'unit' ? unitId! : null;
+  const normalizedOrganizationId = organizationId ?? null;
+  const normalizedProviderId = providerId ?? null;
+
+  if (normalizedProjectId) {
+    const project = await db.project.findUnique({ where: { id: normalizedProjectId }, select: { id: true } });
+    if (!project) {
+      throw new Error(`Project ${normalizedProjectId} not found`);
+    }
+  }
+
+  if (scopeType === 'unit') {
+    const unit = await db.unit.findUnique({
+      where: { id: normalizedUnitId as string },
+      select: { id: true, projectId: true },
+    });
+    if (!unit) {
+      throw new Error(`Unit ${normalizedUnitId} not found`);
+    }
+    if (unit.projectId !== normalizedProjectId) {
+      throw new Error(`Unit ${normalizedUnitId} does not belong to project ${normalizedProjectId}`);
+    }
+  }
+
+  const existing = await db.roleAssignment.findFirst({
+    where: {
+      identityId,
+      role,
+      scopeType,
+      projectId: normalizedProjectId,
+      unitId: normalizedUnitId,
+      organizationId: normalizedOrganizationId,
+      providerId: normalizedProviderId,
+    },
+    include: {
+      identity: true,
+      project: true,
+      unit: true,
+      organization: true,
+    },
+  });
+
+  if (existing) {
+    return db.roleAssignment.update({
+      where: { id: existing.id },
+      data: {
+        status: 'active',
+        grantedByIdentityId,
+      },
+      include: {
+        identity: true,
+        project: true,
+        unit: true,
+        organization: true,
+      },
+    });
+  }
+
   return db.roleAssignment.create({
     data: {
       identityId,
       role,
       scopeType,
-      projectId,
-      unitId,
-      organizationId,
-      providerId,
+      projectId: normalizedProjectId,
+      unitId: normalizedUnitId,
+      organizationId: normalizedOrganizationId,
+      providerId: normalizedProviderId,
       grantedByIdentityId,
       status: 'active',
     },

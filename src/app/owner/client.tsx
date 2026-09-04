@@ -36,6 +36,12 @@ interface UnitData {
   nextArrivalDate: Date | null;
   bookingsCount: number;
   openTicketsCount: number;
+  openTickets: Array<{
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+  }>;
   latestStatementId: string | null;
 }
 
@@ -471,6 +477,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </h2>
               <OpenTicketsList
                 count={currentUnit?.openTicketsCount || 0}
+                tickets={currentUnit?.openTickets || []}
                 labels={{
                   empty: labels['owner.tickets.empty'],
                   waitingCount: labels['owner.tickets.waiting_count'],

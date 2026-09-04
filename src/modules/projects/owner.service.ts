@@ -21,6 +21,12 @@ export interface OwnerDashboardData {
     nextArrivalDate: Date | null;
     bookingsCount: number;
     openTicketsCount: number;
+    openTickets: {
+      id: string;
+      title: string;
+      status: TicketStatus;
+      createdAt: Date;
+    }[];
     latestStatementId: string | null;
   }[];
   combinedOccupancyThisMonth: number;
@@ -133,8 +139,11 @@ export async function getOwnerDashboard(
       tickets: {
         select: {
           id: true,
+          title: true,
           status: true,
+          createdAt: true,
         },
+        orderBy: { createdAt: 'desc' },
       },
       statements: {
         select: {
@@ -212,6 +221,15 @@ export async function getOwnerDashboard(
       nextArrivalDate: nextArrival,
       bookingsCount: unit.bookings.filter((b) => b.status !== 'cancelled').length,
       openTicketsCount: unit.tickets.filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status)).length,
+      openTickets: unit.tickets
+        .filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status))
+        .slice(0, 5)
+        .map((ticket) => ({
+          id: ticket.id,
+          title: ticket.title,
+          status: ticket.status,
+          createdAt: ticket.createdAt,
+        })),
       latestStatementId: unit.statements[0]?.id || null,
     };
   });

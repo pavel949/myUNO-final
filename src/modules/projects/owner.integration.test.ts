@@ -267,6 +267,10 @@ describe('Owner experience (T-033)', () => {
 
       const dashboard = await getOwnerDashboard(db, owner.id);
       expect(dashboard.units[0].openTicketsCount).toBe(4);
+      expect(dashboard.units[0].openTickets).toHaveLength(4);
+      expect(dashboard.units[0].openTickets.map((ticket) => ticket.status)).toEqual(
+        expect.arrayContaining(['open', 'acknowledged', 'in_progress', 'waiting_reporter'])
+      );
     });
   });
 

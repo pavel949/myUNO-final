@@ -2681,6 +2681,9 @@ const ACCOUNT_KEYS: KeyDef[] = [
   // The account surface (doc 08 §5 `/app/account`). The notification half is
   // the PDPA withdrawal surface, so its wording matters more than most.
   { key: 'staff.ops.costs_link', namespace: 'staff', description: 'Ops board: link to record a cost', en: 'Record a cost', ru: 'Записать расход', th: 'บันทึกรายจ่าย', status: NR },
+  { key: 'staff.ops.calendar.back', namespace: 'staff', description: 'Ops unit calendar page back link', en: '← Ops board', ru: '← Операционная панель', th: '← แผงปฏิบัติการ', status: NR },
+  { key: 'staff.ops.calendar.title', namespace: 'staff', description: 'Ops unit calendar page title', en: 'Unit calendar', ru: 'Календарь юнита', th: 'ปฏิทินยูนิต', status: NR },
+  { key: 'staff.ops.calendar.subtitle', namespace: 'staff', description: 'Ops unit calendar page subtitle', en: 'Block dates or set one-off rates for this unit.', ru: 'Заблокируйте даты или установите разовый тариф для этого юнита.', th: 'ปิดวันที่หรือตั้งอัตราราคาเฉพาะช่วงสำหรับยูนิตนี้', status: NR },
   { key: 'ops.costs.title', namespace: 'ops', description: 'Record a cost: page title', en: 'Record a cost', ru: 'Записать расход', status: NR },
   { key: 'ops.costs.intro', namespace: 'ops', description: 'Record a cost: what it affects', en: 'Costs recorded here appear on the owner statement for that unit.', ru: 'Записанные здесь расходы попадут в отчёт собственника по этому объекту.', status: NR },
   { key: 'ops.costs.unit', namespace: 'ops', description: 'Record a cost: unit field', en: 'Unit', ru: 'Объект', status: NR },

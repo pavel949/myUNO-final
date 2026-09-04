@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import BookingRequestRespondActions, {
+  type DeclineReasonOption,
+} from '@/components/booking/BookingRequestRespondActions';
 
 interface OpsBooking {
   id: string;
@@ -93,6 +96,7 @@ export default function OpsBoardClient({
   pendingPayment,
   pendingServiceOrders,
   openTickets,
+  declineReasons,
   labels,
 }: {
   viewerIdentityId: string;
@@ -104,6 +108,7 @@ export default function OpsBoardClient({
   pendingPayment: OpsBooking[];
   pendingServiceOrders: OpsServiceOrder[];
   openTickets: OpsTicket[];
+  declineReasons: DeclineReasonOption[];
   labels: Labels;
 }) {
   const router = useRouter();
@@ -203,14 +208,13 @@ export default function OpsBoardClient({
     void ticketAction(ticket.id, 'status', { newStatus, note });
   };
 
-  const respondToRequest = async (bookingId: string, action: 'approve' | 'decline') => {
-    if (
-      action === 'decline' &&
-      !window.confirm(labels['staff.ops.confirm_decline_request'])
-    ) {
-      return;
-    }
-    await act(bookingId, 'respond', { action });
+  const respondLabels = {
+    approve: labels['staff.ops.approve_request'],
+    decline: labels['staff.ops.decline_request'],
+    decline_reason: labels['staff.ops.decline_reason'],
+    decline_reason_required: labels['staff.ops.decline_reason_required'],
+    confirm_decline: labels['staff.ops.confirm_decline_request'],
+    error_generic: labels['staff.ops.error_generic'],
   };
 
   const RequestRow = ({ booking }: { booking: OpsBooking }) => (
@@ -244,24 +248,11 @@ export default function OpsBoardClient({
           </p>
         ) : null}
       </div>
-      <div className="flex items-center gap-8">
-        <Button
-          size="sm"
-          variant="sun"
-          onClick={() => void respondToRequest(booking.id, 'approve')}
-          isLoading={busyId === booking.id}
-        >
-          {labels['staff.ops.approve_request']}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => void respondToRequest(booking.id, 'decline')}
-          isLoading={busyId === booking.id}
-        >
-          {labels['staff.ops.decline_request']}
-        </Button>
-      </div>
+      <BookingRequestRespondActions
+        bookingId={booking.id}
+        labels={respondLabels}
+        declineReasons={declineReasons}
+      />
     </div>
   );
 

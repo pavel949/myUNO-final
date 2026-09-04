@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getMcBookingRequests } from '@/modules/projects';
+import { getBookingDeclineReasonOptions } from '@/modules/booking';
 import { getMCProjectScopes } from '@/app/libs/projectScope';
 import McRequestsClient from './requests-client';
 
@@ -77,6 +78,7 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
     activeScope.projectId,
     activeScope.organizationId
   );
+  const declineReasons = await getBookingDeclineReasonOptions(getRequestLocale());
 
   const backHref = `/mc?projectId=${encodeURIComponent(activeScope.projectId)}&organizationId=${encodeURIComponent(
     activeScope.organizationId
@@ -91,6 +93,8 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
     'mc.requests.expires': 'Respond by',
     'mc.requests.approve': 'Approve',
     'mc.requests.decline': 'Decline',
+    'mc.requests.decline_reason': 'Decline reason',
+    'mc.requests.decline_reason_required': 'Select a decline reason.',
     'mc.requests.confirm_decline': 'Decline this booking request? The guest will be notified.',
     'mc.requests.error_generic': 'Action failed. Please try again.',
   });
@@ -129,6 +133,7 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
         )}
 
         <McRequestsClient
+          declineReasons={declineReasons}
           requests={requests.map((request) => ({
             id: request.id,
             startDate: request.startDate.toISOString(),

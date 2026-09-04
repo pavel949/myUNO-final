@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getOpsBookingRequests } from '@/modules/ops';
+import { getBookingDeclineReasonOptions } from '@/modules/booking';
 import OpsRequestsClient from './requests-client';
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 import {
@@ -47,7 +48,10 @@ export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageP
   );
 
   const scope = opsBoardScope(opsContext, validActiveProjectId);
-  const requests = await getOpsBookingRequests(prisma, scope);
+  const [requests, declineReasons] = await Promise.all([
+    getOpsBookingRequests(prisma, scope),
+    getBookingDeclineReasonOptions(getRequestLocale()),
+  ]);
 
   const labels = await getLabels({
     'staff.ops.requests_title': 'Booking requests',
@@ -55,6 +59,8 @@ export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageP
     'staff.ops.requests_empty': 'No pending booking requests.',
     'staff.ops.approve_request': 'Approve',
     'staff.ops.decline_request': 'Decline',
+    'staff.ops.decline_reason': 'Decline reason',
+    'staff.ops.decline_reason_required': 'Select a decline reason.',
     'staff.ops.confirm_decline_request':
       'Decline this booking request? The guest will be notified.',
     'staff.ops.request_expires': 'Respond by',
@@ -90,6 +96,7 @@ export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageP
         />
         <OpsRequestsClient
           showProjectName={showProjectName}
+          declineReasons={declineReasons}
           requests={requests.map((request) => ({
             id: request.id,
             startDate: request.startDate.toISOString(),

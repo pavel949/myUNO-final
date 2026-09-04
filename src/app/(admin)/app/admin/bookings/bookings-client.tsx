@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import BookingRequestRespondActions, {
+  type DeclineReasonOption,
+} from '@/components/booking/BookingRequestRespondActions';
 
 interface AdminBooking {
   id: string;
@@ -34,8 +37,10 @@ const statusStyle: Record<string, string> = {
 
 export default function BookingsAdminClient({
   labels,
+  declineReasons,
 }: {
   labels: Labels;
+  declineReasons: DeclineReasonOption[];
 }) {
   const router = useRouter();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
@@ -269,24 +274,19 @@ export default function BookingsAdminClient({
           </span>
           <div className="flex items-center gap-8">
             {booking.status === 'requested' && (
-              <>
-                <Button
-                  size="sm"
-                  variant="sun"
-                  onClick={() => act(booking.id, 'respond', { action: 'approve' })}
-                  isLoading={busyId === booking.id}
-                >
-                  {labels['admin.bookings.approve']}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => act(booking.id, 'respond', { action: 'decline' })}
-                  isLoading={busyId === booking.id}
-                >
-                  {labels['admin.bookings.decline']}
-                </Button>
-              </>
+              <BookingRequestRespondActions
+                bookingId={booking.id}
+                declineReasons={declineReasons}
+                onComplete={() => void fetchBookings(0)}
+                labels={{
+                  approve: labels['admin.bookings.approve'],
+                  decline: labels['admin.bookings.decline'],
+                  decline_reason: labels['admin.bookings.decline_reason'],
+                  decline_reason_required: labels['admin.bookings.decline_reason_required'],
+                  confirm_decline: labels['admin.bookings.confirm_decline'],
+                  error_generic: labels['admin.bookings.error_generic'],
+                }}
+              />
             )}
             {booking.status === 'pending_payment' && (
               <>

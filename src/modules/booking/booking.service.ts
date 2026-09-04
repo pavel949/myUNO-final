@@ -1,6 +1,10 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown } from '@/modules/core';
+import {
+  formatDeclineCancellationReason,
+  isBookingRequestDeclineReason,
+} from './request-decline-reasons';
 
 export interface CreateBookingInput {
   unitId: string;
@@ -33,6 +37,7 @@ export interface ApproveBookingRequestInput {
 export interface DeclineBookingRequestInput {
   bookingId: string;
   declinedByIdentityId?: string;
+  reasonCode?: string;
 }
 
 export interface ConfirmBookingInput {
@@ -439,7 +444,7 @@ export async function declineBookingRequest(
   db: PrismaClient,
   input: DeclineBookingRequestInput
 ) {
-  const { bookingId, declinedByIdentityId } = input;
+  const { bookingId, declinedByIdentityId, reasonCode } = input;
 
   const booking = await db.booking.findUnique({ where: { id: bookingId } });
   if (!booking) {
@@ -450,13 +455,21 @@ export async function declineBookingRequest(
     throw new Error(`Cannot decline booking with status ${booking.status}`);
   }
 
+  if (reasonCode !== undefined && !isBookingRequestDeclineReason(reasonCode)) {
+    throw new Error(`Invalid decline reason: ${reasonCode}`);
+  }
+
+  const cancellationReason = reasonCode
+    ? formatDeclineCancellationReason(reasonCode)
+    : 'declined_by_host';
+
   return db.booking.update({
     where: { id: bookingId },
     data: {
       status: 'declined',
       requestExpiresAt: null,
       cancelledByIdentityId: declinedByIdentityId,
-      cancellationReason: 'declined_by_host',
+      cancellationReason,
       cancelledAt: new Date(),
     },
   });

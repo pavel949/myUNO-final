@@ -539,6 +539,35 @@ describe('booking.service — integration tests', () => {
       expect(declined.cancelledByIdentityId).toBe(host.id);
     });
 
+    it('stores the selected decline reason code', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const host = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: false,
+      });
+
+      const declined = await bookingService.declineBookingRequest(db, {
+        bookingId: booking.id,
+        declinedByIdentityId: host.id,
+        reasonCode: 'minimum_stay',
+      });
+
+      expect(declined.cancellationReason).toBe('declined:minimum_stay');
+    });
+
     it('rejects decline when not in requested status', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);

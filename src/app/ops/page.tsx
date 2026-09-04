@@ -137,6 +137,7 @@ export default async function OpsBoardPage() {
         </div>
 
         <OpsBoardClient
+          viewerIdentityId={user.identityId}
           arrivals={serialize(arrivals)}
           departures={serialize(departures)}
           pendingPayment={serialize(pendingPayment)}

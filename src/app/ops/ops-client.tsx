@@ -70,6 +70,7 @@ const ticketStatusStyle: Record<string, string> = {
 };
 
 export default function OpsBoardClient({
+  viewerIdentityId,
   arrivals,
   departures,
   pendingPayment,
@@ -77,6 +78,7 @@ export default function OpsBoardClient({
   openTickets,
   labels,
 }: {
+  viewerIdentityId: string;
   arrivals: OpsBooking[];
   departures: OpsBooking[];
   pendingPayment: OpsBooking[];
@@ -407,7 +409,7 @@ export default function OpsBoardClient({
                   >
                     {labels['staff.ops.ticket_view']} →
                   </Link>
-                  {!ticket.assigneeIdentityId ? (
+                  {ticket.assigneeIdentityId !== viewerIdentityId ? (
                     <Button
                       size="sm"
                       variant="secondary"

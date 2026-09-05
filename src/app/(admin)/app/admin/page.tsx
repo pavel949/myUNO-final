@@ -90,7 +90,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-24">
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.dashboard.title']}
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
@@ -106,20 +106,20 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* KPI row */}
-      <h2 className="text-heading-3 font-semibold text-text-ink mt-32 mb-16">
+      <h2 className="font-display text-title font-semibold text-text-ink mt-32 mb-16">
         {labels['admin.dashboard.kpi_title']}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
         {kpiTiles.map((tile) => (
           <div key={tile.label} className="bg-surface-paper border border-border-line rounded-lg p-24">
             <p className="text-small text-text-secondary mb-8">{tile.label}</p>
-            <p className="text-heading-2 font-semibold text-text-ink">{tile.value}</p>
+            <p className="font-display text-display font-semibold tabular-nums text-text-ink">{tile.value}</p>
           </div>
         ))}
       </div>
 
       {/* Platform-wide 30-day trend row (MetricDaily via the analytics read seam) */}
-      <h2 className="text-heading-3 font-semibold text-text-ink mt-32 mb-16">
+      <h2 className="font-display text-title font-semibold text-text-ink mt-32 mb-16">
         {labels['admin.dashboard.last30_title']}
       </h2>
       {last30.length === 0 ? (
@@ -133,7 +133,7 @@ export default async function AdminDashboardPage() {
               {labels['admin.dashboard.last30_revenue']}
             </p>
             <div className="flex items-end justify-between gap-16">
-              <p className="text-heading-2 font-semibold text-text-ink">
+              <p className="font-display text-display font-semibold tabular-nums text-text-ink">
                 {formatThb(revenue30)}
               </p>
               <Sparkline
@@ -149,7 +149,9 @@ export default async function AdminDashboardPage() {
               {labels['admin.dashboard.last30_nights']}
             </p>
             <div className="flex items-end justify-between gap-16">
-              <p className="text-heading-2 font-semibold text-text-ink">{nights30}</p>
+              <p className="font-display text-display font-semibold tabular-nums text-text-ink">
+                {nights30}
+              </p>
               <Sparkline
                 values={last30.map((p) => p.nightsOccupied)}
                 title={labels['admin.dashboard.last30_nights_spark']}
@@ -163,7 +165,7 @@ export default async function AdminDashboardPage() {
 
       {projectReports.length > 0 ? (
         <div className="mt-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-24">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-24">
             {labels['admin.dashboard.reports_title']}
           </h2>
           <div className="flex flex-col gap-24">
@@ -233,7 +235,7 @@ export default async function AdminDashboardPage() {
                       <p className="text-small text-text-secondary">
                         {labels['admin.dashboard.reports.rental']}
                       </p>
-                      <p className="text-heading-3 font-semibold text-text-ink">
+                      <p className="font-display text-title font-semibold tabular-nums text-text-ink">
                         {formatThb(report.split.rentalThb)}
                       </p>
                     </div>
@@ -241,7 +243,7 @@ export default async function AdminDashboardPage() {
                       <p className="text-small text-text-secondary">
                         {labels['admin.dashboard.reports.ancillary']}
                       </p>
-                      <p className="text-heading-3 font-semibold text-text-ink">
+                      <p className="font-display text-title font-semibold tabular-nums text-text-ink">
                         {formatThb(report.split.ancillaryThb)}
                       </p>
                     </div>

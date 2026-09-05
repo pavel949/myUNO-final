@@ -20,6 +20,24 @@ export default async function CrmPage() {
   const labels = await getLabels({
     'admin.crm.title': 'CRM & Pipeline',
     'admin.crm.subtitle': 'One commercial memory from first inquiry through guest, buyer and owner.',
+    'admin.crm.pipeline_breakdown': 'Pipeline breakdown',
+    'admin.crm.next_action_overdue': 'Next action overdue',
+    'admin.crm.lost_reason': 'Reason for loss',
+    'admin.crm.stage.new': 'New',
+    'admin.crm.stage.qualified': 'Qualified',
+    'admin.crm.stage.discovery': 'Discovery',
+    'admin.crm.stage.proposal': 'Proposal',
+    'admin.crm.stage.negotiation': 'Negotiation',
+    'admin.crm.stage.nurture': 'Nurture',
+    'admin.crm.stage.won': 'Won',
+    'admin.crm.stage.lost': 'Lost',
+    'admin.crm.type.rental': 'Rental',
+    'admin.crm.type.purchase': 'Purchase',
+    'admin.crm.type.sale': 'Sale',
+    'admin.crm.type.management': 'Management',
+    'admin.crm.type.developer_advisory': 'Developer advisory',
+    'admin.crm.type.capex': 'Capex',
+    'admin.crm.type.compliance': 'Compliance',
     'admin.crm.new': 'New opportunity',
     'admin.crm.contact': 'Contact',
     'admin.crm.type': 'Type',
@@ -64,8 +82,10 @@ export default async function CrmPage() {
 
   return (
     <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['admin.crm.title']}</h1>
-      <p className="text-body text-text-secondary mb-24">{labels['admin.crm.subtitle']}</p>
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+        {labels['admin.crm.title']}
+      </h1>
+      <p className="text-body text-text-stone mb-24">{labels['admin.crm.subtitle']}</p>
       <CrmDashboardPanel labels={labels} />
       <CrmLifecyclePanel labels={labels} />
       <CrmPipelineClient

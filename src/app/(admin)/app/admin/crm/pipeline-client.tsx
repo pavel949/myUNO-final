@@ -3,6 +3,9 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
+import { Input } from '@/components/Input';
+import { Select } from '@/components/Select';
 
 type Contact = { id: string; firstName: string; lastName: string; email: string | null; phone: string | null };
 type Opportunity = {
@@ -21,6 +24,32 @@ type Opportunity = {
 
 const STAGES = ['new', 'qualified', 'discovery', 'proposal', 'negotiation', 'nurture'] as const;
 const TYPES = ['rental', 'purchase', 'sale', 'management', 'developer_advisory', 'capex', 'compliance'] as const;
+const ALL_STAGES = [...STAGES, 'won', 'lost'] as const;
+
+const STAGE_BAR: Record<string, string> = {
+  new: 'bg-chart-seq-1 text-text-ink',
+  qualified: 'bg-chart-seq-2 text-text-ink',
+  discovery: 'bg-chart-seq-3 text-surface-ivory',
+  proposal: 'bg-chart-seq-4 text-surface-ivory',
+  negotiation: 'bg-chart-seq-5 text-surface-ivory',
+  nurture: 'bg-chart-seq-1 text-text-ink',
+  won: 'bg-state-success text-surface-ivory',
+  lost: 'bg-text-stone-2 text-text-ink',
+};
+
+const chipStatusVariant = 'status' as const;
+const chipNeutralVariant = 'neutral' as const;
+const overdueChip = 'declined' as const;
+
+function typeChipStatus(type: string): 'checked_in' | 'pending_payment' | 'default' {
+  if (type === 'purchase' || type === 'sale') return 'pending_payment';
+  if (type === 'developer_advisory' || type === 'capex') return 'default';
+  return 'checked_in';
+}
+
+function isOverdue(nextActionAt: string | null): boolean {
+  return Boolean(nextActionAt && new Date(nextActionAt).getTime() < Date.now());
+}
 
 export default function CrmPipelineClient({
   opportunities,
@@ -38,6 +67,10 @@ export default function CrmPipelineClient({
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const summary = useMemo(() => Object.fromEntries(counts.map((c) => [c.stage, c])), [counts]);
+  const maxCount = Math.max(1, ...STAGES.map((stage) => summary[stage]?.count ?? 0));
+
+  const stageLabel = (stage: string) => labels[`admin.crm.stage.${stage}`] || stage;
+  const typeLabel = (type: string) => labels[`admin.crm.type.${type}`] || type.replace('_', ' ');
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,7 +103,7 @@ export default function CrmPipelineClient({
   async function move(id: string, stage: string) {
     setBusy(true);
     setError(null);
-    const lostReason = stage === 'lost' ? window.prompt('Reason for loss') : null;
+    const lostReason = stage === 'lost' ? window.prompt(labels['admin.crm.lost_reason']) : null;
     if (stage === 'lost' && !lostReason?.trim()) {
       setBusy(false);
       return;
@@ -87,48 +120,139 @@ export default function CrmPipelineClient({
 
   return (
     <div>
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-12 mb-24">
-        {STAGES.map((stage) => (
-          <div key={stage} className="bg-surface-paper border border-border-line rounded-lg p-16">
-            <p className="text-small text-text-secondary capitalize">{stage.replace('_', ' ')}</p>
-            <p className="text-heading-3 font-bold text-text-ink">{summary[stage]?.count ?? 0}</p>
-            <p className="text-small text-text-secondary">฿{(summary[stage]?.valueThb ?? 0).toLocaleString()}</p>
-          </div>
-        ))}
-      </div>
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <h2 className="font-display text-title font-semibold text-text-ink mb-16">
+          {labels['admin.crm.pipeline_breakdown']}
+        </h2>
+        <div className="flex flex-col gap-12">
+          {STAGES.map((stage) => {
+            const count = summary[stage]?.count ?? 0;
+            const widthPct = Math.round((count / maxCount) * 100);
+            return (
+              <div key={stage} className="flex items-center gap-16">
+                <span className="w-[110px] shrink-0 text-small text-text-stone font-display font-semibold">
+                  {stageLabel(stage)}
+                </span>
+                <div className="flex-1 h-24 rounded-sm bg-surface-ivory overflow-hidden">
+                  <div
+                    className={`h-full min-w-0 flex items-center justify-center font-display text-small font-semibold tabular-nums ${STAGE_BAR[stage]}`}
+                    style={{ width: `${Math.max(count > 0 ? 12 : 0, widthPct)}%` }}
+                  >
+                    {count > 0 ? count : null}
+                  </div>
+                </div>
+                <span className="w-24 shrink-0 text-right font-display text-small font-medium tabular-nums text-text-ink">
+                  ฿{(summary[stage]?.valueThb ?? 0).toLocaleString()}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <div className="mb-16">
-        <Button variant="sun" onClick={() => setShowForm((value) => !value)}>{labels['admin.crm.new']}</Button>
+        <Button variant="sun" onClick={() => setShowForm((value) => !value)}>
+          {labels['admin.crm.new']}
+        </Button>
       </div>
       {error ? <p className="text-state-error mb-16">{error}</p> : null}
 
       {showForm ? (
-        <form onSubmit={submit} className="grid md:grid-cols-2 gap-12 bg-surface-paper border border-border-line rounded-lg p-20 mb-24">
-          <label className="text-small">{labels['admin.crm.contact']}<select required name="identityId" className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm"><option value="" />{contacts.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName} · {c.email ?? c.phone ?? '—'}</option>)}</select></label>
-          <label className="text-small">{labels['admin.crm.type']}<select required name="type" className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm">{TYPES.map((type) => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}</select></label>
-          <label className="text-small">{labels['admin.crm.opportunity_title']}<input required name="title" maxLength={240} className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm" /></label>
-          <label className="text-small">{labels['admin.crm.source']}<input required name="source" maxLength={120} className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm" /></label>
-          <label className="text-small">{labels['admin.crm.value']}<input name="valueThb" type="number" min="0" className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm" /></label>
-          <label className="text-small">{labels['admin.crm.next_action']}<input name="nextActionAt" type="datetime-local" className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm" /></label>
-          <label className="text-small">{labels['admin.crm.partner']}<input name="externalPartner" maxLength={240} className="block w-full h-40 mt-4 px-8 border border-border-line rounded-sm" /></label>
-          <div className="flex items-end"><Button type="submit" variant="sun" isLoading={busy}>{labels['admin.crm.create']}</Button></div>
+        <form
+          onSubmit={submit}
+          className="grid md:grid-cols-2 gap-16 bg-surface-paper border border-border-line rounded-lg shadow-card p-20 mb-24"
+        >
+          <Select
+            required
+            name="identityId"
+            label={labels['admin.crm.contact']}
+            options={contacts.map((c) => ({
+              value: c.id,
+              label: `${c.firstName} ${c.lastName} · ${c.email ?? c.phone ?? '—'}`,
+            }))}
+          />
+          <Select
+            required
+            name="type"
+            label={labels['admin.crm.type']}
+            options={TYPES.map((type) => ({
+              value: type,
+              label: typeLabel(type),
+            }))}
+          />
+          <Input required name="title" maxLength={240} label={labels['admin.crm.opportunity_title']} />
+          <Input required name="source" maxLength={120} label={labels['admin.crm.source']} />
+          <Input name="valueThb" type="number" min="0" label={labels['admin.crm.value']} />
+          <Input name="nextActionAt" type="datetime-local" label={labels['admin.crm.next_action']} />
+          <Input name="externalPartner" maxLength={240} label={labels['admin.crm.partner']} />
+          <div className="flex items-end">
+            <Button type="submit" variant="sun" isLoading={busy}>
+              {labels['admin.crm.create']}
+            </Button>
+          </div>
         </form>
       ) : null}
 
       <div className="grid xl:grid-cols-3 gap-16">
-        {opportunities.length === 0 ? <p>{labels['admin.crm.empty']}</p> : opportunities.map((item) => (
-          <article key={item.id} className="bg-surface-paper border border-border-line rounded-lg p-20">
-            <div className="flex justify-between gap-8 mb-8"><span className="text-small uppercase tracking-wide text-text-secondary">{item.type.replace('_', ' ')}</span><span className="text-small font-semibold">{item.stage}</span></div>
-            <h2 className="text-heading-3 font-semibold text-text-ink">{item.title}</h2>
-            <p className="text-body text-text-secondary">{item.identity.firstName} {item.identity.lastName}</p>
-            <p className="text-small text-text-secondary mt-8">{item.source} · {item.probability}% · ฿{(item.valueThb ?? 0).toLocaleString()}</p>
-            {item.externalPartner ? <p className="text-small mt-4">Partner: {item.externalPartner}</p> : null}
-            <select disabled={busy} value={item.stage} onChange={(event) => move(item.id, event.target.value)} className="w-full h-40 mt-16 px-8 border border-border-line rounded-sm">
-              {STAGES.map((stage) => <option key={stage} value={stage}>{stage.replace('_', ' ')}</option>)}
-              <option value="won">won</option><option value="lost">lost</option>
-            </select>
-          </article>
-        ))}
+        {opportunities.length === 0 ? (
+          <p className="text-body text-text-stone">{labels['admin.crm.empty']}</p>
+        ) : (
+          opportunities.map((item) => {
+            const overdue = isOverdue(item.nextActionAt);
+            return (
+              <article
+                key={item.id}
+                className="bg-surface-paper border border-border-line rounded-lg shadow-card p-20"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-8 mb-8">
+                  <Chip
+                    variant={
+                      typeChipStatus(item.type) === 'default' ? chipNeutralVariant : chipStatusVariant
+                    }
+                    status={
+                      typeChipStatus(item.type) === 'default' ? undefined : typeChipStatus(item.type)
+                    }
+                  >
+                    {typeLabel(item.type)}
+                  </Chip>
+                  <span className="text-small text-text-stone font-display tabular-nums">
+                    {item.probability}%
+                  </span>
+                </div>
+                <h2 className="font-display text-title font-semibold text-text-ink">{item.title}</h2>
+                <p className="text-body text-text-stone">
+                  {item.identity.firstName} {item.identity.lastName}
+                </p>
+                <p className="font-display text-subtitle font-medium tabular-nums text-text-ink mt-8">
+                  ฿{(item.valueThb ?? 0).toLocaleString()}
+                </p>
+                <p className="text-small text-text-stone mt-4">{item.source}</p>
+                {item.externalPartner ? (
+                  <p className="text-small text-text-stone mt-4">
+                    {labels['admin.crm.partner']}: {item.externalPartner}
+                  </p>
+                ) : null}
+                {overdue ? (
+                  <div className="mt-8">
+                    <Chip variant={chipStatusVariant} status={overdueChip}>
+                      {labels['admin.crm.next_action_overdue']}
+                    </Chip>
+                  </div>
+                ) : null}
+                <Select
+                  disabled={busy}
+                  value={item.stage}
+                  onChange={(event) => move(item.id, event.target.value)}
+                  className="mt-16"
+                  options={ALL_STAGES.map((stage) => ({
+                    value: stage,
+                    label: stageLabel(stage),
+                  }))}
+                />
+              </article>
+            );
+          })
+        )}
       </div>
     </div>
   );

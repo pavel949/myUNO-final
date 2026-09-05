@@ -82,10 +82,10 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
 
   return (
     <section className="mb-32">
-      <h2 className="text-heading-2 font-bold text-text-ink mb-8">
+      <h2 className="font-display text-title font-semibold text-text-ink mb-8">
         {labels['admin.crm.lifecycle.title']}
       </h2>
-      <p className="text-body text-text-secondary mb-16">{labels['admin.crm.lifecycle.subtitle']}</p>
+      <p className="text-body text-text-stone mb-16">{labels['admin.crm.lifecycle.subtitle']}</p>
 
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">

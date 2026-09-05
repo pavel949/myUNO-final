@@ -165,8 +165,8 @@ export default function ProviderOrdersClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+        <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['provider.orders.title']}
           {providerName ? (
             <span className="text-body font-normal text-text-secondary"> · {providerName}</span>

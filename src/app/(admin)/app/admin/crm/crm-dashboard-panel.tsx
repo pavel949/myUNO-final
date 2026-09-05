@@ -109,11 +109,11 @@ export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {
       </div>
 
       {overdueCount > 0 && (
-        <div className="bg-state-warning-soft border border-state-warning rounded-md p-20">
-          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+        <div className="bg-state-error-soft border border-state-error rounded-md p-20">
+          <h2 className="font-display text-title font-semibold text-state-error mb-8">
             {labels['admin.crm.dashboard.overdue_title']}
           </h2>
-          <p className="text-body text-text-secondary mb-12">
+          <p className="text-body text-text-stone mb-12">
             {labels['admin.crm.dashboard.overdue_count'].replace(
               '{count}',
               String(overdueCount)

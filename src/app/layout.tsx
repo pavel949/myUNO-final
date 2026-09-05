@@ -26,7 +26,9 @@ const SURFACE_LABEL_KEYS = {
 } as const satisfies Record<Landing['reason'], string>;
 
 const outfit = Outfit({
-  subsets: ['latin', 'cyrillic'],
+  // Google does not ship a Cyrillic cut of Outfit. Asking for one fails
+  // `next build`. Russian display type falls through to Manrope (below).
+  subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-outfit',
   display: 'swap',

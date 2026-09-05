@@ -38,15 +38,15 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   return (
     <Badge variant="verified" className={className}>
       <svg
-        className="w-16 h-16 flex-shrink-0"
-        fill="currentColor"
-        viewBox="0 0 20 20"
+        className="w-14 h-14 flex-shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden
       >
-        <path
-          fillRule="evenodd"
-          d="M6.267 3.455a3.066 3.066 0 001.745-2.77 3.066 3.066 0 00-3.58 3.048A3.066 3.066 0 006.267 3.455zm9.8 2.696a4.5 4.5 0 10-9.933-1.34 4.5 4.5 0 009.933 1.34z"
-          clipRule="evenodd"
-        />
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
       </svg>
       {label}
     </Badge>

@@ -14,15 +14,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-brand-andaman text-surface-ivory hover:bg-brand-deep focus-visible:ring-2 focus-visible:ring-brand-andaman focus-visible:ring-offset-2',
   secondary: 'bg-surface-paper text-text-ink border border-border-line hover:border-border-line-2 focus-visible:ring-2 focus-visible:ring-brand-andaman focus-visible:ring-offset-2',
-  ghost: 'text-brand-andaman hover:bg-surface-paper focus-visible:ring-2 focus-visible:ring-brand-andaman focus-visible:ring-offset-2',
-  destructive: 'bg-state-error text-surface-ivory hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-state-error focus-visible:ring-offset-2',
+  ghost: 'text-brand-andaman hover:bg-surface-ivory focus-visible:ring-2 focus-visible:ring-brand-andaman focus-visible:ring-offset-2',
+  destructive: 'bg-state-error text-surface-ivory hover:opacity-90 focus-visible:ring-2 focus-visible:ring-state-error focus-visible:ring-offset-2',
   sun: 'bg-brand-sun text-brand-deep hover:bg-brand-sun-soft focus-visible:ring-2 focus-visible:ring-brand-sun focus-visible:ring-offset-2',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-40 px-16 text-small rounded-md',
-  md: 'h-48 px-24 text-body rounded-md',
-  lg: 'h-56 px-32 text-subtitle rounded-lg',
+  sm: 'h-40 px-16 text-small rounded-md font-sans',
+  md: 'h-48 px-24 text-body rounded-md font-sans',
+  lg: 'h-56 px-32 text-subtitle rounded-lg font-display',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

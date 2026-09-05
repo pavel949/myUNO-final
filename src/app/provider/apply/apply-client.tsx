@@ -83,7 +83,7 @@ export default function ProviderApplyClient({
       className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-16"
     >
       <div>
-        <h2 className="text-heading-3 font-bold text-text-ink mb-4">
+        <h2 className="font-display text-display-sm text-brand-deep mb-4">
           {labels['provider.apply.title']}
         </h2>
         <p className="text-body text-text-secondary">{labels['provider.apply.subtitle']}</p>

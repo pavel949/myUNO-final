@@ -132,7 +132,7 @@ export function AnnouncementsComposer({
       </div>
 
       <section className="mb-32 p-16 bg-surface-paper border border-border-line rounded-lg max-w-2xl">
-        <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+        <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.announcements.compose']}
         </h2>
 
@@ -160,22 +160,30 @@ export function AnnouncementsComposer({
           />
         </label>
 
-        <label className="block mb-12">
-          <span className="text-small text-text-secondary block mb-4">
+        <div className="mb-12">
+          <p className="text-small text-text-secondary mb-8">
             {labels['admin.announcements.audience']}
-          </span>
-          <select
-            value={audience}
-            onChange={(e) => setAudience(e.target.value)}
-            className={field}
-          >
-            {audiences.map((value) => (
-              <option key={value} value={value}>
-                {labels[`admin.announcements.audience.${value}`]}
-              </option>
-            ))}
-          </select>
-        </label>
+          </p>
+          <div className="flex flex-wrap gap-8">
+            {audiences.map((value) => {
+              const selected = audience === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAudience(value)}
+                  className={
+                    selected
+                      ? 'rounded-full bg-brand-andaman px-12 py-8 text-small text-on-dark-text'
+                      : 'rounded-full border border-border-line bg-surface-ivory px-12 py-8 text-small text-text-ink hover:border-brand-andaman'
+                  }
+                >
+                  {labels[`admin.announcements.audience.${value}`]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <label className="block mb-4">
           <span className="text-small text-text-secondary block mb-4">

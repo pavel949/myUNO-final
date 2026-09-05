@@ -27,6 +27,16 @@ const composer = readFileSync(
   join(process.cwd(), 'src/components/announcements/AnnouncementsComposer.tsx'),
   'utf8'
 );
+const inbox = readFileSync(join(process.cwd(), 'src/app/messages/page.tsx'), 'utf8');
+const thread = readFileSync(
+  join(process.cwd(), 'src/app/messages/[threadId]/thread-client.tsx'),
+  'utf8'
+);
+const health = readFileSync(
+  join(process.cwd(), 'src/app/components/admin/IntegrationHealthPanel.tsx'),
+  'utf8'
+);
+const apply = readFileSync(join(process.cwd(), 'src/app/provider/apply/apply-client.tsx'), 'utf8');
 
 describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
   it('drops the unused gray marketplace leftovers', () => {
@@ -72,5 +82,21 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
   it('defines the andaman wash the live chips already use', () => {
     expect(tokens).toContain("'andaman-soft'");
     expect(tokens).toContain('#E3ECEA');
+  });
+
+  it('restyles inbox, thread, integrations, apply, and onboarding on existing data', () => {
+    expect(inbox).toContain('md:w-[360px]');
+    expect(inbox).toContain('messages.inbox.empty_pane.lead');
+    expect(inbox).not.toContain('subject');
+    expect(thread).toContain('bg-brand-andaman text-surface-ivory');
+    expect(thread).toContain('messageKind === \'system\'');
+    expect(health).toContain('grid gap-16 md:grid-cols-2');
+    expect(health).not.toContain('<table');
+    expect(health).not.toContain('Run now');
+    expect(composer).toContain('onClick={() => setAudience(value)}');
+    expect(composer).not.toContain('<option key={value} value={value}>');
+    expect(apply).toContain('text-display-sm');
+    expect(onboarding).toContain('doneCount');
+    expect(onboarding).toContain('bg-brand-andaman');
   });
 });

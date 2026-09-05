@@ -2144,6 +2144,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'nav.bell_mark_all', namespace: 'nav', description: 'Bell mark-all-read', en: 'Mark all read', ru: 'Отметить всё прочитанным', th: 'ทำเครื่องหมายว่าอ่านทั้งหมด', status: NR },
   { key: 'messages.inbox.title', namespace: 'messages', description: 'Inbox title', en: 'Messages', ru: 'Сообщения', th: 'ข้อความ', status: NR },
   { key: 'messages.inbox.empty', namespace: 'messages', description: 'Inbox empty state', en: 'No conversations yet. Message us from any of your trips and we will answer here.', ru: 'Диалогов пока нет. Напишите нам из любой поездки — ответим здесь.', th: 'ยังไม่มีการสนทนา ส่งข้อความมาจากการเดินทางใดก็ได้ เราจะตอบที่นี่', status: NR },
+  { key: 'messages.inbox.empty_pane.lead', namespace: 'messages', description: 'Desktop inbox empty pane', en: 'Select a conversation.', ru: 'Выберите диалог.', th: 'เลือกการสนทนา', status: NR },
   { key: 'messages.thread.back', namespace: 'messages', description: 'Back to inbox', en: '← Messages', ru: '← Сообщения', th: '← ข้อความ', status: NR },
   { key: 'messages.thread.loading', namespace: 'messages', description: 'Thread loading', en: 'Loading conversation…', ru: 'Загружаем диалог…', th: 'กำลังโหลดการสนทนา…', status: NR },
   { key: 'messages.thread.not_found', namespace: 'messages', description: 'Thread not found', en: 'Conversation not found', ru: 'Диалог не найден', th: 'ไม่พบการสนทนา', status: NR },

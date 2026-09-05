@@ -30,14 +30,13 @@ export function IntegrationHealthPanel({
 }) {
   if (accounts.length === 0) {
     return (
-      <div className="text-center py-24">
+      <div className="py-24 text-center">
         <p className="text-body text-text-secondary">{labels['admin.integrations.empty']}</p>
       </div>
     );
   }
 
-  const integrationLabel = (key: IntegrationKey) =>
-    labels[`integrations.key.${key}`] || key;
+  const integrationLabel = (key: IntegrationKey) => labels[`integrations.key.${key}`] || key;
 
   const statusLabel = (status: IntegrationStatus) =>
     labels[`integrations.status.${status}`] || status;
@@ -54,70 +53,49 @@ export function IntegrationHealthPanel({
 
   return (
     <div className="space-y-16">
-      <h2 className="text-heading-3 font-semibold text-text-ink">
+      <h2 className="font-display text-heading-3 text-brand-deep">
         {fill(labels['admin.integrations.table_title'], { total })}
       </h2>
 
-      <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border-line bg-surface-ivory">
-              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
-                {labels['admin.integrations.col_integration']}
-              </th>
-              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
-                {labels['admin.integrations.col_scope']}
-              </th>
-              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
-                {labels['admin.integrations.col_status']}
-              </th>
-              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
-                {labels['admin.integrations.col_last_sync']}
-              </th>
-              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
-                {labels['admin.integrations.col_error']}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {accounts.map((account) => (
-              <tr
-                key={account.id}
-                className="border-b border-border-line last:border-b-0 hover:bg-surface-ivory"
+      <div className="grid gap-16 md:grid-cols-2">
+        {accounts.map((account) => (
+          <article
+            key={account.id}
+            className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card"
+          >
+            <div className="flex items-start justify-between gap-12">
+              <div>
+                <p className="text-body font-medium text-text-ink">
+                  {integrationLabel(account.integrationKey)}
+                </p>
+                <p className="mt-4 text-small text-text-secondary">{scopeLabel(account)}</p>
+              </div>
+              <span
+                className={`inline-flex items-center rounded-full px-10 py-4 text-small font-medium ${
+                  STATUS_STYLE[account.status]
+                }`}
               >
-                <td className="py-12 px-16">
-                  <span className="text-body font-medium text-text-ink">
-                    {integrationLabel(account.integrationKey)}
-                  </span>
-                </td>
-                <td className="py-12 px-16">
-                  <span className="text-small text-text-secondary">{scopeLabel(account)}</span>
-                </td>
-                <td className="py-12 px-16">
-                  <span
-                    className={`inline-flex items-center px-10 py-4 rounded-full text-small font-medium ${
-                      STATUS_STYLE[account.status]
-                    }`}
-                  >
-                    {statusLabel(account.status)}
-                  </span>
-                </td>
-                <td className="py-12 px-16">
-                  <span className="text-small text-text-secondary">
-                    {account.lastSyncAt
-                      ? new Date(account.lastSyncAt).toLocaleString(locale)
-                      : labels['admin.integrations.never_synced']}
-                  </span>
-                </td>
-                <td className="py-12 px-16">
-                  <span className="text-small text-state-error">
-                    {account.lastError || '—'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                {statusLabel(account.status)}
+              </span>
+            </div>
+            <dl className="mt-16 space-y-8 text-small">
+              <div className="flex justify-between gap-12">
+                <dt className="text-text-secondary">{labels['admin.integrations.col_last_sync']}</dt>
+                <dd className="text-text-ink">
+                  {account.lastSyncAt
+                    ? new Date(account.lastSyncAt).toLocaleString(locale)
+                    : labels['admin.integrations.never_synced']}
+                </dd>
+              </div>
+              {account.lastError ? (
+                <div>
+                  <dt className="text-text-secondary">{labels['admin.integrations.col_error']}</dt>
+                  <dd className="mt-4 text-state-error">{account.lastError}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </article>
+        ))}
       </div>
     </div>
   );

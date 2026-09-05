@@ -42,6 +42,12 @@ function ticketChipStatus(
   }
 }
 
+const chipStatusVariant = 'status' as const;
+
+function ticketStatusLabel(status: string, labels: Record<string, string>): string {
+  return labels[`tickets.status.${status}`] || status;
+}
+
 export default async function JuristicPortalPage({
   searchParams,
 }: {
@@ -183,7 +189,7 @@ export default async function JuristicPortalPage({
                       <p className="text-body font-semibold text-text-ink m-0">
                         {announcement.title}
                       </p>
-                      <Chip variant="status" status={isPublished ? publishedChip : draftChip}>
+                      <Chip variant={chipStatusVariant} status={isPublished ? publishedChip : draftChip}>
                         {isPublished ? labels['juristic.published'] : labels['juristic.draft']}
                       </Chip>
                     </div>
@@ -234,8 +240,11 @@ export default async function JuristicPortalPage({
                         } · ${ticket.createdAt.toLocaleDateString(locale)}`}
                       </p>
                     </div>
-                    <Chip variant="status" status={ticketChipStatus(ticket.status)}>
-                      {labels[`tickets.status.${ticket.status}`] ?? ticket.status}
+                    <Chip
+                      variant={chipStatusVariant}
+                      status={ticketChipStatus(ticket.status)}
+                    >
+                      {ticketStatusLabel(ticket.status, labels as Record<string, string>)}
                     </Chip>
                   </li>
                 )

@@ -18,7 +18,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyPageProps)
   });
 
   return (
-    <main className="min-h-screen bg-surface-background flex items-start justify-center px-24 py-64">
+    <main className="min-h-screen bg-surface-ivory flex items-start justify-center px-24 py-64">
       <div className="w-full max-w-md bg-surface-paper border border-border-line rounded-lg p-32 text-center">
         <h1 className="text-heading-2 font-bold text-text-ink mb-16">
           {labels['auth.verify.title']}

@@ -246,7 +246,7 @@ export default function ContentAdminClient({
                 </Button>
               </div>
               {preview[`${row.key}::en`] ? (
-                <p className="text-small text-text-secondary mb-8 bg-surface-background p-8 rounded-sm">
+                <p className="text-small text-text-secondary mb-8 bg-surface-ivory p-8 rounded-sm">
                   {preview[`${row.key}::en`]}
                 </p>
               ) : null}
@@ -285,7 +285,7 @@ export default function ContentAdminClient({
                           setDrafts((prev) => ({ ...prev, [id]: e.target.value }))
                         }
                         rows={2}
-                        className="px-12 py-8 rounded-sm bg-surface-background border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+                        className="px-12 py-8 rounded-sm bg-surface-ivory border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
                       />
                     </div>
                   );

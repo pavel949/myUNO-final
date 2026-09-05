@@ -125,7 +125,7 @@ export default function ThreadClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface-background p-32">
+      <main className="min-h-screen bg-surface-ivory p-32">
         <p className="text-body text-text-secondary text-center">
           {labels['messages.thread.loading']}
         </p>
@@ -135,7 +135,7 @@ export default function ThreadClient({
 
   if (!thread) {
     return (
-      <main className="min-h-screen bg-surface-background p-32">
+      <main className="min-h-screen bg-surface-ivory p-32">
         <div className="max-w-2xl mx-auto">
           <p className="text-body text-state-error mb-16">
             {error || labels['messages.thread.not_found']}
@@ -149,7 +149,7 @@ export default function ThreadClient({
   }
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-2xl mx-auto flex flex-col" style={{ minHeight: '80vh' }}>
         <p className="mb-16">
           <Link href="/messages" className="text-brand-andaman font-semibold hover:underline">

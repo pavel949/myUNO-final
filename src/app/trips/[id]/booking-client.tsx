@@ -312,7 +312,7 @@ export default function BookingDetailClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-background p-32">
+      <div className="min-h-screen bg-surface-ivory p-32">
         <p className="text-body text-text-secondary text-center">
           {labels['booking.detail.loading']}
         </p>
@@ -322,7 +322,7 @@ export default function BookingDetailClient({
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-surface-background p-32">
+      <div className="min-h-screen bg-surface-ivory p-32">
         <div className="max-w-3xl mx-auto">
           <div className="bg-state-error-soft border border-state-error rounded-lg p-16">
             <p className="text-body text-state-error">
@@ -348,7 +348,7 @@ export default function BookingDetailClient({
   const rebookUrl = rebookHref(booking);
 
   return (
-    <div className="min-h-screen bg-surface-background p-24 md:p-32">
+    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         <p className="mb-16">
           <Link href="/trips" className="text-brand-andaman font-semibold hover:underline">

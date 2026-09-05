@@ -158,7 +158,7 @@ export default function ProviderApplyClient({
               className={
                 selected.has(category.key)
                   ? 'px-12 py-8 rounded-full text-small bg-brand-andaman text-on-dark-text'
-                  : 'px-12 py-8 rounded-full text-small bg-surface-background border border-border-line text-text-ink hover:border-brand-andaman'
+                  : 'px-12 py-8 rounded-full text-small bg-surface-ivory border border-border-line text-text-ink hover:border-brand-andaman'
               }
             >
               {category.label}

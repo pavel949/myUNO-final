@@ -186,7 +186,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Audience Doors */}
-      <section className="bg-surface-background py-64 px-24">
+      <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
             {labels['landing.doors.title']}
@@ -231,7 +231,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Services Section */}
-      <section className="bg-surface-background py-64 px-24">
+      <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-32">
             {labels['landing.services.title']}

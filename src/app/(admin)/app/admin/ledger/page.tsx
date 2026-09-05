@@ -68,7 +68,7 @@ export default async function AdminLedgerPage({
 
   return (
     <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['admin.ledger.title']}</h1>
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.ledger.title']}</h1>
       <p className="text-body text-text-secondary mb-24">{labels['admin.ledger.subtitle']}</p>
       {projectId ? (
         <LedgerAdminClient

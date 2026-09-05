@@ -99,12 +99,12 @@ export default async function McCalendarIndexPage({ searchParams }: McCalendarIn
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['mc.calendar_index.back']}
         </Link>
-        <h1 className="text-heading-1 font-bold text-text-ink mt-12 mb-8">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mt-12 mb-8">
           {labels['mc.calendar_index.title']}
         </h1>
         <p className="text-body text-text-secondary mb-24">{labels['mc.calendar_index.hint']}</p>

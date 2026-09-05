@@ -221,7 +221,7 @@ export default function SearchResults({
   };
 
   return (
-    <div className="min-h-screen bg-surface-background p-24 md:p-32">
+    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
         <div className="mb-24">
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>

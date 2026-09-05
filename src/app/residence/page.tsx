@@ -57,9 +57,9 @@ export default async function ResidencePage() {
 
   if (residences.length === 0) {
     return (
-      <main className="min-h-screen bg-surface-background p-24 md:p-32">
+      <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-16">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
             {labels['residence.title']}
           </h1>
           <div className="p-24 bg-surface-paper border border-border-line rounded-lg">
@@ -93,9 +93,9 @@ export default async function ResidencePage() {
     `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['residence.title']}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['residence.title']}</h1>
         <p className="text-body text-text-secondary mb-32">{labels['residence.subtitle']}</p>
 
         {residences.map((residence, index) => (

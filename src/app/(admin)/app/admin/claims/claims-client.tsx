@@ -132,7 +132,7 @@ export default function ClaimsAdminClient({
                   value={note}
                   onChange={(e) => setNotes({ ...notes, [claim.id]: e.target.value })}
                   rows={2}
-                  className="w-full px-12 py-8 border border-border-line rounded-lg bg-surface-background text-text-ink text-small"
+                  className="w-full px-12 py-8 border border-border-line rounded-lg bg-surface-ivory text-text-ink text-small"
                 />
               </label>
 

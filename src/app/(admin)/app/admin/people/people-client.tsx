@@ -158,7 +158,7 @@ export default function PeopleAdminClient({
 
   return (
     <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-24">{labels['admin.people.title']}</h1>
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">{labels['admin.people.title']}</h1>
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 max-w-2xl">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
@@ -171,20 +171,20 @@ export default function PeopleAdminClient({
             value={inviteForm.firstName}
             onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
             placeholder={labels['admin.people.invite_first_name']}
-            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+            className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
           <input
             value={inviteForm.lastName}
             onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
             placeholder={labels['admin.people.invite_last_name']}
-            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+            className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
           <input
             type="email"
             value={inviteForm.email}
             onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
             placeholder={labels['admin.people.invite_email']}
-            className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+            className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
         </div>
 
@@ -310,7 +310,7 @@ export default function PeopleAdminClient({
                   // A role that cannot span the platform must not offer it.
                   if (!PLATFORM_SCOPED_ROLES.has(e.target.value)) setScopeType('project');
                 }}
-                className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
                 {ROLES.map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -320,7 +320,7 @@ export default function PeopleAdminClient({
               <select
                 value={scopeType}
                 onChange={(e) => setScopeType(e.target.value)}
-                className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
                 <option value="project">{labels['admin.people.scope_project']}</option>
                 {PLATFORM_SCOPED_ROLES.has(role) && (
@@ -332,7 +332,7 @@ export default function PeopleAdminClient({
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  className="h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                  className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
                 >
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>

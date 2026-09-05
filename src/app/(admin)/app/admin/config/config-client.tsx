@@ -136,13 +136,13 @@ export default function ConfigAdminClient({
           </div>
           {key === 'comms.whatsapp_number' ? (
             <input
-              className="w-full h-40 px-12 rounded-sm bg-surface-background border border-border-line text-small text-text-ink font-mono"
+              className="w-full h-40 px-12 rounded-sm bg-surface-ivory border border-border-line text-small text-text-ink font-mono"
               value={drafts[key]}
               onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
             />
           ) : (
             <textarea
-              className="w-full min-h-[160px] p-12 rounded-sm bg-surface-background border border-border-line text-small text-text-ink font-mono"
+              className="w-full min-h-[160px] p-12 rounded-sm bg-surface-ivory border border-border-line text-small text-text-ink font-mono"
               value={drafts[key]}
               onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
               spellCheck={false}
@@ -177,7 +177,7 @@ export default function ConfigAdminClient({
               ) : (
                 <ul className="space-y-8 text-small">
                   {historyRows.map((row) => (
-                    <li key={row.id} className="bg-surface-background rounded-sm p-12">
+                    <li key={row.id} className="bg-surface-ivory rounded-sm p-12">
                       <p className="text-text-secondary">
                         {new Date(row.createdAt).toLocaleString()}
                         {row.changedBy

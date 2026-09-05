@@ -82,7 +82,7 @@ export default function TripsList({ labels }: TripsListProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-background p-8">
+      <div className="min-h-screen bg-surface-ivory p-8">
         <div className="text-center">
           <p className="text-text-secondary">{labels['booking.trips.loading']}</p>
         </div>
@@ -91,7 +91,7 @@ export default function TripsList({ labels }: TripsListProps) {
   }
 
   return (
-    <div className="min-h-screen bg-surface-background p-8">
+    <div className="min-h-screen bg-surface-ivory p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text-ink">{labels['booking.trips.title']}</h1>

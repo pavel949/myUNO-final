@@ -7,7 +7,7 @@ import React from 'react';
  */
 export default function OwnerStatementLoading() {
   return (
-    <div className="min-h-screen bg-surface-background" aria-busy="true">
+    <div className="min-h-screen bg-surface-ivory" aria-busy="true">
       <div className="max-w-6xl mx-auto px-24 py-40">
         <div className="mb-40 animate-pulse">
           <div className="h-16 w-96 bg-border-line rounded-sm mb-16" />

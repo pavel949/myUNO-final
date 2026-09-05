@@ -42,7 +42,7 @@ export default async function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-surface-background p-32">
+        <div className="min-h-screen bg-surface-ivory p-32">
           <p className="text-body text-text-secondary">{labels['search.loading']}</p>
         </div>
       }

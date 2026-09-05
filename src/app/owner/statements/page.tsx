@@ -44,14 +44,14 @@ export default async function OwnerStatementsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
           <Link href="/owner" className="text-brand-andaman font-semibold hover:underline">
             {labels['owner.statements.back']}
           </Link>
         </p>
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['owner.statements.title']}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['owner.statements.title']}</h1>
         <p className="text-body text-text-secondary mb-24">{labels['owner.statements.subtitle']}</p>
         <OwnerStatementsClient labels={labels} />
       </div>

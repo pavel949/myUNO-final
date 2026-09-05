@@ -45,7 +45,7 @@ export default async function DevelopersPage() {
     <main className="min-h-screen bg-white">
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-heading-1 font-bold mb-24">
+          <h1 className="font-display text-display-xl font-semibold mb-24">
             {labels['audience.developers.hero_title']}
           </h1>
           <p className="text-body text-surface-ivory/90 mb-32">

@@ -42,10 +42,10 @@ export default async function TrustPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-surface-background">
+    <main className="min-h-screen bg-surface-ivory">
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-heading-1 font-bold mb-24">{labels['trust.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold mb-24">{labels['trust.title']}</h1>
           <p className="text-body text-surface-ivory/90">{labels['trust.intro']}</p>
         </div>
       </section>

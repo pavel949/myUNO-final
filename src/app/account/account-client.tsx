@@ -116,9 +116,9 @@ export default function AccountClient({
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface-background p-24 md:p-32">
+    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-24">{labels['account.title']}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">{labels['account.title']}</h1>
 
         <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
           <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
@@ -130,7 +130,7 @@ export default function AccountClient({
               <input
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               />
             </label>
             <label className="block">
@@ -138,7 +138,7 @@ export default function AccountClient({
               <input
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               />
             </label>
           </div>
@@ -148,7 +148,7 @@ export default function AccountClient({
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value)}
-              className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+              className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
             >
               <option value="en">{labels['account.locale.en']}</option>
               <option value="ru">{labels['account.locale.ru']}</option>
@@ -196,7 +196,7 @@ export default function AccountClient({
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
                   />
                 </label>
                 <label className="block">
@@ -205,7 +205,7 @@ export default function AccountClient({
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
                   />
                 </label>
               </div>

@@ -522,7 +522,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                   {row.category && isOpen && (
                     <div
                       id={`statement-lines-${row.key}`}
-                      className="border-t border-border-line bg-surface-background px-24 py-16"
+                      className="border-t border-border-line bg-surface-ivory px-24 py-16"
                     >
                       <p className="text-small text-text-stone mb-12">
                         {labels[`common.line_item_category.${row.category}`]}

@@ -731,7 +731,7 @@ export function MCDashboardClient({
                   units.map((unit) => (
                     <div
                       key={unit.id}
-                      className="border border-border-line rounded-lg p-16 hover:bg-surface-background transition"
+                      className="border border-border-line rounded-lg p-16 hover:bg-surface-ivory transition"
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -775,7 +775,7 @@ export function MCDashboardClient({
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-surface-background border-b border-border-line">
+                  <thead className="bg-surface-ivory border-b border-border-line">
                     <tr>
                       <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.unit']}</th>
                       <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.guest']}</th>
@@ -795,7 +795,7 @@ export function MCDashboardClient({
                       </tr>
                     ) : (
                       bookings.map((booking) => (
-                        <tr key={booking.id} className="border-b border-border-line hover:bg-surface-background">
+                        <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
                             {booking.unit.name}
                           </td>
@@ -939,7 +939,7 @@ export function MCDashboardClient({
                     <select
                       value={serviceUnitId}
                       onChange={(event) => setServiceUnitId(event.target.value)}
-                      className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                      className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
                     >
                       {units.map((unit) => (
                         <option key={unit.id} value={unit.id}>
@@ -1127,7 +1127,7 @@ export function MCDashboardClient({
                     type="month"
                     value={reportMonth}
                     onChange={(event) => setReportMonth(event.target.value)}
-                    className="mt-4 block h-40 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
+                    className="mt-4 block h-40 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
                   />
                 </label>
                 <button

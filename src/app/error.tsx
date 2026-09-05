@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <main className="min-h-screen bg-surface-background flex items-center justify-center px-24">
+    <main className="min-h-screen bg-surface-ivory flex items-center justify-center px-24">
       <div className="max-w-md w-full bg-surface-paper border border-border-line rounded-lg p-32 text-center">
         <div className="text-heading-2 mb-16" aria-hidden="true">
           ⚠️

@@ -9,9 +9,9 @@ export default async function NotFound() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-background flex items-center justify-center px-24">
+    <main className="min-h-screen bg-surface-ivory flex items-center justify-center px-24">
       <div className="max-w-md w-full bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-        <p className="text-heading-1 font-bold text-brand-andaman mb-16">404</p>
+        <p className="font-display text-display-xl font-semibold text-brand-andaman mb-16">404</p>
         <h1 className="text-heading-2 font-bold text-text-ink mb-12">
           {labels['common.not_found.title']}
         </h1>

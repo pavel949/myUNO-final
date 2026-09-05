@@ -90,7 +90,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
   if (loading) {
     return (
       <div className="space-y-24">
-        <h1 className="text-heading-1 font-bold text-text-ink">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
         <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
@@ -103,7 +103,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
   if (error) {
     return (
       <div className="space-y-24">
-        <h1 className="text-heading-1 font-bold text-text-ink">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
         <div className="bg-state-error-soft border border-state-error rounded-lg p-24">
@@ -119,7 +119,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
   if (!data) {
     return (
       <div className="space-y-24">
-        <h1 className="text-heading-1 font-bold text-text-ink">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
         <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
@@ -136,7 +136,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
   return (
     <div className="space-y-32">
       <div>
-        <h1 className="text-heading-1 font-bold text-text-ink">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
         <p className="text-body text-text-secondary mt-8">

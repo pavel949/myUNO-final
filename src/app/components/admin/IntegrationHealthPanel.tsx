@@ -61,7 +61,7 @@ export function IntegrationHealthPanel({
       <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border-line bg-surface-background">
+            <tr className="border-b border-border-line bg-surface-ivory">
               <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
                 {labels['admin.integrations.col_integration']}
               </th>
@@ -83,7 +83,7 @@ export function IntegrationHealthPanel({
             {accounts.map((account) => (
               <tr
                 key={account.id}
-                className="border-b border-border-line last:border-b-0 hover:bg-surface-background"
+                className="border-b border-border-line last:border-b-0 hover:bg-surface-ivory"
               >
                 <td className="py-12 px-16">
                   <span className="text-body font-medium text-text-ink">

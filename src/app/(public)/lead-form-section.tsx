@@ -26,7 +26,7 @@ export async function LeadFormSection({
   });
 
   return (
-    <section className="bg-surface-background py-64 px-24">
+    <section className="bg-surface-ivory py-64 px-24">
       <div className="max-w-2xl mx-auto">
         <LeadForm
           audience={audience}

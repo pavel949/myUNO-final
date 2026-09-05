@@ -201,7 +201,7 @@ export default function BookingsAdminClient({
       )}
       <div className="mb-16">
         <select
-          className="h-40 px-12 rounded-sm bg-surface-background border border-border-line text-small text-text-ink"
+          className="h-40 px-12 rounded-sm bg-surface-ivory border border-border-line text-small text-text-ink"
           value={channelFilter}
           onChange={(e) => setChannelFilter(e.target.value)}
         >
@@ -239,7 +239,7 @@ export default function BookingsAdminClient({
                 onChange={(e) =>
                   setNotes((prev) => ({ ...prev, [booking.id]: e.target.value }))
                 }
-                className="h-32 px-8 rounded-sm bg-surface-background border border-border-line text-small text-text-ink flex-1 max-w-md"
+                className="h-32 px-8 rounded-sm bg-surface-ivory border border-border-line text-small text-text-ink flex-1 max-w-md"
               />
               {notes[booking.id] !== undefined &&
               notes[booking.id] !== (booking.internalNote ?? '') ? (

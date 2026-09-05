@@ -110,7 +110,7 @@ export default function CheckoutClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-background">
+      <div className="min-h-screen flex items-center justify-center bg-surface-ivory">
         <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
       </div>
     );
@@ -118,7 +118,7 @@ export default function CheckoutClient({
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-background px-24">
+      <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
         <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full text-center">
           <div className="text-heading-1 mb-16" aria-hidden="true">
             ✓
@@ -135,7 +135,7 @@ export default function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-background px-24">
+    <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
       <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full">
         <h1 className="text-heading-2 font-bold text-text-ink mb-24">
           {labels['payments.checkout.title']}
@@ -151,7 +151,7 @@ export default function CheckoutClient({
         </div>
 
         {session && (
-          <div className="mb-24 p-16 bg-surface-background rounded-lg border border-border-line space-y-8">
+          <div className="mb-24 p-16 bg-surface-ivory rounded-lg border border-border-line space-y-8">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">

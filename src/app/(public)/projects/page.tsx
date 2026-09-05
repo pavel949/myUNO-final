@@ -59,7 +59,7 @@ export default async function ProjectsHubPage() {
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-small mb-16">{labels['projects.hub.kicker']}</p>
-          <h1 className="text-heading-1 font-bold mb-16">{labels['projects.hub.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold mb-16">{labels['projects.hub.title']}</h1>
           <p className="text-body text-surface-ivory/90">{labels['projects.hub.subtitle']}</p>
         </div>
       </section>
@@ -97,7 +97,7 @@ export default async function ProjectsHubPage() {
                     className="w-full h-56 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-56 bg-surface-background" />
+                  <div className="w-full h-56 bg-surface-ivory" />
                 )}
                 <div className="p-32">
                   <h2 className="text-heading-2 font-bold text-text-ink mb-8">

@@ -226,7 +226,7 @@ export default async function ServiceOrderDetailPage({
   ];
 
   return (
-    <main className="min-h-screen bg-surface-background">
+    <main className="min-h-screen bg-surface-ivory">
       <Breadcrumb items={breadcrumbs} />
       <div className="p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
@@ -237,7 +237,7 @@ export default async function ServiceOrderDetailPage({
         )}
         {/* Header */}
         <div className="mb-24">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
             {labels['service-order.detail.title']}
           </h1>
           <div className="flex items-center gap-16 mb-16">
@@ -374,7 +374,7 @@ export default async function ServiceOrderDetailPage({
               {order.payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="p-12 border border-border-line rounded bg-surface-background"
+                  className="p-12 border border-border-line rounded bg-surface-ivory"
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div>

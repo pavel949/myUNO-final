@@ -10,6 +10,33 @@ import {
 } from '@/test/util'
 import type { OwnerStatementStatus } from '@prisma/client'
 
+/**
+ * The page renders a fragment — a <Breadcrumb> alongside the client component
+ * (T-P1-003) — so its own `props` carry `children`, not the statement. Reach
+ * past any wrapper to the element actually handed the statement, so adding
+ * chrome around the page never silently guts these assertions again.
+ */
+function statementClientProps(element: unknown): Record<string, any> {
+  const seen: unknown[] = []
+  const queue: unknown[] = [element]
+  while (queue.length > 0) {
+    const node = queue.shift()
+    if (node === null || typeof node !== 'object') continue
+    if (seen.includes(node)) continue
+    seen.push(node)
+    if (Array.isArray(node)) {
+      queue.push(...node)
+      continue
+    }
+    const props = (node as { props?: Record<string, any> }).props
+    if (props && 'statement' in props) return props
+    if (props) queue.push(props.children)
+  }
+  throw new Error(
+    'the page rendered no element carrying a `statement` prop; did the client component move?'
+  )
+}
+
 const mockGetCurrentUser = vi.fn()
 vi.mock('@/app/actions/getCurrentUser', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
@@ -124,7 +151,7 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    const props = statementClientProps(element)
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.unitName).toBe('B-707')
     // OwnerStatement stores every amount in satang (34_000 = ฿340), like every
@@ -167,7 +194,7 @@ describe('Owner statement detail page — scoping', () => {
       params: { statementId: statement.id },
     })
 
-    const props = (element as { props: Record<string, any> }).props
+    const props = statementClientProps(element)
     expect(props.statement.id).toBe(statement.id)
     expect(props.statement.status).toBe('pending_owner_review')
   })

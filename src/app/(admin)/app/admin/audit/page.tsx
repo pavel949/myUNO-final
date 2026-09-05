@@ -259,7 +259,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
             <tbody>
               {result.entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-border-line align-top hover:bg-surface-paper">
-                  <td className="px-12 py-8 whitespace-nowrap font-mono text-xsmall">
+                  <td className="px-12 py-8 whitespace-nowrap font-mono text-small">
                     {timestamp.format(entry.at)}
                   </td>
                   <td className="px-12 py-8 whitespace-nowrap">
@@ -279,11 +279,11 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
                     )}
                   </td>
                   <td className="px-12 py-8">
-                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-xsmall font-semibold font-mono">
+                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold font-mono">
                       {entry.action}
                     </span>
                   </td>
-                  <td className="px-12 py-8 font-mono text-xsmall">
+                  <td className="px-12 py-8 font-mono text-small">
                     <Link
                       href={`/app/admin/audit${queryString(searchParams, {
                         entityType: entry.entityType,
@@ -295,7 +295,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
                       {`${entry.entityType} · ${entry.entityId}`}
                     </Link>
                   </td>
-                  <td className="px-12 py-8 font-mono text-xsmall text-text-secondary break-all">
+                  <td className="px-12 py-8 font-mono text-small text-text-secondary break-all">
                     {preview(entry.data)}
                   </td>
                 </tr>
@@ -329,7 +329,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
         </div>
       ) : null}
 
-      <p className="mt-24 text-xsmall text-text-secondary max-w-3xl">
+      <p className="mt-24 text-small text-text-secondary max-w-3xl">
         {labels['admin.audit.export_note']}
       </p>
     </div>

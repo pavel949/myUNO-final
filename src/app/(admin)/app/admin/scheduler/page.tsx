@@ -104,7 +104,7 @@ export default async function AdminSchedulerPage() {
               <tr key={row.key} className="border-b border-border-line align-top hover:bg-surface-paper">
                 <td className="px-12 py-12">
                   <p className="font-semibold text-text-ink">{jobLabel(row.key)}</p>
-                  <p className="text-xsmall text-text-secondary">
+                  <p className="text-small text-text-secondary">
                     {row.cadence === 'frequent'
                       ? labels['admin.scheduler.cadence.frequent']
                       : labels['admin.scheduler.cadence.nightly']}
@@ -112,12 +112,12 @@ export default async function AdminSchedulerPage() {
                 </td>
                 <td className="px-12 py-12 whitespace-nowrap">
                   <span
-                    className={`px-8 py-4 rounded text-xsmall font-semibold ${STATUS_CLASS[row.status]}`}
+                    className={`px-8 py-4 rounded text-small font-semibold ${STATUS_CLASS[row.status]}`}
                   >
                     {labels[`admin.scheduler.status.${row.status}` as keyof typeof labels]}
                   </span>
                 </td>
-                <td className="px-12 py-12 whitespace-nowrap font-mono text-xsmall">
+                <td className="px-12 py-12 whitespace-nowrap font-mono text-small">
                   {row.lastFinishedAt
                     ? timestamp.format(row.lastFinishedAt)
                     : labels['admin.scheduler.empty_summary']}
@@ -127,7 +127,7 @@ export default async function AdminSchedulerPage() {
                     ? labels[`admin.scheduler.outcome.${row.lastOutcome}` as keyof typeof labels]
                     : labels['admin.scheduler.empty_summary']}
                 </td>
-                <td className="px-12 py-12 font-mono text-xsmall text-text-secondary">
+                <td className="px-12 py-12 font-mono text-small text-text-secondary">
                   {row.summary || labels['admin.scheduler.empty_summary']}
                 </td>
               </tr>

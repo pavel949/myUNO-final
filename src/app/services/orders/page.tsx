@@ -79,7 +79,7 @@ export default async function ServiceOrdersPage() {
               >
                 <div className="flex flex-wrap items-baseline gap-8 mb-4">
                   <p className="text-body font-semibold text-text-ink">{order.service.title}</p>
-                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-xsmall font-semibold">
+                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
                     {statusLabel(order.status)}
                   </span>
                 </div>

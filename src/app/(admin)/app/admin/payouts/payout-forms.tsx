@@ -340,7 +340,7 @@ export default function PayoutForms({
                 <p className="text-small text-state-success">{labels['admin.payouts.success']}</p>
               )}
               {!remittance && !providerError && (
-                <p className="text-xsmall text-text-secondary">{labels['admin.payouts.compute_first']}</p>
+                <p className="text-small text-text-secondary">{labels['admin.payouts.compute_first']}</p>
               )}
 
               <button

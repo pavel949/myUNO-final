@@ -22,6 +22,11 @@ const onboarding = readFileSync(
   join(process.cwd(), 'src/app/(admin)/app/admin/units/[id]/onboarding-client.tsx'),
   'utf8'
 );
+const tokens = readFileSync(join(process.cwd(), 'tailwind.config.ts'), 'utf8');
+const composer = readFileSync(
+  join(process.cwd(), 'src/components/announcements/AnnouncementsComposer.tsx'),
+  'utf8'
+);
 
 describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
   it('drops the unused gray marketplace leftovers', () => {
@@ -60,7 +65,12 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
     expect(claim).toContain('bg-surface-ivory');
     expect(reconciliation).toContain('text-display-xl');
     expect(reconciliation).not.toContain('text-xsmall');
-    expect(reconciliation).not.toContain('bg-brand-andaman-soft');
     expect(reconciliation).not.toContain('text-gray-');
+    expect(composer).not.toContain('text-xsmall');
+  });
+
+  it('defines the andaman wash the live chips already use', () => {
+    expect(tokens).toContain("'andaman-soft'");
+    expect(tokens).toContain('#E3ECEA');
   });
 });

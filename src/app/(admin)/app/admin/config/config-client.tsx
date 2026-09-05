@@ -184,7 +184,7 @@ export default function ConfigAdminClient({
                           ? ` · ${row.changedBy.firstName} ${row.changedBy.lastName}`
                           : ''}
                       </p>
-                      <pre className="mt-4 text-xsmall font-mono overflow-x-auto whitespace-pre-wrap">
+                      <pre className="mt-4 text-small font-mono overflow-x-auto whitespace-pre-wrap">
                         {JSON.stringify(row.oldValue)} → {JSON.stringify(row.newValue)}
                       </pre>
                     </li>

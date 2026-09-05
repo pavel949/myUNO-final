@@ -100,13 +100,13 @@ export default function ClaimsAdminClient({
 
               <div className="flex flex-wrap gap-24 mb-12">
                 <div>
-                  <p className="text-xsmall text-text-secondary">{labels['admin.claims.claimed']}</p>
+                  <p className="text-small text-text-secondary">{labels['admin.claims.claimed']}</p>
                   <p className="text-heading-3 font-semibold text-text-ink">
                     {baht(claim.claimedAmountThb)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xsmall text-text-secondary">{labels['admin.claims.held']}</p>
+                  <p className="text-small text-text-secondary">{labels['admin.claims.held']}</p>
                   <p className="text-heading-3 font-semibold text-text-ink">
                     {claim.preauthAmountThb === null ? '—' : baht(claim.preauthAmountThb)}
                   </p>
@@ -155,7 +155,7 @@ export default function ClaimsAdminClient({
                   {labels['admin.claims.reject']}
                 </button>
 
-                <span className="text-xsmall text-text-secondary">
+                <span className="text-small text-text-secondary">
                   {windowClosed
                     ? labels['admin.claims.window_closed']
                     : `${Math.floor(hoursLeft)}h ${labels['admin.claims.window_left']}`}
@@ -163,7 +163,7 @@ export default function ClaimsAdminClient({
               </div>
 
               {!note.trim() && !windowClosed ? (
-                <p className="mt-8 text-xsmall text-text-secondary">
+                <p className="mt-8 text-small text-text-secondary">
                   {labels['admin.claims.note_required']}
                 </p>
               ) : null}
@@ -172,7 +172,7 @@ export default function ClaimsAdminClient({
         })}
       </ul>
 
-      <p className="mt-24 text-xsmall text-text-secondary max-w-3xl">
+      <p className="mt-24 text-small text-text-secondary max-w-3xl">
         {labels['admin.claims.window_note']}
       </p>
     </div>

@@ -84,7 +84,7 @@ export const ActivityItem: FC<ActivityItemProps> = ({
           ? 'border-green-500 bg-green-50'
           : isPastDue
             ? 'border-red-500 bg-state-error-soft'
-            : 'border-blue-500 bg-brand-andaman-soft'
+            : 'border-brand-andaman bg-brand-andaman-soft'
       }`}
     >
       <div className="flex items-start justify-between gap-3">

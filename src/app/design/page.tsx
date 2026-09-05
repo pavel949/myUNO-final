@@ -142,8 +142,8 @@ export default function DesignPage() {
             <Panel className="w-full max-w-[520px]">
               <h3 className="font-display text-title mb-4">Type</h3>
               <p className="text-small text-text-stone mb-24">
-                Display Outfit, body Manrope. Both cover Cyrillic; Thai falls back
-                to Noto Sans Thai.
+                Display Outfit, body Manrope. Outfit is Latin-only; Cyrillic
+                display falls through to Manrope. Thai uses Noto Sans Thai.
               </p>
               <div className="flex flex-col gap-20">
                 {TYPE_ROWS.map((row) => (

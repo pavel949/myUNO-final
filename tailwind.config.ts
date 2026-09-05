@@ -72,7 +72,12 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['var(--font-outfit)', 'var(--font-noto-thai)', 'sans-serif'],
+        display: [
+          'var(--font-outfit)',
+          'var(--font-manrope)',
+          'var(--font-noto-thai)',
+          'sans-serif',
+        ],
         body: ['var(--font-manrope)', 'var(--font-noto-thai)', 'sans-serif'],
         sans: ['var(--font-manrope)', 'var(--font-noto-thai)', 'sans-serif'],
       },

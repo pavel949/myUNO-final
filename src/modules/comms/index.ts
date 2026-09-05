@@ -52,9 +52,12 @@ export {
   getTicketDetail,
   getProjectTickets,
   getReporterTickets,
+  getAdminTicketBoard,
   checkAndTrackSLABreaches,
+  autoCloseResolvedTickets,
   type RaiseTicketInput,
   type UpdateTicketStatusInput,
+  type AdminTicketBoardFilter,
 } from './ticket.service';
 
 export {

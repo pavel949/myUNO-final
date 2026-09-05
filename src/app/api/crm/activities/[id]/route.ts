@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import type { CrmActivityStatus } from '@prisma/client';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (!user.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   const body = await req.json();
   const { status, subject, body: bodyText, dueAt } = body;

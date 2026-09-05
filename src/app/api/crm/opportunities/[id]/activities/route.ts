@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import type { CrmActivityType, CrmActivityStatus } from '@prisma/client';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (!user.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   const { searchParams } = new URL(req.url);
   const typeFilter = searchParams.get('type') as CrmActivityType | null;
@@ -92,15 +85,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (!user.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   const body = await req.json();
   const { type, subject, body: bodyText, dueAt } = body;
@@ -130,7 +116,7 @@ export async function POST(
       body: bodyText || null,
       opportunityId: params.id,
       identityId: opportunity.identityId,
-      createdByIdentityId: user.identityId,
+      createdByIdentityId: guard.actorIdentityId,
       dueAt: dueAt ? new Date(dueAt) : null,
       status: 'open',
     },

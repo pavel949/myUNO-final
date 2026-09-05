@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from './Button';
 import { NotificationBell, type BellLabels } from './NotificationBell';
 
@@ -44,7 +43,6 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarProps) {
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -55,8 +53,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
     } finally {
       setLoggingOut(false);
       setMenuOpen(false);
-      router.push('/');
-      router.refresh();
+      window.location.assign('/');
     }
   };
 
@@ -126,7 +123,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
             value={locale}
             onChange={(e) => {
               document.cookie = `locale=${e.target.value}; path=/; max-age=31536000; samesite=lax`;
-              router.refresh();
+              window.location.reload();
             }}
             className="h-40 px-8 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
           >

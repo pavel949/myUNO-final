@@ -12,6 +12,8 @@ interface LoginFormLabels {
   password: string;
   submit: string;
   errorGeneric: string;
+  errorInvalidCredentials: string;
+  errorRateLimited: string;
   noAccount: string;
   registerLink: string;
   forgotPassword: string;
@@ -27,6 +29,19 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const errorMessageFromResponse = (body: unknown) => {
+    if (!body || typeof body !== 'object') return labels.errorGeneric;
+
+    const code = 'code' in body ? (body as { code?: unknown }).code : undefined;
+    if (code === 'invalid_credentials') return labels.errorInvalidCredentials;
+    if (code === 'rate_limited') return labels.errorRateLimited;
+
+    const message = 'error' in body ? (body as { error?: unknown }).error : undefined;
+    return typeof message === 'string' && message.length > 0
+      ? message
+      : labels.errorGeneric;
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -41,11 +56,11 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(body?.error || labels.errorGeneric);
+        setError(errorMessageFromResponse(body));
         return;
       }
 
-      const next = searchParams.get('next');
+      const next = searchParams?.get('next');
       router.push(next && next.startsWith('/') ? next : '/');
       router.refresh();
     } catch {
@@ -83,8 +98,13 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        error={error || undefined}
+        error={undefined}
       />
+      {error && (
+        <p className="text-small text-state-error" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
       <Button type="submit" fullWidth isLoading={loading}>
         {labels.submit}
       </Button>

@@ -17,6 +17,8 @@ export interface LandingContext {
   roles: readonly RoleType[];
   /** A stay that is under way right now — checked in, or inside its dates. */
   activeBookingId?: string | null;
+  /** When the owner holds exactly one unit, land on its dashboard (doc 06 S7). */
+  ownerUnitId?: string | null;
 }
 
 export interface Landing {
@@ -79,6 +81,12 @@ export function resolveLanding(context: LandingContext): Landing {
   const held = new Set(context.roles);
   for (const entry of PRECEDENCE) {
     if (held.has(entry.role)) {
+      if (entry.role === 'owner' && context.ownerUnitId) {
+        return {
+          path: `/owner/units/${context.ownerUnitId}`,
+          reason: entry.reason,
+        };
+      }
       return { path: entry.path, reason: entry.reason };
     }
   }
@@ -113,9 +121,15 @@ export function availableSurfaces(context: LandingContext): Landing[] {
   for (const entry of PRECEDENCE) {
     // staff_ops and onsite_host both land on the ops board; listing it twice
     // would suggest there are two of them.
-    if (held.has(entry.role) && !seen.has(entry.path)) {
-      surfaces.push({ path: entry.path, reason: entry.reason });
-      seen.add(entry.path);
+    if (held.has(entry.role)) {
+      const path =
+        entry.role === 'owner' && context.ownerUnitId
+          ? `/owner/units/${context.ownerUnitId}`
+          : entry.path;
+      if (!seen.has(path)) {
+        surfaces.push({ path, reason: entry.reason });
+        seen.add(path);
+      }
     }
   }
 

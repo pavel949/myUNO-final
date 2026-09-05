@@ -1,33 +1,16 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
 import { createService, approveService } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 import { logAudit } from '@/modules/audit';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
 const PRICE_MODELS = ['fixed', 'per_hour', 'per_person', 'quote'] as const;
 type PriceModel = (typeof PRICE_MODELS)[number];
 
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const identity = await prisma.identity.findUnique({
-    where: { id: user.identityId },
-  });
-  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
-
-  // Check admin permission
-  if (
-    !(await can({
-      identity,
-      action: 'admin:view_all',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const status = req.nextUrl.searchParams.get('status') || 'draft';
@@ -66,23 +49,8 @@ export async function GET(req: NextRequest) {
  * also the one who would have approved it, so it goes live immediately.
  */
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const identity = await prisma.identity.findUnique({
-    where: { id: user.identityId },
-  });
-  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
-
-  if (
-    !(await can({
-      identity,
-      action: 'admin:modify',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const body = await req.json();
@@ -163,11 +131,11 @@ export async function POST(req: NextRequest) {
       select: { status: true },
     });
     if (draft?.status === 'draft') {
-      await approveService(prisma, created.id, user.identityId);
+      await approveService(prisma, created.id, guard.actorIdentityId);
     }
 
     await logAudit({
-      actorIdentityId: user.identityId,
+      actorIdentityId: guard.actorIdentityId,
       action: 'services:admin_create',
       entityType: 'Service',
       entityId: created.id,

@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmOpportunityType } from '@prisma/client';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import { createOpportunity, getPipeline } from '@/modules/crm';
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
   return NextResponse.json(await getPipeline(prisma));
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const body = await req.json();
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
     const opportunity = await createOpportunity(prisma, {
       identityId: body.identityId,
-      assignedToIdentityId: body.assignedToIdentityId ?? user.identityId,
+      assignedToIdentityId: body.assignedToIdentityId ?? guard.actorIdentityId,
       projectId: body.projectId,
       unitId: body.unitId,
       type: body.type,

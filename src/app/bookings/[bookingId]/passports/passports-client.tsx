@@ -23,6 +23,7 @@ export default function PassportsClient({
   labels: Labels;
 }) {
   const [guests, setGuests] = useState<PartyGuest[]>([]);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [nationality, setNationality] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
@@ -35,6 +36,7 @@ export default function PassportsClient({
     if (response.ok) {
       const data = await response.json();
       setGuests(data.guests || []);
+      setVerificationStatus(data.verificationStatus ?? null);
     }
   }, [bookingId]);
 
@@ -91,6 +93,17 @@ export default function PassportsClient({
         <p className="text-body text-text-secondary mb-24">
           {labels['checkin.passports.why']}
         </p>
+
+        {verificationStatus === 'failed' && (
+          <div className="bg-state-warning-soft border border-state-warning rounded-lg p-24 mb-24">
+            <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+              {labels['checkin.passports.verification_failed_title']}
+            </h2>
+            <p className="text-body text-text-secondary">
+              {labels['checkin.passports.verification_failed_body']}
+            </p>
+          </div>
+        )}
 
         <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">

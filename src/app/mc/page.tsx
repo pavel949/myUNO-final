@@ -1,55 +1,114 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { fetchMCDashboard, fetchMCFeeReport } from '@/app/actions/getMCDashboard';
+import { fetchMCDashboard } from '@/app/actions/getMCDashboard';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { prisma } from '@/lib/prisma';
 import { MCDashboardClient } from './client';
+import { getMCProjectScopes } from '@/app/libs/projectScope';
+import { getMcIcalConflictAlerts } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MCPortalPage() {
+interface MCPortalPageProps {
+  searchParams?: {
+    projectId?: string;
+    organizationId?: string;
+  };
+}
+
+export default async function MCPortalPage({ searchParams }: MCPortalPageProps) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc');
   }
 
-  const mcRole = user.roles.find(
-    (role) => role.role === 'mc_member' && role.projectId && role.organizationId
-  );
-  if (!mcRole) {
+  const mcScopes = getMCProjectScopes(user);
+  if (mcScopes.length === 0) {
     redirect('/');
   }
 
-  const data = await fetchMCDashboard(
-    user.identityId,
-    mcRole.projectId as string,
-    mcRole.organizationId as string
+  const requestedProjectId =
+    typeof searchParams?.projectId === 'string' ? searchParams.projectId : null;
+  const requestedOrganizationId =
+    typeof searchParams?.organizationId === 'string' ? searchParams.organizationId : null;
+
+  const matchingScope =
+    mcScopes.find(
+      (scope) =>
+        scope.projectId === requestedProjectId &&
+        (!requestedOrganizationId || scope.organizationId === requestedOrganizationId)
+    ) ||
+    (requestedProjectId
+      ? mcScopes.find((scope) => scope.projectId === requestedProjectId)
+      : null) ||
+    mcScopes[0];
+
+  const projectIds = Array.from(new Set(mcScopes.map((scope) => scope.projectId)));
+  const organizationIds = Array.from(new Set(mcScopes.map((scope) => scope.organizationId)));
+  const [projects, organizations] = await Promise.all([
+    prisma.project.findMany({
+      where: { id: { in: projectIds } },
+      select: { id: true, name: true },
+    }),
+    prisma.organization.findMany({
+      where: { id: { in: organizationIds } },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const projectNameById = new Map(projects.map((project) => [project.id, project.name]));
+  const organizationNameById = new Map(
+    organizations.map((organization) => [organization.id, organization.name])
   );
 
-  // Current-month fee report for the reports tab
-  const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  let feeReport = null;
-  try {
-    feeReport = await fetchMCFeeReport(
-      user.identityId,
-      mcRole.projectId as string,
-      mcRole.organizationId as string,
-      periodStart,
-      periodEnd
-    );
-  } catch {
-    feeReport = null;
-  }
+  const contexts = mcScopes.map((scope) => ({
+    key: `${scope.projectId}:${scope.organizationId}`,
+    projectId: scope.projectId,
+    organizationId: scope.organizationId,
+    projectName: projectNameById.get(scope.projectId) || scope.projectId,
+    organizationName: organizationNameById.get(scope.organizationId) || scope.organizationId,
+    href: `/mc?projectId=${encodeURIComponent(scope.projectId)}&organizationId=${encodeURIComponent(
+      scope.organizationId
+    )}`,
+  }));
+  const activeContext =
+    contexts.find((context) => context.key === `${matchingScope.projectId}:${matchingScope.organizationId}`) ||
+    contexts[0];
+
+  const data = await fetchMCDashboard(
+    user.identityId,
+    activeContext.projectId,
+    activeContext.organizationId
+  );
+
+  const icalConflicts = await getMcIcalConflictAlerts(
+    prisma,
+    user.identityId,
+    activeContext.projectId,
+    activeContext.organizationId
+  );
 
   const labels = await getLabels({
     'mc.portal.title': 'Management Company Portal',
     'mc.portal.subtitle': 'Manage your units, bookings, and operations',
+    'mc.context.active': 'Active context',
+    'mc.context.switcher': 'Switch project portfolio context',
     'mc.nav.announcements': 'Post an announcement',
+    'mc.nav.tm30': 'TM30 queue',
+    'mc.nav.mobilization': 'Mobilization',
+    'mc.nav.calendar': 'Unit calendars',
+    'mc.nav.requests': 'Booking requests',
+    'mc.nav.services': 'Order services',
+    'mc.nav.costs': 'Record a cost',
+    'mc.ical_conflicts_title': 'OTA calendar conflicts',
+    'mc.ical_conflicts_hint':
+      'Imported OTA bookings overlap platform stays on your managed units. The platform calendar wins — correct each OTA channel manually.',
+    'staff.calendar.conflict_body_with_unit':
+      '{unit_name} · {guest_name}: {start_date} — {end_date} clashes with an OTA import',
     'mc.tabs.overview': 'Overview',
     'mc.tabs.bookings': 'Bookings',
     'mc.tabs.tickets': 'Tickets',
+    'mc.tabs.service_orders': 'Service orders',
     'mc.tabs.calendar': 'Calendar',
     'mc.tabs.reports': 'Fee Reports',
     'mc.stats.units': 'Managed Units',
@@ -69,15 +128,35 @@ export default async function MCPortalPage() {
     'mc.bookings.check_out': 'Check-out',
     'mc.bookings.amount': 'Amount',
     'mc.bookings.status': 'Status',
+    'mc.bookings.actions': 'Actions',
+    'mc.bookings.record_cash': 'Record cash',
+    'mc.bookings.receipt_placeholder': 'Receipt / чек №',
+    'mc.bookings.confirm_cash': 'Confirm ฿{amount} received',
+    'mc.bookings.approve': 'Approve',
+    'mc.bookings.decline': 'Decline',
+    'mc.bookings.request_expires': 'Respond by',
+    'mc.bookings.confirm_decline': 'Decline this booking request? The guest will be notified.',
+    'mc.bookings.error_generic': 'Action failed. Please try again.',
     'mc.tickets.title': 'Tickets',
     'mc.tickets.empty': 'No open tickets',
     'mc.tickets.view': 'View',
     'mc.tickets.reported_by': 'Reported by',
+    'mc.tickets.error_generic': 'Action failed. Please try again.',
+    'mc.tickets.assign_me': 'Assign to me',
+    'mc.tickets.assigned_to': 'Assigned to',
+    'mc.tickets.acknowledge': 'Acknowledge',
+    'mc.tickets.start': 'Start work',
+    'mc.tickets.need_reporter': 'Need reporter input',
+    'mc.tickets.resume': 'Resume work',
+    'mc.tickets.resolve': 'Resolve',
+    'mc.tickets.resolve_note_prompt': 'Describe the resolution for the reporter',
+    'mc.tickets.resolve_note_required': 'Resolution note is required to resolve a ticket.',
     'mc.calendar.title': 'Calendar View',
     'mc.calendar.empty': 'No bookings in the period.',
     'mc.calendar.occupied': 'Booked',
     'mc.calendar.vacant': 'Free',
     'mc.calendar.no_data': 'No data',
+    'mc.calendar.manage': 'Manage availability',
     'mc.reports.title': 'Fee Reports',
     'mc.reports.empty': 'No fee data for this period.',
     'mc.reports.gross': 'Gross revenue',
@@ -85,6 +164,17 @@ export default async function MCPortalPage() {
     'mc.reports.by_unit': 'Gross & fees by unit',
     'mc.reports.net_of_fee': 'Net of fee',
     'mc.reports.platform_fee': 'Platform fee',
+    'mc.reports.period_label': 'Period',
+    'mc.reports.export_csv': 'Export CSV',
+    'mc.reports.loading': 'Loading fee report…',
+    'mc.reports.error_generic': 'Could not load fee report. Please try again.',
+    'mc.reports.export.date': 'Date',
+    'mc.reports.export.type': 'Type',
+    'mc.reports.export.unit': 'Unit',
+    'mc.reports.export.description': 'Description',
+    'mc.reports.export.gross': 'Gross (THB)',
+    'mc.reports.export.fee_pct': 'Fee %',
+    'mc.reports.export.fee_amount': 'Fee (THB)',
     'mc.chart.unit': 'Unit',
     'mc.chart.amount': 'Amount',
     'mc.chart.show_table': 'View as table',
@@ -93,12 +183,79 @@ export default async function MCPortalPage() {
     'mc.status.checked_in': 'Checked in',
     'mc.status.checked_out': 'Checked out',
     'mc.status.pending_payment': 'Pending payment',
+    'mc.status.requested': 'Requested',
+    'mc.status.placed': 'Placed',
+    'mc.status.paid': 'Paid',
+    'mc.status.accepted': 'Accepted',
     'mc.status.open': 'Open',
     'mc.status.acknowledged': 'Acknowledged',
     'mc.status.in_progress': 'In progress',
     'mc.status.waiting_reporter': 'Waiting for reporter',
     'mc.status.resolved': 'Resolved',
+    'mc.service_orders.title': 'Service orders',
+    'mc.service_orders.empty': 'No open service orders',
+    'mc.service_orders.unknown_service': 'Service',
+    'mc.service_orders.unknown_unit': 'Unit not specified',
+    'mc.service_orders.unknown_orderer': 'Unknown orderer',
+    'mc.service_orders.note': 'Note:',
+    'mc.service_orders.record_cash': 'Record cash',
+    'mc.service_orders.receipt_placeholder': 'Receipt / чек №',
+    'mc.service_orders.confirm_cash': 'Confirm ฿{amount} received',
+    'mc.service_orders.cancel': 'Cancel order',
+    'mc.service_orders.confirm_cancel': 'Cancel this service order?',
+    'mc.service_orders.error_generic': 'Action failed. Please try again.',
+    'mc.service_orders.order_hint': 'Place a service order on behalf of a managed unit.',
+    'mc.service_orders.unit_label': 'Unit',
+    'mc.service_orders.browse': 'Browse services',
+    'staff.ops.checkin.title': 'Check in — {guest_name} · {unit_name}',
+    'staff.ops.checkin.hint':
+      'Complete the walkthrough checklist and capture photos before confirming check-in.',
+    'staff.ops.checkin.close': 'Close',
+    'staff.ops.checkin.checklist_title': 'Walkthrough checklist',
+    'staff.ops.checkin.checklist.entry': 'Entry and exterior',
+    'staff.ops.checkin.checklist.living': 'Living area',
+    'staff.ops.checkin.checklist.kitchen': 'Kitchen',
+    'staff.ops.checkin.checklist.bedrooms': 'Bedrooms',
+    'staff.ops.checkin.checklist.bathrooms': 'Bathrooms',
+    'staff.ops.checkin.checklist.appliances': 'Appliances working',
+    'staff.ops.checkin.checklist_required': 'Check at least one area on the walkthrough checklist.',
+    'staff.ops.checkin.photos_title': 'Condition photos',
+    'staff.ops.checkin.photos_hint': 'Upload photos of any issues or the overall condition.',
+    'staff.ops.checkin.photo_upload_error': 'Could not upload a photo.',
+    'staff.ops.checkin.notes_title': 'Notes',
+    'staff.ops.checkin.notes_placeholder': 'Any damage, missing items, or guest requests…',
+    'staff.ops.checkin.submit': 'Confirm check-in',
+    'staff.ops.checkout.title': 'Check out — {guest_name} · {unit_name}',
+    'staff.ops.checkout.hint':
+      'Complete the departure inspection checklist and capture photos before confirming check-out.',
+    'staff.ops.checkout.close': 'Close',
+    'staff.ops.checkout.checklist_title': 'Departure inspection',
+    'staff.ops.checkout.checklist.entry': 'Entry and exterior',
+    'staff.ops.checkout.checklist.living': 'Living area',
+    'staff.ops.checkout.checklist.kitchen': 'Kitchen',
+    'staff.ops.checkout.checklist.bedrooms': 'Bedrooms',
+    'staff.ops.checkout.checklist.bathrooms': 'Bathrooms',
+    'staff.ops.checkout.checklist.appliances': 'Appliances and utilities',
+    'staff.ops.checkout.checklist_required': 'Check at least one area on the inspection checklist.',
+    'staff.ops.checkout.photos_title': 'Condition photos',
+    'staff.ops.checkout.photos_hint': 'Photograph any damage or issues found during inspection.',
+    'staff.ops.checkout.photo_upload_error': 'Could not upload a photo.',
+    'staff.ops.checkout.notes_title': 'Notes',
+    'staff.ops.checkout.notes_placeholder': 'Damage, missing items, or follow-up needed…',
+    'staff.ops.checkout.submit': 'Confirm check-out',
   });
 
-  return <MCDashboardClient {...data} feeReport={feeReport as never} labels={labels} />;
+  return (
+    <MCDashboardClient
+      {...data}
+      icalConflicts={icalConflicts}
+      feeReportContext={{
+        projectId: activeContext.projectId,
+        organizationId: activeContext.organizationId,
+      }}
+      labels={labels}
+      contexts={contexts}
+      activeContextKey={activeContext.key}
+    />
+  );
 }

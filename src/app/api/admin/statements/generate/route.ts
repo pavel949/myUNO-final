@@ -1,6 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/app/libs/onboardingGuard'
+import { handleError } from '@/app/libs/errorHandler'
 import { getConfig } from '@/modules/config'
 import {
   BookingStatus,
@@ -39,22 +40,10 @@ const OPERATING_EXPENSE_ENTRY_TYPES: LedgerEntryType[] = [
 ]
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin()
+  if (!guard.ok) return guard.error
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
     const body: GenerateStatementRequest = await req.json()
 
     if (!body.unitId || !body.periodStart || !body.periodEnd) {
@@ -83,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch unit
-    const unit = await prismadb.unit.findUnique({
+    const unit = await prisma.unit.findUnique({
       where: { id: body.unitId },
       include: {
         engagements: {
@@ -125,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     // One statement per unit per period — a re-run must supersede an existing
     // statement explicitly, never silently produce a second set of numbers.
-    const existing = await prismadb.ownerStatement.findFirst({
+    const existing = await prisma.ownerStatement.findFirst({
       where: {
         unitId: body.unitId,
         periodStart: startDate,
@@ -148,7 +137,7 @@ export async function POST(req: NextRequest) {
     // Every figure below is computed on the server from stored rows; nothing
     // is taken from the request body beyond the unit and the period.
 
-    const bookings = await prismadb.booking.findMany({
+    const bookings = await prisma.booking.findMany({
       where: {
         unitId: body.unitId,
         startDate: { gte: startDate },
@@ -173,7 +162,7 @@ export async function POST(req: NextRequest) {
 
     // Cash actually collected from guests against those stays.
     const guestPayments = bookingIds.length
-      ? await prismadb.payment.aggregate({
+      ? await prisma.payment.aggregate({
           where: {
             bookingId: { in: bookingIds },
             status: 'succeeded',
@@ -185,7 +174,7 @@ export async function POST(req: NextRequest) {
     const guestPaymentsReceivedThb = guestPayments._sum.amountThb || 0
 
     // The append-only ledger is the source for refunds, expenses and taxes.
-    const ledgerEntries = await prismadb.ledgerEntry.findMany({
+    const ledgerEntries = await prisma.ledgerEntry.findMany({
       where: {
         unitId: body.unitId,
         occurredOn: { gte: startDate, lte: endDate },
@@ -220,7 +209,7 @@ export async function POST(req: NextRequest) {
     // The service fee rate is a business rule, never a literal (doc 04
     // `finance.statement.service_fee_pct`), and is scoped unit → project → global.
     const serviceFeePct =
-      (await getConfig(prismadb, 'finance.statement.service_fee_pct', {
+      (await getConfig(prisma, 'finance.statement.service_fee_pct', {
         unitId: unit.id,
         projectId: unit.projectId,
       })) ?? 0
@@ -236,7 +225,7 @@ export async function POST(req: NextRequest) {
 
     // Performance fee: only when the unit's active management contract enables
     // one; its basis and rate come from the contract, never from a default.
-    const contract = await prismadb.managementContract.findFirst({
+    const contract = await prisma.managementContract.findFirst({
       where: {
         unitId: unit.id,
         status: 'active',
@@ -281,7 +270,7 @@ export async function POST(req: NextRequest) {
       capApplied = capProRataThb < distributableCashThb
     } else if (engagement.engagementType === 'via_management_company') {
       const mcFeePct =
-        (await getConfig(prismadb, 'engagement.via_mc.platform_fee_pct', {
+        (await getConfig(prisma, 'engagement.via_mc.platform_fee_pct', {
           unitId: unit.id,
           projectId: unit.projectId,
         })) ?? 0
@@ -290,7 +279,7 @@ export async function POST(req: NextRequest) {
       estateShareThb = serviceFeesThb + performanceFeeThb + mcFeeThb
     } else {
       const bookingFeePct =
-        (await getConfig(prismadb, 'engagement.owner_direct.booking_fee_pct', {
+        (await getConfig(prisma, 'engagement.owner_direct.booking_fee_pct', {
           unitId: unit.id,
           projectId: unit.projectId,
         })) ?? 0
@@ -350,7 +339,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const statement = await prismadb.ownerStatement.create({
+    const statement = await prisma.ownerStatement.create({
       data: {
         unitId: body.unitId,
         ownerIdentityId: engagement.ownerIdentityId,
@@ -416,10 +405,6 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[STATEMENT GENERATION]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleError(error)
   }
 }

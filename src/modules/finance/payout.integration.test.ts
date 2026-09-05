@@ -10,9 +10,11 @@ import {
 } from '@/test/util';
 import {
   computeProviderRemittance,
+  getProviderRemittancesView,
   getReconciliationData,
   reconcilePayout,
   resolveFailedRefund,
+  resolveProviderPayoutPeriod,
 } from './payout.service';
 
 describe('Payouts & Reconciliation (T-031)', () => {
@@ -244,6 +246,54 @@ describe('Payouts & Reconciliation (T-031)', () => {
 
     it('refuses to reconcile a payout that does not exist', async () => {
       await expect(reconcilePayout(db, 'nonexistent-id')).rejects.toThrow('Payout not found');
+    });
+  });
+
+  describe('resolveProviderPayoutPeriod', () => {
+    it('returns a monthly period aligned to calendar months', () => {
+      const { periodStart, periodEnd } = resolveProviderPayoutPeriod(
+        new Date('2026-07-15T12:00:00Z'),
+        'monthly'
+      );
+      expect(periodStart.toISOString()).toBe('2026-07-01T00:00:00.000Z');
+      expect(periodEnd.toISOString()).toBe('2026-08-01T00:00:00.000Z');
+    });
+
+    it('returns a weekly period starting on Monday', () => {
+      const { periodStart, periodEnd } = resolveProviderPayoutPeriod(
+        new Date('2026-07-15T12:00:00Z'),
+        'weekly'
+      );
+      expect(periodStart.getUTCDay()).toBe(1);
+      expect(periodEnd.getTime() - periodStart.getTime()).toBe(7 * 24 * 60 * 60 * 1000);
+    });
+  });
+
+  describe('getProviderRemittancesView', () => {
+    it('marks payoutRecorded when a payout exists for the current period', async () => {
+      const provider = await createProvider();
+      const staff = await createIdentity();
+      const now = new Date('2026-07-10T12:00:00Z');
+      const { periodStart, periodEnd } = resolveProviderPayoutPeriod(now, 'weekly');
+
+      await db.payout.create({
+        data: {
+          payeeType: 'provider',
+          providerId: provider.id,
+          periodStart,
+          periodEnd,
+          amountThb: 1000,
+          method: 'bank_transfer_thb',
+          reference: 'REF-CURRENT',
+          executedOn: new Date('2026-07-09'),
+          recordedByIdentityId: staff.id,
+          status: 'recorded',
+        },
+      });
+
+      const view = await getProviderRemittancesView(db, provider.id, now);
+      expect(view.currentPeriod.payoutRecorded).toBe(true);
+      expect(view.payouts[0].reference).toBe('REF-CURRENT');
     });
   });
 });

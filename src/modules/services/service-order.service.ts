@@ -1,8 +1,8 @@
-import { PrismaClient, ServiceOrderStatus, RoleType } from '@prisma/client';
+import { PrismaClient, ServiceOrderStatus, RoleType, RefundReason } from '@prisma/client';
 import { getConfig } from '@/modules/config';
-import { createNotification } from '@/modules/comms';
+import { createNotification, raiseTicket } from '@/modules/comms';
 import { track } from '@/modules/analytics';
-import { recordServiceCommission } from '@/modules/finance';
+import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 
 export interface CreateServiceOrderInput {
@@ -31,6 +31,90 @@ export interface ServiceOrderDetails {
   scheduledStart: Date;
   scheduledEnd: Date;
   [key: string]: any;
+}
+
+async function issueServiceOrderRefunds(input: {
+  db: PrismaClient;
+  serviceOrderId: string;
+  initiatedByIdentityId: string;
+  reason: RefundReason;
+  targetRefundThb: number;
+}) {
+  if (input.targetRefundThb <= 0) {
+    return { issuedRefundThb: 0, recordsCreated: 0 };
+  }
+
+  const succeededPayments = await input.db.payment.findMany({
+    where: {
+      serviceOrderId: input.serviceOrderId,
+      status: 'succeeded',
+      purpose: 'service_order',
+    },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  let remaining = input.targetRefundThb;
+  let issuedRefundThb = 0;
+  let recordsCreated = 0;
+
+  for (const payment of succeededPayments) {
+    if (remaining <= 0) {
+      break;
+    }
+
+    const alreadyRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
+    const refundableOnPayment = Math.max(0, payment.amountThb - alreadyRefunded);
+    const refundAmount = Math.min(refundableOnPayment, remaining);
+    if (refundAmount <= 0) {
+      continue;
+    }
+
+    if (payment.method === 'card_provider') {
+      await requestPaymentRefund(
+        input.db,
+        payment.id,
+        refundAmount,
+        input.reason,
+        input.initiatedByIdentityId
+      );
+    } else {
+      // For cash/manual rails this records the refund obligation; a real
+      // operator payout marks it succeeded later through finance flows.
+      const refund = await input.db.refund.create({
+        data: {
+          paymentId: payment.id,
+          method: 'cash',
+          amountThb: refundAmount,
+          reason: input.reason,
+          status: 'requested',
+          initiatedByIdentityId: input.initiatedByIdentityId,
+        },
+      });
+      await input.db.ledgerEntry.create({
+        data: {
+          entryType: 'refund_out',
+          amountThb: -refundAmount,
+          serviceOrderId: input.serviceOrderId,
+          paymentId: payment.id,
+          refundId: refund.id,
+          occurredOn: new Date(),
+          description: `Service-order refund requested: ${input.reason}`,
+        },
+      });
+    }
+
+    issuedRefundThb += refundAmount;
+    recordsCreated += 1;
+    remaining -= refundAmount;
+  }
+
+  return { issuedRefundThb, recordsCreated };
 }
 
 /**
@@ -74,6 +158,46 @@ export async function createServiceOrder(
 
   if (!service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
     throw new Error('Provider is not vetted');
+  }
+
+  const serviceProjects = await db.serviceProject.findMany({
+    where: { service_id: serviceId },
+    select: { project_id: true },
+  });
+  if (
+    serviceProjects.length > 0 &&
+    !serviceProjects.some((available) => available.project_id === projectId)
+  ) {
+    throw new Error('Service is not available in this project');
+  }
+
+  if (unitId) {
+    const unit = await db.unit.findUnique({
+      where: { id: unitId },
+      select: { projectId: true },
+    });
+    if (!unit || unit.projectId !== projectId) {
+      throw new Error('Unit does not belong to this project');
+    }
+  }
+
+  if (bookingId) {
+    const booking = await db.booking.findUnique({
+      where: { id: bookingId },
+      select: { projectId: true, unitId: true, guestIdentityId: true },
+    });
+    if (
+      !booking ||
+      booking.projectId !== projectId ||
+      booking.unitId !== unitId ||
+      booking.guestIdentityId !== ordererIdentityId
+    ) {
+      throw new Error('Booking context is invalid for this order');
+    }
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(totalThb) || totalThb <= 0) {
+    throw new Error('Order quantity and total must be positive integers');
   }
 
   // Create order in placed status
@@ -203,42 +327,21 @@ export async function declineServiceOrder(
   }
 
   // Find paid payment if any
-  const paidPayment = order.payments.find((p) => p.status === 'succeeded');
-
-  // If paid, initiate refund
-  if (paidPayment) {
-    await db.refund.create({
-      data: {
-        paymentId: paidPayment.id,
-        method: 'cash', // cash-first in loop one
-        amountThb: paidPayment.amountThb,
-        reason: 'provider_no_show', // Decline is treated as provider no-show
-        status: 'succeeded',
-        paidBackByIdentityId: null,
-        // A provider decline is triggered by the Provider (not an Identity); the
-        // refund's initiator must be a real Identity, so record the orderer, who
-        // is the refund's beneficiary and always present on the order.
-        initiatedByIdentityId: order.orderer_identity_id,
-      },
-    });
-
-    // Write ledger entry
-    await db.ledgerEntry.create({
-      data: {
-        entryType: 'refund_out',
-        amountThb: -paidPayment.amountThb,
-        serviceOrderId: order.id,
-        paymentId: paidPayment.id,
-        occurredOn: new Date(),
-        description: `Service order declined by provider: ${reason || 'no reason'}`,
-      },
-    });
-  }
+  const paidAmount = order.payments
+    .filter((payment) => payment.status === 'succeeded')
+    .reduce((sum, payment) => sum + payment.amountThb, 0);
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: order.orderer_identity_id,
+    reason: 'provider_no_show',
+    targetRefundThb: paidAmount,
+  });
 
   // Update order status
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
-    data: { status: 'declined' },
+    data: { status: 'declined', refund_accrued_thb: issuedRefundThb },
   });
 
   // Track analytics event
@@ -267,7 +370,7 @@ export async function declineServiceOrder(
 
 /**
  * Mark a service order as fulfilled.
- * Transitions accepted → fulfilled. Prompts for review.
+ * Transitions accepted → fulfilled. Review prompt (N-27) is sent by cron 12h later.
  */
 export async function fulfillServiceOrder(
   db: PrismaClient,
@@ -291,21 +394,10 @@ export async function fulfillServiceOrder(
     throw new Error(`Cannot fulfill order in ${order.status} status`);
   }
 
+  const fulfilledAt = new Date();
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
-    data: { status: 'fulfilled' },
-  });
-
-  // Prompt orderer for review (N-27)
-  await createNotification(db, {
-    identityId: order.orderer_identity_id,
-    type: 'order_review_prompt',
-    titleKey: 'order.review_prompt.title',
-    bodyKey: 'order.review_prompt.body',
-    params: {
-      order_id: order.id,
-      service_title: order.service?.title || 'Service',
-    },
+    data: { status: 'fulfilled', fulfilled_at: fulfilledAt },
   });
 
   // Record commission on fulfillment (S5)
@@ -328,6 +420,110 @@ export async function fulfillServiceOrder(
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
   });
+}
+
+/**
+ * Orderer reports that the provider did not show (doc 07 F-PROV-3).
+ * accepted → failed, refund per `[cfg] service.provider_no_show_refund_pct`,
+ * auto-ticket for ops, provider notified.
+ */
+export async function reportProviderNoShow(
+  db: PrismaClient,
+  serviceOrderId: string,
+  reportedByIdentityId: string,
+  note?: string
+): Promise<{ ticketId: string; refundThb: number }> {
+  const order = await db.serviceOrder.findUnique({
+    where: { id: serviceOrderId },
+    include: { service: true, provider: true, payments: true },
+  });
+
+  if (!order) {
+    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
+  }
+
+  if (order.orderer_identity_id !== reportedByIdentityId) {
+    throw new Error('Only the orderer can report a provider no-show');
+  }
+
+  if (order.status !== 'accepted') {
+    throw new Error(`Cannot report no-show for an order in ${order.status} status`);
+  }
+
+  const now = new Date();
+  if (now < order.scheduled_start) {
+    throw new Error('The scheduled time has not started yet');
+  }
+
+  const refundPct =
+    ((await getConfig(db, 'service.provider_no_show_refund_pct', {
+      projectId: order.project_id,
+    })) as number | undefined) ?? 100;
+
+  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
+
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: reportedByIdentityId,
+    reason: 'provider_no_show',
+    targetRefundThb: refundTargetThb,
+  });
+
+  await db.serviceOrder.update({
+    where: { id: serviceOrderId },
+    data: {
+      status: 'failed',
+      cancellation_reason: note?.trim() || 'provider_no_show',
+      refund_accrued_thb: issuedRefundThb,
+    },
+  });
+
+  const serviceTitle = order.service?.title || 'Service';
+  const { id: ticketId } = await raiseTicket(db, {
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    raisedByIdentityId: reportedByIdentityId,
+    raisedByRole: order.orderer_role,
+    categoryKey: 'complaint',
+    title: `Provider no-show: ${serviceTitle}`,
+    description:
+      note?.trim() ||
+      `Order ${order.id}: the provider did not arrive for the scheduled service.`,
+    priority: 'high',
+  });
+
+  await createNotification(db, {
+    identityId: order.orderer_identity_id,
+    type: 'order_failed_no_show',
+    titleKey: 'order.no_show.title',
+    bodyKey: 'order.no_show.body',
+    params: {
+      service_title: serviceTitle,
+      refund_thb: issuedRefundThb,
+    },
+  });
+
+  await notifyProviderMembers(db, order.provider_id, {
+    type: 'order_failed_no_show',
+    titleKey: 'order.provider_no_show.title',
+    bodyKey: 'order.provider_no_show.body',
+    params: {
+      order_id: order.id,
+      service_title: serviceTitle,
+    },
+  });
+
+  await track(db, 'service_order_no_show', {
+    serviceOrderId: order.id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: order.orderer_identity_id,
+    totalThb: order.total_thb,
+    refundThb: issuedRefundThb,
+  });
+
+  return { ticketId, refundThb: issuedRefundThb };
 }
 
 /**
@@ -365,37 +561,14 @@ export async function cancelServiceOrder(
   const refundPct =
     order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 100 : 0;
 
-  const refundThb = Math.round((order.total_thb * refundPct) / 100);
-
-  // Find paid payment if any
-  const paidPayment = order.payments.find((p) => p.status === 'succeeded');
-
-  // If paid and refund > 0, create refund
-  if (paidPayment && refundThb > 0) {
-    await db.refund.create({
-      data: {
-        paymentId: paidPayment.id,
-        method: 'cash',
-        amountThb: refundThb,
-        reason: 'cancellation',
-        status: 'succeeded',
-        paidBackByIdentityId: null,
-        initiatedByIdentityId: cancelledByIdentityId,
-      },
-    });
-
-    // Write ledger entry
-    await db.ledgerEntry.create({
-      data: {
-        entryType: 'refund_out',
-        amountThb: -refundThb,
-        serviceOrderId: order.id,
-        paymentId: paidPayment.id,
-        occurredOn: now,
-        description: `Service order cancelled: ${reason || 'no reason'} (refund ${refundPct}%)`,
-      },
-    });
-  }
+  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
+  const { issuedRefundThb } = await issueServiceOrderRefunds({
+    db,
+    serviceOrderId: order.id,
+    initiatedByIdentityId: cancelledByIdentityId,
+    reason: 'cancellation',
+    targetRefundThb: refundTargetThb,
+  });
 
   // Update order
   await db.serviceOrder.update({
@@ -405,7 +578,7 @@ export async function cancelServiceOrder(
       cancelled_at: now,
       cancelled_by_identity_id: cancelledByIdentityId,
       cancellation_reason: reason,
-      refund_accrued_thb: refundThb,
+      refund_accrued_thb: issuedRefundThb,
     },
   });
 
@@ -419,7 +592,7 @@ export async function cancelServiceOrder(
     params: {
       order_id: order.id,
       service_title: order.service?.title || 'Service',
-      refund_thb: refundThb,
+      refund_thb: issuedRefundThb,
     },
   });
 
@@ -431,7 +604,7 @@ export async function cancelServiceOrder(
     params: {
       order_id: order.id,
       service_title: order.service?.title || 'Service',
-      refund_thb: refundThb,
+      refund_thb: issuedRefundThb,
     },
   });
 
@@ -513,6 +686,14 @@ export async function rateServiceOrder(
     throw new Error(`ServiceOrder ${serviceOrderId} not found`);
   }
 
+  if (order.orderer_identity_id !== raterIdentityId) {
+    throw new Error('Only the orderer can rate this service order');
+  }
+
+  if (order.status !== 'fulfilled') {
+    throw new Error(`Cannot rate order in ${order.status} status`);
+  }
+
   if (rating < 1 || rating > 5) {
     throw new Error('Rating must be 1-5');
   }
@@ -577,12 +758,18 @@ export async function expireStaleServiceOrders(
       },
     });
 
-    // Refund any successful payment
-    if (order.payments.some((p) => p.status === 'succeeded')) {
+    const { issuedRefundThb } = await issueServiceOrderRefunds({
+      db,
+      serviceOrderId: order.id,
+      initiatedByIdentityId: order.orderer_identity_id,
+      reason: 'provider_no_show',
+      targetRefundThb: order.total_thb,
+    });
+    if (issuedRefundThb > 0) {
       await db.serviceOrder.update({
         where: { id: order.id },
         data: {
-          refund_accrued_thb: order.total_thb,
+          refund_accrued_thb: issuedRefundThb,
         },
       });
       refunded++;

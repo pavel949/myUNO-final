@@ -15,6 +15,8 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
     'messages.thread.placeholder': 'Write a message…',
     'messages.thread.send': 'Send',
     'messages.thread.error_generic': 'Could not send. Please try again.',
+    'messages.thread.flag_purchase': 'Flag as purchase interest',
+    'messages.thread.flag_working': 'Flagging…',
   });
 
   const breadcrumbs = [

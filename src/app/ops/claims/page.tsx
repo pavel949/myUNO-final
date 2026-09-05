@@ -5,25 +5,58 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { getStaysOpenToClaim } from '@/modules/finance';
 import FileClaimClient from './file-claim-client';
+import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
+import {
+  loadOpsSwitcherProjects,
+  opsHref,
+  resolveOpsProjectContext,
+  validatedActiveProjectId,
+} from '@/app/libs/opsProjectContext';
 
 export const dynamic = 'force-dynamic';
 
+interface OpsClaimsPageProps {
+  searchParams?: {
+    projectId?: string;
+  };
+}
+
 /**
  * Filing a damage claim (doc 07 F-DIS-1, staff side).
- *
- * Only stays still inside the filing window appear. The window is short by
- * design, so the question a staff member has after a check-out is "can I still
- * raise this, and for how long" — a list including stays that can no longer be
- * claimed against would answer the wrong question.
  */
-export default async function OpsClaimsPage() {
+export default async function OpsClaimsPage({ searchParams }: OpsClaimsPageProps) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/claims');
 
-  const isStaff = user.roles.some((role) => role.role === 'staff_ops' || role.role === 'onsite_host');
-  if (!isStaff && !user.isAdmin) redirect('/');
+  const opsContext = resolveOpsProjectContext(
+    user,
+    typeof searchParams?.projectId === 'string' ? searchParams.projectId : null
+  );
+  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+  if (!isStaff) redirect('/');
 
-  const stays = await getStaysOpenToClaim(prisma);
+  const projects = await loadOpsSwitcherProjects(prisma, opsContext);
+  const validActiveProjectId = validatedActiveProjectId(
+    opsContext.activeProjectId,
+    projects.map((project) => project.id)
+  );
+
+  const scopedProjectIds = validActiveProjectId
+    ? [validActiveProjectId]
+    : opsContext.isAdmin
+      ? null
+      : opsContext.queryProjectIds || [];
+
+  const stays =
+    scopedProjectIds === null
+      ? await getStaysOpenToClaim(prisma)
+      : (
+          await Promise.all(
+            scopedProjectIds.map((projectId) => getStaysOpenToClaim(prisma, projectId))
+          )
+        )
+          .flat()
+          .sort((a, b) => a.checkedOutAt.getTime() - b.checkedOutAt.getTime());
 
   const labels = await getLabels({
     'staff.claims.title': 'Damage claims',
@@ -47,18 +80,33 @@ export default async function OpsClaimsPage() {
     'staff.claims.error': 'That did not work.',
     'staff.claims.note':
       'A claim is a request, not a charge. An admin reviews it before anything is taken from the guest.',
+    'staff.ops.context.switcher': 'Project context',
+    'staff.ops.context.all_projects': 'All projects',
+    'staff.ops.context.active': 'Showing',
   });
+
+  const switcherBasePath = '/ops/claims';
 
   return (
     <main className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-heading-1 font-bold text-text-ink">{labels['staff.claims.title']}</h1>
-          <Link href="/ops" className="text-brand-andaman font-semibold hover:underline">
+          <Link
+            href={opsHref('/ops', validActiveProjectId)}
+            className="text-brand-andaman font-semibold hover:underline"
+          >
             {labels['staff.claims.back']}
           </Link>
         </div>
         <p className="text-body text-text-secondary mb-24">{labels['staff.claims.subtitle']}</p>
+
+        <OpsProjectSwitcher
+          projects={projects}
+          activeProjectId={validActiveProjectId}
+          basePath={switcherBasePath}
+          labels={labels}
+        />
 
         <FileClaimClient
           stays={stays.map((s) => ({

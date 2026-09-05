@@ -28,6 +28,7 @@ export default async function ProviderLayout({
     'provider.portal.title': 'Provider Portal',
     'provider.portal.nav_orders': 'Orders',
     'provider.portal.nav_services': 'My Services',
+    'provider.portal.nav_remittances': 'Remittances',
   });
 
   return (
@@ -50,6 +51,12 @@ export default async function ProviderLayout({
                 className="text-body text-brand-andaman hover:underline"
               >
                 {labels['provider.portal.nav_services']}
+              </Link>
+              <Link
+                href="/provider/remittances"
+                className="text-body text-brand-andaman hover:underline"
+              >
+                {labels['provider.portal.nav_remittances']}
               </Link>
             </nav>
           )}

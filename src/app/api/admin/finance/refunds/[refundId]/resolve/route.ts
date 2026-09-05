@@ -1,12 +1,12 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { resolveFailedRefund } from '@/modules/finance'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { resolveFailedRefund } from '@/modules/finance';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface ResolveRefundRequest {
-  action: 'retry' | 'write_off'
+  action: 'retry' | 'write_off';
 }
 
 export async function POST(
@@ -14,20 +14,8 @@ export async function POST(
   { params }: { params: { refundId: string } }
 ) {
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const body: ResolveRefundRequest = await req.json()
 

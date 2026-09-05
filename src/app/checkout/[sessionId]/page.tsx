@@ -24,6 +24,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     'payments.checkout.success_body':
       'Your booking is confirmed. Taking you to your trip…',
     'payments.checkout.error_generic': 'Payment failed. Please try again.',
+    'payments.checkout.decline_simulate': 'Simulate card declined',
+    'payments.checkout.back_to_trip': 'Back to your trip',
     'payments.checkout.test_note': 'No real payment is charged in test mode.',
   });
 

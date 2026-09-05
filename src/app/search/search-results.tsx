@@ -87,12 +87,12 @@ export default function SearchResults({
   const [bookingCategory, setBookingCategory] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
-  const adults = searchParams.get('adults') || '1';
-  const children = searchParams.get('children') || '0';
-  const projectId = searchParams.get('projectId');
-  const sort = searchParams.get('sort') || sortOptions[0]?.key || 'recommended';
+  const startDate = searchParams?.get('startDate');
+  const endDate = searchParams?.get('endDate');
+  const adults = searchParams?.get('adults') || '1';
+  const children = searchParams?.get('children') || '0';
+  const projectId = searchParams?.get('projectId');
+  const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
   const hasDates = Boolean(startDate && endDate);
 
   /**
@@ -175,7 +175,7 @@ export default function SearchResults({
   }, [hasDates, fetchPage]);
 
   const handleSortChange = (nextSort: string) => {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = new URLSearchParams(searchParams?.toString() || '');
     next.set('sort', nextSort);
     // In the URL, so the ordering survives a reload and travels in a shared link.
     router.replace(`/search?${next.toString()}`);
@@ -199,7 +199,7 @@ export default function SearchResults({
         }),
       });
       if (response.status === 401) {
-        const next = `/search?${searchParams.toString()}`;
+        const next = `/search?${searchParams?.toString() || ''}`;
         router.push(`/login?next=${encodeURIComponent(next)}`);
         return;
       }

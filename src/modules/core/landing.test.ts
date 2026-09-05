@@ -42,6 +42,12 @@ describe('where a person lands', () => {
     expect(resolveLanding({ ...base, roles: [role] }).path).toBe(path);
   });
 
+  it('sends a single-unit owner to their unit dashboard (doc 06 S7)', () => {
+    expect(
+      resolveLanding({ ...base, roles: ['owner'], ownerUnitId: 'unit-42' })
+    ).toEqual({ path: '/owner/units/unit-42', reason: 'owner' });
+  });
+
   it('puts an owner ahead of a buyer when someone is both', () => {
     // The asset they already hold has money moving through it every month; the
     // one they are considering does not.

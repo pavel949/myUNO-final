@@ -1,26 +1,20 @@
-import { db } from '@/app/libs/prismadb';
 import { t } from '@/modules/content';
 import { Locale } from '@/modules/content';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
     const { key, locale } = await request.json();
 
     if (!key || typeof key !== 'string') {
-      return Response.json(
-        { error: 'Missing or invalid key' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Missing or invalid key' }, { status: 400 });
     }
 
-    const value = await t(db, key, {}, (locale as Locale) || 'ru');
+    const value = await t(prisma, key, {}, (locale as Locale) || 'ru');
 
     return Response.json({ key, value, locale });
   } catch (error) {
     console.error('Translation error:', error);
-    return Response.json(
-      { error: 'Failed to fetch translation' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to fetch translation' }, { status: 500 });
   }
 }

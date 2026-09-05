@@ -17,6 +17,8 @@ export default async function TripsPage() {
     'booking.trips.total': 'Total',
     'booking.trips.payment_pending': 'Payment pending',
     'booking.trips.payment_action': 'Complete Payment',
+    'booking.trips.hold_expires': 'Complete payment within {time}',
+    'booking.trips.hold_expired': 'Hold expired',
     'booking.trips.ready_checkin': 'Ready for check-in',
     'booking.trips.note_label': 'Guest Note:',
     'booking.trips.fetch_error': 'Failed to fetch trips',

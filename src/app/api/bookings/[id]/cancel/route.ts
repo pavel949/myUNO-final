@@ -2,6 +2,79 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { cancelBooking, computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
+import { refund as requestCardProviderRefund } from '@/modules/finance';
+import { notifyBookingCancelled } from '@/app/libs/bookingCancelled';
+
+async function issueCancellationRefunds(input: {
+  bookingId: string;
+  initiatedByIdentityId: string;
+  totalRefundThb: number;
+}) {
+  if (input.totalRefundThb <= 0) {
+    return { issuedRefundThb: 0, refundsCreated: 0 };
+  }
+
+  const succeededPayments = await prisma.payment.findMany({
+    where: {
+      bookingId: input.bookingId,
+      status: 'succeeded',
+      purpose: { in: ['stay', 'stay_balance'] },
+    },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  let remaining = input.totalRefundThb;
+  let issuedRefundThb = 0;
+  let refundsCreated = 0;
+
+  for (const payment of succeededPayments) {
+    if (remaining <= 0) {
+      break;
+    }
+
+    const alreadyRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
+    const refundableOnPayment = Math.max(0, payment.amountThb - alreadyRefunded);
+    const refundAmount = Math.min(refundableOnPayment, remaining);
+    if (refundAmount <= 0) {
+      continue;
+    }
+
+    if (payment.method === 'card_provider') {
+      await requestCardProviderRefund(
+        prisma,
+        payment.id,
+        refundAmount,
+        'cancellation',
+        input.initiatedByIdentityId
+      );
+    } else {
+      // Cash and manual transfer refunds require an operator payout step; mark
+      // them as requested so finance can settle them with an explicit trace.
+      await prisma.refund.create({
+        data: {
+          paymentId: payment.id,
+          method: 'cash',
+          amountThb: refundAmount,
+          reason: 'cancellation',
+          status: 'requested',
+          initiatedByIdentityId: input.initiatedByIdentityId,
+        },
+      });
+    }
+
+    remaining -= refundAmount;
+    issuedRefundThb += refundAmount;
+    refundsCreated += 1;
+  }
+
+  return { issuedRefundThb, refundsCreated };
+}
 
 /**
  * POST /api/bookings/[id]/cancel
@@ -86,12 +159,22 @@ export async function POST(
       reason,
       refundAmountThb,
     });
+    const { issuedRefundThb, refundsCreated } = await issueCancellationRefunds({
+      bookingId,
+      initiatedByIdentityId: user.identityId,
+      totalRefundThb: refundAmountThb,
+    });
+
+    await notifyBookingCancelled(prisma, bookingId, refundAmountThb);
 
     return NextResponse.json(
       {
         booking: cancelled,
         refund: {
           amountThb: refundAmountThb,
+          issuedThb: issuedRefundThb,
+          pendingThb: Math.max(0, refundAmountThb - issuedRefundThb),
+          recordsCreated: refundsCreated,
           reason,
         },
       },

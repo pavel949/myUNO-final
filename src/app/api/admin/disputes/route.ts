@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { getOpenDisputes } from '@/modules/comms';
-import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { handleError } from '@/app/libs/errorHandler';
 
 /** GET /api/admin/disputes — the open-dispute queue, newest first. */
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user || !user.isAdmin) {
-      throw createPublicError('unauthorized', 401);
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const disputes = await getOpenDisputes(prisma);
     return NextResponse.json({

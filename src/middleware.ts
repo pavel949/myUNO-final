@@ -28,6 +28,16 @@ export function middleware(request: NextRequest) {
   response.headers.set(CORRELATION_ID_HEADER, correlationId);
 
   // Content Security Policy — strict by default, public pages only
+  //
+  // In development, Next.js evaluates client modules and React Refresh through
+  // eval(), so 'unsafe-eval' is required or the browser blocks the dev runtime
+  // and no page ever hydrates (interactive forms silently fall back to a native
+  // submit). It is added for development only — production keeps the strict CSP.
+  const scriptSrc =
+    process.env.NODE_ENV === 'production'
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+
   response.headers.set(
     'Content-Security-Policy',
     [
@@ -35,7 +45,7 @@ export function middleware(request: NextRequest) {
       // Next.js App Router hydrates via inline <script> tags (self.__next_f),
       // so 'unsafe-inline' is required or all client interactivity is blocked.
       // Tightening to nonces needs Next's nonce plumbing — tracked for post-launch.
-      "script-src 'self' 'unsafe-inline'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'", // Tailwind needs inline styles
       "img-src 'self' data: https:",
       "font-src 'self'",

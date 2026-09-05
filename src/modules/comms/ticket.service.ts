@@ -422,6 +422,8 @@ export async function getReporterTickets(
       assignee: {
         select: { firstName: true, lastName: true },
       },
+      unit: { select: { name: true } },
+      project: { select: { name: true } },
     },
     orderBy: { updatedAt: 'desc' },
   });

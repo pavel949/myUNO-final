@@ -33,7 +33,7 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
   const breadcrumbs = [
     { label: labels['booking.handbook.breadcrumb_home'], href: '/' },
     { label: labels['booking.handbook.breadcrumb_trips'], href: '/trips' },
-    { label: projectName, href: `/bookings/${params.bookingId}` },
+    { label: projectName, href: `/bookings/${params.bookingId}/home-space` },
     { label: labels['booking.handbook.breadcrumb_handbook'], current: true },
   ];
 

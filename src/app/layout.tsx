@@ -70,6 +70,13 @@ export default async function RootLayout({
     'nav.find_stay': 'Find a stay',
     'nav.residences': 'Residences',
     'nav.services': 'Services',
+    'nav.owners': 'Owners',
+    'nav.about': 'About',
+    'nav.language': 'Language',
+    'nav.locale.en': 'EN',
+    'nav.locale.ru': 'RU',
+    'nav.locale.th': 'TH',
+    'nav.locale.zh': '中文',
     'nav.trust': 'Trust',
     'nav.login': 'Log in',
     'nav.register': 'Sign up',
@@ -115,6 +122,11 @@ export default async function RootLayout({
     'nav.footer.residences': 'Residences',
     'nav.footer.trust': 'Trust',
     'nav.footer.about': 'About',
+    'nav.footer.search': 'Find a stay',
+    'nav.footer.services': 'Services',
+    'nav.footer.ombudsman': 'Ombudsman',
+    'nav.footer.legal_index': 'Legal',
+    'nav.language': 'Language',
     'nav.footer.audience_column': 'For Everyone',
     'nav.footer.owners': 'Owners',
     'nav.footer.guests': 'Guests',
@@ -151,7 +163,10 @@ export default async function RootLayout({
             findStay: navLabels['nav.find_stay'],
             residences: navLabels['nav.residences'],
             services: navLabels['nav.services'],
+            owners: navLabels['nav.owners'],
+            about: navLabels['nav.about'],
             trust: navLabels['nav.trust'],
+            language: navLabels['nav.language'],
             login: navLabels['nav.login'],
             register: navLabels['nav.register'],
             logout: navLabels['nav.logout'],
@@ -169,16 +184,26 @@ export default async function RootLayout({
             markAll: navLabels['nav.bell_mark_all'],
           }}
           locale={locale}
+          localeOptions={{
+            en: navLabels['nav.locale.en'],
+            ru: navLabels['nav.locale.ru'],
+            th: navLabels['nav.locale.th'],
+            zh: navLabels['nav.locale.zh'],
+          }}
         />
         <div className="flex-1">{children}</div>
         <AnalyticsBeacon />
         <Footer
+          locale={locale}
           labels={{
             brandColumn: footerLabels['nav.footer.brand_column'],
             home: footerLabels['nav.footer.home'],
             residences: footerLabels['nav.footer.residences'],
+            services: footerLabels['nav.footer.services'],
+            search: footerLabels['nav.footer.search'],
             trust: footerLabels['nav.footer.trust'],
             about: footerLabels['nav.footer.about'],
+            ombudsman: footerLabels['nav.footer.ombudsman'],
             audienceColumn: footerLabels['nav.footer.audience_column'],
             owners: footerLabels['nav.footer.owners'],
             guests: footerLabels['nav.footer.guests'],
@@ -190,8 +215,16 @@ export default async function RootLayout({
             legalColumn: footerLabels['nav.footer.legal_column'],
             terms: footerLabels['nav.footer.terms'],
             privacy: footerLabels['nav.footer.privacy'],
+            legalIndex: footerLabels['nav.footer.legal_index'],
+            language: navLabels['nav.language'],
             companyLine: footerLabels['nav.footer.company_line'],
             copyright: footerLabels['nav.footer.copyright'],
+          }}
+          localeOptions={{
+            en: navLabels['nav.locale.en'],
+            ru: navLabels['nav.locale.ru'],
+            th: navLabels['nav.locale.th'],
+            zh: navLabels['nav.locale.zh'],
           }}
         />
       </body>

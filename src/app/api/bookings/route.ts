@@ -27,7 +27,7 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * - childrenCount: number
  * - instantBook: boolean (required on the unitId path)
  * - guestNote?: string
- * - paymentMethod?: 'cash' | 'card_provider'
+ * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
  *
  * The total is ALWAYS computed server-side from the pricing engine —
  * any client-sent amount is ignored (doc 10: never trust client totals).
@@ -168,9 +168,13 @@ export async function POST(req: NextRequest) {
     }
 
     const instantBook = booking.status !== 'requested';
+    const method =
+      paymentMethod === 'card_provider' || paymentMethod === 'bank_transfer'
+        ? paymentMethod
+        : 'cash';
 
     // If instant book and card payment method, create checkout session
-    if (instantBook && paymentMethod === 'card_provider') {
+    if (instantBook && method === 'card_provider') {
       const checkout = await createCheckout(prisma, {
         purpose: 'stay',
         bookingId: booking.id,
@@ -187,8 +191,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For cash payment, return the booking (payment recorded later via ops)
-    if (instantBook && paymentMethod === 'cash') {
+    // Cash and bank transfer stay pending until staff record the receipt.
+    if (instantBook && (method === 'cash' || method === 'bank_transfer')) {
       return NextResponse.json(
         {
           booking,

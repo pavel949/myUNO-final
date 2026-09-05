@@ -121,7 +121,7 @@ export default async function OwnersPage() {
             {labels['audience.owners.hero_lede']}
           </p>
           <Link
-            href="/register"
+            href="#lead-form"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
             {labels['audience.owners.cta']} →

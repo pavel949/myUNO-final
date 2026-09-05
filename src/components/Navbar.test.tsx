@@ -19,7 +19,10 @@ describe('Navbar', () => {
           findStay: 'Find a stay',
           residences: 'Residences',
           services: 'Services',
+          owners: 'Owners',
+          about: 'About',
           trust: 'Trust',
+          language: 'Language',
           login: 'Log in',
           register: 'Sign up',
           logout: 'Log out',
@@ -33,6 +36,7 @@ describe('Navbar', () => {
         roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
         bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}
         locale="en"
+        localeOptions={{ en: 'EN', ru: 'RU', th: 'TH', zh: 'ZH' }}
       />
     );
     const owner = screen.getAllByRole('link', { name: 'Owner dashboard' })[0];

@@ -84,21 +84,23 @@ export default function NewTicketClient({
             className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-16"
           >
             <div className="flex flex-col gap-8">
-              <label htmlFor="ticket-category" className="text-small text-text-stone">
-                {labels['tickets.new.category']}
-              </label>
-              <select
-                id="ticket-category"
-                value={categoryKey}
-                onChange={(e) => setCategoryKey(e.target.value)}
-                className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-body text-text-ink"
-              >
+              <p className="text-small text-text-stone">{labels['tickets.new.category']}</p>
+              <div className="flex flex-wrap gap-8">
                 {categories.map((c) => (
-                  <option key={c} value={c}>
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCategoryKey(c)}
+                    className={
+                      categoryKey === c
+                        ? 'rounded-full bg-brand-andaman px-16 py-8 text-small text-on-dark-text'
+                        : 'rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink'
+                    }
+                  >
                     {labels[`catalog.ticket_categories.${c}.label`] || c}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
             <Input

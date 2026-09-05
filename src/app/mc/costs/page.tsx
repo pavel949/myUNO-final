@@ -131,14 +131,14 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
           <Link href={backHref} className="text-brand-andaman font-semibold hover:underline">
             {labels['mc.costs.back']}
           </Link>
         </p>
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['mc.costs.title']}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['mc.costs.title']}</h1>
         <p className="text-body text-text-secondary mb-16">{labels['ops.costs.intro']}</p>
 
         {contexts.length > 1 ? (

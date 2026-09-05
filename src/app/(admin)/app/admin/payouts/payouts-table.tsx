@@ -118,8 +118,8 @@ export default function PayoutsTable({
                     <span
                       className={
                         payout.status === 'reconciled'
-                          ? 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-success-soft text-state-success'
-                          : 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-warning-soft text-state-warning'
+                          ? 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-success-soft text-state-success'
+                          : 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-warning-soft text-state-warning'
                       }
                     >
                       {statusLabel(payout.status)}

@@ -77,7 +77,7 @@ export default function DisputesAdminClient({
           <li key={dispute.id} className="p-16 bg-surface-paper border border-border-line rounded-lg">
             <div className="flex flex-wrap items-baseline justify-between gap-16 mb-8">
               <div>
-                <span className="inline-flex items-center px-8 py-2 rounded-full text-xsmall font-medium bg-state-warning-soft text-state-warning mr-8">
+                <span className="inline-flex items-center px-8 py-2 rounded-full text-small font-medium bg-state-warning-soft text-state-warning mr-8">
                   {labels[`admin.disputes.subject.${dispute.subjectType}`]}
                 </span>
                 <span className="text-body font-semibold text-text-ink">{dispute.title}</span>
@@ -111,7 +111,7 @@ export default function DisputesAdminClient({
                   onChange={(e) => setAmounts((prev) => ({ ...prev, [dispute.id]: e.target.value }))}
                   className="block w-full h-40 mt-4 px-12 rounded-sm border border-border-line text-body text-text-ink"
                 />
-                <span className="block text-xsmall text-text-secondary mt-4">
+                <span className="block text-small text-text-secondary mt-4">
                   {labels['admin.disputes.amount_hint']}
                 </span>
               </label>

@@ -110,7 +110,7 @@ export default function CheckoutClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-background">
+      <div className="min-h-screen flex items-center justify-center bg-surface-ivory">
         <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
       </div>
     );
@@ -118,12 +118,12 @@ export default function CheckoutClient({
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-background px-24">
+      <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
         <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full text-center">
           <div className="text-heading-1 mb-16" aria-hidden="true">
             ✓
           </div>
-          <h1 className="text-heading-2 font-bold text-text-ink mb-12">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-12">
             {labels['payments.checkout.success_title']}
           </h1>
           <p className="text-body text-text-secondary">
@@ -135,9 +135,9 @@ export default function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-background px-24">
+    <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
       <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full">
-        <h1 className="text-heading-2 font-bold text-text-ink mb-24">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
           {labels['payments.checkout.title']}
         </h1>
 
@@ -151,7 +151,7 @@ export default function CheckoutClient({
         </div>
 
         {session && (
-          <div className="mb-24 p-16 bg-surface-background rounded-lg border border-border-line space-y-8">
+          <div className="mb-24 p-16 bg-surface-ivory rounded-lg border border-border-line space-y-8">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">
@@ -191,9 +191,11 @@ export default function CheckoutClient({
                 </div>
               </>
             )}
-            <div className="flex justify-between text-body font-bold pt-8 border-t border-border-line">
+            <div className="flex justify-between text-body font-semibold pt-8 border-t border-border-line">
               <span className="text-text-ink">{labels['payments.checkout.amount_label']}</span>
-              <span className="text-brand-andaman">฿{session.amountThb.toLocaleString()}</span>
+              <span className="font-display text-title text-brand-andaman tabular-nums">
+                ฿{session.amountThb.toLocaleString()}
+              </span>
             </div>
           </div>
         )}

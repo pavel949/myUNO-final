@@ -110,7 +110,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       <Link href="/app/admin/units" className="text-small text-text-secondary hover:underline">
         ← {labels['admin.onboarding.back']}
       </Link>
-      <h1 className="text-heading-1 font-bold text-text-ink mt-8 mb-24">
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {unit.name} · {labels['admin.onboarding.title']}
       </h1>
 

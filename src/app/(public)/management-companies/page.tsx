@@ -59,10 +59,10 @@ export default async function ManagementCompaniesPage() {
   const values = ([1, 2, 3] as const).map((n) => labels[`audience.mc.value.point${n}`]);
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-heading-1 font-bold mb-24">{labels['audience.mc.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold mb-24">{labels['audience.mc.title']}</h1>
           <p className="text-body text-surface-ivory/90 mb-32">
             {labels['audience.mc.subtitle']}
           </p>
@@ -76,7 +76,7 @@ export default async function ManagementCompaniesPage() {
       </section>
 
       <section className="max-w-4xl mx-auto py-64 px-24">
-        <h2 className="text-heading-1 font-bold text-text-ink mb-40">
+        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
           {labels['audience.mc.how.title']}
         </h2>
         <ol className="space-y-32">
@@ -92,9 +92,9 @@ export default async function ManagementCompaniesPage() {
         </ol>
       </section>
 
-      <section className="bg-surface-background py-64 px-24">
+      <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-heading-1 font-bold text-text-ink mb-40">
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
             {labels['audience.mc.value.title']}
           </h2>
           <ul className="space-y-24 text-body">

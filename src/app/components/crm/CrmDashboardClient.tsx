@@ -69,44 +69,44 @@ export const CrmDashboardClient: FC<CrmDashboardClientProps> = ({
       />
 
       {/* View Switcher */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-surface-paper rounded-lg shadow p-4">
         <button
           onClick={() => setViewMode('dashboard')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'dashboard'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ? 'bg-brand-andaman text-surface-ivory'
+              : 'bg-surface-ivory text-text-ink  hover:bg-surface-ivory '
           }`}
         >
-          📊 Dashboard
+          Dashboard
         </button>
         <button
           onClick={() => setViewMode('kanban')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'kanban'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ? 'bg-brand-andaman text-surface-ivory'
+              : 'bg-surface-ivory text-text-ink  hover:bg-surface-ivory '
           }`}
         >
-          📋 Kanban
+          Board
         </button>
         <button
           onClick={() => setViewMode('list')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'list'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ? 'bg-brand-andaman text-surface-ivory'
+              : 'bg-surface-ivory text-text-ink  hover:bg-surface-ivory '
           }`}
         >
-          📑 List
+          List
         </button>
 
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={handleRefresh}
-            className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+            className="px-4 py-2 rounded-lg bg-surface-ivory text-text-ink  hover:bg-surface-ivory  transition-colors font-medium"
           >
-            🔄 Refresh
+            Refresh
           </button>
         </div>
       </div>

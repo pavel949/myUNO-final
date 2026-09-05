@@ -69,6 +69,7 @@ export default async function TicketDetailPage({
     'tickets.detail.assigned_to': 'Assigned to',
     'tickets.detail.unassigned': 'Unassigned',
     'tickets.detail.created_at': 'Created',
+    'tickets.detail.conversation': 'Open the conversation',
     'tickets.detail.history_title': 'Activity',
     'tickets.detail.empty_history': 'No updates yet.',
     'tickets.detail.assign_me': 'Assign to me',
@@ -125,16 +126,26 @@ export default async function TicketDetailPage({
   };
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         <p className="mb-12">
           <Link href="/tickets" className="text-brand-andaman font-semibold hover:underline">
             {labels['tickets.detail.back']}
           </Link>
         </p>
-        <h1 className="text-heading-1 font-bold text-text-ink mb-20">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-20">
           {labels['tickets.detail.title']}
         </h1>
+        {ticket.threadId && (
+          <p className="mb-20">
+            <Link
+              href={`/messages/${ticket.threadId}`}
+              className="font-semibold text-brand-andaman hover:underline"
+            >
+              {labels['tickets.detail.conversation']}
+            </Link>
+          </p>
+        )}
         <TicketDetailClient
           ticket={detail}
           labels={labels}

@@ -41,55 +41,64 @@ export default async function MessagesInboxPage() {
     'messages.inbox.title': 'Messages',
     'messages.inbox.empty':
       'No conversations yet. Message us from any of your trips and we will answer here.',
+    'messages.inbox.empty_pane.lead': 'Select a conversation.',
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-24">
+    <div className="flex min-h-0 flex-1 flex-col bg-surface-ivory">
+      <div className="border-b border-border-line bg-surface-paper px-24 py-20 md:px-32">
+        <h1 className="font-display text-display-xl font-semibold text-brand-deep">
           {labels['messages.inbox.title']}
         </h1>
-        {threads.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-            <p className="text-body text-text-secondary">
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <aside className="w-full shrink-0 border-border-line md:w-[360px] md:border-r">
+          {threads.length === 0 ? (
+            <p className="px-24 py-32 text-body text-text-secondary">
               {labels['messages.inbox.empty']}
             </p>
-          </div>
-        ) : (
-          <div className="bg-surface-paper border border-border-line rounded-lg">
-            {threads.map((thread) => (
-              <Link
-                key={thread.id}
-                href={`/messages/${thread.id}`}
-                className="flex items-center justify-between gap-12 p-16 border-b border-border-line last:border-b-0 hover:bg-surface-ivory transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-body font-semibold text-text-ink truncate">
-                    {thread.others.map((o) => o.name).join(', ') || 'myUNO'}
-                  </p>
-                  {thread.lastMessage && (
-                    <p className="text-small text-text-secondary truncate">
-                      {thread.lastMessage}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-8 shrink-0">
-                  {thread.unreadCount > 0 && (
-                    <span className="min-w-24 h-24 px-8 rounded-full bg-brand-andaman text-surface-ivory text-small font-semibold flex items-center justify-center">
-                      {thread.unreadCount}
-                    </span>
-                  )}
-                  {thread.lastMessageAt && (
-                    <span className="text-small text-text-stone">
-                      {new Date(thread.lastMessageAt).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+          ) : (
+            <ul>
+              {threads.map((thread) => (
+                <li key={thread.id} className="border-b border-border-line">
+                  <Link
+                    href={`/messages/${thread.id}`}
+                    className="flex items-start justify-between gap-12 px-20 py-16 hover:bg-surface-paper"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-body font-medium text-text-ink">
+                        {thread.others.map((o) => o.name).join(', ') || 'myUNO'}
+                      </p>
+                      {thread.lastMessage && (
+                        <p className="mt-1 truncate text-small text-text-secondary">
+                          {thread.lastMessage}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      {thread.unreadCount > 0 && (
+                        <span className="flex h-24 min-w-24 items-center justify-center rounded-full bg-brand-andaman px-8 text-small font-medium text-surface-ivory">
+                          {thread.unreadCount}
+                        </span>
+                      )}
+                      {thread.lastMessageAt && (
+                        <span className="text-small text-text-stone">
+                          {new Date(thread.lastMessageAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+        <section className="hidden flex-1 items-center justify-center bg-surface-ivory p-40 md:flex">
+          <p className="max-w-sm text-center text-body text-text-secondary">
+            {labels['messages.inbox.empty_pane.lead']}
+          </p>
+        </section>
       </div>
-    </main>
+    </div>
   );
 }

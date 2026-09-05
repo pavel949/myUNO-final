@@ -51,9 +51,9 @@ export default function GuestAccessClient({ labels }: { labels: GuestAccessLabel
     'focus:border-brand-andaman focus:ring-2 focus:ring-brand-andaman focus:outline-none w-full';
 
   return (
-    <div className="min-h-screen bg-surface-background flex items-center justify-center p-24">
+    <div className="min-h-screen bg-surface-ivory flex items-center justify-center p-24">
       <div className="bg-surface-paper border border-border-line rounded-lg p-32 w-full max-w-md">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels.title}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels.title}</h1>
         <p className="text-body text-text-secondary mb-24">{labels.subtitle}</p>
 
         {sent ? (

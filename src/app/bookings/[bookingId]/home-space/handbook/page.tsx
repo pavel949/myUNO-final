@@ -33,12 +33,12 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
   const breadcrumbs = [
     { label: labels['booking.handbook.breadcrumb_home'], href: '/' },
     { label: labels['booking.handbook.breadcrumb_trips'], href: '/trips' },
-    { label: projectName, href: `/bookings/${params.bookingId}` },
+    { label: projectName, href: `/bookings/${params.bookingId}/home-space` },
     { label: labels['booking.handbook.breadcrumb_handbook'], current: true },
   ];
 
   return (
-    <div className="min-h-screen bg-surface-background">
+    <div className="min-h-screen bg-surface-ivory">
       <Breadcrumb items={breadcrumbs} />
 
       {/* Header */}
@@ -49,7 +49,7 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
               {labels['booking.handbook.back_link']}
             </Button>
           </Link>
-          <h1 className="text-heading-1 font-bold text-surface-ivory mt-16">{labels['booking.handbook.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold text-surface-ivory mt-16">{labels['booking.handbook.title']}</h1>
           <p className="text-body text-surface-ivory mt-8">{projectName}</p>
         </div>
       </div>

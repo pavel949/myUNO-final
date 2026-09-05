@@ -77,7 +77,7 @@ export default function PassportsClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-2xl mx-auto">
         <p className="mb-8">
           <Link
@@ -87,7 +87,7 @@ export default function PassportsClient({
             {labels['checkin.passports.back']}
           </Link>
         </p>
-        <h1 className="text-heading-1 font-bold text-text-ink mb-12">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-12">
           {labels['checkin.passports.title']}
         </h1>
         <p className="text-body text-text-secondary mb-24">

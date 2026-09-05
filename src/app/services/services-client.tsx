@@ -260,9 +260,9 @@ export default function ServicesClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
           {labels['services.browse.title']}
         </h1>
         <p className="text-body text-text-secondary mb-24">
@@ -480,7 +480,7 @@ export default function ServicesClient({
           </div>
         )}
 
-        <h2 className="text-heading-2 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-display font-semibold text-text-ink mb-16">
           {labels['services.my_orders.title']}
         </h2>
         {!loggedIn || orders.length === 0 ? (

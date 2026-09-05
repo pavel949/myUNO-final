@@ -16,6 +16,8 @@ const config: Config = {
           deep: '#0A3733',
           // Alias of brand.deep — widely used in page gradients
           'andaman-dark': '#0A3733',
+          // Alias of state.info-soft — andaman wash already used on chips
+          'andaman-soft': '#E3ECEA',
           sun: '#D69A3A',
           'sun-soft': '#E7C079',
         },

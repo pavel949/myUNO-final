@@ -132,6 +132,6 @@ describe('Unit Asset Status API', () => {
       params: { id: testUnit.id },
     })
 
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
   })
 })

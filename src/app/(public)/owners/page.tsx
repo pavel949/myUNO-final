@@ -105,7 +105,7 @@ export default async function OwnersPage() {
   const faqJsonLd = faqPageJsonLd(faqs.map((f) => ({ question: f.q, answer: f.a })));
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       {faqJsonLd ? (
         <script
           type="application/ld+json"
@@ -114,14 +114,14 @@ export default async function OwnersPage() {
       ) : null}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-heading-1 font-bold mb-24">
+          <h1 className="font-display text-display-xl font-semibold mb-24">
             {labels['audience.owners.hero_title']}
           </h1>
           <p className="text-body text-surface-ivory/90 mb-32">
             {labels['audience.owners.hero_lede']}
           </p>
           <Link
-            href="/register"
+            href="#lead-form"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
             {labels['audience.owners.cta']} →
@@ -149,7 +149,7 @@ export default async function OwnersPage() {
         </p>
       </section>
 
-      <section className="bg-surface-background py-64 px-24">
+      <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-16">
             {labels['audience.owners.see.title']}
@@ -182,7 +182,7 @@ export default async function OwnersPage() {
         </div>
       </section>
 
-      <section className="bg-surface-background py-64 px-24">
+      <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-40">
             {labels['audience.owners.faq.title']}

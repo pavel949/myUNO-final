@@ -8,8 +8,6 @@ import { Chip } from '@/components/Chip';
 import { Counter } from '@/components/Counter';
 import { MoneyAmount } from '@/components/MoneyAmount';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
-import { Select } from '@/components/Select';
-import { Textarea } from '@/components/Textarea';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 
 interface Unit {
@@ -115,11 +113,7 @@ export default function UnitDetailClient({
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [datesConflict, setDatesConflict] = useState(false);
   const [bookingType, setBookingType] = useState<'instant' | 'request'>('instant');
-  const [guestNote, setGuestNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_provider'>('cash');
-  const [submitting, setSubmitting] = useState(false);
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -186,58 +180,18 @@ export default function UnitDetailClient({
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const handleBooking = async () => {
-    if (!startDate || !endDate || !breakdown || !unit) return;
-
-    setSubmitting(true);
-    setError(null);
-    setDatesConflict(false);
-
-    try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          unitId: unit.id,
-          projectId: unit.projectId,
-          startDate,
-          endDate,
-          adultsCount: adults,
-          childrenCount: children,
-          instantBook: bookingType === 'instant',
-          guestNote: guestNote || undefined,
-          paymentMethod,
-        }),
-      });
-
-      if (response.status === 401) {
-        const next = `${pathname}?${searchParams?.toString() || ''}`;
-        router.push(`/login?next=${encodeURIComponent(next)}`);
-        return;
-      }
-
-      if (response.status === 409) {
-        setDatesConflict(true);
-        return;
-      }
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || labels.errorBooking);
-      }
-
-      const result = await response.json();
-
-      if (result.checkout) {
-        router.push(result.checkout.checkoutUrl);
-      } else {
-        router.push('/trips');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : labels.errorBooking);
-    } finally {
-      setSubmitting(false);
-    }
+  const goToReview = () => {
+    if (!startDate || !endDate || !unit) return;
+    const next = new URLSearchParams({
+      unitId: unit.id,
+      projectId: unit.projectId,
+      startDate,
+      endDate,
+      adults: String(adults),
+      children: String(children),
+      instantBook: bookingType === 'instant' ? '1' : '0',
+    });
+    router.push(`/book/review?${next.toString()}`);
   };
 
   if (loading) {
@@ -411,42 +365,7 @@ export default function UnitDetailClient({
                 {bookingType === 'instant' ? labels.instantBook : labels.requestToBook}
               </p>
 
-              <div className="mb-16">
-                <Select
-                  label={labels.paymentMethod}
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card_provider')}
-                  options={[
-                    { value: 'cash', label: labels.payCash },
-                    { value: 'card_provider', label: labels.payCard },
-                  ]}
-                />
-              </div>
-
-              <div className="mb-20">
-                <Textarea
-                  label={labels.guestNote}
-                  value={guestNote}
-                  onChange={(e) => setGuestNote(e.target.value)}
-                  placeholder={labels.guestNotePlaceholder}
-                />
-              </div>
-
-              {datesConflict ? (
-                <div className="bg-state-warning-soft border border-state-warning rounded-lg p-16 mb-16">
-                  <h3 className="text-body-strong text-text-ink mb-8">
-                    {labels.conflictTitle}
-                  </h3>
-                  <p className="text-small text-text-secondary mb-12">{labels.conflictBody}</p>
-                  <Link href={backToSearch}>
-                    <Button variant="secondary" size="sm">
-                      {labels.searchAgain}
-                    </Button>
-                  </Link>
-                </div>
-              ) : null}
-
-              {error && !datesConflict && (
+              {error && (
                 <div className="bg-state-error/10 border border-state-error rounded-lg p-12 mb-16">
                   <p className="text-small text-state-error">{error}</p>
                 </div>
@@ -454,9 +373,8 @@ export default function UnitDetailClient({
 
               <Button
                 size="lg"
-                onClick={handleBooking}
-                disabled={submitting || !breakdown}
-                isLoading={submitting}
+                onClick={goToReview}
+                disabled={!breakdown}
                 fullWidth
               >
                 {labels.reserve}
@@ -475,9 +393,7 @@ export default function UnitDetailClient({
             className="text-title font-semibold"
           />
           <Button
-            onClick={handleBooking}
-            disabled={submitting}
-            isLoading={submitting}
+            onClick={goToReview}
           >
             {labels.reserve}
           </Button>

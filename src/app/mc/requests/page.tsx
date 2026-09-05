@@ -104,12 +104,12 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
   const activeContextKey = `${activeScope.projectId}:${activeScope.organizationId}`;
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['mc.requests.back']}
         </Link>
-        <h1 className="text-heading-1 font-bold text-text-ink mt-12 mb-24">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mt-12 mb-24">
           {labels['mc.requests.title']}
         </h1>
 

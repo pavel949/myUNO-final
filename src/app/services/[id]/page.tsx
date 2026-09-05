@@ -128,7 +128,7 @@ export default async function ServiceDetailPage({
   ];
 
   return (
-    <main className="min-h-screen bg-surface-background">
+    <main className="min-h-screen bg-surface-ivory">
       <Breadcrumb items={breadcrumbs} />
       <div className="p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
@@ -148,7 +148,7 @@ export default async function ServiceDetailPage({
 
         {/* Title & provider */}
         <div className="mb-24">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-8">{service.title}</h1>
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{service.title}</h1>
           <div className="flex items-center gap-8 text-body text-text-secondary mb-16">
             <span>
               {labels['services.detail.by_provider'].replace('{provider}', service.provider.name)}

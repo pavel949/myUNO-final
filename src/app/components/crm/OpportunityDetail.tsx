@@ -49,14 +49,14 @@ interface OpportunityDetailProps {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  new: 'bg-slate-100 dark:bg-slate-800',
-  qualified: 'bg-blue-100 dark:bg-blue-900',
-  discovery: 'bg-indigo-100 dark:bg-indigo-900',
-  proposal: 'bg-purple-100 dark:bg-purple-900',
-  negotiation: 'bg-orange-100 dark:bg-orange-900',
-  nurture: 'bg-yellow-100 dark:bg-yellow-900',
-  won: 'bg-green-100 dark:bg-green-900',
-  lost: 'bg-red-100 dark:bg-red-900',
+  new: 'bg-slate-100',
+  qualified: 'bg-blue-100',
+  discovery: 'bg-indigo-100',
+  proposal: 'bg-purple-100',
+  negotiation: 'bg-orange-100',
+  nurture: 'bg-yellow-100',
+  won: 'bg-green-100',
+  lost: 'bg-state-error-soft',
 };
 
 export const OpportunityDetail: FC<OpportunityDetailProps> = ({
@@ -116,7 +116,7 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
 
   if (error || !opportunity) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200 p-4 rounded-lg">
+      <div className="bg-state-error-soft text-state-error p-4 rounded-lg">
         {error || 'Opportunity not found'}
       </div>
     );
@@ -127,20 +127,20 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="bg-surface-paper rounded-lg shadow p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-2">
               {opportunity.title}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-text-stone ">
               {opportunity.contact.name} • {opportunity.source}
             </p>
           </div>
           <div
             className={`${STAGE_COLORS[opportunity.stage]} px-4 py-2 rounded-lg`}
           >
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="font-semibold text-text-ink ">
               {opportunity.stage.charAt(0).toUpperCase() +
                 opportunity.stage.slice(1)}
             </p>
@@ -149,55 +149,55 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
 
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Value
             </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-text-ink ">
               ฿{(weightedValue / 1000).toFixed(1)}K
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Probability
             </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-text-ink ">
               {opportunity.probability}%
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Type
             </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-text-ink ">
               {opportunity.type}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Assigned
             </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-text-ink ">
               {opportunity.assignedTo?.name || '—'}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-border-line ">
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Expected Close
             </p>
-            <p className="text-sm text-gray-900 dark:text-white">
+            <p className="text-sm text-text-ink ">
               {opportunity.expectedCloseAt
                 ? new Date(opportunity.expectedCloseAt).toLocaleDateString()
                 : '—'}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+            <p className="text-xs text-text-stone  uppercase">
               Next Action
             </p>
-            <p className="text-sm text-gray-900 dark:text-white">
+            <p className="text-sm text-text-ink ">
               {opportunity.nextActionAt
                 ? new Date(opportunity.nextActionAt).toLocaleDateString()
                 : '—'}
@@ -205,20 +205,20 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
           </div>
           {opportunity.project && (
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+              <p className="text-xs text-text-stone  uppercase">
                 Project
               </p>
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-text-ink ">
                 {opportunity.project.name}
               </p>
             </div>
           )}
           {opportunity.unit && (
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+              <p className="text-xs text-text-stone  uppercase">
                 Unit
               </p>
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-text-ink ">
                 {opportunity.unit.name}
               </p>
             </div>
@@ -226,14 +226,14 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-surface-paper rounded-lg shadow">
+        <div className="flex border-b border-border-line ">
           <button
             onClick={() => setActiveTab('timeline')}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === 'timeline'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-text-stone hover:text-text-ink'
             }`}
           >
             Activity Timeline
@@ -242,8 +242,8 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
             onClick={() => setActiveTab('requirements')}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === 'requirements'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-text-stone hover:text-text-ink'
             }`}
           >
             Requirements

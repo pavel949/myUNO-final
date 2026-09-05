@@ -54,6 +54,10 @@ export interface SearchResultsLabels {
   barAdults: string;
   barChildren: string;
   barSubmit: string;
+  filterType: string;
+  filterMin: string;
+  filterMax: string;
+  filterClear: string;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -72,9 +76,11 @@ export interface SortOption {
 export default function SearchResults({
   labels,
   sortOptions,
+  typeOptions,
 }: {
   labels: SearchResultsLabels;
   sortOptions: SortOption[];
+  typeOptions: { key: string; label: string }[];
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -84,7 +90,6 @@ export default function SearchResults({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bookingCategory, setBookingCategory] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
   const startDate = searchParams?.get('startDate');
@@ -93,7 +98,11 @@ export default function SearchResults({
   const children = searchParams?.get('children') || '0';
   const projectId = searchParams?.get('projectId');
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
+  const unitTypes = searchParams?.get('unitTypes') || '';
+  const minPrice = searchParams?.get('minPrice') || '';
+  const maxPrice = searchParams?.get('maxPrice') || '';
   const hasDates = Boolean(startDate && endDate);
+  const selectedTypes = new Set(unitTypes.split(',').filter(Boolean));
 
   /**
    * Which search the answers belong to. A slow first page must not overwrite a
@@ -120,6 +129,9 @@ export default function SearchResults({
           offset: String(offset),
         });
         if (projectId) params.set('projectId', projectId);
+        if (unitTypes) params.set('unitTypes', unitTypes);
+        if (minPrice) params.set('minPrice', minPrice);
+        if (maxPrice) params.set('maxPrice', maxPrice);
 
         const response = await fetch(`/api/search/units?${params}`);
         if (!response.ok) {
@@ -157,7 +169,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, sort, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, sort, unitTypes, minPrice, maxPrice, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -181,47 +193,37 @@ export default function SearchResults({
     router.replace(`/search?${next.toString()}`);
   };
 
-  const handleBookCategory = async (categoryKey: string) => {
+  const replaceFilters = (mutate: (next: URLSearchParams) => void) => {
+    const next = new URLSearchParams(searchParams?.toString() || '');
+    mutate(next);
+    router.replace(`/search?${next.toString()}`);
+  };
+
+  const toggleType = (key: string) => {
+    replaceFilters((next) => {
+      const current = new Set((next.get('unitTypes') || '').split(',').filter(Boolean));
+      if (current.has(key)) current.delete(key);
+      else current.add(key);
+      if (current.size === 0) next.delete('unitTypes');
+      else next.set('unitTypes', Array.from(current).join(','));
+    });
+  };
+
+  const handleBookCategory = (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;
-    setBookingCategory(categoryKey);
-    setError(null);
-    try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          categoryKey,
-          projectId,
-          startDate,
-          endDate,
-          adultsCount: Number(adults),
-          childrenCount: Number(children),
-        }),
-      });
-      if (response.status === 401) {
-        const next = `/search?${searchParams?.toString() || ''}`;
-        router.push(`/login?next=${encodeURIComponent(next)}`);
-        return;
-      }
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || labels.errorBooking);
-      }
-      const result = await response.json();
-      if (result.checkout) {
-        router.push(result.checkout.checkoutUrl);
-      } else {
-        router.push('/trips');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : labels.errorBooking);
-    } finally {
-      setBookingCategory(null);
-    }
+    const next = new URLSearchParams({
+      categoryKey,
+      projectId,
+      startDate,
+      endDate,
+      adults,
+      children,
+    });
+    router.push(`/book/review?${next.toString()}`);
   };
 
   return (
-    <div className="min-h-screen bg-surface-background p-24 md:p-32">
+    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
         <div className="mb-24">
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>
@@ -271,6 +273,77 @@ export default function SearchResults({
           </div>
         )}
 
+        {hasDates && (
+          <div className="mb-24 space-y-16">
+            <div>
+              <p className="mb-8 text-small text-text-stone">{labels.filterType}</p>
+              <div className="flex flex-wrap gap-8">
+                {typeOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => toggleType(option.key)}
+                    className={
+                      selectedTypes.has(option.key)
+                        ? 'rounded-full bg-brand-andaman px-16 py-8 text-small text-on-dark-text'
+                        : 'rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink'
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-end gap-12">
+              <label className="text-small text-text-stone">
+                {labels.filterMin}
+                <input
+                  type="number"
+                  min={0}
+                  value={minPrice}
+                  onChange={(event) =>
+                    replaceFilters((next) => {
+                      if (event.target.value) next.set('minPrice', event.target.value);
+                      else next.delete('minPrice');
+                    })
+                  }
+                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                />
+              </label>
+              <label className="text-small text-text-stone">
+                {labels.filterMax}
+                <input
+                  type="number"
+                  min={0}
+                  value={maxPrice}
+                  onChange={(event) =>
+                    replaceFilters((next) => {
+                      if (event.target.value) next.set('maxPrice', event.target.value);
+                      else next.delete('maxPrice');
+                    })
+                  }
+                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                />
+              </label>
+              {(unitTypes || minPrice || maxPrice) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    replaceFilters((next) => {
+                      next.delete('unitTypes');
+                      next.delete('minPrice');
+                      next.delete('maxPrice');
+                    })
+                  }
+                  className="h-40 text-small font-semibold text-brand-andaman hover:underline"
+                >
+                  {labels.filterClear}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {loading && <p className="text-body text-text-secondary">{labels.loading}</p>}
 
         {error && (
@@ -304,12 +377,9 @@ export default function SearchResults({
                   <button
                     type="button"
                     onClick={() => handleBookCategory(category.category_key)}
-                    disabled={bookingCategory !== null}
-                    className="w-full bg-brand-andaman text-surface-ivory rounded-sm h-48 font-semibold hover:opacity-90 transition disabled:opacity-50"
+                    className="w-full bg-brand-andaman text-surface-ivory rounded-sm h-48 font-semibold hover:opacity-90 transition"
                   >
-                    {bookingCategory === category.category_key
-                      ? labels.categoryBooking
-                      : labels.categoryBook}
+                    {labels.categoryBook}
                   </button>
                   <p className="text-small text-text-secondary mt-8">
                     {labels.categoryAutoAssign}

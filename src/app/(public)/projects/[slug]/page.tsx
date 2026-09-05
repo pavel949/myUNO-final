@@ -173,7 +173,7 @@ export default async function ProjectLandingPage({
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -192,13 +192,13 @@ export default async function ProjectLandingPage({
         ) : null}
         <div className="relative max-w-4xl mx-auto text-center py-64 px-24">
           {areaLabel ? <p className="text-small mb-16">{areaLabel}</p> : null}
-          <h1 className="text-heading-1 font-bold mb-16">{project.name}</h1>
+          <h1 className="font-display text-display-xl font-semibold mb-16">{project.name}</h1>
           <p className="text-body text-surface-ivory/90">{project.address}</p>
         </div>
       </section>
 
       {/* Availability bar */}
-      <section className="bg-surface-background py-40 px-24">
+      <section className="bg-surface-ivory py-40 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}
@@ -222,14 +222,14 @@ export default async function ProjectLandingPage({
         <section className="max-w-6xl mx-auto py-64 px-24">
           {styleKeys.length > 1 ? (
             <>
-              <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+              <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
                 {labels['project_page.styles.title']}
               </h2>
               <div className="flex flex-wrap gap-16 mb-40">
                 {styleKeys.map((styleKey) => (
                   <span
                     key={styleKey}
-                    className="bg-surface-background border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
+                    className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
                   >
                     {styleLabels[styleKey] || styleKey}
                   </span>
@@ -237,14 +237,14 @@ export default async function ProjectLandingPage({
               </div>
             </>
           ) : null}
-          <h2 className="text-heading-1 font-bold text-text-ink mb-40">
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
             {labels['project_page.categories.title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.categories.map((category) => (
               <div
                 key={category.key}
-                className="bg-white border border-border-line rounded-lg p-24"
+                className="bg-surface-paper border border-border-line rounded-lg p-24"
               >
                 <h3 className="text-heading-3 font-bold text-text-ink mb-8">
                   {categoryLabels[category.key] || category.key}
@@ -276,9 +276,9 @@ export default async function ProjectLandingPage({
 
       {/* Long-stay block (renders when any category sells monthly) */}
       {monthlyCategories.length > 0 ? (
-        <section className="bg-surface-background py-64 px-24">
+        <section className="bg-surface-ivory py-64 px-24">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-heading-1 font-bold text-text-ink mb-16">
+            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-16">
               {labels['project_page.longstay.title']}
             </h2>
             <p className="text-body text-text-secondary mb-24">
@@ -288,7 +288,7 @@ export default async function ProjectLandingPage({
               {monthlyCategories.map((category) => (
                 <div
                   key={category.key}
-                  className="bg-white border border-border-line rounded-lg px-24 py-16"
+                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-16"
                 >
                   <p className="text-small text-text-secondary mb-4">
                     {categoryLabels[category.key] || category.key}
@@ -316,7 +316,7 @@ export default async function ProjectLandingPage({
 
       {/* Units grid */}
       <section className="max-w-6xl mx-auto py-64 px-24">
-        <h2 className="text-heading-1 font-bold text-text-ink mb-40">
+        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
           {labels['project_page.units.title']}
         </h2>
         {project.units.length === 0 ? (
@@ -329,7 +329,7 @@ export default async function ProjectLandingPage({
               <Link
                 key={unit.id}
                 href={`/units/${unit.id}`}
-                className="bg-white border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {unit.coverUrl ? (
                   <Image
@@ -340,7 +340,7 @@ export default async function ProjectLandingPage({
                     className="w-full h-44 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-44 bg-surface-background" />
+                  <div className="w-full h-44 bg-surface-ivory" />
                 )}
                 <div className="p-24">
                   <h3 className="text-heading-3 font-bold text-text-ink mb-8">{unit.name}</h3>
@@ -369,9 +369,9 @@ export default async function ProjectLandingPage({
 
       {/* Project story */}
       {story ? (
-        <section className="bg-surface-background py-64 px-24">
+        <section className="bg-surface-ivory py-64 px-24">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
               {labels['project_page.story.title']}
             </h2>
             <p className="text-body text-text-secondary whitespace-pre-line">{story}</p>
@@ -382,14 +382,14 @@ export default async function ProjectLandingPage({
       {/* Amenities */}
       {project.amenityKeys.length > 0 ? (
         <section className="max-w-6xl mx-auto py-64 px-24">
-          <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
             {labels['project_page.amenities.title']}
           </h2>
           <div className="flex flex-wrap gap-16">
             {project.amenityKeys.map((key) => (
               <span
                 key={key}
-                className="bg-surface-background border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
+                className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
               >
                 {amenityLabel(key)}
               </span>
@@ -400,9 +400,9 @@ export default async function ProjectLandingPage({
 
       {/* Services available here */}
       {services.length > 0 ? (
-        <section className="bg-surface-background py-64 px-24">
+        <section className="bg-surface-ivory py-64 px-24">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
               {labels['project_page.services.title']}
             </h2>
             <div className="flex flex-wrap gap-16 mb-24">
@@ -410,7 +410,7 @@ export default async function ProjectLandingPage({
                 <Link
                   key={service.id}
                   href={`/services/${service.id}`}
-                  className="bg-white border border-border-line rounded-lg px-24 py-12 text-body text-text-ink hover:shadow-md transition"
+                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-12 text-body text-text-ink hover:shadow-md transition"
                 >
                   {service.title}
                 </Link>
@@ -425,7 +425,7 @@ export default async function ProjectLandingPage({
 
       {/* Location */}
       <section className="max-w-4xl mx-auto py-64 px-24">
-        <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
           {labels['project_page.location.title']}
         </h2>
         <p className="text-body text-text-secondary mb-16">{project.address}</p>
@@ -441,9 +441,9 @@ export default async function ProjectLandingPage({
 
       {/* Handbook teaser */}
       {handbookTeaser ? (
-        <section className="bg-surface-background py-64 px-24">
+        <section className="bg-surface-ivory py-64 px-24">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-heading-1 font-bold text-text-ink mb-24">
+            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
               {labels['project_page.handbook.title']}
             </h2>
             <p className="text-body text-text-secondary whitespace-pre-line">
@@ -459,7 +459,7 @@ export default async function ProjectLandingPage({
       {project.reviews.count > 0 ? (
         <section className="max-w-6xl mx-auto py-64 px-24">
           <div className="flex items-baseline gap-16 mb-40">
-            <h2 className="text-heading-1 font-bold text-text-ink">
+            <h2 className="font-display text-display-xl font-semibold text-text-ink">
               {labels['project_page.reviews.title']}
             </h2>
             <span className="text-body text-text-secondary">
@@ -473,7 +473,7 @@ export default async function ProjectLandingPage({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.reviews.items.map((review, i) => (
-              <div key={i} className="bg-white border border-border-line rounded-lg p-24">
+              <div key={i} className="bg-surface-paper border border-border-line rounded-lg p-24">
                 <p className="text-small text-brand-andaman mb-8">
                   {'★'.repeat(review.rating)}
                 </p>
@@ -497,7 +497,7 @@ export default async function ProjectLandingPage({
 
       {/* Trust band */}
       <section className="max-w-6xl mx-auto py-64 px-24">
-        <h2 className="text-heading-1 font-bold text-text-ink mb-40 text-center">
+        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
           {labels['project_page.trust.title']}
         </h2>
         {licenceLine ? (

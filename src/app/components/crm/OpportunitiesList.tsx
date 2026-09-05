@@ -28,14 +28,14 @@ interface OpportunitiesListProps {
 type SortKey = 'stage' | 'probability' | 'value' | 'age' | 'date';
 
 const STAGE_COLORS: Record<string, string> = {
-  new: 'text-slate-700 dark:text-slate-300',
-  qualified: 'text-blue-700 dark:text-blue-300',
-  discovery: 'text-indigo-700 dark:text-indigo-300',
-  proposal: 'text-purple-700 dark:text-purple-300',
-  negotiation: 'text-orange-700 dark:text-orange-300',
-  nurture: 'text-yellow-700 dark:text-yellow-300',
-  won: 'text-green-700 dark:text-green-300',
-  lost: 'text-red-700 dark:text-red-300',
+  new: 'text-slate-700',
+  qualified: 'text-blue-700',
+  discovery: 'text-indigo-700',
+  proposal: 'text-purple-700',
+  negotiation: 'text-orange-700',
+  nurture: 'text-yellow-700',
+  won: 'text-green-700',
+  lost: 'text-red-700',
 };
 
 const getDaysInStage = (createdAt: string | Date): number => {
@@ -117,39 +117,39 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
   return (
     <div className="w-full">
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
+      <div className="hidden lg:block bg-surface-paper rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm">
-        <thead className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <thead className="bg-surface-ivory border-b border-border-line ">
           <tr>
-            <th className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">
+            <th className="px-4 py-3 text-left font-semibold text-text-ink ">
               Contact
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">
+            <th className="px-4 py-3 text-left font-semibold text-text-ink ">
               Opportunity
             </th>
             <th
-              className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800"
+              className="px-4 py-3 text-left font-semibold text-text-ink  cursor-pointer hover:bg-surface-ivory "
               onClick={() => toggleSort('stage')}
             >
               Stage{' '}
               {sort.key === 'stage' && (sort.asc ? '↑' : '↓')}
             </th>
             <th
-              className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800"
+              className="px-4 py-3 text-left font-semibold text-text-ink  cursor-pointer hover:bg-surface-ivory "
               onClick={() => toggleSort('probability')}
             >
               Probability{' '}
               {sort.key === 'probability' && (sort.asc ? '↑' : '↓')}
             </th>
             <th
-              className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800"
+              className="px-4 py-3 text-right font-semibold text-text-ink  cursor-pointer hover:bg-surface-ivory "
               onClick={() => toggleSort('value')}
             >
               Weighted Value{' '}
               {sort.key === 'value' && (sort.asc ? '↑' : '↓')}
             </th>
             <th
-              className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800"
+              className="px-4 py-3 text-right font-semibold text-text-ink  cursor-pointer hover:bg-surface-ivory "
               onClick={() => toggleSort('age')}
             >
               Days in Stage{' '}
@@ -157,12 +157,12 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="divide-y divide-gray-200">
           {sorted.map((opp) => (
             <tr
               key={opp.id}
               onClick={() => onRowClick?.(opp.id)}
-              className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              className="hover:bg-surface-ivory  cursor-pointer transition-colors"
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -176,24 +176,24 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-border-line  flex-shrink-0 flex items-center justify-center">
                       <span className="text-xs font-bold">
                         {opp.contact?.name?.[0]?.toUpperCase() || '?'}
                       </span>
                     </div>
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <p className="font-medium text-text-ink ">
                       {opp.contact?.name || 'Unknown'}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-text-stone ">
                       {opp.contact?.email}
                     </p>
                   </div>
                 </div>
               </td>
               <td className="px-4 py-3">
-                <p className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                <p className="font-medium text-text-ink  line-clamp-1">
                   {opp.title}
                 </p>
               </td>
@@ -204,23 +204,23 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div className="w-12 h-2 bg-border-line  rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500"
+                      className="h-full bg-brand-andaman"
                       style={{ width: `${opp.probability}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-10">
+                  <span className="text-sm font-medium text-text-ink  w-10">
                     {opp.probability}%
                   </span>
                 </div>
               </td>
-              <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+              <td className="px-4 py-3 text-right font-medium text-text-ink ">
                 {formatCurrency(
                   ((opp.valueThb ?? 0) * opp.probability) / 100
                 )}
               </td>
-              <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
+              <td className="px-4 py-3 text-right text-text-stone ">
                 {getDaysInStage(opp.createdAt)} days
               </td>
             </tr>
@@ -230,8 +230,8 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
       </div>
 
       {sorted.length === 0 && (
-        <div className="hidden lg:block text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-500 dark:text-gray-400">
+        <div className="hidden lg:block text-center py-12 bg-surface-paper rounded-lg">
+          <p className="text-text-stone ">
             No opportunities yet
           </p>
         </div>
@@ -240,8 +240,8 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
         {sorted.length === 0 && (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 bg-surface-paper rounded-lg">
+            <p className="text-text-stone ">
               No opportunities yet
             </p>
           </div>
@@ -250,14 +250,14 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
           <div
             key={opp.id}
             onClick={() => onRowClick?.(opp.id)}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-surface-paper rounded-lg shadow p-4 space-y-3 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <p className="font-medium text-gray-900 dark:text-white">
+                <p className="font-medium text-text-ink ">
                   {opp.title}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-text-stone ">
                   {opp.contact?.name || 'Unknown'}
                 </p>
               </div>
@@ -268,20 +268,20 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
 
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-gray-600 dark:text-gray-400">Prob:</span>
-                <div className="w-16 h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                <span className="text-text-stone ">Prob:</span>
+                <div className="w-16 h-2 bg-border-line  rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500"
+                    className="h-full bg-brand-andaman"
                     style={{ width: `${opp.probability}%` }}
                   />
                 </div>
-                <span className="font-medium text-gray-700 dark:text-gray-300 w-8">
+                <span className="font-medium text-text-ink  w-8">
                   {opp.probability}%
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between text-sm text-text-stone  pt-2 border-t border-border-line ">
               <span>
                 Value: {formatCurrency(((opp.valueThb ?? 0) * opp.probability) / 100)}
               </span>

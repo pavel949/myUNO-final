@@ -84,6 +84,9 @@ export default function OnboardingClient({
 
   const hasChecklist = steps.some((s) => s.itemId);
   const hasPermittedUseRecord = complianceRecords.some((r) => r.recordType === 'permitted_use');
+  const doneCount = steps.filter((s) => s.status === 'done').length;
+  const stepTotal = steps.length;
+  const doneRatio = stepTotal === 0 ? 0 : doneCount / stepTotal;
 
   const post = (url: string, body?: unknown) =>
     fetch(url, {
@@ -102,7 +105,7 @@ export default function OnboardingClient({
 
       {/* Owner — a mandate cannot exist without one, so it comes first. */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.owner_title']}
         </h2>
         {owner ? (
@@ -150,7 +153,7 @@ export default function OnboardingClient({
 
       {/* Mandate — the step that decides whether statements can ever run. */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.engagement_title']}
         </h2>
         {engagements.length === 0 ? (
@@ -227,7 +230,7 @@ export default function OnboardingClient({
 
       {/* Compliance — the evidence behind the permitted-use gate. */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.compliance_title']}
         </h2>
         {permittedUseConfirmed && !hasPermittedUseRecord && (
@@ -327,9 +330,22 @@ export default function OnboardingClient({
 
       {/* The checklist itself. */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.title']}
         </h2>
+        {stepTotal > 0 && (
+          <div className="mb-16">
+            <p className="mb-8 text-small text-text-secondary">
+              {`${doneCount} / ${stepTotal} ${labels['admin.onboarding.done']}`}
+            </p>
+            <div className="h-8 overflow-hidden rounded-full bg-surface-ivory">
+              <div
+                className="h-full bg-brand-andaman"
+                style={{ width: `${Math.round(doneRatio * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {!hasChecklist && (
           <div className="mb-16">

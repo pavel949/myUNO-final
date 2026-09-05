@@ -57,9 +57,9 @@ export default async function ResidencePage() {
 
   if (residences.length === 0) {
     return (
-      <main className="min-h-screen bg-surface-background p-24 md:p-32">
+      <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-16">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
             {labels['residence.title']}
           </h1>
           <div className="p-24 bg-surface-paper border border-border-line rounded-lg">
@@ -93,15 +93,15 @@ export default async function ResidencePage() {
     `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['residence.title']}</h1>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['residence.title']}</h1>
         <p className="text-body text-text-secondary mb-32">{labels['residence.subtitle']}</p>
 
         {residences.map((residence, index) => (
           <section key={residence.projectId} className="mb-40">
             <div className="mb-24">
-              <h2 className="text-heading-2 font-semibold text-text-ink">
+              <h2 className="font-display text-display font-semibold text-text-ink">
                 {residence.projectName}
               </h2>
               {residence.units.length > 0 ? (
@@ -113,7 +113,7 @@ export default async function ResidencePage() {
               ) : null}
             </div>
 
-            <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
+            <h3 className="font-display text-title font-semibold text-text-ink mb-12">
               {labels['residence.announcements']}
             </h3>
             {residence.announcements.length === 0 ? (
@@ -125,39 +125,41 @@ export default async function ResidencePage() {
                 {residence.announcements.map((announcement) => (
                   <li
                     key={announcement.id}
-                    className="p-16 bg-surface-paper border border-border-line rounded-lg"
+                    className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card"
                   >
                     <div className="flex flex-wrap items-baseline gap-8 mb-4">
-                      <p className="text-body font-semibold text-text-ink">{announcement.title}</p>
+                      <p className="font-display text-title font-semibold text-text-ink">
+                        {announcement.title}
+                      </p>
                       {announcement.isPinned ? (
-                        <span className="text-xsmall text-brand-andaman font-semibold">
+                        <span className="text-small text-brand-andaman font-semibold">
                           {labels['residence.pinned']}
                         </span>
                       ) : null}
                       {announcement.isImportant ? (
-                        <span className="text-xsmall text-state-warning font-semibold">
+                        <span className="text-small text-state-warning font-semibold">
                           {labels['residence.important']}
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-small text-text-secondary whitespace-pre-wrap mb-8">
+                    <p className="text-small text-text-stone whitespace-pre-wrap mb-8">
                       {announcement.body}
                     </p>
-                    <p className="text-xsmall text-text-secondary">
+                    <p className="text-small text-text-stone">
                       {`${
                         (labels as Record<string, string>)[
                           `residence.posted_by.${announcement.postedAs}`
                         ] ?? ''
                       }${
                         announcement.organizationName ? ` · ${announcement.organizationName}` : ''
-                      } · ${announcement.createdAt.toLocaleDateString('sv-SE')}`}
+                      } · ${announcement.createdAt.toLocaleDateString(locale)}`}
                     </p>
                   </li>
                 ))}
               </ul>
             )}
 
-            <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
+            <h3 className="font-display text-title font-semibold text-text-ink mb-12">
               {labels['residence.handbook']}
             </h3>
             <div className="p-16 bg-surface-paper border border-border-line rounded-lg mb-24">
@@ -174,7 +176,7 @@ export default async function ResidencePage() {
             </div>
 
             <div className="flex items-baseline justify-between mb-12">
-              <h3 className="text-heading-3 font-semibold text-text-ink">
+              <h3 className="font-display text-title font-semibold text-text-ink">
                 {labels['residence.services']}
               </h3>
               <Link
@@ -209,7 +211,7 @@ export default async function ResidencePage() {
         ))}
 
         <section className="pt-24 border-t border-border-line">
-          <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
+          <h3 className="font-display text-title font-semibold text-text-ink mb-12">
             {labels['residence.actions']}
           </h3>
           <div className="flex flex-wrap gap-16">

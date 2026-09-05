@@ -1,11 +1,15 @@
 import Link from 'next/link';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 export interface FooterLabels {
   brandColumn: string;
   home: string;
   residences: string;
+  services: string;
+  search: string;
   trust: string;
   about: string;
+  ombudsman: string;
   audienceColumn: string;
   owners: string;
   guests: string;
@@ -17,22 +21,29 @@ export interface FooterLabels {
   legalColumn: string;
   terms: string;
   privacy: string;
+  legalIndex: string;
+  language: string;
   companyLine: string;
   copyright: string;
 }
 
 interface FooterProps {
   labels: FooterLabels;
+  locale: string;
+  localeOptions: { en: string; ru: string; th: string; zh: string };
 }
 
-export function Footer({ labels }: FooterProps) {
+export function Footer({ labels, locale, localeOptions }: FooterProps) {
   const columns = [
     {
       title: labels.brandColumn,
       links: [
         { href: '/', label: labels.home },
+        { href: '/search', label: labels.search },
         { href: '/projects', label: labels.residences },
+        { href: '/services', label: labels.services },
         { href: '/trust', label: labels.trust },
+        { href: '/trust/ombudsman', label: labels.ombudsman },
         { href: '/about', label: labels.about },
       ],
     },
@@ -55,6 +66,7 @@ export function Footer({ labels }: FooterProps) {
     {
       title: labels.legalColumn,
       links: [
+        { href: '/legal', label: labels.legalIndex },
         { href: '/legal/terms', label: labels.terms },
         { href: '/legal/privacy', label: labels.privacy },
       ],
@@ -80,9 +92,17 @@ export function Footer({ labels }: FooterProps) {
             </div>
           ))}
         </div>
-        <div className="border-t border-surface-ivory/20 pt-32">
-          <p className="text-small text-surface-ivory/60 mb-12">{labels.companyLine}</p>
-          <p className="text-small text-surface-ivory/60">{labels.copyright}</p>
+        <div className="flex flex-wrap items-end justify-between gap-16 border-t border-surface-ivory/20 pt-32">
+          <div>
+            <p className="text-small text-surface-ivory/60 mb-12">{labels.companyLine}</p>
+            <p className="text-small text-surface-ivory/60">{labels.copyright}</p>
+          </div>
+          <LocaleSwitcher
+            locale={locale}
+            ariaLabel={labels.language}
+            optionLabels={localeOptions}
+            variant="onDark"
+          />
         </div>
       </div>
     </footer>

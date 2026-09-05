@@ -32,10 +32,10 @@ export default async function ProviderLayout({
   });
 
   return (
-    <div className="min-h-screen bg-surface-background">
+    <div className="min-h-screen bg-surface-ivory">
       <div className="max-w-4xl mx-auto px-24 py-32">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-12 mb-24">
-          <h1 className="text-heading-2 font-bold text-text-ink">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink">
             {labels['provider.portal.title']}
           </h1>
           {isMember && (

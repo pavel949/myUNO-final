@@ -85,7 +85,7 @@ export default async function AdminPayoutsPage() {
 
   return (
     <div>
-      <h1 className="text-heading-1 font-bold text-text-ink mb-24">
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.payouts.title']}
       </h1>
 

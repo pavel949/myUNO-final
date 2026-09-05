@@ -125,8 +125,8 @@ export default function ThreadClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface-background p-32">
-        <p className="text-body text-text-secondary text-center">
+      <main className="min-h-screen bg-surface-ivory p-32">
+        <p className="text-center text-body text-text-secondary">
           {labels['messages.thread.loading']}
         </p>
       </main>
@@ -135,12 +135,12 @@ export default function ThreadClient({
 
   if (!thread) {
     return (
-      <main className="min-h-screen bg-surface-background p-32">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-body text-state-error mb-16">
+      <main className="min-h-screen bg-surface-ivory p-32">
+        <div className="mx-auto max-w-2xl">
+          <p className="mb-16 text-body text-state-error">
             {error || labels['messages.thread.not_found']}
           </p>
-          <Link href="/messages" className="text-brand-andaman font-semibold hover:underline">
+          <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
             {labels['messages.thread.back']}
           </Link>
         </div>
@@ -149,78 +149,80 @@ export default function ThreadClient({
   }
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
-      <div className="max-w-2xl mx-auto flex flex-col" style={{ minHeight: '80vh' }}>
-        <p className="mb-16">
-          <Link href="/messages" className="text-brand-andaman font-semibold hover:underline">
-            {labels['messages.thread.back']}
-          </Link>
-        </p>
+    <div className="flex min-h-[80vh] flex-col bg-surface-ivory">
+      <div className="border-b border-border-line bg-surface-paper px-24 py-16">
+        <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
+          {labels['messages.thread.back']}
+        </Link>
+      </div>
 
-        <div className="flex-1 bg-surface-paper border border-border-line rounded-lg p-16 mb-16 overflow-y-auto space-y-12">
-          {thread.messages.map((message) => {
-            const mine = myId !== null && message.sender?.id === myId;
-            if (message.messageKind === 'system') {
-              return (
-                <p key={message.id} className="text-small text-text-stone text-center">
+      <div className="flex-1 space-y-12 overflow-y-auto px-24 py-20">
+        {thread.messages.map((message) => {
+          const mine = myId !== null && message.sender?.id === myId;
+          if (message.messageKind === 'system') {
+            return (
+              <div key={message.id} className="flex justify-center">
+                <p className="max-w-md rounded-full bg-state-info-soft px-16 py-6 text-center text-small text-state-info">
                   {message.body}
                 </p>
-              );
-            }
-            return (
-              <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[80%] rounded-lg px-16 py-8 ${
-                    mine
-                      ? 'bg-state-info-soft text-text-ink'
-                      : 'bg-surface-ivory text-text-ink'
-                  }`}
-                >
-                  {!mine && message.sender && (
-                    <p className="text-small font-semibold text-brand-andaman">
-                      {message.sender.firstName} {message.sender.lastName}
-                    </p>
-                  )}
-                  <p className="text-body whitespace-pre-wrap">{message.body}</p>
-                  <div className="flex items-center justify-between gap-8 mt-4 flex-wrap">
-                    <p className="text-small text-text-stone">
-                      {new Date(message.createdAt).toLocaleString()}
-                    </p>
-                    {isStaff && !mine && message.sender ? (
-                      <button
-                        type="button"
-                        className="text-small text-brand-andaman hover:underline disabled:opacity-50"
-                        onClick={() => flagPurchase(message.id)}
-                        disabled={flaggingId === message.id}
-                      >
-                        {flaggingId === message.id
-                          ? labels['messages.thread.flag_working']
-                          : labels['messages.thread.flag_purchase']}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
               </div>
             );
-          })}
-          <div ref={bottomRef} />
-        </div>
-
-        {error && <p className="text-small text-state-error mb-8">{error}</p>}
-
-        <form onSubmit={send} className="flex gap-8">
-          <input
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={labels['messages.thread.placeholder']}
-            className="flex-1 h-48 px-16 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
-          />
-          <Button type="submit" isLoading={sending} disabled={!draft.trim()}>
-            {labels['messages.thread.send']}
-          </Button>
-        </form>
+          }
+          return (
+            <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[80%] rounded-lg px-16 py-12 ${
+                  mine
+                    ? 'bg-brand-andaman text-surface-ivory'
+                    : 'border border-border-line bg-surface-paper text-text-ink'
+                }`}
+              >
+                {!mine && message.sender && (
+                  <p className={`mb-1 text-small font-medium ${mine ? '' : 'text-brand-andaman'}`}>
+                    {message.sender.firstName} {message.sender.lastName}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap text-body">{message.body}</p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className={`text-small ${mine ? 'text-surface-ivory/70' : 'text-text-stone'}`}>
+                    {new Date(message.createdAt).toLocaleString()}
+                  </p>
+                  {isStaff && !mine && message.sender ? (
+                    <button
+                      type="button"
+                      className={`text-small hover:underline disabled:opacity-50 ${
+                        mine ? 'text-surface-ivory' : 'text-brand-andaman'
+                      }`}
+                      onClick={() => flagPurchase(message.id)}
+                      disabled={flaggingId === message.id}
+                    >
+                      {flaggingId === message.id
+                        ? labels['messages.thread.flag_working']
+                        : labels['messages.thread.flag_purchase']}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
       </div>
-    </main>
+
+      {error && <p className="px-24 text-small text-state-error">{error}</p>}
+
+      <form onSubmit={send} className="flex gap-8 border-t border-border-line bg-surface-paper px-24 py-16">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={labels['messages.thread.placeholder']}
+          className="h-48 flex-1 rounded-sm border border-border-line bg-surface-paper px-16 text-text-ink focus:border-brand-andaman focus:outline-none"
+        />
+        <Button type="submit" isLoading={sending} disabled={!draft.trim()}>
+          {labels['messages.thread.send']}
+        </Button>
+      </form>
+    </div>
   );
 }

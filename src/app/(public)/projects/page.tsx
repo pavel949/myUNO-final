@@ -55,11 +55,11 @@ export default async function ProjectsHubPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-small mb-16">{labels['projects.hub.kicker']}</p>
-          <h1 className="text-heading-1 font-bold mb-16">{labels['projects.hub.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold mb-16">{labels['projects.hub.title']}</h1>
           <p className="text-body text-surface-ivory/90">{labels['projects.hub.subtitle']}</p>
         </div>
       </section>
@@ -86,7 +86,7 @@ export default async function ProjectsHubPage() {
               <Link
                 key={project.id}
                 href={`/projects/${project.slug}`}
-                className="bg-white border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {project.coverUrl ? (
                   <Image
@@ -97,7 +97,7 @@ export default async function ProjectsHubPage() {
                     className="w-full h-56 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-56 bg-surface-background" />
+                  <div className="w-full h-56 bg-surface-ivory" />
                 )}
                 <div className="p-32">
                   <h2 className="text-heading-2 font-bold text-text-ink mb-8">

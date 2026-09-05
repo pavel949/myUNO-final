@@ -37,12 +37,19 @@ export default async function SearchPage() {
     'search.bar_adults': 'Adults',
     'search.bar_children': 'Children',
     'search.bar_submit': 'Search',
+    'search.filters.type': 'Home type',
+    'search.filters.min_price': 'Min nightly THB',
+    'search.filters.max_price': 'Max nightly THB',
+    'search.filters.clear': 'Clear filters',
+    'catalog.unit_types.villa.label': 'Villa',
+    'catalog.unit_types.condo.label': 'Apartment',
+    'catalog.unit_types.townhouse.label': 'Townhouse',
   });
 
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-surface-background p-32">
+        <div className="min-h-screen bg-surface-ivory p-32">
           <p className="text-body text-text-secondary">{labels['search.loading']}</p>
         </div>
       }
@@ -74,7 +81,16 @@ export default async function SearchPage() {
           barAdults: labels['search.bar_adults'],
           barChildren: labels['search.bar_children'],
           barSubmit: labels['search.bar_submit'],
+          filterType: labels['search.filters.type'],
+          filterMin: labels['search.filters.min_price'],
+          filterMax: labels['search.filters.max_price'],
+          filterClear: labels['search.filters.clear'],
         }}
+        typeOptions={[
+          { key: 'villa', label: labels['catalog.unit_types.villa.label'] },
+          { key: 'condo', label: labels['catalog.unit_types.condo.label'] },
+          { key: 'townhouse', label: labels['catalog.unit_types.townhouse.label'] },
+        ]}
         sortOptions={UNIT_SORTS.map((sort) => ({
           key: sort.key,
           label: sortLabels[sort.labelKey],

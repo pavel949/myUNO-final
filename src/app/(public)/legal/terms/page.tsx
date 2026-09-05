@@ -43,10 +43,10 @@ export default async function TermsPage() {
   const labels = await getLabels(LEGAL_LABELS);
 
   return (
-    <main className="min-h-screen bg-surface-background">
+    <main className="min-h-screen bg-surface-ivory">
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-heading-1 font-bold">{labels['legal.terms.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold">{labels['legal.terms.title']}</h1>
         </div>
       </section>
 

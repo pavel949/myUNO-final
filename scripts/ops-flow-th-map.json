@@ -37,6 +37,7 @@
   "checkin.passports.error_generic": "บันทึกไม่สำเร็จ โปรดลองอีกครั้ง",
   "messages.inbox.title": "ข้อความ",
   "messages.inbox.empty": "ยังไม่มีการสนทนา ส่งข้อความมาจากการเดินทางใดก็ได้ เราจะตอบที่นี่",
+  "messages.inbox.empty_pane.lead": "เลือกการสนทนา",
   "messages.thread.back": "← ข้อความ",
   "messages.thread.loading": "กำลังโหลดการสนทนา…",
   "messages.thread.not_found": "ไม่พบการสนทนา",

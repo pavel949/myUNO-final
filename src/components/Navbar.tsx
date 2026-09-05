@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './Button';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { NotificationBell, type BellLabels } from './NotificationBell';
 
 function navLinkClass(pathname: string, href: string, extra = '') {
@@ -26,7 +27,10 @@ export interface NavbarLabels {
   findStay: string;
   residences: string;
   services: string;
+  owners: string;
+  about: string;
   trust: string;
+  language: string;
   login: string;
   register: string;
   logout: string;
@@ -51,9 +55,10 @@ interface NavbarProps {
   roleLinks: { href: string; label: string }[];
   bellLabels: BellLabels;
   locale: string;
+  localeOptions: { en: string; ru: string; th: string; zh: string };
 }
 
-export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarProps) {
+export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOptions }: NavbarProps) {
   const pathname = usePathname() ?? '';
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -110,6 +115,12 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
             <Link href="/services" className={navLinkClass(pathname, '/services')}>
               {labels.services}
             </Link>
+            <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
+              {labels.owners}
+            </Link>
+            <Link href="/about" className={navLinkClass(pathname, '/about')}>
+              {labels.about}
+            </Link>
             <Link href="/trust" className={navLinkClass(pathname, '/trust')}>
               {labels.trust}
             </Link>
@@ -118,20 +129,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
 
         {/* Desktop auth area */}
         <div className="hidden md:flex items-center gap-16">
-          <select
-            aria-label="Language"
-            value={locale}
-            onChange={(e) => {
-              document.cookie = `locale=${e.target.value}; path=/; max-age=31536000; samesite=lax`;
-              window.location.reload();
-            }}
-            className="h-40 px-8 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-          >
-            <option value="en">EN</option>
-            <option value="ru">RU</option>
-            <option value="th">TH</option>
-            <option value="zh">中文</option>
-          </select>
+          <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
           {user ? (
             <>
               {userLinks.map((link) => (
@@ -207,6 +205,12 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
           </Link>
           <Link href="/services" className={navLinkClass(pathname, '/services', 'py-8')} onClick={closeMenu}>
             {labels.services}
+          </Link>
+          <Link href="/owners" className={navLinkClass(pathname, '/owners', 'py-8')} onClick={closeMenu}>
+            {labels.owners}
+          </Link>
+          <Link href="/about" className={navLinkClass(pathname, '/about', 'py-8')} onClick={closeMenu}>
+            {labels.about}
           </Link>
           <Link href="/trust" className={navLinkClass(pathname, '/trust', 'py-8')} onClick={closeMenu}>
             {labels.trust}

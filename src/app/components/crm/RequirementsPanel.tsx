@@ -63,19 +63,19 @@ export const RequirementsPanel: FC<RequirementsPanelProps> = ({
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-text-ink  mb-2">
             Deal requirements (JSON)
           </label>
           <textarea
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             rows={12}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm resize-vertical"
+            className="w-full px-3 py-2 border border-border-line  rounded-lg bg-surface-paper text-text-ink  font-mono text-sm resize-vertical"
           />
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200 p-3 rounded text-sm">
+          <div className="bg-state-error-soft text-state-error p-3 rounded text-sm">
             {error}
           </div>
         )}
@@ -88,14 +88,14 @@ export const RequirementsPanel: FC<RequirementsPanelProps> = ({
               setError(null);
             }}
             disabled={isSaving}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-text-ink  hover:bg-surface-ivory  rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 rounded-lg transition-colors font-medium"
+            className="px-4 py-2 bg-brand-andaman text-surface-ivory hover:bg-brand-deep disabled:opacity-50 rounded-lg transition-colors font-medium"
           >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
@@ -108,27 +108,27 @@ export const RequirementsPanel: FC<RequirementsPanelProps> = ({
     <div className="space-y-4">
       {Object.keys(requirements).length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-text-stone  mb-4">
             No requirements set yet
           </p>
           <button
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 rounded-lg transition-colors font-medium"
+            className="px-4 py-2 bg-brand-andaman text-surface-ivory hover:bg-brand-deep rounded-lg transition-colors font-medium"
           >
             Add requirements
           </button>
         </div>
       ) : (
         <>
-          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <pre className="text-sm text-gray-700 dark:text-gray-300 overflow-auto max-h-96">
+          <div className="bg-surface-ivory p-4 rounded-lg border border-border-line ">
+            <pre className="text-sm text-text-ink  overflow-auto max-h-96">
               {JSON.stringify(requirements, null, 2)}
             </pre>
           </div>
 
           <button
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 rounded-lg transition-colors font-medium"
+            className="px-4 py-2 bg-brand-andaman text-surface-ivory hover:bg-brand-deep rounded-lg transition-colors font-medium"
           >
             Edit requirements
           </button>

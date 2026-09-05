@@ -66,7 +66,7 @@ export default function PayoutsTable({
           {labels['admin.payouts.history_title']}
         </h2>
         <Link
-          href="/admin/finance/reconciliation"
+          href="/app/admin/finance/reconciliation"
           className="text-brand-andaman font-semibold hover:underline text-small"
         >
           {labels['admin.payouts.reconciliation_link']}

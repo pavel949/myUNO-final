@@ -270,7 +270,11 @@ const MATRIX_CAPABILITIES = [
       owner: false,
       guest: true,
       resident: true,
-      mc_member: true,
+      // Board 19's permission matrix states this as an absolute: owners,
+      // providers and MC/juristic members may never open a guest passport.
+      // staff_ops/onsite_host/admin may, but only logged with a reason
+      // (see requirePassportAccess in src/modules/core/passportAccess.ts).
+      mc_member: false,
       juristic_member: false,
       provider_member: false,
       buyer: true,

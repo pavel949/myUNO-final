@@ -11,6 +11,8 @@ export {
   type AccessLevel,
 } from './permissions';
 
+export { requirePassportAccess } from './passportAccess';
+
 export {
   grantRole,
   revokeRole,

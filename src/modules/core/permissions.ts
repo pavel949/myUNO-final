@@ -106,8 +106,13 @@ export const PERMISSIONS: PermissionEntry[] = [
   { action: 'compliance:view_passport_and_sensitive_data', role: 'onsite_host', access: 'allow', scope: 'arrivals_only' },
   { action: 'compliance:view_passport_and_sensitive_data', role: 'guest', access: 'allow', scope: 'own_only' },
   { action: 'compliance:view_passport_and_sensitive_data', role: 'resident', access: 'allow', scope: 'own_only' },
-  { action: 'compliance:view_passport_and_sensitive_data', role: 'mc_member', access: 'allow', scope: 'their_units_arrivals' },
   { action: 'compliance:view_passport_and_sensitive_data', role: 'buyer', access: 'allow', scope: 'own_only' },
+  // mc_member deliberately has NO row here. The design system's permission
+  // matrix (canvas board 19) states this as an absolute: owners, providers
+  // and MC/juristic members may never open a guest passport — only ops and
+  // admin may, and only logged with a reason (src/modules/core/passportAccess.ts).
+  // An earlier "their_units_arrivals" grant for mc_member was that exact
+  // violation and has been removed.
 
   // Services — 5 capabilities
   { action: 'services:browse_and_order', role: 'staff_ops', access: 'allow' },

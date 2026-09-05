@@ -92,6 +92,9 @@ module.exports = {
           'basePath',
           'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
           'variant', 'size',
+          // HTML table accessibility — `scope="col"` is a screen-reader hint,
+          // not a word a reader translates (same class as `role`).
+          'scope', 'colSpan', 'rowSpan', 'headers',
           // SVG
           'fill', 'stroke', 'strokeWidth', 'strokeLinecap', 'strokeLinejoin', 'strokeDasharray',
           'viewBox', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'width',

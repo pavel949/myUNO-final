@@ -68,8 +68,11 @@ or paste the session-pooler URL yourself. Either way the hostname must be
 ### Optional
 ```bash
 RESEND_API_KEY=<your Resend API key>
-EMAIL_FROM=onboarding@resend.dev  # or your verified domain
+EMAIL_FROM=pavel@ignatevestate.com
+EMAIL_REPLY_TO=pavel@ignatevestate.com
 CONTENT_REVIEW_GATE_ENABLED=true
+# Until ignatevestate.com is verified in Resend, EMAIL_FROM must be
+# onboarding@resend.dev or sends fail. Reply-To can stay on Pavel.
 ```
 
 ## Build Process (Improved)

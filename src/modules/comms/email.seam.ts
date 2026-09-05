@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { emailFrom, emailReplyTo } from '@/lib/emailAddresses';
 import { t } from '@/modules/content/content.service';
 import type { Locale } from '@/modules/content/types';
 
@@ -62,7 +63,8 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'noreply@myuno.io',
+        from: emailFrom(),
+        reply_to: emailReplyTo(),
         to,
         subject,
         text: body,

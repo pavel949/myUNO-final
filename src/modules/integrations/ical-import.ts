@@ -1,6 +1,7 @@
 import { PrismaClient, BlockedDateReason, Booking } from '@prisma/client';
 import { recordIntegrationSync } from './integrations';
 import { createNotification } from '@/modules/comms';
+import { toCalendarDay } from '@/lib/date';
 
 export interface ICalEvent {
   uid: string; // Unique identifier for idempotency
@@ -208,8 +209,8 @@ export async function createConflictNotifications(
           unit_id: unit.id,
           unit_name: unit.name,
           booking_id: conflict.conflictingBooking.id,
-          start_date: conflict.event.dtStart.toISOString().slice(0, 10),
-          end_date: conflict.event.dtEnd.toISOString().slice(0, 10),
+          start_date: toCalendarDay(conflict.event.dtStart),
+          end_date: toCalendarDay(conflict.event.dtEnd),
         },
       });
       if (created) notified += 1;

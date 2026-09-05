@@ -797,6 +797,47 @@ describe('Availability & Pricing Service', () => {
       expect(only59.total_thb).toBe(3000);
     });
 
+    it('counts the days-before in the project timezone, not in UTC (T-052)', async () => {
+      // The booking instant is 23:00 UTC on 2 April, which is already 06:00
+      // on 3 April in Phuket. Measured in Phuket the guest is 59 days out and
+      // does NOT qualify; measured in UTC they look 60 days out and do.
+      //
+      // The old helper normalised the instant to server-local midnight, which
+      // on Vercel is UTC — so for the seven hours between 00:00 and 07:00 ICT
+      // it handed out an early-bird discount the guest had not earned. Money,
+      // every day, silently.
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.early_bird',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: { min_days_before: 60, pct: 8 } as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+
+      const checkIn = new Date('2026-06-01');
+      const checkOut = new Date('2026-06-04');
+
+      const bookedEarlyMorningInPhuket = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-02T23:00:00.000Z')
+      );
+      expect(bookedEarlyMorningInPhuket.early_bird_discount_thb).toBe(0);
+
+      // Still on 2 April in Phuket (17:00 ICT) — 60 days out, qualifies.
+      const bookedSameDayInPhuket = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-02T10:00:00.000Z')
+      );
+      expect(bookedSameDayInPhuket.early_bird_discount_thb).toBe(240);
+    });
+
     it('long stay ≥28 nights uses the flat monthly rate and replaces the LOS discount', async () => {
       const project = await createProject();
       await seedLayantaraPricing(project.id, {

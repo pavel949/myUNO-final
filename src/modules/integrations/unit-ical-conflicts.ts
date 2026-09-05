@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { toCalendarDay } from '@/lib/date';
 
 export interface UnitIcalConflictAlert {
   bookingId: string;
@@ -57,8 +58,8 @@ function alertsFromBookings(
       unitId: booking.unitId,
       unitName: booking.unit.name,
       startDate:
-        params.start_date ?? booking.startDate.toISOString().slice(0, 10),
-      endDate: params.end_date ?? booking.endDate.toISOString().slice(0, 10),
+        params.start_date ?? toCalendarDay(booking.startDate),
+      endDate: params.end_date ?? toCalendarDay(booking.endDate),
       guestName: `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`,
       notifiedAt: notification.createdAt,
     });

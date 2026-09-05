@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/Button';
+import { BookingWidget } from '@/components/BookingWidget';
+import type { PriceLine } from '@/components/PriceBreakdown';
 
 interface Unit {
   id: string;
@@ -208,6 +209,43 @@ export default function UnitDetailClient({
     }
   };
 
+  // The breakdown API converts to whole baht at its boundary; the canonical
+  // PriceBreakdown/MoneyAmount contract is satang, so convert back (×100 is
+  // exact for whole baht). Service fee mirrors the prior widget, which did not
+  // itemise it — kept identical here; itemising it is a later transparency slice.
+  const priceLines: PriceLine[] | null = breakdown
+    ? [
+        {
+          label: fill(labels.priceNights, { nights: breakdown.nights }),
+          satang: breakdown.subtotal * 100,
+        },
+        ...(breakdown.lengthOfStayDiscount > 0
+          ? [
+              {
+                label: labels.discountLongStay,
+                satang: breakdown.lengthOfStayDiscount * 100,
+                kind: 'discount' as const,
+              },
+            ]
+          : []),
+        ...(breakdown.earlyBirdDiscount > 0
+          ? [
+              {
+                label: labels.discountEarlyBird,
+                satang: breakdown.earlyBirdDiscount * 100,
+                kind: 'discount' as const,
+              },
+            ]
+          : []),
+        ...(breakdown.cleaningFee > 0
+          ? [{ label: labels.cleaningFee, satang: breakdown.cleaningFee * 100 }]
+          : []),
+        ...(breakdown.occupancyTax > 0
+          ? [{ label: labels.occupancyTax, satang: breakdown.occupancyTax * 100 }]
+          : []),
+      ]
+    : null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-surface-background p-32">
@@ -344,129 +382,37 @@ export default function UnitDetailClient({
 
           {/* Booking widget */}
           <div className="lg:col-span-1">
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24 sticky top-96">
-              <h2 className="text-heading-2 font-bold text-text-ink mb-24">
-                ฿{unit.baseNightlyThb?.toLocaleString()} {labels.perNight}
-              </h2>
-
-              {!startDate || !endDate ? (
-                <p className="text-body text-text-secondary mb-24">{labels.pickDates}</p>
-              ) : null}
-
-              {breakdown && (
-                <div className="space-y-12 mb-24 pb-24 border-b border-border-line">
-                  <div className="flex justify-between text-small">
-                    <span className="text-text-secondary">
-                      ฿{breakdown.nightlyRate?.toLocaleString()}{' '}
-                      {fill(labels.priceNights, { nights: breakdown.nights })}
-                    </span>
-                    <span className="text-text-ink font-semibold">
-                      ฿{breakdown.subtotal?.toLocaleString()}
-                    </span>
-                  </div>
-                  {breakdown.lengthOfStayDiscount > 0 && (
-                    <div className="flex justify-between text-small">
-                      <span className="text-text-secondary">{labels.discountLongStay}</span>
-                      <span className="text-state-success font-semibold">
-                        -฿{breakdown.lengthOfStayDiscount?.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {breakdown.earlyBirdDiscount > 0 && (
-                    <div className="flex justify-between text-small">
-                      <span className="text-text-secondary">{labels.discountEarlyBird}</span>
-                      <span className="text-state-success font-semibold">
-                        -฿{breakdown.earlyBirdDiscount?.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {breakdown.cleaningFee > 0 && (
-                    <div className="flex justify-between text-small">
-                      <span className="text-text-secondary">{labels.cleaningFee}</span>
-                      <span className="text-text-ink font-semibold">
-                        ฿{breakdown.cleaningFee?.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {breakdown.occupancyTax > 0 && (
-                    <div className="flex justify-between text-small">
-                      <span className="text-text-secondary">{labels.occupancyTax}</span>
-                      <span className="text-text-ink font-semibold">
-                        ฿{breakdown.occupancyTax?.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-subtitle font-bold">
-                    <span className="text-text-ink">{labels.total}</span>
-                    <span className="text-brand-andaman">
-                      ฿{breakdown.total?.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Booking type is a property of the unit, not a guest choice —
-                  showing it read-only prevents a guest routing themselves into
-                  request-to-book on an instant-book unit. */}
-              <div className="mb-24">
-                <span className="block text-small font-semibold text-text-ink mb-8">
-                  {labels.bookingType}
-                </span>
-                <p className="text-body text-text-secondary">
-                  {bookingType === 'instant' ? labels.instantBook : labels.requestToBook}
-                </p>
-              </div>
-
-              <div className="mb-24">
-                <label
-                  htmlFor="payment-method"
-                  className="block text-small font-semibold text-text-ink mb-8"
-                >
-                  {labels.paymentMethod}
-                </label>
-                <select
-                  id="payment-method"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card_provider')}
-                  className="w-full h-48 px-12 border border-border-line rounded-sm text-body bg-surface-paper text-text-ink"
-                >
-                  <option value="cash">{labels.payCash}</option>
-                  <option value="card_provider">{labels.payCard}</option>
-                </select>
-              </div>
-
-              <div className="mb-24">
-                <label
-                  htmlFor="guest-note"
-                  className="block text-small font-semibold text-text-ink mb-8"
-                >
-                  {labels.guestNote}
-                </label>
-                <textarea
-                  id="guest-note"
-                  value={guestNote}
-                  onChange={(e) => setGuestNote(e.target.value)}
-                  className="w-full px-12 py-12 border border-border-line rounded-sm text-body bg-surface-paper text-text-ink"
-                  rows={3}
-                  placeholder={labels.guestNotePlaceholder}
-                />
-              </div>
-
-              {error && (
-                <div className="bg-state-error/10 border border-state-error rounded-lg p-12 mb-16">
-                  <p className="text-small text-state-error">{error}</p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleBooking}
-                disabled={submitting || !breakdown}
-                isLoading={submitting}
-                fullWidth
-              >
-                {labels.reserve}
-              </Button>
-            </div>
+            <BookingWidget
+              nightlySatang={(unit.baseNightlyThb || 0) * 100}
+              priceLines={priceLines}
+              totalSatang={breakdown ? breakdown.total * 100 : null}
+              bookingTypeValue={
+                bookingType === 'instant' ? labels.instantBook : labels.requestToBook
+              }
+              paymentMethods={[
+                { value: 'cash', label: labels.payCash },
+                { value: 'card_provider', label: labels.payCard },
+              ]}
+              paymentMethod={paymentMethod}
+              onPaymentMethodChange={(v) => setPaymentMethod(v as 'cash' | 'card_provider')}
+              guestNote={guestNote}
+              onGuestNoteChange={setGuestNote}
+              error={error}
+              onReserve={handleBooking}
+              reserving={submitting}
+              canReserve={Boolean(breakdown)}
+              labels={{
+                perNight: labels.perNight,
+                pickDates: labels.pickDates,
+                total: labels.total,
+                bookingType: labels.bookingType,
+                paymentMethod: labels.paymentMethod,
+                guestNote: labels.guestNote,
+                guestNotePlaceholder: labels.guestNotePlaceholder,
+                reserve: labels.reserve,
+                reserving: labels.reserving,
+              }}
+            />
           </div>
         </div>
       </div>

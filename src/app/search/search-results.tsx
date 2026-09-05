@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
+import { UnitCard } from '@/components/UnitCard';
+import { Pagination } from '@/components/Pagination';
 
 /** One screenful. Beyond this the guest asks for more rather than waiting for it. */
 const PAGE_SIZE = 24;
@@ -330,60 +330,41 @@ export default function SearchResults({
         {!loading && units.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
             {units.map((unit) => (
-              <Link
+              <UnitCard
                 key={unit.id}
                 href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
-              >
-                {unit.coverUrl ? (
-                  <Image
-                    src={unit.coverUrl}
-                    alt={unit.name}
-                    width={640}
-                    height={360}
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                )}
-                <div className="p-16">
-                  <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
-                  <p className="text-heading-3 font-bold text-brand-andaman mb-4">
-                    ฿{unit.baseNightlyThb?.toLocaleString()}
-                  </p>
-                  <p className="text-small text-text-secondary">{labels.perNight}</p>
-                  {/* A villa nobody has reviewed shows nothing, rather than a
-                      zero — it is unknown, not bad. */}
-                  {unit.averageRating !== null && unit.averageRating !== undefined && (
-                    <p className="text-small text-text-secondary mt-8">
-                      {fill(labels.ratingSummary, {
+                name={unit.name}
+                coverUrl={unit.coverUrl}
+                // The search API returns the raw DB row, so baseNightlyThb is
+                // satang (the platform money unit). Passing it straight to
+                // MoneyAmount via UnitCard also fixes the prior 100x display bug
+                // where the inline card rendered satang as if it were baht.
+                nightlySatang={unit.baseNightlyThb || 0}
+                perNightLabel={labels.perNight}
+                averageRating={unit.averageRating}
+                ratingSummary={
+                  unit.averageRating !== null && unit.averageRating !== undefined
+                    ? fill(labels.ratingSummary, {
                         rating: unit.averageRating.toFixed(1),
                         count: unit.reviewCount ?? 0,
-                      })}
-                    </p>
-                  )}
-                </div>
-              </Link>
+                      })
+                    : undefined
+                }
+              />
             ))}
           </div>
         )}
 
         {!loading && units.length > 0 && (
-          <div className="mt-32 text-center">
-            <p className="text-small text-text-secondary mb-16">
-              {fill(labels.showing, { shown: units.length, total })}
-            </p>
-            {units.length < total && (
-              <button
-                type="button"
-                onClick={() => fetchPage(units.length)}
-                disabled={loadingMore}
-                className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition disabled:opacity-50"
-              >
-                {loadingMore ? labels.loadingMore : labels.loadMore}
-              </button>
-            )}
-          </div>
+          <Pagination
+            shown={units.length}
+            total={total}
+            summary={fill(labels.showing, { shown: units.length, total })}
+            loadMoreLabel={labels.loadMore}
+            loadingLabel={labels.loadingMore}
+            onLoadMore={() => fetchPage(units.length)}
+            isLoading={loadingMore}
+          />
         )}
       </div>
     </div>

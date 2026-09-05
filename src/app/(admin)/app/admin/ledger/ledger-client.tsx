@@ -112,19 +112,19 @@ export default function LedgerAdminClient({
                 <tr key={entry.id} className="border-b border-border-line hover:bg-surface-paper">
                   <td className="px-12 py-8">{new Date(entry.occurredOn).toLocaleDateString()}</td>
                   <td className="px-12 py-8">
-                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-xsmall font-semibold">
+                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
                       {entry.entryType.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="px-12 py-8">{entry.unitName}</td>
                   <td className="px-12 py-8 text-right font-mono">{formatThb(entry.amountThb)}</td>
                   <td className="px-12 py-8 text-text-secondary truncate max-w-xs">{entry.description}</td>
-                  <td className="px-12 py-8 text-text-secondary text-xsmall">{entry.createdBy}</td>
+                  <td className="px-12 py-8 text-text-secondary text-small">{entry.createdBy}</td>
                   <td className="px-12 py-8">
                     <button
                       onClick={() => handleReverse(entry.id)}
                       disabled={reversing === entry.id}
-                      className="text-xsmall text-brand-andaman hover:underline disabled:opacity-50"
+                      className="text-small text-brand-andaman hover:underline disabled:opacity-50"
                     >
                       {reversing === entry.id ? '...' : labels['admin.ledger.reverse']}
                     </button>

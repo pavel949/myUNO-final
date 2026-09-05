@@ -107,7 +107,7 @@ export default async function BuyingPage() {
                       } ${labels['buying.bedrooms']}`}
                     </p>
                     {entry.note ? (
-                      <p className="text-xsmall text-text-secondary mt-4">{entry.note}</p>
+                      <p className="text-small text-text-secondary mt-4">{entry.note}</p>
                     ) : null}
                   </Link>
                 </li>

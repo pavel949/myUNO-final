@@ -130,12 +130,12 @@ export default async function ResidencePage() {
                     <div className="flex flex-wrap items-baseline gap-8 mb-4">
                       <p className="text-body font-semibold text-text-ink">{announcement.title}</p>
                       {announcement.isPinned ? (
-                        <span className="text-xsmall text-brand-andaman font-semibold">
+                        <span className="text-small text-brand-andaman font-semibold">
                           {labels['residence.pinned']}
                         </span>
                       ) : null}
                       {announcement.isImportant ? (
-                        <span className="text-xsmall text-state-warning font-semibold">
+                        <span className="text-small text-state-warning font-semibold">
                           {labels['residence.important']}
                         </span>
                       ) : null}
@@ -143,7 +143,7 @@ export default async function ResidencePage() {
                     <p className="text-small text-text-secondary whitespace-pre-wrap mb-8">
                       {announcement.body}
                     </p>
-                    <p className="text-xsmall text-text-secondary">
+                    <p className="text-small text-text-secondary">
                       {`${
                         (labels as Record<string, string>)[
                           `residence.posted_by.${announcement.postedAs}`

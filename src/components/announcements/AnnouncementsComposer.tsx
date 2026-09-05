@@ -188,7 +188,7 @@ export function AnnouncementsComposer({
             className={field}
           />
         </label>
-        <p className="text-xsmall text-text-secondary mb-12">
+        <p className="text-small text-text-secondary mb-12">
           {labels['admin.announcements.expires_hint']}
         </p>
 
@@ -216,7 +216,7 @@ export function AnnouncementsComposer({
             : labels['admin.announcements.save_draft']}
         </button>
 
-        <p className="mt-12 text-xsmall text-text-secondary">
+        <p className="mt-12 text-small text-text-secondary">
           {labels['admin.announcements.posted_as_note']}
         </p>
       </section>
@@ -241,19 +241,19 @@ export function AnnouncementsComposer({
                 className="p-16 bg-surface-paper border border-border-line rounded-lg"
               >
                 <div className="flex flex-wrap items-baseline gap-8 mb-8">
-                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-xsmall font-semibold">
+                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
                     {labels[`admin.announcements.status.${a.status}`]}
                   </span>
-                  <span className="text-xsmall text-text-secondary">
+                  <span className="text-small text-text-secondary">
                     {labels[`admin.announcements.audience.${a.audience}`]}
                   </span>
-                  <span className="text-xsmall text-text-secondary">
+                  <span className="text-small text-text-secondary">
                     {`${labels['admin.announcements.posted_as']} ${
                       labels[`admin.announcements.posted_as.${a.postedAs}`]
                     }${a.organizationName ? ` · ${a.organizationName}` : ''}`}
                   </span>
                   {expired ? (
-                    <span className="text-xsmall text-text-secondary">
+                    <span className="text-small text-text-secondary">
                       {labels['admin.announcements.expired']}
                     </span>
                   ) : null}
@@ -297,7 +297,7 @@ export function AnnouncementsComposer({
                   ) : null}
 
                   {a.status !== 'published' ? (
-                    <span className="text-xsmall text-text-secondary">
+                    <span className="text-small text-text-secondary">
                       {labels['admin.announcements.publish_warning']}
                     </span>
                   ) : null}

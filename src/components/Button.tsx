@@ -48,12 +48,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || isLoading}
-        className={`${baseClasses} ${variantClass} ${sizeClass} ${widthClass} ${className || ''}`}
+        aria-busy={isLoading || undefined}
+        // Loading never shrinks the button: the label stays in flow (so its
+        // width still sizes the button) but hidden, with the spinner laid
+        // over it. A fixed pixel width would break the moment a locale's
+        // label is longer than English (RU runs up to +86% — board 21).
+        className={`relative ${baseClasses} ${variantClass} ${sizeClass} ${widthClass} ${className || ''}`}
         {...props}
       >
-        {isLoading ? (
+        {isLoading && (
           <svg
-            className="animate-spin h-5 w-5"
+            className="animate-spin h-5 w-5 absolute"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -72,9 +77,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        ) : (
-          children
         )}
+        <span className={isLoading ? 'opacity-0' : undefined}>{children}</span>
       </button>
     );
   }

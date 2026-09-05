@@ -255,7 +255,7 @@ export default function StatementActions({
                     <td className="px-12 py-8 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
                     <td className="px-12 py-8">
                       <span
-                        className={`px-8 py-2 rounded-full text-xsmall font-medium ${
+                        className={`px-8 py-2 rounded-full text-small font-medium ${
                           statusStyle[s.status] || 'bg-surface-ivory text-text-ink'
                         }`}
                       >

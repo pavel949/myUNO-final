@@ -107,7 +107,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
-  const { user } = auth;
 
   try {
     const body: CreateIncidentRequest = await req.json();
@@ -156,7 +155,7 @@ export async function POST(req: NextRequest) {
         incidentType: body.incidentType,
         severity: body.severity,
         description: body.description,
-        reportedByIdentityId: user!.identityId,
+        reportedByIdentityId: guard.actorIdentityId,
         assignedToIdentityId: body.assignedToIdentityId,
         status: 'open',
       },

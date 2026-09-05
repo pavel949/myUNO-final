@@ -205,8 +205,8 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       <span
                         className={
                           payment.status === 'failed'
-                            ? 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-error-soft text-state-error'
-                            : 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-warning-soft text-state-warning'
+                            ? 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-error-soft text-state-error'
+                            : 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-warning-soft text-state-warning'
                         }
                       >
                         {payment.status}
@@ -324,11 +324,11 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       {payout.payeeType}
                     </td>
                     <td className="px-12 py-8 font-bold text-text-ink">{`฿${payout.amountThb.toLocaleString()}`}</td>
-                    <td className="px-12 py-8 font-mono text-xsmall text-text-ink">{payout.reference}</td>
+                    <td className="px-12 py-8 font-mono text-small text-text-ink">{payout.reference}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.executedOn}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.recordedBy}</td>
                     <td className="px-12 py-8">
-                      <span className="inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-brand-andaman-soft text-brand-andaman">
+                      <span className="inline-flex px-8 py-2 rounded-full text-small font-medium bg-brand-andaman-soft text-brand-andaman">
                         {payout.status}
                       </span>
                     </td>

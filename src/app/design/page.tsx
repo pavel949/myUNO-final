@@ -3,13 +3,24 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { Textarea } from '@/components/Textarea';
+import { Select } from '@/components/Select';
 import { Chip } from '@/components/Chip';
+import { StatusChip } from '@/components/StatusChip';
+import { Counter } from '@/components/Counter';
 import { Avatar } from '@/components/Avatar';
 import { Badge, VerifiedBadge } from '@/components/Badge';
 import { EmptyState, LoadingState, ErrorState } from '@/components/StateComponents';
+import { Skeleton } from '@/components/Skeleton';
+import { PriceBreakdown } from '@/components/PriceBreakdown';
+import { StatusTimeline } from '@/components/StatusTimeline';
+import { DataTable } from '@/components/DataTable';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export default function DesignPage() {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [guestCount, setGuestCount] = useState(2);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <div className="bg-surface-ivory min-h-screen py-40 px-16 md:px-24">
@@ -102,6 +113,31 @@ export default function DesignPage() {
               />
             </div>
           </SubSection>
+
+          <SubSection title="Textarea">
+            <div className="max-w-md">
+              <Textarea label="Note to provider" defaultValue="Gate code 4417. Dog on site." />
+            </div>
+          </SubSection>
+
+          <SubSection title="Select">
+            <div className="max-w-md">
+              <Select label="Language" defaultValue="en">
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+                <option value="th">ไทย</option>
+              </Select>
+            </div>
+          </SubSection>
+        </Section>
+
+        {/* Counter Section */}
+        <Section title="Counter">
+          <SubSection title="Guests, quantity — 44px targets">
+            <div className="max-w-xs">
+              <Counter label="Guests" value={guestCount} min={1} max={8} onChange={setGuestCount} />
+            </div>
+          </SubSection>
         </Section>
 
         {/* Chips Section */}
@@ -152,6 +188,16 @@ export default function DesignPage() {
               <Chip variant="status" status="cancelled">
                 Cancelled
               </Chip>
+            </div>
+          </SubSection>
+
+          <SubSection title="StatusChip — single §3.4 mapping">
+            <div className="flex flex-wrap gap-12">
+              <StatusChip status="confirmed" label="Confirmed" />
+              <StatusChip status="pending_payment" label="Pending payment" />
+              <StatusChip status="cancelled" label="Cancelled" />
+              <StatusChip status="draft" label="Draft" />
+              <StatusChip status="checked_in" label="Checked in" />
             </div>
           </SubSection>
         </Section>
@@ -213,6 +259,89 @@ export default function DesignPage() {
                 onRetry={() => alert('Retry clicked')}
               />
             </div>
+          </SubSection>
+        </Section>
+
+        {/* Data & State Surfaces Section */}
+        <Section title="Data & State Surfaces">
+          <SubSection title="Skeleton">
+            <div className="flex flex-col gap-12 max-w-md">
+              <Skeleton shape="line" width="60%" />
+              <Skeleton shape="card" />
+              <Skeleton shape="line" width="80%" />
+              <div className="flex items-center gap-12">
+                <Skeleton shape="avatar" />
+                <Skeleton shape="line" width="40%" />
+              </div>
+            </div>
+          </SubSection>
+
+          <SubSection title="PriceBreakdown">
+            <div className="max-w-md">
+              <PriceBreakdown
+                items={[
+                  { label: '8 nights × ฿4,500', amountSatang: 3_600_000, attribution: 'high season · rule RS-2026-HI' },
+                  { label: 'Cleaning fee', amountSatang: 180_000 },
+                  { label: 'Direct-booking credit', amountSatang: -120_000 },
+                ]}
+                totalLabel="Total"
+                totalSatang={3_660_000}
+              />
+            </div>
+          </SubSection>
+
+          <SubSection title="StatusTimeline — the reporter sees what staff see">
+            <div className="max-w-md">
+              <StatusTimeline
+                events={[
+                  { title: 'Resolved', meta: '12 Jan 14:20 · Somchai P.', dotVariant: 'success' },
+                  { title: 'In progress', meta: '12 Jan 09:05 · assigned to maintenance', dotVariant: 'active' },
+                  { title: 'Raised by guest', meta: '11 Jan 21:40 · aircon in bedroom 2', dotVariant: 'pending' },
+                ]}
+              />
+            </div>
+          </SubSection>
+
+          <SubSection title="DataTable — collapses to key-value cards below md">
+            <DataTable
+              rowKey={(row) => row.id}
+              columns={[
+                { key: 'unit', header: 'Unit', render: (row) => row.unit },
+                { key: 'guest', header: 'Guest', render: (row) => row.guest },
+                { key: 'checkIn', header: 'Check-in', render: (row) => row.checkIn },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  render: (row) => <StatusChip status={row.status} label={row.statusLabel} />,
+                },
+              ]}
+              rows={[
+                { id: '1', unit: 'B-707 · Layan', guest: 'A. Sokolova', checkIn: '04 Jan 2026', status: 'confirmed', statusLabel: 'Confirmed' },
+                { id: '2', unit: 'A-204 · Bang Tao', guest: 'M. Chen', checkIn: '07 Jan 2026', status: 'pending_payment', statusLabel: 'Pending payment' },
+                { id: '3', unit: 'Villa Kata 3 · Kata', guest: 'J. Weber', checkIn: '11 Jan 2026', status: 'checked_in', statusLabel: 'Checked in' },
+              ]}
+            />
+          </SubSection>
+
+          <SubSection title="ConfirmDialog — friction scaled to stakes">
+            <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
+              Cancel booking B-707
+            </Button>
+            <ConfirmDialog
+              open={confirmOpen}
+              title="Cancel booking B-707 · Jan 4–12?"
+              consequencesHeading="What happens:"
+              consequences={[
+                'The unit is released to availability immediately.',
+                '฿36,600 is refunded under policy flex-7 — ฿32,940 after the 10% window fee.',
+                'The guest is notified and the TM30 filing is withdrawn.',
+              ]}
+              confirmLabel="Cancel booking"
+              cancelLabel="Keep booking"
+              confirmVariant="destructive"
+              onConfirm={() => setConfirmOpen(false)}
+              onCancel={() => setConfirmOpen(false)}
+            />
           </SubSection>
         </Section>
 

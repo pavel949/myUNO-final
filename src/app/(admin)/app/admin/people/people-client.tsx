@@ -211,7 +211,7 @@ export default function PeopleAdminClient({
             {/* Shown so an operator can pass it on by Telegram or WhatsApp,
                 which is how this clientele actually receives things. */}
             <p className="text-small text-text-ink font-mono break-all">{inviteResult.claimUrl}</p>
-            <p className="text-xsmall text-text-secondary mt-4">
+            <p className="text-small text-text-secondary mt-4">
               {labels['admin.people.invite_link_note']}
             </p>
           </div>

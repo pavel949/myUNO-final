@@ -147,7 +147,7 @@ export default async function JuristicPortalPage({
                   <div className="flex flex-wrap items-baseline gap-8 mb-4">
                     <p className="text-body font-semibold text-text-ink">{announcement.title}</p>
                     {announcement.status !== 'published' ? (
-                      <span className="text-xsmall text-text-secondary">
+                      <span className="text-small text-text-secondary">
                         {labels['juristic.draft']}
                       </span>
                     ) : null}
@@ -155,7 +155,7 @@ export default async function JuristicPortalPage({
                   <p className="text-small text-text-secondary whitespace-pre-wrap mb-8">
                     {announcement.body}
                   </p>
-                  <p className="text-xsmall text-text-secondary">
+                  <p className="text-small text-text-secondary">
                     {`${labels['juristic.published_on']} ${announcement.createdAt.toLocaleDateString('sv-SE')}`}
                   </p>
                 </li>
@@ -186,7 +186,7 @@ export default async function JuristicPortalPage({
                     className="p-16 bg-surface-paper border border-border-line rounded-lg"
                   >
                     <p className="text-body text-text-ink">{ticket.title}</p>
-                    <p className="text-xsmall text-text-secondary">
+                    <p className="text-small text-text-secondary">
                       {`${ticket.status} · ${labels['juristic.raised_by']} ${
                         ticket.raisedBy
                           ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`.trim()

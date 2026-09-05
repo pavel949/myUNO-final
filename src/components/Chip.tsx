@@ -1,25 +1,17 @@
 import React from 'react';
+import { getStatusVariant, STATUS_VARIANT_CLASSES } from '@/lib/status';
 
 type ChipVariant = 'filter' | 'status' | 'neutral';
-type ChipStatus = 'confirmed' | 'pending_payment' | 'requested' | 'declined' | 'cancelled' | 'default';
 
 interface ChipProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   children: React.ReactNode;
   variant?: ChipVariant;
-  status?: ChipStatus;
+  /** Any raw status enum — resolved to a color through the doc 06 §3.4 single mapping (src/lib/status.ts), never chosen ad hoc here. */
+  status?: string;
   isActive?: boolean;
   isSelectable?: boolean;
   icon?: React.ReactNode;
 }
-
-const statusClasses: Record<ChipStatus, string> = {
-  confirmed: 'bg-state-success-soft text-state-success',
-  pending_payment: 'bg-state-warning-soft text-state-warning',
-  requested: 'bg-state-warning-soft text-state-warning',
-  declined: 'bg-state-error-soft text-state-error',
-  cancelled: 'bg-state-error-soft text-state-error',
-  default: 'bg-surface-paper text-text-ink border border-border-line',
-};
 
 export const Chip = React.forwardRef<HTMLButtonElement, ChipProps>(
   (
@@ -38,7 +30,7 @@ export const Chip = React.forwardRef<HTMLButtonElement, ChipProps>(
     let chipClasses = 'inline-flex items-center gap-8 px-16 py-8 rounded-full text-small font-medium transition-colors duration-micro';
 
     if (variant === 'status') {
-      chipClasses += ` ${statusClasses[status]}`;
+      chipClasses += ` ${STATUS_VARIANT_CLASSES[getStatusVariant(status)]}`;
     } else if (variant === 'filter') {
       if (isActive) {
         chipClasses += ' bg-brand-andaman text-surface-ivory';

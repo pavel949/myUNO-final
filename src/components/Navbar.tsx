@@ -2,8 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from './Button';
 import { NotificationBell, type BellLabels } from './NotificationBell';
+
+function navLinkClass(pathname: string, href: string, extra = '') {
+  const active =
+    href === '/'
+      ? pathname === '/'
+      : pathname === href || pathname.startsWith(`${href}/`);
+  return `${extra} text-body transition-colors duration-micro ${
+    active ? 'text-brand-andaman font-semibold' : 'text-text-ink hover:text-brand-andaman'
+  }`;
+}
 
 export interface NavbarUser {
   firstName: string;
@@ -43,6 +54,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarProps) {
+  const pathname = usePathname() ?? '';
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -83,34 +95,22 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
         <div className="flex items-center gap-40">
           <Link
             href="/"
-            className="text-heading-3 font-bold text-brand-andaman"
+            className="font-display text-heading-3 font-bold text-brand-andaman"
             onClick={closeMenu}
           >
             myUNO
           </Link>
           <div className="hidden md:flex items-center gap-24">
-            <Link
-              href="/search"
-              className="text-body text-text-ink hover:text-brand-andaman transition-colors"
-            >
+            <Link href="/search" className={navLinkClass(pathname, '/search')}>
               {labels.findStay}
             </Link>
-            <Link
-              href="/projects"
-              className="text-body text-text-ink hover:text-brand-andaman transition-colors"
-            >
+            <Link href="/projects" className={navLinkClass(pathname, '/projects')}>
               {labels.residences}
             </Link>
-            <Link
-              href="/services"
-              className="text-body text-text-ink hover:text-brand-andaman transition-colors"
-            >
+            <Link href="/services" className={navLinkClass(pathname, '/services')}>
               {labels.services}
             </Link>
-            <Link
-              href="/trust"
-              className="text-body text-text-ink hover:text-brand-andaman transition-colors"
-            >
+            <Link href="/trust" className={navLinkClass(pathname, '/trust')}>
               {labels.trust}
             </Link>
           </div>
@@ -138,7 +138,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-body text-text-ink hover:text-brand-andaman transition-colors"
+                  className={navLinkClass(pathname, link.href)}
                 >
                   {link.label}
                 </Link>
@@ -199,16 +199,16 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-border-line bg-surface-paper px-24 py-16 flex flex-col gap-16">
-          <Link href="/search" className="text-body text-text-ink py-8" onClick={closeMenu}>
+          <Link href="/search" className={navLinkClass(pathname, '/search', 'py-8')} onClick={closeMenu}>
             {labels.findStay}
           </Link>
-          <Link href="/projects" className="text-body text-text-ink py-8" onClick={closeMenu}>
+          <Link href="/projects" className={navLinkClass(pathname, '/projects', 'py-8')} onClick={closeMenu}>
             {labels.residences}
           </Link>
-          <Link href="/services" className="text-body text-text-ink py-8" onClick={closeMenu}>
+          <Link href="/services" className={navLinkClass(pathname, '/services', 'py-8')} onClick={closeMenu}>
             {labels.services}
           </Link>
-          <Link href="/trust" className="text-body text-text-ink py-8" onClick={closeMenu}>
+          <Link href="/trust" className={navLinkClass(pathname, '/trust', 'py-8')} onClick={closeMenu}>
             {labels.trust}
           </Link>
           {user ? (
@@ -217,7 +217,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale }: NavbarPr
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-body text-text-ink py-8"
+                  className={navLinkClass(pathname, link.href, 'py-8')}
                   onClick={closeMenu}
                 >
                   {link.label}

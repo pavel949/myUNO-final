@@ -18,6 +18,7 @@ import { EmptyState, ErrorState } from '@/components/StateComponents';
 import { StatTile } from '@/components/StatTile';
 import { StatusTimeline } from '@/components/StatusTimeline';
 import { Textarea } from '@/components/Textarea';
+import { TrustMark } from '@/components/TrustMark';
 import DeltaChip from '@/components/viz/DeltaChip';
 import MonthHeatStrip from '@/components/viz/MonthHeatStrip';
 import Sparkline from '@/components/viz/Sparkline';
@@ -520,6 +521,30 @@ export default function DesignPage() {
                 and up. Below md it collapses to key-value cards.
               </p>
             </Panel>
+          </div>
+        </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">03 · 04</p>
+          <h2 className="font-display text-display text-text-ink mb-8">App shell and public surface</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-24">
+            The header highlights the surface you are on. RoleContextBanner is
+            the info band when a second hat is in play. The landing sits on
+            ivory, uses the sun kicker, and the ring-and-point mark — not a
+            check glyph.
+          </p>
+          <div className="bg-state-info-soft text-state-info px-16 py-12 mb-24 flex flex-wrap justify-between gap-8">
+            <p className="text-small m-0">
+              You are viewing as owner of B-707 · Layan Green Park. Actions here
+              are recorded against that mandate.
+            </p>
+            <p className="text-small font-semibold m-0">Switch surface</p>
+          </div>
+          <div className="flex items-center gap-24 text-brand-andaman">
+            <TrustMark size={48} filled />
+            <p className="text-body text-text-stone m-0">
+              Trust points on the landing use this mark at 48px.
+            </p>
           </div>
         </section>
       </div>

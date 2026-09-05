@@ -105,7 +105,7 @@ export default async function OwnersPage() {
   const faqJsonLd = faqPageJsonLd(faqs.map((f) => ({ question: f.q, answer: f.a })));
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       {faqJsonLd ? (
         <script
           type="application/ld+json"

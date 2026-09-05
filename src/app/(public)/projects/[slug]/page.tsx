@@ -173,7 +173,7 @@ export default async function ProjectLandingPage({
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -244,7 +244,7 @@ export default async function ProjectLandingPage({
             {project.categories.map((category) => (
               <div
                 key={category.key}
-                className="bg-white border border-border-line rounded-lg p-24"
+                className="bg-surface-paper border border-border-line rounded-lg p-24"
               >
                 <h3 className="text-heading-3 font-bold text-text-ink mb-8">
                   {categoryLabels[category.key] || category.key}
@@ -288,7 +288,7 @@ export default async function ProjectLandingPage({
               {monthlyCategories.map((category) => (
                 <div
                   key={category.key}
-                  className="bg-white border border-border-line rounded-lg px-24 py-16"
+                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-16"
                 >
                   <p className="text-small text-text-secondary mb-4">
                     {categoryLabels[category.key] || category.key}
@@ -329,7 +329,7 @@ export default async function ProjectLandingPage({
               <Link
                 key={unit.id}
                 href={`/units/${unit.id}`}
-                className="bg-white border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {unit.coverUrl ? (
                   <Image
@@ -410,7 +410,7 @@ export default async function ProjectLandingPage({
                 <Link
                   key={service.id}
                   href={`/services/${service.id}`}
-                  className="bg-white border border-border-line rounded-lg px-24 py-12 text-body text-text-ink hover:shadow-md transition"
+                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-12 text-body text-text-ink hover:shadow-md transition"
                 >
                   {service.title}
                 </Link>
@@ -473,7 +473,7 @@ export default async function ProjectLandingPage({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.reviews.items.map((review, i) => (
-              <div key={i} className="bg-white border border-border-line rounded-lg p-24">
+              <div key={i} className="bg-surface-paper border border-border-line rounded-lg p-24">
                 <p className="text-small text-brand-andaman mb-8">
                   {'★'.repeat(review.rating)}
                 </p>

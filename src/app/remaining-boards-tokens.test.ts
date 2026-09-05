@@ -37,6 +37,12 @@ const health = readFileSync(
   'utf8'
 );
 const apply = readFileSync(join(process.cwd(), 'src/app/provider/apply/apply-client.tsx'), 'utf8');
+const ownersPublic = readFileSync(join(process.cwd(), 'src/app/(public)/owners/page.tsx'), 'utf8');
+const projectsHub = readFileSync(join(process.cwd(), 'src/app/(public)/projects/page.tsx'), 'utf8');
+const projectLanding = readFileSync(
+  join(process.cwd(), 'src/app/(public)/projects/[slug]/page.tsx'),
+  'utf8'
+);
 
 describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
   it('drops the unused gray marketplace leftovers', () => {
@@ -98,5 +104,13 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
     expect(apply).toContain('text-display-sm');
     expect(onboarding).toContain('doneCount');
     expect(onboarding).toContain('bg-brand-andaman');
+  });
+
+  it('sits remaining public audience and project pages on ivory, not raw white', () => {
+    expect(ownersPublic).toContain('bg-surface-ivory');
+    expect(ownersPublic).not.toContain('bg-white');
+    expect(projectsHub).not.toContain('bg-white');
+    expect(projectLanding).not.toContain('bg-white');
+    expect(projectLanding).toContain('bg-surface-paper');
   });
 });

@@ -270,6 +270,32 @@ describe('Auth module', () => {
       expect(passwordMatches).toBe(true);
     });
 
+    it('accepts a token wrapped in whitespace from an email client', async () => {
+      const crypto = await import('crypto');
+      const { verifyPassword } = await import('./utils/hash');
+      const identity = await prisma.identity.findUnique({
+        where: { email: identityEmail },
+      });
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      await prisma.oneTimeToken.create({
+        data: {
+          identityId: identity!.id,
+          purpose: 'password_reset',
+          tokenHash,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const result = await confirmPasswordReset({
+        token: `  ${token}\n`,
+        newPassword: 'WrappedPass123',
+      });
+      expect(result.success).toBe(true);
+      const updated = await prisma.identity.findUnique({ where: { email: identityEmail } });
+      expect(await verifyPassword('WrappedPass123', updated!.hashedPassword!)).toBe(true);
+    });
+
     it('rejects expired token', async () => {
       const { generateToken } = await import('./utils/token');
       const { hashToken } = await import('./utils/token');

@@ -72,7 +72,7 @@ export async function PUT(
     // on their behalf (a signed paper statement, doc 10 sign-off gate).
     const isOwnerOfStatement = currentUser.identityId === statement.ownerIdentityId
     if (body.actor === 'operator') {
-      const adminGuard = await requireAdmin()
+      const adminGuard = await requireAdmin({ identityId: currentUser.identityId })
       if (!adminGuard.ok) {
         return adminGuard.error
       }

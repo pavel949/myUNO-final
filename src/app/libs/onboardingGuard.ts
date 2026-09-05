@@ -58,15 +58,25 @@ export async function requireAction(action: string): Promise<GuardResult> {
  * policy the founder owns. Admin-only is the narrow, reversible reading;
  * widening it to staff is **Q42**.
  */
-export async function requireAdmin(): Promise<GuardResult> {
-  const loaded = await loadIdentity();
-  if ('ok' in loaded) return loaded;
+export async function requireAdmin(already?: { identityId: string }): Promise<GuardResult> {
+  let identity: Identity;
+  if (already?.identityId) {
+    const found = await prisma.identity.findUnique({ where: { id: already.identityId } });
+    if (!found) {
+      return { ok: false, error: NextResponse.json({ error: 'Identity not found' }, { status: 404 }) };
+    }
+    identity = found;
+  } else {
+    const loaded = await loadIdentity();
+    if ('ok' in loaded) return loaded;
+    identity = loaded.identity;
+  }
 
-  if (!loaded.identity.isAdmin) {
+  if (!identity.isAdmin) {
     return { ok: false, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true, identity: loaded.identity, actorIdentityId: loaded.identity.id };
+  return { ok: true, identity, actorIdentityId: identity.id };
 }
 
 /** Turn a thrown service error into the response it deserves. */

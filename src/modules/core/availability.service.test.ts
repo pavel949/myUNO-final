@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db as prisma, resetDb, createProject, createUnit } from '@/test/util';
+import {
+  db as prisma,
+  resetDb,
+  createProject,
+  createUnit,
+  createIdentity,
+  createBooking,
+} from '@/test/util';
 import {
   getApplicableSeasonMarkup,
   getApplicableNightlyPrice,
@@ -959,6 +966,83 @@ describe('Availability & Pricing Service', () => {
   });
 
   describe('checkAvailability', () => {
+    // T-051. This function checked `blocked_date` and nothing else, so it
+    // answered "available" for a range with a confirmed booking in it. Nothing
+    // broke, because no production path called it — the booking flow enforces
+    // overlap itself in a transaction. But it is exported from the module's
+    // public interface under a name with one obvious meaning, and the next
+    // caller to trust it would have been quietly wrong.
+    describe('bookings, not just blocked dates', () => {
+      async function unitWithBooking(
+        status: 'confirmed' | 'checked_in' | 'pending_payment' | 'cancelled',
+        holdExpiresAt?: Date | null
+      ) {
+        const project = await createProject();
+        const unit = await createUnit(project.id);
+        const guest = await createIdentity();
+        await createBooking({
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          startDate: new Date('2026-07-15'),
+          endDate: new Date('2026-07-20'),
+          status,
+          ...(holdExpiresAt !== undefined && { holdExpiresAt }),
+        });
+        return unit.id;
+      }
+
+      it('refuses a range a confirmed booking already occupies', async () => {
+        const unitId = await unitWithBooking('confirmed');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('refuses a range an in-progress stay occupies', async () => {
+        const unitId = await unitWithBooking('checked_in');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('refuses a range held by a live pending_payment hold', async () => {
+        const unitId = await unitWithBooking(
+          'pending_payment',
+          new Date(Date.now() + 30 * 60 * 1000)
+        );
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('ignores a lapsed hold, matching the booking path exactly', async () => {
+        // A stricter reading here would refuse guests the booking flow would
+        // have accepted, which is a lost sale rather than a safety measure.
+        const unitId = await unitWithBooking(
+          'pending_payment',
+          new Date(Date.now() - 30 * 60 * 1000)
+        );
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(true);
+      });
+
+      it('ignores a cancelled booking', async () => {
+        const unitId = await unitWithBooking('cancelled');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(true);
+      });
+
+      it('treats checkout day as free — the next guest arrives the day one leaves', async () => {
+        const unitId = await unitWithBooking('confirmed');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-20'), new Date('2026-07-22'))
+        ).toBe(true);
+      });
+    });
+
     it('returns true when no blocked dates exist', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);

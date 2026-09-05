@@ -411,20 +411,42 @@ export async function checkAvailability(
   startDate: Date,
   endDate: Date
 ): Promise<boolean> {
-  // Check for blocked dates
-  const blockedDate = await db.blockedDate.findFirst({
-    where: {
-      unitId,
-      startDate: { lt: endDate },
-      endDate: { gt: startDate },
-    },
-  });
+  const now = new Date();
+  const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
 
-  if (blockedDate) {
-    return false;
-  }
+  // Two things make a unit unavailable, and this used to ask about only one.
+  //
+  // It checked `blocked_date` and nothing else, so it answered "available" for
+  // a range with a confirmed booking sitting in it. Nothing was broken in
+  // practice, because no production path called it — the booking flow enforces
+  // this itself inside a transaction (`findBlockingConflict`, an advisory lock,
+  // and the `booking_no_overlap` exclusion constraint as the backstop). But a
+  // function named `checkAvailability`, exported from the module's public
+  // interface, has one obvious meaning, and the next caller to reach for it
+  // would have been quietly wrong.
+  //
+  // The booking rules are mirrored exactly rather than approximated: a lapsed
+  // `pending_payment` hold does not block, a live one does. A stricter reading
+  // here would refuse guests the booking path would have accepted.
+  const [blockedDate, conflictingBooking] = await Promise.all([
+    db.blockedDate.findFirst({
+      where: { unitId, ...overlaps },
+      select: { id: true },
+    }),
+    db.booking.findFirst({
+      where: {
+        unitId,
+        ...overlaps,
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: now } },
+        ],
+      },
+      select: { id: true },
+    }),
+  ]);
 
-  return true;
+  return blockedDate === null && conflictingBooking === null;
 }
 
 // ---------------------------------------------------------------------------

@@ -2,6 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/Button';
+import { Select } from '@/components/Select';
+import { Textarea } from '@/components/Textarea';
 
 /**
  * "Ask about buying" — the request-due-diligence step of the buyer journey.
@@ -43,15 +46,12 @@ export default function BuyingClient({
     setBusy(false);
   }, [unitId, message, labels]);
 
-  const field =
-    'w-full px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink text-small';
-
   return (
-    <section className="p-16 bg-surface-paper border border-border-line rounded-lg">
-      <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+    <section className="p-24 bg-surface-paper border border-border-line rounded-lg">
+      <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-8">
         {labels['buying.ask_title']}
       </h2>
-      <p className="text-small text-text-secondary mb-16">{labels['buying.ask_intro']}</p>
+      <p className="text-body text-text-stone mb-20">{labels['buying.ask_intro']}</p>
 
       {threadId ? (
         <div>
@@ -64,50 +64,45 @@ export default function BuyingClient({
           </Link>
         </div>
       ) : (
-        <>
+        <div className="flex flex-col gap-16">
           {units.length > 0 ? (
-            <label className="block mb-12">
-              <span className="text-small text-text-secondary block mb-4">
-                {labels['buying.ask_unit']}
-              </span>
-              <select value={unitId} onChange={(e) => setUnitId(e.target.value)} className={field}>
-                <option value="">{labels['buying.ask_unit_none']}</option>
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label={labels['buying.ask_unit']}
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              options={[
+                { value: '', label: labels['buying.ask_unit_none'] },
+                ...units.map((unit) => ({ value: unit.id, label: unit.name })),
+              ]}
+            />
           ) : null}
 
-          <label className="block mb-12">
-            <span className="text-small text-text-secondary block mb-4">
-              {labels['buying.ask_message']}
-            </span>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              className={field}
-            />
-          </label>
+          <Textarea
+            label={labels['buying.ask_message']}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={4}
+          />
 
           {error ? (
-            <p className="text-small text-state-error mb-12" role="alert">
+            <p className="text-small text-state-error m-0" role="alert">
               {error}
             </p>
           ) : null}
 
-          <button
-            type="button"
-            onClick={send}
-            disabled={busy || message.trim().length === 0}
-            className="px-16 py-8 rounded-lg bg-brand-deep text-on-dark-text text-small font-semibold disabled:opacity-50"
-          >
-            {busy ? labels['buying.ask_sending'] : labels['buying.ask_submit']}
-          </button>
-        </>
+          <div>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={send}
+              disabled={busy || message.trim().length === 0}
+              isLoading={busy}
+            >
+              {busy ? labels['buying.ask_sending'] : labels['buying.ask_submit']}
+            </Button>
+          </div>
+        </div>
       )}
     </section>
   );

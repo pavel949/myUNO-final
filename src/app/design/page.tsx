@@ -569,6 +569,16 @@ export default function DesignPage() {
             this board does not invent occupancy or revenue.
           </p>
         </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">08</p>
+          <h2 className="font-display text-display text-text-ink mb-8">Buy · and the juristic board</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-0">
+            Buying stays narrow: watched homes and a person to talk to. Ownership
+            structure is still not shown. The juristic board uses status chips
+            and readable dates — not raw enums or ISO stamps.
+          </p>
+        </section>
       </div>
     </div>
   );

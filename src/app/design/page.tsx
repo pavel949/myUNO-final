@@ -82,8 +82,8 @@ export default function DesignPage() {
           Design system, flows and screen catalogue
         </h1>
         <p className="text-body text-text-stone max-w-[720px] mb-32">
-          Boards 01 and 02 from the Claude Design canvas, built on the tokens in
-          docs/06 and the components in src/components. Product screens 03–21
+          Boards 01–06 from the Claude Design canvas, built on the tokens in
+          docs/06 and the components in src/components. Product screens 07–21
           stay in later tasks.
         </p>
 
@@ -546,6 +546,17 @@ export default function DesignPage() {
               Trust points on the landing use this mark at 48px.
             </p>
           </div>
+        </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">06</p>
+          <h2 className="font-display text-display text-text-ink mb-8">Stay · the guest surface</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-0">
+            The in-stay home is a feed on ivory: paper stay card, sun kicker,
+            status chips, paper action tiles. Door codes and TM30 chips appear
+            only when those facts exist. Empty concierge, shuttle, and order
+            blocks are not rendered.
+          </p>
         </section>
       </div>
     </div>

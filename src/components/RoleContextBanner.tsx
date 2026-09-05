@@ -28,7 +28,7 @@ export const RoleContextBanner = React.forwardRef<HTMLDivElement, RoleContextBan
       <div
         ref={ref}
         role="status"
-        className="flex flex-wrap items-center justify-between gap-8 bg-state-info-soft text-state-info px-16 py-12 mb-24"
+        className="flex flex-wrap items-center justify-between gap-8 bg-state-info-soft text-state-info px-16 py-12 mb-24 rounded-md"
       >
         <p className="text-small m-0">{message}</p>
         {action ? (

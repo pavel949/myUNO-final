@@ -32,7 +32,7 @@ export const ExtendStayPanel = React.forwardRef<HTMLDivElement, ExtendStayPanelP
     return (
       <div
         ref={ref}
-        className="bg-surface-paper border border-border-line rounded-md p-32 mb-24"
+        className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24"
       >
         <h2 className="text-heading-2 font-semibold text-text-ink mb-8">
           {labels['home.extend.title']}

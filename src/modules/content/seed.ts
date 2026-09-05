@@ -2823,15 +2823,26 @@ const UI_SHELL_KEYS: KeyDef[] = [
 const HOME_KEYS: KeyDef[] = [
   // Home-space (in-stay guest portal)
   { key: 'home.welcome', namespace: 'home', description: 'Welcome to property heading', en: 'Welcome to', ru: 'Добро пожаловать в', th: 'ยินดีต้อนรับสู่', status: NR },
+  { key: 'home.welcome_back', namespace: 'home', description: 'In-stay header when the guest first name is known', en: 'Welcome back, {name}', ru: 'С возвращением, {name}', th: 'ยินดีต้อนรับกลับ, {name}', status: NR },
   { key: 'home.handbook.title', namespace: 'home', description: 'Property handbook section title', en: 'Property Handbook', ru: 'Справочник Имущества', th: 'คู่มือที่พัก', status: NR },
   { key: 'home.handbook.description', namespace: 'home', description: 'Property handbook description', en: 'Learn about the property amenities, check-out procedures, and local information.', ru: 'Узнайте о удобствах имущества, процедурах выписки и местной информации.', th: 'เรียนรู้สิ่งอำนวยความสะดวก ขั้นตอนเช็คเอาท์ และข้อมูลท้องถิ่น', status: NR },
   { key: 'home.handbook.view_button', namespace: 'home', description: 'View handbook button text', en: 'View Handbook', ru: 'Просмотреть Справочник', th: 'ดูคู่มือ', status: NR },
   { key: 'home.help_text', namespace: 'home', description: 'Footer help text', en: 'Need help? Contact the host or raise an issue above.', ru: 'Нужна помощь? Свяжитесь с хозяином или сообщите о проблеме выше.', th: 'ต้องการความช่วยเหลือ? ติดต่อโฮสต์หรือแจ้งปัญหาด้านบน', status: NR },
   { key: 'home.active_orders', namespace: 'home', description: 'Active orders section title', en: 'Your Active Orders', ru: 'Ваши Активные Заказы', th: 'คำสั่งซื้อที่กำลังดำเนินการ', status: NR },
   { key: 'home.concierge_whatsapp', namespace: 'home', description: 'Home space: concierge WhatsApp CTA', en: 'Message the concierge on WhatsApp', ru: 'Написать консьержу в WhatsApp', zh: '通过WhatsApp联系礼宾', th: 'ส่งข้อความหาคอนเซียร์จทาง WhatsApp', status: NR },
+  { key: 'home.concierge.kicker', namespace: 'home', description: 'Home space: concierge card heading', en: 'Concierge', ru: 'Консьерж', th: 'คอนเซียร์จ', status: NR },
+  { key: 'home.announcements.kicker', namespace: 'home', description: 'Home space: announcements section kicker', en: 'From the building', ru: 'От дома', th: 'จากอาคาร', status: NR },
+  { key: 'home.announcement.voice.myuno', namespace: 'home', description: 'Announcement voice chip: myUNO', en: 'Official · myUNO', ru: 'Официально · myUNO', th: 'ทางการ · myUNO', status: NR },
+  { key: 'home.announcement.voice.management_company', namespace: 'home', description: 'Announcement voice chip: management company', en: 'Official · Management company', ru: 'Официально · УК', th: 'ทางการ · บริษัทจัดการ', status: NR },
+  { key: 'home.announcement.voice.juristic_person', namespace: 'home', description: 'Announcement voice chip: juristic person', en: 'Official · Juristic person', ru: 'Официально · юрлицо', th: 'ทางการ · นิติบุคคล', status: NR },
   { key: 'home.shuttle.title', namespace: 'home', description: 'Home space: shuttle schedule title', en: 'Beach shuttle schedule', ru: 'Расписание шаттла до пляжа', zh: '海滩班车时刻表', th: 'ตารางรถรับส่งชายหาด', status: NR },
 
   // Stay card (T-034 · S6 hero)
+  { key: 'home.stay.kicker', namespace: 'home', description: 'Stay card sun kicker', en: 'Your stay', ru: 'Ваше проживание', th: 'การเข้าพักของคุณ', status: NR },
+  { key: 'home.stay.nights_count', namespace: 'home', description: 'Stay card: night count in the date line', en: '{count} nights', ru: '{count} ночей', th: '{count} คืน', status: NR },
+  { key: 'home.stay.tm30_filed', namespace: 'home', description: 'Stay card chip: TM30 has been filed', en: 'TM30 filed', ru: 'TM30 подана', th: 'ยื่น TM30 แล้ว', status: NR },
+  { key: 'home.stay.paid_in_full', namespace: 'home', description: 'Stay card chip: no balance remains on the stay', en: 'Paid in full', ru: 'Оплачено полностью', th: 'ชำระครบแล้ว', status: NR },
+  { key: 'home.stay.door_code', namespace: 'home', description: 'Stay card: door-code label, shown only when a real code exists', en: 'Door code', ru: 'Код двери', th: 'รหัสประตู', status: NR },
   { key: 'home.stay.check_in', namespace: 'home', description: 'Stay card: check-in date label', en: 'Check-in', ru: 'Заезд', zh: '入住', th: 'เช็คอิน', status: NR },
   { key: 'home.stay.check_out', namespace: 'home', description: 'Stay card: check-out date label', en: 'Check-out', ru: 'Выезд', zh: '退房', th: 'เช็คเอาท์', status: NR },
   { key: 'home.stay.checked_in_note', namespace: 'home', description: 'Stay card: note shown once the guest has checked in', en: 'You are checked in. Everything you need is on this page.', ru: 'Вы заселились. Всё необходимое — на этой странице.', zh: '您已入住。所需的一切都在此页面上。', th: 'คุณเช็คอินแล้ว ทุกอย่างที่ต้องการอยู่ในหน้านี้', status: NR },

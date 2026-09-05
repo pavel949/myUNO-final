@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { Chip } from '@/components/Chip';
+import { TrustMark } from '@/components/TrustMark';
 
 interface StayCardProps {
   unitName: string;
@@ -10,25 +12,43 @@ interface StayCardProps {
   status: string;
   checkedInAt?: string | null;
   guestNationality?: string;
+  nights: number;
+  guestCount: number;
+  tm30Filed?: boolean;
+  paidInFull?: boolean;
+  /** Only pass a real door code from the stay. Never invent one. */
+  doorCode?: string | null;
+  doorCodeHint?: string | null;
   /** Resolved copy from the content layer — the card never writes its own. */
   labels: Record<string, string>;
 }
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatStayRange = (startStr: string, endStr: string): string => {
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  const startLabel = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endLabel = end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${startLabel} – ${endLabel}`;
 };
 
-const getStatusBadgeColor = (status: string): string => {
+const stayChipStatus = (status: string): 'checked_in' | 'confirmed' | 'cancelled' | 'closed' | 'default' => {
   switch (status) {
-    case 'confirmed':
-      return 'bg-green-100 text-green-700';
     case 'checked_in':
-      return 'bg-blue-100 text-blue-700';
+      return 'checked_in';
+    case 'confirmed':
+      return 'confirmed';
+    case 'cancelled':
+    case 'declined':
+      return 'cancelled';
     case 'checked_out':
-      return 'bg-gray-100 text-gray-700';
+    case 'completed':
+      return 'closed';
     default:
-      return 'bg-yellow-100 text-yellow-700';
+      return 'default';
   }
 };
 
@@ -41,45 +61,86 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
       endDate,
       status,
       guestNationality,
+      nights,
+      guestCount,
+      tm30Filed = false,
+      paidInFull = false,
+      doorCode,
+      doorCodeHint,
       labels,
     },
     ref
   ) => {
-    const isCheckedIn = status === 'checked_in';
+    const nightsLabel = (labels['home.stay.nights_count'] ?? '').replace(
+      '{count}',
+      String(nights)
+    );
+    const guestsLabel = (labels['listing.guests_count'] ?? '').replace(
+      '{count}',
+      String(guestCount)
+    );
+    const meta = [formatStayRange(startDate, endDate), nightsLabel, guestsLabel]
+      .filter(Boolean)
+      .join(' · ');
+
+    const doorBlock = doorCode ? (
+      <div className="bg-surface-ivory rounded-sm p-16 text-center">
+        <p className="text-small text-text-stone m-0 mb-4">{labels['home.stay.door_code']}</p>
+        <p className="font-display text-display font-semibold tracking-[4px] tabular-nums m-0">
+          {doorCode}
+        </p>
+        {doorCodeHint ? (
+          <p className="text-small text-text-stone mt-8 m-0">{doorCodeHint}</p>
+        ) : null}
+      </div>
+    ) : null;
 
     return (
-      <div ref={ref} className="bg-gradient-to-r from-brand-andaman-soft to-brand-andaman text-text-ink rounded-lg p-32 mb-32 shadow-md">
-        <div className="flex justify-between items-start mb-16">
-          <div>
-            <p className="text-small text-text-secondary mb-4">{projectName}</p>
-            <h1 className="text-heading-2 font-bold">{unitName}</h1>
+      <div
+        ref={ref}
+        className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 lg:grid lg:grid-cols-[1fr_200px] lg:gap-24 lg:items-start"
+      >
+        <div>
+          <p className="font-display text-kicker uppercase text-brand-sun m-0 mb-12">
+            {labels['home.stay.kicker']}
+          </p>
+          <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-4">
+            {unitName}
+          </h2>
+          <p className="text-small text-text-stone m-0 mb-4">{projectName}</p>
+          <p className="font-display text-body text-text-stone tabular-nums m-0 mb-16">{meta}</p>
+
+          <div className="flex flex-wrap gap-8 mb-16">
+            <Chip variant="status" status={stayChipStatus(status)}>
+              {labels[`home.stay_status.${status}`] ?? status.replace('_', ' ')}
+            </Chip>
+            {tm30Filed ? (
+              <Chip
+                variant="status"
+                status="confirmed"
+                icon={<TrustMark size={14} />}
+              >
+                {labels['home.stay.tm30_filed']}
+              </Chip>
+            ) : null}
+            {paidInFull ? (
+              <Chip variant="status" status="confirmed">
+                {labels['home.stay.paid_in_full']}
+              </Chip>
+            ) : null}
           </div>
-          <span className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${getStatusBadgeColor(status)}`}>
-            {labels[`home.stay_status.${status}`] ?? status.replace('_', ' ')}
-          </span>
+
+          {guestNationality ? (
+            <p className="text-small text-text-stone m-0">
+              {(labels['home.stay.visiting_from'] ?? '').replace(
+                '{nationality}',
+                guestNationality
+              )}
+            </p>
+          ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-20 mb-24">
-          <div>
-            <p className="text-small text-text-secondary mb-4">{labels['home.stay.check_in']}</p>
-            <p className="text-body font-semibold">{formatDate(startDate)}</p>
-          </div>
-          <div>
-            <p className="text-small text-text-secondary mb-4">{labels['home.stay.check_out']}</p>
-            <p className="text-body font-semibold">{formatDate(endDate)}</p>
-          </div>
-        </div>
-
-        {isCheckedIn && (
-          <div className="border-t border-brand-andaman-dark pt-16 mt-16">
-            <p className="text-small font-medium">{labels['home.stay.checked_in_note']}</p>
-            {guestNationality && (
-              <p className="text-small text-text-secondary mt-4">
-                {(labels['home.stay.visiting_from'] ?? '').replace('{nationality}', guestNationality)}
-              </p>
-            )}
-          </div>
-        )}
+        {doorBlock ? <div className="mt-16 lg:mt-0">{doorBlock}</div> : null}
       </div>
     );
   }

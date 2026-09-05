@@ -24,13 +24,25 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
   const data = await fetchInStayHomeSpace(params.bookingId, user.identityId);
   const labels = await getLabels({
     'home.welcome': 'Welcome to',
+    'home.welcome_back': 'Welcome back, {name}',
     'home.handbook.title': 'Property Handbook',
     'home.handbook.description': 'Learn about the property amenities, check-out procedures, and local information.',
     'home.handbook.view_button': 'View Handbook',
     'home.help_text': 'Need help? Contact the host or raise an issue above.',
     'home.active_orders': 'Your Active Orders',
     'home.concierge_whatsapp': 'Message the concierge on WhatsApp',
+    'home.concierge.kicker': 'Concierge',
+    'home.announcements.kicker': 'From the building',
+    'home.announcement.voice.myuno': 'Official · myUNO',
+    'home.announcement.voice.management_company': 'Official · Management company',
+    'home.announcement.voice.juristic_person': 'Official · Juristic person',
     'home.shuttle.title': 'Beach shuttle schedule',
+    'home.stay.kicker': 'Your stay',
+    'home.stay.nights_count': '{count} nights',
+    'home.stay.tm30_filed': 'TM30 filed',
+    'home.stay.paid_in_full': 'Paid in full',
+    'home.stay.door_code': 'Door code',
+    'listing.guests_count': '{count} guests',
     'home.stay.check_in': 'Check-in',
     'home.stay.check_out': 'Check-out',
     'home.stay.checked_in_note': 'You are checked in. Everything you need is on this page.',
@@ -47,6 +59,15 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'home.services.from': 'from',
     'home.order.rate_button': 'Rate this service',
     'home.order.you_rated': 'You rated:',
+    'common.status.service_order.placed': 'Placed',
+    'common.status.service_order.paid': 'Paid',
+    'common.status.service_order.accepted': 'Accepted',
+    'common.status.service_order.declined': 'Declined',
+    'common.status.service_order.expired': 'Expired',
+    'common.status.service_order.fulfilled': 'Completed',
+    'common.status.service_order.cancelled': 'Cancelled',
+    'common.status.service_order.failed': 'Failed',
+    'common.status.service_order.closed': 'Closed',
     'home.extend.title': 'Stay longer',
     'home.extend.description':
       'Choose a new check-out date. We will check the calendar and price the extra nights before anything is charged.',
@@ -83,5 +104,12 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     shuttleText = '';
   }
 
-  return <InStayHomeSpaceClient {...data} shuttleText={shuttleText} labels={labels} />;
+  return (
+    <InStayHomeSpaceClient
+      {...data}
+      guestFirstName={user.firstName}
+      shuttleText={shuttleText}
+      labels={labels}
+    />
+  );
 }

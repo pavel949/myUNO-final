@@ -16,6 +16,8 @@ interface AnnouncementsSectionProps {
   labels: Record<string, string>;
 }
 
+const voiceChipStatus = 'closed' as const;
+
 export const AnnouncementsSection = React.forwardRef<HTMLDivElement, AnnouncementsSectionProps>(
   ({ announcements, labels }, ref) => {
     if (!announcements || announcements.length === 0) {
@@ -44,7 +46,7 @@ export const AnnouncementsSection = React.forwardRef<HTMLDivElement, Announcemen
                     {announcement.title}
                   </h3>
                   {voice ? (
-                    <Chip variant="status" status="closed">
+                    <Chip variant="status" status={voiceChipStatus}>
                       {voice}
                     </Chip>
                   ) : null}

@@ -117,14 +117,14 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
             {tm30Filed ? (
               <Chip
                 variant="status"
-                status="confirmed"
+                status={stayChipStatus('confirmed')}
                 icon={<TrustMark size={14} />}
               >
                 {labels['home.stay.tm30_filed']}
               </Chip>
             ) : null}
             {paidInFull ? (
-              <Chip variant="status" status="confirmed">
+              <Chip variant="status" status={stayChipStatus('confirmed')}>
                 {labels['home.stay.paid_in_full']}
               </Chip>
             ) : null}

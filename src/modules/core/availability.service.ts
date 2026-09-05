@@ -271,9 +271,31 @@ export async function computePriceBreakdown(
   }
 
   const nights = daysBetween(checkInDate, checkOutDate);
-  if (nights < unit.minNights) {
+
+  // The minimum stay is the arrival night's, not the unit's flat default.
+  //
+  // `PricingRule.minNightsOverride` was stored, validated on write, returned by
+  // the API and rendered in the admin panel — and read by nothing, so setting a
+  // seasonal minimum stay silently did nothing (T-054).
+  //
+  // The arrival night decides, which is how every OTA expresses a minimum stay
+  // and the only reading that stays unambiguous: `createPricingRule` refuses
+  // overlapping rules for a unit, so exactly one rule can cover a given night.
+  // It is a genuine override rather than a floor — relaxing the minimum in low
+  // season is as much a revenue lever as raising it over peak, and a rule that
+  // could only tighten would not be one.
+  const arrivalRule = await db.pricingRule.findFirst({
+    where: {
+      unitId: unit.id,
+      startDate: { lte: checkInDate },
+      endDate: { gt: checkInDate },
+    },
+    select: { minNightsOverride: true, label: true },
+  });
+  const minNights = arrivalRule?.minNightsOverride ?? unit.minNights;
+  if (nights < minNights) {
     throw new Error(
-      `Stay length ${nights} nights is below minimum of ${unit.minNights}`
+      `Stay length ${nights} nights is below minimum of ${minNights}`
     );
   }
 

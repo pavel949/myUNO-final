@@ -965,6 +965,80 @@ describe('Availability & Pricing Service', () => {
     });
   });
 
+  describe('minNightsOverride — a seasonal minimum stay (T-054)', () => {
+    // The column was written, validated, returned by the API and rendered in
+    // the admin panel, and read by nothing: setting a seasonal minimum stay
+    // did precisely nothing. The arrival night decides, which is how every OTA
+    // expresses this and the only unambiguous reading, since createPricingRule
+    // refuses overlapping rules for a unit.
+    async function unitWithArrivalRule(minNightsOverride: number | null) {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 2,
+        maxGuests: 4,
+      });
+      await prisma.pricingRule.create({
+        data: {
+          unitId: unit.id,
+          startDate: new Date('2026-12-20'),
+          endDate: new Date('2026-12-31'),
+          nightlyThb: 5000,
+          label: 'peak',
+          minNightsOverride,
+        },
+      });
+      return unit.id;
+    }
+
+    it('refuses a stay shorter than the arrival rule’s minimum', async () => {
+      const unitId = await unitWithArrivalRule(5);
+      await expect(
+        computePriceBreakdown(
+          prisma, unitId, new Date('2026-12-22'), new Date('2026-12-26'), 2
+        )
+      ).rejects.toThrow(/below minimum of 5/);
+    });
+
+    it('permits a stay that meets it', async () => {
+      const unitId = await unitWithArrivalRule(5);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-12-22'), new Date('2026-12-27'), 2
+      );
+      expect(breakdown.lines).toHaveLength(5);
+    });
+
+    it('does not apply when arrival falls outside the rule’s window', async () => {
+      // Same 4-night stay, arriving before the peak window: the unit's own
+      // minimum of 2 governs, so this is fine.
+      const unitId = await unitWithArrivalRule(5);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-11-10'), new Date('2026-11-14'), 2
+      );
+      expect(breakdown.lines).toHaveLength(4);
+    });
+
+    it('can relax the unit minimum, not only tighten it', async () => {
+      // A floor-only reading would reject this. Dropping the minimum in low
+      // season is as much a revenue lever as raising it over peak.
+      const unitId = await unitWithArrivalRule(1);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-12-22'), new Date('2026-12-23'), 2
+      );
+      expect(breakdown.lines).toHaveLength(1);
+    });
+
+    it('falls back to the unit minimum when the rule sets no override', async () => {
+      const unitId = await unitWithArrivalRule(null);
+      await expect(
+        computePriceBreakdown(
+          prisma, unitId, new Date('2026-12-22'), new Date('2026-12-23'), 2
+        )
+      ).rejects.toThrow(/below minimum of 2/);
+    });
+  });
+
   describe('checkAvailability', () => {
     // T-051. This function checked `blocked_date` and nothing else, so it
     // answered "available" for a range with a confirmed booking in it. Nothing

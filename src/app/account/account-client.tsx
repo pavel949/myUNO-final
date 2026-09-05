@@ -28,6 +28,7 @@ export default function AccountClient({
   const [settings, setSettings] = useState<Setting[]>([]);
   const [unmutable, setUnmutable] = useState<string[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [exportState, setExportState] = useState<'idle' | 'exporting' | 'error'>('idle');
 
   useEffect(() => {
     fetch('/api/account/notifications')
@@ -95,6 +96,24 @@ export default function AccountClient({
   );
 
   const types = Array.from(new Set(settings.map((s) => s.type)));
+
+  const exportData = useCallback(async () => {
+    setExportState('exporting');
+    try {
+      const response = await fetch('/api/profile/export');
+      if (!response.ok) throw new Error('export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `personal-data-${new Date().toISOString().split('T')[0]}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setExportState('idle');
+    } catch {
+      setExportState('error');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-surface-background p-24 md:p-32">
@@ -204,6 +223,28 @@ export default function AccountClient({
             </>
           ) : (
             <p className="text-body text-text-secondary">{labels['account.password.none']}</p>
+          )}
+        </section>
+
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+            {labels['account.privacy.title']}
+          </h2>
+          <p className="text-body text-text-secondary mb-16">
+            {labels['account.privacy.export_hint']}
+          </p>
+          <button
+            type="button"
+            onClick={exportData}
+            disabled={exportState === 'exporting'}
+            className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition disabled:opacity-50"
+          >
+            {exportState === 'exporting'
+              ? labels['account.privacy.exporting']
+              : labels['account.privacy.export']}
+          </button>
+          {exportState === 'error' && (
+            <p className="mt-12 text-small text-state-error">{labels['account.privacy.export_error']}</p>
           )}
         </section>
 

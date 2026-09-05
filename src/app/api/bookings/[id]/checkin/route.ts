@@ -1,32 +1,30 @@
 /**
  * POST /api/bookings/[id]/checkin
  * Check in a booking: update status, create TM30 filings for foreign guests, baseline condition report.
- * Only the guest or a staff member can check in.
+ * Only the guest, scoped staff, or scoped MC member can check in.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createTm30Filing, createConditionReport } from '@/modules/ops';
+import {
+  CHECK_IN_CHECKLIST_ITEMS,
+  formatCheckInChecklistNotes,
+  type CheckInChecklistItem,
+} from '@/modules/ops/check-in-checklist';
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
+import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get the booking
@@ -44,19 +42,15 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Authorization: guest or staff can check in
-    const isGuest = booking.guestIdentityId === currentUser.id;
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        role: 'staff_ops',
-        status: 'active',
-      },
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+      ownerIdentityId: booking.unit.ownerIdentityId,
     });
-
-    if (!isGuest && !isStaff) {
+    if (!canRecordStayTransition(access)) {
       return NextResponse.json(
-        { error: 'Only guest or staff can check in' },
+        { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }
       );
     }
@@ -93,14 +87,28 @@ export async function POST(
       }
     }
 
+    // Optional condition report payload from staff check-in flow (F-OPS-1)
+    const body = await req.json().catch(() => ({}));
+    const notesInput = typeof body.notes === 'string' ? body.notes : '';
+    const photoMediaIds = Array.isArray(body.photoMediaIds)
+      ? body.photoMediaIds.filter((id: unknown) => typeof id === 'string')
+      : [];
+    const checklistItems = Array.isArray(body.checklistItems)
+      ? body.checklistItems.filter((item: unknown): item is CheckInChecklistItem =>
+          typeof item === 'string' &&
+          (CHECK_IN_CHECKLIST_ITEMS as readonly string[]).includes(item)
+        )
+      : [];
+
     // Create baseline condition report
     try {
       await createConditionReport(prisma, {
         unitId: booking.unitId,
         bookingId: booking.id,
         reportType: 'check_in',
-        notes: 'Check-in inspection. Photos should be attached separately.',
-        createdByIdentityId: currentUser.id,
+        notes: formatCheckInChecklistNotes(checklistItems, notesInput),
+        createdByIdentityId: user.identityId,
+        photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
       });
     } catch (error) {
       console.error(`Failed to create condition report:`, error);
@@ -118,13 +126,13 @@ export async function POST(
       },
     });
 
-    // Notify unit owner
+    // Notify unit owner that the guest has arrived (not N-03 — that fires on confirmation).
     if (booking.unit.ownerIdentityId) {
       await createNotification(prisma, {
         identityId: booking.unit.ownerIdentityId,
-        type: 'stay_new_booking_ops',
-        titleKey: 'booking.guest_checkin.title',
-        bodyKey: 'booking.guest_checkin.body',
+        type: 'stay_modified_ops',
+        titleKey: 'notify.stay_guest_checked_in.title',
+        bodyKey: 'notify.stay_guest_checked_in.body',
         params: {
           guest_name: booking.guestIdentity.firstName + ' ' + booking.guestIdentity.lastName,
           unit_name: booking.unit.name,

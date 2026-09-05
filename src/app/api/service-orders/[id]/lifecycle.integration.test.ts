@@ -29,6 +29,7 @@ import { POST as accept } from './accept/route';
 import { POST as decline } from './decline/route';
 import { POST as fulfil } from './fulfil/route';
 import { POST as cancel } from './cancel/route';
+import { POST as reportNoShow } from './no-show/route';
 
 function post(body?: unknown): NextRequest {
   return new NextRequest('http://localhost/api/service-orders/x', {
@@ -76,9 +77,11 @@ describe('service-order lifecycle routes (S1)', () => {
   let providerId: string;
   let otherProviderId: string;
   let orderId: string;
+  let projectId: string;
 
   async function makeOrder(opts?: { daysAhead?: number }) {
     const project = await createProject({ status: 'live' });
+    projectId = project.id;
     const provider = await createProvider({ status: 'active' });
     await db.provider.update({
       where: { id: provider.id },
@@ -126,8 +129,14 @@ describe('service-order lifecycle routes (S1)', () => {
   const asOrderer = () => mockGetCurrentUser.mockResolvedValue(userOf(orderer));
   const asStaff = () =>
     mockGetCurrentUser.mockResolvedValue(
-      userOf(staff, { roles: [{ role: 'staff_ops' }] })
+      userOf(staff, { roles: [{ role: 'staff_ops', projectId }] })
     );
+  const asOffProjectStaff = async () => {
+    const otherProject = await createProject({ status: 'live' });
+    mockGetCurrentUser.mockResolvedValue(
+      userOf(staff, { roles: [{ role: 'staff_ops', projectId: otherProject.id }] })
+    );
+  };
   const asProviderMember = (pid?: string) =>
     mockGetCurrentUser.mockResolvedValue(
       userOf(providerMember, {
@@ -161,6 +170,14 @@ describe('service-order lifecycle routes (S1)', () => {
         params: { id: orderId },
       });
       expect(res.status).toBe(403);
+    });
+
+    it('staff from another project cannot record cash', async () => {
+      await asOffProjectStaff();
+      const res = await recordCash(post({ receiptRef: 'x' }), {
+        params: { id: orderId },
+      });
+      expect(res.status).toBe(404);
     });
 
     it('rejects a second payment', async () => {
@@ -245,6 +262,41 @@ describe('service-order lifecycle routes (S1)', () => {
       expect(res.status).toBe(200);
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
       expect(order?.status).toBe('fulfilled');
+    });
+
+    it('orderer can report provider no-show after the slot starts (F-PROV-3)', async () => {
+      asStaff();
+      await recordCash(post({ receiptRef: 'r-ns' }), { params: { id: orderId } });
+
+      asProviderMember();
+      await accept(post(), { params: { id: orderId } });
+
+      await db.serviceOrder.update({
+        where: { id: orderId },
+        data: {
+          scheduled_start: new Date(Date.now() - 60 * 60 * 1000),
+          scheduled_end: new Date(Date.now() - 30 * 60 * 1000),
+        },
+      });
+
+      asOrderer();
+      const res = await reportNoShow(post({ note: 'Nobody came' }), {
+        params: { id: orderId },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.status).toBe('failed');
+      expect(body.ticketId).toBeTruthy();
+
+      const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
+      expect(order?.status).toBe('failed');
+      expect(order?.refund_accrued_thb).toBe(80000);
+
+      const ticket = await db.ticket.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(ticket?.priority).toBe('high');
     });
   });
 

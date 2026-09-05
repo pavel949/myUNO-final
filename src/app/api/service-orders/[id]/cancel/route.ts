@@ -6,7 +6,7 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
 
 /**
- * POST /api/service-orders/[id]/cancel — the orderer (or staff/admin) cancels
+ * POST /api/service-orders/[id]/cancel — the orderer (or scoped staff/MC/admin) cancels
  * an order (F-SVC-3). Refund eligibility is decided in the module against
  * config `service.cancel_window_hours`: full refund outside the window, none
  * inside it. Body: { reason?: string }.
@@ -21,8 +21,11 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
-    const { order, isOrderer, isStaff, isAdmin } = await loadOrderForUser(params.id, user);
-    if (!isOrderer && !isStaff && !isAdmin) {
+    const { order, isOrderer, isStaff, isManagedMc, isAdmin } = await loadOrderForUser(
+      params.id,
+      user
+    );
+    if (!isOrderer && !isStaff && !isManagedMc && !isAdmin) {
       throw createPublicError('Access denied.', 403);
     }
 

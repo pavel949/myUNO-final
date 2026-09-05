@@ -41,21 +41,31 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
  * 1. User clicks "Sign in with Google"
  * 2. Redirected to Google consent screen
  * 3. Google redirects back to /api/auth/callback/google?code=...&state=...
- * 4. This handler exchanges code for access token
+ * 4. This handler exchanges code for tokens
  * 5. Fetches user info from Google
  * 6. Finds or creates identity with that email
  * 7. Creates or updates AuthAccount linking Google ID to identity
  * 8. Creates session cookie and redirects to /app
  */
 export async function GET(request: NextRequest) {
-  const loginRedirect = (reason: string) =>
-    NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(reason)}`, request.nextUrl.origin)
-    );
-
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
+  const state = searchParams.get('state');
   const error = searchParams.get('error');
+  const cookieState = request.cookies.get('google_oauth_state')?.value;
+  const clearOauthState = {
+    path: '/',
+    maxAge: 0,
+    sameSite: 'lax' as const,
+    secure: request.nextUrl.protocol === 'https:',
+  };
+  const loginRedirect = (reason: string) => {
+    const response = NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(reason)}`, request.nextUrl.origin)
+    );
+    response.cookies.set('google_oauth_state', '', clearOauthState);
+    return response;
+  };
 
   // Handle user rejection or errors from Google
   if (error) {
@@ -66,6 +76,10 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     return loginRedirect('missing_authorization_code');
+  }
+
+  if (!state || !cookieState || decodeURIComponent(cookieState) !== state) {
+    return loginRedirect('invalid_oauth_state');
   }
 
   try {
@@ -118,8 +132,12 @@ export async function GET(request: NextRequest) {
           preferredLocale: 'en', // Could derive from Google user locale if available
         },
       });
-    } else if (identity.status === 'blocked') {
-      return loginRedirect('This account has been blocked.');
+    } else if (identity.status === 'blocked' || identity.status === 'invited') {
+      return loginRedirect(
+        identity.status === 'blocked'
+          ? 'This account has been blocked.'
+          : 'Please activate your invited account before using Google sign-in.'
+      );
     }
 
     // Step 4: Upsert auth account (link Google ID to identity)
@@ -148,6 +166,7 @@ export async function GET(request: NextRequest) {
       sessionToken,
       sessionCookieOptions()
     );
+    response.cookies.set('google_oauth_state', '', clearOauthState);
 
     return response;
   } catch (error) {

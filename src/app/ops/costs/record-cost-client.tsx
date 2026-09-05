@@ -27,10 +27,13 @@ export default function RecordCostClient({
   units,
   recent,
   labels,
+  embedded = false,
 }: {
   units: Unit[];
   recent: Entry[];
   labels: Record<string, string>;
+  /** When true, parent page supplies title/intro/back link. */
+  embedded?: boolean;
 }) {
   const [unitId, setUnitId] = useState(units[0]?.id ?? '');
   const [entryType, setEntryType] = useState<string>(COST_TYPES[0]);
@@ -85,10 +88,14 @@ export default function RecordCostClient({
   };
 
   return (
-    <div className="min-h-screen bg-surface-background p-24 md:p-32">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['ops.costs.title']}</h1>
-        <p className="text-body text-text-secondary mb-24">{labels['ops.costs.intro']}</p>
+    <div className={embedded ? undefined : 'min-h-screen bg-surface-background p-24 md:p-32'}>
+      <div className={embedded ? undefined : 'max-w-3xl mx-auto'}>
+        {!embedded ? (
+          <>
+            <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['ops.costs.title']}</h1>
+            <p className="text-body text-text-secondary mb-24">{labels['ops.costs.intro']}</p>
+          </>
+        ) : null}
 
         <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">

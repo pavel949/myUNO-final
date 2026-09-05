@@ -191,6 +191,11 @@ describe('booking.service — integration tests', () => {
       expect(booking.status).toBe('requested');
       expect(booking.holdExpiresAt).toBeNull();
       expect(booking.requestExpiresAt).toBeDefined();
+
+      const guestAlert = await db.notification.findFirst({
+        where: { identityId: guest.id, type: 'stay_request_placed' },
+      });
+      expect(guestAlert).not.toBeNull();
     });
 
     it('prevents double-booking with confirmed reservation', async () => {
@@ -539,6 +544,35 @@ describe('booking.service — integration tests', () => {
       expect(declined.cancelledByIdentityId).toBe(host.id);
     });
 
+    it('stores the selected decline reason code', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const host = await createIdentity();
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: false,
+      });
+
+      const declined = await bookingService.declineBookingRequest(db, {
+        bookingId: booking.id,
+        declinedByIdentityId: host.id,
+        reasonCode: 'minimum_stay',
+      });
+
+      expect(declined.cancellationReason).toBe('declined:minimum_stay');
+    });
+
     it('rejects decline when not in requested status', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
@@ -591,6 +625,52 @@ describe('booking.service — integration tests', () => {
 
       expect(confirmed.status).toBe('confirmed');
       expect(confirmed.holdExpiresAt).toBeNull();
+    });
+
+    it('schedules deposit preauth on confirm when unit config mode=preauth (Q46)', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+
+      await db.configOverride.create({
+        data: {
+          parameterKey: 'booking.deposit.mode',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 'preauth',
+          updatedByIdentityId: guest.id,
+        },
+      });
+      await db.configOverride.create({
+        data: {
+          parameterKey: 'booking.deposit.amount_thb',
+          scopeType: 'unit',
+          scopeId: unit.id,
+          value: 5000,
+          updatedByIdentityId: guest.id,
+        },
+      });
+
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+
+      await bookingService.confirmBooking(db, { bookingId: booking.id });
+
+      const preauth = await db.depositPreauth.findUnique({ where: { bookingId: booking.id } });
+      expect(preauth).not.toBeNull();
+      expect(preauth?.amountThb).toBe(5000);
+      expect(preauth?.status).toBe('authorized');
     });
 
     it('rejects confirmation when not in pending_payment status', async () => {
@@ -994,6 +1074,11 @@ describe('booking.service — integration tests', () => {
       expect(expired?.status).toBe('expired');
       expect(expired?.holdExpiresAt).toBeNull();
 
+      const notification = await db.notification.findFirst({
+        where: { type: 'stay_hold_expired', identityId: guest1.id },
+      });
+      expect(notification).toBeTruthy();
+
       const notExpired = await db.booking.findUnique({ where: { id: booking2.id } });
       expect(notExpired?.status).toBe('pending_payment');
       expect(notExpired?.holdExpiresAt).toBeDefined();
@@ -1085,6 +1170,11 @@ describe('booking.service — integration tests', () => {
       expect(autoDeclined?.status).toBe('declined');
       expect(autoDeclined?.cancellationReason).toBe('auto_declined_timeout');
       expect(autoDeclined?.requestExpiresAt).toBeNull();
+
+      const notification = await db.notification.findFirst({
+        where: { type: 'stay_request_declined', identityId: guest1.id },
+      });
+      expect(notification).toBeTruthy();
 
       const notDeclined = await db.booking.findUnique({ where: { id: booking2.id } });
       expect(notDeclined?.status).toBe('requested');

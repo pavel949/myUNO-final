@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
@@ -13,13 +13,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw createPublicError('unauthorized', 401);
-    }
-    if (!user.isAdmin) {
-      throw createPublicError('Access denied.', 403);
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const { mediaAssetId, cover } = await req.json();
     if (!mediaAssetId) {

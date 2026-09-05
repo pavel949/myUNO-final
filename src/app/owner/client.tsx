@@ -12,11 +12,21 @@ import {
   SellInterestCard,
   OwnerStayModal,
   MoneyAmount,
+  RoleContextBanner,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
+
+function fill(template: string, params?: Record<string, string>): string {
+  if (!params) return template;
+  let output = template;
+  for (const [key, value] of Object.entries(params)) {
+    output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  }
+  return output;
+}
 
 interface UnitData {
   id: string;
@@ -27,6 +37,13 @@ interface UnitData {
   nextArrivalDate: Date | null;
   bookingsCount: number;
   openTicketsCount: number;
+  openTickets: Array<{
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+    unitName: string;
+  }>;
   latestStatementId: string | null;
 }
 
@@ -78,13 +95,9 @@ interface OwnerDashboardClientProps {
   complianceSummary: OwnerComplianceStatus[];
   statements: OwnerStatement[];
   labels: Record<string, string>;
+  locale: string;
+  activeStay?: { bookingId: string; unitName: string } | null;
 }
-
-const monthLabel = (period: string): string => {
-  // period is 'YYYY-MM'
-  const d = new Date(`${period}-01T00:00:00Z`);
-  return d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
-};
 
 export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   dashboard,
@@ -96,6 +109,8 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   complianceSummary,
   statements,
   labels,
+  locale,
+  activeStay,
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     shape.isPortfolio ? projects[0]?.id || null : null
@@ -145,6 +160,15 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   const filteredUnits = selectedProjectId
     ? dashboard.units.filter((u) => u.projectId === selectedProjectId)
     : dashboard.units;
+  const portfolioOpenTickets = filteredUnits
+    .flatMap((unit) =>
+      unit.openTickets.map((ticket) => ({
+        ...ticket,
+        unitName: ticket.unitName || unit.name,
+      }))
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   const occupancyNow = shape.isPortfolio
     ? dashboard.combinedOccupancyThisMonth
@@ -162,6 +186,34 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     emptyLabel: labels['owner.trends.empty'],
   };
 
+  const resolveLabel = (key: string, params?: Record<string, string>) =>
+    fill(labels[key] || key, params);
+
+  const ticketHref = (unit: { id: string; projectId: string }) =>
+    `/tickets/new?projectId=${unit.projectId}&unitId=${unit.id}`;
+
+  const serviceHref = (unit: { id: string; projectId: string }) =>
+    `/services?projectId=${unit.projectId}&unitId=${unit.id}`;
+
+  const OwnerQuickActions = ({
+    unit,
+  }: {
+    unit: { id: string; projectId: string; name: string };
+  }) => (
+    <div className="flex flex-col sm:flex-row gap-12">
+      <Link href={ticketHref(unit)} className="flex-1">
+        <Button variant="secondary" size="md" fullWidth>
+          {labels['owner.actions.raise_ticket']}
+        </Button>
+      </Link>
+      <Link href={serviceHref(unit)} className="flex-1">
+        <Button variant="secondary" size="md" fullWidth>
+          {labels['owner.actions.book_service']}
+        </Button>
+      </Link>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-surface-background">
       <div className="max-w-6xl mx-auto px-24 py-40">
@@ -173,6 +225,16 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           <p className="text-body text-text-secondary">{labels['owner.dashboard.subtitle']}</p>
         </div>
 
+        {activeStay ? (
+          <RoleContextBanner
+            message={(labels['owner.role_context'] ?? '').replace('{unit}', activeStay.unitName)}
+            action={{
+              label: labels['owner.role_context.stay_link'],
+              href: `/bookings/${activeStay.bookingId}/home-space`,
+            }}
+          />
+        ) : null}
+
         {/* Portfolio: Project Switcher */}
         {shape.isPortfolio && (
           <div className="mb-40">
@@ -180,6 +242,11 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               projects={projects}
               selectedProjectId={selectedProjectId || projects[0]?.id || null}
               onProjectChange={setSelectedProjectId}
+              labels={{
+                selectProject: labels['owner.switcher.select_project'],
+                unitSingular: labels['owner.switcher.unit_singular'],
+                unitPlural: labels['owner.switcher.unit_plural'],
+              }}
             />
           </div>
         )}
@@ -203,9 +270,11 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   <div className="flex items-start justify-between gap-12">
                     <div>
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {alert.title}
+                        {resolveLabel(alert.titleKey, alert.titleParams)}
                       </h3>
-                      <p className="text-body text-text-secondary">{alert.description}</p>
+                      <p className="text-body text-text-secondary">
+                        {resolveLabel(alert.descriptionKey, alert.descriptionParams)}
+                      </p>
                       <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
                     </div>
                     {alert.actionUrl && (
@@ -264,7 +333,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </h3>
               <BarChart
                 data={trends.monthly.map((p) => ({
-                  label: monthLabel(p.period),
+                  label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
+                    month: 'short',
+                    timeZone: 'UTC',
+                  }),
                   value: p.rentalRevenueThb,
                 }))}
                 color={CHART_SERIES[0]}
@@ -279,7 +351,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </h3>
               <LineChart
                 data={trends.monthly.map((p) => ({
-                  label: monthLabel(p.period),
+                  label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
+                    month: 'short',
+                    timeZone: 'UTC',
+                  }),
                   value: Math.round(p.occupancyPct),
                 }))}
                 max={100}
@@ -356,9 +431,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Statements (D2) */}
         {statements.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-              {labels['owner.statement.title']}
-            </h2>
+            <div className="flex items-center justify-between gap-16 mb-16">
+              <h2 className="text-heading-2 font-semibold text-text-ink">
+                {labels['owner.statement.title']}
+              </h2>
+              <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
+                {labels['owner.statements.view_all']}
+              </Link>
+            </div>
             <div className="space-y-16">
               {statements.map((statement) => (
                 <div
@@ -425,7 +505,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.bookings']}
               </h2>
-              <BookingsList bookings={bookings} />
+              <BookingsList
+                bookings={bookings}
+                locale={locale}
+                labels={{
+                  empty: labels['owner.bookings.empty'],
+                  unknownNationality: labels['owner.bookings.unknown_nationality'],
+                }}
+              />
             </div>
 
             {/* Single Unit: Latest Statement */}
@@ -441,8 +528,34 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
-              <OpenTicketsList count={currentUnit?.openTicketsCount || 0} />
+              <OpenTicketsList
+                count={currentUnit?.openTicketsCount || 0}
+                tickets={currentUnit?.openTickets || []}
+                labels={{
+                  empty: labels['owner.tickets.empty'],
+                  waitingCount: labels['owner.tickets.waiting_count'],
+                  view: labels['owner.tickets.view'],
+                  status: {
+                    open: labels['tickets.status.open'],
+                    acknowledged: labels['tickets.status.acknowledged'],
+                    in_progress: labels['tickets.status.in_progress'],
+                    waiting_reporter: labels['tickets.status.waiting_reporter'],
+                    resolved: labels['tickets.status.resolved'],
+                    closed: labels['tickets.status.closed'],
+                    cancelled: labels['tickets.status.cancelled'],
+                  },
+                }}
+              />
             </div>
+
+            {currentUnit ? (
+              <div>
+                <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                  {labels['owner.actions.title']}
+                </h2>
+                <OwnerQuickActions unit={currentUnit} />
+              </div>
+            ) : null}
 
             {/* Owner Stay Action */}
             <div>
@@ -458,7 +571,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Sell Interest Card */}
             <div>
-              <SellInterestCard onExpressInterest={handleExpressSellInterest} />
+              <SellInterestCard
+                labels={{
+                  title: labels['owner.sell_interest.card_title'],
+                  description: labels['owner.sell_interest.card_description'],
+                  action: labels['owner.sell_interest.action'],
+                }}
+                onExpressInterest={handleExpressSellInterest}
+              />
             </div>
           </div>
         ) : (
@@ -471,7 +591,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12 mb-16">
-                    <h3 className="text-heading-3 font-semibold text-text-ink">{unit.name}</h3>
+                    <h3 className="text-heading-3 font-semibold text-text-ink">
+                      <Link
+                        href={`/owner/units/${unit.id}`}
+                        className="hover:text-brand-andaman hover:underline"
+                      >
+                        {unit.name}
+                      </Link>
+                    </h3>
                     <Sparkline
                       values={trends.sparklines[unit.id] || []}
                       max={1}
@@ -507,14 +634,65 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       </span>
                       <span className="text-body font-medium text-text-ink">{unit.openTicketsCount}</span>
                     </div>
+                    <div className="pt-12 flex flex-col gap-8">
+                      <Link
+                        href={`/owner/units/${unit.id}`}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.units.view_detail']} →
+                      </Link>
+                      <Link
+                        href={ticketHref(unit)}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.actions.raise_ticket']} →
+                      </Link>
+                      <Link
+                        href={serviceHref(unit)}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['owner.actions.book_service']} →
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
+            <div>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.tickets']}
+              </h2>
+              <OpenTicketsList
+                count={filteredUnits.reduce((acc, unit) => acc + unit.openTicketsCount, 0)}
+                tickets={portfolioOpenTickets}
+                labels={{
+                  empty: labels['owner.tickets.empty'],
+                  waitingCount: labels['owner.tickets.waiting_count'],
+                  view: labels['owner.tickets.view'],
+                  status: {
+                    open: labels['tickets.status.open'],
+                    acknowledged: labels['tickets.status.acknowledged'],
+                    in_progress: labels['tickets.status.in_progress'],
+                    waiting_reporter: labels['tickets.status.waiting_reporter'],
+                    resolved: labels['tickets.status.resolved'],
+                    closed: labels['tickets.status.closed'],
+                    cancelled: labels['tickets.status.cancelled'],
+                  },
+                }}
+              />
+            </div>
+
             {/* Portfolio: Sell Interest Card */}
             <div>
-              <SellInterestCard onExpressInterest={handleExpressSellInterest} />
+              <SellInterestCard
+                labels={{
+                  title: labels['owner.sell_interest.card_title'],
+                  description: labels['owner.sell_interest.card_description'],
+                  action: labels['owner.sell_interest.action'],
+                }}
+                onExpressInterest={handleExpressSellInterest}
+              />
             </div>
           </div>
         )}

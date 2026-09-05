@@ -23,8 +23,10 @@ vi.mock('@/lib/prisma', async () => {
 import { POST as apply } from '@/app/api/providers/apply/route';
 import { GET as me } from './me/route';
 import { GET as listOrders } from './orders/route';
+import { GET as listRemittances } from './remittances/route';
 import { GET as listServices, POST as postService } from './services/route';
 import { PATCH as patchService } from './services/[id]/route';
+import { computeProviderRemittance, resolveProviderPayoutPeriod } from '@/modules/finance';
 
 function post(body?: unknown): NextRequest {
   return new NextRequest('http://localhost/api/provider/x', {
@@ -190,6 +192,82 @@ describe('provider portal routes (S2)', () => {
       expect(orders).toHaveLength(1);
       expect(orders[0].status).toBe('placed');
       expect(orders[0].acceptDeadline).toBeTruthy();
+    });
+  });
+
+  describe('GET /api/provider/remittances', () => {
+    it('403 for a non-member', async () => {
+      mockGetCurrentUser.mockResolvedValue(userOf(applicant));
+      expect((await listRemittances()).status).toBe(403);
+    });
+
+    it('returns current-period remittance and payout history for the member provider', async () => {
+      const project = await createProject({ status: 'live' });
+      const provider = await createProvider({ status: 'active' });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+        basePriceThb: 50000,
+      });
+
+      const now = new Date();
+      const { periodStart, periodEnd } = resolveProviderPayoutPeriod(now, 'weekly');
+      const fulfilledAt = new Date(periodStart.getTime() + 24 * 60 * 60 * 1000);
+
+      await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: applicant.id,
+          orderer_role: 'guest',
+          scheduled_start: fulfilledAt,
+          scheduled_end: new Date(fulfilledAt.getTime() + 2 * 60 * 60 * 1000),
+          quantity: 1,
+          price_breakdown: {},
+          total_thb: 10000,
+          take_rate_pct_snapshot: 10,
+          status: 'fulfilled',
+          updatedAt: fulfilledAt,
+        },
+      });
+
+      const admin = await createIdentity({ firstName: 'Admin' });
+      await db.payout.create({
+        data: {
+          payeeType: 'provider',
+          providerId: provider.id,
+          periodStart: new Date('2026-06-01'),
+          periodEnd: new Date('2026-07-01'),
+          amountThb: 4500,
+          method: 'bank_transfer_thb',
+          reference: 'REF-001',
+          executedOn: new Date('2026-07-05'),
+          recordedByIdentityId: admin.id,
+          status: 'recorded',
+        },
+      });
+
+      mockGetCurrentUser.mockResolvedValue(userOf(member, { providerId: provider.id }));
+
+      const res = await listRemittances();
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      expect(body.cadence).toBe('weekly');
+      expect(body.currentPeriod.remittance.orderCount).toBe(1);
+      expect(body.payouts).toHaveLength(1);
+      expect(body.payouts[0].reference).toBe('REF-001');
+      expect(body.payouts[0].amountThb).toBe(4500);
+
+      const expected = await computeProviderRemittance(
+        db,
+        provider.id,
+        new Date(body.currentPeriod.periodStart),
+        new Date(body.currentPeriod.periodEnd)
+      );
+      expect(body.currentPeriod.remittance.netThb).toBe(expected.netThb);
+      expect(body.currentPeriod.remittance.netThb).toBe(8500);
     });
   });
 

@@ -7,6 +7,7 @@ import {
   getMCBookings,
   getMCTickets,
   getMCFeeReport,
+  getMCServiceOrders,
 } from '@/modules/projects';
 
 export async function fetchMCDashboard(
@@ -19,6 +20,13 @@ export async function fetchMCDashboard(
     const unitsRaw = await getMCManagedUnits(prisma, mcIdentityId, projectId, organizationId);
     const bookingsRaw = await getMCBookings(prisma, mcIdentityId, projectId, organizationId, 50);
     const ticketsRaw = await getMCTickets(prisma, mcIdentityId, projectId, organizationId, 10);
+    const serviceOrdersRaw = await getMCServiceOrders(
+      prisma,
+      mcIdentityId,
+      projectId,
+      organizationId,
+      50
+    );
 
     // Cast to any to avoid type mismatches between Prisma and client types.
     // baseNightlyThb / totalThb are satang like every other amount in the
@@ -34,12 +42,20 @@ export async function fetchMCDashboard(
       totalThb: booking.totalThb / 100,
     }));
     const tickets = ticketsRaw as any;
+    const serviceOrders = (serviceOrdersRaw as any[]).map((order) => ({
+      ...order,
+      scheduledStart: order.scheduled_start,
+      totalThb: order.total_thb / 100,
+      noteToProvider: order.note_to_provider,
+      paid: order.payments.length > 0,
+    }));
 
     return {
       dashboard,
       units,
       bookings,
       tickets,
+      serviceOrders,
     };
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC dashboard');

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as financeService from '@/modules/finance';
+import { markPaymentFailed } from '@/modules/finance';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { track } from '@/modules/analytics';
+import { canAccessPaymentSession } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/checkout/confirm
@@ -48,6 +50,16 @@ export async function POST(req: NextRequest) {
       throw createPublicError('sessionId is required', 400);
     }
 
+    // Mock-provider unhappy path (doc 07 F-GUEST-3): card declined, booking
+    // stays pending_payment and the guest retries from My trips.
+    if (body.simulateDecline === true) {
+      await markPaymentFailed(prisma, sessionId, 'card_declined');
+      throw createPublicError(
+        'Your card was declined. Nothing was charged — complete payment from My trips before your hold expires.',
+        400
+      );
+    }
+
     const payment = await prisma.payment.findUnique({
       where: { id: sessionId },
       select: { payerIdentityId: true, bookingId: true, amountThb: true, method: true, provider: true },
@@ -57,7 +69,7 @@ export async function POST(req: NextRequest) {
       throw createPublicError('not found', 404);
     }
 
-    if (payment.payerIdentityId !== user.identityId && !user.isAdmin) {
+    if (!canAccessPaymentSession(user, payment.payerIdentityId)) {
       throw createPublicError('Access denied.', 403);
     }
 

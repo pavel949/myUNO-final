@@ -69,7 +69,15 @@ and must never touch a live domain.
 
 ## 3. Give the connection string to the app
 
-**Vercel → your project → Settings → Environment Variables**
+**Vercel → my-uno-final → Settings → Environment Variables**
+
+Preferred: **Vercel Marketplace → Supabase** (or Supabase **Integrations →
+Vercel**) so the platform injects `DATABASE_URL`. After linking, open the
+variable and confirm it is the **session** pooler (`*.pooler.supabase.com`,
+port 5432, username `postgres.<project-ref>`). If the integration injected a
+direct `db.<ref>.supabase.co` URL or port 6543, replace it — the app rewrites
+those hosts at runtime as a safety net, but the stored value should already
+be correct.
 
 | Name | Value | Environments |
 |---|---|---|

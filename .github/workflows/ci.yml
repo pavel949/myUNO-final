@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
+    # Production trunk is `main`. `develop` is kept for compatibility.
     branches: [main, develop]
+  # Unfiltered: a `branches: [main]` filter here matches the *base* branch.
+  # While GitHub's default was a `claude/**` branch, every PR skipped CI.
   pull_request:
 
 jobs:

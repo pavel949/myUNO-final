@@ -231,6 +231,7 @@ export interface RoleAssignmentFactoryOpts {
   scopeType?: 'platform' | 'project' | 'unit';
   projectId?: string;
   unitId?: string;
+  providerId?: string;
   status?: 'active' | 'revoked';
 }
 
@@ -251,6 +252,7 @@ export async function createRoleAssignment(opts: RoleAssignmentFactoryOpts) {
       scopeType,
       projectId,
       unitId: opts.unitId,
+      providerId: opts.providerId,
       status: opts.status || 'active',
     },
   });

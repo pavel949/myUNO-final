@@ -4,6 +4,7 @@ import {
   db,
   resetDb,
   createIdentity,
+  createOrganization,
   createProject,
   createUnit,
   createBooking,
@@ -34,14 +35,20 @@ function makeRequest(body: unknown): NextRequest {
 describe('POST /api/bookings/[id]/record-cash-payment', () => {
   let staff: Awaited<ReturnType<typeof createIdentity>>;
   let guest: Awaited<ReturnType<typeof createIdentity>>;
+  let owner: Awaited<ReturnType<typeof createIdentity>>;
+  let unitId: string;
+  let projectId: string;
   let bookingId: string;
 
   beforeEach(async () => {
     await resetDb();
     staff = await createIdentity({ firstName: 'Ops' });
     guest = await createIdentity({ firstName: 'Guest' });
+    owner = await createIdentity({ firstName: 'Owner' });
     const project = await createProject({ status: 'live' });
-    const unit = await createUnit({ projectId: project.id });
+    projectId = project.id;
+    const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+    unitId = unit.id;
     const booking = await createBooking({
       unitId: unit.id,
       projectId: project.id,
@@ -58,7 +65,15 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
     firstName: 'Ops',
     lastName: 'User',
     isAdmin: false,
-    roles: [{ role: 'staff_ops', projectId: null, unitId: null, organizationId: null }],
+    roles: [
+      {
+        role: 'staff_ops',
+        projectId,
+        unitId: null,
+        organizationId: null,
+        providerId: null,
+      },
+    ],
   });
 
   it('records cash, confirms the booking, and writes the ledger entry', async () => {
@@ -126,5 +141,76 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
       params: { id: bookingId },
     });
     expect(second.status).toBe(400);
+  });
+
+  it('allows the assigned MC member for the managed unit', async () => {
+    const managementOrg = await createOrganization('MC Alpha', projectId, 'management_company');
+    await db.unitEngagement.create({
+      data: {
+        unitId,
+        ownerIdentityId: owner.id,
+        engagementType: 'via_management_company',
+        managementOrgId: managementOrg.id,
+        status: 'active',
+      },
+    });
+
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: staff.id,
+      email: staff.email,
+      firstName: 'MC',
+      lastName: 'Member',
+      isAdmin: false,
+      roles: [
+        {
+          role: 'mc_member',
+          projectId,
+          unitId: null,
+          organizationId: managementOrg.id,
+          providerId: null,
+        },
+      ],
+    });
+
+    const response = await POST(makeRequest({ receiptRef: 'mc-001' }), {
+      params: { id: bookingId },
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it('blocks MC members from other organizations for the same unit', async () => {
+    const managementOrg = await createOrganization('MC Alpha', projectId, 'management_company');
+    const otherOrg = await createOrganization('MC Beta', projectId, 'management_company');
+    await db.unitEngagement.create({
+      data: {
+        unitId,
+        ownerIdentityId: owner.id,
+        engagementType: 'via_management_company',
+        managementOrgId: managementOrg.id,
+        status: 'active',
+      },
+    });
+
+    mockGetCurrentUser.mockResolvedValue({
+      identityId: staff.id,
+      email: staff.email,
+      firstName: 'MC',
+      lastName: 'Other',
+      isAdmin: false,
+      roles: [
+        {
+          role: 'mc_member',
+          projectId,
+          unitId: null,
+          organizationId: otherOrg.id,
+          providerId: null,
+        },
+      ],
+    });
+
+    const response = await POST(makeRequest({ receiptRef: 'mc-002' }), {
+      params: { id: bookingId },
+    });
+    expect(response.status).toBe(403);
   });
 });

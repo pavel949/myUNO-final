@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { markTm30FilingFiled } from '@/modules/ops';
+import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
 export async function POST(
   req: NextRequest,
@@ -19,37 +20,19 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     // Get the filing
     const filing = await prisma.tm30Filing.findUnique({
       where: { id: params.id },
-      include: { booking: true },
+      include: { booking: { select: { projectId: true, unitId: true } } },
     });
 
     if (!filing) {
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    // Check authorization: staff only
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        projectId: filing.booking.projectId,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!isStaff) {
+    if (!(await canAccessTm30Filing(user, filing.booking))) {
       return NextResponse.json(
-        { error: 'Only staff can file TM30' },
+        { error: 'Only staff or MC members with unit scope can file TM30' },
         { status: 403 }
       );
     }
@@ -59,7 +42,7 @@ export async function POST(
     const { receiptMediaId } = body;
 
     // Mark as filed
-    await markTm30FilingFiled(prisma, params.id, currentUser.id, receiptMediaId);
+    await markTm30FilingFiled(prisma, params.id, user.identityId, receiptMediaId);
 
     // Log action
     await prisma.auditLog.create({
@@ -67,7 +50,7 @@ export async function POST(
         action: 'filed_tm30',
         entityType: 'tm30_filing',
         entityId: params.id,
-        actorIdentityId: currentUser.id,
+        actorIdentityId: user.identityId,
         data: {
           receiptMediaId,
         } as any,

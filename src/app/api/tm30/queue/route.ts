@@ -7,8 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getTm30Queue } from '@/modules/ops';
+import { safeDecrypt } from '@/modules/ops';
 import { getConfig } from '@/modules/config';
+import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,57 +18,37 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const projectId = req.nextUrl.searchParams.get('projectId');
+    if (!projectId) {
+      return NextResponse.json({ error: 'projectId required' }, { status: 400 });
     }
 
-    // Check authorization: staff only
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!isStaff) {
+    if (!hasProjectStaffAccess(user, projectId)) {
       return NextResponse.json(
         { error: 'Only staff can view TM30 queue' },
         { status: 403 }
       );
     }
 
-    // Get projectId from query params
-    const projectId = req.nextUrl.searchParams.get('projectId');
-    if (!projectId) {
-      return NextResponse.json({ error: 'projectId required' }, { status: 400 });
-    }
-
-    // Verify staff has access to this project
-    const projectAccess = await prisma.roleAssignment.findFirst({
+    const filings = await prisma.tm30Filing.findMany({
       where: {
-        identityId: currentUser.id,
-        projectId,
-        role: 'staff_ops',
-        status: 'active',
+        status: { in: ['pending', 'escalated', 'failed'] },
+        booking: { projectId },
       },
+      include: {
+        booking: {
+          select: {
+            id: true,
+            startDate: true,
+            unit: { select: { name: true } },
+            project: { select: { name: true } },
+          },
+        },
+        bookingGuest: { select: { fullName: true, nationality: true } },
+      },
+      orderBy: { dueAt: 'asc' },
     });
 
-    if (!projectAccess) {
-      return NextResponse.json(
-        { error: 'No access to this project' },
-        { status: 403 }
-      );
-    }
-
-    // Get TM30 queue sorted by due date
-    const filings = await getTm30Queue(prisma, projectId);
-
-    // Enrich with escalation info
     const now = new Date();
     const escalationHoursBefore =
       ((await getConfig(prisma, 'compliance.tm30_escalation_hours_before', {
@@ -86,7 +67,14 @@ export async function GET(req: NextRequest) {
       );
 
       return {
-        ...filing,
+        id: filing.id,
+        status: filing.status,
+        dueAt: filing.dueAt.toISOString(),
+        guestName: safeDecrypt(filing.bookingGuest?.fullName) || '—',
+        nationality: filing.bookingGuest?.nationality || '—',
+        unitName: filing.booking?.unit?.name || '—',
+        projectName: filing.booking?.project?.name || '—',
+        arrival: filing.booking?.startDate?.toISOString() || null,
         minutesUntilEscalation,
         minutesUntilDue,
         isEscalated: filing.status === 'escalated',

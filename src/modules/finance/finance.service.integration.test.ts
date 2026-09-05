@@ -423,6 +423,219 @@ describe('finance.service — integration tests', () => {
     });
   });
 
+  describe('markRefundFailed', () => {
+    it('sets refund status to failed and alerts every admin (N-10)', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 800_000,
+        status: 'cancelled',
+      });
+      await db.booking.update({
+        where: { id: booking.id },
+        data: { refundAccruedThb: 800_000 },
+      });
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId: booking.id,
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 800_000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      const refund = await financeService.refund(
+        db,
+        payment.id,
+        800_000,
+        'cancellation',
+        actor.id
+      );
+
+      const failed = await financeService.markRefundFailed(db, refund.id, 'provider_declined');
+      expect(failed.status).toBe('failed');
+
+      const notifications = await db.notification.findMany({
+        where: { type: 'finance_refund_failed', identityId: admin.id },
+      });
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0]?.titleKey).toBe('notify.finance.refund_failed.title');
+      expect(notifications[0]?.bodyKey).toBe('notify.finance.refund_failed.body');
+    });
+
+    it('is idempotent when refund is already failed', async () => {
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 500_000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      const refund = await financeService.refund(
+        db,
+        payment.id,
+        500_000,
+        'cancellation',
+        actor.id
+      );
+
+      await financeService.markRefundFailed(db, refund.id);
+      const again = await financeService.markRefundFailed(db, refund.id);
+      expect(again.status).toBe('failed');
+    });
+  });
+
+  describe('getBookingRefundDisplayState', () => {
+    it('returns processing while card refund is in flight', async () => {
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 500_000,
+        status: 'cancelled',
+      });
+      await db.booking.update({
+        where: { id: booking.id },
+        data: { refundAccruedThb: 500_000 },
+      });
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId: booking.id,
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 500_000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      await financeService.refund(db, payment.id, 500_000, 'cancellation', actor.id);
+
+      const state = await financeService.getBookingRefundDisplayState(db, booking.id);
+      expect(state).toBe('processing');
+    });
+
+    it('keeps processing display after provider failure (guest-safe)', async () => {
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 500_000,
+        status: 'cancelled',
+      });
+      await db.booking.update({
+        where: { id: booking.id },
+        data: { refundAccruedThb: 500_000 },
+      });
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId: booking.id,
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 500_000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      const refund = await financeService.refund(db, payment.id, 500_000, 'cancellation', actor.id);
+      await financeService.markRefundFailed(db, refund.id);
+
+      const state = await financeService.getBookingRefundDisplayState(db, booking.id);
+      expect(state).toBe('processing');
+    });
+
+    it('returns completed when refund succeeded in full', async () => {
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 500_000,
+        status: 'cancelled',
+      });
+      await db.booking.update({
+        where: { id: booking.id },
+        data: { refundAccruedThb: 500_000 },
+      });
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId: booking.id,
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 500_000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      const refund = await financeService.refund(db, payment.id, 500_000, 'cancellation', actor.id);
+      await db.refund.update({ where: { id: refund.id }, data: { status: 'succeeded' } });
+
+      const state = await financeService.getBookingRefundDisplayState(db, booking.id);
+      expect(state).toBe('completed');
+    });
+  });
+
   describe('full flow: cash payment then booking state', () => {
     it('transitions booking through request → pending → confirmed via cash', async () => {
       const project = await createProject();

@@ -10,6 +10,17 @@ import fs from 'fs';
 // and DATABASE_URL_TEST already hold the same value.
 function resolveTestDatabaseUrl(): string | undefined {
   if (process.env.DATABASE_URL_TEST) return process.env.DATABASE_URL_TEST;
+  // Cloud development environments expose the isolated local database as
+  // DATABASE_URL but do not always copy it to DATABASE_URL_TEST. It is safe to
+  // use that value only when it is unambiguously local/test; never infer a
+  // production or hosted database as the destructive integration-test target.
+  const databaseUrl = process.env.DATABASE_URL;
+  if (
+    databaseUrl &&
+    (/localhost|127\.0\.0\.1/.test(databaseUrl) || /(?:^|[_-])test(?:[_-]|$)/i.test(databaseUrl))
+  ) {
+    return databaseUrl;
+  }
   try {
     const envFile = fs.readFileSync(path.resolve(__dirname, '.env'), 'utf8');
     const match = envFile.match(/^DATABASE_URL_TEST=(.*)$/m);

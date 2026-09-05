@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { serviceId, scheduledStart, quantity = 1, bookingId, noteToProvider } = body;
+    const { serviceId, scheduledStart, quantity = 1, bookingId, unitId: requestedUnitId, noteToProvider } = body;
     if (!serviceId || !scheduledStart) {
       throw createPublicError(
         'invalid request: serviceId and scheduledStart are required',
@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
     // the body (validated) → the single project when only one exists → 400.
     let projectId: string | null = null;
     let unitId: string | undefined;
+    let contextIsValidated = false;
     if (bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
       }
       projectId = booking.projectId;
       unitId = booking.unitId;
+      contextIsValidated = true;
     } else if (typeof body.projectId === 'string' && body.projectId) {
       const project = await prisma.project.findUnique({
         where: { id: body.projectId },
@@ -99,12 +101,37 @@ export async function POST(req: NextRequest) {
         throw createPublicError('invalid request: unknown project', 400);
       }
       projectId = project.id;
+      unitId = typeof requestedUnitId === 'string' ? requestedUnitId : undefined;
     } else {
       const projects = await prisma.project.findMany({ select: { id: true }, take: 2 });
       projectId = projects.length === 1 ? projects[0].id : null;
+      unitId = typeof requestedUnitId === 'string' ? requestedUnitId : undefined;
     }
     if (!projectId) {
       throw createPublicError('invalid request: no project context', 400);
+    }
+
+    if (unitId) {
+      const unit = await prisma.unit.findUnique({
+        where: { id: unitId },
+        select: { projectId: true },
+      });
+      if (!unit || unit.projectId !== projectId) {
+        throw createPublicError('not found', 404);
+      }
+    }
+
+    // A booking proves the guest's context. Without one, the caller must have
+    // an active role scoped to this project or unit; a platform-shaped role is
+    // not a substitute for resource scope.
+    const hasScopedRole = user.isAdmin || user.roles.some(
+      (role) =>
+        (unitId && role.unitId === unitId) ||
+        (!unitId && role.projectId === projectId) ||
+        (unitId && role.projectId === projectId)
+    );
+    if (!contextIsValidated && !hasScopedRole) {
+      throw createPublicError('not found', 404);
     }
 
     const totalThb = service.basePriceThb * qty;

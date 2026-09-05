@@ -18,16 +18,21 @@ interface Booking {
 
 interface BookingsListProps {
   bookings: Booking[];
+  labels: {
+    empty: string;
+    unknownNationality: string;
+  };
+  locale: string;
   loading?: boolean;
 }
 
-const formatDate = (dateStr: string): string => {
+const formatDate = (dateStr: string, locale: string): string => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 };
 
-const formatCurrency = (thb: number): string => {
-  return new Intl.NumberFormat('th-TH', {
+const formatCurrency = (thb: number, locale: string): string => {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'THB',
     maximumFractionDigits: 0,
@@ -35,7 +40,7 @@ const formatCurrency = (thb: number): string => {
 };
 
 export const BookingsList = React.forwardRef<HTMLDivElement, BookingsListProps>(
-  ({ bookings, loading }, ref) => {
+  ({ bookings, labels, locale, loading }, ref) => {
     if (loading) {
       return (
         <div ref={ref} className="space-y-12">
@@ -49,7 +54,7 @@ export const BookingsList = React.forwardRef<HTMLDivElement, BookingsListProps>(
     if (!bookings || bookings.length === 0) {
       return (
         <div ref={ref} className="text-center py-48">
-          <p className="text-body text-text-secondary">No bookings yet</p>
+          <p className="text-body text-text-secondary">{labels.empty}</p>
         </div>
       );
     }
@@ -65,14 +70,16 @@ export const BookingsList = React.forwardRef<HTMLDivElement, BookingsListProps>(
               <div className="flex-1">
                 <p className="text-body font-medium text-text-ink">{booking.guestIdentity.firstName}</p>
                 <p className="text-small text-text-secondary mt-4">
-                  {booking.guests[0]?.nationality || 'Unknown'}
+                  {booking.guests[0]?.nationality || labels.unknownNationality}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-body font-medium text-text-ink">
-                  {formatDate(booking.startDate)} – {formatDate(booking.endDate)}
+                  {formatDate(booking.startDate, locale)} – {formatDate(booking.endDate, locale)}
                 </p>
-                <p className="text-small text-text-secondary mt-4">{formatCurrency(booking.totalThb)}</p>
+                <p className="text-small text-text-secondary mt-4">
+                  {formatCurrency(booking.totalThb, locale)}
+                </p>
               </div>
             </div>
           </div>

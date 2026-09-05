@@ -2217,6 +2217,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Owner dashboard — trends & dataviz (doc 06 §3.5)
   { key: 'owner.dashboard.subtitle', namespace: 'owner', description: 'Owner dashboard subtitle', en: 'Manage your properties and stay informed', ru: 'Управляйте своей недвижимостью и будьте в курсе', th: 'จัดการทรัพย์สินของคุณและติดตามทุกความเคลื่อนไหว', status: NR },
+  { key: 'owner.dashboard.portfolio_subtitle', namespace: 'owner', description: 'Owner dashboard subtitle when the owner holds several units', en: '{units} units across {projects} projects', ru: '{units} юнитов в {projects} проектах', th: '{units} ยูนิตใน {projects} โครงการ', status: NR },
+  { key: 'owner.compliance.permitted_yes', namespace: 'owner', description: 'Permitted use is confirmed', en: 'Confirmed', ru: 'Подтверждено', th: 'ยืนยันแล้ว', status: NR },
+  { key: 'owner.compliance.permitted_no', namespace: 'owner', description: 'Permitted use is not confirmed', en: 'Not confirmed', ru: 'Не подтверждено', th: 'ยังไม่ยืนยัน', status: NR },
+  { key: 'owner.switcher.all_projects', namespace: 'owner', description: 'Owner project switcher: show every project', en: 'All projects', ru: 'Все проекты', th: 'ทุกโครงการ', status: NR },
   { key: 'owner.stats.nights', namespace: 'owner', description: 'Unit for occupancy tile value (nights)', en: 'nights', ru: 'ночей', th: 'คืน', status: NR },
   { key: 'owner.stats.vs_last_month', namespace: 'owner', description: 'Delta chip suffix: compared to previous month', en: 'vs last month', ru: 'к прошлому месяцу', th: 'เทียบเดือนก่อน', status: NR },
   { key: 'owner.stats.new_period', namespace: 'owner', description: 'Delta chip when no prior period exists', en: 'New', ru: 'Новое', th: 'ใหม่', status: NR },

@@ -173,7 +173,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
     labels[`owner.contract.basis.${basis}`] || basis;
 
   return (
-    <div className="min-h-screen bg-surface-background">
+    <div className="min-h-screen bg-surface-ivory">
       <div className="max-w-4xl mx-auto px-24 py-40">
         <Link href="/owner" className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['owner.unit.back']}
@@ -181,9 +181,11 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-16 mt-12 mb-32">
           <div>
-            <h1 className="text-heading-1 font-bold text-text-ink mb-8">{unit.name}</h1>
-            <p className="text-body text-text-secondary">
-              {unit.projectName} — {labels['owner.unit.subtitle']}
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+              {labels['owner.dashboard.title']}
+            </h1>
+            <p className="text-body text-text-stone">
+              {unit.name} · {unit.projectName}
             </p>
           </div>
           <Sparkline values={sparkline} max={1} title={labels['owner.units.last30']} />
@@ -286,7 +288,9 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
                       : 'text-state-warning'
                   }`}
                 >
-                  {compliance.permittedUseConfirmedAt ? '✓' : '⚠'}
+                  {compliance.permittedUseConfirmedAt
+                    ? labels['owner.compliance.permitted_yes']
+                    : labels['owner.compliance.permitted_no']}
                 </span>
               </div>
               <div className="flex justify-between items-center">

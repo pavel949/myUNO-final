@@ -32,6 +32,9 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
   const locale = getRequestLocale();
 
   const labels = (await getLabels({
+    'owner.dashboard.title': 'Owner Dashboard',
+    'owner.compliance.permitted_yes': 'Confirmed',
+    'owner.compliance.permitted_no': 'Not confirmed',
     'owner.unit.back': '← Owner dashboard',
     'owner.unit.subtitle': 'Everything about this unit — occupancy, bookings, statements, and open requests.',
     'owner.dashboard.occupancy_this_month': 'Occupied This Month',

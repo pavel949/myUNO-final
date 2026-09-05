@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Chip } from '@/components/Chip';
 
 interface Ticket {
   id: string;
@@ -23,20 +24,23 @@ interface OpenTicketsListProps {
   loading?: boolean;
 }
 
-const getStatusStyles = (status: string): { bg: string; text: string } => {
+const ticketChipStatus = (
+  status: string
+): 'requested' | 'checked_in' | 'confirmed' | 'closed' | 'default' => {
   switch (status) {
     case 'open':
-      return { bg: 'bg-state-warning-soft', text: 'text-state-warning' };
-    case 'acknowledged':
-      return { bg: 'bg-state-info-soft', text: 'text-state-info' };
-    case 'in_progress':
-      return { bg: 'bg-state-info-soft', text: 'text-state-info' };
     case 'waiting_reporter':
-      return { bg: 'bg-state-warning-soft', text: 'text-state-warning' };
+      return 'requested';
+    case 'acknowledged':
+    case 'in_progress':
+      return 'checked_in';
     case 'resolved':
-      return { bg: 'bg-state-success-soft', text: 'text-state-success' };
+      return 'confirmed';
+    case 'closed':
+    case 'cancelled':
+      return 'closed';
     default:
-      return { bg: 'bg-surface-ivory', text: 'text-text-stone' };
+      return 'default';
   }
 };
 
@@ -71,32 +75,29 @@ export const OpenTicketsList = React.forwardRef<HTMLDivElement, OpenTicketsListP
     return (
       <div ref={ref} className="space-y-12">
         {tickets.length > 0 ? (
-          tickets.map((ticket) => {
-            const styles = getStatusStyles(ticket.status);
-            return (
+          tickets.map((ticket) => (
               <div
                 key={ticket.id}
-                className="border border-border-line rounded-md p-20 hover:bg-surface-paper-soft transition-colors"
+                className="bg-surface-paper border border-border-line rounded-md p-16"
               >
                 <div className="flex justify-between items-start gap-16">
                   <div className="flex-1">
-                    <p className="text-body font-medium text-text-ink">{ticket.title}</p>
+                    <p className="text-body font-semibold text-text-ink m-0">{ticket.title}</p>
                     {ticket.unitName ? (
-                      <p className="text-small text-text-secondary mt-4">{ticket.unitName}</p>
+                      <p className="text-small text-text-stone mt-4 m-0">{ticket.unitName}</p>
                     ) : null}
                   </div>
-                  <span className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${styles.bg} ${styles.text}`}>
+                  <Chip variant="status" status={ticketChipStatus(ticket.status)}>
                     {labels.status[ticket.status] || ticket.status}
-                  </span>
+                  </Chip>
                 </div>
                 <div className="mt-8">
                   <Link href={`/tickets/${ticket.id}`} className="text-small font-semibold text-brand-andaman hover:underline">
-                    {labels.view} →
+                    {labels.view}
                   </Link>
                 </div>
               </div>
-            );
-          })
+          ))
         ) : (
           <p className="text-small text-text-secondary">
             {fill(labels.waitingCount, { count })}

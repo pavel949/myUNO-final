@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import BookingRequestRespondActions, {
+  type DeclineReasonOption,
+} from '@/components/booking/BookingRequestRespondActions';
 
 interface AdminBooking {
   id: string;
@@ -34,8 +37,10 @@ const statusStyle: Record<string, string> = {
 
 export default function BookingsAdminClient({
   labels,
+  declineReasons,
 }: {
   labels: Labels;
+  declineReasons: DeclineReasonOption[];
 }) {
   const router = useRouter();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
@@ -43,6 +48,7 @@ export default function BookingsAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
+  const [bankRefs, setBankRefs] = useState<Record<string, string>>({});
   const [guestLink, setGuestLink] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState<string>('');
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -269,24 +275,19 @@ export default function BookingsAdminClient({
           </span>
           <div className="flex items-center gap-8">
             {booking.status === 'requested' && (
-              <>
-                <Button
-                  size="sm"
-                  variant="sun"
-                  onClick={() => act(booking.id, 'respond', { action: 'approve' })}
-                  isLoading={busyId === booking.id}
-                >
-                  {labels['admin.bookings.approve']}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => act(booking.id, 'respond', { action: 'decline' })}
-                  isLoading={busyId === booking.id}
-                >
-                  {labels['admin.bookings.decline']}
-                </Button>
-              </>
+              <BookingRequestRespondActions
+                bookingId={booking.id}
+                declineReasons={declineReasons}
+                onComplete={() => void fetchBookings(0)}
+                labels={{
+                  approve: labels['admin.bookings.approve'],
+                  decline: labels['admin.bookings.decline'],
+                  decline_reason: labels['admin.bookings.decline_reason'],
+                  decline_reason_required: labels['admin.bookings.decline_reason_required'],
+                  confirm_decline: labels['admin.bookings.confirm_decline'],
+                  error_generic: labels['admin.bookings.error_generic'],
+                }}
+              />
             )}
             {booking.status === 'pending_payment' && (
               <>
@@ -312,6 +313,30 @@ export default function BookingsAdminClient({
                   disabled={!(receipts[booking.id] || '').trim()}
                 >
                   {labels['admin.bookings.record_cash']}
+                </Button>
+                <input
+                  type="text"
+                  value={bankRefs[booking.id] || ''}
+                  onChange={(e) =>
+                    setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
+                  }
+                  placeholder={labels['admin.bookings.bank_ref_placeholder']}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
+                  style={{ width: '150px' }}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    act(booking.id, 'record-transfer', {
+                      amountThb: Math.round(booking.totalThb * 100),
+                      bankReference: (bankRefs[booking.id] || '').trim(),
+                    })
+                  }
+                  isLoading={busyId === booking.id}
+                  disabled={!(bankRefs[booking.id] || '').trim()}
+                >
+                  {labels['admin.bookings.record_transfer']}
                 </Button>
               </>
             )}

@@ -3,15 +3,22 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createNotification } from '@/modules/comms';
 import { checkOutBooking } from '@/modules/booking';
+import { createConditionReport } from '@/modules/ops';
+import {
+  CHECK_OUT_CHECKLIST_ITEMS,
+  formatCheckOutChecklistNotes,
+  type CheckOutChecklistItem,
+} from '@/modules/ops/check-out-checklist';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/bookings/[id]/check-out
- * Check out a stay: checked_in → checked_out (staff or the guest).
- * Notifies the owner that the unit is free for turnaround.
+ * Check out a stay: checked_in → checked_out (guest, scoped staff, or scoped MC).
+ * Optional condition report payload (F-OPS-1 departure inspection).
  */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -22,16 +29,20 @@ export async function POST(
 
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
-      include: { unit: { select: { name: true, ownerIdentityId: true } } },
+      include: { unit: { select: { name: true, ownerIdentityId: true, id: true } } },
     });
 
     if (!booking) {
       throw createPublicError('not found', 404);
     }
 
-    const isGuest = booking.guestIdentityId === user.identityId;
-    const isStaff = user.roles.some((role) => role.role === 'staff_ops');
-    if (!isGuest && !isStaff && !user.isAdmin) {
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+      ownerIdentityId: booking.unit?.ownerIdentityId,
+    });
+    if (!canRecordStayTransition(access)) {
       throw createPublicError('Access denied.', 403);
     }
 
@@ -49,10 +60,37 @@ export async function POST(
       );
     }
 
+    const body = await req.json().catch(() => ({}));
+    const notesInput = typeof body.notes === 'string' ? body.notes : '';
+    const photoMediaIds = Array.isArray(body.photoMediaIds)
+      ? body.photoMediaIds.filter((id: unknown) => typeof id === 'string')
+      : [];
+    const checklistItems = Array.isArray(body.checklistItems)
+      ? body.checklistItems.filter((item: unknown): item is CheckOutChecklistItem =>
+          typeof item === 'string' &&
+          (CHECK_OUT_CHECKLIST_ITEMS as readonly string[]).includes(item)
+        )
+      : [];
+
+    if (checklistItems.length > 0 || notesInput || photoMediaIds.length > 0) {
+      try {
+        await createConditionReport(prisma, {
+          unitId: booking.unitId,
+          bookingId: booking.id,
+          reportType: 'check_out',
+          notes: formatCheckOutChecklistNotes(checklistItems, notesInput),
+          createdByIdentityId: user.identityId,
+          photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
+        });
+      } catch (error) {
+        console.error('Failed to create check-out condition report:', error);
+      }
+    }
+
     if (booking.unit?.ownerIdentityId) {
       await createNotification(prisma, {
         identityId: booking.unit.ownerIdentityId,
-        type: 'stay_post_stay',
+        type: 'stay_modified_ops',
         titleKey: 'notify.stay_checked_out.title',
         bodyKey: 'notify.stay_checked_out.body',
         params: { unit_name: booking.unit.name },

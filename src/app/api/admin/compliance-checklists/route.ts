@@ -1,53 +1,36 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import { ComplianceChecklistFrequency } from '@prisma/client'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { ComplianceChecklistFrequency, Prisma } from '@prisma/client';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface CreateChecklistInstanceRequest {
-  unitId: string
-  templateId: string
-  dueDate: string
+  unitId: string;
+  templateId: string;
+  dueDate: string;
 }
 
 interface CreateChecklistTemplateRequest {
-  name: string
-  frequency: ComplianceChecklistFrequency
-  items: Record<string, any>[]
+  name: string;
+  frequency: ComplianceChecklistFrequency;
+  items: Prisma.InputJsonValue;
 }
 
 export async function GET(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    const url = new URL(req.url)
-    const unitId = url.searchParams.get('unitId')
-    const templateId = url.searchParams.get('templateId')
-    const showTemplates = url.searchParams.get('showTemplates') === 'true'
+    const url = new URL(req.url);
+    const unitId = url.searchParams.get('unitId');
+    const templateId = url.searchParams.get('templateId');
+    const showTemplates = url.searchParams.get('showTemplates') === 'true';
 
     if (showTemplates) {
-      // Return templates
-      const templates = await prismadb.complianceChecklistTemplate.findMany({
-        include: {
-          instances: {
-            select: { id: true },
-          },
-        },
-      })
+      const templates = await prisma.complianceChecklistTemplate.findMany({
+        include: { instances: { select: { id: true } } },
+      });
 
       return NextResponse.json({
         success: true,
@@ -60,41 +43,25 @@ export async function GET(req: NextRequest) {
           createdAt: t.createdAt.toISOString(),
           updatedAt: t.updatedAt.toISOString(),
         })),
-      })
+      });
     }
 
-    // Return instances
-    const where: any = {}
-    if (unitId) where.unitId = unitId
-    if (templateId) where.templateId = templateId
+    const where: { unitId?: string; templateId?: string } = {};
+    if (unitId) where.unitId = unitId;
+    if (templateId) where.templateId = templateId;
 
-    const instances = await prismadb.complianceChecklistInstance.findMany({
+    const instances = await prisma.complianceChecklistInstance.findMany({
       where,
       include: {
-        unit: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        template: {
-          select: {
-            id: true,
-            name: true,
-            frequency: true,
-          },
-        },
+        unit: { select: { id: true, name: true } },
+        template: { select: { id: true, name: true, frequency: true } },
         checkedBy: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
+          select: { id: true, email: true, firstName: true, lastName: true },
         },
       },
       orderBy: { dueDate: 'asc' },
-    })
+      take: 100,
+    });
 
     return NextResponse.json({
       success: true,
@@ -109,63 +76,52 @@ export async function GET(req: NextRequest) {
         completedDate: instance.completedDate?.toISOString() || null,
         passed: instance.passed,
         notes: instance.notes,
-        checkedBy: instance.checkedBy ? {
-          id: instance.checkedBy.id,
-          email: instance.checkedBy.email,
-          name: `${instance.checkedBy.firstName} ${instance.checkedBy.lastName}`,
-        } : null,
+        checkedBy: instance.checkedBy
+          ? {
+              id: instance.checkedBy.id,
+              email: instance.checkedBy.email,
+              name: `${instance.checkedBy.firstName} ${instance.checkedBy.lastName}`.trim(),
+            }
+          : null,
         createdAt: instance.createdAt.toISOString(),
         updatedAt: instance.updatedAt.toISOString(),
       })),
-    })
+    });
   } catch (error) {
-    console.error('[COMPLIANCE CHECKLISTS GET]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[COMPLIANCE CHECKLISTS GET]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
+
   try {
-    const currentUser = await getCurrentUser()
+    const body = await req.json();
 
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    const body = await req.json()
-
-    // Check if creating template or instance
     if (body.name && body.frequency && body.items) {
-      // Create template
-      const templateRequest = body as CreateChecklistTemplateRequest
-
-      const validFrequencies: ComplianceChecklistFrequency[] = ['weekly', 'monthly', 'quarterly', 'annual']
+      const templateRequest = body as CreateChecklistTemplateRequest;
+      const validFrequencies: ComplianceChecklistFrequency[] = [
+        'weekly',
+        'monthly',
+        'quarterly',
+        'annual',
+      ];
       if (!validFrequencies.includes(templateRequest.frequency)) {
         return NextResponse.json(
           { error: `Invalid frequency. Must be one of: ${validFrequencies.join(', ')}` },
           { status: 400 }
-        )
+        );
       }
 
-      const template = await prismadb.complianceChecklistTemplate.create({
+      const template = await prisma.complianceChecklistTemplate.create({
         data: {
           name: templateRequest.name,
           frequency: templateRequest.frequency,
           items: templateRequest.items,
         },
-      })
+      });
 
       return NextResponse.json({
         success: true,
@@ -176,72 +132,35 @@ export async function POST(req: NextRequest) {
           items: template.items,
           createdAt: template.createdAt.toISOString(),
         },
-      })
-    } else if (body.unitId && body.templateId && body.dueDate) {
-      // Create instance
-      const instanceRequest = body as CreateChecklistInstanceRequest
+      });
+    }
 
-      if (!instanceRequest.unitId || !instanceRequest.templateId || !instanceRequest.dueDate) {
-        return NextResponse.json(
-          { error: 'Missing required fields: unitId, templateId, dueDate' },
-          { status: 400 }
-        )
-      }
+    if (body.unitId && body.templateId && body.dueDate) {
+      const instanceRequest = body as CreateChecklistInstanceRequest;
+      const unit = await prisma.unit.findUnique({ where: { id: instanceRequest.unitId } });
+      if (!unit) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 
-      // Verify unit exists
-      const unit = await prismadb.unit.findUnique({
-        where: { id: instanceRequest.unitId },
-      })
-
-      if (!unit) {
-        return NextResponse.json(
-          { error: 'Unit not found' },
-          { status: 404 }
-        )
-      }
-
-      // Verify template exists
-      const template = await prismadb.complianceChecklistTemplate.findUnique({
+      const template = await prisma.complianceChecklistTemplate.findUnique({
         where: { id: instanceRequest.templateId },
-      })
+      });
+      if (!template) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
 
-      if (!template) {
-        return NextResponse.json(
-          { error: 'Template not found' },
-          { status: 404 }
-        )
-      }
-
-      const dueDate = new Date(instanceRequest.dueDate)
+      const dueDate = new Date(instanceRequest.dueDate);
       if (isNaN(dueDate.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid date format for dueDate' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid date format for dueDate' }, { status: 400 });
       }
 
-      const instance = await prismadb.complianceChecklistInstance.create({
+      const instance = await prisma.complianceChecklistInstance.create({
         data: {
           unitId: instanceRequest.unitId,
           templateId: instanceRequest.templateId,
           dueDate,
         },
         include: {
-          unit: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          template: {
-            select: {
-              id: true,
-              name: true,
-              frequency: true,
-            },
-          },
+          unit: { select: { id: true, name: true } },
+          template: { select: { id: true, name: true, frequency: true } },
         },
-      })
+      });
 
       return NextResponse.json({
         success: true,
@@ -256,18 +175,12 @@ export async function POST(req: NextRequest) {
           passed: instance.passed,
           createdAt: instance.createdAt.toISOString(),
         },
-      })
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
-      )
+      });
     }
+
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   } catch (error) {
-    console.error('[COMPLIANCE CHECKLISTS POST]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[COMPLIANCE CHECKLISTS POST]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -180,6 +180,8 @@ const apiRoutes = apiRouteFiles.map(routeOfApi);
  * crawler conventions, and secret-token URLs handed to external tools.
  */
 const API_ENTRY_POINTS = new Set([
+  // Google redirects to this callback after consent; it is not an in-app link.
+  '/api/auth/callback/google',
   '/api/cron/check-tm30-escalations',
   '/api/cron/check-verification-deadlines',
   '/api/cron/expire-service-orders',
@@ -187,6 +189,7 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/rollup-metrics',
   '/api/cron/run-all',
   '/api/cron/sync-ical-imports',
+  '/api/webhooks/opn',
   '/api/health',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin
@@ -205,49 +208,6 @@ const API_ENTRY_POINTS = new Set([
  * it here — should shrink this list, never grow it back.
  */
 const API_DEBT = new Set([
-  // Admin screens whose backend exists with no UI caller anywhere (Q59).
-  '/api/admin/compliance-checklists/[id]',
-  '/api/admin/compliance-checklists',
-  '/api/admin/config/[paramKey]/history',
-  '/api/admin/content/export',
-  '/api/admin/content/import',
-  '/api/admin/content/namespace/[namespace]',
-  '/api/admin/contracts',
-  '/api/admin/crm/activities',
-  '/api/admin/crm/pipeline',
-  '/api/admin/crm/profiles/[profileId]/transition',
-  '/api/admin/fees/[contractId]',
-  '/api/admin/fees/calculate',
-  '/api/admin/incidents/[id]',
-  '/api/admin/incidents',
-  '/api/admin/operational-kpis',
-  '/api/admin/organizations/[organizationId]',
-  '/api/admin/organizations',
-  '/api/admin/prospecting/[id]/transition',
-  '/api/admin/prospecting',
-  '/api/admin/reports/attribution',
-  '/api/admin/service-orders',
-  '/api/admin/statements/[statementId]/line-items',
-  '/api/admin/units/[id]/status',
-  // Guest/owner/provider-facing routes with no caller found.
-  '/api/auth/verify-email',
-  '/api/bookings/[id]/record-transfer',
-  '/api/bookings/[id]/transfer-instructions',
-  '/api/bookings/[id]/verify-passports',
-  '/api/content/translate',
-  '/api/crm/dashboard/next-actions',
-  '/api/crm/dashboard/summary',
-  '/api/messages/[messageId]/flag-as-purchase',
-  '/api/profile/export',
-  '/api/provider/me',
-  '/api/provider/orders',
-  '/api/service-orders/[id]/detail',
-  '/api/services/[id]',
-  '/api/tm30/[id]/passport',
-  '/api/tm30/queue',
-  // The client-side analytics beacon (doc 13) — server code calls track()
-  // directly; nothing in the browser ever POSTs here.
-  '/api/track',
   // SSE endpoints that exist and work, but the frontend they were built for
   // polls instead (NotificationBell polls /api/notifications every 30s) —
   // built, never adopted.

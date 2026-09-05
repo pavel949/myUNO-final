@@ -1,8 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+
+interface ConfigChangeRow {
+  id: string;
+  parameterKey: string;
+  oldValue: unknown;
+  newValue: unknown;
+  createdAt: string;
+  changedBy: { firstName: string; lastName: string; email: string | null } | null;
+}
 
 type Labels = Record<string, string>;
 
@@ -34,6 +43,32 @@ export default function ConfigAdminClient({
   );
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [historyKey, setHistoryKey] = useState<string | null>(null);
+  const [historyRows, setHistoryRows] = useState<ConfigChangeRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  const loadHistory = useCallback(
+    async (key: string) => {
+      setHistoryKey(key);
+      setHistoryLoading(true);
+      setHistoryError(null);
+      try {
+        const response = await fetch(`/api/admin/config/${encodeURIComponent(key)}/history`);
+        if (!response.ok) throw new Error(labels['admin.config.history_error']);
+        const data = await response.json();
+        setHistoryRows(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setHistoryError(
+          err instanceof Error ? err.message : labels['admin.config.history_error']
+        );
+        setHistoryRows([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [labels]
+  );
 
   const save = async (key: string) => {
     setBusyKey(key);
@@ -113,14 +148,51 @@ export default function ConfigAdminClient({
               spellCheck={false}
             />
           )}
-          <div className="flex items-center gap-12 mt-8">
+          <div className="flex items-center gap-12 mt-8 flex-wrap">
             <Button size="sm" variant="sun" onClick={() => save(key)} isLoading={busyKey === key}>
               {labels['admin.config.save']}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => (historyKey === key ? setHistoryKey(null) : loadHistory(key))}
+              isLoading={historyLoading && historyKey === key}
+            >
+              {historyKey === key
+                ? labels['admin.config.history_hide']
+                : labels['admin.config.history_show']}
             </Button>
             {messages[key] ? (
               <span className="text-small text-text-secondary">{messages[key]}</span>
             ) : null}
           </div>
+          {historyKey === key ? (
+            <div className="mt-12 border-t border-border-line pt-12">
+              {historyError ? (
+                <p className="text-small text-state-error">{historyError}</p>
+              ) : historyLoading ? (
+                <p className="text-small text-text-secondary">{labels['admin.config.history_loading']}</p>
+              ) : historyRows.length === 0 ? (
+                <p className="text-small text-text-secondary">{labels['admin.config.history_empty']}</p>
+              ) : (
+                <ul className="space-y-8 text-small">
+                  {historyRows.map((row) => (
+                    <li key={row.id} className="bg-surface-background rounded-sm p-12">
+                      <p className="text-text-secondary">
+                        {new Date(row.createdAt).toLocaleString()}
+                        {row.changedBy
+                          ? ` · ${row.changedBy.firstName} ${row.changedBy.lastName}`
+                          : ''}
+                      </p>
+                      <pre className="mt-4 text-xsmall font-mono overflow-x-auto whitespace-pre-wrap">
+                        {JSON.stringify(row.oldValue)} → {JSON.stringify(row.newValue)}
+                      </pre>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

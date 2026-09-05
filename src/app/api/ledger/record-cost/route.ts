@@ -1,12 +1,13 @@
 /**
  * POST /api/ledger/record-cost
- * Record a manual cost entry in the unit ledger (F-OPS-3).
- * Staff/host with project scope required. Creates append-only LedgerEntry.
+ * Record a manual cost entry in the unit ledger (F-OPS-3, F-MC-2).
+ * Staff, on-site host, or MC member with unit scope via core.can().
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { can } from '@/modules/core';
 import { recordCost } from '@/modules/finance';
 import { LedgerEntryType } from '@prisma/client';
 
@@ -17,15 +18,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+    if (!identity) {
+      return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+    }
+
     const body = await req.json();
     const { unitId, entryType, amountThb, occurredOn, description, receiptMediaId } = body;
 
-    // Validate required fields
     if (!unitId || !entryType || typeof amountThb !== 'number' || !occurredOn || !description) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Validate entryType is a valid cost type (manual entries only)
     const manualEntryTypes: LedgerEntryType[] = [
       'cleaning_cost',
       'maintenance_cost',
@@ -35,10 +39,12 @@ export async function POST(req: NextRequest) {
     ];
 
     if (!manualEntryTypes.includes(entryType)) {
-      return NextResponse.json({ error: `Invalid entry type for manual recording: ${entryType}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Invalid entry type for manual recording: ${entryType}` },
+        { status: 400 }
+      );
     }
 
-    // Verify user has scope to the unit's project
     const unit = await prisma.unit.findUnique({
       where: { id: unitId },
       select: { projectId: true },
@@ -48,25 +54,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
-    // Check permission: staff_ops or owner of the unit
-    const isOwner = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: user.identityId,
-        projectId: unit.projectId,
-        role: 'owner',
-      },
-    });
-
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: user.identityId,
-        projectId: unit.projectId,
-        role: { in: ['staff_ops', 'onsite_host'] },
-      },
-    });
-
-    if (!isOwner && !isStaff) {
-      return NextResponse.json({ error: 'Insufficient scope' }, { status: 403 });
+    if (
+      !(await can({
+        identity,
+        action: 'money:record_costs_on_units',
+        resource: { projectId: unit.projectId, unitId },
+      }))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const entry = await recordCost(prisma, {

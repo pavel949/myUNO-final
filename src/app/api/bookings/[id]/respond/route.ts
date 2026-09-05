@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { approveBookingRequest, declineBookingRequest } from '@/modules/booking';
+import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { t, type Locale } from '@/modules/content';
 
 /**
  * POST /api/bookings/[id]/respond
  * Approve or decline a request-to-book booking (doc 07 F-GUEST-4).
- * Body: { action: 'approve' | 'decline' }
+ * Body: { action: 'approve' | 'decline', reasonCode?: string }
  *
  * Permission: stays:approve_decline_booking_requests (staff_ops, onsite_host,
  * mc_member scoped to their units; admin bypasses via can()).
@@ -63,6 +64,13 @@ export async function POST(
     if (action !== 'approve' && action !== 'decline') {
       return NextResponse.json(
         { error: "action must be 'approve' or 'decline'" },
+        { status: 400 }
+      );
+    }
+
+    if (action === 'decline' && !isBookingRequestDeclineReason(body?.reasonCode)) {
+      return NextResponse.json(
+        { error: 'reasonCode is required when declining a booking request' },
         { status: 400 }
       );
     }
@@ -140,14 +148,35 @@ export async function POST(
     const updated = await declineBookingRequest(prisma, {
       bookingId: booking.id,
       declinedByIdentityId: user.identityId,
+      reasonCode: body?.reasonCode,
     });
+
+    const guestIdentity = await prisma.identity.findUnique({
+      where: { id: booking.guestIdentityId },
+      select: { preferredLocale: true },
+    });
+    const guestLocale = (guestIdentity?.preferredLocale || 'ru') as Locale;
+    const declineReasonLabel = isBookingRequestDeclineReason(body?.reasonCode)
+      ? await t(
+          prisma,
+          bookingRequestDeclineReasonLabelKey(body.reasonCode),
+          undefined,
+          guestLocale
+        )
+      : '';
+
     // N-06 — guest: request declined
     await createNotification(prisma, {
       identityId: booking.guestIdentityId,
       type: 'stay_request_declined',
       titleKey: 'notify.stay_request_declined.title',
-      bodyKey: 'notify.stay_request_declined.body',
-      params: notifyParams,
+      bodyKey: declineReasonLabel
+        ? 'notify.stay_request_declined.body_with_reason'
+        : 'notify.stay_request_declined.body',
+      params: {
+        ...notifyParams,
+        ...(declineReasonLabel ? { decline_reason: declineReasonLabel } : {}),
+      },
     });
 
     // Track analytics event

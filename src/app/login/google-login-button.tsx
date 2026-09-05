@@ -6,6 +6,17 @@ import { Button } from '@/components/Button';
 export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: string }) {
   const [isLoading, setIsLoading] = useState(false);
 
+  const issueOAuthState = () => {
+    const bytes = new Uint32Array(2);
+    window.crypto.getRandomValues(bytes);
+    const state = `${bytes[0].toString(36)}${bytes[1].toString(36)}`;
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `google_oauth_state=${encodeURIComponent(
+      state
+    )}; Path=/; Max-Age=600; SameSite=Lax${secure}`;
+    return state;
+  };
+
   const handleGoogleLogin = () => {
     setIsLoading(true);
     try {
@@ -18,9 +29,8 @@ export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: 
       const scope = encodeURIComponent('openid email profile');
       const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/callback/google`);
 
-      // Generate random state for CSRF protection
-      const state = Math.random().toString(36).substring(7);
-      sessionStorage.setItem('google_oauth_state', state);
+      // Generate a short-lived CSRF state that the callback verifies server-side.
+      const state = issueOAuthState();
 
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${clientId}` +

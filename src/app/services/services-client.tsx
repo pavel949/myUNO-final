@@ -70,15 +70,19 @@ export default function ServicesClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const bookingId = searchParams.get('bookingId');
+  const bookingId = searchParams?.get('bookingId');
+  const unitId = searchParams?.get('unitId');
+  const projectId = searchParams?.get('projectId');
+  const orderContext = searchParams?.get('context');
 
   const [services, setServices] = useState<MarketService[]>([]);
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [loggedIn, setLoggedIn] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    searchParams.get('category')
+    searchParams?.get('category') || null
   );
   const [stay, setStay] = useState<StayContext | null>(null);
+  const [unitContext, setUnitContext] = useState<StayContext | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [when, setWhen] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -133,9 +137,32 @@ export default function ServicesClient({
     };
   }, [bookingId]);
 
+  useEffect(() => {
+    if (!unitId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/units/${unitId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setUnitContext({
+            unitName: data?.name ?? null,
+            projectName: data?.project?.name ?? null,
+          });
+        }
+      } catch {
+        // banner is optional
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [unitId]);
+
   const selectCategory = (key: string | null) => {
     setSelectedCategory(key);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (key) params.set('category', key);
     else params.delete('category');
     router.replace(`/services${params.size ? `?${params}` : ''}`, { scroll: false });
@@ -206,6 +233,8 @@ export default function ServicesClient({
           scheduledStart: when,
           quantity,
           bookingId: bookingId || undefined,
+          projectId: projectId || undefined,
+          unitId: unitId || undefined,
           noteToProvider: note || undefined,
         }),
       });
@@ -253,6 +282,30 @@ export default function ServicesClient({
               className="text-small font-semibold text-brand-andaman hover:underline"
             >
               {labels['services.browse.stay_banner_link']}
+            </Link>
+          </div>
+        )}
+
+        {!bookingId && unitId && unitContext && (unitContext.unitName || unitContext.projectName) && (
+          <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
+            <p className="text-body text-text-ink">
+              {fill(
+                orderContext === 'mc'
+                  ? labels['services.browse.mc_banner']
+                  : labels['services.browse.owner_banner'],
+                {
+                  unit: unitContext.unitName ?? '—',
+                  project: unitContext.projectName ?? '—',
+                }
+              )}
+            </p>
+            <Link
+              href={orderContext === 'mc' ? '/mc' : '/owner'}
+              className="text-small font-semibold text-brand-andaman hover:underline"
+            >
+              {orderContext === 'mc'
+                ? labels['services.browse.mc_banner_link']
+                : labels['services.browse.owner_banner_link']}
             </Link>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createRoleAssignment } from '@/test/util';
 import * as ticketService from './ticket.service';
 
 describe('ticket.service — integration tests', () => {
@@ -61,6 +61,44 @@ describe('ticket.service — integration tests', () => {
       expect(events[0]?.eventType).toBe('status_change');
       expect(events[0]?.data?.newStatus).toBe('open');
     });
+
+    it('sets slaDueAt from priority config and auto-assigns project ops lead', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const opsLead = await createIdentity({ firstName: 'Ops', lastName: 'Lead' });
+      await createRoleAssignment({
+        identityId: opsLead.id,
+        role: 'staff_ops',
+        scopeType: 'project',
+        projectId: project.id,
+      });
+
+      const before = Date.now();
+      const result = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Leaking pipe',
+        priority: 'urgent',
+      });
+      const after = Date.now();
+
+      const ticket = await db.ticket.findUnique({ where: { id: result.id } });
+      expect(ticket?.assigneeIdentityId).toBe(opsLead.id);
+      expect(ticket?.slaDueAt).toBeDefined();
+
+      const slaMs = ticket!.slaDueAt!.getTime() - before;
+      expect(slaMs).toBeGreaterThanOrEqual(4 * 60 * 60 * 1000 - 1000);
+      expect(slaMs).toBeLessThanOrEqual(4 * 60 * 60 * 1000 + (after - before) + 1000);
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId: result.id, eventType: 'assignment' },
+      });
+      expect(events).toHaveLength(1);
+      expect(events[0]?.data?.assignedTo).toBe(opsLead.id);
+      expect(events[0]?.data?.autoAssigned).toBe(true);
+    });
   });
 
   describe('updateTicketStatus', () => {
@@ -116,6 +154,17 @@ describe('ticket.service — integration tests', () => {
         title: 'Broken AC',
       });
 
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
       // Staff resolves ticket
       await ticketService.updateTicketStatus(db, {
         ticketId,
@@ -160,6 +209,61 @@ describe('ticket.service — integration tests', () => {
           actorIdentityId: staff.id,
         })
       ).rejects.toThrow('Cannot transition from closed');
+    });
+
+    it('rejects invalid transition outside the state chart', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Test',
+      });
+
+      await expect(
+        ticketService.updateTicketStatus(db, {
+          ticketId,
+          newStatus: 'resolved',
+          actorIdentityId: staff.id,
+          note: 'Done',
+        })
+      ).rejects.toThrow('invalid transition');
+    });
+
+    it('requires resolution note when resolving', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Test',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
+      await expect(
+        ticketService.updateTicketStatus(db, {
+          ticketId,
+          newStatus: 'resolved',
+          actorIdentityId: staff.id,
+        })
+      ).rejects.toThrow('resolution note required');
     });
   });
 
@@ -221,6 +325,12 @@ describe('ticket.service — integration tests', () => {
 
       await ticketService.updateTicketStatus(db, {
         ticketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+
+      await ticketService.updateTicketStatus(db, {
+        ticketId,
         newStatus: 'resolved',
         actorIdentityId: staff.id,
         note: 'Fixed AC unit',
@@ -235,14 +345,14 @@ describe('ticket.service — integration tests', () => {
 
       expect(detail).toBeDefined();
       expect(detail?.title).toBe('Broken AC');
-      expect(detail?.events).toHaveLength(4); // creation + 3 transitions
+      expect(detail?.events).toHaveLength(5); // creation + 4 transitions
       expect(detail?.resolutionNote).toBe('Fixed AC unit');
 
       // Verify reporter can see all transitions
       const statusChangeEvents = detail?.events.filter(
         (e) => e.eventType === 'status_change'
       );
-      expect(statusChangeEvents?.length).toBe(3); // open, acknowledged, resolved
+      expect(statusChangeEvents?.length).toBe(4); // open, acknowledged, in_progress, resolved
     });
 
     it('throws when non-reporter/assignee tries to view', async () => {
@@ -305,6 +415,126 @@ describe('ticket.service — integration tests', () => {
 
       expect(escalationEvent).toBeDefined();
       expect(escalationEvent?.data?.priority).toBe('urgent');
+    });
+  });
+
+  describe('checkAndTrackSLABreaches', () => {
+    it('records one sla_escalation event per breached active ticket', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+
+      const { id: ticketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Overdue ticket',
+        priority: 'urgent',
+      });
+
+      await db.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: 'in_progress',
+          slaDueAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+      });
+
+      const firstRun = await ticketService.checkAndTrackSLABreaches(db);
+      const secondRun = await ticketService.checkAndTrackSLABreaches(db);
+
+      expect(firstRun).toBe(1);
+      expect(secondRun).toBe(0);
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId, eventType: 'sla_escalation' },
+      });
+      expect(events).toHaveLength(1);
+    });
+  });
+
+  describe('autoCloseResolvedTickets', () => {
+    it('auto-closes resolved tickets older than configured grace period', async () => {
+      const project = await createProject();
+      const reporter = await createIdentity();
+      const staff = await createIdentity();
+
+      const { id: staleTicketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Stale resolved ticket',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: staleTicketId,
+        newStatus: 'resolved',
+        actorIdentityId: staff.id,
+        note: 'Done',
+      });
+      await db.ticket.update({
+        where: { id: staleTicketId },
+        data: { resolvedAt: new Date('2026-01-01T00:00:00Z') },
+      });
+
+      const { id: freshTicketId } = await ticketService.raiseTicket(db, {
+        projectId: project.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Fresh resolved ticket',
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'acknowledged',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'in_progress',
+        actorIdentityId: staff.id,
+      });
+      await ticketService.updateTicketStatus(db, {
+        ticketId: freshTicketId,
+        newStatus: 'resolved',
+        actorIdentityId: staff.id,
+        note: 'Done',
+      });
+      await db.ticket.update({
+        where: { id: freshTicketId },
+        data: { resolvedAt: new Date('2026-01-18T00:00:00Z') },
+      });
+
+      const closedCount = await ticketService.autoCloseResolvedTickets(
+        db,
+        7,
+        new Date('2026-01-20T00:00:00Z')
+      );
+      expect(closedCount).toBe(1);
+
+      const staleTicket = await db.ticket.findUnique({ where: { id: staleTicketId } });
+      const freshTicket = await db.ticket.findUnique({ where: { id: freshTicketId } });
+      expect(staleTicket?.status).toBe('closed');
+      expect(freshTicket?.status).toBe('resolved');
+
+      const events = await db.ticketEvent.findMany({
+        where: { ticketId: staleTicketId, eventType: 'status_change' },
+        orderBy: { createdAt: 'asc' },
+      });
+      const lastEvent = events[events.length - 1];
+      expect(lastEvent?.data?.oldStatus).toBe('resolved');
+      expect(lastEvent?.data?.newStatus).toBe('closed');
+      expect(lastEvent?.actorIdentityId).toBeNull();
     });
   });
 
@@ -379,6 +609,52 @@ describe('ticket.service — integration tests', () => {
 
       // StatusTimeline can be rendered from this history
       // (not implemented yet - UI task)
+    });
+  });
+
+  describe('getAdminTicketBoard', () => {
+    it('returns active tickets across projects sorted by SLA', async () => {
+      const projectA = await createProject({ name: 'Alpha' });
+      const projectB = await createProject({ name: 'Beta' });
+      const reporter = await createIdentity({ firstName: 'Reporter' });
+
+      const openLate = await ticketService.raiseTicket(db, {
+        projectId: projectA.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Late SLA ticket',
+        priority: 'low',
+      });
+      const openSoon = await ticketService.raiseTicket(db, {
+        projectId: projectB.id,
+        raisedByIdentityId: reporter.id,
+        raisedByRole: 'guest',
+        categoryKey: 'maintenance',
+        title: 'Soon SLA ticket',
+        priority: 'urgent',
+      });
+
+      await db.ticket.update({
+        where: { id: openLate.id },
+        data: { slaDueAt: new Date(Date.now() + 48 * 60 * 60 * 1000) },
+      });
+      await db.ticket.update({
+        where: { id: openSoon.id },
+        data: { slaDueAt: new Date(Date.now() + 2 * 60 * 60 * 1000) },
+      });
+
+      const board = await ticketService.getAdminTicketBoard(db, { filter: 'active' });
+      const ids = board.map((row) => row.id);
+      expect(ids).toContain(openLate.id);
+      expect(ids).toContain(openSoon.id);
+      expect(ids.indexOf(openSoon.id)).toBeLessThan(ids.indexOf(openLate.id));
+
+      const scoped = await ticketService.getAdminTicketBoard(db, {
+        projectId: projectA.id,
+        filter: 'active',
+      });
+      expect(scoped.every((row) => row.project.id === projectA.id)).toBe(true);
     });
   });
 });

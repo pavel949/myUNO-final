@@ -1,80 +1,71 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
-import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
-import { FeeType } from '@prisma/client'
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface CalculateFeeRequest {
-  contractId: string
-  periodStart: string
-  periodEnd: string
-  gop?: number
-  noi?: number
-  grossBooking?: number
-  feeType?: FeeType
+  contractId: string;
+  periodStart: string;
+  periodEnd: string;
+  gop?: number;
+  noi?: number;
+  grossBooking?: number;
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
-    const body: CalculateFeeRequest = await req.json()
+    const body: CalculateFeeRequest = await req.json();
 
     if (!body.contractId || !body.periodStart || !body.periodEnd) {
       return NextResponse.json(
         { error: 'Missing required fields: contractId, periodStart, periodEnd' },
         { status: 400 }
-      )
+      );
     }
 
-    // Get the contract
-    const contract = await prismadb.managementContract.findUnique({
+    const contract = await prisma.managementContract.findUnique({
       where: { id: body.contractId },
-    })
+    });
 
     if (!contract) {
-      return NextResponse.json(
-        { error: 'Contract not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
     }
 
-    // Calculate fees based on basis
-    const calculatedFees = []
-    let managementFeeAmount = 0
-    let calculationBasis = ''
+    const calculatedFees: Array<{
+      id: string;
+      feeType: string;
+      amount: number;
+      calculationBasis: string;
+      status: string;
+    }> = [];
 
-    // Management fee calculation
+    let managementFeeAmount = 0;
+    let calculationBasis = '';
+    const rate = contract.managementFeeRate?.toNumber() ?? 0;
+
     if (contract.managementFeeBasis === 'fixed' && contract.managementFeeFixedAmount) {
-      managementFeeAmount = contract.managementFeeFixedAmount
-      calculationBasis = 'fixed_amount'
+      managementFeeAmount = contract.managementFeeFixedAmount;
+      calculationBasis = 'fixed_amount';
     } else if (contract.managementFeeBasis === 'percentage_gop' && body.gop && contract.managementFeeRate) {
-      managementFeeAmount = Math.round(body.gop * contract.managementFeeRate.toNumber())
-      calculationBasis = `percentage_gop (${body.gop} THB × ${contract.managementFeeRate.toNumber() * 100}%)`
+      managementFeeAmount = Math.round(body.gop * rate);
+      calculationBasis = `percentage_gop (${body.gop} THB × ${rate * 100}%)`;
     } else if (contract.managementFeeBasis === 'percentage_noi' && body.noi && contract.managementFeeRate) {
-      managementFeeAmount = Math.round(body.noi * contract.managementFeeRate.toNumber())
-      calculationBasis = `percentage_noi (${body.noi} THB × ${contract.managementFeeRate.toNumber() * 100}%)`
-    } else if (contract.managementFeeBasis === 'percentage_gross_booking' && body.grossBooking && contract.managementFeeRate) {
-      managementFeeAmount = Math.round(body.grossBooking * contract.managementFeeRate.toNumber())
-      calculationBasis = `percentage_gross_booking (${body.grossBooking} THB × ${contract.managementFeeRate.toNumber() * 100}%)`
+      managementFeeAmount = Math.round(body.noi * rate);
+      calculationBasis = `percentage_noi (${body.noi} THB × ${rate * 100}%)`;
+    } else if (
+      contract.managementFeeBasis === 'percentage_gross_booking' &&
+      body.grossBooking &&
+      contract.managementFeeRate
+    ) {
+      managementFeeAmount = Math.round(body.grossBooking * rate);
+      calculationBasis = `percentage_gross_booking (${body.grossBooking} THB × ${rate * 100}%)`;
     }
 
-    // Create management fee entry
-    const managementFee = await prismadb.earnedFee.create({
+    const managementFee = await prisma.earnedFee.create({
       data: {
         managementContractId: body.contractId,
         feeType: 'management',
@@ -84,7 +75,7 @@ export async function POST(req: NextRequest) {
         amount: managementFeeAmount,
         status: 'accrued',
       },
-    })
+    });
 
     calculatedFees.push({
       id: managementFee.id,
@@ -92,11 +83,9 @@ export async function POST(req: NextRequest) {
       amount: managementFee.amount,
       calculationBasis: managementFee.calculationBasis,
       status: managementFee.status,
-    })
+    });
 
-    // Performance fee calculation
-    let performanceFeeAmount = 0
-    let performanceCalculationBasis = ''
+    let performanceFeeAmount = 0;
 
     if (
       contract.performanceFeeEnabled &&
@@ -105,11 +94,12 @@ export async function POST(req: NextRequest) {
       contract.performanceFeeBaseline &&
       body.noi > contract.performanceFeeBaseline
     ) {
-      const excess = body.noi - contract.performanceFeeBaseline
-      performanceFeeAmount = Math.round(excess * contract.performanceFeeRate.toNumber())
-      performanceCalculationBasis = `performance_noi (${body.noi} THB - ${contract.performanceFeeBaseline} THB baseline) × ${contract.performanceFeeRate.toNumber() * 100}%`
+      const perfRate = contract.performanceFeeRate.toNumber();
+      const excess = body.noi - contract.performanceFeeBaseline;
+      performanceFeeAmount = Math.round(excess * perfRate);
+      const performanceCalculationBasis = `performance_noi (${body.noi} THB - ${contract.performanceFeeBaseline} THB baseline) × ${perfRate * 100}%`;
 
-      const performanceFee = await prismadb.earnedFee.create({
+      const performanceFee = await prisma.earnedFee.create({
         data: {
           managementContractId: body.contractId,
           feeType: 'performance',
@@ -119,7 +109,7 @@ export async function POST(req: NextRequest) {
           amount: performanceFeeAmount,
           status: 'accrued',
         },
-      })
+      });
 
       calculatedFees.push({
         id: performanceFee.id,
@@ -127,7 +117,7 @@ export async function POST(req: NextRequest) {
         amount: performanceFee.amount,
         calculationBasis: performanceFee.calculationBasis,
         status: performanceFee.status,
-      })
+      });
     }
 
     return NextResponse.json({
@@ -136,12 +126,9 @@ export async function POST(req: NextRequest) {
       totalAmount: managementFeeAmount + performanceFeeAmount,
       periodStart: body.periodStart,
       periodEnd: body.periodEnd,
-    })
+    });
   } catch (error) {
-    console.error('[FEE CALCULATE]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[FEE CALCULATE]', error);
+    return failed(error, 'Internal server error');
   }
 }

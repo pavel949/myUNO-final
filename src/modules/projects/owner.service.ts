@@ -1,7 +1,17 @@
-import { PrismaClient, Booking, OwnerStatement } from '@prisma/client';
+import { PrismaClient, Booking, OwnerStatement, TicketStatus } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
+import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
+import { notifyOwnerStayBooked } from './notify-owner-stay';
+import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
+
+const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
+  'open',
+  'acknowledged',
+  'in_progress',
+  'waiting_reporter',
+];
 
 export interface OwnerDashboardData {
   identityId: string;
@@ -14,6 +24,13 @@ export interface OwnerDashboardData {
     nextArrivalDate: Date | null;
     bookingsCount: number;
     openTicketsCount: number;
+    openTickets: {
+      id: string;
+      title: string;
+      status: TicketStatus;
+      createdAt: Date;
+      unitName: string;
+    }[];
     latestStatementId: string | null;
   }[];
   combinedOccupancyThisMonth: number;
@@ -93,6 +110,9 @@ export async function bookOwnerStay(db: PrismaClient, input: OwnerStayInput): Pr
     },
   });
 
+  await notifyOwnerStayBooked(db, booking.id);
+  await scheduleOwnerStayTurnoverClean(db, booking.id);
+
   return booking;
 }
 
@@ -126,8 +146,11 @@ export async function getOwnerDashboard(
       tickets: {
         select: {
           id: true,
+          title: true,
           status: true,
+          createdAt: true,
         },
+        orderBy: { createdAt: 'desc' },
       },
       statements: {
         select: {
@@ -204,7 +227,17 @@ export async function getOwnerDashboard(
       revenueThisMonth: monthRevenue / 100,
       nextArrivalDate: nextArrival,
       bookingsCount: unit.bookings.filter((b) => b.status !== 'cancelled').length,
-      openTicketsCount: unit.tickets.filter((t) => t.status !== 'closed').length,
+      openTicketsCount: unit.tickets.filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status)).length,
+      openTickets: unit.tickets
+        .filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status))
+        .slice(0, 5)
+        .map((ticket) => ({
+          id: ticket.id,
+          title: ticket.title,
+          status: ticket.status,
+          createdAt: ticket.createdAt,
+          unitName: unit.name,
+        })),
       latestStatementId: unit.statements[0]?.id || null,
     };
   });
@@ -335,8 +368,10 @@ export interface OwnerAlert {
   severity: 'warning' | 'critical';
   unitId: string;
   unitName: string;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
+  titleParams?: Record<string, string>;
+  descriptionParams?: Record<string, string>;
   createdAt: Date;
   actionUrl?: string;
 }
@@ -415,8 +450,11 @@ export async function getOwnerAlerts(
           severity: 'critical',
           unitId: filing.booking.unit.id,
           unitName: filing.booking.unit.name,
-          title: 'TM30 Filing Overdue',
-          description: `TM30 filing for guest arrival on ${filing.booking.startDate.toLocaleDateString()} is overdue`,
+          titleKey: 'owner.alert.tm30_overdue.title',
+          descriptionKey: 'owner.alert.tm30_overdue.body',
+          descriptionParams: {
+            date: filing.booking.startDate.toLocaleDateString(),
+          },
           createdAt: filing.booking.startDate,
           actionUrl: `/ops/tm30`,
         });
@@ -430,8 +468,8 @@ export async function getOwnerAlerts(
         severity: 'critical',
         unitId: filing.booking.unit.id,
         unitName: filing.booking.unit.name,
-        title: 'TM30 Filing Escalated',
-        description: 'An escalation has been flagged for this TM30 filing',
+        titleKey: 'owner.alert.tm30_escalated.title',
+        descriptionKey: 'owner.alert.tm30_escalated.body',
         createdAt: filing.escalatedAt,
         actionUrl: `/ops/tm30`,
       });
@@ -447,8 +485,8 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: unit.id,
         unitName: unit.name,
-        title: 'Unit is Paused',
-        description: 'This unit is currently paused and not accepting bookings',
+        titleKey: 'owner.alert.unit_paused.title',
+        descriptionKey: 'owner.alert.unit_paused.body',
         createdAt: new Date(),
       });
     }
@@ -479,8 +517,15 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: record.unit.id,
         unitName: record.unit.name,
-        title: `${record.recordType} Expiring Soon`,
-        description: `Your ${record.recordType} expires on ${record.expiresOn.toLocaleDateString()}`,
+        titleKey: 'owner.alert.compliance_expiry.title',
+        descriptionKey: 'owner.alert.compliance_expiry.body',
+        titleParams: {
+          recordType: record.recordType,
+        },
+        descriptionParams: {
+          recordType: record.recordType,
+          date: record.expiresOn.toLocaleDateString(),
+        },
         createdAt: now,
       });
     }
@@ -490,7 +535,7 @@ export async function getOwnerAlerts(
   const tickets = await db.ticket.findMany({
     where: {
       unit: { id: { in: unitIds } },
-      status: { not: 'closed' },
+      status: { in: ACTIVE_TICKET_STATUSES },
     },
     select: {
       id: true,
@@ -507,10 +552,10 @@ export async function getOwnerAlerts(
         severity: 'warning',
         unitId: ticket.unit.id,
         unitName: ticket.unit.name,
-        title: 'Ticket SLA Breached',
-        description: 'An open ticket has exceeded its SLA deadline',
+        titleKey: 'owner.alert.ticket_sla.title',
+        descriptionKey: 'owner.alert.ticket_sla.body',
         createdAt: now,
-        actionUrl: `/tickets`,
+        actionUrl: `/tickets/${ticket.id}`,
       });
     }
   }
@@ -616,4 +661,94 @@ export async function getOwnerStatements(
   });
 
   return allStatements;
+}
+
+export interface OwnerUnitDashboardData {
+  unit: {
+    id: string;
+    name: string;
+    projectId: string;
+    projectName: string;
+  };
+  summary: OwnerDashboardData['units'][number];
+  bookings: Awaited<ReturnType<typeof getOwnerBookingsList>>;
+  alerts: OwnerAlert[];
+  compliance: OwnerComplianceStatus | null;
+  statements: OwnerStatement[];
+  sparkline: number[];
+  trends: {
+    prevMonth: { nights: number; revenueThb: number } | null;
+  };
+}
+
+/**
+ * Per-unit owner dashboard (doc 06 S7/S8, doc 07 F-OWN-2).
+ * Returns null when the unit is missing or not owned by the caller.
+ */
+export async function getOwnerUnitDashboard(
+  db: PrismaClient,
+  ownerIdentityId: string,
+  unitId: string
+): Promise<OwnerUnitDashboardData | null> {
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: {
+      id: true,
+      name: true,
+      projectId: true,
+      ownerIdentityId: true,
+      project: { select: { name: true } },
+    },
+  });
+
+  if (!unit || unit.ownerIdentityId !== ownerIdentityId) {
+    return null;
+  }
+
+  const [dashboard, bookings, alerts, complianceSummary, statements, sparkDots] = await Promise.all([
+    getOwnerDashboard(db, ownerIdentityId),
+    getOwnerBookingsList(db, unitId, ownerIdentityId, 10),
+    getOwnerAlerts(db, ownerIdentityId),
+    getOwnerComplianceSummary(db, ownerIdentityId),
+    getOwnerStatements(db, ownerIdentityId),
+    getUnitOccupancySparklines(db, [unitId], 30),
+  ]);
+
+  const summary = dashboard.units.find((row) => row.id === unitId);
+  if (!summary) {
+    return null;
+  }
+
+  const now = new Date();
+  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+  const monthly = await getMetricsSeries(db, {
+    unitIds: [unitId],
+    from,
+    to: now,
+    groupBy: 'month',
+  });
+  const prevPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+    .toISOString()
+    .slice(0, 7);
+  const prev = monthly.find((point) => point.period === prevPeriod);
+
+  return {
+    unit: {
+      id: unit.id,
+      name: unit.name,
+      projectId: unit.projectId,
+      projectName: unit.project.name,
+    },
+    summary,
+    bookings,
+    alerts: alerts.filter((alert) => alert.unitId === unitId),
+    compliance: complianceSummary.find((row) => row.unitId === unitId) ?? null,
+    statements: statements.filter((statement) => statement.unitId === unitId),
+    sparkline: (sparkDots[unitId] || []).map((dot) => (dot.occupied ? 1 : 0)),
+    trends: {
+      prevMonth: prev
+        ? { nights: prev.nightsOccupied, revenueThb: prev.rentalRevenueThb }
+        : null,
+    },
+  };
 }

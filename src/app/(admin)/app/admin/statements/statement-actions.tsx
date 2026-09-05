@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -13,6 +13,13 @@ interface Statement {
   noiTh: number;
   status: string;
   signedOffByOperatorAt: string | null;
+}
+
+interface LineItemRow {
+  id: string;
+  category: string;
+  description: string;
+  amountThb: number;
 }
 
 type Labels = Record<string, string>;
@@ -56,6 +63,10 @@ export default function StatementActions({
 
   const [signingId, setSigningId] = useState<string | null>(null);
   const [signError, setSignError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [lineItems, setLineItems] = useState<LineItemRow[]>([]);
+  const [linesLoading, setLinesLoading] = useState(false);
+  const [linesError, setLinesError] = useState<string | null>(null);
 
   const generate = useCallback(
     async (e: React.FormEvent) => {
@@ -102,6 +113,31 @@ export default function StatementActions({
       }
     },
     [labels, router]
+  );
+
+  const toggleLineItems = useCallback(
+    async (statementId: string) => {
+      if (expandedId === statementId) {
+        setExpandedId(null);
+        setLineItems([]);
+        return;
+      }
+      setExpandedId(statementId);
+      setLinesLoading(true);
+      setLinesError(null);
+      try {
+        const res = await fetch(`/api/admin/statements/${statementId}/line-items`);
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || labels['admin.statements.error']);
+        setLineItems(Array.isArray(data.lineItems) ? data.lineItems : []);
+      } catch (err) {
+        setLinesError(err instanceof Error ? err.message : labels['admin.statements.error']);
+        setLineItems([]);
+      } finally {
+        setLinesLoading(false);
+      }
+    },
+    [expandedId, labels]
   );
 
   return (
@@ -209,43 +245,93 @@ export default function StatementActions({
             </thead>
             <tbody>
               {statements.map((s) => (
-                <tr key={s.id} className="border-b border-border-line">
-                  <td className="px-12 py-8">
-                    {`${new Date(s.periodStart).toLocaleDateString()} – ${new Date(s.periodEnd).toLocaleDateString()}`}
-                  </td>
-                  <td className="px-12 py-8">{s.ownerName}</td>
-                  <td className="px-12 py-8">{s.unitName}</td>
-                  <td className="px-12 py-8 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
-                  <td className="px-12 py-8">
-                    <span
-                      className={`px-8 py-2 rounded-full text-xsmall font-medium ${
-                        statusStyle[s.status] || 'bg-surface-ivory text-text-ink'
-                      }`}
-                    >
-                      {labels[`admin.statements.status.${s.status}`] || s.status}
-                    </span>
-                  </td>
-                  <td className="px-12 py-8">
-                    {s.signedOffByOperatorAt ? (
-                      <span className="text-text-secondary">
-                        {labels['admin.statements.signed_off_note']}
+                <Fragment key={s.id}>
+                  <tr className="border-b border-border-line">
+                    <td className="px-12 py-8">
+                      {`${new Date(s.periodStart).toLocaleDateString()} – ${new Date(s.periodEnd).toLocaleDateString()}`}
+                    </td>
+                    <td className="px-12 py-8">{s.ownerName}</td>
+                    <td className="px-12 py-8">{s.unitName}</td>
+                    <td className="px-12 py-8 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
+                    <td className="px-12 py-8">
+                      <span
+                        className={`px-8 py-2 rounded-full text-xsmall font-medium ${
+                          statusStyle[s.status] || 'bg-surface-ivory text-text-ink'
+                        }`}
+                      >
+                        {labels[`admin.statements.status.${s.status}`] || s.status}
                       </span>
-                    ) : SIGNABLE_STATUSES.has(s.status) ? (
+                    </td>
+                    <td className="px-12 py-8 flex flex-wrap gap-8">
                       <Button
                         size="sm"
-                        variant="secondary"
-                        onClick={() => signOff(s.id)}
-                        isLoading={signingId === s.id}
+                        variant="ghost"
+                        onClick={() => toggleLineItems(s.id)}
+                        isLoading={linesLoading && expandedId === s.id}
                       >
-                        {signingId === s.id
-                          ? labels['admin.statements.working']
-                          : labels['admin.statements.sign_off']}
+                        {expandedId === s.id
+                          ? labels['admin.statements.hide_lines']
+                          : labels['admin.statements.view_lines']}
                       </Button>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                </tr>
+                      {s.signedOffByOperatorAt ? (
+                        <span className="text-text-secondary">
+                          {labels['admin.statements.signed_off_note']}
+                        </span>
+                      ) : SIGNABLE_STATUSES.has(s.status) ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => signOff(s.id)}
+                          isLoading={signingId === s.id}
+                        >
+                          {signingId === s.id
+                            ? labels['admin.statements.working']
+                            : labels['admin.statements.sign_off']}
+                        </Button>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                  {expandedId === s.id ? (
+                    <tr key={`${s.id}-lines`} className="border-b border-border-line bg-surface-ivory">
+                      <td colSpan={6} className="px-24 py-12">
+                        {linesError ? (
+                          <p className="text-small text-state-error">{linesError}</p>
+                        ) : linesLoading ? (
+                          <p className="text-small text-text-secondary">
+                            {labels['admin.statements.lines_loading']}
+                          </p>
+                        ) : lineItems.length === 0 ? (
+                          <p className="text-small text-text-secondary">
+                            {labels['admin.statements.lines_empty']}
+                          </p>
+                        ) : (
+                          <table className="w-full text-small">
+                            <thead>
+                              <tr>
+                                <th className="text-left py-4">{labels['admin.statements.lines_category']}</th>
+                                <th className="text-left py-4">{labels['admin.statements.lines_description']}</th>
+                                <th className="text-right py-4">{labels['admin.statements.lines_amount']}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {lineItems.map((item) => (
+                                <tr key={item.id}>
+                                  <td className="py-4">{item.category}</td>
+                                  <td className="py-4">{item.description}</td>
+                                  <td className="py-4 text-right font-mono">
+                                    {(item.amountThb / 100).toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>

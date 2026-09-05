@@ -15,10 +15,21 @@ export const dynamic = 'force-dynamic';
  * Public read; optional ?projectId scope (services are platform-wide in
  * loop one — the param is accepted for the project-scoped rail).
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
+
     const services = await prisma.service.findMany({
-      where: { status: 'active', provider: { status: 'active' } },
+      where: {
+        status: 'active',
+        provider: { status: 'active', vetted_at: { not: null } },
+        ...(projectId && {
+          OR: [
+            { availableProjects: { none: {} } },
+            { availableProjects: { some: { project_id: projectId } } },
+          ],
+        }),
+      },
       include: {
         provider: { select: { id: true, name: true, vetted_at: true } },
         coverMedia: { select: { storageKey: true } },

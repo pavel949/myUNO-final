@@ -1,6 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/app/libs/onboardingGuard'
+import { handleError } from '@/app/libs/errorHandler'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,22 +13,10 @@ interface RecordOwnerPayoutRequest {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin()
+  if (!guard.ok) return guard.error
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
     const body: RecordOwnerPayoutRequest = await req.json()
 
     if (!body.statementId || !body.amountThb || !body.reference || !body.executedOn) {
@@ -44,8 +33,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify statement exists and is published
-    const statement = await prismadb.ownerStatement.findUnique({
+    const statement = await prisma.ownerStatement.findUnique({
       where: { id: body.statementId },
       include: { unit: true },
     })
@@ -64,11 +52,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Q18: "amount = owner share" — the statement already carries the figure
-    // this payout is meant to settle, so a typed amount that disagrees with
-    // it is either a fat-fingered entry or a payout for the wrong statement.
-    // Matches the same anti-tamper posture the provider payout route already
-    // holds itself to (CLAUDE.md: client-sent amounts are never trusted).
     if (body.amountThb !== statement.ownerShareTh) {
       return NextResponse.json(
         {
@@ -79,8 +62,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if payout already exists for this statement
-    const existingPayout = await prismadb.payout.findFirst({
+    const existingPayout = await prisma.payout.findFirst({
       where: {
         ownerStatementId: body.statementId,
         payeeType: 'owner',
@@ -94,8 +76,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create the payout record
-    const payout = await prismadb.payout.create({
+    const payout = await prisma.payout.create({
       data: {
         payeeType: 'owner',
         ownerStatementId: body.statementId,
@@ -105,7 +86,7 @@ export async function POST(req: NextRequest) {
         method: 'bank_transfer_thb',
         reference: body.reference,
         executedOn: new Date(body.executedOn),
-        recordedByIdentityId: currentUser.identityId,
+        recordedByIdentityId: guard.actorIdentityId,
         status: 'recorded',
       },
       include: {
@@ -137,10 +118,6 @@ export async function POST(req: NextRequest) {
       message: `Owner payout recorded for ${payout.ownerStatement?.unit?.name}: ฿${payout.amountThb.toLocaleString()}`,
     })
   } catch (error) {
-    console.error('[OWNER PAYOUT]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleError(error)
   }
 }

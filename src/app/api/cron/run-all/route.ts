@@ -6,10 +6,15 @@ import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
 import {
   expireHolds,
   autoDeclineRequests,
+  remindUnansweredRequests,
   sendPrearrivalReminders,
+  sendCheckinInstructions,
+  sendCheckoutReminders,
   sendPostStayPrompts,
+  sendPostStayReengage,
 } from '@/modules/booking';
-import { expireStaleServiceOrders } from '@/modules/services';
+import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
+import { expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +39,8 @@ export async function POST(req: NextRequest) {
   try {
     const expired = await expireHolds(prisma);
     const declined = await autoDeclineRequests(prisma);
-    results.bookingLifecycle = `ok (${expired} holds expired, ${declined} requests auto-declined)`;
+    const reminded = await remindUnansweredRequests(prisma);
+    results.bookingLifecycle = `ok (${expired} holds expired, ${declined} requests auto-declined, ${reminded} request reminders)`;
   } catch (error) {
     console.error('[Cron run-all] booking lifecycle failed:', error);
     results.bookingLifecycle = 'failed';
@@ -68,8 +74,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const prearrival = await sendPrearrivalReminders(prisma);
+    const checkin = await sendCheckinInstructions(prisma);
+    const checkout = await sendCheckoutReminders(prisma);
     const postStay = await sendPostStayPrompts(prisma);
-    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${postStay} post-stay)`;
+    const reengage = await sendPostStayReengage(prisma);
+    results.guestLifecycle = `ok (${prearrival} pre-arrival, ${checkin} check-in, ${checkout} checkout, ${postStay} review, ${reengage} re-engage)`;
   } catch (error) {
     console.error('[Cron run-all] guest lifecycle sends failed:', error);
     results.guestLifecycle = 'failed';
@@ -77,11 +86,30 @@ export async function POST(req: NextRequest) {
 
   try {
     const slaHours = (await getConfig(prisma, 'service.accept_sla_hours')) as number | null;
+    const orderReminded = await remindUnansweredServiceOrders(prisma);
+    const reviewPrompted = await sendServiceOrderReviewPrompts(prisma);
     const result = await expireStaleServiceOrders(prisma, slaHours ?? 12);
-    results.serviceOrderExpiry = `ok (${result.expired} expired, ${result.refunded} refunded)`;
+    results.serviceOrderExpiry = `ok (${orderReminded} reminded, ${reviewPrompted} review prompts, ${result.expired} expired, ${result.refunded} refunded)`;
   } catch (error) {
     console.error('[Cron run-all] service order expiry failed:', error);
     results.serviceOrderExpiry = 'failed';
+  }
+
+  try {
+    const autoCloseDays = (await getConfig(prisma, 'tickets.auto_close_resolved_days')) as number | null;
+    const closed = await autoCloseResolvedTickets(prisma, autoCloseDays ?? 7);
+    results.ticketAutoClose = `ok (${closed} auto-closed)`;
+  } catch (error) {
+    console.error('[Cron run-all] ticket auto-close failed:', error);
+    results.ticketAutoClose = 'failed';
+  }
+
+  try {
+    const breached = await checkAndTrackSLABreaches(prisma);
+    results.ticketSlaBreaches = `ok (${breached} escalated)`;
+  } catch (error) {
+    console.error('[Cron run-all] ticket SLA breach tracking failed:', error);
+    results.ticketSlaBreaches = 'failed';
   }
 
   const failed = Object.values(results).includes('failed');

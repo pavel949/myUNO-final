@@ -32,8 +32,8 @@ interface ClaimIdentity {
 export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
-  const next = searchParams.get('next') || '/trips';
+  const token = searchParams?.get('token');
+  const next = searchParams?.get('next') || '/trips';
 
   const [identity, setIdentity] = useState<ClaimIdentity | null>(null);
   const [loading, setLoading] = useState(true);

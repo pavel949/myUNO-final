@@ -32,6 +32,8 @@ const GOVERNABLE_TYPES: NotificationType[] = [
   'stay_checkin_instructions',
   'stay_checkout_reminder',
   'stay_cancelled',
+  'stay_review_prompt',
+  'stay_post_stay',
   'stay_verification_failed',
   'compliance_tm30_escalation',
 ];

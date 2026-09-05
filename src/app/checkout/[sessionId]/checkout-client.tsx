@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/Button';
 
 interface SessionInfo {
@@ -35,6 +36,7 @@ export default function CheckoutClient({
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [declining, setDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -59,15 +61,19 @@ export default function CheckoutClient({
     load();
   }, [sessionId, router, labels]);
 
-  const handlePayment = async () => {
-    setPaying(true);
+  const handlePayment = async (simulateDecline = false) => {
+    if (simulateDecline) {
+      setDeclining(true);
+    } else {
+      setPaying(true);
+    }
     setError(null);
 
     try {
       const response = await fetch('/api/checkout/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, simulateDecline }),
       });
 
       const result = await response.json().catch(() => null);
@@ -96,8 +102,11 @@ export default function CheckoutClient({
       setError(labels['payments.checkout.error_generic']);
     } finally {
       setPaying(false);
+      setDeclining(false);
     }
   };
+
+  const tripUrl = session?.booking?.id ? `/trips/${session.booking.id}` : '/trips';
 
   if (loading) {
     return (
@@ -191,12 +200,30 @@ export default function CheckoutClient({
 
         {error && (
           <div className="mb-24 p-16 bg-state-error-soft rounded-lg border border-state-error">
-            <p className="text-small text-state-error">{error}</p>
+            <p className="text-small text-state-error mb-12">{error}</p>
+            {session?.booking?.id ? (
+              <Link href={tripUrl}>
+                <Button variant="ghost" size="sm">
+                  {labels['payments.checkout.back_to_trip']}
+                </Button>
+              </Link>
+            ) : null}
           </div>
         )}
 
-        <Button onClick={handlePayment} isLoading={paying} fullWidth disabled={!session}>
+        <Button onClick={() => handlePayment(false)} isLoading={paying} fullWidth disabled={!session || declining}>
           {labels['payments.checkout.pay_now']}
+        </Button>
+
+        <Button
+          onClick={() => handlePayment(true)}
+          variant="ghost"
+          isLoading={declining}
+          fullWidth
+          disabled={!session || paying}
+          className="mt-12"
+        >
+          {labels['payments.checkout.decline_simulate']}
         </Button>
 
         <p className="text-small text-text-stone text-center mt-16">

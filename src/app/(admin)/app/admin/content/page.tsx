@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import ContentAdminClient from './content-client';
@@ -30,7 +29,15 @@ export default async function AdminContentPage({
     'admin.content.title': 'Content (RU / EN / TH)',
     'admin.content.save': 'Save',
     'admin.content.saved': 'Saved',
+    'admin.content.loading': 'Loading keys…',
     'admin.content.error_generic': 'Save failed. Please try again.',
+    'admin.content.export': 'Export CSV',
+    'admin.content.import': 'Import CSV',
+    'admin.content.export_error': 'Export failed.',
+    'admin.content.import_error': 'Import failed.',
+    'admin.content.import_success': 'Imported: {created} created, {updated} updated.',
+    'admin.content.needs_review': 'review',
+    'admin.content.preview_en': 'Preview EN (API)',
   });
 
   return (
@@ -38,23 +45,13 @@ export default async function AdminContentPage({
       <h1 className="text-heading-1 font-bold text-text-ink mb-24">
         {labels['admin.content.title']}
       </h1>
-      <div className="flex flex-wrap gap-8 mb-24">
-        {namespaces.map((ns) => (
-          <Link
-            key={ns.namespace}
-            href={`/app/admin/content?ns=${ns.namespace}`}
-            className={`px-12 py-8 rounded-full text-small font-semibold border ${
-              ns.namespace === activeNs
-                ? 'bg-brand-andaman text-surface-ivory border-brand-andaman'
-                : 'bg-surface-paper text-text-ink border-border-line hover:border-brand-andaman'
-            }`}
-          >
-            {ns.namespace} ({ns._count.key})
-          </Link>
-        ))}
-      </div>
       <ContentAdminClient
-        keys={keys.map((k) => ({
+        namespaces={namespaces.map((ns) => ({
+          namespace: ns.namespace,
+          count: ns._count.key,
+        }))}
+        initialNamespace={activeNs}
+        initialKeys={keys.map((k) => ({
           key: k.key,
           description: k.description,
           translations: Object.fromEntries(

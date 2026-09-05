@@ -52,6 +52,8 @@ export {
   isMobilizationComplete,
   initializeMobilizationChecklist,
   MOBILIZATION_STEPS,
+  getAdminComplianceOverview,
+  type AdminComplianceOverview,
   type CreateComplianceRecordInput,
   type UpdateComplianceRecordInput,
 } from './compliance.service';

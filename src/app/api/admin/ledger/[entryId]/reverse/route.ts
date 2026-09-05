@@ -6,26 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { reverseLedgerEntry } from '@/modules/finance';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ entryId: string }> }) {
   try {
     const { entryId } = await params;
-    const user = await getCurrentUser();
-    if (!user?.identityId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin role
-    const isAdmin = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-      select: { isAdmin: true },
-    });
-
-    if (!isAdmin?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
 
     const body = await req.json();
     const { reason } = body;
@@ -34,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
       return NextResponse.json({ error: 'Reversal reason required' }, { status: 400 });
     }
 
-    const reversal = await reverseLedgerEntry(prisma, entryId, reason, user.identityId);
+    const reversal = await reverseLedgerEntry(prisma, entryId, reason, guard.actorIdentityId);
 
     // Audit log the reversal
     await prisma.auditLog.create({
@@ -42,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
         action: 'ledger_entry_reversed',
         entityType: 'ledger_entry',
         entityId: entryId,
-        actorIdentityId: user.identityId,
+        actorIdentityId: guard.actorIdentityId,
         data: {
           reversalEntryId: reversal.id,
           reason,

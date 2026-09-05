@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData } from '@/modules/ops';
+import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 export async function POST(
   req: NextRequest,
@@ -17,14 +18,6 @@ export async function POST(
     const user = await getCurrentUser();
     if (!user?.identityId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get the booking
@@ -41,17 +34,13 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Authorization: guest or staff can capture passports
-    const isGuest = booking.guestIdentityId === currentUser.id;
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        role: 'staff_ops',
-        status: 'active',
-      },
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+      ownerIdentityId: booking.unit?.ownerIdentityId,
     });
-
-    if (!isGuest && !isStaff) {
+    if (!canManageBookingGuests(access)) {
       return NextResponse.json(
         { error: 'Only guest or staff can capture passports' },
         { status: 403 }

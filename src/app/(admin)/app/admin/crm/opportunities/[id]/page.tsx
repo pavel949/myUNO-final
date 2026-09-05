@@ -123,6 +123,12 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     'admin.crm.opportunities.breadcrumb_detail': 'Opportunity',
     'admin.crm.opportunities.back_link': 'Back to CRM',
     'admin.crm.opportunities.details_heading': 'Opportunity Details',
+    'admin.crm.activity.title': 'Log activity',
+    'admin.crm.activity.subject': 'Subject',
+    'admin.crm.activity.body': 'Notes (optional)',
+    'admin.crm.activity.submit': 'Add note',
+    'admin.crm.activity.saving': 'Saving…',
+    'admin.crm.activity.error': 'Could not save activity.',
   });
 
   const breadcrumbs = [
@@ -156,7 +162,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
 
         {/* Content */}
         <div className="p-24">
-          <OpportunityDetailClient opportunity={serializedOpportunity} />
+          <OpportunityDetailClient opportunity={serializedOpportunity} labels={labels} />
         </div>
       </div>
     </div>

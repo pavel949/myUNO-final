@@ -29,6 +29,7 @@ export default async function TicketsPage() {
     'tickets.list.title': 'My requests',
     'tickets.list.empty':
       'No requests yet. Raise one from your trip or unit and track its progress here.',
+    'tickets.list.view': 'View',
     'tickets.status.open': 'Open',
     'tickets.status.acknowledged': 'Acknowledged',
     'tickets.status.in_progress': 'In progress',
@@ -57,20 +58,27 @@ export default async function TicketsPage() {
               >
                 <div className="min-w-0">
                   <p className="text-body font-semibold text-text-ink truncate">
-                    {ticket.title}
+                    <Link href={`/tickets/${ticket.id}`} className="hover:underline">
+                      {ticket.title}
+                    </Link>
                   </p>
                   <p className="text-small text-text-secondary">
                     {ticket.unit?.name || ticket.project?.name} ·{' '}
                     {new Date(ticket.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <span
-                  className={`shrink-0 px-12 py-4 rounded-full text-small font-semibold ${
-                    statusStyle[ticket.status] || 'bg-surface-ivory text-text-ink'
-                  }`}
-                >
-                  {(labels as Record<string, string>)[`tickets.status.${ticket.status}`] || ticket.status}
-                </span>
+                <div className="flex items-center gap-10">
+                  <span
+                    className={`shrink-0 px-12 py-4 rounded-full text-small font-semibold ${
+                      statusStyle[ticket.status] || 'bg-surface-ivory text-text-ink'
+                    }`}
+                  >
+                    {(labels as Record<string, string>)[`tickets.status.${ticket.status}`] || ticket.status}
+                  </span>
+                  <Link href={`/tickets/${ticket.id}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                    {labels['tickets.list.view']} →
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

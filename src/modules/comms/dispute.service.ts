@@ -1,4 +1,4 @@
-import { PrismaClient, Dispute, DisputeSubjectType, RoleType } from '@prisma/client';
+import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
 import { refund, recordCashRefund } from '@/modules/finance/finance.service';
 import { recordCost } from '@/modules/finance/ledger.service';
@@ -149,7 +149,10 @@ export interface DecideDisputeInput {
 export async function decideDispute(db: PrismaClient, input: DecideDisputeInput): Promise<Dispute> {
   const { disputeId, decidedByIdentityId, resolutionAmountThb, decisionNote } = input;
 
-  const dispute = await db.dispute.findUnique({ where: { id: disputeId } });
+  const dispute = await db.dispute.findUnique({
+    where: { id: disputeId },
+    include: { ticket: { select: { id: true, status: true } } },
+  });
   if (!dispute) {
     throw new Error('Dispute not found');
   }
@@ -217,12 +220,25 @@ export async function decideDispute(db: PrismaClient, input: DecideDisputeInput)
     },
   });
 
-  await updateTicketStatus(db, {
-    ticketId: dispute.ticketId,
-    newStatus: 'resolved',
-    actorIdentityId: decidedByIdentityId,
-    note: decisionNote,
-  });
+  const resolvePathByStatus: Record<TicketStatus, TicketStatus[]> = {
+    open: ['acknowledged', 'in_progress', 'resolved'],
+    acknowledged: ['in_progress', 'resolved'],
+    in_progress: ['resolved'],
+    waiting_reporter: ['in_progress', 'resolved'],
+    resolved: [],
+    closed: [],
+    cancelled: [],
+  };
+  const transitions = resolvePathByStatus[dispute.ticket.status] || [];
+
+  for (const nextStatus of transitions) {
+    await updateTicketStatus(db, {
+      ticketId: dispute.ticketId,
+      newStatus: nextStatus,
+      actorIdentityId: decidedByIdentityId,
+      ...(nextStatus === 'resolved' ? { note: decisionNote } : {}),
+    });
+  }
 
   return decided;
 }

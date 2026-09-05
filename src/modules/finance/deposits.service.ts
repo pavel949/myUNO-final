@@ -1,5 +1,6 @@
-import { PrismaClient, DepositClaim, DepositPreauth } from '@prisma/client';
+import { PrismaClient, DepositClaim, DepositPreauth, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { createNotification, raiseDispute } from '@/modules/comms';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -17,6 +18,108 @@ async function windowHours(
 ): Promise<number> {
   const value = await getConfig(db, key, projectId ? { projectId } : undefined).catch(() => undefined);
   return typeof value === 'number' && value > 0 ? value : fallback;
+}
+
+export interface DepositClaimGuestView {
+  id: string;
+  description: string;
+  claimedAmountThb: number;
+  status: string;
+  filedAt: Date;
+  /** ISO deadline by which the guest may dispute before capture may proceed. */
+  responseDeadlineAt: Date;
+  canDispute: boolean;
+}
+
+/**
+ * The active damage claim on a booking, for the guest-facing trip detail page.
+ * Returns null when there is no claim or the guest should not see it.
+ */
+export async function getActiveDepositClaimForGuest(
+  db: PrismaClient,
+  bookingId: string
+): Promise<DepositClaimGuestView | null> {
+  const claim = await db.depositClaim.findFirst({
+    where: {
+      bookingId,
+      status: { in: ['filed', 'disputed', 'approved', 'rejected'] },
+    },
+    orderBy: { filedAt: 'desc' },
+    include: { booking: { select: { projectId: true } } },
+  });
+  if (!claim) return null;
+
+  const hours = await windowHours(
+    db,
+    'booking.deposit.approval_window_hours',
+    claim.booking.projectId
+  );
+  const responseDeadlineAt = new Date(claim.filedAt.getTime() + hours * HOUR_MS);
+
+  return {
+    id: claim.id,
+    description: claim.description,
+    claimedAmountThb: claim.claimedAmountThb,
+    status: claim.status,
+    filedAt: claim.filedAt,
+    responseDeadlineAt,
+    canDispute: claim.status === 'filed',
+  };
+}
+
+/**
+ * Guest disputes a filed damage claim (doc 07 F-DIS-1 → F-DIS-2).
+ * Marks the claim disputed and opens the neutral-arbiter dispute ticket.
+ */
+export async function disputeDepositClaim(
+  db: PrismaClient,
+  input: {
+    claimId: string;
+    guestIdentityId: string;
+    raisedByRole: RoleType;
+    title: string;
+    description: string;
+  }
+): Promise<DepositClaim> {
+  const claim = await db.depositClaim.findUnique({
+    where: { id: input.claimId },
+    include: {
+      booking: {
+        select: { id: true, guestIdentityId: true, projectId: true },
+      },
+    },
+  });
+
+  if (!claim) {
+    throw new Error('Claim not found');
+  }
+  if (claim.booking.guestIdentityId !== input.guestIdentityId) {
+    throw new Error('You can only dispute a claim on your own stay');
+  }
+  if (claim.status !== 'filed') {
+    const error = new Error('This claim can no longer be disputed');
+    (error as { code?: string }).code = 'NOT_DISPUTABLE';
+    throw error;
+  }
+
+  const existingDispute = await db.dispute.findFirst({
+    where: { subjectType: 'booking', subjectId: claim.bookingId },
+  });
+  if (!existingDispute) {
+    await raiseDispute(db, {
+      subjectType: 'booking',
+      subjectId: claim.bookingId,
+      raisedByIdentityId: input.guestIdentityId,
+      raisedByRole: input.raisedByRole,
+      title: input.title,
+      description: input.description,
+    });
+  }
+
+  return db.depositClaim.update({
+    where: { id: input.claimId },
+    data: { status: 'disputed' },
+  });
 }
 
 export interface DepositClaimInput {
@@ -90,7 +193,22 @@ export async function scheduleDepositPreauthIfConfigured(
 
   if (mode !== 'preauth' || !amountThb || amountThb <= 0) return null;
 
+  const existing = await db.depositPreauth.findUnique({ where: { bookingId } });
+  if (existing) return existing;
+
   return scheduleDepositPreauth(db, bookingId, amountThb as number);
+}
+
+/**
+ * Place a deposit pre-authorization when a stay becomes confirmed (Q46 / doc 04).
+ * Idempotent — safe to call from every confirmation path.
+ */
+export async function ensureDepositPreauthOnStayConfirmed(
+  db: PrismaClient,
+  bookingId: string,
+  unitId: string
+): Promise<DepositPreauth | null> {
+  return scheduleDepositPreauthIfConfigured(db, bookingId, unitId);
 }
 
 /**
@@ -305,6 +423,35 @@ export async function fileDepositClaim(db: PrismaClient, input: DepositClaimInpu
       status: 'filed',
     },
   });
+
+  // N-28: guest must see the claim and has a response window before capture.
+  const bookingWithGuest = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      guestIdentityId: true,
+      projectId: true,
+      unit: { select: { name: true } },
+    },
+  });
+  if (bookingWithGuest) {
+    const responseHours = await windowHours(
+      db,
+      'booking.deposit.approval_window_hours',
+      bookingWithGuest.projectId
+    );
+    await createNotification(db, {
+      identityId: bookingWithGuest.guestIdentityId,
+      type: 'stay_damage_claim',
+      titleKey: 'notify.stay.damage_claim.title',
+      bodyKey: 'notify.stay.damage_claim.body',
+      params: {
+        unit_name: bookingWithGuest.unit?.name ?? 'your stay',
+        amount_thb: Math.round(claimedAmountThb / 100),
+        description,
+        hours: responseHours,
+      },
+    }).catch(() => null);
+  }
 
   return claim;
 }

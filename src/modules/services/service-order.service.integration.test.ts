@@ -62,6 +62,41 @@ describe('service-order.service — integration tests', () => {
       expect(order?.note_to_provider).toBe('Please bring supplies');
     });
 
+    it('rejects a service restricted to another project', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const allowedProject = await createProject();
+      const requestedProject = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      await db.serviceProject.create({
+        data: { service_id: service.id, project_id: allowedProject.id },
+      });
+
+      await expect(
+        serviceOrderService.createServiceOrder(db, {
+          serviceId: service.id,
+          projectId: requestedProject.id,
+          ordererIdentityId: orderer.id,
+          ordererRole: 'owner',
+          scheduledStart: new Date('2026-08-01'),
+          scheduledEnd: new Date('2026-08-02'),
+          quantity: 1,
+          priceBreakdown: { base: 1000 },
+          totalThb: 1000,
+          tookRatePctSnapshot: 15,
+        })
+      ).rejects.toThrow('not available in this project');
+    });
+
     it('rejects order for inactive service', async () => {
       const orderer = await createIdentity();
       const provider = await createProvider();
@@ -298,6 +333,11 @@ describe('service-order.service — integration tests', () => {
 
       expect(refunds.length).toBeGreaterThan(0);
       expect(refunds[0]?.amountThb).toBe(1000);
+      expect(refunds[0]?.status).toBe('requested');
+      expect(refunds[0]?.method).toBe('cash');
+
+      const declinedOrder = await db.serviceOrder.findUnique({ where: { id: orderResult.id } });
+      expect(declinedOrder?.refund_accrued_thb).toBe(1000);
     });
   });
 
@@ -442,6 +482,17 @@ describe('service-order.service — integration tests', () => {
 
       expect(order?.status).toBe('cancelled');
       expect(order?.refund_accrued_thb).toBe(1000); // Full refund
+
+      const refunds = await db.refund.findMany({
+        where: {
+          payment: {
+            serviceOrderId: orderResult.id,
+          },
+        },
+      });
+      expect(refunds).toHaveLength(1);
+      expect(refunds[0]?.status).toBe('requested');
+      expect(refunds[0]?.amountThb).toBe(1000);
     });
 
     it('cancels after window with zero refund', async () => {
@@ -505,6 +556,79 @@ describe('service-order.service — integration tests', () => {
 
       expect(order?.status).toBe('cancelled');
       expect(order?.refund_accrued_thb).toBe(0); // No refund after window
+
+      const refunds = await db.refund.findMany({
+        where: {
+          payment: {
+            serviceOrderId: orderResult.id,
+          },
+        },
+      });
+      expect(refunds).toHaveLength(0);
+    });
+
+    it('creates provider refund request for card payments on cancellation', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
+      });
+
+      const now = new Date();
+      const scheduledStart = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      const scheduledEnd = new Date(scheduledStart.getTime() + 2 * 60 * 60 * 1000);
+
+      const orderResult = await serviceOrderService.createServiceOrder(db, {
+        serviceId: service.id,
+        projectId: project.id,
+        ordererIdentityId: orderer.id,
+        ordererRole: 'owner',
+        scheduledStart,
+        scheduledEnd,
+        quantity: 1,
+        priceBreakdown: {},
+        totalThb: 1200,
+        tookRatePctSnapshot: 15,
+      });
+
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 1200,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      await serviceOrderService.cancelServiceOrder(db, orderResult.id, orderer.id);
+
+      const refunds = await db.refund.findMany({ where: { paymentId: payment.id } });
+      expect(refunds).toHaveLength(1);
+      expect(refunds[0]?.method).toBe('card_provider');
+      expect(refunds[0]?.status).toBe('processing');
+
+      const ledger = await db.ledgerEntry.findFirst({
+        where: {
+          paymentId: payment.id,
+          refundId: refunds[0]?.id,
+          entryType: 'refund_out',
+        },
+      });
+      expect(ledger).not.toBeNull();
     });
   });
 
@@ -538,6 +662,11 @@ describe('service-order.service — integration tests', () => {
         priceBreakdown: {},
         totalThb: 1000,
         tookRatePctSnapshot: 15,
+      });
+
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
       });
 
       const reviewResult = await serviceOrderService.rateServiceOrder(
@@ -591,6 +720,11 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
+      });
+
       await serviceOrderService.rateServiceOrder(db, orderResult.id, orderer.id, 5);
 
       await expect(
@@ -629,6 +763,11 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
+      await db.serviceOrder.update({
+        where: { id: orderResult.id },
+        data: { status: 'fulfilled' },
+      });
+
       await expect(
         serviceOrderService.rateServiceOrder(db, orderResult.id, orderer.id, 6)
       ).rejects.toThrow('Rating must be 1-5');
@@ -636,6 +775,79 @@ describe('service-order.service — integration tests', () => {
       await expect(
         serviceOrderService.rateServiceOrder(db, orderResult.id, orderer.id, 0)
       ).rejects.toThrow('Rating must be 1-5');
+    });
+
+    it('allows only the orderer to rate a fulfilled order', async () => {
+      const orderer = await createIdentity();
+      const stranger = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'fulfilled',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1000 },
+          total_thb: 1000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await expect(
+        serviceOrderService.rateServiceOrder(db, order.id, stranger.id, 5)
+      ).rejects.toThrow('Only the orderer');
+    });
+
+    it('rejects ratings before fulfilment', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        status: 'active',
+      });
+      const order = await db.serviceOrder.create({
+        data: {
+          service_id: service.id,
+          provider_id: provider.id,
+          project_id: project.id,
+          orderer_identity_id: orderer.id,
+          orderer_role: 'owner',
+          status: 'accepted',
+          scheduled_start: new Date('2026-08-01'),
+          scheduled_end: new Date('2026-08-02'),
+          quantity: 1,
+          price_breakdown: { base: 1000 },
+          total_thb: 1000,
+          take_rate_pct_snapshot: 15,
+        },
+      });
+
+      await expect(
+        serviceOrderService.rateServiceOrder(db, order.id, orderer.id, 5)
+      ).rejects.toThrow('Cannot rate order in accepted status');
     });
   });
 
@@ -814,6 +1026,16 @@ describe('service-order.service — integration tests', () => {
       });
 
       expect(expiredOrder?.refund_accrued_thb).toBe(500);
+
+      const payment = await db.payment.findFirst({
+        where: { serviceOrderId: order.id },
+      });
+      const refunds = await db.refund.findMany({
+        where: { paymentId: payment?.id },
+      });
+      expect(refunds).toHaveLength(1);
+      expect(refunds[0]?.status).toBe('requested');
+      expect(refunds[0]?.amountThb).toBe(500);
     });
 
     it('recordServiceCommission is called when order is fulfilled (S5)', async () => {

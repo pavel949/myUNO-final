@@ -1,6 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/app/libs/onboardingGuard'
+import { handleError } from '@/app/libs/errorHandler'
 import { computeProviderRemittance } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
@@ -15,22 +16,10 @@ interface RecordProviderPayoutRequest {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin()
+  if (!guard.ok) return guard.error
+
   try {
-    const currentUser = await getCurrentUser()
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 401 }
-      )
-    }
-
     const body: RecordProviderPayoutRequest = await req.json()
 
     if (!body.providerId || !body.periodStart || !body.periodEnd || !body.amountThb || !body.reference || !body.executedOn) {
@@ -47,8 +36,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify provider exists
-    const provider = await prismadb.provider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { id: body.providerId },
     })
 
@@ -69,9 +57,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify amount matches computed remittance for this period
     const remittance = await computeProviderRemittance(
-      prismadb,
+      prisma,
       body.providerId,
       periodStart,
       periodEnd
@@ -87,8 +74,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if payout already exists for this period
-    const existingPayout = await prismadb.payout.findFirst({
+    const existingPayout = await prisma.payout.findFirst({
       where: {
         providerId: body.providerId,
         payeeType: 'provider',
@@ -104,8 +90,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create the payout record
-    const payout = await prismadb.payout.create({
+    const payout = await prisma.payout.create({
       data: {
         payeeType: 'provider',
         providerId: body.providerId,
@@ -115,7 +100,7 @@ export async function POST(req: NextRequest) {
         method: 'bank_transfer_thb',
         reference: body.reference,
         executedOn: new Date(body.executedOn),
-        recordedByIdentityId: currentUser.identityId,
+        recordedByIdentityId: guard.actorIdentityId,
         status: 'recorded',
       },
       include: {
@@ -142,10 +127,6 @@ export async function POST(req: NextRequest) {
       message: `Provider payout recorded for ${payout.provider?.name}: ฿${payout.amountThb.toLocaleString()}`,
     })
   } catch (error) {
-    console.error('[PROVIDER PAYOUT]', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleError(error)
   }
 }

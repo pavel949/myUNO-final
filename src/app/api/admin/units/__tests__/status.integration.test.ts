@@ -132,6 +132,7 @@ describe('Unit Asset Status API', () => {
       params: { id: testUnit.id },
     })
 
-    expect(res.status).toBe(401)
+    // Signed in, but not admin: Forbidden. 401 is only for a missing session.
+    expect(res.status).toBe(403)
   })
 })

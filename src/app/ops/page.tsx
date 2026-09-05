@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getOpsBoard, getOpsMobilizationQueue } from '@/modules/ops';
 import { getBookingDeclineReasonOptions } from '@/modules/booking';
+import { StatTile } from '@/components/StatTile';
 import OpsBoardClient from './ops-client';
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 import UnitIcalConflictBanner, { UNIT_ICAL_CALENDAR_SURFACES } from '@/components/units/UnitIcalConflictBanner';
@@ -61,13 +62,23 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     boardScope ? { projectIds: boardScope.projectIds } : undefined
   );
 
-  const declineReasons = await getBookingDeclineReasonOptions(getRequestLocale());
+  const locale = getRequestLocale();
+  const declineReasons = await getBookingDeclineReasonOptions(locale);
+
+  function fill(template: string, params: Record<string, string | number>): string {
+    let result = template;
+    for (const [key, value] of Object.entries(params)) {
+      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+    }
+    return result;
+  }
 
   const switcherBasePath = '/ops';
 
   const labels = await getLabels({
     ...bookingRequestInboxLabelDrafts,
     'staff.ops.title': 'Ops board',
+    'staff.ops.subtitle': '{date} · {arrivals} arrivals, {departures} departures, {unpaid} unpaid',
     'staff.ops.context.switcher': 'Project context',
     'staff.ops.context.all_projects': 'All projects',
     'staff.ops.context.active': 'Showing',
@@ -234,54 +245,45 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
       breakdownLines: booking.breakdownLines,
     }));
 
+  const boardSubtitle = fill(labels['staff.ops.subtitle'], {
+    date: new Date().toLocaleDateString(locale),
+    arrivals: arrivals.length,
+    departures: departures.length,
+    unpaid: pendingPayment.length,
+  });
+
+  const navClass = 'text-small font-semibold text-brand-andaman hover:underline';
+
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-24">
-          <h1 className="text-heading-1 font-bold text-text-ink">
-            {labels['staff.ops.title']}
-          </h1>
-          <div className="flex items-center gap-16">
-            <Link
-              href={opsHref('/ops/costs', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+        <div className="flex flex-col gap-16 lg:flex-row lg:items-start lg:justify-between mb-24">
+          <div>
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+              {labels['staff.ops.title']}
+            </h1>
+            <p className="text-body text-text-stone">{boardSubtitle}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-12">
+            <Link href={opsHref('/ops/costs', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.costs_link']}
             </Link>
-            <Link
-              href={opsHref('/ops/claims', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href={opsHref('/ops/claims', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.claims_link']}
             </Link>
-            <Link
-              href={opsHref('/ops/mobilization', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href={opsHref('/ops/mobilization', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.mobilization_link']}
             </Link>
-            <Link
-              href={opsHref('/ops/calendar', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href={opsHref('/ops/calendar', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.calendar_link']}
             </Link>
-            <Link
-              href={opsHref('/ops/tm30', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href={opsHref('/ops/tm30', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.tm30_link']}
             </Link>
-            <Link
-              href={opsHref('/ops/requests', validActiveProjectId)}
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href={opsHref('/ops/requests', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.requests_link']}
             </Link>
-            <Link
-              href="/announcements"
-              className="text-brand-andaman font-semibold hover:underline"
-            >
+            <Link href="/announcements" className={navClass}>
               {labels['staff.ops.announcements_link']}
             </Link>
           </div>
@@ -294,20 +296,19 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
           labels={labels}
         />
 
-        {/* SLA health tiles */}
         <div className="mb-24">
-          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['staff.ops.sla_title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-              <p className="text-small text-text-secondary mb-8">{labels['staff.ops.tm30_on_time']}</p>
-              <p className="text-heading-2 font-semibold text-text-ink">{slaMetrics.tm30OnTimeRate7d}%</p>
-            </div>
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-              <p className="text-small text-text-secondary mb-8">{labels['staff.ops.tickets_past_sla']}</p>
-              <p className="text-heading-2 font-semibold text-text-ink">{slaMetrics.ticketsWithOpenSLA}</p>
-            </div>
+            <StatTile
+              label={labels['staff.ops.tm30_on_time']}
+              value={`${slaMetrics.tm30OnTimeRate7d}%`}
+            />
+            <StatTile
+              label={labels['staff.ops.tickets_past_sla']}
+              value={slaMetrics.ticketsWithOpenSLA}
+            />
           </div>
         </div>
 

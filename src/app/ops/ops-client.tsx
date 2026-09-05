@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
+import { Input } from '@/components/Input';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
@@ -85,15 +87,31 @@ function ticketStatusLabel(status: string, labels: Labels): string {
   return labels[`tickets.status.${status}`] || status;
 }
 
-const ticketStatusStyle: Record<string, string> = {
-  open: 'bg-state-warning-soft text-state-warning',
-  acknowledged: 'bg-state-info-soft text-state-info',
-  in_progress: 'bg-state-info-soft text-state-info',
-  waiting_reporter: 'bg-state-warning-soft text-state-warning',
-  resolved: 'bg-state-success-soft text-state-success',
-  closed: 'bg-surface-ivory text-text-stone',
-  cancelled: 'bg-surface-ivory text-text-stone',
-};
+function ticketChipStatus(
+  status: string
+): 'requested' | 'checked_in' | 'confirmed' | 'closed' | 'default' {
+  switch (status) {
+    case 'open':
+    case 'waiting_reporter':
+      return 'requested';
+    case 'acknowledged':
+    case 'in_progress':
+      return 'checked_in';
+    case 'resolved':
+      return 'confirmed';
+    case 'closed':
+    case 'cancelled':
+      return 'closed';
+    default:
+      return 'default';
+  }
+}
+
+const paidChip = 'confirmed' as const;
+const unpaidChip = 'pending_payment' as const;
+const verifiedChip = 'confirmed' as const;
+const notVerifiedChip = 'requested' as const;
+const chipStatusVariant = 'status' as const;
 
 interface OpsMobilizationUnit {
   id: string;
@@ -312,23 +330,26 @@ export default function OpsBoardClient({
           {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
           {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
         </p>
-        <p className="text-small">
-          <span className={booking.paid ? 'text-state-success' : 'text-state-warning'}>
+        <div className="flex flex-wrap gap-8 mt-8">
+          <Chip
+            variant={chipStatusVariant}
+            status={booking.paid ? paidChip : unpaidChip}
+          >
             {booking.paid ? labels['staff.ops.paid'] : labels['staff.ops.unpaid']}
-          </span>
-          {' · '}
-          <span
-            className={
+          </Chip>
+          <Chip
+            variant={chipStatusVariant}
+            status={
               booking.verificationStatus === 'passports_received'
-                ? 'text-state-success'
-                : 'text-state-warning'
+                ? verifiedChip
+                : notVerifiedChip
             }
           >
             {booking.verificationStatus === 'passports_received'
               ? labels['staff.ops.verified']
               : labels['staff.ops.not_verified']}
-          </span>
-        </p>
+          </Chip>
+        </div>
       </div>
       <div className="flex items-center gap-8">{action}</div>
     </div>
@@ -343,8 +364,8 @@ export default function OpsBoardClient({
     bookings: OpsBooking[];
     action: (booking: OpsBooking) => React.ReactNode;
   }) => (
-    <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-      <h2 className="text-heading-3 font-bold text-text-ink mb-8">{title}</h2>
+    <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <h2 className="font-display text-title font-semibold text-text-ink mb-8">{title}</h2>
       {bookings.length === 0 ? (
         <p className="text-body text-text-secondary py-8">{labels['staff.ops.empty']}</p>
       ) : (
@@ -364,8 +385,8 @@ export default function OpsBoardClient({
       )}
 
       {mobilizationUnits.length > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['staff.ops.mobilization_title']}
           </h2>
           <ul className="space-y-12">
@@ -404,9 +425,9 @@ export default function OpsBoardClient({
         </section>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <div className="flex items-center justify-between gap-16 mb-8">
-          <h2 className="text-heading-3 font-bold text-text-ink">
+          <h2 className="font-display text-title font-semibold text-text-ink">
             {labels['staff.ops.booking_requests']}
           </h2>
           <Link
@@ -501,15 +522,14 @@ export default function OpsBoardClient({
         bookings={pendingPayment}
         action={(booking) => (
           <div className="flex items-center gap-8">
-            <input
+            <Input
               type="text"
               value={receipts[booking.id] || ''}
               onChange={(e) =>
                 setReceipts((prev) => ({ ...prev, [booking.id]: e.target.value }))
               }
               placeholder={labels['staff.ops.receipt_placeholder']}
-              className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-40 md:w-auto"
-              style={{ width: '160px' }}
+              className="w-[160px]"
             />
             <Button
               size="sm"
@@ -532,15 +552,14 @@ export default function OpsBoardClient({
             >
               {labels['staff.ops.record_cash']}
             </Button>
-            <input
+            <Input
               type="text"
               value={bankRefs[booking.id] || ''}
               onChange={(e) =>
                 setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
               }
               placeholder={labels['staff.ops.bank_ref_placeholder']}
-              className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-              style={{ width: '160px' }}
+              className="w-[160px]"
             />
             <Button
               size="sm"
@@ -562,8 +581,8 @@ export default function OpsBoardClient({
         )}
       />
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.service_pending_cash']}
         </h2>
         {pendingServiceOrders.length === 0 ? (
@@ -585,15 +604,14 @@ export default function OpsBoardClient({
                 </p>
               </div>
               <div className="flex items-center gap-8">
-                <input
+                <Input
                   type="text"
                   value={receipts[order.id] || ''}
                   onChange={(e) =>
                     setReceipts((prev) => ({ ...prev, [order.id]: e.target.value }))
                   }
                   placeholder={labels['staff.ops.receipt_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                  style={{ width: '160px' }}
+                  className="w-[160px]"
                 />
                 <Button
                   size="sm"
@@ -610,8 +628,8 @@ export default function OpsBoardClient({
         )}
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.tickets_title']}
         </h2>
         {openTickets.length === 0 ? (
@@ -650,13 +668,9 @@ export default function OpsBoardClient({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-8">
                     <p className="text-body font-semibold text-text-ink">{ticket.title}</p>
-                    <span
-                      className={`inline-flex items-center px-10 py-4 rounded-full text-small font-medium ${
-                        ticketStatusStyle[ticket.status] || 'bg-surface-ivory text-text-stone'
-                      }`}
-                    >
+                    <Chip variant={chipStatusVariant} status={ticketChipStatus(ticket.status)}>
                       {ticketStatusLabel(ticket.status, labels)}
-                    </span>
+                    </Chip>
                   </div>
                   <p className="text-small text-text-secondary">
                     {ticket.unitId ? (

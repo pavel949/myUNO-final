@@ -88,10 +88,12 @@ export default async function OpsClaimsPage({ searchParams }: OpsClaimsPageProps
   const switcherBasePath = '/ops/claims';
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-heading-1 font-bold text-text-ink">{labels['staff.claims.title']}</h1>
+          <h1 className="font-display text-display-xl font-semibold text-text-ink">
+            {labels['staff.claims.title']}
+          </h1>
           <Link
             href={opsHref('/ops', validActiveProjectId)}
             className="text-brand-andaman font-semibold hover:underline"
@@ -99,7 +101,7 @@ export default async function OpsClaimsPage({ searchParams }: OpsClaimsPageProps
             {labels['staff.claims.back']}
           </Link>
         </div>
-        <p className="text-body text-text-secondary mb-24">{labels['staff.claims.subtitle']}</p>
+        <p className="text-body text-text-stone mb-24">{labels['staff.claims.subtitle']}</p>
 
         <OpsProjectSwitcher
           projects={projects}

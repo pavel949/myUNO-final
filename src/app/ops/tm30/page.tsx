@@ -76,6 +76,8 @@ export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps
 
   const labels = await getLabels({
     'staff.tm30.title': 'TM30 queue',
+    'staff.tm30.subtitle':
+      'Every arrival must be filed within 24 hours. Breaches escalate automatically.',
     'staff.tm30.back': '← Ops board',
     'staff.tm30.empty': 'No filings due. Everything is filed.',
     'staff.tm30.due': 'Due',
@@ -119,7 +121,7 @@ export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps
   const switcherBasePath = '/ops/tm30';
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
           <Link
@@ -129,9 +131,10 @@ export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps
             {labels['staff.tm30.back']}
           </Link>
         </p>
-        <h1 className="text-heading-1 font-bold text-text-ink mb-24">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
           {labels['staff.tm30.title']}
         </h1>
+        <p className="text-body text-text-stone mb-24">{labels['staff.tm30.subtitle']}</p>
         <OpsProjectSwitcher
           projects={projects}
           activeProjectId={validActiveProjectId}

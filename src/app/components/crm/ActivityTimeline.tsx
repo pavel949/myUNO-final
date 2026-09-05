@@ -26,16 +26,16 @@ interface ActivityTimelineProps {
 
 const getActivityIcon = (type: CrmActivityType): string => {
   const icons: Record<CrmActivityType, string> = {
-    note: '📝',
-    task: '✅',
-    call: '☎️',
-    meeting: '📅',
-    email: '✉️',
-    whatsapp: '💬',
-    telegram: '✈️',
-    system: '⚙️',
+    note: 'Note',
+    task: 'Task',
+    call: 'Call',
+    meeting: 'Meeting',
+    email: 'Email',
+    whatsapp: 'WhatsApp',
+    telegram: 'Telegram',
+    system: 'System',
   };
-  return icons[type] || '•';
+  return icons[type] || type;
 };
 
 const getActivityLabel = (type: CrmActivityType): string => {
@@ -78,7 +78,7 @@ export const ActivityTimeline: FC<ActivityTimelineProps> = ({
   if (activities.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-text-stone ">
           No activities yet. Log one to get started.
         </p>
       </div>
@@ -89,8 +89,8 @@ export const ActivityTimeline: FC<ActivityTimelineProps> = ({
     <div className="space-y-8">
       {Object.entries(groupedByDay).map(([dateKey, dayActivities]) => (
         <div key={dateKey}>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="inline-block w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs">
+          <h3 className="text-sm font-semibold text-text-ink  mb-4 flex items-center gap-2">
+            <span className="inline-block w-8 h-8 rounded-full bg-surface-ivory  flex items-center justify-center text-xs">
               {dayActivities.length}
             </span>
             {dateKey}

@@ -27,11 +27,11 @@ interface ActivityItemProps {
 
 const getStatusColor = (status: CrmActivityStatus): string => {
   const colors: Record<CrmActivityStatus, string> = {
-    open: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+    open: 'bg-yellow-100 text-yellow-800',
     completed:
-      'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+      'bg-green-100 text-green-800',
     cancelled:
-      'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+      'bg-surface-ivory text-text-ink ',
   };
   return colors[status] || colors.open;
 };
@@ -81,10 +81,10 @@ export const ActivityItem: FC<ActivityItemProps> = ({
     <div
       className={`border-l-4 pl-4 py-3 rounded-r-lg transition-colors ${
         activity.status === 'completed'
-          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+          ? 'border-green-500 bg-green-50'
           : isPastDue
-            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-            : 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+            ? 'border-red-500 bg-state-error-soft'
+            : 'border-blue-500 bg-brand-andaman-soft'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -92,7 +92,7 @@ export const ActivityItem: FC<ActivityItemProps> = ({
           <div className="text-lg mt-0.5">{icon}</div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-medium text-text-ink ">
                 {label}
               </span>
               <span
@@ -101,7 +101,7 @@ export const ActivityItem: FC<ActivityItemProps> = ({
                 {getStatusLabel(activity.status)}
               </span>
               {isPastDue && (
-                <span className="text-xs px-2 py-0.5 rounded bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                <span className="text-xs px-2 py-0.5 rounded bg-state-error-soft text-state-error">
                   Overdue
                 </span>
               )}
@@ -109,15 +109,15 @@ export const ActivityItem: FC<ActivityItemProps> = ({
             <p
               className={`text-sm font-medium line-clamp-2 cursor-pointer hover:underline ${
                 activity.status === 'completed'
-                  ? 'text-gray-600 dark:text-gray-400 line-through'
-                  : 'text-gray-900 dark:text-white'
+                  ? 'text-text-stone  line-through'
+                  : 'text-text-ink '
               }`}
               onClick={() => setIsExpanded(!isExpanded)}
             >
               {activity.subject}
             </p>
             {activity.dueAt && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-text-stone  mt-1">
                 Due: {new Date(activity.dueAt).toLocaleDateString()} at{' '}
                 {new Date(activity.dueAt).toLocaleTimeString([], {
                   hour: '2-digit',
@@ -126,12 +126,12 @@ export const ActivityItem: FC<ActivityItemProps> = ({
               </p>
             )}
             {isExpanded && activity.body && (
-              <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
+              <div className="mt-3 p-3 bg-surface-paper rounded border border-border-line  text-sm text-text-ink ">
                 {activity.body}
               </div>
             )}
             {isExpanded && activity.createdBy && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-xs text-text-stone  mt-2">
                 By {activity.createdBy.name} •{' '}
                 {new Date(activity.createdAt).toLocaleString()}
               </p>
@@ -146,8 +146,8 @@ export const ActivityItem: FC<ActivityItemProps> = ({
               disabled={isUpdating}
               className={`p-2 rounded transition-colors ${
                 activity.status === 'completed'
-                  ? 'bg-green-200 dark:bg-green-700 text-green-800 dark:text-green-200'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  ? 'bg-green-200 text-green-800'
+                  : 'bg-surface-ivory  text-text-ink  hover:bg-border-line '
               }`}
             >
               {isUpdating ? '...' : activity.status === 'completed' ? '✓' : '○'}

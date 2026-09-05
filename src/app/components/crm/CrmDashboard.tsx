@@ -47,17 +47,17 @@ const formatCurrency = (value: number): string => {
 const getActivityIcon = (type: string): string => {
   switch (type) {
     case 'call':
-      return '☎️';
+      return 'Call';
     case 'email':
-      return '✉️';
+      return 'Email';
     case 'meeting':
-      return '📅';
+      return 'Meeting';
     case 'task':
-      return '✅';
+      return 'Task';
     case 'note':
-      return '📝';
+      return 'Note';
     default:
-      return '📌';
+      return type;
   }
 };
 
@@ -73,22 +73,18 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
         <MetricCard
           label="Total Deals"
           value={summary.totalDeals}
-          icon="📊"
         />
         <MetricCard
           label="Total Value"
           value={formatCurrency(summary.totalValue)}
-          icon="💰"
         />
         <MetricCard
           label="Weighted Forecast"
           value={formatCurrency(summary.weightedForecast)}
-          icon="📈"
         />
         <MetricCard
           label="Win Rate"
           value={`${summary.winRate}%`}
-          icon="🏆"
         />
         <MetricCard
           label="In Progress"
@@ -98,28 +94,27 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
             summary.stageBreakdown['proposal'].count +
             summary.stageBreakdown['negotiation'].count
           }
-          icon="⚙️"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pipeline Breakdown */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="lg:col-span-2 bg-surface-paper rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-text-ink  mb-4">
             Pipeline Breakdown
           </h3>
           <div className="space-y-3">
             {Object.entries(summary.stageBreakdown).map(
               ([stage, data]) => (
                 <div key={stage} className="flex items-center gap-4">
-                  <div className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                  <div className="w-32 text-sm font-medium text-text-ink  capitalize">
                     {stage}
                   </div>
                   <div className="flex-1">
-                    <div className="w-full h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                    <div className="w-full h-6 bg-surface-ivory  rounded-full overflow-hidden flex">
                       {/* Count bar */}
                       <div
-                        className="bg-blue-500 flex items-center justify-center text-xs font-bold text-white"
+                        className="bg-brand-andaman flex items-center justify-center text-xs font-bold text-surface-ivory"
                         style={{
                           width: `${(data.count / summary.totalDeals) * 100}%`,
                           minWidth: '30px',
@@ -129,7 +124,7 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="w-24 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="w-24 text-right text-sm font-medium text-text-ink ">
                     {formatCurrency(data.weightedValue)}
                   </div>
                 </div>
@@ -139,12 +134,12 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
         </div>
 
         {/* Overdue Tasks */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface-paper rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-text-ink  mb-4">
             Overdue Tasks
           </h3>
           {overdueTasks.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-text-stone ">
               No overdue tasks
             </p>
           ) : (
@@ -152,12 +147,12 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
               {overdueTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="p-3 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800"
+                  className="p-3 bg-state-error-soft rounded border border-state-error"
                 >
-                  <p className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">
-                    ⚠️ {task.subject}
+                  <p className="text-xs font-medium text-state-error mb-1">
+                    {task.subject}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-text-stone ">
                     {task.contact?.name}
                   </p>
                 </div>
@@ -168,12 +163,12 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface-paper rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-text-ink  mb-4">
           Recent Activities
         </h3>
         {recentActivities.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-text-stone ">
             No activities yet
           </p>
         ) : (
@@ -181,21 +176,21 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
             {recentActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                className="flex items-start gap-3 p-3 hover:bg-surface-ivory  rounded transition-colors"
               >
                 <span className="text-lg flex-shrink-0">
                   {getActivityIcon(activity.type)}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-medium text-text-ink  truncate">
                     {activity.subject}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-text-stone ">
                     {activity.contact?.name} •{' '}
                     {new Date(activity.createdAt).toLocaleDateString()}
                   </p>
                   {activity.opportunity && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-text-stone  mt-1">
                       {activity.opportunity.title}
                     </p>
                   )}
@@ -212,21 +207,11 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
 interface MetricCardProps {
   label: string;
   value: string | number;
-  icon: string;
 }
 
-const MetricCard: FC<MetricCardProps> = ({ label, value, icon }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">
-          {label}
-        </p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-          {value}
-        </p>
-      </div>
-      <span className="text-3xl">{icon}</span>
-    </div>
+const MetricCard: FC<MetricCardProps> = ({ label, value }) => (
+  <div className="bg-surface-paper border border-border-line rounded-md shadow-card p-24">
+    <p className="text-small text-text-stone mb-8">{label}</p>
+    <p className="font-display text-display font-semibold tabular-nums text-text-ink">{value}</p>
   </div>
 );

@@ -62,14 +62,14 @@ const STAGE_COLORS: Record<string, string> = {
 };
 
 const STAGE_LABELS: Record<string, string> = {
-  new: '🆕 New',
-  qualified: '✅ Qualified',
-  discovery: '🔍 Discovery',
-  proposal: '💼 Proposal',
-  negotiation: '🤝 Negotiation',
-  nurture: '🌱 Nurture',
-  won: '🏆 Won',
-  lost: '❌ Lost',
+  new: 'New',
+  qualified: 'Qualified',
+  discovery: 'Discovery',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  nurture: 'Nurture',
+  won: 'Won',
+  lost: 'Lost',
 };
 
 const getDaysInStage = (createdAt: string | Date): number => {

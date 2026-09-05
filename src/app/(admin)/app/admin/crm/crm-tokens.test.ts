@@ -10,6 +10,11 @@ const pipeline = readFileSync(
 const layout = readFileSync(join(process.cwd(), 'src/app/(admin)/app/admin/layout.tsx'), 'utf8');
 const provider = readFileSync(join(process.cwd(), 'src/app/provider/layout.tsx'), 'utf8');
 const mc = readFileSync(join(process.cwd(), 'src/app/mc/client.tsx'), 'utf8');
+const detail = readFileSync(
+  join(process.cwd(), 'src/app/components/crm/OpportunityDetailClient.tsx'),
+  'utf8'
+);
+const residence = readFileSync(join(process.cwd(), 'src/app/residence/page.tsx'), 'utf8');
 
 describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   it('keeps admin nav hrefs in the layout file', () => {
@@ -29,6 +34,17 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   it('does not invent a ฿286.4M forecast', () => {
     expect(page).not.toContain('286.4');
     expect(pipeline).not.toContain('286.4');
+  });
+
+  it('drops emoji stage names on the shipping opportunity detail', () => {
+    expect(detail).not.toContain('🆕');
+    expect(detail).toContain("new: 'New'");
+  });
+
+  it('does not invent announcement read-receipts on residence', () => {
+    expect(residence).toContain('text-display-xl');
+    expect(residence).not.toContain('have read this');
+    expect(residence).not.toContain('sv-SE');
   });
 
   it('sits provider and MC portals on ivory', () => {

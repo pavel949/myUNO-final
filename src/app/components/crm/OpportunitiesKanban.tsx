@@ -44,14 +44,14 @@ const STAGES = [
 ];
 
 const STAGE_LABELS: Record<string, string> = {
-  new: '🆕 New',
-  qualified: '✅ Qualified',
-  discovery: '🔍 Discovery',
-  proposal: '💼 Proposal',
-  negotiation: '🤝 Negotiation',
-  nurture: '🌱 Nurture',
-  won: '🏆 Won',
-  lost: '❌ Lost',
+  new: 'New',
+  qualified: 'Qualified',
+  discovery: 'Discovery',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  nurture: 'Nurture',
+  won: 'Won',
+  lost: 'Lost',
 };
 
 export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
@@ -112,9 +112,9 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
   );
 
   return (
-    <div className="w-full h-full bg-gray-50 dark:bg-gray-900 p-6 rounded-lg overflow-x-auto">
+    <div className="w-full h-full bg-surface-ivory p-6 rounded-lg overflow-x-auto">
       {error && (
-        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-state-error-soft text-state-error rounded-lg text-sm">
           {error}
         </div>
       )}
@@ -129,23 +129,23 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
                   {...provided.droppableProps}
                   className={`flex-shrink-0 w-80 rounded-lg p-4 transition-colors ${
                     snapshot.isDraggingOver
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : 'bg-white dark:bg-gray-800'
+                      ? 'bg-brand-andaman-soft'
+                      : 'bg-surface-paper'
                   }`}
                 >
                   {/* Stage Header */}
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                    <h3 className="font-semibold text-text-ink ">
                       {STAGE_LABELS[stage]}
                     </h3>
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">
+                    <span className="text-sm font-medium text-text-stone  bg-surface-ivory  px-2 py-1 rounded-full">
                       {groupedByStage[stage].length}
                     </span>
                   </div>
 
                   {/* Column Stats */}
                   {groupedByStage[stage].length > 0 && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="text-xs text-text-stone  mb-4 pb-4 border-b border-border-line ">
                       <div>
                         ฿
                         {(
@@ -193,7 +193,7 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
                   {/* Empty State */}
                   {groupedByStage[stage].length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-text-stone ">
                         No opportunities
                       </p>
                     </div>

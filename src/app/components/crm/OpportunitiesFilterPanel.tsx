@@ -28,14 +28,14 @@ const STAGES = [
 ];
 
 const STAGE_COLORS: Record<string, string> = {
-  new: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
-  qualified: 'bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-blue-300',
-  discovery: 'bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-300',
-  proposal: 'bg-purple-100 dark:bg-purple-700 text-purple-700 dark:text-purple-300',
-  negotiation: 'bg-orange-100 dark:bg-orange-700 text-orange-700 dark:text-orange-300',
-  nurture: 'bg-yellow-100 dark:bg-yellow-700 text-yellow-700 dark:text-yellow-300',
-  won: 'bg-green-100 dark:bg-green-700 text-green-700 dark:text-green-300',
-  lost: 'bg-red-100 dark:bg-red-700 text-red-700 dark:text-red-300',
+  new: 'bg-slate-100 text-slate-700',
+  qualified: 'bg-blue-100  text-blue-700',
+  discovery: 'bg-indigo-100 text-indigo-700',
+  proposal: 'bg-purple-100 text-purple-700',
+  negotiation: 'bg-orange-100 text-orange-700',
+  nurture: 'bg-yellow-100 text-yellow-700',
+  won: 'bg-green-100 text-green-700',
+  lost: 'bg-red-100 text-red-700',
 };
 
 export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
@@ -94,23 +94,22 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
     filters.assignedOnly;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="bg-surface-paper rounded-lg shadow">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <div className="p-4 border-b border-border-line  flex items-center justify-between">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          className="flex items-center gap-2 font-medium text-text-ink hover:text-brand-andaman transition-colors"
         >
-          <span className="text-lg">🔍</span>
           Filters & Search
           {hasActiveFilters && (
-            <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full" />
+            <span className="ml-2 inline-block w-2 h-2 bg-brand-andaman rounded-full" />
           )}
         </button>
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-sm text-text-stone hover:text-text-ink transition-colors"
           >
             Clear all
           </button>
@@ -122,7 +121,7 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
         <div className="p-4 space-y-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-text-ink  mb-2">
               Search
             </label>
             <input
@@ -130,13 +129,13 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
               value={filters.search}
               onChange={(e) => handleFilterChange({ search: e.target.value })}
               placeholder="Contact name, title, email..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-border-line  rounded-lg bg-surface-paper  text-text-ink  placeholder:text-text-stone-2 "
             />
           </div>
 
           {/* Stages */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-text-ink  mb-2">
               Stages
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -146,8 +145,8 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
                   onClick={() => toggleStage(stage)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     filters.stages.includes(stage)
-                      ? `${STAGE_COLORS[stage]} ring-2 ring-offset-0 dark:ring-offset-gray-800`
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      ? `${STAGE_COLORS[stage]} ring-2 ring-offset-0`
+                      : 'bg-surface-ivory text-text-ink  hover:bg-surface-ivory '
                   }`}
                 >
                   {stage.charAt(0).toUpperCase() + stage.slice(1)}
@@ -159,7 +158,7 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
           {/* Types */}
           {opportunityTypes.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-text-ink  mb-2">
                 Types
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -169,8 +168,8 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
                     onClick={() => toggleType(type)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       filters.types.includes(type)
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-brand-andaman text-surface-ivory'
+                        : 'bg-surface-ivory text-text-ink  hover:bg-surface-ivory '
                     }`}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -182,7 +181,7 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
 
           {/* Probability Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-text-ink  mb-2">
               Probability: {filters.minProbability}% – {filters.maxProbability}%
             </label>
             <div className="space-y-2">
@@ -218,9 +217,9 @@ export const OpportunitiesFilterPanel: FC<OpportunitiesFilterPanelProps> = ({
                 onChange={(e) =>
                   handleFilterChange({ assignedOnly: e.target.checked })
                 }
-                className="rounded border-gray-300"
+                className="rounded border-border-line"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-text-ink ">
                 Show only assigned opportunities
               </span>
             </label>

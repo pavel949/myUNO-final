@@ -8,14 +8,14 @@ interface QuickActivityFormProps {
   onActivityAdded?: () => void;
 }
 
-const ACTIVITY_TYPES: Array<{ value: CrmActivityType; label: string; icon: string }> = [
-  { value: 'note', label: 'Note', icon: '📝' },
-  { value: 'task', label: 'Task', icon: '✅' },
-  { value: 'call', label: 'Call', icon: '☎️' },
-  { value: 'meeting', label: 'Meeting', icon: '📅' },
-  { value: 'email', label: 'Email', icon: '✉️' },
-  { value: 'whatsapp', label: 'WhatsApp', icon: '💬' },
-  { value: 'telegram', label: 'Telegram', icon: '✈️' },
+const ACTIVITY_TYPES: Array<{ value: CrmActivityType; label: string }> = [
+  { value: 'note', label: 'Note' },
+  { value: 'task', label: 'Task' },
+  { value: 'call', label: 'Call' },
+  { value: 'meeting', label: 'Meeting' },
+  { value: 'email', label: 'Email' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telegram', label: 'Telegram' },
 ];
 
 export const QuickActivityForm: FC<QuickActivityFormProps> = ({
@@ -78,7 +78,7 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full py-3 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+        className="w-full py-3 px-4 border-2 border-dashed border-border-line rounded-lg text-text-ink hover:border-brand-andaman hover:text-brand-andaman transition-colors font-medium"
       >
         + Log an activity
       </button>
@@ -86,10 +86,10 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="bg-surface-ivory p-4 rounded-lg border border-border-line ">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-text-ink  mb-2">
             Activity type
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -100,19 +100,18 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
                 onClick={() => setType(actType.value)}
                 className={`p-2 rounded text-center transition-colors ${
                   type === actType.value
-                    ? 'bg-blue-500 dark:bg-blue-600 text-white'
-                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400'
+                    ? 'bg-brand-andaman text-surface-ivory'
+                    : 'bg-surface-paper border border-border-line  text-text-ink  hover:border-brand-andaman '
                 }`}
               >
-                <div className="text-lg">{actType.icon}</div>
-                <div className="text-xs font-medium mt-1">{actType.label}</div>
+                <div className="text-small font-medium">{actType.label}</div>
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-text-ink  mb-2">
             Subject *
           </label>
           <input
@@ -120,12 +119,12 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="What happened or needs to happen?"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            className="w-full px-3 py-2 border border-border-line  rounded-lg bg-surface-paper text-text-ink  placeholder:text-text-stone-2 "
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-text-ink  mb-2">
             Details
           </label>
           <textarea
@@ -133,26 +132,26 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
             onChange={(e) => setBody(e.target.value)}
             placeholder="Add more context..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+            className="w-full px-3 py-2 border border-border-line  rounded-lg bg-surface-paper text-text-ink  placeholder:text-text-stone-2  resize-none"
           />
         </div>
 
         {type === 'task' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-text-ink  mb-2">
               Due date
             </label>
             <input
               type="datetime-local"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-border-line  rounded-lg bg-surface-paper text-text-ink "
             />
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200 p-3 rounded text-sm">
+          <div className="bg-state-error-soft text-state-error p-3 rounded text-sm">
             {error}
           </div>
         )}
@@ -168,14 +167,14 @@ export const QuickActivityForm: FC<QuickActivityFormProps> = ({
               setError(null);
             }}
             disabled={isLoading}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-text-ink  hover:bg-surface-ivory  rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading || !subject.trim()}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 rounded-lg transition-colors font-medium"
+            className="px-4 py-2 bg-brand-andaman text-surface-ivory hover:bg-brand-deep disabled:opacity-50 rounded-lg transition-colors font-medium"
           >
             {isLoading ? 'Adding...' : 'Add activity'}
           </button>

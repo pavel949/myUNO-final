@@ -12,6 +12,8 @@ import type { BookingRequestBreakdownLine } from '@/modules/booking';
 import ArrivalPassportCaptureModal from '@/components/ops/ArrivalPassportCaptureModal';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
+import { TypedPaymentSheet } from '@/components/ops/TypedPaymentSheet';
+import { NoteSheet } from '@/components/NoteSheet';
 
 interface OpsBooking {
   id: string;
@@ -138,9 +140,14 @@ export default function OpsBoardClient({
   const [checkoutBooking, setCheckoutBooking] = useState<OpsBooking | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [bankRefs, setBankRefs] = useState<Record<string, string>>({});
+  const [cashSheetBooking, setCashSheetBooking] = useState<OpsBooking | null>(null);
+  const [transferSheetBooking, setTransferSheetBooking] = useState<OpsBooking | null>(null);
+  const [cashSheetOrder, setCashSheetOrder] = useState<OpsServiceOrder | null>(null);
+  const [resolveTicket, setResolveTicket] = useState<OpsTicket | null>(null);
+  const [resolveNote, setResolveNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const act = async (bookingId: string, path: string, body?: unknown) => {
+  const act = async (bookingId: string, path: string, body?: unknown): Promise<boolean> => {
     setBusyId(bookingId);
     setError(null);
     try {
@@ -154,25 +161,16 @@ export default function OpsBoardClient({
         throw new Error(data?.error || labels['staff.ops.error_generic']);
       }
       router.refresh();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['staff.ops.error_generic']);
+      return false;
     } finally {
       setBusyId(null);
     }
   };
 
-  const recordServiceCash = async (order: OpsServiceOrder) => {
-    const receiptRef = (receipts[order.id] || '').trim();
-    if (!receiptRef) return;
-    if (
-      !window.confirm(
-        fill(labels['staff.ops.confirm_cash'], {
-          amount: order.totalThb.toLocaleString(),
-        })
-      )
-    ) {
-      return;
-    }
+  const recordServiceCash = async (order: OpsServiceOrder, receiptRef: string): Promise<boolean> => {
     setBusyId(order.id);
     setError(null);
     try {
@@ -186,8 +184,10 @@ export default function OpsBoardClient({
         throw new Error(data?.error || labels['staff.ops.error_generic']);
       }
       router.refresh();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['staff.ops.error_generic']);
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -197,7 +197,7 @@ export default function OpsBoardClient({
     ticketId: string,
     path: 'assign' | 'status',
     body: Record<string, unknown> = {}
-  ) => {
+  ): Promise<boolean> => {
     setBusyId(ticketId);
     setError(null);
     try {
@@ -211,8 +211,10 @@ export default function OpsBoardClient({
         throw new Error(data?.error || labels['staff.ops.error_generic']);
       }
       router.refresh();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['staff.ops.error_generic']);
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -223,13 +225,7 @@ export default function OpsBoardClient({
       void ticketAction(ticket.id, 'status', { newStatus });
       return;
     }
-    const noteRaw = window.prompt(labels['staff.ops.ticket_resolve_note_prompt']) || '';
-    const note = noteRaw.trim();
-    if (!note) {
-      setError(labels['staff.ops.ticket_resolve_note_required']);
-      return;
-    }
-    void ticketAction(ticket.id, 'status', { newStatus, note });
+    setResolveTicket(ticket);
   };
 
   const respondLabels = {
@@ -500,66 +496,81 @@ export default function OpsBoardClient({
         title={labels['staff.ops.pending_cash']}
         bookings={pendingPayment}
         action={(booking) => (
-          <div className="flex items-center gap-8">
-            <input
-              type="text"
-              value={receipts[booking.id] || ''}
-              onChange={(e) =>
-                setReceipts((prev) => ({ ...prev, [booking.id]: e.target.value }))
-              }
-              placeholder={labels['staff.ops.receipt_placeholder']}
-              className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-40 md:w-auto"
-              style={{ width: '160px' }}
-            />
-            <Button
-              size="sm"
-              variant="sun"
-              onClick={() => {
-                const receiptRef = (receipts[booking.id] || '').trim();
-                if (!receiptRef) return;
-                if (
-                  window.confirm(
-                    fill(labels['staff.ops.confirm_cash'], {
-                      amount: booking.totalThb.toLocaleString(),
-                    })
-                  )
-                ) {
-                  act(booking.id, 'record-cash-payment', { receiptRef });
-                }
-              }}
-              isLoading={busyId === booking.id}
-              disabled={!(receipts[booking.id] || '').trim()}
-            >
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-8">
+            <Button size="sm" variant="sun" onClick={() => setCashSheetBooking(booking)}>
               {labels['staff.ops.record_cash']}
             </Button>
-            <input
-              type="text"
-              value={bankRefs[booking.id] || ''}
-              onChange={(e) =>
-                setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
-              }
-              placeholder={labels['staff.ops.bank_ref_placeholder']}
-              className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-              style={{ width: '160px' }}
-            />
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                const bankReference = (bankRefs[booking.id] || '').trim();
-                if (!bankReference) return;
-                act(booking.id, 'record-transfer', {
-                  amountThb: Math.round(booking.totalThb * 100),
-                  bankReference,
-                });
-              }}
-              isLoading={busyId === booking.id}
-              disabled={!(bankRefs[booking.id] || '').trim()}
-            >
+            <Button size="sm" variant="secondary" onClick={() => setTransferSheetBooking(booking)}>
               {labels['staff.ops.record_transfer']}
             </Button>
           </div>
         )}
+      />
+
+      <TypedPaymentSheet
+        open={cashSheetBooking !== null}
+        onClose={() => setCashSheetBooking(null)}
+        closeLabel={labels['staff.ops.sheet_close']}
+        title={fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetBooking?.guestName ?? '' })}
+        subtitle={cashSheetBooking?.unitName ?? ''}
+        amountThb={cashSheetBooking?.totalThb ?? 0}
+        amountDueLabel={labels['staff.ops.sheet_amount_due']}
+        refLabel={labels['staff.ops.receipt_placeholder']}
+        refValue={cashSheetBooking ? receipts[cashSheetBooking.id] || '' : ''}
+        onRefChange={(value) =>
+          cashSheetBooking &&
+          setReceipts((prev) => ({ ...prev, [cashSheetBooking.id]: value }))
+        }
+        refHelpText={labels['staff.ops.cash_sheet_hint']}
+        confirmationLabel={fill(labels['staff.ops.cash_sheet_counted'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        submitLabel={fill(labels['staff.ops.cash_sheet_submit'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['staff.ops.cash_sheet_required_hint']}
+        busy={cashSheetBooking !== null && busyId === cashSheetBooking.id}
+        onSubmit={async () => {
+          if (!cashSheetBooking) return;
+          const receiptRef = (receipts[cashSheetBooking.id] || '').trim();
+          if (!receiptRef) return;
+          const ok = await act(cashSheetBooking.id, 'record-cash-payment', { receiptRef });
+          if (ok) setCashSheetBooking(null);
+        }}
+      />
+
+      <TypedPaymentSheet
+        open={transferSheetBooking !== null}
+        onClose={() => setTransferSheetBooking(null)}
+        closeLabel={labels['staff.ops.sheet_close']}
+        title={fill(labels['staff.ops.transfer_sheet_title'], {
+          name: transferSheetBooking?.guestName ?? '',
+        })}
+        subtitle={transferSheetBooking?.unitName ?? ''}
+        amountThb={transferSheetBooking?.totalThb ?? 0}
+        amountDueLabel={labels['staff.ops.sheet_amount_due']}
+        refLabel={labels['staff.ops.bank_ref_placeholder']}
+        refValue={transferSheetBooking ? bankRefs[transferSheetBooking.id] || '' : ''}
+        onRefChange={(value) =>
+          transferSheetBooking &&
+          setBankRefs((prev) => ({ ...prev, [transferSheetBooking.id]: value }))
+        }
+        refHelpText={labels['staff.ops.transfer_sheet_hint']}
+        submitLabel={fill(labels['staff.ops.transfer_sheet_submit'], {
+          amount: `฿${(transferSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['staff.ops.transfer_sheet_required_hint']}
+        busy={transferSheetBooking !== null && busyId === transferSheetBooking.id}
+        onSubmit={async () => {
+          if (!transferSheetBooking) return;
+          const bankReference = (bankRefs[transferSheetBooking.id] || '').trim();
+          if (!bankReference) return;
+          const ok = await act(transferSheetBooking.id, 'record-transfer', {
+            amountThb: Math.round(transferSheetBooking.totalThb * 100),
+            bankReference,
+          });
+          if (ok) setTransferSheetBooking(null);
+        }}
       />
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
@@ -584,31 +595,44 @@ export default function OpsBoardClient({
                   {order.totalThb.toLocaleString()}
                 </p>
               </div>
-              <div className="flex items-center gap-8">
-                <input
-                  type="text"
-                  value={receipts[order.id] || ''}
-                  onChange={(e) =>
-                    setReceipts((prev) => ({ ...prev, [order.id]: e.target.value }))
-                  }
-                  placeholder={labels['staff.ops.receipt_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                  style={{ width: '160px' }}
-                />
-                <Button
-                  size="sm"
-                  variant="sun"
-                  onClick={() => recordServiceCash(order)}
-                  isLoading={busyId === order.id}
-                  disabled={!(receipts[order.id] || '').trim()}
-                >
-                  {labels['staff.ops.record_cash']}
-                </Button>
-              </div>
+              <Button size="sm" variant="sun" onClick={() => setCashSheetOrder(order)}>
+                {labels['staff.ops.record_cash']}
+              </Button>
             </div>
           ))
         )}
       </section>
+
+      <TypedPaymentSheet
+        open={cashSheetOrder !== null}
+        onClose={() => setCashSheetOrder(null)}
+        closeLabel={labels['staff.ops.sheet_close']}
+        title={fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetOrder?.serviceTitle ?? '' })}
+        subtitle={cashSheetOrder?.ordererName ?? ''}
+        amountThb={cashSheetOrder?.totalThb ?? 0}
+        amountDueLabel={labels['staff.ops.sheet_amount_due']}
+        refLabel={labels['staff.ops.receipt_placeholder']}
+        refValue={cashSheetOrder ? receipts[cashSheetOrder.id] || '' : ''}
+        onRefChange={(value) =>
+          cashSheetOrder && setReceipts((prev) => ({ ...prev, [cashSheetOrder.id]: value }))
+        }
+        refHelpText={labels['staff.ops.cash_sheet_hint']}
+        confirmationLabel={fill(labels['staff.ops.cash_sheet_counted'], {
+          amount: `฿${(cashSheetOrder?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        submitLabel={fill(labels['staff.ops.cash_sheet_submit'], {
+          amount: `฿${(cashSheetOrder?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['staff.ops.cash_sheet_required_hint']}
+        busy={cashSheetOrder !== null && busyId === cashSheetOrder.id}
+        onSubmit={async () => {
+          if (!cashSheetOrder) return;
+          const receiptRef = (receipts[cashSheetOrder.id] || '').trim();
+          if (!receiptRef) return;
+          const ok = await recordServiceCash(cashSheetOrder, receiptRef);
+          if (ok) setCashSheetOrder(null);
+        }}
+      />
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-8">
@@ -715,6 +739,34 @@ export default function OpsBoardClient({
           })
         )}
       </section>
+
+      <NoteSheet
+        open={resolveTicket !== null}
+        onClose={() => {
+          setResolveTicket(null);
+          setResolveNote('');
+        }}
+        closeLabel={labels['staff.ops.sheet_close']}
+        title={fill(labels['staff.ops.ticket_resolve_sheet_title'], {
+          title: resolveTicket?.title ?? '',
+        })}
+        noteLabel={labels['staff.ops.ticket_resolve_note_prompt']}
+        value={resolveNote}
+        onChange={setResolveNote}
+        submitLabel={labels['staff.ops.ticket_resolve_submit']}
+        requiredHint={labels['staff.ops.ticket_resolve_note_required']}
+        busy={resolveTicket !== null && busyId === resolveTicket.id}
+        onSubmit={async () => {
+          if (!resolveTicket) return;
+          const note = resolveNote.trim();
+          if (!note) return;
+          const ok = await ticketAction(resolveTicket.id, 'status', { newStatus: 'resolved', note });
+          if (ok) {
+            setResolveTicket(null);
+            setResolveNote('');
+          }
+        }}
+      />
     </div>
   );
 }

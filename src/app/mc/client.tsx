@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button, StatTile } from '@/components';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
+import { TypedPaymentSheet } from '@/components/ops/TypedPaymentSheet';
 import UnitIcalConflictBanner, {
   UNIT_ICAL_CALENDAR_SURFACES,
 } from '@/components/units/UnitIcalConflictBanner';
@@ -250,6 +251,7 @@ export function MCDashboardClient({
   const [serviceOrderReceipts, setServiceOrderReceipts] = useState<Record<string, string>>({});
   const [checkinBooking, setCheckinBooking] = useState<Booking | null>(null);
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
+  const [cashSheetBooking, setCashSheetBooking] = useState<Booking | null>(null);
   const [serviceUnitId, setServiceUnitId] = useState(units[0]?.id ?? '');
 
   const tabs = [
@@ -384,7 +386,11 @@ export function MCDashboardClient({
     return result;
   };
 
-  const postBookingAction = async (bookingId: string, path: string, body?: unknown) => {
+  const postBookingAction = async (
+    bookingId: string,
+    path: string,
+    body?: unknown
+  ): Promise<boolean> => {
     setBusyBookingId(bookingId);
     setBookingError(null);
     try {
@@ -398,10 +404,12 @@ export function MCDashboardClient({
         throw new Error(payload?.error || labels['mc.bookings.error_generic']);
       }
       router.refresh();
+      return true;
     } catch (error) {
       setBookingError(
         error instanceof Error ? error.message : labels['mc.bookings.error_generic']
       );
+      return false;
     } finally {
       setBusyBookingId(null);
     }
@@ -514,43 +522,10 @@ export function MCDashboardClient({
     }
 
     if (booking.status === 'pending_payment') {
-      const receiptRef = (bookingReceipts[booking.id] || '').trim();
       return (
-        <div className="flex items-center gap-8">
-          <input
-            type="text"
-            value={bookingReceipts[booking.id] || ''}
-            onChange={(event) =>
-              setBookingReceipts((previous) => ({
-                ...previous,
-                [booking.id]: event.target.value,
-              }))
-            }
-            placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-            style={{ width: '140px' }}
-          />
-          <Button
-            size="sm"
-            variant="sun"
-            onClick={() => {
-              if (!receiptRef) return;
-              if (
-                window.confirm(
-                  fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
-                  })
-                )
-              ) {
-                void postBookingAction(booking.id, 'record-cash-payment', { receiptRef });
-              }
-            }}
-            isLoading={busyBookingId === booking.id}
-            disabled={!receiptRef}
-          >
-            {labels['mc.bookings.record_cash']}
-          </Button>
-        </div>
+        <Button size="sm" variant="sun" onClick={() => setCashSheetBooking(booking)}>
+          {labels['mc.bookings.record_cash']}
+        </Button>
       );
     }
 
@@ -677,7 +652,8 @@ export function MCDashboardClient({
       {/* Navigation Tabs */}
       <section className="bg-surface-paper border-b border-border-line sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-24">
-          <div className="flex gap-32 overflow-x-auto">
+          {/* Desktop / tablet: underline tabs */}
+          <div className="hidden md:flex gap-32 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -686,6 +662,22 @@ export function MCDashboardClient({
                   activeTab === tab.key
                     ? 'border-brand-andaman text-brand-andaman'
                     : 'border-transparent text-text-secondary hover:text-text-ink'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {/* Mobile: chip scroller (board 20 rule: tabs become a chip scroller) */}
+          <div className="md:hidden flex gap-8 overflow-x-auto py-12">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-14 py-8 rounded-full text-small font-medium whitespace-nowrap transition ${
+                  activeTab === tab.key
+                    ? 'bg-brand-andaman text-surface-ivory'
+                    : 'bg-surface-paper border border-border-line text-text-secondary'
                 }`}
               >
                 {tab.label}
@@ -772,73 +764,128 @@ export function MCDashboardClient({
                 <p className="text-small text-state-error">{bookingError}</p>
               </div>
             )}
-            <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-surface-background border-b border-border-line">
-                    <tr>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.unit']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.guest']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.check_in']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.check_out']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.amount']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.status']}</th>
-                      <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.actions']}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center p-24 text-text-secondary">
-                          {labels['mc.bookings.empty']}
-                        </td>
-                      </tr>
-                    ) : (
-                      bookings.map((booking) => (
-                        <tr key={booking.id} className="border-b border-border-line hover:bg-surface-background">
-                          <td className="p-16 text-body font-semibold text-text-ink">
-                            {booking.unit.name}
-                          </td>
-                          <td className="p-16 text-body text-text-ink">
-                            {booking.guestIdentity.firstName}
-                            {booking.guests[0]?.nationality && (
-                              <span className="text-small text-text-secondary ml-8">
-                                ({booking.guests[0].nationality})
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
-                          </td>
-                          <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
-                          </td>
-                          <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
-                          </td>
-                          <td className="p-16">
-                            <span
-                              className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
-                                bookingStatusStyle[booking.status] || 'bg-surface-ivory text-text-stone'
-                              }`}
-                            >
-                              {statusLabel(booking.status)}
-                            </span>
-                            {booking.status === 'requested' && booking.requestExpiresAt ? (
-                              <p className="text-small text-state-warning mt-4">
-                                {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
-                              </p>
-                            ) : null}
-                          </td>
-                          <td className="p-16">{actionForBooking(booking)}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {bookings.length === 0 ? (
+              <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center text-text-secondary">
+                {labels['mc.bookings.empty']}
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Desktop / tablet: table */}
+                <div className="hidden md:block bg-surface-paper border border-border-line rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-surface-background border-b border-border-line">
+                        <tr>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.unit']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.guest']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.check_in']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.check_out']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.amount']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.status']}</th>
+                          <th className="text-left p-16 font-bold text-text-ink">{labels['mc.bookings.actions']}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookings.map((booking) => (
+                          <tr key={booking.id} className="border-b border-border-line hover:bg-surface-background">
+                            <td className="p-16 text-body font-semibold text-text-ink">
+                              {booking.unit.name}
+                            </td>
+                            <td className="p-16 text-body text-text-ink">
+                              {booking.guestIdentity.firstName}
+                              {booking.guests[0]?.nationality && (
+                                <span className="text-small text-text-secondary ml-8">
+                                  ({booking.guests[0].nationality})
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-16 text-small text-text-secondary">
+                              {new Date(booking.startDate).toLocaleDateString()}
+                            </td>
+                            <td className="p-16 text-small text-text-secondary">
+                              {new Date(booking.endDate).toLocaleDateString()}
+                            </td>
+                            <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
+                              ฿{booking.totalThb.toLocaleString()}
+                            </td>
+                            <td className="p-16">
+                              <span
+                                className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+                                  bookingStatusStyle[booking.status] || 'bg-surface-ivory text-text-stone'
+                                }`}
+                              >
+                                {statusLabel(booking.status)}
+                              </span>
+                              {booking.status === 'requested' && booking.requestExpiresAt ? (
+                                <p className="text-small text-state-warning mt-4">
+                                  {labels['mc.bookings.request_expires']}:{' '}
+                                  {new Date(booking.requestExpiresAt).toLocaleString()}
+                                </p>
+                              ) : null}
+                            </td>
+                            <td className="p-16">{actionForBooking(booking)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Mobile: key-value cards, actions full width at the bottom of the card */}
+                <div className="md:hidden flex flex-col gap-12">
+                  {bookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="bg-surface-paper border border-border-line rounded-lg p-16"
+                    >
+                      <div className="flex items-start justify-between gap-12 mb-8">
+                        <div>
+                          <p className="text-body font-semibold text-text-ink">{booking.unit.name}</p>
+                          <p className="text-small text-text-secondary">
+                            {booking.guestIdentity.firstName}
+                            {booking.guests[0]?.nationality && ` (${booking.guests[0].nationality})`}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium shrink-0 ${
+                            bookingStatusStyle[booking.status] || 'bg-surface-ivory text-text-stone'
+                          }`}
+                        >
+                          {statusLabel(booking.status)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-16 py-4 border-t border-border-line">
+                        <span className="text-small text-text-stone">{labels['mc.bookings.check_in']}</span>
+                        <span className="text-body text-text-ink">
+                          {new Date(booking.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-16 py-4">
+                        <span className="text-small text-text-stone">{labels['mc.bookings.check_out']}</span>
+                        <span className="text-body text-text-ink">
+                          {new Date(booking.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-16 py-4">
+                        <span className="text-small text-text-stone">{labels['mc.bookings.amount']}</span>
+                        <span className="text-body font-semibold text-text-ink tabular-nums">
+                          ฿{booking.totalThb.toLocaleString()}
+                        </span>
+                      </div>
+                      {booking.status === 'requested' && booking.requestExpiresAt ? (
+                        <p className="text-small text-state-warning py-4">
+                          {labels['mc.bookings.request_expires']}:{' '}
+                          {new Date(booking.requestExpiresAt).toLocaleString()}
+                        </p>
+                      ) : null}
+                      <div className="mt-12 [&_button]:w-full [&_button]:h-48 [&>div]:w-full [&>div]:flex-col [&>div]:gap-8">
+                        {actionForBooking(booking)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1207,6 +1254,42 @@ export function MCDashboardClient({
         labels={labels}
         onClose={() => setCheckoutBooking(null)}
         onComplete={() => router.refresh()}
+      />
+
+      <TypedPaymentSheet
+        open={cashSheetBooking !== null}
+        onClose={() => setCashSheetBooking(null)}
+        closeLabel={labels['mc.bookings.sheet_close']}
+        title={fill(labels['mc.bookings.cash_sheet_title'], {
+          name: cashSheetBooking?.guestIdentity.firstName ?? '',
+        })}
+        subtitle={cashSheetBooking?.unit.name ?? ''}
+        amountThb={cashSheetBooking?.totalThb ?? 0}
+        amountDueLabel={labels['mc.bookings.sheet_amount_due']}
+        refLabel={labels['mc.bookings.receipt_placeholder']}
+        refValue={cashSheetBooking ? bookingReceipts[cashSheetBooking.id] || '' : ''}
+        onRefChange={(value) =>
+          cashSheetBooking &&
+          setBookingReceipts((previous) => ({ ...previous, [cashSheetBooking.id]: value }))
+        }
+        refHelpText={labels['mc.bookings.cash_sheet_hint']}
+        confirmationLabel={fill(labels['mc.bookings.cash_sheet_counted'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        submitLabel={fill(labels['mc.bookings.cash_sheet_submit'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['mc.bookings.cash_sheet_required_hint']}
+        busy={cashSheetBooking !== null && busyBookingId === cashSheetBooking.id}
+        onSubmit={async () => {
+          if (!cashSheetBooking) return;
+          const receiptRef = (bookingReceipts[cashSheetBooking.id] || '').trim();
+          if (!receiptRef) return;
+          const ok = await postBookingAction(cashSheetBooking.id, 'record-cash-payment', {
+            receiptRef,
+          });
+          if (ok) setCashSheetBooking(null);
+        }}
       />
     </main>
   );

@@ -13,6 +13,7 @@ import {
   OwnerStayModal,
   MoneyAmount,
   RoleContextBanner,
+  StickyPrimaryAction,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
@@ -345,7 +346,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {...chartLabels}
               />
             </div>
-            <div className="bg-surface-paper border border-border-line rounded-md p-24">
+            <div className="hidden lg:block bg-surface-paper border border-border-line rounded-md p-24">
               <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
                 {labels['owner.trends.occupancy']}
               </h3>
@@ -558,7 +559,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             ) : null}
 
             {/* Owner Stay Action */}
-            <div>
+            <StickyPrimaryAction>
               <Button
                 variant="primary"
                 size="lg"
@@ -567,7 +568,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               >
                 {labels['owner.stay.book_action']}
               </Button>
-            </div>
+            </StickyPrimaryAction>
 
             {/* Sell Interest Card */}
             <div>

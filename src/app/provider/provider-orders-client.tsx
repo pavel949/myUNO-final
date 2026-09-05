@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { NoteSheet } from '@/components/NoteSheet';
+
+function fill(template: string, params: Record<string, string>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  }
+  return result;
+}
 
 interface ProviderOrder {
   id: string;
@@ -66,6 +75,7 @@ export default function ProviderOrdersClient({
   const [loading, setLoading] = useState(!initialOrders);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [declineOrder, setDeclineOrder] = useState<ProviderOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadQueue = useCallback(async () => {
@@ -114,7 +124,7 @@ export default function ProviderOrdersClient({
     };
   }, [initialOrders, loadQueue, labels]);
 
-  const act = async (orderId: string, action: string, body?: unknown) => {
+  const act = async (orderId: string, action: string, body?: unknown): Promise<boolean> => {
     setBusyId(orderId);
     setError(null);
     try {
@@ -148,10 +158,12 @@ export default function ProviderOrdersClient({
       } else {
         await loadQueue();
       }
+      return true;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : labels['provider.orders.error_generic']
       );
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -228,28 +240,12 @@ export default function ProviderOrdersClient({
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() =>
-                          act(order.id, 'decline', {
-                            reason: (reasons[order.id] || '').trim() || undefined,
-                          })
-                        }
+                        onClick={() => setDeclineOrder(order)}
                         isLoading={busyId === order.id}
                       >
                         {labels['provider.orders.decline']}
                       </Button>
                     </div>
-                  )}
-                  {actionable && (
-                    <input
-                      type="text"
-                      value={reasons[order.id] || ''}
-                      onChange={(e) =>
-                        setReasons((prev) => ({ ...prev, [order.id]: e.target.value }))
-                      }
-                      placeholder={labels['provider.orders.decline_reason']}
-                      className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                      style={{ width: '200px' }}
-                    />
                   )}
                   {order.status === 'accepted' && (
                     <Button
@@ -267,6 +263,33 @@ export default function ProviderOrdersClient({
           })
         )}
       </section>
+
+      <NoteSheet
+        open={declineOrder !== null}
+        onClose={() => setDeclineOrder(null)}
+        closeLabel={labels['provider.orders.sheet_close']}
+        title={
+          declineOrder
+            ? fill(labels['provider.orders.decline_sheet_title'], {
+                service: declineOrder.serviceTitle ?? '',
+              })
+            : ''
+        }
+        noteLabel={labels['provider.orders.decline_reason']}
+        value={declineOrder ? reasons[declineOrder.id] || '' : ''}
+        onChange={(value) =>
+          declineOrder && setReasons((prev) => ({ ...prev, [declineOrder.id]: value }))
+        }
+        submitLabel={labels['provider.orders.decline_submit']}
+        optional
+        busy={declineOrder !== null && busyId === declineOrder.id}
+        onSubmit={async () => {
+          if (!declineOrder) return;
+          const reason = (reasons[declineOrder.id] || '').trim() || undefined;
+          const ok = await act(declineOrder.id, 'decline', { reason });
+          if (ok) setDeclineOrder(null);
+        }}
+      />
     </div>
   );
 }

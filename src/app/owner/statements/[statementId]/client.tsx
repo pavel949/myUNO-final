@@ -2,7 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Button, StatTile, EmptyState, MoneyAmount } from '@/components';
+import {
+  Button,
+  StatTile,
+  EmptyState,
+  MoneyAmount,
+  NoteSheet,
+  Sheet,
+  Input,
+  Textarea,
+  StickyPrimaryAction,
+} from '@/components';
 import { SIGNABLE_STATEMENT_STATUSES } from '@/modules/finance';
 import type { LineItemCategory, OwnerStatementStatus } from '@prisma/client';
 
@@ -303,8 +313,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
     }
   };
 
-  const handleDisputeSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleDisputeSubmit = async () => {
     if (!disputeTitle.trim() || !disputeDescription.trim()) return;
     setDisputeBusy(true);
     setDisputeError(null);
@@ -336,8 +345,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
     }
   };
 
-  const handleQuestionSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleQuestionSubmit = async () => {
     if (!questionBody.trim()) return;
     setQuestionBusy(true);
     setQuestionError(null);
@@ -658,14 +666,16 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 <p className="text-body text-text-secondary mb-16">
                   {labels['owner.statement.signoff_description']}
                 </p>
-                <Button
-                  variant="primary"
-                  onClick={handleSignOff}
-                  isLoading={signingOff}
-                  disabled={signingOff}
-                >
-                  {labels['owner.statement.signoff_action']}
-                </Button>
+                <StickyPrimaryAction>
+                  <Button
+                    variant="primary"
+                    onClick={handleSignOff}
+                    isLoading={signingOff}
+                    disabled={signingOff}
+                  >
+                    {labels['owner.statement.signoff_action']}
+                  </Button>
+                </StickyPrimaryAction>
               </>
             )}
 
@@ -735,48 +745,27 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
               >
                 {labels['owner.statement.question_open_thread']}
               </Link>
-            ) : null}
-            {questionOpen ? (
-              <form onSubmit={handleQuestionSubmit} className="flex flex-col gap-12 mt-16">
-                <textarea
-                  value={questionBody}
-                  onChange={(event) => setQuestionBody(event.target.value)}
-                  rows={4}
-                  maxLength={4000}
-                  className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
-                  placeholder={labels['owner.statement.question_placeholder']}
-                />
-                {questionError ? (
-                  <p role="alert" className="text-body text-state-error">
-                    {questionError}
-                  </p>
-                ) : null}
-                <div className="flex gap-12">
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    isLoading={questionBusy}
-                    disabled={!questionBody.trim()}
-                  >
-                    {labels['owner.statement.question_submit']}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setQuestionOpen(false)}
-                    disabled={questionBusy}
-                  >
-                    {labels['owner.statement.question_cancel']}
-                  </Button>
-                </div>
-              </form>
-            ) : !questionThreadId ? (
+            ) : (
               <Button variant="ghost" onClick={() => setQuestionOpen(true)}>
                 {labels['owner.statement.question_open']}
               </Button>
-            ) : null}
+            )}
           </div>
         </div>
+
+        <NoteSheet
+          open={questionOpen}
+          onClose={() => setQuestionOpen(false)}
+          closeLabel={labels['owner.statement.question_cancel']}
+          title={labels['owner.statement.question_title']}
+          noteLabel={labels['owner.statement.question_placeholder']}
+          value={questionBody}
+          onChange={setQuestionBody}
+          submitLabel={labels['owner.statement.question_submit']}
+          error={questionError}
+          busy={questionBusy}
+          onSubmit={handleQuestionSubmit}
+        />
 
         {/* Dispute */}
         <div className="mb-40">
@@ -784,79 +773,63 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             {labels['owner.statement.dispute_title']}
           </h2>
           <div className="bg-surface-paper border border-border-line rounded-md p-24">
-            {disputeSent && !disputeOpen && (
+            {disputeSent && (
               <p className="text-body text-state-success mb-16">
                 {labels['owner.statement.dispute_sent']}
               </p>
             )}
-            {disputeOpen ? (
-              <form onSubmit={handleDisputeSubmit} className="flex flex-col gap-12">
-                <div className="flex flex-col gap-4">
-                  <label htmlFor="statement-dispute-title" className="text-small text-text-secondary">
-                    {labels['owner.statement.dispute_title_field']}
-                  </label>
-                  <input
-                    id="statement-dispute-title"
-                    type="text"
-                    value={disputeTitle}
-                    onChange={(e) => setDisputeTitle(e.target.value)}
-                    maxLength={200}
-                    className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-4">
-                  <label
-                    htmlFor="statement-dispute-description"
-                    className="text-small text-text-secondary"
-                  >
-                    {labels['owner.statement.dispute_description_field']}
-                  </label>
-                  <textarea
-                    id="statement-dispute-description"
-                    value={disputeDescription}
-                    onChange={(e) => setDisputeDescription(e.target.value)}
-                    rows={4}
-                    maxLength={4000}
-                    className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
-                  />
-                </div>
-                {disputeError && (
-                  <p role="alert" className="text-body text-state-error">
-                    {disputeError}
-                  </p>
-                )}
-                <div className="flex gap-12">
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    isLoading={disputeBusy}
-                    disabled={!disputeTitle.trim() || !disputeDescription.trim()}
-                  >
-                    {labels['owner.statement.dispute_submit']}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setDisputeOpen(false)}
-                    disabled={disputeBusy}
-                  >
-                    {labels['owner.statement.dispute_cancel']}
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setDisputeOpen(true);
-                  setDisputeSent(false);
-                }}
-              >
-                {labels['owner.statement.dispute_open']}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDisputeOpen(true);
+                setDisputeSent(false);
+              }}
+            >
+              {labels['owner.statement.dispute_open']}
+            </Button>
           </div>
         </div>
+
+        <Sheet
+          open={disputeOpen}
+          onClose={() => setDisputeOpen(false)}
+          closeLabel={labels['owner.statement.dispute_cancel']}
+          title={labels['owner.statement.dispute_title']}
+        >
+          <div className="mb-16">
+            <Input
+              label={labels['owner.statement.dispute_title_field']}
+              required
+              value={disputeTitle}
+              onChange={(e) => setDisputeTitle(e.target.value)}
+              maxLength={200}
+            />
+          </div>
+          <div className="mb-16">
+            <Textarea
+              label={labels['owner.statement.dispute_description_field']}
+              required
+              value={disputeDescription}
+              onChange={(e) => setDisputeDescription(e.target.value)}
+              rows={4}
+              maxLength={4000}
+            />
+          </div>
+          {disputeError && (
+            <p role="alert" className="text-body text-state-error mb-16">
+              {disputeError}
+            </p>
+          )}
+          <Button
+            fullWidth
+            variant="primary"
+            isLoading={disputeBusy}
+            disabled={!disputeTitle.trim() || !disputeDescription.trim()}
+            onClick={handleDisputeSubmit}
+          >
+            {labels['owner.statement.dispute_submit']}
+          </Button>
+        </Sheet>
       </div>
     </div>
   );

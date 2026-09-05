@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { AdminSidebar } from './AdminSidebar';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +52,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.group_inventory': 'Inventory',
     'admin.nav.group_supply': 'Supply & content',
     'admin.nav.group_money': 'Money & record',
+    'admin.nav.menu': 'Menu',
   });
 
   const dashboardItem = { href: '/app/admin', label: labels['admin.nav.dashboard'] };
@@ -118,40 +119,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface-background">
-      <aside className="md:w-56 shrink-0 bg-brand-deep text-on-dark-text p-16 md:min-h-screen overflow-y-auto" style={{ minWidth: '220px' }}>
-        <p className="text-subtitle font-bold mb-24">{labels['admin.nav.title']}</p>
-        <nav className="flex flex-col gap-8">
-          <Link
-            href={dashboardItem.href}
-            className="block px-12 py-8 rounded-md text-small hover:bg-brand-andaman transition-colors"
-          >
-            {dashboardItem.label}
-          </Link>
-          {groups.map((group) => (
-            <div key={group.label} className="pt-16">
-              <p className="px-12 pb-8 text-small font-medium text-brand-sun-soft uppercase tracking-wide">
-                {group.label}
-              </p>
-              <div className="flex flex-col gap-8">
-                {group.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block px-12 py-8 rounded-md text-small hover:bg-brand-andaman transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
-        <p className="mt-24">
-          <Link href="/" className="text-small text-on-dark-muted hover:underline">
-            {labels['admin.nav.back_to_site']}
-          </Link>
-        </p>
-      </aside>
+      <AdminSidebar
+        title={labels['admin.nav.title']}
+        menuLabel={labels['admin.nav.menu']}
+        dashboardItem={dashboardItem}
+        groups={groups}
+        backToSiteLabel={labels['admin.nav.back_to_site']}
+      />
       <div className="flex-1 p-24">{children}</div>
     </div>
   );

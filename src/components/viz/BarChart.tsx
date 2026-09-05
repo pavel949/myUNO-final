@@ -110,6 +110,17 @@ export default function BarChart({
                   textAnchor="middle"
                   fontSize={11}
                   fill={CHART_AXIS_TEXT}
+                  className="sm:hidden"
+                >
+                  {d.label.charAt(0).toUpperCase()}
+                </text>
+                <text
+                  x={x + barW / 2}
+                  y={height - 6}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill={CHART_AXIS_TEXT}
+                  className="hidden sm:inline"
                 >
                   {d.label}
                 </text>

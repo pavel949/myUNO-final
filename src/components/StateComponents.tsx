@@ -22,13 +22,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-        />
+        <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+        <circle cx="12" cy="12" r="2.5" strokeWidth={1.5} />
       </svg>
       <h3 className="text-subtitle text-text-ink mb-12">{title}</h3>
       {description && <p className="text-body text-text-stone mb-24">{description}</p>}
@@ -81,13 +78,11 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 9v2m0 4v2m0 4v2m0-12a9 9 0 0 0-9 9 9 9 0 0018 0 9 9 0 00-9-9z"
-        />
+        <circle cx="12" cy="12" r="9" strokeWidth={2} />
+        <path d="M12 8v4.5" strokeWidth={2} strokeLinecap="round" />
+        <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" />
       </svg>
       <h3 className="text-subtitle text-text-ink mb-12">{title}</h3>
       {description && <p className="text-body text-text-stone mb-24">{description}</p>}

@@ -72,9 +72,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['Outfit', 'sans-serif'],
-        body: ['Manrope', 'sans-serif'],
-        sans: ['Manrope', 'sans-serif'],
+        display: ['var(--font-outfit)', 'var(--font-noto-thai)', 'sans-serif'],
+        body: ['var(--font-manrope)', 'var(--font-noto-thai)', 'sans-serif'],
+        sans: ['var(--font-manrope)', 'var(--font-noto-thai)', 'sans-serif'],
       },
       fontSize: {
         // Typography (doc 06 §2.2)

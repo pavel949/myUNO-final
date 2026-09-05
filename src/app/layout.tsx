@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Manrope, Noto_Sans_Thai, Outfit } from 'next/font/google';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -23,6 +24,27 @@ const SURFACE_LABEL_KEYS = {
   buyer: 'nav.buying',
   public: 'nav.find_stay',
 } as const satisfies Record<Landing['reason'], string>;
+
+const outfit = Outfit({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
+const manrope = Manrope({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+
+const notoSansThai = Noto_Sans_Thai({
+  subsets: ['thai'],
+  weight: ['400', '500', '600'],
+  variable: '--font-noto-thai',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -108,7 +130,10 @@ export default async function RootLayout({
   });
 
   return (
-    <html lang={locale}>
+    <html
+      lang={locale}
+      className={`${outfit.variable} ${manrope.variable} ${notoSansThai.variable}`}
+    >
       <body className="min-h-screen flex flex-col">
         <Navbar
           user={

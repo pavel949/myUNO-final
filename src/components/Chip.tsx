@@ -1,7 +1,15 @@
 import React from 'react';
 
 type ChipVariant = 'filter' | 'status' | 'neutral';
-type ChipStatus = 'confirmed' | 'pending_payment' | 'requested' | 'declined' | 'cancelled' | 'default';
+type ChipStatus =
+  | 'confirmed'
+  | 'pending_payment'
+  | 'requested'
+  | 'declined'
+  | 'cancelled'
+  | 'closed'
+  | 'checked_in'
+  | 'default';
 
 interface ChipProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   children: React.ReactNode;
@@ -18,6 +26,8 @@ const statusClasses: Record<ChipStatus, string> = {
   requested: 'bg-state-warning-soft text-state-warning',
   declined: 'bg-state-error-soft text-state-error',
   cancelled: 'bg-state-error-soft text-state-error',
+  closed: 'bg-surface-paper text-text-stone border border-border-line',
+  checked_in: 'bg-state-info-soft text-state-info',
   default: 'bg-surface-paper text-text-ink border border-border-line',
 };
 

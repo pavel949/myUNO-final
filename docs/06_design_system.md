@@ -86,7 +86,7 @@ Loop one ships **light only** (ivory). Tokens are CSS variables so a dark theme 
 
 ## 3. Component library
 
-The living catalogue for §2 tokens and §3.1–3.2 primitives is `/design`. It matches Claude Design boards **01 · Foundations** and **02 · Component library**. Boards **03 · App shell** and **04 · Public surface** are implemented on the real navbar, admin sidebar, `RoleContextBanner`, landing, and search — not as a second look.
+The living catalogue for §2 tokens and §3.1–3.2 primitives is `/design`. It matches Claude Design boards **01 · Foundations** and **02 · Component library**. Boards **03–05** are implemented on the real navbar, admin sidebar, landing, search, and unit detail (gallery mosaic + sticky booking widget). Reviews, share/save, and a live calendar stay out until those products exist.
 
 Every component ships with **all** its states: default, hover/press, focus-visible (2px `brand.andaman` offset ring), disabled, loading, error — plus **empty, loading, and error patterns** for every data surface. States are not optional extras; a component PR without them fails review.
 

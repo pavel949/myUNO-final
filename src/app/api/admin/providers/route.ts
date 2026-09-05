@@ -1,6 +1,7 @@
 import { getProviderApplications } from '@/modules/services';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   const guard = await requireAdmin();

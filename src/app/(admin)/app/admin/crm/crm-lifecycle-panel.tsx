@@ -109,7 +109,7 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
                   : 'bg-surface-paper border border-border-line rounded-lg p-16 text-left hover:border-brand-andaman'
               }
             >
-              <p className="text-caption opacity-80">{stageLabel(stage.stage)}</p>
+              <p className="text-small opacity-80">{stageLabel(stage.stage)}</p>
               <p className="text-heading-3 font-bold">{stage.count}</p>
               <p className="text-small opacity-80">
                 ฿{stage.totalValue.toLocaleString()}

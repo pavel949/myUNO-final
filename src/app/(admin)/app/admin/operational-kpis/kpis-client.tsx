@@ -261,7 +261,7 @@ export default function AdminOperationalKpisClient({
                   </td>
                   <td className="p-12">
                     <span
-                      className={`inline-block px-8 py-4 rounded-full text-caption ${statusStyle[kpi.status] || ''}`}
+                      className={`inline-block px-8 py-4 rounded-full text-small ${statusStyle[kpi.status] || ''}`}
                     >
                       {statusLabel(kpi.status)}
                     </span>

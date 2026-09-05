@@ -109,7 +109,7 @@ export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {
       </div>
 
       {overdueCount > 0 && (
-        <div className="bg-state-warning-soft border border-state-warning rounded-md p-20">
+        <div className="bg-state-error-soft border border-state-error rounded-md p-20">
           <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
             {labels['admin.crm.dashboard.overdue_title']}
           </h2>
@@ -121,11 +121,11 @@ export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {
           </p>
           <ul className="space-y-8">
             {overduePreview.map((task) => (
-              <li key={task.id} className="text-body text-text-ink">
+              <li key={task.id} className="text-body font-semibold text-state-error">
                 {task.opportunity ? (
                   <Link
                     href={`/app/admin/crm/opportunities/${task.opportunity.id}`}
-                    className="text-brand-andaman font-semibold hover:underline"
+                    className="text-state-error font-semibold hover:underline"
                   >
                     {task.opportunity.title}
                   </Link>

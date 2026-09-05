@@ -4,6 +4,7 @@ import { FC, FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
+import { getOpportunityTypeChipClasses, getStageClasses } from '@/lib/crmPresentation';
 
 interface SerializedOpportunity extends Omit<CrmOpportunity, 'createdAt' | 'updatedAt' | 'expectedCloseAt' | 'nextActionAt' | 'wonAt' | 'lostAt'> {
   createdAt: string;
@@ -50,26 +51,17 @@ interface OpportunityDetailClientProps {
   labels?: Record<string, string>;
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  new: 'bg-surface-paper text-text-ink',
-  qualified: 'bg-state-success-soft text-state-success',
-  discovery: 'bg-state-info-soft text-state-info',
-  proposal: 'bg-state-warning-soft text-state-warning',
-  negotiation: 'bg-state-warning-soft text-state-warning',
-  nurture: 'bg-state-info-soft text-state-info',
-  won: 'bg-state-success-soft text-state-success',
-  lost: 'bg-state-error-soft text-state-error',
-};
-
+// Board 10: stage labels are Outfit 600, no emoji prefixes; the colour comes
+// from the sequential andaman ramp (getStageClasses), not a per-stage guess.
 const STAGE_LABELS: Record<string, string> = {
-  new: '🆕 New',
-  qualified: '✅ Qualified',
-  discovery: '🔍 Discovery',
-  proposal: '💼 Proposal',
-  negotiation: '🤝 Negotiation',
-  nurture: '🌱 Nurture',
-  won: '🏆 Won',
-  lost: '❌ Lost',
+  new: 'New',
+  qualified: 'Qualified',
+  discovery: 'Discovery',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  nurture: 'Nurture',
+  won: 'Won',
+  lost: 'Lost',
 };
 
 const getDaysInStage = (createdAt: string | Date): number => {
@@ -81,15 +73,14 @@ const getDaysInStage = (createdAt: string | Date): number => {
   return days;
 };
 
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `฿${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `฿${(value / 1_000).toFixed(1)}K`;
-  }
-  return `฿${value.toFixed(0)}`;
-};
+/**
+ * Full, non-abbreviated, thousands-separated figure — board 10 shows
+ * opportunity-level money this way ("฿8,600,000"), unlike the dashboard's
+ * aggregate rollups which abbreviate to K/M. valueThb is stored as whole
+ * baht (not satang), so this does not go through MoneyAmount, which would
+ * divide it by 100 again.
+ */
+const formatCurrency = (value: number): string => `฿${Math.round(value).toLocaleString('en-US')}`;
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'Not set';
@@ -113,6 +104,9 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
 
   const daysInStage = getDaysInStage(opportunity.createdAt);
   const weightedValue = ((opportunity.valueThb ?? 0) * opportunity.probability) / 100;
+  const isNextActionOverdue = Boolean(
+    opportunity.nextActionAt && new Date(opportunity.nextActionAt) < new Date()
+  );
 
   const logActivity = async (event: FormEvent) => {
     event.preventDefault();
@@ -203,7 +197,7 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
           <div className="space-y-16">
             <div>
               <p className="text-small text-text-secondary mb-8">Stage</p>
-              <span className={`inline-block px-12 py-4 rounded-full font-semibold text-small ${STAGE_COLORS[opportunity.stage]}`}>
+              <span className={`inline-block px-12 py-4 rounded-full font-display font-semibold text-small ${getStageClasses(opportunity.stage)}`}>
                 {STAGE_LABELS[opportunity.stage]}
               </span>
             </div>
@@ -238,13 +232,13 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
           <div className="space-y-16">
             <div>
               <p className="text-small text-text-secondary mb-4">Expected Value</p>
-              <p className="text-heading-1 font-semibold text-text-ink">
+              <p className="text-heading-1 font-display font-semibold tabular-nums text-text-ink">
                 {formatCurrency(opportunity.valueThb ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-small text-text-secondary mb-4">Weighted Value</p>
-              <p className="text-heading-2 font-semibold text-brand-andaman">
+              <p className="text-heading-2 font-display font-semibold tabular-nums text-brand-andaman">
                 {formatCurrency(weightedValue)}
               </p>
             </div>
@@ -266,9 +260,9 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
           </div>
           <div>
             <p className="text-small text-text-secondary mb-4">Type</p>
-            <p className="text-body text-text-ink capitalize">
-              {opportunity.type}
-            </p>
+            <span className={`inline-block px-12 py-4 rounded-full text-small font-medium capitalize ${getOpportunityTypeChipClasses(opportunity.type)}`}>
+              {opportunity.type.replace('_', ' ')}
+            </span>
           </div>
           <div>
             <p className="text-small text-text-secondary mb-4">Expected Close Date</p>
@@ -278,8 +272,9 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
           </div>
           <div>
             <p className="text-small text-text-secondary mb-4">Next Action Date</p>
-            <p className="text-body text-text-ink">
+            <p className={`text-body ${isNextActionOverdue ? 'font-semibold text-state-error' : 'text-text-ink'}`}>
               {formatDate(opportunity.nextActionAt)}
+              {isNextActionOverdue && ' — overdue'}
             </p>
           </div>
           {opportunity.project && (

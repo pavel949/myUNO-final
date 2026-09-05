@@ -825,7 +825,7 @@ export function MCDashboardClient({
                               {statusLabel(booking.status)}
                             </span>
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
-                              <p className="text-caption text-state-warning mt-4">
+                              <p className="text-small text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
                                 {new Date(booking.requestExpiresAt).toLocaleString()}
                               </p>

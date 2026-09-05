@@ -27,6 +27,7 @@ export default async function CrmPage() {
     'admin.crm.source': 'Source',
     'admin.crm.value': 'Value, THB',
     'admin.crm.next_action': 'Next action',
+    'admin.crm.next_action_overdue': 'Next action overdue',
     'admin.crm.partner': 'External partner',
     'admin.crm.create': 'Create',
     'admin.crm.empty': 'No active opportunities.',

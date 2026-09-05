@@ -196,7 +196,7 @@ export default function AdminTicketsClient({
                       ? ` · ${labels['admin.tickets.assigned_to']} ${ticket.assigneeName}`
                       : ` · ${labels['admin.tickets.unassigned']}`}
                   </p>
-                  <p className="text-caption text-text-secondary mt-4">
+                  <p className="text-small text-text-secondary mt-4">
                     {ticket.categoryKey} · {ticket.priority}
                     {ticket.slaDueAt
                       ? ` · ${labels['admin.tickets.sla_due']} ${new Date(ticket.slaDueAt).toLocaleString()}`

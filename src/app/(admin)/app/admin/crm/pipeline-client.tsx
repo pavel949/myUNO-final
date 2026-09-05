@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { getOpportunityTypeChipClasses, getStageClasses } from '@/lib/crmPresentation';
 
 type Contact = { id: string; firstName: string; lastName: string; email: string | null; phone: string | null };
 type Opportunity = {
@@ -90,9 +91,15 @@ export default function CrmPipelineClient({
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-12 mb-24">
         {STAGES.map((stage) => (
           <div key={stage} className="bg-surface-paper border border-border-line rounded-lg p-16">
-            <p className="text-small text-text-secondary capitalize">{stage.replace('_', ' ')}</p>
-            <p className="text-heading-3 font-bold text-text-ink">{summary[stage]?.count ?? 0}</p>
-            <p className="text-small text-text-secondary">฿{(summary[stage]?.valueThb ?? 0).toLocaleString()}</p>
+            <div className="flex items-center justify-between gap-8 mb-8">
+              <p className="text-title capitalize">{stage.replace('_', ' ')}</p>
+              <span className="px-8 py-2 rounded-full bg-surface-ivory text-small font-medium">
+                {summary[stage]?.count ?? 0}
+              </span>
+            </div>
+            <p className="font-display font-medium tabular-nums text-small text-text-secondary pt-8 border-t border-border-line">
+              ฿{(summary[stage]?.valueThb ?? 0).toLocaleString()}
+            </p>
           </div>
         ))}
       </div>
@@ -116,19 +123,37 @@ export default function CrmPipelineClient({
       ) : null}
 
       <div className="grid xl:grid-cols-3 gap-16">
-        {opportunities.length === 0 ? <p>{labels['admin.crm.empty']}</p> : opportunities.map((item) => (
+        {opportunities.length === 0 ? <p>{labels['admin.crm.empty']}</p> : opportunities.map((item) => {
+          const isOverdue = Boolean(item.nextActionAt && new Date(item.nextActionAt) < new Date());
+          return (
           <article key={item.id} className="bg-surface-paper border border-border-line rounded-lg p-20">
-            <div className="flex justify-between gap-8 mb-8"><span className="text-small uppercase tracking-wide text-text-secondary">{item.type.replace('_', ' ')}</span><span className="text-small font-semibold">{item.stage}</span></div>
+            <div className="flex justify-between gap-8 mb-8">
+              <span className={`px-8 py-2 rounded-full text-small font-medium ${getOpportunityTypeChipClasses(item.type)}`}>
+                {item.type.replace('_', ' ')}
+              </span>
+              <span className={`px-8 py-2 rounded-full text-small font-medium ${getStageClasses(item.stage)}`}>
+                {item.stage.replace('_', ' ')}
+              </span>
+            </div>
             <h2 className="text-heading-3 font-semibold text-text-ink">{item.title}</h2>
             <p className="text-body text-text-secondary">{item.identity.firstName} {item.identity.lastName}</p>
-            <p className="text-small text-text-secondary mt-8">{item.source} · {item.probability}% · ฿{(item.valueThb ?? 0).toLocaleString()}</p>
+            <p className="text-small text-text-secondary mt-8">
+              {item.source} · {item.probability}% ·{' '}
+              <span className="font-display font-medium tabular-nums">฿{(item.valueThb ?? 0).toLocaleString()}</span>
+            </p>
             {item.externalPartner ? <p className="text-small mt-4">Partner: {item.externalPartner}</p> : null}
+            {isOverdue && (
+              <p className="text-small font-semibold text-state-error mt-8">
+                {labels['admin.crm.next_action_overdue'] || 'Next action overdue'}
+              </p>
+            )}
             <select disabled={busy} value={item.stage} onChange={(event) => move(item.id, event.target.value)} className="w-full h-40 mt-16 px-8 border border-border-line rounded-sm">
               {STAGES.map((stage) => <option key={stage} value={stage}>{stage.replace('_', ' ')}</option>)}
               <option value="won">won</option><option value="lost">lost</option>
             </select>
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

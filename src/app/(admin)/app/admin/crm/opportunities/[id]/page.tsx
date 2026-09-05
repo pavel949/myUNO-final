@@ -129,6 +129,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     'admin.crm.activity.submit': 'Add note',
     'admin.crm.activity.saving': 'Saving…',
     'admin.crm.activity.error': 'Could not save activity.',
+    'admin.crm.next_action_overdue': 'Next action overdue',
   });
 
   const breadcrumbs = [
@@ -152,9 +153,16 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
               ← {labels['admin.crm.opportunities.back_link']}
             </Link>
           </div>
-          <h1 className="text-heading-1 font-bold text-text-ink">
-            {opportunity.title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-12">
+            <h1 className="text-heading-1 font-bold text-text-ink">
+              {opportunity.title}
+            </h1>
+            {opportunity.nextActionAt && opportunity.nextActionAt < new Date() && (
+              <span className="px-12 py-4 rounded-full bg-state-error-soft text-state-error text-small font-semibold">
+                {labels['admin.crm.next_action_overdue']}
+              </span>
+            )}
+          </div>
           <p className="text-body text-text-secondary mt-8">
             {labels['admin.crm.opportunities.details_heading']}
           </p>

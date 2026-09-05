@@ -1,23 +1,24 @@
 /**
- * GET /api/tm30/[id]/passport
- * Get passport data for a TM30 filing (with access logging).
- * Staff only. Access is audit-logged.
+ * GET /api/tm30/[id]/passport?reason=...
+ * Get passport data for a TM30 filing. Staff/admin only — never MC/juristic
+ * (board 19's permission matrix, one of its two absolutes) — and only with
+ * a stated reason, which requirePassportAccess both requires and audit-logs.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
-  logTm30PassportAccess,
   decryptPassportNumber,
   safeDecrypt,
   buildTm30AddressBlock,
   TM30_IMMIGRATION_PORTAL_URL,
 } from '@/modules/ops';
-import { canAccessTm30Filing } from '@/app/libs/projectScope';
+import { requirePassportAccess } from '@/modules/core';
+import { canViewTm30PassportDetails } from '@/app/libs/projectScope';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -45,15 +46,39 @@ export async function GET(
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    if (!(await canAccessTm30Filing(user, filing.booking))) {
+    if (!canViewTm30PassportDetails(user, { projectId: filing.booking.projectId })) {
       return NextResponse.json(
-        { error: 'Only staff or MC members with unit scope can access passport data' },
+        { error: 'Only staff or admin may access passport data' },
         { status: 403 }
       );
     }
 
-    // Log access
-    await logTm30PassportAccess(prisma, params.id, user.identityId, 'viewed_passport_details');
+    const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+    if (!identity) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const reason = req.nextUrl.searchParams.get('reason') ?? undefined;
+    const access = await requirePassportAccess({
+      identity,
+      subjectIdentityId: filing.booking.guestIdentityId,
+      entityType: 'tm30_filing',
+      entityId: filing.id,
+      reason,
+      resource: { unitId: filing.booking.unitId, projectId: filing.booking.projectId },
+    });
+    if (!access.ok) {
+      return NextResponse.json(
+        {
+          error:
+            access.error === 'reason_required'
+              ? 'State a reason before viewing this passport.'
+              : 'Only staff or admin may access passport data',
+          code: access.error,
+        },
+        { status: access.error === 'reason_required' ? 400 : 403 }
+      );
+    }
 
     // Decrypt passport for response
     const decryptedPassport = filing.bookingGuest?.passportNumber

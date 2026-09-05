@@ -44,11 +44,18 @@ export default function Tm30QueueClient({
   filings: initialFilings,
   labels,
   queueProjectId,
+  canViewPassport = true,
 }: {
   filings: QueueFiling[];
   labels: Labels;
   /** When set, refresh the list from GET /api/tm30/queue after actions. */
   queueProjectId?: string | null;
+  /**
+   * Staff/admin only — never MC/juristic (board 19's permission matrix).
+   * The server already refuses the request either way; this only keeps the
+   * UI from offering an action MC will just get a 403 back from.
+   */
+  canViewPassport?: boolean;
 }) {
   const router = useRouter();
   const [filings, setFilings] = useState(initialFilings);
@@ -177,6 +184,7 @@ export default function Tm30QueueClient({
       <Tm30FilingDetailDrawer
         filing={activeFiling}
         labels={labels}
+        canViewPassport={canViewPassport}
         onClose={() => setActiveFiling(null)}
         onComplete={() => router.refresh()}
       />

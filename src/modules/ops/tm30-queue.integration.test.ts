@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking, createBookingGuest } from '@/test/util';
 import {
   createTm30Filing,
-  logTm30PassportAccess,
   checkTm30Escalations,
   getTm30Queue,
 } from './tm30-filing.service';
@@ -100,59 +99,6 @@ describe('TM30 queue operations', () => {
 
       const filed = await getTm30Queue(db, project.id, ['filed']);
       expect(filed.length).toBe(1);
-    });
-  });
-
-  describe('logTm30PassportAccess', () => {
-    it('writes audit log entry when passport data is accessed', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
-      const guest = await createIdentity();
-      const staff = await createIdentity();
-
-      const booking = await createBooking({
-        unitId: unit.id,
-        projectId: project.id,
-        guestIdentityId: guest.id,
-      });
-
-      const bookingGuest = await createBookingGuest({
-        bookingId: booking.id,
-        fullName: 'John Doe',
-        nationality: 'US',
-        passportNumber: 'AB123456',
-      });
-
-      const filing = await createTm30Filing(db, {
-        bookingId: booking.id,
-        bookingGuestId: bookingGuest.id,
-      });
-
-      const auditLogsBefore = await db.auditLog.count();
-
-      await logTm30PassportAccess(db, filing.id, staff.id, 'viewed_passport_details');
-
-      const auditLogsAfter = await db.auditLog.count();
-
-      expect(auditLogsAfter).toBe(auditLogsBefore + 1);
-
-      const auditLog = await db.auditLog.findFirst({
-        where: {
-          entityId: filing.id,
-          action: 'viewed_passport_details',
-        },
-      });
-
-      expect(auditLog).toBeTruthy();
-      expect(auditLog!.actorIdentityId).toBe(staff.id);
-    });
-
-    it('throws when filing not found', async () => {
-      const staff = await createIdentity();
-
-      await expect(
-        logTm30PassportAccess(db, 'nonexistent', staff.id)
-      ).rejects.toThrow('not found');
     });
   });
 

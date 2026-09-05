@@ -34,6 +34,10 @@ export interface AccountProfile {
   preferredLocale: string;
   /** False for an identity created by staff that has never set a password. */
   hasPassword: boolean;
+  /** Whether a Google identity is linked (modules/auth's callback links by verified email). */
+  googleConnected: boolean;
+  /** True once the person has asked to delete their account; still inside the grace period until anonymizeDeletedIdentities runs. */
+  deletionRequested: boolean;
 }
 
 export async function getAccountProfile(
@@ -52,9 +56,15 @@ export async function getAccountProfile(
       phoneVerifiedAt: true,
       preferredLocale: true,
       hashedPassword: true,
+      status: true,
     },
   });
   if (!identity) return null;
+
+  const googleAccount = await db.authAccount.findFirst({
+    where: { identityId, provider: 'google' },
+    select: { id: true },
+  });
 
   return {
     identityId: identity.id,
@@ -67,7 +77,48 @@ export async function getAccountProfile(
     preferredLocale: identity.preferredLocale,
     // The hash itself never leaves this function.
     hasPassword: Boolean(identity.hashedPassword),
+    googleConnected: Boolean(googleAccount),
+    deletionRequested: identity.status === 'deletion_requested',
   };
+}
+
+/**
+ * Start the PDPA deletion grace period (doc 12 §2): the account stays fully
+ * usable until anonymizeDeletedIdentities (retention.service) processes it
+ * after `gracePeriodDays`. That job never touches a `merged` identity and
+ * this never overwrites one either — merging and deleting are different
+ * requests, and a duplicate folded into another identity is not this
+ * person's to delete a second time.
+ */
+export async function requestAccountDeletion(db: PrismaClient, identityId: string): Promise<void> {
+  const identity = await db.identity.findUnique({ where: { id: identityId }, select: { status: true } });
+  if (!identity || identity.status === 'merged') {
+    throw new Error('This account cannot be deleted this way.');
+  }
+
+  await db.identity.update({ where: { id: identityId }, data: { status: 'deletion_requested' } });
+  await logAudit({
+    actorIdentityId: identityId,
+    action: 'identity_deletion_requested',
+    entityType: 'identity',
+    entityId: identityId,
+  });
+}
+
+/** Reverses requestAccountDeletion — only while still inside the grace period (status check enforces this: once anonymized, there is nothing left to restore). */
+export async function cancelAccountDeletion(db: PrismaClient, identityId: string): Promise<void> {
+  const identity = await db.identity.findUnique({ where: { id: identityId }, select: { status: true } });
+  if (!identity || identity.status !== 'deletion_requested') {
+    throw new Error('No pending deletion request to cancel.');
+  }
+
+  await db.identity.update({ where: { id: identityId }, data: { status: 'active' } });
+  await logAudit({
+    actorIdentityId: identityId,
+    action: 'identity_deletion_cancelled',
+    entityType: 'identity',
+    entityId: identityId,
+  });
 }
 
 export interface UpdateProfileInput {

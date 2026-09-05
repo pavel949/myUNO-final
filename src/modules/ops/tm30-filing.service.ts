@@ -180,40 +180,6 @@ export async function getTm30Queue(
 }
 
 /**
- * Log access to TM30 filing passport data (for audit trail).
- * Called when staff views passport details for a filing.
- */
-export async function logTm30PassportAccess(
-  db: PrismaClient,
-  tm30FilingId: string,
-  accessorIdentityId: string,
-  action: string = 'viewed_passport'
-): Promise<void> {
-  const filing = (await db.tm30Filing.findUnique({
-    where: { id: tm30FilingId },
-    include: { booking: true, bookingGuest: true },
-  })) as any;
-
-  if (!filing) {
-    throw new Error(`Tm30Filing ${tm30FilingId} not found`);
-  }
-
-  // Log access in the audit log
-  await db.auditLog.create({
-    data: {
-      action,
-      entityType: 'tm30_filing',
-      entityId: tm30FilingId,
-      actorIdentityId: accessorIdentityId,
-      data: {
-        bookingId: filing.bookingId,
-        bookingGuestId: filing.bookingGuestId,
-      } as any,
-    },
-  });
-}
-
-/**
  * Check and escalate TM30 filings that are approaching their deadline.
  * Sets escalated status when due_at - escalation_hours_before is reached.
  */

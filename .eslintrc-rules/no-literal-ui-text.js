@@ -91,7 +91,7 @@ module.exports = {
           'className', 'id', 'htmlFor', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
           'basePath',
           'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
-          'variant', 'size',
+          'variant', 'size', 'confirmVariant',
           // SVG
           'fill', 'stroke', 'strokeWidth', 'strokeLinecap', 'strokeLinejoin', 'strokeDasharray',
           'viewBox', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'width',

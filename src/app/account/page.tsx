@@ -61,6 +61,24 @@ export default async function AccountPage() {
     'account.privacy.export': 'Download my data',
     'account.privacy.exporting': 'Preparing download…',
     'account.privacy.export_error': 'Export failed. Please try again.',
+    'account.connected.title': 'Connected accounts',
+    'account.connected.google_linked': 'Google — connected',
+    'account.connected.google_not_linked': 'Google — not connected. Sign out and use "Continue with Google" on the login screen to link it.',
+    'account.delete.title': 'Delete account',
+    'account.delete.hint':
+      'This starts a 30-day grace period. Your name and contact details are then cleared; bookings, statements and the ledger are kept for financial and legal record, as required by law.',
+    'account.delete.button': 'Delete my account',
+    'account.delete.confirm_title': 'Delete your myUNO account?',
+    'account.delete.consequence_1': 'Your name, email and phone are cleared after 30 days.',
+    'account.delete.consequence_2': 'Bookings, statements and the ledger are kept — never deleted, only anonymized.',
+    'account.delete.consequence_3': 'You can cancel any time in the next 30 days by logging back in.',
+    'account.delete.consequences_heading': 'What happens:',
+    'account.delete.confirm_button': 'Delete my account',
+    'account.delete.cancel_button': 'Keep my account',
+    'account.delete.pending_notice':
+      'Your account is scheduled for deletion. You can still cancel this within the grace period.',
+    'account.delete.cancel_request': 'Cancel deletion',
+    'account.delete.error': 'Could not process that request. Please try again.',
   });
 
   return <AccountClient profile={profile} labels={labels} />;

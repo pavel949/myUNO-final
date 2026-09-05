@@ -87,6 +87,8 @@ export {
   getAccountProfile,
   updateAccountProfile,
   changeAccountPassword,
+  requestAccountDeletion,
+  cancelAccountDeletion,
   getNotificationSettings,
   setNotificationPreference,
   SUPPORTED_LOCALES,

@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import type { AccountProfile } from '@/modules/core';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface Setting {
   type: string;
@@ -29,6 +31,12 @@ export default function AccountClient({
   const [unmutable, setUnmutable] = useState<string[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [exportState, setExportState] = useState<'idle' | 'exporting' | 'error'>('idle');
+
+  const router = useRouter();
+  const [deletionRequested, setDeletionRequested] = useState(profile.deletionRequested);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/account/notifications')
@@ -114,6 +122,42 @@ export default function AccountClient({
       setExportState('error');
     }
   }, []);
+
+  const requestDeletion = useCallback(async () => {
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || labels['account.delete.error']);
+      }
+      setDeletionRequested(true);
+      setDeleteConfirmOpen(false);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : labels['account.delete.error']);
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [labels]);
+
+  const cancelDeletion = useCallback(async () => {
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/api/account/delete', { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || labels['account.delete.error']);
+      }
+      setDeletionRequested(false);
+      router.refresh();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : labels['account.delete.error']);
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [labels, router]);
 
   return (
     <div className="min-h-screen bg-surface-background p-24 md:p-32">
@@ -248,7 +292,18 @@ export default function AccountClient({
           )}
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+            {labels['account.connected.title']}
+          </h2>
+          <p className={`text-body ${profile.googleConnected ? 'text-state-success' : 'text-text-secondary'}`}>
+            {profile.googleConnected
+              ? labels['account.connected.google_linked']
+              : labels['account.connected.google_not_linked']}
+          </p>
+        </section>
+
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
           <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
             {labels['account.notifications.title']}
           </h2>
@@ -299,7 +354,57 @@ export default function AccountClient({
             </table>
           </div>
         </section>
+
+        <section className="bg-surface-paper border border-state-error rounded-lg p-24 mt-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+            {labels['account.delete.title']}
+          </h2>
+          <p className="text-body text-text-secondary mb-16">{labels['account.delete.hint']}</p>
+          {deleteError && (
+            <p className="text-small text-state-error mb-12" role="alert">
+              {deleteError}
+            </p>
+          )}
+          {deletionRequested ? (
+            <>
+              <p className="text-small text-state-warning mb-12">{labels['account.delete.pending_notice']}</p>
+              <button
+                type="button"
+                onClick={cancelDeletion}
+                disabled={deleteBusy}
+                className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition disabled:opacity-50"
+              >
+                {labels['account.delete.cancel_request']}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="h-48 px-24 rounded-sm bg-state-error text-surface-ivory font-semibold hover:opacity-90 transition"
+            >
+              {labels['account.delete.button']}
+            </button>
+          )}
+        </section>
       </div>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title={labels['account.delete.confirm_title']}
+        consequencesHeading={labels['account.delete.consequences_heading']}
+        consequences={[
+          labels['account.delete.consequence_1'],
+          labels['account.delete.consequence_2'],
+          labels['account.delete.consequence_3'],
+        ]}
+        confirmLabel={labels['account.delete.confirm_button']}
+        cancelLabel={labels['account.delete.cancel_button']}
+        confirmVariant="destructive"
+        isLoading={deleteBusy}
+        onConfirm={requestDeletion}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
     </div>
   );
 }

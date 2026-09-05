@@ -44,11 +44,14 @@ export default function Tm30FilingDetailDrawer({
   labels,
   onClose,
   onComplete,
+  canViewPassport = true,
 }: {
   filing: QueueFiling | null;
   labels: Labels;
   onClose: () => void;
   onComplete: () => void;
+  /** Staff/admin only — never MC/juristic (board 19). The server refuses either way; this keeps the reason-gate from even appearing for a role that can't pass it. */
+  canViewPassport?: boolean;
 }) {
   const [details, setDetails] = useState<PassportDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,37 +59,41 @@ export default function Tm30FilingDetailDrawer({
   const [error, setError] = useState<string | null>(null);
   const [failureNote, setFailureNote] = useState('');
   const [copied, setCopied] = useState(false);
+  const [accessReason, setAccessReason] = useState('');
   const receiptInputRef = useRef<HTMLInputElement>(null);
 
-  const loadDetails = useCallback(async () => {
-    if (!filing) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/tm30/${filing.id}/passport`);
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.error || labels['staff.tm30.error_generic']);
+  // Opening this passport is logged with whatever reason is typed below —
+  // requirePassportAccess (core) both requires it and writes the audit
+  // entry, so nothing here fetches until the person states one.
+  const loadDetails = useCallback(
+    async (reason: string) => {
+      if (!filing) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/tm30/${filing.id}/passport?reason=${encodeURIComponent(reason)}`);
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          throw new Error(data?.error || labels['staff.tm30.error_generic']);
+        }
+        setDetails(await response.json());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : labels['staff.tm30.error_generic']);
+        setDetails(null);
+      } finally {
+        setLoading(false);
       }
-      setDetails(await response.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : labels['staff.tm30.error_generic']);
-      setDetails(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [filing, labels]);
+    },
+    [filing, labels]
+  );
 
   useEffect(() => {
-    if (!filing) {
-      setDetails(null);
-      setError(null);
-      setFailureNote('');
-      setCopied(false);
-      return;
-    }
-    void loadDetails();
-  }, [filing, loadDetails]);
+    setDetails(null);
+    setError(null);
+    setFailureNote('');
+    setCopied(false);
+    setAccessReason('');
+  }, [filing]);
 
   if (!filing) {
     return null;
@@ -211,7 +218,35 @@ export default function Tm30FilingDetailDrawer({
 
         {loading ? (
           <p className="text-body text-text-secondary py-24">{labels['staff.tm30.detail_loading']}</p>
-        ) : details ? (
+        ) : !canViewPassport ? (
+          <p className="text-body text-text-secondary py-24">{labels['staff.tm30.passport_restricted']}</p>
+        ) : !details ? (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const reason = accessReason.trim();
+              if (!reason) {
+                setError(labels['staff.tm30.reason_required']);
+                return;
+              }
+              void loadDetails(reason);
+            }}
+            className="py-16"
+          >
+            <p className="text-body text-text-secondary mb-12">{labels['staff.tm30.reason_prompt']}</p>
+            <input
+              type="text"
+              value={accessReason}
+              onChange={(event) => setAccessReason(event.target.value)}
+              placeholder={labels['staff.tm30.reason_placeholder']}
+              className="h-48 w-full px-16 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:ring-2 focus:ring-brand-andaman focus:outline-none mb-16"
+            />
+            <Button type="submit">{labels['staff.tm30.reason_submit']}</Button>
+            <p className="text-small text-text-secondary mt-12">
+              {labels['staff.tm30.passport_access_logged']}
+            </p>
+          </form>
+        ) : (
           <>
             <section className="mb-24">
               <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
@@ -300,7 +335,7 @@ export default function Tm30FilingDetailDrawer({
               </Button>
             </section>
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );

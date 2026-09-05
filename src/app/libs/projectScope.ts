@@ -95,6 +95,18 @@ export function hasProjectStaffAccess(user: CurrentUser, projectId: string): boo
   );
 }
 
+/**
+ * Staff or admin only — never MC/juristic. Board 19's permission matrix
+ * states "open a guest passport" as one of its two absolutes; TM30 passport
+ * details are exactly that, so this deliberately does not fall through to
+ * `hasManagedUnitMcAccess` the way canAccessTm30Filing (mark-filed/failed)
+ * does. See requirePassportAccess (core), which this route's handler calls
+ * for the reason+audit-log half of the same rule.
+ */
+export function canViewTm30PassportDetails(user: CurrentUser, input: { projectId: string }): boolean {
+  return hasProjectStaffAccess(user, input.projectId);
+}
+
 /** Staff or MC member with an active managed-unit engagement may file TM30 (doc 03). */
 export async function canAccessTm30Filing(
   user: CurrentUser,

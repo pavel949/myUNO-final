@@ -107,6 +107,7 @@ export default async function McTm30Page({ searchParams }: McTm30PageProps) {
     'staff.tm30.passport_dob': 'Date of birth',
     'staff.tm30.passport_missing': 'Not captured yet',
     'staff.tm30.passport_access_logged': 'Access to this data is logged for compliance.',
+    'staff.tm30.passport_restricted': 'Passport details are restricted to myUNO staff.',
     'staff.tm30.address_section': 'Address for immigration portal',
     'staff.tm30.address_copy': 'Copy address',
     'staff.tm30.address_copied': 'Copied',
@@ -168,6 +169,7 @@ export default async function McTm30Page({ searchParams }: McTm30PageProps) {
             arrival: filing.arrival.toISOString(),
           }))}
           labels={labels}
+          canViewPassport={false}
         />
       </div>
     </main>

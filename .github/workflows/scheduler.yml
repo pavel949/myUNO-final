@@ -1,0 +1,121 @@
+# The real scheduler (T-047).
+#
+# Doc 15 §5 asks for hold expiry every 5 minutes and iCal import every 15.
+# Vercel Hobby refuses any cron firing more than once per day, so the two
+# entries in `vercel.json` are daily — which left holds sitting expired for up
+# to 24 hours and OTA calendars up to 24 hours stale in production.
+#
+# `/api/cron/run-frequent` is an ordinary authenticated route (see
+# `src/jobs/auth.ts`), so it does not care what drives it. This workflow calls
+# it on the cadence doc 15 actually specifies, at no cost. The Vercel crons
+# stay in place as a backstop: if GitHub Actions is unavailable, the schedule
+# degrades to daily rather than stopping.
+#
+# Two honest caveats, both the reason `SCHEDULER_MODE` exists rather than the
+# thresholds simply being tightened:
+#
+#   1. GitHub's scheduled workflows are best-effort. They queue behind the
+#      platform's own load, routinely fire minutes late, and can be skipped
+#      entirely under peak load. This is a good-enough scheduler, not a
+#      real-time one. The registry allows six intervals of slack for it.
+#   2. GitHub disables scheduled workflows in a repository with no activity
+#      for 60 days. On a quiet repo, check the Actions tab before trusting
+#      the cadence.
+#
+# Required repository configuration:
+#   Secret   CRON_SECRET  — must equal the value set in Vercel.
+#   Variable APP_BASE_URL — e.g. https://my-uno-final.vercel.app (no trailing slash).
+#
+# Once this is confirmed firing, set SCHEDULER_MODE=external in Vercel so the
+# admin scheduler panel judges these jobs against the real cadence instead of
+# the two-day Hobby window.
+
+name: Scheduler
+
+on:
+  schedule:
+    # Frequent slot — hold expiry, TM30 escalation, iCal import.
+    - cron: '*/5 * * * *'
+    # Nightly slot — 19:00 UTC / 02:00 ICT, matching vercel.json.
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Which dispatcher to run'
+        required: true
+        default: frequent
+        type: choice
+        options:
+          - frequent
+          - all
+
+# A slow run must never overlap the next tick and double-dispatch a job.
+# Newer runs queue rather than cancel, so a tick is delayed, never dropped.
+concurrency:
+  group: scheduler-${{ github.event.schedule || inputs.slot }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Resolve which dispatcher to call
+        id: slot
+        run: |
+          case "${{ github.event.schedule }}" in
+            '*/5 * * * *') echo "path=run-frequent" >> "$GITHUB_OUTPUT" ;;
+            '0 19 * * *')  echo "path=run-all"      >> "$GITHUB_OUTPUT" ;;
+            *)
+              if [ "${{ inputs.slot }}" = "all" ]; then
+                echo "path=run-all" >> "$GITHUB_OUTPUT"
+              else
+                echo "path=run-frequent" >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+          esac
+
+      - name: Check required configuration
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+        run: |
+          missing=0
+          [ -n "$CRON_SECRET" ]  || { echo "::error::Secret CRON_SECRET is not set."; missing=1; }
+          [ -n "$APP_BASE_URL" ] || { echo "::error::Variable APP_BASE_URL is not set."; missing=1; }
+          exit $missing
+
+      - name: Dispatch scheduled jobs
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+          SLOT_PATH: ${{ steps.slot.outputs.path }}
+        run: |
+          set -euo pipefail
+          url="${APP_BASE_URL%/}/api/cron/${SLOT_PATH}"
+          echo "Dispatching ${SLOT_PATH}"
+
+          # --max-time guards against a hung function holding the runner.
+          # The body is captured so a failure names which job failed rather
+          # than only its status code; the route returns per-job results.
+          body_file="$(mktemp)"
+          status="$(curl -sS -X POST "$url" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H 'Content-Type: application/json' \
+            --max-time 300 \
+            -o "$body_file" \
+            -w '%{http_code}')"
+
+          echo "HTTP ${status}"
+          cat "$body_file"
+          echo
+
+          # A non-2xx is a real failure: the route already isolates each job
+          # and returns 500 only when one actually threw. Failing the step is
+          # what surfaces it — `reportError` pages ALERT_WEBHOOK_URL from the
+          # application side, and this is the second, independent signal.
+          case "$status" in
+            2*) ;;
+            401) echo "::error::Rejected by the cron gate. CRON_SECRET here does not match Vercel."; exit 1 ;;
+            *)   echo "::error::Dispatcher ${SLOT_PATH} returned HTTP ${status}."; exit 1 ;;
+          esac

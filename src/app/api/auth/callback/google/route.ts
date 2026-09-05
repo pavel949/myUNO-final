@@ -15,6 +15,7 @@ interface GoogleTokenResponse {
 interface GoogleUserInfo {
   id: string;
   email: string;
+  verified_email: boolean;
   name: string;
   given_name: string;
   family_name: string;
@@ -110,6 +111,15 @@ export async function GET(request: NextRequest) {
     if (!googleUser.email) {
       console.error('Google user has no email:', googleUser);
       return loginRedirect('Google account has no email. Please use a different account.');
+    }
+
+    // The whole identity-linking mechanism rests on this: an unverified
+    // Google address is refused rather than trusted to match an existing
+    // identity or mint a new one (board 18's stated rule). Google's own
+    // consent screen lets a user add an alias they haven't confirmed yet,
+    // so this is a real, reachable case, not a defensive formality.
+    if (!googleUser.verified_email) {
+      return loginRedirect('Please verify your email address with Google first.');
     }
 
     // Step 3: Find or create identity

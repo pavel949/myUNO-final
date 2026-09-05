@@ -12,8 +12,10 @@ export default async function ResetPasswordPage() {
     'auth.reset.confirm_subtitle': 'Choose a new password for your account.',
     'auth.reset.email': 'Email',
     'auth.reset.new_password': 'New password',
+    'auth.reset.new_password_confirm': 'Repeat it',
     'auth.reset.password_help':
       'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.',
+    'auth.reset.error_mismatch': 'These do not match',
     'auth.reset.request_submit': 'Send reset link',
     'auth.reset.confirm_submit': 'Set new password',
     'auth.reset.request_sent':
@@ -34,7 +36,9 @@ export default async function ResetPasswordPage() {
               confirmSubtitle: labels['auth.reset.confirm_subtitle'],
               email: labels['auth.reset.email'],
               newPassword: labels['auth.reset.new_password'],
+              newPasswordConfirm: labels['auth.reset.new_password_confirm'],
               passwordHelp: labels['auth.reset.password_help'],
+              errorMismatch: labels['auth.reset.error_mismatch'],
               requestSubmit: labels['auth.reset.request_submit'],
               confirmSubmit: labels['auth.reset.confirm_submit'],
               requestSent: labels['auth.reset.request_sent'],

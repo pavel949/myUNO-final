@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
 import { GoogleLoginButton } from './google-login-button';
 
 interface LoginFormLabels {
@@ -91,14 +92,12 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Input
+      <PasswordInput
         label={labels.password}
-        type="password"
         autoComplete="current-password"
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        error={undefined}
       />
       {error && (
         <p className="text-small text-state-error" role="alert" aria-live="polite">

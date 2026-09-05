@@ -348,6 +348,39 @@ export async function generateClaimLink(db: PrismaClient, input: GenerateClaimLi
 }
 
 /**
+ * Self-serve entry point for "claim your existing account" (register page,
+ * board 18: most guests already exist from a booking, so registering fresh
+ * would create a duplicate identity). Enumeration-safe on the same pattern
+ * as requestPasswordReset — a non-existent email and an email that exists
+ * but is already active both do nothing and both return successfully, so a
+ * caller can never learn which from the response.
+ */
+export async function requestAccountClaim(db: PrismaClient, input: { email: string }): Promise<{ success: true }> {
+  const { email } = input;
+  const identity = await db.identity.findUnique({ where: { email } });
+
+  if (identity && identity.status === 'invited') {
+    const { sendEmail } = await import('@/modules/auth');
+    const token = await generateClaimLink(db, { identityId: identity.id });
+    const claimUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/claim?token=${token}`;
+
+    await sendEmail({
+      to: email,
+      subject: 'Claim your myUNO account',
+      html: `
+        <p>We found a booking under this email. Set a password to claim your account:</p>
+        <p><a href="${claimUrl}">Claim account</a></p>
+        <p>Or copy this link: ${claimUrl}</p>
+        <p>This link expires in 7 days.</p>
+        <p>If you didn't request this, ignore this email.</p>
+      `,
+    });
+  }
+
+  return { success: true };
+}
+
+/**
  * Claim an invited identity by setting password and validating claim token
  */
 export async function claimIdentity(db: PrismaClient, input: ClaimIdentityInput): Promise<Identity> {

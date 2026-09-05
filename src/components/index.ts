@@ -1,6 +1,8 @@
 // Core primitive components (doc 06 §3.1)
 export { Button } from './Button';
 export { Input } from './Input';
+export { PasswordInput } from './PasswordInput';
+export { PasswordStrengthMeter, scorePasswordStrength } from './PasswordStrengthMeter';
 export { Textarea } from './Textarea';
 export { Select } from './Select';
 export { Chip } from './Chip';

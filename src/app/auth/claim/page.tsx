@@ -17,6 +17,13 @@ export default async function ClaimPage() {
     'auth.claim.error_generic': 'Could not activate the account. Please try again.',
     'auth.claim.error_invalid': 'This link is invalid or has expired. Ask us for a new one.',
     'auth.claim.loading': 'Checking your link…',
+    'auth.claim.request_title': 'Claim your account',
+    'auth.claim.request_subtitle':
+      'If you have stayed with us before, you already have one. Enter your email and we will send a link to claim it.',
+    'auth.claim.request_email': 'Email',
+    'auth.claim.request_submit': 'Send claim link',
+    'auth.claim.request_sent': 'If that email has a stay with us, a claim link is on its way.',
+    'auth.claim.login_instead': 'Have a password already? Log in',
   });
 
   return (
@@ -34,6 +41,12 @@ export default async function ClaimPage() {
           errorGeneric: labels['auth.claim.error_generic'],
           errorInvalid: labels['auth.claim.error_invalid'],
           loading: labels['auth.claim.loading'],
+          requestTitle: labels['auth.claim.request_title'],
+          requestSubtitle: labels['auth.claim.request_subtitle'],
+          requestEmail: labels['auth.claim.request_email'],
+          requestSubmit: labels['auth.claim.request_submit'],
+          requestSent: labels['auth.claim.request_sent'],
+          loginInstead: labels['auth.claim.login_instead'],
         }}
       />
     </Suspense>

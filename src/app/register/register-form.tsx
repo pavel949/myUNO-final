@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
+import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
 
 interface RegisterFormLabels {
   firstName: string;
@@ -16,6 +18,8 @@ interface RegisterFormLabels {
   errorGeneric: string;
   haveAccount: string;
   loginLink: string;
+  alreadyStayed: string;
+  claimLink: string;
 }
 
 export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
@@ -56,6 +60,12 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-24">
+      <p className="text-small text-text-secondary -mb-8">
+        {labels.alreadyStayed}{' '}
+        <Link href="/auth/claim" className="text-brand-andaman font-semibold hover:underline">
+          {labels.claimLink}
+        </Link>
+      </p>
       <div className="grid grid-cols-2 gap-16">
         <Input
           label={labels.firstName}
@@ -80,16 +90,18 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Input
-        label={labels.password}
-        type="password"
-        autoComplete="new-password"
-        required
-        helpText={labels.passwordHelp}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        error={error || undefined}
-      />
+      <div className="flex flex-col gap-8">
+        <PasswordInput
+          label={labels.password}
+          autoComplete="new-password"
+          required
+          helpText={labels.passwordHelp}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={error || undefined}
+        />
+        <PasswordStrengthMeter password={password} />
+      </div>
       <Button type="submit" fullWidth isLoading={loading}>
         {labels.submit}
       </Button>

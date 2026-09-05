@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
 
 interface ResetPasswordLabels {
   title: string;
@@ -12,7 +13,9 @@ interface ResetPasswordLabels {
   confirmSubtitle: string;
   email: string;
   newPassword: string;
+  newPasswordConfirm: string;
   passwordHelp: string;
+  errorMismatch: string;
   requestSubmit: string;
   confirmSubmit: string;
   requestSent: string;
@@ -27,6 +30,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
 
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,6 +56,10 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   const handleConfirm = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    if (newPassword !== confirmPassword) {
+      setError(labels.errorMismatch);
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -83,14 +91,20 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
         <p className="text-body text-text-ink mb-24">{message}</p>
       ) : token ? (
         <form onSubmit={handleConfirm} className="flex flex-col gap-24">
-          <Input
+          <PasswordInput
             label={labels.newPassword}
-            type="password"
             autoComplete="new-password"
             required
             helpText={labels.passwordHelp}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <PasswordInput
+            label={labels.newPasswordConfirm}
+            autoComplete="new-password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             error={error || undefined}
           />
           <Button type="submit" fullWidth isLoading={loading}>

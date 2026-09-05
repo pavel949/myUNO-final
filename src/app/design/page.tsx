@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
+import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
 import { Textarea } from '@/components/Textarea';
 import { Select } from '@/components/Select';
 import { Chip } from '@/components/Chip';
@@ -21,6 +23,7 @@ export default function DesignPage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [guestCount, setGuestCount] = useState(2);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [strengthPreview, setStrengthPreview] = useState('correct-horse-battery');
 
   return (
     <div className="bg-surface-ivory min-h-screen py-40 px-16 md:px-24">
@@ -127,6 +130,17 @@ export default function DesignPage() {
                 <option value="ru">Русский</option>
                 <option value="th">ไทย</option>
               </Select>
+            </div>
+          </SubSection>
+
+          <SubSection title="Password — 44px reveal toggle, re-hides after 15s">
+            <div className="max-w-md flex flex-col gap-8">
+              <PasswordInput
+                label="Password"
+                value={strengthPreview}
+                onChange={(e) => setStrengthPreview(e.target.value)}
+              />
+              <PasswordStrengthMeter password={strengthPreview} />
             </div>
           </SubSection>
         </Section>

@@ -1,4 +1,5 @@
 /* eslint-disable no-restricted-imports */
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import {
@@ -365,19 +366,29 @@ describe('Owner statement sign-off (Q33)', () => {
 
     const ownerUser = currentUser(owner)
     const adminUser = currentUser(admin, true)
-    let call = 0
-    // The two requests interleave: each resolves its own actor's session.
-    mockGetCurrentUser.mockImplementation(() =>
-      Promise.resolve(call++ % 2 === 0 ? ownerUser : adminUser)
-    )
+    // The admin route calls getCurrentUser twice (once itself, once inside
+    // requireAdmin). A shared call-counter hands the owner session to the
+    // operator request and returns 403. Bind each request to its actor.
+    const sessionAls = new AsyncLocalStorage<ReturnType<typeof currentUser>>()
+    mockGetCurrentUser.mockImplementation(() => {
+      const user = sessionAls.getStore()
+      if (!user) {
+        throw new Error('sign-off race: getCurrentUser outside a request session')
+      }
+      return Promise.resolve(user)
+    })
 
     const [ownerRes, adminRes] = await Promise.all([
-      ownerSignOff(put(statement.id), {
-        params: { statementId: statement.id },
-      }),
-      adminSignOff(put(statement.id, { actor: 'operator' }), {
-        params: { statementId: statement.id },
-      }),
+      sessionAls.run(ownerUser, () =>
+        ownerSignOff(put(statement.id), {
+          params: { statementId: statement.id },
+        })
+      ),
+      sessionAls.run(adminUser, () =>
+        adminSignOff(put(statement.id, { actor: 'operator' }), {
+          params: { statementId: statement.id },
+        })
+      ),
     ])
 
     expect(ownerRes.status).toBe(200)

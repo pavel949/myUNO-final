@@ -17,6 +17,7 @@ export {
   SESSION_TTL_MS,
 } from './session';
 
+export { AuthError, isAuthError } from './types';
 export type {
   RegisterInput,
   LoginInput,
@@ -24,5 +25,4 @@ export type {
   PasswordResetConfirmInput,
   VerifyEmailInput,
   ClaimAccountInput,
-  AuthError,
 } from './types';

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { confirmPasswordReset } from '@/modules/auth';
+import { confirmPasswordReset, isAuthError } from '@/modules/auth';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,11 +23,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    if (error instanceof Error && 'code' in error && 'statusCode' in error) {
-      const authError = error as any;
+    if (isAuthError(error)) {
       return NextResponse.json(
-        { error: error.message, code: authError.code },
-        { status: authError.statusCode }
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
       );
     }
 

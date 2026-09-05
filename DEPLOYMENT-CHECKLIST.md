@@ -62,7 +62,8 @@ If a database password was ever committed (older copies of this file),
 | `ENCRYPTION_KEY` | Keep existing. Never rotate once passports are stored. |
 | `CRON_SECRET` | Must match Vercel cron bearer |
 | `RESEND_API_KEY` | Set in Vercel only |
-| `EMAIL_FROM` | `onboarding@resend.dev` until the domain is verified |
+| `EMAIL_FROM` | `pavel@ignatevestate.com` once `ignatevestate.com` is verified in Resend; otherwise `onboarding@resend.dev` |
+| `EMAIL_REPLY_TO` | `pavel@ignatevestate.com` |
 | `CONTENT_REVIEW_GATE_ENABLED` | `true` in production; `false` only to unblock a known review queue |
 
 Do **not** set `NODE_ENV`.

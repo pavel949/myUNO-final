@@ -32,8 +32,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Always return success to not leak email existence
-    await requestPasswordReset({ email });
+    // Always return success to not leak email existence.
+    // Use the host the user posted from so a stale NEXTAUTH_URL
+    // (e.g. myuno-final.vercel.app) cannot mint a dead reset link.
+    await requestPasswordReset({ email, baseUrl: request.nextUrl.origin });
 
     return NextResponse.json(
       { success: true, message: 'If an account exists, a reset link has been sent' },

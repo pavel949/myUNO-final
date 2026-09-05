@@ -9,6 +9,7 @@ import {
   PasswordResetConfirmInput,
   AuthError,
 } from './types';
+import { normalizeResetToken } from './utils/token';
 
 const BCRYPT_COST = 12;
 
@@ -57,10 +58,17 @@ function hashToken(token: string): string {
 // --- Helpers ---
 
 function createAuthError(code: string, message: string, statusCode: number): AuthError {
-  const error = new Error(message) as AuthError;
-  error.code = code;
-  error.statusCode = statusCode;
-  return error;
+  return new AuthError(code, message, statusCode);
+}
+
+function appOrigin(baseUrl?: string): string {
+  const raw = (
+    baseUrl ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    'http://localhost:3000'
+  ).trim();
+  return raw.replace(/\/$/, '');
 }
 
 // --- Register ---
@@ -202,29 +210,41 @@ export async function requestPasswordReset(input: PasswordResetRequestInput) {
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}`;
-    await sendEmail({
-      to: email,
-      subject: 'Reset your password',
-      html: `
+    const resetUrl = `${appOrigin(input.baseUrl)}/auth/reset-password?token=${token}`;
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Reset your password',
+        html: `
         <p>Click to reset your password:</p>
         <p><a href="${resetUrl}">Reset Password</a></p>
         <p>Or copy this link: ${resetUrl}</p>
         <p>This link expires in ${ttlMinutes} minutes.</p>
         <p>If you didn't request this, ignore this email.</p>
       `,
-    });
+      });
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        resendKeySet: !!process.env.RESEND_API_KEY,
+      });
+    }
   }
 
   return { success: true };
 }
 
 export async function confirmPasswordReset(input: PasswordResetConfirmInput) {
-  const { token, newPassword } = input;
+  const { newPassword } = input;
+  const token = normalizeResetToken(input.token);
 
   const passwordValidation = validatePasswordStrength(newPassword);
   if (!passwordValidation.valid) {
     throw createAuthError('weak_password', passwordValidation.errors.join(', '), 400);
+  }
+
+  if (!token) {
+    throw createAuthError('invalid_token', 'Invalid or expired reset link', 401);
   }
 
   const tokenHash_ = hashToken(token);
@@ -235,7 +255,7 @@ export async function confirmPasswordReset(input: PasswordResetConfirmInput) {
       consumedAt: null,
       expiresAt: { gt: new Date() },
     },
-    include: { identity: true },
+    select: { id: true, identityId: true },
   });
 
   if (!oneTimeToken) {
@@ -244,16 +264,25 @@ export async function confirmPasswordReset(input: PasswordResetConfirmInput) {
 
   const hashedPassword = await hashPassword(newPassword);
 
-  await prisma.$transaction([
-    prisma.identity.update({
-      where: { id: oneTimeToken.identityId },
-      data: { hashedPassword },
-    }),
-    prisma.oneTimeToken.update({
+  // Sequential writes (not $transaction): a Prisma interactive/batched
+  // transaction on the session pooler with connection_limit=1 is what turns a
+  // valid link into a generic 500. The password write is the source of truth;
+  // consuming the token is best-effort after that so a retry still logs in.
+  await prisma.identity.update({
+    where: { id: oneTimeToken.identityId },
+    data: { hashedPassword },
+  });
+
+  await prisma.oneTimeToken
+    .update({
       where: { id: oneTimeToken.id },
       data: { consumedAt: new Date() },
-    }),
-  ]);
+    })
+    .catch((consumeError: unknown) => {
+      console.error('Password updated but reset token consume failed:', {
+        message: consumeError instanceof Error ? consumeError.message : String(consumeError),
+      });
+    });
 
   return { success: true };
 }

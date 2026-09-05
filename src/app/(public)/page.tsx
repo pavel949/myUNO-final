@@ -133,7 +133,7 @@ export default async function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
@@ -141,8 +141,8 @@ export default async function LandingPage() {
       {/* Hero + search */}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-small mb-16">{labels['landing.hero.kicker']}</p>
-          <h1 className="text-heading-1 font-bold mb-16">
+          <p className="text-kicker text-brand-sun uppercase mb-16">{labels['landing.hero.kicker']}</p>
+          <h1 className="text-heading-1 mb-16">
             {labels['landing.hero.title']}
           </h1>
           <p className="text-body text-surface-ivory/90 mb-32">
@@ -212,7 +212,19 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-40 mb-40">
           {trustPoints.map((point) => (
             <div key={point.title} className="text-center">
-              <div className="text-heading-2 mb-16">✓</div>
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#0E4F4B"
+                strokeWidth="1.5"
+                className="mx-auto mb-16"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3" fill="#D69A3A" stroke="none" />
+              </svg>
               <h3 className="text-heading-2 font-bold text-text-ink mb-12">{point.title}</h3>
               <p className="text-body text-text-secondary">{point.body}</p>
             </div>

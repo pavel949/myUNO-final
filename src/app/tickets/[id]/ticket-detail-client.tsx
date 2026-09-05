@@ -170,7 +170,7 @@ export default function TicketDetailClient({
     <section className="bg-surface-paper border border-border-line rounded-lg p-20">
       <div className="flex flex-wrap items-start justify-between gap-12">
         <div>
-          <h2 className="text-heading-2 font-bold text-text-ink">{ticket.title}</h2>
+          <h2 className="font-display text-display font-semibold text-text-ink">{ticket.title}</h2>
           {ticket.description ? (
             <p className="mt-8 text-body text-text-secondary">{ticket.description}</p>
           ) : null}

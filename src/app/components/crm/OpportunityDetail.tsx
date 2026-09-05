@@ -130,7 +130,7 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
       <div className="bg-surface-paper rounded-lg shadow p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-text-ink  mb-2">
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-2">
               {opportunity.title}
             </h1>
             <p className="text-sm text-text-stone ">

@@ -149,25 +149,31 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
           <p className="text-small font-medium text-state-warning">
             {labels['finance.reconciliation.unmatched_payments']}
           </p>
-          <p className="text-heading-2 font-bold text-state-warning mt-8">{totalUnmatched}</p>
+          <p className="font-display text-display font-semibold text-state-warning mt-8 tabular-nums">
+            {totalUnmatched}
+          </p>
         </div>
         <div className="bg-state-error-soft border border-state-error rounded-lg p-24">
           <p className="text-small font-medium text-state-error">
             {labels['finance.reconciliation.failed_refunds']}
           </p>
-          <p className="text-heading-2 font-bold text-state-error mt-8">{totalFailedRefunds}</p>
+          <p className="font-display text-display font-semibold text-state-error mt-8 tabular-nums">
+            {totalFailedRefunds}
+          </p>
         </div>
-        <div className="bg-brand-andaman-soft border border-brand-andaman rounded-lg p-24">
+        <div className="bg-state-info-soft border border-brand-andaman rounded-lg p-24">
           <p className="text-small font-medium text-brand-andaman">
             {labels['finance.reconciliation.pending_payouts']}
           </p>
-          <p className="text-heading-2 font-bold text-brand-andaman mt-8">{totalPendingPayouts}</p>
+          <p className="font-display text-display font-semibold text-brand-andaman mt-8 tabular-nums">
+            {totalPendingPayouts}
+          </p>
         </div>
       </div>
 
       {totalUnmatched > 0 && (
         <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+          <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.unmatched_payments']} (${totalUnmatched})`}
           </h2>
           <div className="overflow-x-auto">
@@ -205,8 +211,8 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       <span
                         className={
                           payment.status === 'failed'
-                            ? 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-error-soft text-state-error'
-                            : 'inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-state-warning-soft text-state-warning'
+                            ? 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-error-soft text-state-error'
+                            : 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-warning-soft text-state-warning'
                         }
                       >
                         {payment.status}
@@ -225,7 +231,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
 
       {totalFailedRefunds > 0 && (
         <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+          <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.failed_refunds']} (${totalFailedRefunds})`}
           </h2>
           <div className="flex flex-col gap-16">
@@ -287,7 +293,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
 
       {totalPendingPayouts > 0 && (
         <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+          <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.pending_payouts']} (${totalPendingPayouts})`}
           </h2>
           <div className="overflow-x-auto">
@@ -324,11 +330,11 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       {payout.payeeType}
                     </td>
                     <td className="px-12 py-8 font-bold text-text-ink">{`฿${payout.amountThb.toLocaleString()}`}</td>
-                    <td className="px-12 py-8 font-mono text-xsmall text-text-ink">{payout.reference}</td>
+                    <td className="px-12 py-8 font-mono text-small text-text-ink">{payout.reference}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.executedOn}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.recordedBy}</td>
                     <td className="px-12 py-8">
-                      <span className="inline-flex px-8 py-2 rounded-full text-xsmall font-medium bg-brand-andaman-soft text-brand-andaman">
+                      <span className="inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-info-soft text-brand-andaman">
                         {payout.status}
                       </span>
                     </td>
@@ -352,7 +358,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
 
       {totalUnmatched === 0 && totalFailedRefunds === 0 && totalPendingPayouts === 0 && (
         <section className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
-          <p className="text-heading-3 font-bold text-text-ink mb-8">
+          <p className="font-display text-display font-semibold text-text-ink mb-8">
             {labels['finance.reconciliation.all_clear']}
           </p>
           <p className="text-body text-text-secondary">{labels['finance.reconciliation.no_issues']}</p>

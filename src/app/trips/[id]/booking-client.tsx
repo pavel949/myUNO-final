@@ -359,7 +359,7 @@ export default function BookingDetailClient({
         <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
           <div className="flex items-start justify-between mb-16">
             <div>
-              <h1 className="text-heading-2 font-bold text-text-ink">
+              <h1 className="font-display text-display-xl font-semibold text-text-ink">
                 {booking.unit?.name || labels['booking.detail.title']}
               </h1>
               {booking.project?.name && (

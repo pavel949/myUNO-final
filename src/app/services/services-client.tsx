@@ -480,7 +480,7 @@ export default function ServicesClient({
           </div>
         )}
 
-        <h2 className="text-heading-2 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-display font-semibold text-text-ink mb-16">
           {labels['services.my_orders.title']}
         </h2>
         {!loggedIn || orders.length === 0 ? (

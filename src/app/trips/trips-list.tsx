@@ -82,59 +82,61 @@ export default function TripsList({ labels }: TripsListProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-8">
+      <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
         <div className="text-center">
-          <p className="text-text-secondary">{labels['booking.trips.loading']}</p>
+          <p className="text-body text-text-secondary">{labels['booking.trips.loading']}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-ivory p-8">
+    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-ink">{labels['booking.trips.title']}</h1>
-          <p className="text-text-secondary">
+        <div className="mb-24">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink">
+            {labels['booking.trips.title']}
+          </h1>
+          <p className="text-body text-text-secondary">
             {trips.length} {trips.length === 1 ? labels['booking.trips.count_singular'] : labels['booking.trips.count_plural']}
           </p>
         </div>
 
         {error && (
-          <div className="bg-state-error-soft border border-state-error rounded-lg p-4 mb-6">
-            <p className="text-state-error">{error}</p>
+          <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
+            <p className="text-body text-state-error">{error}</p>
           </div>
         )}
 
         {trips.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-8 text-center">
-            <p className="text-text-secondary mb-4">{labels['booking.trips.empty_title']}</p>
+          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+            <p className="text-body text-text-secondary mb-16">{labels['booking.trips.empty_title']}</p>
             <a
               href="/"
-              className="inline-block px-6 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep"
+              className="inline-block h-48 px-24 leading-[48px] bg-brand-andaman text-surface-ivory rounded-sm hover:bg-brand-deep"
             >
               {labels['booking.trips.empty_action']}
             </a>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-16">
             {trips.map((trip) => (
               <div
                 key={trip.id}
                 onClick={() => router.push(`/trips/${trip.id}`)}
-                className="bg-surface-paper border border-border-line rounded-lg p-6 hover:shadow-lg transition cursor-pointer"
+                className="bg-surface-paper border border-border-line rounded-lg p-24 hover:shadow-card transition cursor-pointer"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-16">
                   <div>
-                    <h3 className="text-xl font-semibold text-text-ink">
+                    <h3 className="text-subtitle font-semibold text-text-ink">
                       {trip.unit.name}
                     </h3>
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-small text-text-secondary">
                       {trip.project.name}
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    className={`px-12 py-4 rounded-full text-small font-semibold ${
                       statusColors[trip.status] ||
                       'bg-surface-ivory text-text-ink'
                     }`}
@@ -145,15 +147,15 @@ export default function TripsList({ labels }: TripsListProps) {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b">
+                <div className="grid grid-cols-2 gap-16 mb-16 pb-16 border-b border-border-line">
                   <div>
-                    <p className="text-sm text-text-secondary">{labels['booking.trips.check_in']}</p>
+                    <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
                       {new Date(trip.startDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-text-secondary">{labels['booking.trips.check_out']}</p>
+                    <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
                       {new Date(trip.endDate).toLocaleDateString()}
                     </p>
@@ -162,19 +164,19 @@ export default function TripsList({ labels }: TripsListProps) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-text-secondary">{labels['booking.trips.total']}</p>
-                    <p className="text-2xl font-bold text-brand-andaman">
+                    <p className="text-small text-text-secondary">{labels['booking.trips.total']}</p>
+                    <p className="font-display text-title font-semibold text-brand-andaman tabular-nums">
                       ฿{trip.totalThb?.toLocaleString()}
                     </p>
                   </div>
 
                   {trip.status === 'pending_payment' && (
                     <div className="text-right">
-                      <p className="text-sm text-state-warning font-semibold mb-2">
+                      <p className="text-small text-state-warning font-semibold mb-8">
                         {labels['booking.trips.payment_pending']}
                       </p>
                       {trip.holdExpiresAt ? (
-                        <p className="text-sm mb-2">
+                        <p className="text-small mb-8">
                           <SlaCountdown
                             deadline={trip.holdExpiresAt}
                             leftTemplate={labels['booking.trips.hold_expires']}
@@ -184,7 +186,7 @@ export default function TripsList({ labels }: TripsListProps) {
                       ) : null}
                       <button
                         onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}`); }}
-                        className="px-4 py-2 bg-brand-andaman text-surface-ivory rounded-lg hover:bg-brand-deep text-sm"
+                        className="h-40 px-16 bg-brand-andaman text-surface-ivory rounded-sm hover:bg-brand-deep text-small"
                       >
                         {labels['booking.trips.payment_action']}
                       </button>
@@ -193,7 +195,7 @@ export default function TripsList({ labels }: TripsListProps) {
 
                   {trip.status === 'confirmed' && (
                     <div className="text-right">
-                      <p className="text-sm text-state-success font-semibold">
+                      <p className="text-small text-state-success font-semibold">
                         {labels['booking.trips.ready_checkin']}
                       </p>
                     </div>
@@ -201,9 +203,9 @@ export default function TripsList({ labels }: TripsListProps) {
                 </div>
 
                 {trip.guestNote && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm text-text-secondary mb-1">{labels['booking.trips.note_label']}</p>
-                    <p className="text-text-ink">{trip.guestNote}</p>
+                  <div className="mt-16 pt-16 border-t border-border-line">
+                    <p className="text-small text-text-secondary mb-4">{labels['booking.trips.note_label']}</p>
+                    <p className="text-body text-text-ink">{trip.guestNote}</p>
                   </div>
                 )}
               </div>

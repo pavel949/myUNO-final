@@ -87,29 +87,31 @@ The seven migrations added on 2026-08-18 were applied through `scripts/supabase-
 
 Seeds (config registry, content keys, catalogs — docs 04/05) ship as idempotent seed scripts run with migrations, so a fresh environment stands up complete.
 
-### 2.7 The region question — Mumbai today, Singapore recommended (2026-08-24)
+### 2.7 The region question — ANSWERED: Mumbai (2026-09-05)
 
-Doc 15 §2 has always specified **Singapore**. The provisioned project `MyUno- final` is in **`ap-south-1` (Mumbai)**, and that mismatch is Q45.
+**The ruling.** The founder ruled on 2026-09-05 that the database **stays in `ap-south-1` (Mumbai)**. Q45 is closed on that basis. Earlier drafts of this document specified Singapore; §2 above now names Mumbai, and this section records why the mismatch was resolved in that direction rather than the other.
 
-**Why it is not merely cosmetic.** Under the PDPA the privacy notice tells people where their personal data rests. The notice now published at `/legal/privacy` names Mumbai, so the platform is *accurate* today — but "accurate" and "what we intended" are different things, and passports for every foreign guest will rest wherever this lands.
+**What made it safe to rule this way.** Under the PDPA the privacy notice tells people where their personal data rests. The notice published at `/legal/privacy` already names Mumbai, through the content key `legal.privacy.location_body` — so the platform has been *accurate* throughout, and the ruling changes no published statement. Nothing was ever misrepresented; the gap was between two internal documents, not between the product and its users.
 
-**The recommendation: move to Singapore (`ap-southeast-1`).** Closest to Phuket users, matches every other document, and removes an explanation nobody wants to give a Russian-speaking buyer about why their passport is in India.
+**The one outstanding action, and it is counsel's.** Accuracy is not the same as adequacy. A cross-border transfer disclosure has to read correctly, not merely name the right country. When counsel reviews the privacy notice (Q36, the D-2 decision), the location and cross-border wording goes in front of them **as a specific question**, not as part of a general read-through. Their edits are content changes to `legal.privacy.location_body`, not code.
 
-**Why now.** The database is small. Moving is a dump-and-restore that takes minutes. Once there are real guests, bookings and encrypted passports it becomes a migration with downtime — and the `ENCRYPTION_KEY` must travel with it *intact*, because a different key makes every stored passport permanently unreadable (§4).
+**The accepted costs, recorded so they are not rediscovered as surprises:**
 
-**Runbook, when the founder decides to move:**
+- **Cross-region latency.** `vercel.json` pins the functions to `regions: ["sin1"]` (Singapore) while the database is in Mumbai — roughly 2,800km per query. The session pooler runs `connection_limit=1` per isolate, so that round trip is **not** amortised across the several queries a single request makes. This is invisible at pilot volume and is the first thing that will show up under load. It is monitored, not fixed: if search or booking latency becomes a complaint, this is the first place to look, and the fix is either the move below or moving the functions to `bom1`.
+- **The explanation.** A Russian-speaking buyer asking where their passport is held gets "India" rather than "Singapore". That is a positioning cost the founder has accepted, not an oversight.
 
-1. Create a new Supabase project in `ap-southeast-1`. (Provisioning billable infrastructure is a founder action, not an agent one — which is why this is a runbook and not a completed step.)
+**If this is ever revisited.** The move gets materially more expensive the moment real encrypted guest data lands — it becomes a migration with downtime rather than a dump-and-restore, and the `ENCRYPTION_KEY` must travel with it *intact*, because a different key makes every stored passport permanently unreadable (§4). The runbook is preserved here so a future decision does not have to reconstruct it:
+
+1. Create a new Supabase project in `ap-southeast-1`. (Provisioning billable infrastructure is a founder action, not an agent one.)
 2. Set `ENCRYPTION_KEY` on the new environment to **exactly** the existing value, before any data is written. Verify it matches before continuing; there is no recovery from getting this wrong.
 3. `prisma migrate deploy` against the new database, then confirm `prisma migrate status` reports it up to date.
 4. `pg_dump --data-only` from Mumbai, restore into Singapore. Confirm row counts match on `identity`, `booking`, `payment`, `ledger_entry` and `tm30_filing`.
-5. Re-run the RLS check from `scripts/supabase-2026-08-24-rls-and-transfer.sql` §4 — the new project starts with RLS off on everything.
+5. Re-run the RLS check from `scripts/supabase-2026-08-24-rls-and-transfer.sql` §4 — a new project starts with RLS off on everything.
 6. Swap `DATABASE_URL` in Vercel production, redeploy, and confirm a booking round-trip works.
 7. Edit the content key `legal.privacy.location_body` to name Singapore. **This is the step that keeps the privacy notice true, and it is a content edit, not a deployment.**
-8. Correct this document, and mark Q45 answered.
-9. Keep the Mumbai project paused but not deleted for a fortnight, then delete it.
-
-**If the founder decides to stay in Mumbai instead:** nothing needs to change technically — the notice already names it. Correct §2 of this document to say India, and have counsel confirm the cross-border wording reads correctly. Then mark Q45 answered that way.
+8. Drop the `regions: ["sin1"]` note above — functions and database would then be co-located.
+9. Correct this section and re-open Q45 with the new ruling.
+10. Keep the Mumbai project paused but not deleted for a fortnight, then delete it.
 
 ## 4. Encryption key handling (before production go-live)
 
@@ -127,7 +129,13 @@ Doc 15 §2 has always specified **Singapore**. The provisioned project `MyUno- f
 
 ## 5. Day-to-day operation
 
-- **The scheduler** runs the jobs registry (`src/jobs/`, doc 14 §1). Production is on Vercel Hobby, which **refuses any cron that would fire more than once per day** — a 15-minute expression fails the deploy. Two daily slots: `/api/cron/run-frequent` at 07:00 UTC (14:00 ICT — holds, TM30, iCal) and `/api/cron/run-all` at 19:00 UTC (02:00 ICT — verification, retention, rollup, guest messages, service-order expiry, plus a defensive extra pass of hold expiry). iCal is the daytime slot only: each feed may block for 15 seconds, and putting it on the nightly run would starve PDPA retention and verification. Doc 15’s original 5-minute hold expiry and 15-minute iCal sync need a Pro plan; until then a missed day is the red light, not a missed quarter-hour. Notification digests and monthly statement generation are still admin- or event-driven, not cron jobs — they are not in the registry until they are. Every registered job writes an append-only `job_run` row (last run + outcome). The admin panel at `/app/admin/scheduler` lists the whole registry even when a job has never run — a silent scheduler is a visible red light, not a mystery.
+- **The scheduler** runs the jobs registry (`src/jobs/`, doc 14 §1) from **two sources, deliberately**. Vercel Hobby **refuses any cron that would fire more than once per day** — a 15-minute expression fails the deploy — so `vercel.json` carries two daily slots: `/api/cron/run-frequent` at 07:00 UTC (14:00 ICT — holds, TM30, iCal) and `/api/cron/run-all` at 19:00 UTC (02:00 ICT — verification, retention, rollup, guest messages, service-order expiry, plus a defensive extra pass of hold expiry). iCal is the daytime slot only: each feed may block for 15 seconds, and putting it on the nightly run would starve PDPA retention and verification.
+
+  Daily was never the design. This document asks for **hold expiry every 5 minutes and iCal import every 15**, and running them daily meant holds sitting expired for up to 24 hours — inventory nobody can book — and OTA calendars up to 24 hours stale, which is how double bookings happen. **That gap is closed without a plan upgrade (T-047):** `/api/cron/*` is an ordinary authenticated route (`CRON_SECRET`), so `.github/workflows/scheduler.yml` drives it from GitHub Actions on the real cadence, for free. The Vercel crons stay as a **backstop** — if GitHub Actions is unavailable the schedule degrades to daily rather than stopping.
+
+  Two honest caveats about that scheduler, which is why the thresholds were not simply tightened: GitHub's scheduled workflows are **best-effort** — they queue behind the platform's own load, routinely fire minutes late and can be skipped under peak load — and GitHub **disables scheduled workflows in a repository with no activity for 60 days**. On a quiet repo, check the Actions tab before trusting the cadence. `SCHEDULER_MODE` (`external` | `vercel-daily`, defaulting to the latter) tells the health panel which source is live: on `external` the frequent jobs are judged against the real cadence with six intervals of slack for jitter; unset, the two-day window stands, because a threshold tighter than the schedule would report a working system as broken. Set it to `external` **only once the workflow is confirmed firing**.
+
+  Required for the workflow: repository secret `CRON_SECRET` (matching Vercel) and repository variable `APP_BASE_URL`. Notification digests and monthly statement generation are still admin- or event-driven, not cron jobs — they are not in the registry until they are. Every registered job writes an append-only `job_run` row (last run + outcome). The admin panel at `/app/admin/scheduler` lists the whole registry even when a job has never run — a silent scheduler is a visible red light, not a mystery.
 - **Monitoring & alerts:** `reportError` (`src/lib/observability.ts`) pushes every unexpected error (5xx, not the caller's own 4xx mistakes) to `ALERT_WEBHOOK_URL` — a Slack incoming-webhook URL, or any endpoint that accepts a JSON POST with a `text` field (Discord, PagerDuty's generic webhook, etc.). Set that one env var in Vercel and errors start paging the ops channel with no code change; unset, it stays a correct no-op (same seam pattern as the payment and email providers). Scheduler job failures now go through the same seam (`runRegisteredJob`), so a crashed cron pages the channel the same way a 5xx request does. This is a first version — no retry, no queue, no dedup, so a genuine incident storm can still flood the channel; that is a known limitation, not a silent gap. Still needed beyond the webhook: an uptime check on the public site and API (not configurable from the repository — set up in whatever monitor the founder picks and point it at `/api/health`). The in-app admin dashboard already surfaces business-level red flags (TM30 at risk, refund failures, iCal conflicts); the scheduler panel is the red light for the jobs themselves.
 - **Logs:** structured, PII-scrubbed (doc 12), searchable on the hosting platform, 30-day retention.
 - **Support path:** users hit "something's wrong" → ticket (doc 09); technical incidents follow the doc 12 §7 playbook.

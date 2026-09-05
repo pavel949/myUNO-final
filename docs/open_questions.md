@@ -6,6 +6,8 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 **Answered so far (2026-07):** Q4, Q6, Q7, Q8, Q10, Q11, Q12, Q13, Q16, Q17, Q18. **Still open:** Q1, Q2, Q3, Q5, Q9, Q14, Q15, Q19, Q20, Q21 (crypto), Q22 (international payouts), Q32 (service-fee rate), Q34 (provider take rate), Q35 (audience FAQ copy), Q36 (terms + privacy prose).
 
+**Founder rulings 2026-09-05:** Q45 (region — Mumbai, see below). Launch scope set to the full platform (stay + live + own), which puts Q41 (ownership structure) on the critical path rather than deferred — it now gates a whole stage of the production plan and needs counsel, not a founder ruling alone.
+
 ---
 
 ## A. Inherited from the business model (Appendix A of v3) — founder's call
@@ -264,12 +266,12 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
   - **The ruling needed:** should an inactive mandate block every later step, as doc 07 reads — or is the current behaviour what operations actually want, in which case doc 07 should be corrected instead?
 - **Fixed meanwhile, needing no ruling:** a refused go-live used to leave `golive_checklist` marked done while the unit stayed draft — the step was written before the all-steps-complete check, with no transaction to undo it. The check now runs before any write, and the tick plus the go-live are one transaction.
 
-### Q45. The database sits in Mumbai, but the deployment spec and the privacy notice say Singapore — OPEN
-- **Source:** connecting the app to Supabase. Doc 15 §2 specifies **Singapore** for the managed Postgres: closest to Phuket users, and named in the privacy notice as where personal data rests (PDPA). The provisioned project `MyUno- final` (`burcnghheyzbzffzgmjz`) is in **`ap-south-1` (Mumbai)**.
-- **Why it is not just a latency question:** under the PDPA the privacy notice tells data subjects where their personal data is held. Passports, payment records and guest identities would rest in a country the published notice does not name. That is a disclosure problem before it is an engineering one.
-- **Why deciding now is cheaper:** the database is currently empty. Moving regions is a dump-and-restore today; once there are real guests, bookings and encrypted passports it becomes a migration with downtime, and the `ENCRYPTION_KEY` must travel with it intact or every passport becomes unreadable (doc 15 §4).
-- **Needs from founder:** either (a) re-provision in Singapore (`ap-southeast-1`) and point `DATABASE_URL` at it, or (b) rule that Mumbai is acceptable — in which case doc 15 §2 and the privacy notice copy (`legal.privacy.*`, Q36) must both be corrected to name it, and counsel should confirm the disclosure reads correctly.
-- **Not decided by an agent:** this trades a compliance statement against convenience, which is a founder call.
+### Q45. Which region the database sits in — ANSWERED: Mumbai (2026-09-05)
+- **Source:** connecting the app to Supabase. Earlier drafts of doc 15 §2 specified **Singapore** for the managed Postgres; the provisioned project `MyUno- final` (`burcnghheyzbzffzgmjz`) is in **`ap-south-1` (Mumbai)**. The question was which of the two to correct.
+- **The ruling:** the founder ruled on 2026-09-05 that the database **stays in Mumbai**. Doc 15 §2 and §2.7 are corrected to name it; the Singapore move is preserved there as a runbook in case the decision is ever revisited, not as a pending action.
+- **Why this was safe to rule either way:** the published privacy notice at `/legal/privacy` has always named Mumbai, through the content key `legal.privacy.location_body`. Nothing was ever misrepresented to a data subject — the gap was between two internal documents, not between the product and its users. The ruling changes no published statement.
+- **The one action this leaves open, and it belongs to counsel, not to engineering:** naming the right country is not the same as disclosing a cross-border transfer *adequately*. The location and cross-border wording goes to counsel as a **specific question** during the Q36 privacy-notice review, not as part of a general read-through. Their edits are content changes, not code.
+- **Accepted costs, recorded so they are not rediscovered as surprises:** `vercel.json` pins functions to `regions: ["sin1"]` while the data is in `ap-south-1` — ~2,800km per query, and the session pooler's `connection_limit=1` means that hop is not amortised across the several queries one request makes. Invisible at pilot volume; the first thing to look at if search or booking latency becomes a complaint. Doc 15 §2.7 carries the detail and the two possible fixes.
 
 ### Q44. Row-level security — ANSWERED (enabled 2026-08-19)
 - Logged during this work as "enabled everywhere and doing nothing", on the reading that it was Supabase's default. That was wrong: doc 15 §2.3 shows it was a deliberate remediation, because with RLS **off** Supabase's public REST API exposed every row — passports, payments, the ledger — to anyone holding the anon key, independently of any application code.

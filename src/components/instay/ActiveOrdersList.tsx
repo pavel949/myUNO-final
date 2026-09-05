@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components';
+import { Button, Chip } from '@/components';
 import { ServiceOrderRatingModal } from './ServiceOrderRatingModal';
 
 interface ActiveOrder {
@@ -46,21 +46,25 @@ const formatDateTime = (dateStr: string): string => {
 // Real ServiceOrderStatus values only (placed/paid/accepted/declined/expired/
 // fulfilled/cancelled/failed/closed) — an earlier version styled a
 // nonexistent 'in_progress' status that could never render.
-const getStatusColor = (status: string): string => {
+const orderChipStatus = (
+  status: string
+): 'confirmed' | 'requested' | 'declined' | 'closed' | 'default' => {
   switch (status) {
-    case 'placed':
-      return 'bg-yellow-100 text-yellow-700';
-    case 'paid':
     case 'accepted':
-      return 'bg-blue-100 text-blue-700';
+    case 'paid':
     case 'fulfilled':
-      return 'bg-green-100 text-green-700';
+      return 'confirmed';
+    case 'placed':
+      return 'requested';
     case 'declined':
     case 'cancelled':
     case 'failed':
-      return 'bg-red-100 text-red-700';
+      return 'declined';
+    case 'closed':
+    case 'expired':
+      return 'closed';
     default:
-      return 'bg-gray-100 text-gray-700';
+      return 'default';
   }
 };
 
@@ -83,30 +87,22 @@ export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersLis
     return (
       <div ref={ref} className="space-y-12">
         {orders.map((order) => (
-          <div key={order.id} className="border border-border-line rounded-md p-20 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start gap-16 mb-12">
+          <div key={order.id} className="bg-surface-paper border border-border-line rounded-md p-16">
+            <div className="flex justify-between items-start gap-16">
               <div className="flex-1">
-                <p className="text-body font-medium text-text-ink">{order.serviceName}</p>
+                <p className="text-body font-semibold text-text-ink m-0 mb-4">{order.serviceName}</p>
+                <p className="text-small text-text-stone m-0">
+                  {formatDateTime(order.scheduledStart)} · {formatCurrency(order.totalThb)}
+                </p>
               </div>
-              <span className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${getStatusColor(order.status)}`}>
-                {order.status.replace('_', ' ')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-16 text-small text-text-secondary mb-16">
-              <div>
-                <span className="font-medium">Scheduled:</span>
-                <p>{formatDateTime(order.scheduledStart)}</p>
-              </div>
-              <div className="text-right">
-                <span className="font-medium">Cost:</span>
-                <p>{formatCurrency(order.totalThb)}</p>
-              </div>
+              <Chip variant="status" status={orderChipStatus(order.status)}>
+                {labels[`common.status.service_order.${order.status}`] ?? order.status.replace('_', ' ')}
+              </Chip>
             </div>
 
             {/* Rating section for fulfilled orders */}
             {order.status === 'fulfilled' && (
-              <div className="flex items-center justify-between pt-12 border-t border-border-line">
+              <div className="flex items-center justify-between pt-12 mt-12 border-t border-border-line">
                 {order.hasRating ? (
                   <div className="flex items-center gap-8">
                     <span className="text-small text-text-secondary">

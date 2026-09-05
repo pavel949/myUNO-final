@@ -36,6 +36,9 @@ interface Booking {
     id: string;
     nationality: string | null;
   } | null;
+  adults: number;
+  children: number;
+  balanceDueThb: number;
 }
 
 interface ActiveOrder {
@@ -53,10 +56,13 @@ interface Announcement {
   title: string;
   body: string;
   createdAt: string;
+  postedAs: string;
 }
 
 interface InStayHomeSpaceClientProps {
   booking: Booking;
+  tm30Filed: boolean;
+  guestFirstName?: string;
   activeOrders: ActiveOrder[];
   announcements: Announcement[];
   services: RailService[];
@@ -66,8 +72,16 @@ interface InStayHomeSpaceClientProps {
   labels: Record<string, string>;
 }
 
+function nightsBetween(startIso: string, endIso: string): number {
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  return Math.max(0, Math.round((end - start) / 86_400_000));
+}
+
 export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   booking,
+  tm30Filed,
+  guestFirstName,
   activeOrders,
   announcements,
   services,
@@ -81,11 +95,12 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   const [extendBusy, setExtendBusy] = React.useState(false);
   const [extendError, setExtendError] = React.useState<string | null>(null);
 
-  // The extension is only offered once the stay is actually under way — before
-  // then the trip page's full date change is the right tool (F-GUEST-9).
   const inStay = booking.status === 'checked_in';
+  const paidInFull =
+    booking.balanceDueThb === 0 &&
+    (booking.status === 'confirmed' || booking.status === 'checked_in');
+
   const handleMessageHost = async () => {
-    // F-COM-1: booking-context thread with ops + owner
     const response = await fetch('/api/threads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -102,20 +117,16 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   };
 
   const handleOrderService = () => {
-    // F-SVC-2: services marketplace scoped to this stay
     router.push(`/services?bookingId=${booking.id}`);
   };
 
   const handleRaiseIssue = () => {
-    // F-COM-3: raise-ticket form pre-scoped to this stay
     router.push(
       `/tickets/new?projectId=${booking.unit.project.id}&unitId=${booking.unit.id}&bookingId=${booking.id}`
     );
   };
 
   const handleExtendStay = () => {
-    // Mid-stay the only date move is later, and it belongs here rather than on
-    // the trip page, whose full date change is hidden once a stay has begun.
     if (inStay) {
       setExtendOpen((open) => !open);
       return;
@@ -127,8 +138,6 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     setExtendBusy(true);
     setExtendError(null);
     try {
-      // F-GUEST-9: the server re-checks availability and prices the added
-      // nights; nothing about the total is decided on the client.
       const response = await fetch(`/api/bookings/${booking.id}/modify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,7 +150,6 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
         return;
       }
 
-      // Added nights are owed, so send the guest straight to settling them.
       if (data?.pricing?.checkoutUrl) {
         router.push(data.pricing.checkoutUrl);
         return;
@@ -154,17 +162,64 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     }
   };
 
+  const welcomeLine = guestFirstName
+    ? (labels['home.welcome_back'] ?? '').replace('{name}', guestFirstName)
+    : labels['home.welcome'];
+
+  const conciergeCard = conciergeWhatsappUrl ? (
+    <div className="bg-brand-deep rounded-lg p-24 mb-24">
+      <p className="font-display text-subtitle font-semibold text-on-dark-text m-0 mb-16">
+        {labels['home.concierge.kicker']}
+      </p>
+      <a
+        href={conciergeWhatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-full text-center bg-brand-sun text-brand-deep rounded-md py-16 font-semibold hover:opacity-90 transition"
+      >
+        {labels['home.concierge_whatsapp']}
+      </a>
+    </div>
+  ) : null;
+
+  const ordersBlock =
+    activeOrders.length > 0 ? (
+      <div className="mb-24">
+        <p className="font-display text-kicker uppercase text-brand-sun m-0 mb-12 lg:font-display lg:text-subtitle lg:normal-case lg:tracking-normal lg:text-text-ink">
+          {labels['home.active_orders']}
+        </p>
+        <ActiveOrdersList orders={activeOrders} labels={labels} />
+      </div>
+    ) : null;
+
+  const handbookBlock = (
+    <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-12">
+        {labels['home.handbook.title']}
+      </h2>
+      <p className="text-body text-text-stone mb-20">
+        {labels['home.handbook.description']}
+      </p>
+      <Link href={`/bookings/${booking.id}/home-space/handbook`}>
+        <Button variant="secondary" size="sm">
+          {labels['home.handbook.view_button']}
+        </Button>
+      </Link>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-surface-background">
-      {/* Header with project branding */}
-      <div className="bg-brand-andaman text-surface-ivory py-16 px-24 mb-32">
-        <p className="text-small">{labels['home.welcome']}</p>
-        <h1 className="text-heading-1 font-bold">{booking.unit.project.name}</h1>
+    <div className="min-h-screen bg-surface-ivory">
+      <div className="bg-brand-andaman text-surface-ivory px-24 py-16">
+        <div className="max-w-content mx-auto">
+          <p className="text-small m-0 mb-4">{welcomeLine}</p>
+          <h1 className="font-display text-display font-semibold m-0">
+            {booking.unit.project.name}
+          </h1>
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-24">
-        {/* Whoever else this person is here, the stay is what they came for —
-            the banner keeps the other hat legible (doc 06; F-OWN-6). */}
+      <div className="max-w-content mx-auto px-16 py-24 lg:px-32">
         {secondaryRoles.length > 0 ? (
           <RoleContextBanner
             message={(labels['home.role_context'] ?? '')
@@ -178,105 +233,77 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
           />
         ) : null}
 
-        {/* Hero stay card */}
-        <StayCard
-          projectName={booking.unit.project.name}
-          unitName={booking.unit.name}
-          startDate={booking.startDate}
-          endDate={booking.endDate}
-          status={booking.status}
-          checkedInAt={booking.checkedInAt}
-          guestNationality={booking.guest?.nationality ?? undefined}
-          labels={labels}
-        />
+        <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-32 lg:items-start">
+          <div>
+            <StayCard
+              projectName={booking.unit.project.name}
+              unitName={booking.unit.name}
+              startDate={booking.startDate}
+              endDate={booking.endDate}
+              status={booking.status}
+              checkedInAt={booking.checkedInAt}
+              guestNationality={booking.guest?.nationality ?? undefined}
+              nights={nightsBetween(booking.startDate, booking.endDate)}
+              guestCount={booking.adults + booking.children}
+              tm30Filed={tm30Filed}
+              paidInFull={paidInFull}
+              labels={labels}
+            />
 
-        {/* Quick actions row */}
-        <QuickActionsRow
-          labels={labels}
-          onMessageHost={handleMessageHost}
-          onOrderService={handleOrderService}
-          onRaiseIssue={handleRaiseIssue}
-          onExtendStay={handleExtendStay}
-        />
+            <QuickActionsRow
+              labels={labels}
+              onMessageHost={handleMessageHost}
+              onOrderService={handleOrderService}
+              onRaiseIssue={handleRaiseIssue}
+              onExtendStay={handleExtendStay}
+            />
 
-        {/* Extension entry — the in-stay half of F-GUEST-9 */}
-        {inStay && extendOpen ? (
-          <ExtendStayPanel
-            currentEndDate={booking.endDate}
-            isLoading={extendBusy}
-            error={extendError}
-            labels={labels}
-            onExtend={submitExtension}
-          />
-        ) : null}
+            {inStay && extendOpen ? (
+              <ExtendStayPanel
+                currentEndDate={booking.endDate}
+                isLoading={extendBusy}
+                error={extendError}
+                labels={labels}
+                onExtend={submitExtension}
+              />
+            ) : null}
 
-        {/* Services rail — this project's services, orderable for this stay */}
-        <ServicesRail
-          services={services}
-          labels={labels}
-          hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
-        />
+            <ServicesRail
+              services={services}
+              labels={labels}
+              hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
+            />
 
-        {/* Concierge WhatsApp (config-driven; hidden without a number) */}
-        {conciergeWhatsappUrl ? (
-          <div className="mb-24">
-            <a
-              href={conciergeWhatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center bg-brand-andaman text-surface-ivory rounded-md py-16 font-semibold hover:opacity-90 transition"
-            >
-              {labels['home.concierge_whatsapp']}
-            </a>
+            <div className="lg:hidden">{conciergeCard}</div>
+
+            {shuttleText ? (
+              <div className="bg-surface-paper border border-border-line rounded-md p-24 mb-24">
+                <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-12">
+                  {labels['home.shuttle.title']}
+                </h2>
+                <p className="text-body text-text-stone whitespace-pre-line m-0">{shuttleText}</p>
+              </div>
+            ) : null}
+
+            <AnnouncementsSection announcements={announcements} labels={labels} />
+
+            <div className="lg:hidden">
+              {ordersBlock}
+              {handbookBlock}
+            </div>
           </div>
-        ) : null}
 
-        {/* Shuttle schedule (project content key; hidden until supplied) */}
-        {shuttleText ? (
-          <div className="bg-surface-paper border border-border-line rounded-md p-32 mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-              {labels['home.shuttle.title']}
-            </h2>
-            <p className="text-body text-text-secondary whitespace-pre-line">{shuttleText}</p>
-          </div>
-        ) : null}
-
-        {/* Announcements section */}
-        <AnnouncementsSection announcements={announcements} />
-
-        {/* Active orders section */}
-        {activeOrders.length > 0 && (
-          <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-              {labels['home.active_orders']}
-            </h2>
-            <ActiveOrdersList orders={activeOrders} labels={labels} />
-          </div>
-        )}
-
-        {/* Handbook and resources section */}
-        <div className="bg-surface-paper border border-border-line rounded-md p-32 mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
-            {labels['home.handbook.title']}
-          </h2>
-          <p className="text-body text-text-secondary mb-20">
-            {labels['home.handbook.description']}
-          </p>
-          <Link href={`/bookings/${booking.id}/home-space/handbook`}>
-            <Button variant="secondary" size="sm">
-              {labels['home.handbook.view_button']} →
-            </Button>
-          </Link>
+          <aside className="hidden lg:block">
+            {ordersBlock}
+            {handbookBlock}
+            {conciergeCard}
+          </aside>
         </div>
 
-        {/* Footer message */}
-        <div className="text-center py-32 mb-40">
-          <p className="text-body text-text-secondary">
-            {labels['home.help_text']}
-          </p>
+        <div className="text-center py-32">
+          <p className="text-body text-text-stone m-0">{labels['home.help_text']}</p>
         </div>
       </div>
-
     </div>
   );
 };

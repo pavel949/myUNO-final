@@ -23,7 +23,12 @@ export interface InStayHomeSpaceData {
       };
     };
     guest: { id: string; nationality: string | null } | null;
+    adults: number;
+    children: number;
+    balanceDueThb: number;
   };
+  /** True only when at least one TM30 for this stay has been filed. */
+  tm30Filed: boolean;
   /** wa.me concierge deep link from project config (null = CTA hidden). */
   conciergeWhatsappUrl: string | null;
   activeOrders: Array<{
@@ -42,6 +47,7 @@ export interface InStayHomeSpaceData {
     title: string;
     body: string;
     createdAt: string;
+    postedAs: string;
   }>;
   /**
    * The services rail (doc 06 S6) — only what is actually orderable at this
@@ -100,6 +106,9 @@ export async function getInStayHomeSpace(
           nationality: true,
         },
         take: 1,
+      },
+      tm30Filings: {
+        select: { status: true },
       },
     },
   });
@@ -232,6 +241,7 @@ export async function getInStayHomeSpace(
       providerName: s.provider?.name ?? '',
       isVetted: Boolean(s.isVetted),
     })),
+    tm30Filed: booking.tm30Filings.some((filing) => filing.status === 'filed'),
     booking: {
       id: booking.id,
       startDate: booking.startDate.toISOString(),
@@ -240,6 +250,9 @@ export async function getInStayHomeSpace(
       checkedInAt: booking.checkedInAt?.toISOString() || null,
       unit: booking.unit,
       guest: booking.guests[0] || null,
+      adults: booking.adults,
+      children: booking.children,
+      balanceDueThb: booking.balanceDueThb,
     },
     activeOrders: activeOrdersWithRatings,
     announcements: announcements.map((a) => ({
@@ -247,6 +260,7 @@ export async function getInStayHomeSpace(
       title: a.title,
       body: a.body,
       createdAt: a.createdAt.toISOString(),
+      postedAs: a.postedAs,
     })),
   };
 }

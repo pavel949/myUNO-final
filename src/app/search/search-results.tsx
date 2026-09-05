@@ -224,7 +224,7 @@ export default function SearchResults({
     <div className="min-h-screen bg-surface-background p-24 md:p-32">
       <div className="max-w-6xl mx-auto">
         <div className="mb-24">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-16">{labels.title}</h1>
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>
           <SearchBar
             projectId={projectId ?? undefined}
             labels={{
@@ -281,7 +281,7 @@ export default function SearchResults({
 
         {!loading && categories.length > 0 && (
           <div className="mb-32">
-            <h2 className="text-heading-2 font-bold text-text-ink mb-16">
+            <h2 className="font-display text-display font-semibold text-text-ink mb-16">
               {labels.categoriesTitle}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
@@ -296,7 +296,7 @@ export default function SearchResults({
                   <p className="text-small text-text-secondary mb-8">
                     {fill(labels.categoryAvailable, { count: category.available_count })}
                   </p>
-                  <p className="text-heading-3 font-bold text-brand-andaman mb-12">
+                  <p className="font-display text-title font-semibold text-brand-andaman mb-12 tabular-nums">
                     {fill(labels.categoryFrom, {
                       price: Math.round(category.from_nightly_thb / 100).toLocaleString(),
                     })}
@@ -333,7 +333,7 @@ export default function SearchResults({
               <Link
                 key={unit.id}
                 href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow duration-micro"
               >
                 {unit.coverUrl ? (
                   <Image
@@ -348,7 +348,7 @@ export default function SearchResults({
                 )}
                 <div className="p-16">
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
-                  <p className="text-heading-3 font-bold text-brand-andaman mb-4">
+                  <p className="font-display text-title font-semibold text-brand-andaman mb-4 tabular-nums">
                     ฿{unit.baseNightlyThb?.toLocaleString()}
                   </p>
                   <p className="text-small text-text-secondary">{labels.perNight}</p>

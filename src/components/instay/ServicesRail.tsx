@@ -32,15 +32,13 @@ export const ServicesRail = React.forwardRef<HTMLDivElement, ServicesRailProps>(
     }
 
     return (
-      <section ref={ref} className="mb-40">
-        <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+      <section ref={ref} className="mb-24">
+        <p className="font-display text-kicker uppercase text-brand-sun m-0 mb-12">
           {labels['home.services.title']}
-        </h2>
+        </p>
 
         <div
-          className="flex gap-16 overflow-x-auto pb-12 -mx-24 px-24 snap-x"
-          // A rail is a list of links; the scroller itself is what gets focus
-          // when a keyboard user tabs past the heading.
+          className="flex gap-16 overflow-x-auto pb-12 snap-x lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0"
           tabIndex={0}
           aria-label={labels['home.services.title']}
         >
@@ -48,25 +46,28 @@ export const ServicesRail = React.forwardRef<HTMLDivElement, ServicesRailProps>(
             <a
               key={service.id}
               href={hrefForService(service.id)}
-              className="snap-start shrink-0 w-60 bg-surface-paper border border-border-line rounded-md p-16 hover:border-brand-andaman transition"
+              className="snap-start shrink-0 w-60 lg:w-auto bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:border-brand-andaman transition"
             >
-              <div className="flex items-start justify-between gap-8 mb-8">
-                <p className="text-body font-semibold text-text-ink">{service.title}</p>
-                {service.isVetted ? (
-                  <Badge variant="verified">{labels['home.services.vetted']}</Badge>
+              <div className="h-80 bg-gradient-to-br from-brand-andaman to-brand-deep" />
+              <div className="p-12">
+                <div className="flex items-start justify-between gap-8 mb-4">
+                  <p className="text-body font-semibold text-text-ink m-0">{service.title}</p>
+                  {service.isVetted ? (
+                    <Badge variant="verified">{labels['home.services.vetted']}</Badge>
+                  ) : null}
+                </div>
+                {service.providerName ? (
+                  <p className="text-small text-text-stone m-0 mb-8">{service.providerName}</p>
+                ) : null}
+                {service.basePriceThb !== null ? (
+                  <p className="text-small text-text-stone tabular-nums m-0">
+                    {/* basePriceThb is satang (THB × 100) straight from the DB
+                        via getInStayHomeSpace — convert to baht only here, at
+                        final render (money rule, CLAUDE.md "Money rules"). */}
+                    {labels['home.services.from']} ฿{(service.basePriceThb / 100).toLocaleString('en-US')}
+                  </p>
                 ) : null}
               </div>
-
-              <p className="text-small text-text-secondary mb-12">{service.providerName}</p>
-
-              {service.basePriceThb !== null ? (
-                <p className="text-small text-text-ink tabular-nums">
-                  {/* basePriceThb is satang (THB × 100) straight from the DB
-                      via getInStayHomeSpace — convert to baht only here, at
-                      final render (money rule, CLAUDE.md "Money rules"). */}
-                  {labels['home.services.from']} ฿{(service.basePriceThb / 100).toLocaleString('en-US')}
-                </p>
-              ) : null}
             </a>
           ))}
         </div>

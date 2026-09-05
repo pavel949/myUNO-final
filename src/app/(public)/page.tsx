@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
+import { TrustMark } from '@/components/TrustMark';
 
 export const metadata: Metadata = {
   title: 'myUNO | Serviced Living in Phuket',
@@ -133,7 +134,7 @@ export default async function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface-ivory">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
@@ -141,8 +142,10 @@ export default async function LandingPage() {
       {/* Hero + search */}
       <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-small mb-16">{labels['landing.hero.kicker']}</p>
-          <h1 className="text-heading-1 font-bold mb-16">
+          <p className="font-display text-kicker uppercase text-brand-sun-soft mb-16">
+            {labels['landing.hero.kicker']}
+          </p>
+          <h1 className="font-display text-display-xl font-semibold mb-16">
             {labels['landing.hero.title']}
           </h1>
           <p className="text-body text-surface-ivory/90 mb-32">
@@ -171,7 +174,7 @@ export default async function LandingPage() {
             ] as const
           ).map(([titleKey, bodyKey]) => (
             <div key={titleKey}>
-              <h3 className="text-heading-2 font-bold text-text-ink mb-16">
+              <h3 className="font-display text-display font-semibold text-text-ink mb-16">
                 {labels[`landing.promise.${titleKey}`]}
               </h3>
               <p className="text-body text-text-secondary">
@@ -185,7 +188,7 @@ export default async function LandingPage() {
       {/* Audience Doors */}
       <section className="bg-surface-background py-64 px-24">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-heading-1 font-bold text-text-ink mb-40 text-center">
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
             {labels['landing.doors.title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-32">
@@ -193,9 +196,9 @@ export default async function LandingPage() {
               <Link
                 key={door.href}
                 href={door.href}
-                className="bg-white border border-border-line rounded-lg p-32 hover:shadow-lg transition"
+                className="bg-surface-paper border border-border-line rounded-lg p-32 hover:shadow-card transition-shadow duration-micro"
               >
-                <h3 className="text-heading-2 font-bold text-text-ink mb-12">{door.title}</h3>
+                <h3 className="font-display text-display font-semibold text-text-ink mb-12">{door.title}</h3>
                 <p className="text-body text-text-secondary mb-24">{door.body}</p>
                 <span className="text-brand-andaman font-semibold">{door.cta}</span>
               </Link>
@@ -206,14 +209,16 @@ export default async function LandingPage() {
 
       {/* Trust Section */}
       <section className="max-w-6xl mx-auto py-64 px-24">
-        <h2 className="text-heading-1 font-bold text-text-ink mb-40 text-center">
+        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
           {labels['landing.trust.title']}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-40 mb-40">
           {trustPoints.map((point) => (
             <div key={point.title} className="text-center">
-              <div className="text-heading-2 mb-16">✓</div>
-              <h3 className="text-heading-2 font-bold text-text-ink mb-12">{point.title}</h3>
+              <div className="flex justify-center mb-16 text-brand-andaman">
+                <TrustMark size={48} filled />
+              </div>
+              <h3 className="font-display text-title text-text-ink mb-12">{point.title}</h3>
               <p className="text-body text-text-secondary">{point.body}</p>
             </div>
           ))}
@@ -228,7 +233,7 @@ export default async function LandingPage() {
       {/* Services Section */}
       <section className="bg-surface-background py-64 px-24">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-heading-1 font-bold text-text-ink mb-32">
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-32">
             {labels['landing.services.title']}
           </h2>
           <p className="text-body text-text-secondary mb-40">

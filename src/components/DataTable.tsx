@@ -79,7 +79,6 @@ export function DataTable<T>({ columns, rows, rowKey, empty }: DataTableProps<T>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  scope="col"
                   aria-sort={
                     sortKey === column.key
                       ? sortDir === 'asc'

@@ -17,6 +17,8 @@ export { Badge, VerifiedBadge } from './Badge';
 export { EmptyState, LoadingState, ErrorState } from './StateComponents';
 export { MoneyAmount, type MoneyAmountProps } from './MoneyAmount';
 export { RoleContextBanner } from './RoleContextBanner';
+export { TrustMark } from './TrustMark';
+export { UnitPhotoMosaic } from './UnitPhotoMosaic';
 export { LegalEntityBlock } from './LegalEntityBlock';
 
 // Owner components

@@ -18,6 +18,7 @@ import { EmptyState, ErrorState } from '@/components/StateComponents';
 import { StatTile } from '@/components/StatTile';
 import { StatusTimeline } from '@/components/StatusTimeline';
 import { Textarea } from '@/components/Textarea';
+import { TrustMark } from '@/components/TrustMark';
 import DeltaChip from '@/components/viz/DeltaChip';
 import MonthHeatStrip from '@/components/viz/MonthHeatStrip';
 import Sparkline from '@/components/viz/Sparkline';
@@ -81,8 +82,8 @@ export default function DesignPage() {
           Design system, flows and screen catalogue
         </h1>
         <p className="text-body text-text-stone max-w-[720px] mb-32">
-          Boards 01 and 02 from the Claude Design canvas, built on the tokens in
-          docs/06 and the components in src/components. Product screens 03–21
+          Boards 01–06 from the Claude Design canvas, built on the tokens in
+          docs/06 and the components in src/components. Product screens 07–21
           stay in later tasks.
         </p>
 
@@ -521,6 +522,41 @@ export default function DesignPage() {
               </p>
             </Panel>
           </div>
+        </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">03 · 04</p>
+          <h2 className="font-display text-display text-text-ink mb-8">App shell and public surface</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-24">
+            The header highlights the surface you are on. RoleContextBanner is
+            the info band when a second hat is in play. The landing sits on
+            ivory, uses the sun kicker, and the ring-and-point mark — not a
+            check glyph.
+          </p>
+          <div className="bg-state-info-soft text-state-info px-16 py-12 mb-24 flex flex-wrap justify-between gap-8">
+            <p className="text-small m-0">
+              You are viewing as owner of B-707 · Layan Green Park. Actions here
+              are recorded against that mandate.
+            </p>
+            <p className="text-small font-semibold m-0">Switch surface</p>
+          </div>
+          <div className="flex items-center gap-24 text-brand-andaman">
+            <TrustMark size={48} filled />
+            <p className="text-body text-text-stone m-0">
+              Trust points on the landing use this mark at 48px.
+            </p>
+          </div>
+        </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">06</p>
+          <h2 className="font-display text-display text-text-ink mb-8">Stay · the guest surface</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-0">
+            The in-stay home is a feed on ivory: paper stay card, sun kicker,
+            status chips, paper action tiles. Door codes and TM30 chips appear
+            only when those facts exist. Empty concierge, shuttle, and order
+            blocks are not rendered.
+          </p>
         </section>
       </div>
     </div>

@@ -366,4 +366,49 @@ describe('In-stay home space — stay project scope (T-034)', () => {
       expect(ratedOrder?.rating).toBe(5);
     });
   });
+
+  describe('stay facts on the card (board 06)', () => {
+    it('does not claim TM30 is filed when no filing exists', async () => {
+      const { guest, booking } = await stayIn();
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.tm30Filed).toBe(false);
+      expect(data.booking.adults).toBe(2);
+      expect(data.booking.balanceDueThb).toBe(0);
+    });
+
+    it('reports tm30Filed only after a filing is marked filed', async () => {
+      const { guest, booking } = await stayIn();
+      const bookingGuest = await db.bookingGuest.create({
+        data: {
+          bookingId: booking.id,
+          fullName: 'Stay Guest',
+          nationality: 'RU',
+          passportNumber: 'TM30FILED1',
+          isLead: true,
+        },
+      });
+
+      await db.tm30Filing.create({
+        data: {
+          bookingId: booking.id,
+          bookingGuestId: bookingGuest.id,
+          dueAt: new Date('2026-07-16T10:00:00Z'),
+          status: 'pending',
+        },
+      });
+
+      const pending = await getInStayHomeSpace(db, booking.id, guest.id);
+      expect(pending.tm30Filed).toBe(false);
+
+      await db.tm30Filing.update({
+        where: { id: (await db.tm30Filing.findFirst({ where: { bookingId: booking.id } }))!.id },
+        data: { status: 'filed', filedAt: new Date() },
+      });
+
+      const filed = await getInStayHomeSpace(db, booking.id, guest.id);
+      expect(filed.tm30Filed).toBe(true);
+    });
+  });
 });

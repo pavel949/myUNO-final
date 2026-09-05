@@ -28,13 +28,13 @@ export const RoleContextBanner = React.forwardRef<HTMLDivElement, RoleContextBan
       <div
         ref={ref}
         role="status"
-        className="flex flex-wrap items-center justify-between gap-8 bg-brand-sun-soft border border-border-line rounded-sm px-16 py-12 mb-24"
+        className="flex flex-wrap items-center justify-between gap-8 bg-state-info-soft text-state-info px-16 py-12 mb-24 rounded-md"
       >
-        <p className="text-small text-text-ink">{message}</p>
+        <p className="text-small m-0">{message}</p>
         {action ? (
           <a
             href={action.href}
-            className="text-small font-semibold text-brand-andaman underline underline-offset-2"
+            className="text-small font-semibold text-state-info"
           >
             {action.label}
           </a>

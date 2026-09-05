@@ -5,10 +5,15 @@ import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
 import {
   expireHolds,
   autoDeclineRequests,
+  remindUnansweredRequests,
   sendPrearrivalReminders,
+  sendCheckinInstructions,
+  sendCheckoutReminders,
   sendPostStayPrompts,
+  sendPostStayReengage,
 } from '@/modules/booking';
-import { expireStaleServiceOrders } from '@/modules/services';
+import { expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
+import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { syncAllICalAccounts } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
 import { JOB_KEYS } from './registry';
@@ -27,9 +32,11 @@ export async function runBookingLifecycleJob(db: PrismaClient) {
     async () => {
       const expired = await expireHolds(db);
       const declined = await autoDeclineRequests(db);
-      return { expired, declined };
+      const reminded = await remindUnansweredRequests(db);
+      return { expired, declined, reminded };
     },
-    (r) => `${r.expired} holds expired, ${r.declined} requests auto-declined`
+    (r) =>
+      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders`
   );
 }
 
@@ -104,10 +111,14 @@ export async function runGuestLifecycleJob(db: PrismaClient) {
     JOB_KEYS.guestLifecycle,
     async () => {
       const prearrival = await sendPrearrivalReminders(db);
+      const checkin = await sendCheckinInstructions(db);
+      const checkout = await sendCheckoutReminders(db);
       const postStay = await sendPostStayPrompts(db);
-      return { prearrival, postStay };
+      const reengage = await sendPostStayReengage(db);
+      return { prearrival, checkin, checkout, postStay, reengage };
     },
-    (r) => `${r.prearrival} pre-arrival, ${r.postStay} post-stay`
+    (r) =>
+      `${r.prearrival} pre-arrival, ${r.checkin} check-in, ${r.checkout} checkout, ${r.postStay} review, ${r.reengage} re-engage`
   );
 }
 
@@ -117,9 +128,18 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
     JOB_KEYS.serviceOrderExpiry,
     async () => {
       const slaHours = (await getConfig(db, 'service.accept_sla_hours')) as number | null;
-      return expireStaleServiceOrders(db, slaHours ?? 12);
+      const reminded = await remindUnansweredServiceOrders(db);
+      const reviewPrompted = await sendServiceOrderReviewPrompts(db);
+      const expired = await expireStaleServiceOrders(db, slaHours ?? 12);
+      const autoCloseDays = (await getConfig(db, 'tickets.auto_close_resolved_days')) as
+        | number
+        | null;
+      const closed = await autoCloseResolvedTickets(db, autoCloseDays ?? 7);
+      const breached = await checkAndTrackSLABreaches(db);
+      return { reminded, reviewPrompted, ...expired, closed, breached };
     },
-    (r) => `${r.expired} expired, ${r.refunded} refunded`
+    (r) =>
+      `${r.reminded} reminded, ${r.reviewPrompted} review prompts, ${r.expired} expired, ${r.refunded} refunded, ${r.closed} tickets closed, ${r.breached} SLA escalated`
   );
 }
 

@@ -1,6 +1,8 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
-import { findOrCreateThread, addSystemMessage } from '@/modules/comms';
+import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
+import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
+import { getPaymentProvider, getProviderConfig } from './providers';
 
 /**
  * Shared post-payment transition for service orders: placed → paid.
@@ -143,6 +145,8 @@ export async function recordCashPayment(
         data: { status: 'confirmed' },
       });
 
+      await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
+
       // Track analytics event (doc 13)
       await track(db, 'stay_payment_succeeded', {
         bookingId,
@@ -232,8 +236,12 @@ export async function createCheckout(
     amountThb,
   } = input;
 
-  // For loop-one, use mock provider by default
-  const provider = 'mock';
+  const { provider: providerName } = getProviderConfig();
+
+  const payer = await db.identity.findUnique({
+    where: { id: payerIdentityId },
+    select: { email: true, firstName: true, lastName: true },
+  });
 
   const payment = await db.payment.create({
     data: {
@@ -242,22 +250,47 @@ export async function createCheckout(
       serviceOrderId,
       payerIdentityId,
       method: 'card_provider',
-      provider,
+      provider: providerName === 'opn' ? 'opn' : 'mock',
       amountThb,
       status: 'pending',
     },
   });
 
-  // Generate a sessionId for tracking
-  const sessionId = payment.id;
-
-  // Mock provider returns a local checkout page
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const checkoutUrl = `${baseUrl}/checkout/${sessionId}`;
+  const returnUrl = `${baseUrl}/checkout/${payment.id}`;
+  const cancelUrl = bookingId
+    ? `${baseUrl}/trips/${bookingId}`
+    : serviceOrderId
+      ? `${baseUrl}/services/orders/${serviceOrderId}`
+      : `${baseUrl}/trips`;
+
+  if (providerName === 'opn' && process.env.PAYMENT_PROVIDER === 'opn') {
+    const provider = getPaymentProvider();
+    const session = await provider.createCheckout({
+      bookingId: bookingId ?? serviceOrderId ?? payment.id,
+      amount: amountThb,
+      guestEmail: payer?.email ?? '',
+      guestName: payer ? `${payer.firstName} ${payer.lastName}`.trim() : 'Guest',
+      returnUrl,
+      cancelUrl,
+      paymentId: payment.id,
+    });
+
+    await db.payment.update({
+      where: { id: payment.id },
+      data: { providerSessionId: session.id },
+    });
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: payment.id,
+      paymentId: payment.id,
+    };
+  }
 
   return {
-    checkoutUrl,
-    sessionId,
+    checkoutUrl: returnUrl,
+    sessionId: payment.id,
     paymentId: payment.id,
   };
 }
@@ -301,6 +334,21 @@ export async function verifyAndConfirm(
     throw new Error(
       `Cannot confirm payment with status ${payment.status}`
     );
+  }
+
+  if (
+    payment.provider === 'opn' &&
+    payment.providerSessionId &&
+    process.env.PAYMENT_PROVIDER === 'opn'
+  ) {
+    const provider = getPaymentProvider();
+    const confirmation = await provider.confirmPayment(payment.providerSessionId);
+    if (confirmation.status !== 'confirmed') {
+      throw new Error('Payment was not confirmed by the provider');
+    }
+    if (confirmation.amount !== payment.amountThb) {
+      throw new Error('Payment amount does not match the provider charge');
+    }
   }
 
   // **CRITICAL: Mark payment as succeeded**
@@ -351,6 +399,12 @@ export async function verifyAndConfirm(
         data: { status: 'confirmed' },
       });
 
+      await ensureDepositPreauthOnStayConfirmed(
+        db,
+        confirmed.bookingId,
+        booking.unitId
+      ).catch(() => null);
+
       // Create communication thread for booking context (best-effort)
       try {
         const fullBooking = await db.booking.findUnique({
@@ -359,7 +413,7 @@ export async function verifyAndConfirm(
         });
 
         if (fullBooking) {
-          await findOrCreateThread(db, {
+          const thread = await findOrCreateThread(db, {
             contextType: 'booking',
             contextId: confirmed.bookingId,
             projectId: booking.projectId,
@@ -369,7 +423,7 @@ export async function verifyAndConfirm(
           // Post system message for booking confirmation
           await addSystemMessage(
             db,
-            confirmed.bookingId,
+            thread.id,
             `Booking confirmed. Payment received.`
           );
         }
@@ -433,7 +487,154 @@ export async function refund(
     },
   });
 
+  if (
+    payment.provider === 'opn' &&
+    payment.providerSessionId &&
+    process.env.PAYMENT_PROVIDER === 'opn'
+  ) {
+    try {
+      const provider = getPaymentProvider();
+      const result = await provider.refund({
+        chargeId: payment.providerSessionId,
+        amount: amountThb,
+        reason,
+      });
+
+      const updated = await db.refund.update({
+        where: { id: refund.id },
+        data: {
+          providerRefundId: result.refundId,
+          ...(result.status === 'failed' ? { status: 'failed' } : {}),
+        },
+      });
+
+      if (result.status === 'failed') {
+        await markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
+        return updated;
+      }
+
+      return updated;
+    } catch (error) {
+      await markRefundFailed(
+        db,
+        refund.id,
+        error instanceof Error ? error.message : 'provider_error'
+      ).catch(() => null);
+      throw error;
+    }
+  }
+
   return refund;
+}
+
+/** Guest-facing refund state on a cancelled booking (doc 07 F-GUEST-8). */
+export type BookingRefundDisplayState = 'none' | 'processing' | 'completed';
+
+/**
+ * Whether a cancelled booking's refund is still in flight for the guest UI.
+ * Failed provider refunds still read as "processing" — money state never lies
+ * silently to the guest (doc 07 F-GUEST-8, doc 10 §8).
+ */
+export async function getBookingRefundDisplayState(
+  db: PrismaClient,
+  bookingId: string
+): Promise<BookingRefundDisplayState> {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { status: true, refundAccruedThb: true },
+  });
+
+  if (!booking || booking.status !== 'cancelled' || (booking.refundAccruedThb ?? 0) <= 0) {
+    return 'none';
+  }
+
+  const refunds = await db.refund.findMany({
+    where: { payment: { bookingId } },
+    select: { status: true, amountThb: true },
+  });
+
+  if (refunds.length === 0) {
+    return 'processing';
+  }
+
+  const succeededTotal = refunds
+    .filter((r) => r.status === 'succeeded')
+    .reduce((sum, r) => sum + r.amountThb, 0);
+
+  if (succeededTotal >= (booking.refundAccruedThb ?? 0)) {
+    return 'completed';
+  }
+
+  return 'processing';
+}
+
+/**
+ * Provider-side refund failure (doc 07 F-GUEST-8, doc 10 §8).
+ * Sets Refund.status=failed and alerts every admin (N-10).
+ */
+export async function markRefundFailed(
+  db: PrismaClient,
+  refundId: string,
+  failureReason?: string
+) {
+  const refundRecord = await db.refund.findUnique({
+    where: { id: refundId },
+    include: {
+      payment: {
+        include: {
+          booking: {
+            include: {
+              unit: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!refundRecord) {
+    throw new Error(`Refund ${refundId} not found`);
+  }
+
+  if (refundRecord.status === 'failed') {
+    return refundRecord;
+  }
+
+  const failed = await db.refund.update({
+    where: { id: refundId },
+    data: { status: 'failed' },
+  });
+
+  const booking = refundRecord.payment.booking;
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const reconciliationUrl = `${baseUrl}/admin/finance/reconciliation`;
+  const amountBaht = Math.round(refundRecord.amountThb / 100);
+
+  const admins = await db.identity.findMany({
+    where: { isAdmin: true, status: 'active' },
+    select: { id: true },
+  });
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification(db, {
+        identityId: admin.id,
+        type: 'finance_refund_failed',
+        titleKey: 'notify.finance.refund_failed.title',
+        bodyKey: 'notify.finance.refund_failed.body',
+        params: {
+          refund_id: refundId,
+          booking_id: booking?.id,
+          unit_name: booking?.unit?.name ?? '',
+          amount_thb: amountBaht,
+          reconciliation_url: reconciliationUrl,
+          failure_reason: failureReason ?? 'provider_declined',
+        },
+      }).catch(() => null)
+    )
+  );
+
+  return failed;
 }
 
 /**

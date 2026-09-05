@@ -1,148 +1,116 @@
 # myUNO Deployment Checklist
 
-## STATUS: READY FOR DEPLOYMENT
+Production URL: **https://my-uno-final.vercel.app**
 
-All code is committed. Follow this checklist to deploy to Vercel.
+Production git branch: **`main`**. All product work merges here. Do not treat
+`claude/project-repo-clarification-bavpp0` as production.
+
+---
+
+## 0. GitHub + Vercel + Supabase (do this once)
+
+### GitHub
+1. Repo **Settings → General → Default branch** → set to `main`.
+2. Protect `main` (required CI check `ci`).
+
+### Vercel (`my-uno-final` in team `pavel949s-projects`)
+1. **Settings → Git**
+   - Connected repo: `pavel949/myUNO-final`
+   - **Production Branch = `main`**
+   - Disconnect any extra Vercel project still pointing at this repo. A second
+     required project is why GitHub shows “1 required project failed to deploy”
+     even when this site is up.
+2. **Settings → Environment Variables** — see §1. **Do not set `NODE_ENV`.**
+   Next sets it. `NODE_ENV=development` on Vercel breaks `next build`
+   (React dual-instance, prerender failures on `/404`, `/legal`, `/design`).
+3. After changing env vars: **Deployments → ⋯ → Redeploy** the `main` build.
+
+### Supabase (`MyUno- final`, ref `burcnghheyzbzffzgmjz`)
+This app uses Supabase as **plain Postgres**. There is no Supabase JS client.
+
+1. Confirm the project is **ACTIVE** (not paused).
+2. **Settings → Database → Connection string → Session pooler** (port **5432**).
+   Username must be `postgres.burcnghheyzbzffzgmjz`, not `postgres`.
+3. Put that string in Vercel as `DATABASE_URL` for Production, Preview, and
+   Development. Never paste the IPv6-only `db.<ref>.supabase.co` host.
+4. Optional but preferred: **Vercel Marketplace → Supabase** (or Supabase
+   dashboard **Integrations → Vercel**) so `DATABASE_URL` is owned by the
+   integration, not a hand-copied secret. After linking, confirm the injected
+   URL is still the **session** pooler on 5432.
+5. GitHub **Supabase Preview** should run on `main` (it already does). It will
+   stay skipped on leftover `claude/**` default-branch PRs until GitHub’s
+   default branch is `main`.
+6. Deploys do **not** migrate. After schema changes run, from a trusted
+   machine:
+   `DATABASE_URL="<session pooler URL>" node scripts/provision-database.mjs`
+
+If a database password was ever committed (older copies of this file),
+**reset it in Supabase** and update Vercel. Do not put the new password in git.
 
 ---
 
 ## 1. Vercel Environment Variables
 
-Go to: **Vercel Dashboard → myUNO Project → Settings → Environment Variables**
+**Vercel → my-uno-final → Settings → Environment Variables**
 
-Add/verify these variables exist with the exact values shown:
+| Name | Notes |
+|---|---|
+| `DATABASE_URL` | Session pooler, port 5432, user `postgres.<ref>` |
+| `SESSION_SECRET` / `NEXTAUTH_SECRET` | Cookie signing — keep existing |
+| `NEXTAUTH_URL` | `https://my-uno-final.vercel.app` |
+| `NEXT_PUBLIC_APP_URL` | Same public origin |
+| `ENCRYPTION_KEY` | Keep existing. Never rotate once passports are stored. |
+| `CRON_SECRET` | Must match Vercel cron bearer |
+| `RESEND_API_KEY` | Set in Vercel only |
+| `EMAIL_FROM` | `onboarding@resend.dev` until the domain is verified |
+| `CONTENT_REVIEW_GATE_ENABLED` | `true` in production; `false` only to unblock a known review queue |
 
-### Database Connection
-- **Name:** `DATABASE_URL`
-- **Value:** `postgresql://postgres.burcnghheyzbzffzgmjz:V%253AGni4CSUN%3FV%5E@aws-1-ap-south-1.pooler.supabase.com:5432/postgres`
-- **Environments:** Production, Preview, Development
-- **⚠️ CRITICAL:** Must use `.pooler.supabase.com` NOT `.supabase.co`
-
-### Email Service (NEW - Add this)
-- **Name:** `RESEND_API_KEY`
-- **Value:** *(See Vercel Settings — already provided via shared secret)*
-- **Environments:** Production, Preview, Development
-- **⚠️ NOTE:** Do NOT commit the actual API key to git. Set this directly in Vercel UI.
-
-### Email From Address
-- **Name:** `EMAIL_FROM`
-- **Value:** `onboarding@resend.dev`
-- **Environments:** Production, Preview, Development
-
-### Authentication
-- **Name:** `NEXTAUTH_SECRET`
-- **Value:** (keep existing)
-- **Environments:** Production, Preview, Development
-
-### Encryption
-- **Name:** `ENCRYPTION_KEY`
-- **Value:** (keep existing)
-- **Environments:** Production, Preview, Development
-
-### Node Environment
-- **Name:** `NODE_ENV`
-- **Value:** `development`
-- **Environments:** Production, Preview, Development
+Do **not** set `NODE_ENV`.
 
 ---
 
-## 2. Trigger Deployment
+## 2. Trigger a production deploy
 
-Option A: **Redeploy the last commit**
-- Go to **Vercel Dashboard → myUNO Project → Deployments**
-- Find the latest deployment
-- Click **Redeploy** button
+Push or merge to `main`. Or **Deployments → Redeploy** the latest `main`
+deployment, with “use existing build cache” off if env vars just changed.
 
-Option B: **Push a new commit**
+---
+
+## 3. Verify
+
 ```bash
-git push origin main
+curl -sS https://my-uno-final.vercel.app/api/health
+# expect: {"status":"ok","db":"ok"}
 ```
 
-Vercel will automatically trigger a new deployment.
-
----
-
-## 3. Wait for Deployment
-
-Watch the deployment progress in Vercel:
-- Build should complete in 1-2 minutes
-- Function logs will show if there are any errors
-
----
-
-## 4. Test Registration Flow
-
-Once "Ready" appears in Vercel:
-
-1. Open https://myuno-final.vercel.app/register
-2. Fill in registration form:
-   - **First Name:** Test
-   - **Last Name:** User
-   - **Email:** test@example.com
-   - **Password:** TestPassword123 (must have uppercase, lowercase, number, 8+ chars)
-3. Click **Register**
-4. Check email for verification link (should arrive via Resend)
-5. Click the link to verify
-6. Navigate to /login
-7. Log in with test@example.com and password
-
----
-
-## 5. Admin Login Test
-
-1. Go to /forgot-password
-2. Enter pavel@ignatevestate.com
-3. Check email for reset link
-4. Click link and set new password (e.g., AdminPassword123)
-5. Go to /login
-6. Log in with pavel@ignatevestate.com
-7. Verify admin dashboard loads
+Then open `/`, `/login`, `/register`, `/projects`.
 
 ---
 
 ## Troubleshooting
 
-### "Registration failed" error
-- Check Vercel logs: **Deployments → Latest → Functions**
-- Look for error details in the console output
-- Verify password meets requirements: 8+ chars, uppercase, lowercase, number
-- Verify email is not already in database
+### Vercel build fails with `<Html> should not be imported outside of pages/_document`
+`NODE_ENV` is set to `development` on the Vercel project. Delete that variable
+and redeploy.
+
+### Vercel build fails: content pending founder review
+The content-review gate connected to the database and found `needs_review`
+rows. Review them in admin, or temporarily set
+`CONTENT_REVIEW_GATE_ENABLED=false` (Production) and redeploy.
+
+### `503 {"status":"degraded","db":"unreachable"}`
+Wrong `DATABASE_URL`, paused Supabase project, or no redeploy after changing
+the URL. Use the session pooler.
+
+### `503 {"status":"degraded","db":"pool_exhausted"}`
+Too many session-pooler clients. Runtime caps each isolate at
+`connection_limit=1`. Wait for isolates to recycle, then redeploy this build.
+
+### GitHub “1 required project failed to deploy”
+A second Vercel project (or an old Production Git integration) is required
+and red. Open
+https://vercel.com/pavel949s-projects/~/deployments?repo=github%2Fpavel949%2FmyUNO-final
+and disconnect the extra project.
 
 ### Email not arriving
-- Verify `RESEND_API_KEY` is set in Vercel environment variables
-- Check Vercel function logs for `[EMAIL SENT]` or `[EMAIL - DEV/MISSING_KEY]` messages
-- If seeing "[EMAIL - DEV/MISSING_KEY]", the RESEND_API_KEY is not set in Vercel
-- Contact admin for the correct Resend API key value
-
-### Database connection errors
-- Verify `DATABASE_URL` uses `.pooler.supabase.com` (not `.supabase.co`)
-- Check Supabase dashboard to ensure database is running
-- Verify the credentials in the connection string are correct
-
-### Build fails
-- Check Vercel build logs for specific errors
-- Common causes: Content gate blocking (should be fixed now), missing environment variables
-- Review `.github/workflows/ci.yml` for build steps
-
----
-
-## Next Steps (After Admin Login Works)
-
-1. Seed three premium projects: `npm run seed:three-projects`
-2. Run end-to-end testing through booking flow
-3. Verify owner statements and admin dashboards
-4. Test all roles (admin, owner, staff, guest)
-5. Verify email notifications work for key events
-
----
-
-## Critical Notes
-
-- **RESEND_API_KEY:** Do NOT commit this to git. Only set in Vercel environment.
-- **DATABASE_URL:** Must use pooler connection for Vercel. Direct connection will timeout.
-- **Password Requirements:** Minimum 8 characters, must include uppercase, lowercase, and number
-- **Email Verification:** Emails are sent via Resend API. Without RESEND_API_KEY, registration succeeds but emails don't arrive.
-
----
-
-Generated: 2026-08-28
+`RESEND_API_KEY` missing. Function logs show `[EMAIL - DEV/MISSING_KEY]`.

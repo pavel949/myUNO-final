@@ -47,6 +47,8 @@ export interface PaymentProvider {
     guestName: string;
     returnUrl: string; // POST /api/checkout/confirm
     cancelUrl: string; // Guest cancels checkout
+    /** Platform payment row id — stored on the charge for webhook matching */
+    paymentId?: string;
   }): Promise<CheckoutSession>;
 
   /**
@@ -84,7 +86,7 @@ export interface PaymentProvider {
 }
 
 export interface ProviderConfig {
-  provider: 'mock' | 'stripe' | 'omise' | 'yandex-kassa';
+  provider: 'mock' | 'opn' | 'stripe' | 'omise' | 'yandex-kassa';
   publicKey?: string; // Publishable/public key (safe for client)
   secretKey?: string; // Secret key (server-only)
   webhookSecret?: string; // For webhook signature verification

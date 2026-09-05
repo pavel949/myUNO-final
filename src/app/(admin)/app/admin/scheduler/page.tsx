@@ -46,14 +46,14 @@ export default async function AdminSchedulerPage() {
     'admin.scheduler.empty_summary': '—',
     'admin.scheduler.never_hint':
       'No recorded run. Either the scheduler is not firing, or this job has not been invoked since tracking began.',
-    'admin.scheduler.job.booking_lifecycle': 'Hold expiry and request auto-decline',
+    'admin.scheduler.job.booking_lifecycle': 'Hold expiry, auto-decline, and request reminders',
     'admin.scheduler.job.tm30_escalations': 'TM30 filing escalations',
     'admin.scheduler.job.ical_sync': 'iCal import sync',
     'admin.scheduler.job.verification_deadlines': 'Pre-arrival verification deadlines',
     'admin.scheduler.job.retention': 'Retention and PDPA deletions',
     'admin.scheduler.job.metrics_rollup': 'Nightly metric rollup',
-    'admin.scheduler.job.guest_lifecycle': 'Pre-arrival and post-stay messages',
-    'admin.scheduler.job.service_order_expiry': 'Stale service-order expiry',
+    'admin.scheduler.job.guest_lifecycle': 'Guest lifecycle messages (pre-arrival through re-engage)',
+    'admin.scheduler.job.service_order_expiry': 'Service-order SLAs and ticket auto-close',
     'admin.scheduler.cadence.frequent': 'Daily, afternoon (Phuket)',
     'admin.scheduler.cadence.nightly': 'Nightly',
   });

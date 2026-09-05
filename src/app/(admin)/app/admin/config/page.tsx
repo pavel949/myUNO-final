@@ -61,6 +61,11 @@ export default async function AdminConfigPage({
     'admin.config.error_json': 'Invalid JSON — fix the syntax and try again.',
     'admin.config.error_generic': 'Save failed. Please try again.',
     'admin.config.no_projects': 'Create a project first.',
+    'admin.config.history_show': 'View history',
+    'admin.config.history_hide': 'Hide history',
+    'admin.config.history_loading': 'Loading change history…',
+    'admin.config.history_empty': 'No changes recorded for this parameter yet.',
+    'admin.config.history_error': 'Could not load change history.',
   });
 
   return (

@@ -89,6 +89,7 @@ module.exports = {
         // instructions and are legitimately literal.
         const TECHNICAL_ATTRS = new Set([
           'className', 'id', 'htmlFor', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
+          'basePath',
           'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
           'variant', 'size',
           // SVG

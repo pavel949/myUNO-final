@@ -16,6 +16,15 @@ export interface StatementLine {
   bookingEndDate: string | null;
 }
 
+export interface StatementPayout {
+  id: string;
+  amountTh: number;
+  method: string;
+  reference: string;
+  executedOn: string;
+  status: string;
+}
+
 export interface StatementDetail {
   id: string;
   unitName: string;
@@ -48,6 +57,8 @@ export interface StatementDetail {
   capApplied: boolean;
 
   lines: StatementLine[];
+  payout: StatementPayout | null;
+  questionThreadId: string | null;
 }
 
 interface OwnerStatementDetailClientProps {
@@ -127,6 +138,13 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   const [disputeSent, setDisputeSent] = useState(false);
   const [disputeBusy, setDisputeBusy] = useState(false);
   const [disputeError, setDisputeError] = useState<string | null>(null);
+  const [questionOpen, setQuestionOpen] = useState(false);
+  const [questionBody, setQuestionBody] = useState('');
+  const [questionBusy, setQuestionBusy] = useState(false);
+  const [questionError, setQuestionError] = useState<string | null>(null);
+  const [questionThreadId, setQuestionThreadId] = useState<string | null>(
+    statement.questionThreadId
+  );
 
   // Group the line items by category and total each group; the breakdown rows
   // open onto their own group, so a figure is never shown without its sources.
@@ -315,6 +333,34 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
       );
     } finally {
       setDisputeBusy(false);
+    }
+  };
+
+  const handleQuestionSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!questionBody.trim()) return;
+    setQuestionBusy(true);
+    setQuestionError(null);
+    try {
+      const response = await fetch(`/api/owner/statements/${statement.id}/question`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: questionBody.trim() }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['owner.statement.question_error']);
+      }
+      const data = await response.json();
+      setQuestionThreadId(data.threadId);
+      setQuestionOpen(false);
+      setQuestionBody('');
+    } catch (err) {
+      setQuestionError(
+        err instanceof Error ? err.message : labels['owner.statement.question_error']
+      );
+    } finally {
+      setQuestionBusy(false);
     }
   };
 
@@ -632,6 +678,103 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 {signOffError}
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Payout */}
+        <div className="mb-40">
+          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            {labels['owner.statement.payout_title']}
+          </h2>
+          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+            {statement.payout ? (
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-12 text-body">
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.statement.payout_amount']}</dt>
+                  <dd className="font-semibold text-text-ink">
+                    <MoneyAmount satang={toSatang(statement.payout.amountTh)} />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.statement.payout_executed']}</dt>
+                  <dd className="text-text-ink">{formatDate(statement.payout.executedOn)}</dd>
+                </div>
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.statement.payout_method']}</dt>
+                  <dd className="text-text-ink">
+                    {labels[`owner.statement.payout_method.${statement.payout.method}`] ||
+                      statement.payout.method}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-secondary">{labels['owner.statement.payout_reference']}</dt>
+                  <dd className="text-text-ink font-mono">{statement.payout.reference}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-body text-text-secondary">
+                {labels['owner.statement.payout_pending']}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Question thread */}
+        <div className="mb-40">
+          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            {labels['owner.statement.question_title']}
+          </h2>
+          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+            <p className="text-body text-text-secondary mb-16">
+              {labels['owner.statement.question_hint']}
+            </p>
+            {questionThreadId ? (
+              <Link
+                href={`/messages/${questionThreadId}`}
+                className="inline-flex items-center text-body font-semibold text-brand-andaman hover:underline"
+              >
+                {labels['owner.statement.question_open_thread']}
+              </Link>
+            ) : null}
+            {questionOpen ? (
+              <form onSubmit={handleQuestionSubmit} className="flex flex-col gap-12 mt-16">
+                <textarea
+                  value={questionBody}
+                  onChange={(event) => setQuestionBody(event.target.value)}
+                  rows={4}
+                  maxLength={4000}
+                  className="px-12 py-8 rounded-sm bg-surface-paper border border-border-line text-text-ink focus:border-brand-andaman focus:outline-none"
+                  placeholder={labels['owner.statement.question_placeholder']}
+                />
+                {questionError ? (
+                  <p role="alert" className="text-body text-state-error">
+                    {questionError}
+                  </p>
+                ) : null}
+                <div className="flex gap-12">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    isLoading={questionBusy}
+                    disabled={!questionBody.trim()}
+                  >
+                    {labels['owner.statement.question_submit']}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setQuestionOpen(false)}
+                    disabled={questionBusy}
+                  >
+                    {labels['owner.statement.question_cancel']}
+                  </Button>
+                </div>
+              </form>
+            ) : !questionThreadId ? (
+              <Button variant="ghost" onClick={() => setQuestionOpen(true)}>
+                {labels['owner.statement.question_open']}
+              </Button>
+            ) : null}
           </div>
         </div>
 

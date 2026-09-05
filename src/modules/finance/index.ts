@@ -8,7 +8,10 @@ export {
   createCheckout,
   verifyAndConfirm,
   refund,
+  markRefundFailed,
+  getBookingRefundDisplayState,
   markPaymentFailed,
+  type BookingRefundDisplayState,
   type RecordCashPaymentInput,
   type RecordCashRefundInput,
   type CreateCheckoutInput,
@@ -46,14 +49,21 @@ export {
 
 export {
   computeProviderRemittance,
+  getProviderRemittancesView,
   getReconciliationData,
   reconcilePayout,
   resolveFailedRefund,
+  resolveProviderPayoutPeriod,
+  type PayoutPeriodCadence,
+  type ProviderRemittancePayoutRow,
+  type ProviderRemittancesView,
   type RemittanceReport,
 } from './payout.service';
 
 export {
   scheduleDepositPreauth,
+  scheduleDepositPreauthIfConfigured,
+  ensureDepositPreauthOnStayConfirmed,
   voidDepositPreauthIfClean,
   captureDepositPreauthOnClaim,
   releaseDepositPreauthOnDispute,
@@ -62,8 +72,11 @@ export {
   rejectClaim,
   getClaimsAwaitingResolution,
   getStaysOpenToClaim,
+  getActiveDepositClaimForGuest,
+  disputeDepositClaim,
   type DepositClaimInput,
   type DepositClaimDetails,
+  type DepositClaimGuestView,
   type ClaimableStay,
 } from './deposits.service';
 
@@ -77,3 +90,5 @@ export {
   type TransferInstructions,
   type RecordBankTransferInput,
 } from './bank-transfer.service';
+
+export { processOpnEvent, type OpnWebhookEvent } from './provider-webhook.service';

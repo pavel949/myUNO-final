@@ -1,6 +1,7 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
 
@@ -46,6 +47,7 @@ interface SerializedOpportunity extends Omit<CrmOpportunity, 'createdAt' | 'upda
 
 interface OpportunityDetailClientProps {
   opportunity: SerializedOpportunity;
+  labels?: Record<string, string>;
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -101,9 +103,49 @@ const formatDate = (dateString: string | null): string => {
 
 export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
   opportunity,
+  labels = {},
 }) => {
+  const router = useRouter();
+  const [activityBusy, setActivityBusy] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [activitySubject, setActivitySubject] = useState('');
+  const [activityBody, setActivityBody] = useState('');
+
   const daysInStage = getDaysInStage(opportunity.createdAt);
   const weightedValue = ((opportunity.valueThb ?? 0) * opportunity.probability) / 100;
+
+  const logActivity = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!activitySubject.trim()) return;
+    setActivityBusy(true);
+    setActivityError(null);
+    try {
+      const response = await fetch('/api/admin/crm/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identityId: opportunity.identityId,
+          opportunityId: opportunity.id,
+          type: 'note',
+          subject: activitySubject.trim(),
+          body: activityBody.trim() || undefined,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || labels['admin.crm.activity.error'] || 'Failed');
+      }
+      setActivitySubject('');
+      setActivityBody('');
+      router.refresh();
+    } catch (err) {
+      setActivityError(
+        err instanceof Error ? err.message : labels['admin.crm.activity.error'] || 'Failed'
+      );
+    } finally {
+      setActivityBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-24">
@@ -281,6 +323,42 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Log activity */}
+      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+        <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+          {labels['admin.crm.activity.title'] || 'Log activity'}
+        </h2>
+        {activityError && (
+          <p className="text-body text-state-error mb-12">{activityError}</p>
+        )}
+        <form onSubmit={logActivity} className="space-y-12">
+          <input
+            type="text"
+            value={activitySubject}
+            onChange={(e) => setActivitySubject(e.target.value)}
+            placeholder={labels['admin.crm.activity.subject'] || 'Subject'}
+            className="h-40 px-12 rounded-sm bg-surface-ivory border border-border-line text-small w-full"
+            required
+          />
+          <textarea
+            value={activityBody}
+            onChange={(e) => setActivityBody(e.target.value)}
+            placeholder={labels['admin.crm.activity.body'] || 'Notes (optional)'}
+            rows={3}
+            className="px-12 py-8 rounded-sm bg-surface-ivory border border-border-line text-small w-full"
+          />
+          <button
+            type="submit"
+            disabled={activityBusy}
+            className="px-16 py-8 rounded-sm bg-brand-andaman text-on-dark-text text-small font-semibold disabled:opacity-50"
+          >
+            {activityBusy
+              ? labels['admin.crm.activity.saving'] || 'Saving…'
+              : labels['admin.crm.activity.submit'] || 'Add note'}
+          </button>
+        </form>
       </div>
 
       {/* Activities Section */}

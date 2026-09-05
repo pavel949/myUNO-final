@@ -1,7 +1,56 @@
 import { PrismaClient, TicketStatus, TicketPriority, TicketEventType, RoleType } from '@prisma/client';
-import { assertCatalogKeys } from '@/modules/config';
+import { assertCatalogKeys, getConfig, type ConfigKey } from '@/modules/config';
 import { publishMessage } from './thread.bus';
 import { track } from '@/modules/analytics';
+
+const SLA_HOURS_BY_PRIORITY: Record<TicketPriority, ConfigKey> = {
+  urgent: 'tickets.sla_hours.urgent',
+  high: 'tickets.sla_hours.high',
+  normal: 'tickets.sla_hours.normal',
+  low: 'tickets.sla_hours.low',
+};
+
+const DEFAULT_SLA_HOURS: Record<TicketPriority, number> = {
+  urgent: 4,
+  high: 24,
+  normal: 72,
+  low: 168,
+};
+
+async function resolveTicketSlaDueAt(
+  db: PrismaClient,
+  projectId: string,
+  unitId: string | undefined,
+  priority: TicketPriority
+): Promise<Date> {
+  const configuredHours = await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId, unitId });
+  const slaHours =
+    typeof configuredHours === 'number' ? configuredHours : DEFAULT_SLA_HOURS[priority];
+  return new Date(Date.now() + slaHours * 60 * 60 * 1000);
+}
+
+async function resolveDefaultAssigneeIdentityId(
+  db: PrismaClient,
+  projectId: string
+): Promise<string | null> {
+  const assigneeMode =
+    (await getConfig(db, 'tickets.default_assignee', { projectId })) ?? 'project_ops_lead';
+  if (assigneeMode === 'unassigned') {
+    return null;
+  }
+
+  const opsLead = await db.roleAssignment.findFirst({
+    where: {
+      projectId,
+      role: 'staff_ops',
+      status: 'active',
+    },
+    select: { identityId: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return opsLead?.identityId ?? null;
+}
 
 export interface RaiseTicketInput {
   projectId: string;
@@ -21,6 +70,16 @@ export interface UpdateTicketStatusInput {
   note?: string;
 }
 
+const ALLOWED_TICKET_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  open: ['acknowledged', 'cancelled'],
+  acknowledged: ['in_progress', 'cancelled'],
+  in_progress: ['waiting_reporter', 'resolved', 'cancelled'],
+  waiting_reporter: ['in_progress', 'cancelled'],
+  resolved: ['closed', 'in_progress'],
+  closed: [],
+  cancelled: [],
+};
+
 /**
  * Raise a new ticket.
  * Auto-creates a thread for the ticket conversation.
@@ -33,11 +92,13 @@ export async function raiseTicket(
 ): Promise<{ id: string; threadId: string }> {
   const { projectId, unitId, raisedByIdentityId, raisedByRole, categoryKey, title, description, priority = 'normal' } = input;
 
-  // In a full implementation, fetch config for default assignee and SLA hours
-  // For now, leave assignee null and slaEmaAt null (will be implemented with config service in next phase)
-
   // Category must exist in the doc 04 §8 catalog (DM-3)
   await assertCatalogKeys(db, 'catalog.ticket_categories', categoryKey, { projectId });
+
+  const [slaDueAt, assigneeIdentityId] = await Promise.all([
+    resolveTicketSlaDueAt(db, projectId, unitId, priority),
+    resolveDefaultAssigneeIdentityId(db, projectId),
+  ]);
 
   const ticket = await db.ticket.create({
     data: {
@@ -50,6 +111,8 @@ export async function raiseTicket(
       description,
       priority,
       status: 'open',
+      slaDueAt,
+      assigneeIdentityId,
     },
   });
 
@@ -84,6 +147,14 @@ export async function raiseTicket(
     note: 'Ticket created',
   });
 
+  if (assigneeIdentityId) {
+    await recordTicketEvent(db, ticket.id, 'assignment', raisedByIdentityId, {
+      assignedTo: assigneeIdentityId,
+      previousAssignee: null,
+      autoAssigned: true,
+    });
+  }
+
   // Track analytics event for ticket raised
   await track(db, 'ticket_raised', {
     projectId,
@@ -105,7 +176,8 @@ export async function updateTicketStatus(
   db: PrismaClient,
   input: UpdateTicketStatusInput
 ): Promise<void> {
-  const { ticketId, newStatus, actorIdentityId, note } = input;
+  const { ticketId, newStatus, actorIdentityId } = input;
+  const note = input.note?.trim();
 
   const ticket = await db.ticket.findUnique({
     where: { id: ticketId },
@@ -121,14 +193,34 @@ export async function updateTicketStatus(
   }
 
   const oldStatus = ticket.status;
+  const allowedTargets = ALLOWED_TICKET_TRANSITIONS[oldStatus];
+  if (!allowedTargets.includes(newStatus)) {
+    throw new Error(`invalid transition: ${oldStatus} -> ${newStatus}`);
+  }
+
+  if (newStatus === 'resolved' && !note) {
+    throw new Error('invalid request: resolution note required for resolved status');
+  }
 
   // Update ticket
+  const updatePayload: {
+    status: TicketStatus;
+    resolvedAt?: Date | null;
+    resolutionNote?: string | null;
+  } = { status: newStatus };
+
+  if (newStatus === 'resolved') {
+    updatePayload.resolvedAt = new Date();
+    updatePayload.resolutionNote = note;
+  } else if (oldStatus === 'resolved' && newStatus === 'in_progress') {
+    // Re-opened after reporter feedback: previous resolution no longer applies.
+    updatePayload.resolvedAt = null;
+    updatePayload.resolutionNote = null;
+  }
+
   await db.ticket.update({
     where: { id: ticketId },
-    data: {
-      status: newStatus,
-      ...(newStatus === 'resolved' && { resolvedAt: new Date(), resolutionNote: note }),
-    },
+    data: updatePayload,
   });
 
   // Record event
@@ -335,6 +427,60 @@ export async function getReporterTickets(
   });
 }
 
+export type AdminTicketBoardFilter = 'active' | 'all' | TicketStatus;
+
+const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
+  'open',
+  'acknowledged',
+  'in_progress',
+  'waiting_reporter',
+];
+
+/**
+ * Cross-project ticket board for admin (doc 08 §6 §9, S14).
+ * Sorted by SLA due date, then newest first.
+ */
+export async function getAdminTicketBoard(
+  db: PrismaClient,
+  options?: {
+    projectId?: string;
+    filter?: AdminTicketBoardFilter;
+    limit?: number;
+  }
+) {
+  const filter = options?.filter ?? 'active';
+  const limit = options?.limit ?? 100;
+
+  const statusWhere =
+    filter === 'all'
+      ? {}
+      : filter === 'active'
+        ? { status: { in: ACTIVE_TICKET_STATUSES } }
+        : { status: filter };
+
+  return db.ticket.findMany({
+    where: {
+      ...(options?.projectId ? { projectId: options.projectId } : {}),
+      ...statusWhere,
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      categoryKey: true,
+      createdAt: true,
+      slaDueAt: true,
+      project: { select: { id: true, name: true } },
+      unit: { select: { id: true, name: true } },
+      raisedBy: { select: { firstName: true, lastName: true } },
+      assignee: { select: { firstName: true, lastName: true } },
+    },
+    orderBy: [{ slaDueAt: 'asc' }, { createdAt: 'desc' }],
+    take: limit,
+  });
+}
+
 /**
  * Check for SLA breaches and track analytics events.
  * Called by cron job to detect tickets where slaDueAt has passed while still open.
@@ -342,13 +488,23 @@ export async function getReporterTickets(
 export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number> {
   const now = new Date();
 
-  // Find open tickets with slaDueAt in the past that haven't been marked as breached
+  const activeStatuses: TicketStatus[] = [
+    'open',
+    'acknowledged',
+    'in_progress',
+    'waiting_reporter',
+  ];
+
+  // Find active tickets with slaDueAt in the past that have not yet been escalated.
   const breachedTickets = await db.ticket.findMany({
     where: {
-      status: { not: 'closed' },
+      status: { in: activeStatuses },
       slaDueAt: { lt: now },
-      // Track only once per ticket by checking a breach_tracked_at field or similar
-      // For now, track all matching tickets
+      events: {
+        none: {
+          eventType: 'sla_escalation',
+        },
+      },
     },
     select: {
       id: true,
@@ -368,6 +524,12 @@ export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number
     // Calculate hours to resolve (from creation to now, but should have been resolved by slaDueAt)
     const hoursElapsed = (now.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
 
+    await recordTicketEvent(db, ticket.id, 'sla_escalation', null, {
+      escalatedAt: now.toISOString(),
+      priority: ticket.priority,
+      hoursElapsed: Math.round(hoursElapsed),
+    });
+
     // Track the SLA breach event
     await track(db, 'ticket_sla_breached', {
       ticketId: ticket.id,
@@ -383,4 +545,52 @@ export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number
   }
 
   return breachedCount;
+}
+
+/**
+ * Auto-close resolved tickets after configured grace period (doc 09 §3).
+ */
+export async function autoCloseResolvedTickets(
+  db: PrismaClient,
+  autoCloseResolvedDays: number,
+  now: Date = new Date()
+): Promise<number> {
+  const graceDays = Math.max(0, Math.floor(autoCloseResolvedDays));
+  const closeBefore = new Date(now.getTime() - graceDays * 24 * 60 * 60 * 1000);
+
+  const staleResolvedTickets = await db.ticket.findMany({
+    where: {
+      status: 'resolved',
+      resolvedAt: { not: null, lte: closeBefore },
+    },
+    select: {
+      id: true,
+      threadId: true,
+    },
+  });
+
+  for (const ticket of staleResolvedTickets) {
+    await db.ticket.update({
+      where: { id: ticket.id },
+      data: { status: 'closed' },
+    });
+
+    await recordTicketEvent(db, ticket.id, 'status_change', null, {
+      oldStatus: 'resolved',
+      newStatus: 'closed',
+      note: 'Auto-closed after resolution grace period',
+    });
+
+    if (ticket.threadId) {
+      publishMessage(ticket.threadId, {
+        id: `event-${ticket.id}-${Date.now()}`,
+        threadId: ticket.threadId,
+        body: 'Status: resolved → closed',
+        messageKind: 'system',
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  return staleResolvedTickets.length;
 }

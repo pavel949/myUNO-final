@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getTransferInstructions } from '@/modules/finance';
+import { canViewTransferInstructions, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
  * Where to send the money for this booking.
@@ -19,6 +20,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     where: { id: params.id },
     select: {
       id: true,
+      unitId: true,
       projectId: true,
       guestIdentityId: true,
       totalThb: true,
@@ -28,8 +30,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-  const isStaff = user.isAdmin || user.roles.some((r) => r.role === 'staff_ops' || r.role === 'onsite_host');
-  if (booking.guestIdentityId !== user.identityId && !isStaff) {
+  const access = await resolveBookingAccess(user, {
+    guestIdentityId: booking.guestIdentityId,
+    projectId: booking.projectId,
+    unitId: booking.unitId,
+  });
+  if (!canViewTransferInstructions(access)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

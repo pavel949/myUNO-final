@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import PayoutForms from './payout-forms';
+import PayoutsTable from './payouts-table';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,7 @@ export default async function AdminPayoutsPage() {
     'admin.payouts.owner_tab': 'Owner payout',
     'admin.payouts.provider_tab': 'Provider payout',
     'admin.payouts.owner_statement': 'Statement',
+    'admin.payouts.period_to': 'to',
     'admin.payouts.owner_statement_empty':
       'No signed-off statement is waiting for a payout.',
     'admin.payouts.owner_share': 'Owner share (locked to the statement)',
@@ -70,6 +72,15 @@ export default async function AdminPayoutsPage() {
     'admin.payouts.success': 'Payout recorded.',
     'admin.payouts.error': 'That did not work.',
     'admin.payouts.compute_first': 'Compute the remittance before recording.',
+    'admin.payouts.history_title': 'Payout history',
+    'admin.payouts.reconciliation_link': 'Open reconciliation board →',
+    'admin.payouts.payee_type': 'Payee',
+    'admin.payouts.payee_owner': 'Owner',
+    'admin.payouts.payee_provider': 'Provider',
+    'admin.payouts.status_recorded': 'Recorded',
+    'admin.payouts.status_reconciled': 'Reconciled',
+    'admin.payouts.reconcile': 'Mark reconciled',
+    'admin.payouts.action': 'Action',
   });
 
   return (
@@ -90,37 +101,17 @@ export default async function AdminPayoutsPage() {
         labels={labels}
       />
 
-      <h2 className="text-heading-3 font-bold text-text-ink mt-40 mb-16">
-        {labels['admin.payouts.title']}
-      </h2>
-      {payouts.length === 0 ? (
-        <p className="text-body text-text-secondary">{labels['admin.payouts.empty']}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-small">
-            <thead>
-              <tr className="border-b border-border-line">
-                <th className="px-12 py-12 text-left">{labels['admin.payouts.reference']}</th>
-                <th className="px-12 py-12 text-right">{labels['admin.payouts.amount']}</th>
-                <th className="px-12 py-12 text-left">{labels['admin.payouts.status']}</th>
-                <th className="px-12 py-12 text-left">{labels['admin.payouts.recorded_by']}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payouts.map((p) => (
-                <tr key={p.id} className="border-b border-border-line">
-                  <td className="px-12 py-8 font-mono">{p.reference}</td>
-                  <td className="px-12 py-8 text-right font-mono">{(p.amountThb / 100).toFixed(2)}</td>
-                  <td className="px-12 py-8">{p.status}</td>
-                  <td className="px-12 py-8">
-                    {`${p.recordedBy?.firstName} ${p.recordedBy?.lastName}`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <PayoutsTable
+        payouts={payouts.map((p) => ({
+          id: p.id,
+          reference: p.reference,
+          amountThb: p.amountThb,
+          status: p.status,
+          payeeType: p.payeeType,
+          recordedByName: `${p.recordedBy?.firstName ?? ''} ${p.recordedBy?.lastName ?? ''}`.trim(),
+        }))}
+        labels={labels}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { recordCashPayment } from '@/modules/finance';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { canOperateBookingAsStaff, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
@@ -28,7 +29,7 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  *
  * Body: { receiptRef: string }
  * Amount is ALWAYS the booking's server-stored total — never client-sent.
- * Auth: staff_ops or admin only.
+ * Auth: scoped staff/admin or the scoped management company member.
  */
 export async function POST(
   req: NextRequest,
@@ -38,11 +39,6 @@ export async function POST(
     const user = await getCurrentUser();
     if (!user) {
       throw createPublicError('unauthorized', 401);
-    }
-
-    const isStaff = user.roles.some((role) => role.role === 'staff_ops');
-    if (!isStaff && !user.isAdmin) {
-      throw createPublicError('Access denied.', 403);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -56,6 +52,8 @@ export async function POST(
       select: {
         id: true,
         status: true,
+        projectId: true,
+        unitId: true,
         totalThb: true,
         guestIdentityId: true,
         payments: {
@@ -67,6 +65,15 @@ export async function POST(
 
     if (!booking) {
       throw createPublicError('not found', 404);
+    }
+
+    const access = await resolveBookingAccess(user, {
+      guestIdentityId: booking.guestIdentityId,
+      projectId: booking.projectId,
+      unitId: booking.unitId,
+    });
+    if (!canOperateBookingAsStaff(access)) {
+      throw createPublicError('Access denied.', 403);
     }
 
     if (booking.status !== 'pending_payment') {

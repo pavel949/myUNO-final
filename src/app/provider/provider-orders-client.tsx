@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 
@@ -31,17 +30,89 @@ const STATUS_TONE: Record<string, string> = {
   closed: 'text-text-secondary',
 };
 
+function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
+  const scheduledStart = raw.scheduledStart ?? raw.scheduled_start;
+  const scheduledEnd = raw.scheduledEnd ?? raw.scheduled_end;
+  const acceptDeadline = raw.acceptDeadline;
+
+  return {
+    id: String(raw.id),
+    status: String(raw.status),
+    scheduledStart: scheduledStart ? new Date(String(scheduledStart)).toISOString() : '',
+    scheduledEnd: scheduledEnd ? new Date(String(scheduledEnd)).toISOString() : null,
+    quantity: Number(raw.quantity ?? 1),
+    totalThb: Number(raw.totalThb ?? raw.total_thb ?? 0),
+    serviceTitle:
+      (raw.serviceTitle as string | null | undefined) ??
+      ((raw.service as { title?: string } | null)?.title ?? null),
+    noteToProvider:
+      (raw.noteToProvider as string | null | undefined) ??
+      (raw.note_to_provider as string | null | undefined) ??
+      null,
+    acceptDeadline: acceptDeadline ? new Date(String(acceptDeadline)).toISOString() : null,
+  };
+}
+
 export default function ProviderOrdersClient({
-  orders,
+  initialOrders,
   labels,
 }: {
-  orders: ProviderOrder[];
+  /** Optional SSR seed; tests pass this and skip the live API fetch. */
+  initialOrders?: ProviderOrder[];
   labels: Labels;
 }) {
-  const router = useRouter();
+  const [orders, setOrders] = useState<ProviderOrder[]>(initialOrders ?? []);
+  const [providerName, setProviderName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!initialOrders);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+
+  const loadQueue = useCallback(async () => {
+    const [meRes, ordersRes] = await Promise.all([
+      fetch('/api/provider/me'),
+      fetch('/api/provider/orders'),
+    ]);
+
+    if (meRes.ok) {
+      const meJson = await meRes.json();
+      setProviderName(meJson.provider?.name ?? null);
+    }
+
+    if (!ordersRes.ok) {
+      throw new Error(labels['provider.orders.error_generic']);
+    }
+
+    const ordersJson = await ordersRes.json();
+    setOrders(
+      Array.isArray(ordersJson.orders)
+        ? ordersJson.orders.map((row: Record<string, unknown>) => mapApiOrder(row))
+        : []
+    );
+  }, [labels]);
+
+  useEffect(() => {
+    if (initialOrders) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await loadQueue();
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : labels['provider.orders.error_generic']
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialOrders, loadQueue, labels]);
 
   const act = async (orderId: string, action: string, body?: unknown) => {
     setBusyId(orderId);
@@ -56,7 +127,27 @@ export default function ProviderOrdersClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['provider.orders.error_generic']);
       }
-      router.refresh();
+      if (initialOrders) {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  status:
+                    action === 'accept'
+                      ? 'accepted'
+                      : action === 'decline'
+                        ? 'declined'
+                        : action === 'fulfil'
+                          ? 'fulfilled'
+                          : order.status,
+                }
+              : order
+          )
+        );
+      } else {
+        await loadQueue();
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : labels['provider.orders.error_generic']
@@ -77,8 +168,15 @@ export default function ProviderOrdersClient({
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-8">
           {labels['provider.orders.title']}
+          {providerName ? (
+            <span className="text-body font-normal text-text-secondary"> · {providerName}</span>
+          ) : null}
         </h2>
-        {orders.length === 0 ? (
+        {loading ? (
+          <p className="text-body text-text-secondary py-8">
+            {labels['provider.orders.loading']}
+          </p>
+        ) : orders.length === 0 ? (
           <p className="text-body text-text-secondary py-8">
             {labels['provider.orders.empty']}
           </p>
@@ -101,9 +199,6 @@ export default function ProviderOrdersClient({
                     </span>
                   </p>
                   <p className="text-small text-text-secondary">
-                    {/* order.totalThb is satang (THB × 100) straight from the
-                        DB via serializeOrder — convert to baht only here, at
-                        final render (money rule, CLAUDE.md "Money rules"). */}
                     {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
                     {(order.totalThb / 100).toLocaleString()}
                   </p>

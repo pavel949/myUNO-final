@@ -25,7 +25,8 @@ export {
   type VerificationCheckResult,
 } from './verification.service';
 
-export { getOpsBoard } from './ops-board.service';
+export { getOpsBoard, getOpsMobilizationQueue, getOpsBookingRequests } from './ops-board.service';
+export type { OpsMobilizationUnit, OpsBookingRequest } from './ops-board.service';
 export type { OpsBoardData } from './ops-board.service';
 
 export {
@@ -35,3 +36,8 @@ export {
   isEncrypted,
   type GuestPiiInput,
 } from './guest-pii';
+
+export {
+  buildTm30AddressBlock,
+  TM30_IMMIGRATION_PORTAL_URL,
+} from './tm30-address';

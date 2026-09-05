@@ -7,7 +7,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { logTm30PassportAccess, decryptPassportNumber, safeDecrypt } from '@/modules/ops';
+import {
+  logTm30PassportAccess,
+  decryptPassportNumber,
+  safeDecrypt,
+  buildTm30AddressBlock,
+  TM30_IMMIGRATION_PORTAL_URL,
+} from '@/modules/ops';
+import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
 export async function GET(
   _req: NextRequest,
@@ -19,14 +26,6 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currentUser = await prisma.identity.findUnique({
-      where: { id: user.identityId },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     // Get the filing
     const filing = await prisma.tm30Filing.findUnique({
       where: { id: params.id },
@@ -34,6 +33,7 @@ export async function GET(
         booking: {
           include: {
             unit: true,
+            project: { select: { address: true, name: true } },
           },
         },
         bookingGuest: true,
@@ -45,30 +45,26 @@ export async function GET(
       return NextResponse.json({ error: 'Filing not found' }, { status: 404 });
     }
 
-    // Check authorization: staff only
-    const isStaff = await prisma.roleAssignment.findFirst({
-      where: {
-        identityId: currentUser.id,
-        projectId: filing.booking.projectId,
-        role: 'staff_ops',
-        status: 'active',
-      },
-    });
-
-    if (!isStaff) {
+    if (!(await canAccessTm30Filing(user, filing.booking))) {
       return NextResponse.json(
-        { error: 'Only staff can access passport data' },
+        { error: 'Only staff or MC members with unit scope can access passport data' },
         { status: 403 }
       );
     }
 
     // Log access
-    await logTm30PassportAccess(prisma, params.id, currentUser.id, 'viewed_passport_details');
+    await logTm30PassportAccess(prisma, params.id, user.identityId, 'viewed_passport_details');
 
     // Decrypt passport for response
     const decryptedPassport = filing.bookingGuest?.passportNumber
       ? decryptPassportNumber(filing.bookingGuest.passportNumber)
       : null;
+
+    const addressBlock = buildTm30AddressBlock({
+      unitName: filing.booking.unit.name,
+      addressSupplement: filing.booking.unit.addressSupplement,
+      projectAddress: filing.booking.project?.address,
+    });
 
     return NextResponse.json(
       {
@@ -77,8 +73,10 @@ export async function GET(
         nationality: filing.bookingGuest?.nationality,
         passportNumber: decryptedPassport,
         dateOfBirth: safeDecrypt(filing.bookingGuest?.dateOfBirth),
-        unit: filing.booking.unit,
-        address: 'Ready to copy to immigration portal',
+        unitName: filing.booking.unit.name,
+        projectName: filing.booking.project?.name,
+        addressBlock,
+        portalUrl: TM30_IMMIGRATION_PORTAL_URL,
       },
       { status: 200 }
     );

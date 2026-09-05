@@ -23,7 +23,7 @@ interface ResetPasswordLabels {
 
 export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
 
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');

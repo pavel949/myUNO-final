@@ -207,6 +207,13 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    // Dates taken is a 409 conflict (doc 07 F-GUEST-3), not a generic 400.
+    if (error instanceof Error && (error as { code?: string }).code === 'DOUBLE_BOOK') {
+      return NextResponse.json(
+        { error: error.message, code: 'DOUBLE_BOOK' },
+        { status: 409 }
+      );
+    }
     // Domain errors from the pricing/booking engine carry guest-actionable
     // messages (dates unavailable, below min nights, party too large)
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {

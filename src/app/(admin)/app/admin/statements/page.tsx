@@ -50,6 +50,13 @@ export default async function AdminStatementsPage() {
     'admin.statements.generate_submit': 'Generate',
     'admin.statements.generate_working': 'Generating…',
     'admin.statements.generate_success': 'Statement generated as a draft.',
+    'admin.statements.view_lines': 'Line items',
+    'admin.statements.hide_lines': 'Hide',
+    'admin.statements.lines_loading': 'Loading line items…',
+    'admin.statements.lines_empty': 'No line items on this statement.',
+    'admin.statements.lines_category': 'Category',
+    'admin.statements.lines_description': 'Description',
+    'admin.statements.lines_amount': 'Amount (฿)',
   });
 
   return (

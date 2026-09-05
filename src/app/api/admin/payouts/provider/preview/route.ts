@@ -1,6 +1,7 @@
-import { getCurrentUser } from '@/app/actions/getCurrentUser'
 import { NextRequest, NextResponse } from 'next/server'
-import prismadb from '@/app/libs/prismadb'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/app/libs/onboardingGuard'
+import { handleError } from '@/app/libs/errorHandler'
 import { computeProviderRemittance } from '@/modules/finance'
 
 export const dynamic = 'force-dynamic'
@@ -12,18 +13,10 @@ export const dynamic = 'force-dynamic'
  * refuses any `amountThb` that does not match this calculation exactly).
  */
 export async function GET(req: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    if (!currentUser.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 401 })
-    }
+  const guard = await requireAdmin()
+  if (!guard.ok) return guard.error
 
+  try {
     const { searchParams } = new URL(req.url)
     const providerId = searchParams.get('providerId')
     const periodStartRaw = searchParams.get('periodStart')
@@ -42,16 +35,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'periodStart must be a valid date before periodEnd' }, { status: 400 })
     }
 
-    const provider = await prismadb.provider.findUnique({ where: { id: providerId }, select: { name: true } })
+    const provider = await prisma.provider.findUnique({
+      where: { id: providerId },
+      select: { name: true },
+    })
     if (!provider) {
       return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
     }
 
-    const remittance = await computeProviderRemittance(prismadb, providerId, periodStart, periodEnd)
+    const remittance = await computeProviderRemittance(prisma, providerId, periodStart, periodEnd)
 
     return NextResponse.json({ providerName: provider.name, remittance })
   } catch (error) {
-    console.error('[PROVIDER PAYOUT PREVIEW]', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleError(error)
   }
 }

@@ -35,6 +35,8 @@ export default function ThreadClient({
   const router = useRouter();
   const [thread, setThread] = useState<ThreadData | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
+  const [flaggingId, setFlaggingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -69,6 +71,11 @@ export default function ThreadClient({
       if (response?.ok) {
         const data = await response.json();
         setMyId(data.id);
+        const staffRoles = new Set(['staff_ops', 'onsite_host']);
+        setIsStaff(
+          Boolean(data.isAdmin) ||
+            (Array.isArray(data.roles) && data.roles.some((r: string) => staffRoles.has(r)))
+        );
       }
     };
     inferMe();
@@ -93,6 +100,26 @@ export default function ThreadClient({
       setError(err instanceof Error ? err.message : labels['messages.thread.error_generic']);
     } finally {
       setSending(false);
+    }
+  };
+
+  const flagPurchase = async (messageId: string) => {
+    setFlaggingId(messageId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/messages/${messageId}/flag-as-purchase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || labels['messages.thread.error_generic']);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['messages.thread.error_generic']);
+    } finally {
+      setFlaggingId(null);
     }
   };
 
@@ -155,9 +182,23 @@ export default function ThreadClient({
                     </p>
                   )}
                   <p className="text-body whitespace-pre-wrap">{message.body}</p>
-                  <p className="text-small text-text-stone mt-4">
-                    {new Date(message.createdAt).toLocaleString()}
-                  </p>
+                  <div className="flex items-center justify-between gap-8 mt-4 flex-wrap">
+                    <p className="text-small text-text-stone">
+                      {new Date(message.createdAt).toLocaleString()}
+                    </p>
+                    {isStaff && !mine && message.sender ? (
+                      <button
+                        type="button"
+                        className="text-small text-brand-andaman hover:underline disabled:opacity-50"
+                        onClick={() => flagPurchase(message.id)}
+                        disabled={flaggingId === message.id}
+                      >
+                        {flaggingId === message.id
+                          ? labels['messages.thread.flag_working']
+                          : labels['messages.thread.flag_purchase']}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );

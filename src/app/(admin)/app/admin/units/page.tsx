@@ -44,6 +44,12 @@ export default async function AdminUnitsPage() {
     'admin.units.set_live': 'Set live',
     'admin.units.pause': 'Pause',
     'admin.units.upload_photo': 'Set photo',
+    'admin.units.asset_status': 'Asset status',
+    'admin.units.asset_status_reason': 'Reason for asset status change',
+    'admin.units.asset_status.managed': 'Managed',
+    'admin.units.asset_status.verified_partner': 'Verified partner',
+    'admin.units.asset_status.one_off_sourced': 'One-off sourced',
+    'admin.units.asset_status.suspended': 'Suspended',
     'admin.units.error_generic': 'Action failed. Please try again.',
   });
 
@@ -59,6 +65,7 @@ export default async function AdminUnitsPage() {
           name: unit.name,
           projectName: unit.project?.name || '—',
           status: unit.status,
+          assetStatus: unit.assetStatus,
           // Display boundary: baseNightlyThb is satang (THB x 100).
           baseNightlyThb: Math.round(unit.baseNightlyThb / 100),
           permittedUseConfirmed: Boolean(unit.permittedUseConfirmedAt),

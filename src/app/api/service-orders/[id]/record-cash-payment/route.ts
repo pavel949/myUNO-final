@@ -12,7 +12,7 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  *
  * Body: { receiptRef: string }
  * Amount is ALWAYS the order's server-stored total — never client-sent.
- * Auth: staff_ops or admin only.
+ * Auth: scoped staff/admin or scoped MC member managing the unit.
  */
 export async function POST(
   req: NextRequest,
@@ -24,8 +24,8 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
-    const { order, isStaff, isAdmin } = await loadOrderForUser(params.id, user);
-    if (!isStaff && !isAdmin) {
+    const { order, isStaff, isManagedMc, isAdmin } = await loadOrderForUser(params.id, user);
+    if (!isStaff && !isManagedMc && !isAdmin) {
       throw createPublicError('Access denied.', 403);
     }
 

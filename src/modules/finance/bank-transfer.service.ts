@@ -1,5 +1,6 @@
 import { PrismaClient, PaymentPurpose } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { track } from '@/modules/analytics';
 
 /**
  * Paying by bank transfer into the company account.
@@ -138,7 +139,7 @@ export async function recordBankTransfer(
 
   const now = new Date();
 
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     const payment = await tx.payment.create({
       data: {
         purpose: input.purpose,
@@ -162,7 +163,7 @@ export async function recordBankTransfer(
     if (input.bookingId && input.purpose === 'stay') {
       const booking = await tx.booking.findUnique({
         where: { id: input.bookingId },
-        select: { unitId: true },
+        select: { unitId: true, projectId: true, guestIdentityId: true, status: true },
       });
 
       if (booking) {
@@ -171,15 +172,41 @@ export async function recordBankTransfer(
             entryType: 'rental_revenue',
             amountThb: input.amountThb,
             unitId: booking.unitId,
+            projectId: booking.projectId,
             bookingId: input.bookingId,
             paymentId: payment.id,
             description: `Bank transfer received (ref ${input.bankReference.trim()})`,
             occurredOn: now,
           },
         });
+
+        if (booking.status === 'pending_payment') {
+          await tx.booking.update({
+            where: { id: input.bookingId },
+            data: {
+              status: 'confirmed',
+              holdExpiresAt: null,
+            },
+          });
+        }
       }
+
+      return { payment, tracking: booking };
     }
 
-    return payment;
+    return { payment, tracking: null };
   });
+
+  if (result.tracking) {
+    await track(db, 'stay_payment_succeeded', {
+      bookingId: input.bookingId,
+      unitId: result.tracking.unitId,
+      projectId: result.tracking.projectId,
+      identityId: result.tracking.guestIdentityId,
+      amountThb: input.amountThb,
+      method: 'bank_transfer',
+    }).catch(() => null);
+  }
+
+  return result.payment;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmOpportunityStage } from '@prisma/client';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import { transitionOpportunity } from '@/modules/crm';
 
@@ -8,8 +8,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { opportunityId: string } }
 ) {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   try {
     const body = await req.json();
@@ -20,7 +20,7 @@ export async function POST(
       prisma,
       params.opportunityId,
       body.stage,
-      user.identityId,
+      guard.actorIdentityId,
       {
         lostReason: body.lostReason,
         nextActionAt: body.nextActionAt ? new Date(body.nextActionAt) : null,

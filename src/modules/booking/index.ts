@@ -31,6 +31,23 @@ export {
 } from './booking.service';
 
 export {
+  BOOKING_REQUEST_DECLINE_REASONS,
+  bookingRequestDeclineReasonLabelKey,
+  formatDeclineCancellationReason,
+  getBookingDeclineReasonOptions,
+  isBookingRequestDeclineReason,
+  parseDeclineCancellationReason,
+  type BookingRequestDeclineReason,
+} from './request-decline-reasons';
+
+export {
+  enrichBookingRequestInbox,
+  summarizePriceBreakdown,
+  type BookingRequestBreakdownLine,
+  type BookingRequestInboxItem,
+} from './request-inbox-enrichment';
+
+export {
   computeRefundPercentage,
   computeRefundAmount,
   DEFAULT_POLICIES,
@@ -46,8 +63,13 @@ export {
 
 export {
   sendPrearrivalReminders,
+  sendCheckinInstructions,
+  sendCheckoutReminders,
   sendPostStayPrompts,
+  sendPostStayReengage,
 } from './lifecycle.jobs';
+
+export { remindUnansweredRequests } from './notify-request-reminder';
 
 // Reviews of the guest, after their stay — the other direction from stay
 // reviews. Built on the polymorphic Review with target_type 'guest'.

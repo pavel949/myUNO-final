@@ -1,26 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
-
-async function requireAdminUser() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-  if (!user.isAdmin) {
-    return { error: 'Forbidden', status: 403 };
-  }
-  return { user };
-}
+import { requireAdmin } from '@/app/libs/onboardingGuard';
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const auth = await requireAdminUser();
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   const opportunity = await prisma.crmOpportunity.findUnique({
     where: { id: params.id },
@@ -149,10 +136,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const auth = await requireAdminUser();
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
 
   const body = await req.json();
   const { requirements } = body;

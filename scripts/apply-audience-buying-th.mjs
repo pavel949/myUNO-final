@@ -1,0 +1,50 @@
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const map = JSON.parse(fs.readFileSync(join(__dirname, 'audience-buying-th-map.json'), 'utf8'));
+const path = join(__dirname, '../src/modules/content/seed.ts');
+const lines = fs.readFileSync(path, 'utf8').split('\n');
+
+const namespaces = new Set(['audience', 'buying']);
+let updated = 0;
+const missing = [];
+
+for (let i = 0; i < lines.length; i++) {
+  const line = lines[i];
+  const nsMatch = line.match(/namespace: '([^']+)'/);
+  if (!nsMatch || !namespaces.has(nsMatch[1])) continue;
+  if (/,\s*th:\s*'/.test(line)) continue;
+  const keyMatch = line.match(/key: '([^']+)'/);
+  if (!keyMatch) continue;
+  const key = keyMatch[1];
+  const translation = map[key];
+  if (!translation) {
+    missing.push(key);
+    continue;
+  }
+  const escaped = translation.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  if (line.includes("status: 'needs_review'")) {
+    lines[i] = line.replace(
+      /, status: 'needs_review'/,
+      `, th: '${escaped}', status: 'needs_review'`,
+    );
+  } else if (line.includes(', status: NR')) {
+    lines[i] = line.replace(/, status: NR/, `, th: '${escaped}', status: NR`);
+  } else if (/,\s*ru:\s*'/.test(line) && /\},\s*$/.test(line)) {
+    lines[i] = line.replace(/\s*\},\s*$/, `, th: '${escaped}' },`);
+  } else {
+    missing.push(key);
+    continue;
+  }
+  updated++;
+}
+
+if (missing.length) {
+  console.warn('No translation for:', missing.join(', '));
+  process.exit(1);
+}
+
+fs.writeFileSync(path, lines.join('\n'));
+console.log(`Updated ${updated} audience/buying keys`);

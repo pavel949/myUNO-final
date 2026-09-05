@@ -3,99 +3,114 @@
 import { IntegrationAccountHealth } from '@/app/actions/getIntegrationHealth';
 import { IntegrationStatus, IntegrationKey } from '@prisma/client';
 
-const INTEGRATION_LABELS: Record<IntegrationKey, string> = {
-  ical_airbnb: 'iCal - Airbnb',
-  ical_booking: 'iCal - Booking.com',
-  ical_agoda: 'iCal - Agoda',
-  payment_provider: 'Payment Provider',
-  whatsapp: 'WhatsApp',
-  telegram: 'Telegram',
-  crm_hubspot: 'HubSpot CRM',
-};
+function fill(template: string, params: Record<string, string | number>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  }
+  return result;
+}
 
-const STATUS_COLORS: Record<IntegrationStatus, string> = {
-  active: 'bg-green-100 text-green-700',
-  error: 'bg-red-100 text-red-700',
-  disabled: 'bg-gray-100 text-gray-700',
+const STATUS_STYLE: Record<IntegrationStatus, string> = {
+  active: 'bg-state-success-soft text-state-success',
+  error: 'bg-state-error-soft text-state-error',
+  disabled: 'bg-surface-ivory text-text-stone',
 };
 
 export function IntegrationHealthPanel({
   accounts,
   total,
+  labels,
+  locale,
 }: {
   accounts: IntegrationAccountHealth[];
   total: number;
+  labels: Record<string, string>;
+  locale: string;
 }) {
   if (accounts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No integration accounts configured</p>
+      <div className="text-center py-24">
+        <p className="text-body text-text-secondary">{labels['admin.integrations.empty']}</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Integration Health ({total})
-        </h2>
-      </div>
+  const integrationLabel = (key: IntegrationKey) =>
+    labels[`integrations.key.${key}`] || key;
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+  const statusLabel = (status: IntegrationStatus) =>
+    labels[`integrations.status.${status}`] || status;
+
+  const scopeLabel = (account: IntegrationAccountHealth) => {
+    if (account.unit) {
+      return fill(labels['admin.integrations.scope_unit'], { name: account.unit.name });
+    }
+    if (account.project) {
+      return fill(labels['admin.integrations.scope_project'], { name: account.project.name });
+    }
+    return labels['admin.integrations.scope_platform'];
+  };
+
+  return (
+    <div className="space-y-16">
+      <h2 className="text-heading-3 font-semibold text-text-ink">
+        {fill(labels['admin.integrations.table_title'], { total })}
+      </h2>
+
+      <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg">
+        <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Integration
+            <tr className="border-b border-border-line bg-surface-background">
+              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
+                {labels['admin.integrations.col_integration']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Scope
+              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
+                {labels['admin.integrations.col_scope']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Status
+              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
+                {labels['admin.integrations.col_status']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Last Sync
+              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
+                {labels['admin.integrations.col_last_sync']}
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Error
+              <th className="text-left py-12 px-16 font-semibold text-text-ink text-small">
+                {labels['admin.integrations.col_error']}
               </th>
             </tr>
           </thead>
           <tbody>
             {accounts.map((account) => (
-              <tr key={account.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4">
-                  <span className="text-sm font-medium">
-                    {INTEGRATION_LABELS[account.integrationKey]}
+              <tr
+                key={account.id}
+                className="border-b border-border-line last:border-b-0 hover:bg-surface-background"
+              >
+                <td className="py-12 px-16">
+                  <span className="text-body font-medium text-text-ink">
+                    {integrationLabel(account.integrationKey)}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm text-gray-600">
-                    {account.unit ? `Unit: ${account.unit.name}` :
-                     account.project ? `Project: ${account.project.name}` :
-                     'Platform'}
-                  </span>
+                <td className="py-12 px-16">
+                  <span className="text-small text-text-secondary">{scopeLabel(account)}</span>
                 </td>
-                <td className="py-3 px-4">
+                <td className="py-12 px-16">
                   <span
-                    className={`text-sm font-medium px-2 py-1 rounded ${
-                      STATUS_COLORS[account.status]
+                    className={`inline-flex items-center px-10 py-4 rounded-full text-small font-medium ${
+                      STATUS_STYLE[account.status]
                     }`}
                   >
-                    {account.status}
+                    {statusLabel(account.status)}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm text-gray-600">
+                <td className="py-12 px-16">
+                  <span className="text-small text-text-secondary">
                     {account.lastSyncAt
-                      ? new Date(account.lastSyncAt).toLocaleString()
-                      : 'Never'}
+                      ? new Date(account.lastSyncAt).toLocaleString(locale)
+                      : labels['admin.integrations.never_synced']}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm text-red-600">
+                <td className="py-12 px-16">
+                  <span className="text-small text-state-error">
                     {account.lastError || '—'}
                   </span>
                 </td>

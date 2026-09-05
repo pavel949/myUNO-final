@@ -3,19 +3,24 @@ import type { OwnerStatementStatus } from '@prisma/client';
 import {
   db,
   resetDb,
+  setGlobalConfig,
   createIdentity,
   createProject,
   createUnit,
   createBooking,
   createUnitEngagement,
+  createProvider,
+  createService,
 } from '@/test/util';
 import {
   bookOwnerStay,
   getOwnerDashboard,
+  getOwnerAlerts,
   getOwnerBookingsList,
   getOwnerPortfolioShape,
   getOwnerProjects,
   getOwnerStatements,
+  getOwnerUnitDashboard,
 } from './owner.service';
 
 describe('Owner experience (T-033)', () => {
@@ -26,8 +31,19 @@ describe('Owner experience (T-033)', () => {
   describe('owner-stay booking', () => {
     it('books an owner stay in their own unit', async () => {
       const owner = await createIdentity();
+      const ops = await createIdentity();
       const project = await createProject();
       const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      await db.roleAssignment.create({
+        data: {
+          identityId: ops.id,
+          role: 'staff_ops',
+          scopeType: 'project',
+          projectId: project.id,
+          status: 'active',
+        },
+      });
 
       // Book owner stay
       const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h from now
@@ -44,6 +60,80 @@ describe('Owner experience (T-033)', () => {
       expect(booking.totalThb).toBe(0); // Zero rent
       expect(booking.status).toBe('confirmed'); // Auto-confirmed
       expect(booking.guestIdentityId).toBe(owner.id);
+
+      const opsAlert = await db.notification.findFirst({
+        where: { identityId: ops.id, type: 'stay_owner_stay_booked' },
+      });
+      expect(opsAlert?.titleKey).toBe('notify.stay_owner_stay_booked.title');
+      expect(opsAlert?.bodyKey).toBe('notify.stay_owner_stay_booked.body');
+    });
+
+    it('schedules turnover cleaning service order when charge_cleaning is enabled', async () => {
+      await setGlobalConfig('owner_stay.charge_cleaning', true);
+
+      const owner = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const provider = await createProvider({ status: 'active' });
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { vetted_at: new Date() },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
+        basePriceThb: 15_000,
+      });
+      await db.serviceProject.create({
+        data: { service_id: service.id, project_id: project.id },
+      });
+
+      const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const endDate = new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const booking = await bookOwnerStay(db, {
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        startDate,
+        endDate,
+      });
+
+      const order = await db.serviceOrder.findFirst({
+        where: { booking_id: booking.id },
+      });
+      expect(order).toBeTruthy();
+      expect(order?.total_thb).toBe(15_000);
+      expect(order?.orderer_role).toBe('owner');
+    });
+
+    it('records ledger cleaning cost when no cleaning service is catalogued', async () => {
+      await setGlobalConfig('owner_stay.charge_cleaning', true);
+      await setGlobalConfig('pricing.cleaning_fee_thb', 8_000);
+
+      const owner = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const startDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const endDate = new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const booking = await bookOwnerStay(db, {
+        unitId: unit.id,
+        ownerIdentityId: owner.id,
+        startDate,
+        endDate,
+      });
+
+      const entry = await db.ledgerEntry.findFirst({
+        where: {
+          unitId: unit.id,
+          entryType: 'cleaning_cost',
+          description: { contains: booking.id },
+        },
+      });
+      expect(entry?.amountThb).toBe(8_000);
     });
 
     it('refuses owner stay if not enough notice', async () => {
@@ -188,6 +278,119 @@ describe('Owner experience (T-033)', () => {
       // Revenue should only count guest stays, not owner stays. 5000 satang
       // -> 50 baht, converted at the display boundary (CLAUDE.md; Q47).
       expect(unitData.revenueThisMonth).toBe(50); // Only the guest booking
+    });
+
+    it('counts only active ticket statuses in openTicketsCount', async () => {
+      const owner = await createIdentity();
+      const reporter = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      await db.ticket.createMany({
+        data: [
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Open item',
+            status: 'open',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Acknowledged item',
+            status: 'acknowledged',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'In progress item',
+            status: 'in_progress',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Waiting reporter item',
+            status: 'waiting_reporter',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Resolved item',
+            status: 'resolved',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Closed item',
+            status: 'closed',
+          },
+          {
+            projectId: project.id,
+            unitId: unit.id,
+            raisedByIdentityId: reporter.id,
+            raisedByRole: 'guest',
+            categoryKey: 'maintenance',
+            title: 'Cancelled item',
+            status: 'cancelled',
+          },
+        ],
+      });
+
+      const dashboard = await getOwnerDashboard(db, owner.id);
+      expect(dashboard.units[0].openTicketsCount).toBe(4);
+      expect(dashboard.units[0].openTickets).toHaveLength(4);
+      expect(dashboard.units[0].openTickets.map((ticket) => ticket.status)).toEqual(
+        expect.arrayContaining(['open', 'acknowledged', 'in_progress', 'waiting_reporter'])
+      );
+      expect(dashboard.units[0].openTickets.every((ticket) => ticket.unitName === unit.name)).toBe(true);
+    });
+  });
+
+  describe('owner alerts', () => {
+    it('links ticket SLA alerts to ticket detail route', async () => {
+      const owner = await createIdentity();
+      const reporter = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+
+      const ticket = await db.ticket.create({
+        data: {
+          projectId: project.id,
+          unitId: unit.id,
+          raisedByIdentityId: reporter.id,
+          raisedByRole: 'guest',
+          categoryKey: 'maintenance',
+          title: 'SLA overdue ticket',
+          status: 'open',
+          slaDueAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+      });
+
+      const alerts = await getOwnerAlerts(db, owner.id);
+      const ticketAlert = alerts.find((alert) => alert.type === 'ticket_sla_breach');
+
+      expect(ticketAlert).toBeDefined();
+      expect(ticketAlert?.titleKey).toBe('owner.alert.ticket_sla.title');
+      expect(ticketAlert?.descriptionKey).toBe('owner.alert.ticket_sla.body');
+      expect(ticketAlert?.actionUrl).toBe(`/tickets/${ticket.id}`);
     });
   });
 
@@ -371,6 +574,29 @@ describe('Owner experience (T-033)', () => {
       await statementFor(unit.id, owner.id, engagement.id, 'published', '2026-06-01');
 
       expect(await getOwnerStatements(db, stranger.id)).toEqual([]);
+    });
+  });
+
+  describe('getOwnerUnitDashboard', () => {
+    it('returns unit-scoped dashboard data for the owner', async () => {
+      const owner = await createIdentity();
+      const stranger = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Villa A' });
+      const otherUnit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, name: 'Villa B' });
+
+      const dashboard = await getOwnerUnitDashboard(db, owner.id, unit.id);
+
+      expect(dashboard).not.toBeNull();
+      expect(dashboard!.unit.name).toBe('Villa A');
+      expect(dashboard!.summary.id).toBe(unit.id);
+      expect(dashboard!.bookings).toEqual([]);
+
+      const denied = await getOwnerUnitDashboard(db, stranger.id, unit.id);
+      expect(denied).toBeNull();
+
+      const missing = await getOwnerUnitDashboard(db, owner.id, otherUnit.id);
+      expect(missing?.unit.id).toBe(otherUnit.id);
     });
   });
 });

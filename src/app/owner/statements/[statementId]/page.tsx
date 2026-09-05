@@ -39,6 +39,11 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     },
     include: {
       unit: { select: { id: true, name: true, projectId: true } },
+      payouts: {
+        where: { payeeType: 'owner' },
+        orderBy: { executedOn: 'desc' },
+        take: 1,
+      },
       lineItems: {
         orderBy: [{ category: 'asc' }, { createdAt: 'asc' }],
         include: {
@@ -46,6 +51,15 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
         },
       },
     },
+  });
+
+  const questionThread = await prisma.thread.findFirst({
+    where: {
+      contextType: 'statement',
+      contextId: params.statementId,
+      participants: { some: { identityId: user.identityId } },
+    },
+    select: { id: true },
   });
 
   if (!statement) {
@@ -104,6 +118,17 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
       bookingStartDate: line.booking?.startDate.toISOString() ?? null,
       bookingEndDate: line.booking?.endDate.toISOString() ?? null,
     })),
+    payout: statement.payouts[0]
+      ? {
+          id: statement.payouts[0].id,
+          amountTh: th(statement.payouts[0].amountThb),
+          method: statement.payouts[0].method,
+          reference: statement.payouts[0].reference,
+          executedOn: statement.payouts[0].executedOn.toISOString(),
+          status: statement.payouts[0].status,
+        }
+      : null,
+    questionThreadId: questionThread?.id ?? null,
   };
 
   const labels = await getLabels({
@@ -167,6 +192,24 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'owner.statement.dispute_sent':
       'Your dispute has been sent to our team — you can follow its status from the ticket it opened.',
     'owner.statement.dispute_error': 'That did not work. Please try again.',
+    'owner.statement.payout_title': 'Payout',
+    'owner.statement.payout_amount': 'Amount paid',
+    'owner.statement.payout_executed': 'Paid on',
+    'owner.statement.payout_method': 'Method',
+    'owner.statement.payout_reference': 'Bank reference',
+    'owner.statement.payout_pending':
+      'No payout recorded yet. After you and myUNO sign off, your share will be transferred to your bank account.',
+    'owner.statement.payout_method.bank_transfer_thb': 'THB bank transfer',
+    'owner.statement.payout_method.other': 'Other',
+    'owner.statement.question_title': 'Question this statement',
+    'owner.statement.question_hint':
+      'Ask about a line item or figure — we will reply in a private thread linked to this statement.',
+    'owner.statement.question_open': 'Ask a question',
+    'owner.statement.question_placeholder': 'Which figure would you like us to explain?',
+    'owner.statement.question_submit': 'Send question',
+    'owner.statement.question_cancel': 'Cancel',
+    'owner.statement.question_open_thread': 'Open conversation →',
+    'owner.statement.question_error': 'Could not send your question. Please try again.',
     'common.status.statement.draft': 'Draft',
     'common.status.statement.published': 'Published',
     'common.status.statement.superseded': 'Superseded',

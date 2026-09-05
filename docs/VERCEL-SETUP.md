@@ -46,14 +46,24 @@ Set these in Vercel Project Settings → Environment Variables:
 
 ### Required (Production)
 ```bash
-NODE_ENV=production
-DATABASE_URL=postgresql://...@db.XXXXXXX.pooler.supabase.com:5432/postgres
+# Do NOT set NODE_ENV. Next.js sets production for `next build`.
+# NODE_ENV=development on Vercel breaks prerender (React dual-instance).
+DATABASE_URL=postgresql://postgres.<ref>:...@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
 SESSION_SECRET=<openssl rand -base64 32>
 ENCRYPTION_KEY=<openssl rand -hex 32>
 NEXTAUTH_SECRET=<same as SESSION_SECRET>
-NEXTAUTH_URL=https://myuno-final.vercel.app
+NEXTAUTH_URL=https://my-uno-final.vercel.app
+NEXT_PUBLIC_APP_URL=https://my-uno-final.vercel.app
 CRON_SECRET=<openssl rand -hex 24>
 ```
+
+**Git:** Production Branch must be `main`. The live hostname is
+`my-uno-final.vercel.app` (hyphens). `myuno-final.vercel.app` is not a
+deployment.
+
+**Supabase:** Link via Vercel Marketplace / Supabase → Integrations → Vercel,
+or paste the session-pooler URL yourself. Either way the hostname must be
+`*.pooler.supabase.com` port 5432. See `DEPLOYMENT-CHECKLIST.md` §0.
 
 ### Optional
 ```bash
@@ -99,21 +109,23 @@ psql "postgresql://user:password@db.XXXXXXX.supabase.co:5432/postgres"
 
 ### 2. Update Vercel Settings
 
-1. Go to https://vercel.com/dashboard → myUNO-final
-2. Settings → Environment Variables
-3. Ensure `DATABASE_URL` uses the **.pooler.supabase.com** endpoint
-4. Set all required variables listed above
-5. Save and redeploy
+1. Go to https://vercel.com/pavel949s-projects/my-uno-final
+2. Settings → Git → Production Branch = `main`
+3. Settings → Environment Variables
+4. Ensure `DATABASE_URL` uses the **.pooler.supabase.com** session pooler (port 5432)
+5. Do not set `NODE_ENV`
+6. Save and redeploy
 
 ### 3. Redeploy
 - Option A: Click "Redeploy" button in Vercel dashboard
-- Option B: Push a commit to main/claude/project-repo-clarification-bavpp0
+- Option B: Merge to `main`
 - Option C: Run via CLI: `vercel --prod`
 
 ### 4. Verify Deployment
 ```bash
+curl -sS https://my-uno-final.vercel.app/api/health
 # Test password reset email
-curl -X POST https://myuno-final.vercel.app/api/auth/forgot-password \
+curl -X POST https://my-uno-final.vercel.app/api/auth/forgot-password \
   -H "Content-Type: application/json" \
   -d '{"email":"pavel@ignatevestate.com"}'
 

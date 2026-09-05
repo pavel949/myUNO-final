@@ -142,10 +142,48 @@ Seeds (config registry, content keys, catalogs — docs 04/05) ship as idempoten
 
 ## 5. Backups & the sleep-at-night rules
 
-- **Database:** the managed Postgres's automated daily backups + point-in-time recovery, 30-day window; a **quarterly restore drill** into staging proves backups are real (calendar reminder; result noted in the repo).
+*(Section number duplicated with "Day-to-day operation" above — left as-is because several documents cross-reference "doc 15 §5" for both. Worth fixing in a pass that updates the references too.)*
+
+- **Database:** the managed Postgres's automated daily backups + point-in-time recovery, 30-day window, **where the plan tier provides them**. That coverage is tier-dependent, cannot be verified from the repository, and as of 2026-09-05 the founder has ruled against a paid tier for now — so it is not what this platform currently relies on. See "Our own backup, and why it verifies itself" below.
 - **Object storage:** versioning on; passport-kind objects excluded from any replication outside the region.
 - **Before risky changes:** manual snapshot before money/compliance migrations (§3.4).
 - **The one rule:** production data never leaves production — staging is fake data by policy, enforced by the seed scripts and by nobody ever restoring prod dumps into staging with 🔒 fields unscrubbed (a scrub script is part of the doc-16 ops tasks).
+
+### Our own backup, and why it verifies itself (T-048)
+
+This document used to ask for a **quarterly restore drill** into staging, on a calendar reminder. It was never performed. That is the predictable outcome: a drill that depends on somebody remembering, in a quarter when nothing is on fire, is a drill that does not happen — and until it happens, the backups are a belief.
+
+`.github/workflows/backup.yml` removes the need to remember. Every night it dumps the production database, **restores that dump into a scratch Postgres, and asserts the restored copy is intact — before storing it**. A dump that cannot be restored fails the run instead of sitting in storage looking reassuring. The quarterly drill now happens nightly, and its result is visible in the Actions tab rather than in somebody's memory.
+
+**What it asserts, and what it deliberately does not.** It checks that the full schema came back (a restore producing a handful of tables restored *something* and is still a failed backup) and that the migration history is complete, which is what proves the copy is a coherent point in the chain rather than an arbitrary subset. It **reports** row counts for `identity`, `project`, `unit`, `booking`, `payment`, `ledger_entry`, `tm30_filing` and `owner_statement` in the run summary, but never asserts a threshold on them: an empty pilot database is legitimate, and a backup job is the wrong place to hold opinions about how much business there ought to be.
+
+**The credential it uses is not the application's.** Create a read-everything, change-nothing role and give the workflow that:
+
+```sql
+CREATE ROLE backup_reader LOGIN PASSWORD '<generated>';
+GRANT pg_read_all_data TO backup_reader;
+```
+
+`pg_read_all_data` (Postgres 14+) reads through row-level security without ownership — exactly what a dump needs and nothing beyond it. A compromised backup credential then leaks a copy of the data, which is bad; it cannot alter or destroy the live database, which is worse.
+
+**Two limits to hold in mind rather than discover.** The encrypted dumps are stored as GitHub Actions artifacts (30-day retention, matching the window above): free, private to the repository, and adequate for a cash pilot. But they live in the **same account as the code**, which is a shared failure domain — losing the GitHub organisation loses both. And artifact retention is capped at 90 days with storage counting against the account quota, so a growing database will outgrow it. **Before real owner money or title records are in the database, add the second destination** — the commented S3 step at the end of the workflow is the shape of it, left commented rather than half-configured so the workflow never implies an offsite copy it does not have.
+
+**`BACKUP_PASSPHRASE` is a second key with no second chance.** The stored dumps are AES-256 symmetric-encrypted. Lose the passphrase and every stored dump is permanently unreadable — the same class of mistake as changing `ENCRYPTION_KEY` (§4), and it wants the same handling: generated once (`openssl rand -base64 48`), stored in the physical vault, never in this repository and never in the database it protects.
+
+### Restoring, when it is actually needed
+
+The nightly run proves a dump restores. This is how a person uses one under pressure.
+
+1. **Stop writing.** Put the app in maintenance or scale the deployment to zero. Restoring underneath live traffic produces a database that matches neither the backup nor the present.
+2. **Get the dump.** Actions → the Backup workflow → the run from the date you want → download the artifact. Note the run's summary table: those row counts are what you should expect to see at the end.
+3. **Decrypt it.** `gpg --batch --passphrase-file <(pass-from-vault) --output dump.pgc --decrypt dump-YYYY-MM-DD.pgc.gpg`
+4. **Restore into a NEW database, never over the damaged one.** The damaged database is evidence: it is how you find out what happened, and you cannot get it back once it is overwritten.
+   `pg_restore --dbname="<new database URL>" --no-owner --no-privileges --exit-on-error dump.pgc`
+5. **Carry `ENCRYPTION_KEY` across unchanged.** Passports are encrypted at the application layer, so a restored database with a different key is a database of permanently unreadable passports (§4). Verify the key matches *before* pointing the app at the restore.
+6. **Check the migration state.** `prisma migrate status` against the restored database. If the code has moved on since the dump, `prisma migrate deploy` brings the schema forward — the restored *data* stays at its own point in time, which is the whole point.
+7. **Re-enable row-level security.** A freshly created database starts with RLS off on everything, and the dump does not carry the enablement. Re-run the RLS migration (`20260824000021_rls_every_table`) and confirm the provider's linter reports zero exposed tables before any traffic reaches it. **This step is how the four-table exposure happened the first time** (§2.3) — it is the easiest one to forget and the most expensive to forget.
+8. **Point `DATABASE_URL` at the restore, redeploy, and walk a booking round-trip** before telling anyone it is over.
+9. **Write down what was lost.** The window between the dump and the incident is real data — bookings taken, payments recorded — and somebody has to reconcile it by hand. Name it explicitly rather than hoping it was empty.
 
 ## 6. Costs (order of magnitude)
 

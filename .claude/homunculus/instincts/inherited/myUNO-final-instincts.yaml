@@ -1,0 +1,367 @@
+# Instincts generated from https://github.com/pavel949/myUNO-final
+# Generated: 2026-07-11T07:02:07.639Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: myUNO-final-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Commit Length
+
+## Action
+
+Write detailed commit messages (~106 characters for first line)
+
+## Evidence
+
+- Average commit message length: 106 chars
+- Based on 18 commits
+
+---
+id: myUNO-final-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Naming Files
+
+## Action
+
+Use snake_case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: snake_case
+
+---
+id: myUNO-final-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: myUNO-final-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: myUNO-final-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: myUNO-final-workflow-add-new-architecture-or-domain-doc
+trigger: "when doing add new architecture or domain doc"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Workflow Add New Architecture Or Domain Doc
+
+## Action
+
+Follow the add-new-architecture-or-domain-doc workflow:
+1. Create a new markdown file in docs/ with a sequential number and descriptive name (e.g., docs/01_architecture_decisions.md).
+2. Write detailed documentation for the topic.
+3. Commit the new file with a message starting with 'docs NN: <topic>'
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~10x per month
+- Files: docs/NN_<topic>.md
+
+---
+id: myUNO-final-workflow-update-existing-doc-and-register-open-questions
+trigger: "when doing update existing doc and register open questions"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/pavel949/myUNO-final
+---
+
+# MyUNO Final Workflow Update Existing Doc And Register Open Questions
+
+## Action
+
+Follow the update-existing-doc-and-register-open-questions workflow:
+1. Edit an existing docs/NN_<topic>.md file.
+2. Edit docs/open_questions.md to add or update open questions related to the topic.
+3. Commit both files together with a message referencing the topic and open questions.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: docs/NN_<topic>.md, docs/open_questions.md
+
+---
+id: myuno-final-naming-convention-files
+trigger: "When creating or renaming a file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Naming Convention Files
+
+## Action
+
+Use snake_case for file names
+
+## Evidence
+
+- Pattern in architecture.namingConventions.files
+- Consistent with docs/NN_<topic>.md examples
+
+---
+id: myuno-final-naming-convention-functions
+trigger: "When defining a function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Naming Convention Functions
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in architecture.namingConventions.functions
+
+---
+id: myuno-final-naming-convention-classes
+trigger: "When defining a class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Naming Convention Classes
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in architecture.namingConventions.classes
+
+---
+id: myuno-final-naming-convention-constants
+trigger: "When defining a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Naming Convention Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in architecture.namingConventions.constants
+
+---
+id: myuno-final-import-style
+trigger: "When importing modules"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: myuno-final-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: myuno-final-test-location
+trigger: "When writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Test Location
+
+## Action
+
+Place test files in a separate directory from source files
+
+## Evidence
+
+- Pattern in architecture.testLocation: 'separate'
+
+---
+id: myuno-final-git-commit-format-docs
+trigger: "When committing documentation changes"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Git Commit Format Docs
+
+## Action
+
+Start commit messages with 'docs NN: <topic>' where NN is a sequential number
+
+## Evidence
+
+- Seen in commit examples: 'docs 00: ...', 'docs 05: ...'
+
+---
+id: myuno-final-git-commit-format-multi-file
+trigger: "When committing changes to both a topic doc and open_questions.md"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Git Commit Format Multi File
+
+## Action
+
+Reference both the topic and open questions in the commit message
+
+## Evidence
+
+- Workflow: update-existing-doc-and-register-open-questions
+- Commit sequence references both files
+
+---
+id: myuno-final-workflow-add-new-doc
+trigger: "When documenting a new architecture decision, domain model, or major system area"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Workflow Add New Doc
+
+## Action
+
+Create a new docs/NN_<topic>.md file, write detailed documentation, and commit with 'docs NN: <topic>'
+
+## Evidence
+
+- Workflow: add-new-architecture-or-domain-doc
+- Commit examples: 'docs 05: ...'
+
+---
+id: myuno-final-workflow-update-doc-and-questions
+trigger: "When refining a documentation topic and tracking unresolved questions"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: pavel949/myUNO-final
+---
+
+# Myuno Final Workflow Update Doc And Questions
+
+## Action
+
+Edit the relevant docs/NN_<topic>.md and docs/open_questions.md, then commit both with a message referencing the topic and open questions
+
+## Evidence
+
+- Workflow: update-existing-doc-and-register-open-questions
+- Commit examples involving both files
+

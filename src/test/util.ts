@@ -13,13 +13,32 @@ if (!testDatabaseUrl) {
   );
 }
 
-export const db = new PrismaClient({
-  datasources: {
-    db: {
-      url: testDatabaseUrl,
+/**
+ * One client for the whole run, cached on globalThis exactly like the app's
+ * own singleton in src/lib/prisma.ts.
+ *
+ * Vitest gives every test file a fresh module registry, so a bare
+ * `new PrismaClient()` here builds a new client — and a new connection pool —
+ * for each of the ~100 files that import this module. The suite runs
+ * `singleFork`, so all of them live in one process and nothing disconnects
+ * them: connections climb monotonically until Postgres refuses with
+ * "sorry, too many clients already" and every remaining file fails in
+ * resetDb(). The module registry resets between files; globalThis does not,
+ * so caching there keeps it to a single pool for the run.
+ */
+const globalForTestDb = globalThis as unknown as { __testPrisma?: PrismaClient };
+
+export const db =
+  globalForTestDb.__testPrisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: testDatabaseUrl,
+      },
     },
-  },
-});
+  });
+
+globalForTestDb.__testPrisma = db;
 
 /**
  * Reset the database between tests. Enumerates every table from pg_tables so it

@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    # Trunk branches. `claude/project-repo-clarification-bavpp0` is the repo's
+    # current GitHub default branch; `main` and `develop` do not exist yet.
+    branches: [main, develop, claude/project-repo-clarification-bavpp0]
+  # Deliberately unfiltered: this filter matches the *base* branch, and while
+  # work happens on claude/**, cursor/** and agent/** branches stacked on each
+  # other, a [main, develop] filter meant no PR ever ran CI at all.
   pull_request:
-    branches: [main, develop]
 
 jobs:
   ci:
@@ -78,11 +82,18 @@ jobs:
         run: npx prisma migrate deploy
         timeout-minutes: 5
 
+      # NODE_ENV is deliberately NOT set here. `next build` with
+      # NODE_ENV=development emits production bundles but loads the dev React
+      # runtime, which dual-instances React and fails prerendering with
+      # "<Html> should not be imported outside of pages/_document" and
+      # "Cannot read properties of null (reading 'useContext')" on /404, /500,
+      # /_not-found, /legal and /design. Next sets NODE_ENV=production for a
+      # build on its own; devDependencies are already installed by the step
+      # above, which is what the override was reaching for.
       - name: Build
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          NODE_ENV: development
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

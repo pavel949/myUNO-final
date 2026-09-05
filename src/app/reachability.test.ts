@@ -191,6 +191,9 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/sync-ical-imports',
   '/api/webhooks/opn',
   '/api/health',
+  // Google redirects the browser here after consent; the only reference is
+  // the redirect_uri string built in the login button, never a fetch call.
+  '/api/auth/callback/google',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin
   // integrations page); never linked from inside the product.

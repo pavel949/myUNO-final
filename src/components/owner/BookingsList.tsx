@@ -60,28 +60,30 @@ export const BookingsList = React.forwardRef<HTMLDivElement, BookingsListProps>(
     }
 
     return (
-      <div ref={ref} className="space-y-12">
-        {bookings.map((booking) => (
+      <div ref={ref} className="bg-surface-paper border border-border-line rounded-md overflow-hidden">
+        {bookings.map((booking, index) => (
           <div
             key={booking.id}
-            className="border border-border-line rounded-md p-20 hover:bg-surface-paper-soft transition-colors"
+            className={`p-16 flex justify-between items-center gap-12 ${
+              index < bookings.length - 1 ? 'border-b border-border-line' : ''
+            }`}
           >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <p className="text-body font-medium text-text-ink">{booking.guestIdentity.firstName}</p>
-                <p className="text-small text-text-secondary mt-4">
-                  {booking.guests[0]?.nationality || labels.unknownNationality}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-body font-medium text-text-ink">
-                  {formatDate(booking.startDate, locale)} – {formatDate(booking.endDate, locale)}
-                </p>
-                <p className="text-small text-text-secondary mt-4">
-                  {formatCurrency(booking.totalThb, locale)}
-                </p>
-              </div>
+            <div>
+              <p className="text-body font-semibold text-text-ink m-0">
+                {[
+                  booking.guestIdentity.firstName,
+                  booking.guests[0]?.nationality || labels.unknownNationality,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <p className="font-display text-small text-text-stone tabular-nums m-0">
+                {formatDate(booking.startDate, locale)} – {formatDate(booking.endDate, locale)}
+              </p>
             </div>
+            <p className="font-display text-body font-medium text-text-ink tabular-nums m-0">
+              {formatCurrency(booking.totalThb, locale)}
+            </p>
           </div>
         ))}
       </div>

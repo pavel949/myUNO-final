@@ -372,7 +372,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   );
 
   return (
-    <div className="min-h-screen bg-surface-background">
+    <div className="min-h-screen bg-surface-ivory">
       <div className="max-w-6xl mx-auto px-24 py-40">
         {/* Header */}
         <div className="mb-40">
@@ -384,7 +384,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
           </Link>
           <div className="flex flex-wrap items-start justify-between gap-16 mt-12">
             <div>
-              <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+              <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
                 {labels['owner.statement.detail_title']}
               </h1>
               <p className="text-body text-text-secondary">

@@ -2,6 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
+import { Textarea } from '@/components/Textarea';
 
 interface Stay {
   bookingId: string;
@@ -62,7 +65,7 @@ export default function FileClaimClient({
 
   if (stays.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+      <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
         <p className="text-body text-text-secondary">{labels['staff.claims.empty']}</p>
       </div>
     );
@@ -93,15 +96,15 @@ export default function FileClaimClient({
           return (
             <li
               key={stay.bookingId}
-              className="p-16 bg-surface-paper border border-border-line rounded-lg"
+              className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card"
             >
-              <div className="flex flex-wrap gap-16 mb-12 text-small text-text-secondary">
+              <div className="flex flex-wrap gap-16 mb-12 text-small text-text-stone">
                 <span>{`${labels['staff.claims.guest']}: ${stay.guestName}`}</span>
                 <span>{`${labels['staff.claims.unit']}: ${stay.unitName}`}</span>
                 <span>
                   {`${labels['staff.claims.checked_out']}: ${new Date(
                     stay.checkedOutAt
-                  ).toLocaleString('sv-SE')}`}
+                  ).toLocaleDateString()}`}
                 </span>
                 <span>{`${stay.hoursLeft} ${labels['staff.claims.hours_left']}`}</span>
               </div>
@@ -124,11 +127,9 @@ export default function FileClaimClient({
                     </p>
                   ) : null}
 
-                  <label className="block mb-12">
-                    <span className="text-small text-text-secondary block mb-4">
-                      {labels['staff.claims.what']}
-                    </span>
-                    <textarea
+                  <div className="mb-12">
+                    <Textarea
+                      label={labels['staff.claims.what']}
                       value={form.description}
                       onChange={(e) =>
                         setForms({
@@ -137,15 +138,12 @@ export default function FileClaimClient({
                         })
                       }
                       rows={2}
-                      className="w-full px-12 py-8 border border-border-line rounded-lg bg-surface-background text-text-ink text-small"
                     />
-                  </label>
+                  </div>
 
-                  <label className="block mb-12 max-w-xs">
-                    <span className="text-small text-text-secondary block mb-4">
-                      {labels['staff.claims.amount']}
-                    </span>
-                    <input
+                  <div className="mb-12 max-w-xs">
+                    <Input
+                      label={labels['staff.claims.amount']}
                       type="number"
                       min="0"
                       step="0.01"
@@ -156,9 +154,8 @@ export default function FileClaimClient({
                           [stay.bookingId]: { ...form, amount: e.target.value },
                         })
                       }
-                      className="w-full px-12 py-8 border border-border-line rounded-lg bg-surface-background text-text-ink text-small"
                     />
-                  </label>
+                  </div>
 
                   {overHold ? (
                     <p className="text-small text-text-secondary mb-12">
@@ -166,16 +163,17 @@ export default function FileClaimClient({
                     </p>
                   ) : null}
 
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
                     onClick={() => file(stay.bookingId)}
                     disabled={!ready || busy !== null}
-                    className="px-16 py-8 rounded-lg bg-brand-deep text-on-dark-text text-small font-semibold disabled:opacity-50"
+                    isLoading={busy === stay.bookingId}
                   >
                     {busy === stay.bookingId
                       ? labels['staff.claims.filing']
                       : labels['staff.claims.file']}
-                  </button>
+                  </Button>
                 </>
               )}
             </li>

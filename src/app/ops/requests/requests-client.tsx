@@ -49,7 +49,7 @@ export default function OpsRequestsClient({
   }
 
   return (
-    <ul className="space-y-0 bg-surface-paper border border-border-line rounded-lg divide-y divide-border-line">
+    <ul className="space-y-0 bg-surface-paper border border-border-line rounded-lg shadow-card divide-y divide-border-line">
       {requests.map((request) => {
         const party = request.adults + request.children;
         return (

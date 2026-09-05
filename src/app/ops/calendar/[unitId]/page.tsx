@@ -49,7 +49,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
   ]);
 
   return (
-    <main className="min-h-screen bg-surface-background">
+    <main className="min-h-screen bg-surface-ivory">
       <section className="max-w-4xl mx-auto px-24 py-32">
         <Link
           href={opsHref('/ops/calendar', unit.projectId)}
@@ -57,10 +57,10 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
         >
           {labels['staff.ops.calendar.back']}
         </Link>
-        <h1 className="text-heading-1 font-bold text-text-ink mt-12">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mt-12">
           {unit.name} · {labels['staff.ops.calendar.title']}
         </h1>
-        <p className="text-body text-text-secondary mt-8">
+        <p className="text-body text-text-stone mt-8">
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
         <div className="mt-24">

@@ -72,14 +72,16 @@ export default async function BuyingPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-background p-24 md:p-32">
+    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['buying.title']}</h1>
-        <p className="text-body text-text-secondary mb-32">{labels['buying.subtitle']}</p>
+        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+          {labels['buying.title']}
+        </h1>
+        <p className="text-body text-text-stone mb-32">{labels['buying.subtitle']}</p>
 
         <section className="mb-32">
           <div className="flex items-baseline justify-between mb-12">
-            <h2 className="text-heading-3 font-semibold text-text-ink">
+            <h2 className="font-display text-title font-semibold text-text-ink m-0">
               {labels['buying.watching']}
             </h2>
             <Link
@@ -91,7 +93,7 @@ export default async function BuyingPage() {
           </div>
 
           {saved.length === 0 ? (
-            <p className="text-body text-text-secondary">{labels['buying.watching_empty']}</p>
+            <p className="text-body text-text-stone">{labels['buying.watching_empty']}</p>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-12">
               {saved.map((entry) => (
@@ -101,13 +103,13 @@ export default async function BuyingPage() {
                     className="block p-16 bg-surface-paper border border-border-line rounded-lg hover:border-brand-andaman transition-colors"
                   >
                     <p className="text-body font-semibold text-text-ink">{entry.unit.name}</p>
-                    <p className="text-small text-text-secondary">
+                    <p className="text-small text-text-stone">
                       {`${projectName.get(entry.unit.projectId) ?? '—'} · ${
                         entry.unit.bedrooms
                       } ${labels['buying.bedrooms']}`}
                     </p>
                     {entry.note ? (
-                      <p className="text-xsmall text-text-secondary mt-4">{entry.note}</p>
+                      <p className="text-small text-text-stone mt-4">{entry.note}</p>
                     ) : null}
                   </Link>
                 </li>
@@ -122,15 +124,15 @@ export default async function BuyingPage() {
         />
 
         <section className="mt-32 pt-24 border-t border-border-line">
-          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-8">
             {labels['buying.how_title']}
           </h2>
-          <p className="text-body text-text-secondary mb-24">{labels['buying.how_body']}</p>
+          <p className="text-body text-text-stone mb-24">{labels['buying.how_body']}</p>
 
-          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-8">
             {labels['buying.structure_title']}
           </h2>
-          <p className="text-body text-text-secondary">{labels['buying.structure_body']}</p>
+          <p className="text-body text-text-stone">{labels['buying.structure_body']}</p>
         </section>
       </div>
     </main>

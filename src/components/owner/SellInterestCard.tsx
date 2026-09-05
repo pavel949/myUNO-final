@@ -17,15 +17,17 @@ export const SellInterestCard = React.forwardRef<HTMLDivElement, SellInterestCar
     return (
       <div
         ref={ref}
-        className="border border-border-line rounded-md p-32 bg-gradient-to-br from-brand-sun-soft to-surface-paper hover:shadow-md transition-shadow"
+        className="bg-surface-paper border border-border-line rounded-md p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-24"
       >
-        <div className="max-w-sm">
-          <h3 className="text-heading-3 font-semibold text-text-ink mb-12">{labels.title}</h3>
-          <p className="text-body text-text-secondary mb-24">{labels.description}</p>
-          <Button variant="sun" size="md" onClick={onExpressInterest}>
-            {labels.action}
-          </Button>
+        <div>
+          <h3 className="font-display text-title font-semibold text-text-ink m-0 mb-4">
+            {labels.title}
+          </h3>
+          <p className="text-body text-text-stone m-0">{labels.description}</p>
         </div>
+        <Button variant="secondary" size="md" onClick={onExpressInterest}>
+          {labels.action}
+        </Button>
       </div>
     );
   }

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
+import { Select } from '@/components/Select';
 
 const COST_TYPES = [
   'cleaning_cost',
@@ -88,100 +91,87 @@ export default function RecordCostClient({
   };
 
   return (
-    <div className={embedded ? undefined : 'min-h-screen bg-surface-background p-24 md:p-32'}>
+    <div className={embedded ? undefined : 'min-h-screen bg-surface-ivory p-24 md:p-32'}>
       <div className={embedded ? undefined : 'max-w-3xl mx-auto'}>
         {!embedded ? (
           <>
-            <h1 className="text-heading-1 font-bold text-text-ink mb-8">{labels['ops.costs.title']}</h1>
-            <p className="text-body text-text-secondary mb-24">{labels['ops.costs.intro']}</p>
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+              {labels['ops.costs.title']}
+            </h1>
+            <p className="text-body text-text-stone mb-24">{labels['ops.costs.intro']}</p>
           </>
         ) : null}
 
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['ops.costs.unit']}</span>
-              <select
-                value={unitId}
-                onChange={(e) => setUnitId(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
-              >
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.projectName} · {u.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label={labels['ops.costs.unit']}
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              options={units.map((u) => ({
+                value: u.id,
+                label: `${u.projectName} · ${u.name}`,
+              }))}
+            />
 
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['ops.costs.type']}</span>
-              <select
-                value={entryType}
-                onChange={(e) => setEntryType(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
-              >
-                {COST_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {labels[`catalog.ledger_entry_types.${t}.label`] ?? t}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label={labels['ops.costs.type']}
+              value={entryType}
+              onChange={(e) => setEntryType(e.target.value)}
+              options={COST_TYPES.map((t) => ({
+                value: t,
+                label: labels[`catalog.ledger_entry_types.${t}.label`] ?? t,
+              }))}
+            />
 
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['ops.costs.amount']}</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
-              />
-            </label>
+            <Input
+              label={labels['ops.costs.amount']}
+              type="number"
+              min="0"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
 
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['ops.costs.date']}</span>
-              <input
-                type="date"
-                value={occurredOn}
-                onChange={(e) => setOccurredOn(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
-              />
-            </label>
+            <Input
+              label={labels['ops.costs.date']}
+              type="date"
+              value={occurredOn}
+              onChange={(e) => setOccurredOn(e.target.value)}
+            />
           </div>
 
-          <label className="block mb-16">
-            <span className="text-small text-text-secondary">{labels['ops.costs.description']}</span>
-            <input
+          <div className="mb-16">
+            <Input
+              label={labels['ops.costs.description']}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-background px-12 text-body text-text-ink"
             />
-          </label>
+          </div>
 
-          <p className="text-small text-text-secondary mb-16 italic">{labels['ops.costs.immutable']}</p>
+          <p className="text-small text-text-stone mb-16">{labels['ops.costs.immutable']}</p>
 
-          <button
-            type="button"
-            onClick={submit}
-            disabled={state === 'saving' || !unitId || !amount || !description}
-            className="h-48 px-24 rounded-sm bg-brand-andaman text-surface-ivory font-semibold hover:opacity-90 transition disabled:opacity-50"
-          >
-            {state === 'saving' ? labels['ops.costs.saving'] : labels['ops.costs.submit']}
-          </button>
-          {message && (
-            <span
-              className={`ml-12 text-small ${state === 'error' ? 'text-state-error' : 'text-state-success'}`}
+          <div className="flex flex-wrap items-center gap-12">
+            <Button
+              type="button"
+              onClick={submit}
+              isLoading={state === 'saving'}
+              disabled={state === 'saving' || !unitId || !amount || !description}
             >
-              {message}
-            </span>
-          )}
+              {state === 'saving' ? labels['ops.costs.saving'] : labels['ops.costs.submit']}
+            </Button>
+            {message && (
+              <span
+                className={`text-small ${state === 'error' ? 'text-state-error' : 'text-state-success'}`}
+              >
+                {message}
+              </span>
+            )}
+          </div>
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24">
-          <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+          <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['ops.costs.recent']}
           </h2>
           {entries.length === 0 ? (

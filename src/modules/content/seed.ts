@@ -2217,6 +2217,10 @@ const UI_SHELL_KEYS: KeyDef[] = [
 
   // Owner dashboard — trends & dataviz (doc 06 §3.5)
   { key: 'owner.dashboard.subtitle', namespace: 'owner', description: 'Owner dashboard subtitle', en: 'Manage your properties and stay informed', ru: 'Управляйте своей недвижимостью и будьте в курсе', th: 'จัดการทรัพย์สินของคุณและติดตามทุกความเคลื่อนไหว', status: NR },
+  { key: 'owner.dashboard.portfolio_subtitle', namespace: 'owner', description: 'Owner dashboard subtitle when the owner holds several units', en: '{units} units across {projects} projects', ru: '{units} юнитов в {projects} проектах', th: '{units} ยูนิตใน {projects} โครงการ', status: NR },
+  { key: 'owner.compliance.permitted_yes', namespace: 'owner', description: 'Permitted use is confirmed', en: 'Confirmed', ru: 'Подтверждено', th: 'ยืนยันแล้ว', status: NR },
+  { key: 'owner.compliance.permitted_no', namespace: 'owner', description: 'Permitted use is not confirmed', en: 'Not confirmed', ru: 'Не подтверждено', th: 'ยังไม่ยืนยัน', status: NR },
+  { key: 'owner.switcher.all_projects', namespace: 'owner', description: 'Owner project switcher: show every project', en: 'All projects', ru: 'Все проекты', th: 'ทุกโครงการ', status: NR },
   { key: 'owner.stats.nights', namespace: 'owner', description: 'Unit for occupancy tile value (nights)', en: 'nights', ru: 'ночей', th: 'คืน', status: NR },
   { key: 'owner.stats.vs_last_month', namespace: 'owner', description: 'Delta chip suffix: compared to previous month', en: 'vs last month', ru: 'к прошлому месяцу', th: 'เทียบเดือนก่อน', status: NR },
   { key: 'owner.stats.new_period', namespace: 'owner', description: 'Delta chip when no prior period exists', en: 'New', ru: 'Новое', th: 'ใหม่', status: NR },
@@ -3657,6 +3661,8 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'juristic.announcements_empty', namespace: 'juristic', description: 'Juristic portal: nothing published', en: 'You have not published anything yet.', ru: 'Вы пока ничего не публиковали.', th: 'คุณยังไม่ได้เผยแพร่อะไร', status: NR },
   { key: 'juristic.published_on', namespace: 'juristic', description: 'Juristic portal: publication date prefix', en: 'Published', ru: 'Опубликовано', th: 'เผยแพร่เมื่อ', status: NR },
   { key: 'juristic.draft', namespace: 'juristic', description: 'Juristic portal: draft badge', en: 'Draft', ru: 'Черновик', th: 'ฉบับร่าง', status: NR },
+  { key: 'juristic.published', namespace: 'juristic', description: 'Juristic portal: published badge', en: 'Published', ru: 'Опубликовано', th: 'เผยแพร่แล้ว', status: NR },
+  { key: 'juristic.draft_note', namespace: 'juristic', description: 'Juristic portal: draft is not visible yet', en: 'Not yet visible to residents', ru: 'Жителям ещё не видно', th: 'ผู้อยู่อาศัยยังมองไม่เห็น', status: NR },
   { key: 'juristic.tickets', namespace: 'juristic', description: 'Juristic portal: tickets heading', en: 'Reported in this building', ru: 'Обращения по дому', th: 'รายงานในอาคารนี้', status: NR },
   { key: 'juristic.tickets_empty', namespace: 'juristic', description: 'Juristic portal: no open tickets', en: 'Nothing is open right now.', ru: 'Открытых обращений нет.', th: 'ตอนนี้ไม่มีรายการเปิดอยู่', status: NR },
   { key: 'juristic.tickets_note', namespace: 'juristic', description: 'Juristic portal: who resolves tickets', en: 'Reports raised by residents and owners in this building. Operations resolve them; this is so you can see them.', ru: 'Обращения резидентов и собственников этого дома. Их решает операционная команда — здесь они видны вам.', th: 'รายงานจากผู้อยู่อาศัยและเจ้าของในอาคารนี้ ทีมปฏิบัติการจะดำเนินการ — หน้านี้ให้คุณเห็นสถานะ', status: NR },

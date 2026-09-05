@@ -558,6 +558,27 @@ export default function DesignPage() {
             blocks are not rendered.
           </p>
         </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">07</p>
+          <h2 className="font-display text-display text-text-ink mb-8">Owners</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-0">
+            The owner dashboard sits on ivory. One unit has no switcher. Several
+            units get chip filters and combined tiles. Compliance uses words,
+            not check glyphs. Statement figures still come from the ledger —
+            this board does not invent occupancy or revenue.
+          </p>
+        </section>
+
+        <section className="mb-80">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-8">08</p>
+          <h2 className="font-display text-display text-text-ink mb-8">Buy · and the juristic board</h2>
+          <p className="text-body text-text-stone max-w-[720px] mb-0">
+            Buying stays narrow: watched homes and a person to talk to. Ownership
+            structure is still not shown. The juristic board uses status chips
+            and readable dates — not raw enums or ISO stamps.
+          </p>
+        </section>
       </div>
     </div>
   );

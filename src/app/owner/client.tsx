@@ -13,6 +13,7 @@ import {
   OwnerStayModal,
   MoneyAmount,
   RoleContextBanner,
+  Chip,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
@@ -112,9 +113,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   locale,
   activeStay,
 }) => {
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    shape.isPortfolio ? projects[0]?.id || null : null
-  );
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showOwnerStayModal, setShowOwnerStayModal] = useState(false);
   const [ownerStayLoading, setOwnerStayLoading] = useState(false);
 
@@ -189,6 +188,12 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   const resolveLabel = (key: string, params?: Record<string, string>) =>
     fill(labels[key] || key, params);
 
+  const statementChipStatus = (status: string) => {
+    if (status === 'distributed' || status === 'signed_off') return 'confirmed' as const;
+    if (status === 'pending_owner_review') return 'requested' as const;
+    return 'default' as const;
+  };
+
   const ticketHref = (unit: { id: string; projectId: string }) =>
     `/tickets/new?projectId=${unit.projectId}&unitId=${unit.id}`;
 
@@ -215,14 +220,20 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   );
 
   return (
-    <div className="min-h-screen bg-surface-background">
+    <div className="min-h-screen bg-surface-ivory">
       <div className="max-w-6xl mx-auto px-24 py-40">
-        {/* Header */}
         <div className="mb-40">
-          <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
             {labels['owner.dashboard.title']}
           </h1>
-          <p className="text-body text-text-secondary">{labels['owner.dashboard.subtitle']}</p>
+          <p className="text-body text-text-stone">
+            {shape.isPortfolio
+              ? fill(labels['owner.dashboard.portfolio_subtitle'] ?? '', {
+                  units: String(shape.unitCount),
+                  projects: String(shape.projectCount),
+                })
+              : labels['owner.dashboard.subtitle']}
+          </p>
         </div>
 
         {activeStay ? (
@@ -240,12 +251,13 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           <div className="mb-40">
             <ProjectSwitcher
               projects={projects}
-              selectedProjectId={selectedProjectId || projects[0]?.id || null}
+              selectedProjectId={selectedProjectId}
               onProjectChange={setSelectedProjectId}
               labels={{
                 selectProject: labels['owner.switcher.select_project'],
                 unitSingular: labels['owner.switcher.unit_singular'],
                 unitPlural: labels['owner.switcher.unit_plural'],
+                allProjects: labels['owner.switcher.all_projects'],
               }}
             />
           </div>
@@ -254,7 +266,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Alerts Section (D2) */}
         {alerts.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-display font-semibold text-text-ink mb-16">
               {labels['owner.alerts.title']}
             </h2>
             <div className="space-y-12">
@@ -323,12 +335,12 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
         {/* Trends — last 6 months from the analytics rollup */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {labels['owner.trends.title']}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
-            <div className="bg-surface-paper border border-border-line rounded-md p-24">
-              <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.revenue']}
               </h3>
               <BarChart
@@ -345,8 +357,8 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {...chartLabels}
               />
             </div>
-            <div className="bg-surface-paper border border-border-line rounded-md p-24">
-              <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.occupancy']}
               </h3>
               <LineChart
@@ -394,7 +406,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           ? 'text-state-success'
                           : 'text-state-warning'
                       }`}>
-                        {status.permittedUseConfirmedAt ? '✓' : '⚠'}
+                        {status.permittedUseConfirmedAt
+                          ? labels['owner.compliance.permitted_yes']
+                          : labels['owner.compliance.permitted_no']}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -485,11 +499,19 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                         </div>
                       </div>
                     </div>
-                    <Link href={`/owner/statements/${statement.id}`}>
-                      <Button variant="secondary" size="sm">
-                        {labels['owner.statement.view']}
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-12 shrink-0">
+                      <Chip
+                        variant="status"
+                        status={statementChipStatus(statement.status)}
+                      >
+                        {labels[`common.status.statement.${statement.status}`] ?? statement.status}
+                      </Chip>
+                      <Link href={`/owner/statements/${statement.id}`}>
+                        <Button variant="secondary" size="sm">
+                          {labels['owner.statement.view']}
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

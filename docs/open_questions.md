@@ -6,7 +6,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 **Answered so far (2026-07):** Q4, Q6, Q7, Q8, Q10, Q11, Q12, Q13, Q16, Q17, Q18. **Still open:** Q1, Q2, Q3, Q5, Q9, Q14, Q15, Q19, Q20, Q21 (crypto), Q22 (international payouts), Q32 (service-fee rate), Q34 (provider take rate), Q35 (audience FAQ copy), Q36 (terms + privacy prose).
 
-**Founder rulings 2026-09-05:** Q45 (region — Mumbai, see below). Launch scope set to the full platform (stay + live + own), which puts Q41 (ownership structure) on the critical path rather than deferred — it now gates a whole stage of the production plan and needs counsel, not a founder ruling alone.
+**Founder rulings 2026-09-05:** Q45 (region — Mumbai, see below). **2026-09-06:** Q63 — long-stay tenancy is a product (yearly rent, set by owner or MC at onboarding); the design questions it opens are listed there and no schema has been written. Launch scope set to the full platform (stay + live + own), which puts Q41 (ownership structure) on the critical path rather than deferred — it now gates a whole stage of the production plan and needs counsel, not a founder ruling alone.
 
 ---
 
@@ -414,6 +414,30 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
   1. **A guest has no way to leave a stay review anywhere.** The `Review` model already supports `target_type: 'stay'`, and both the public project testimonials and every unit's search-card rating already **read** stay reviews — but grepping the whole codebase for `review.create` finds only two writers: a service-order review (the opposite direction — a guest rating a *service*) and a guest-review (a host rating the *guest*). No code path anywhere creates a `target_type: 'stay'` row. Every villa's rating will read as unrated forever in production. This is display-ready infrastructure with no input, not a broken fetch. **Why this isn't just a quick fix:** building it means deciding things CLAUDE.md's no-invention rule reserves for the founder — when a guest is prompted (immediately at checkout? by email days later? both?), whether it's mandatory or skippable, and what the review form itself asks beyond a star rating. Doc 07/08 don't specify a stay-review flow; F-SVC-x only covers service-order reviews.
   2. **The one stay-adjacent review write path that does exist has no button.** `POST /api/service-orders/[id]/rate` (`rateServiceOrder`) is real and tested, but zero UI anywhere calls it — `/services/orders/[orderId]` has a pay button and nothing else. Unlike the stay-review gap above, this one needs no founder decision (the eligibility rule is obvious — a fulfilled order, once per order — and there's no flow-timing question), just a small star-rating widget; a smaller, well-scoped follow-up.
 - **Needs from founder:** the stay-review prompting flow (when/how a guest is asked, mandatory vs optional) before that piece can be built. The service-order rating button can be picked up any time.
+
+### Q63. Long-stay tenancy is a product — RULED 2026-09-06, design questions open
+
+- **The ruling (founder, 2026-09-06):** long-stay tenancy **is a product**, not a price rule. Yearly rent, and it belongs in the data an **owner or management company sets at property onboarding**.
+- **Why this is a change of shape, not a feature request.** Today a ≥28-night stay is a `Booking` with `bookingType: 'guest_stay'` — the same table, the same status machine and the same cancellation, refund, TM30 and services flows as a two-night stay. The only thing that makes it "long" is a pricing branch: `applied_from: 'category_monthly'` in `computePriceBreakdown`. There is no `Lease`, no `Tenancy`, no term, no notice period, no renewal. Separately, the `resident` role is granted by hand and is never produced by any booking, so "long-stay guest" and "resident" are two unconnected code paths that merely sound related. The ruling joins them.
+- **Where the rent now lives.** Mobilization (F-OWN-1) is the onboarding flow, and `UnitEngagement` is where a unit's commercial terms already sit. Yearly rent belongs alongside them, set by the owner or the MC, which also answers who may edit it — the same people who set the engagement, subject to Q42.
+- **What must be decided before any schema is written** (each of these changes the model, and guessing any of them wrongly is expensive to undo):
+  1. **Is a tenancy a `Booking` with a new `BookingType`, or its own model?** A booking carries nights, a party and a nightly price; a tenancy carries a term, a rent and a renewal. Forcing one into the other is how both end up wrong. My reading is its own model, referencing the unit, with `Booking` left to stays — but this is the spine (D3), so it is a founder call.
+  2. **Availability.** A unit under a year's lease is not bookable for stays. `checkAvailability` and `findAvailableUnitsForCategory` must both know that, or the same villa is sold twice.
+  3. **Payment cadence.** "Yearly rent" is a rate; whether it is collected annually, quarterly or monthly is a separate decision, and it determines whether this needs a recurring-charge concept the platform does not have.
+  4. **Deposit.** A tenancy deposit is typically months of rent held for the term — which is **not** what `DepositPreauth` is (a short card pre-authorization, never held funds, per Q6 and the Bank of Thailand line). If a tenancy deposit is real money held for a year, that is a licensing question before it is an engineering one.
+  5. **Does a tenancy grant the `resident` role automatically?** This is the join the ruling implies and the platform currently lacks.
+  6. **Statements.** Does rent flow into the owner statement as revenue alongside stay bookings, and does the management fee apply to it on the same basis?
+  7. **Term, notice and renewal.** Fixed term with an end date, or rolling with notice? Renewal automatic or re-contracted? This is where a wrong guess becomes a dispute with a real tenant.
+- **Not started.** No schema, no migration, no code — deliberately. This is a spine change (CLAUDE.md: "if a requirement seems to need a different shape, stop and ask"), and the ruling settles *that it exists*, not *what shape it takes*.
+
+### Q64. Lifecycle stages never transition on a business event — OPEN
+
+- **Source:** the journey audit, 2026-09-06.
+- **What exists and works:** `CrmProfile.lifecycleStage`, a `VALID_TRANSITIONS` state machine, a mandatory reason, a `LifecycleTransitionLog` audit row, an admin API and a working admin panel. This is not vaporware.
+- **What does not:** nothing anywhere fires a transition from an actual event. `capturePublicLead` sets the *initial* stage and never advances an existing profile. `docs/17_crm_and_commercial_system.md` describes a won purchase promoting a profile to `owner`; no code does it. Every profile is moved by a human clicking through one panel.
+- **Also schema-only:** `CrmProfile.account_owner_identity_id` has no write path anywhere — no route, no UI, no service sets or reassigns it, despite CLAUDE.md describing account ownership and re-assignment as a governance rule.
+- **And a PDPA gap of the same shape:** `CrmConsent` has exactly one write path (`capturePublicLead`) and **no update, withdrawal or revocation path at all**. Doc 17 describes a consent audit trail with withdrawal history; the platform can record a consent and can never record its withdrawal.
+- **Needs from founder:** whether stages should transition automatically on their gating events (a completed booking → `guest`, a won purchase → `owner`) or stay a deliberate human act. Manual is defensible at pilot scale and indefensible at three hundred units. The consent-withdrawal path needs no ruling — it is a PDPA obligation and simply has to be built.
 
 ---
 

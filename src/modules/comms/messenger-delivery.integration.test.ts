@@ -47,7 +47,52 @@ describe('Messenger channels behind the config flag (T-040)', () => {
   }
 
   /** Deliveries are written fire-and-forget; give the microtasks a beat. */
-  async function settle() {
+  /**
+   * Messenger delivery is fire-and-forget, so these tests have to wait for it.
+   *
+   * This used to be a flat 150ms sleep, which is a race dressed as a wait:
+   * under full-suite load the delivery routinely takes longer, and the test
+   * failed intermittently on whichever assertion happened to run first — a
+   * failure that says nothing about the code under test.
+   *
+   * Polling for the actual condition is both faster in the common case and
+   * correct in the slow one. On timeout it returns rather than throwing, so
+   * the test's own assertion produces the real failure message instead of an
+   * opaque "waitFor timed out".
+   */
+  async function waitFor(
+    check: () => boolean | Promise<boolean>,
+    timeoutMs = 5000
+  ): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      if (await check()) return;
+      if (Date.now() >= deadline) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+  }
+
+  /**
+   * Wait for a delivery to reach a terminal status, not merely to exist.
+   *
+   * The row is written `pending` and updated once the adapter returns, so
+   * waiting on existence alone races the update and catches the intermediate
+   * state — which is exactly what a fixed sleep was hiding.
+   */
+  async function settleDelivery(notificationId: string, expected = 1) {
+    await waitFor(
+      async () =>
+        (await db.notificationDelivery.count({
+          where: { notificationId, status: { not: 'pending' } },
+        })) >= expected
+    );
+  }
+
+  /**
+   * A bounded wait used only where the assertion is that nothing happened.
+   * Polling cannot prove an absence, so this one stays a sleep — deliberately.
+   */
+  async function settleAbsence() {
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
 
@@ -62,7 +107,8 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['in_app', 'whatsapp', 'telegram'],
     });
 
-    await settle();
+    await settleDelivery(id!, 1);
+    await settleAbsence();
 
     const deliveries = await db.notificationDelivery.findMany({
       where: { notificationId: id! },
@@ -84,7 +130,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp'],
     });
 
-    await settle();
+    await settleDelivery(id!);
 
     const deliveries = await db.notificationDelivery.findMany({
       where: { notificationId: id! },
@@ -108,7 +154,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp', 'telegram'],
     });
 
-    await settle();
+    await settleDelivery(id!);
 
     const deliveries = await db.notificationDelivery.findMany({
       where: { notificationId: id! },
@@ -135,7 +181,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp'],
     });
 
-    await settle();
+    await waitFor(() => logged.some((l) => l.includes('[Messenger stub]')));
 
     const stubLine = logged.find((l) => l.includes('[Messenger stub]'));
     expect(stubLine).toBeDefined();
@@ -163,7 +209,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp'],
     });
 
-    await settle();
+    await waitFor(() => logged.some((l) => l.includes('[Messenger stub]')));
 
     const all = logged.join('\n');
     expect(all).toContain('[Messenger stub]');
@@ -183,7 +229,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['in_app', 'whatsapp'],
     });
 
-    await settle();
+    await settleDelivery(id!);
 
     // A dark channel must never swallow the channels that do work.
     const inApp = await db.notificationDelivery.findFirst({

@@ -70,15 +70,18 @@ export default async function ServiceOrderDetailPage({
   params,
   searchParams,
 }: {
-  params: { orderId: string };
-  searchParams: { paid?: string; placed?: string };
+  params: Promise<{ orderId: string }>;
+  searchParams: Promise<{ paid?: string; placed?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
-  const { orderId } = params;
+  const [{ orderId }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
 
   let order: ServiceOrderDetail | null = null;
   try {
@@ -171,9 +174,9 @@ export default async function ServiceOrderDetailPage({
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
   // cash-on-fulfilment choice (?placed=cash) shows the confirmation banner.
   const confirmationNote =
-    searchParams.paid === '1'
+    resolvedSearchParams.paid === '1'
       ? labels['service-order.detail.confirmed_paid']
-      : searchParams.placed === 'cash'
+      : resolvedSearchParams.placed === 'cash'
         ? labels['service-order.detail.confirmed_cash']
         : null;
 

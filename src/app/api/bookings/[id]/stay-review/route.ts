@@ -19,7 +19,7 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -27,7 +27,7 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
-    const bookingId = params.id;
+    const { id: bookingId } = await params;
     const body = await req.json();
     const { rating, comment } = body;
 

@@ -10,7 +10,7 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -18,6 +18,7 @@ export async function POST(
       throw createPublicError('unauthorized', 401);
     }
 
+    const { id: orderId } = await params;
     const body = await req.json();
     const { rating, comment } = body;
 
@@ -27,7 +28,7 @@ export async function POST(
 
     const review = await rateServiceOrder(
       prisma,
-      params.id,
+      orderId,
       user.identityId,
       rating,
       comment

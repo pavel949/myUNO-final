@@ -974,6 +974,14 @@ const COMMON_KEYS: KeyDef[] = [
     th: 'ฉันสนใจ',
   },
   {
+    key: 'owner.sell_interest.message',
+    namespace: 'owner',
+    description: 'Opening message posted to the admin thread when an owner expresses sell interest',
+    ru: 'Я хотел бы обсудить продажу моей недвижимости.',
+    en: 'I would like to discuss selling my property.',
+    th: 'ฉันต้องการปรึกษาเรื่องการขายอสังหาริมทรัพย์ของฉัน',
+  },
+  {
     key: 'owner.portfolio.project_switcher',
     namespace: 'owner',
     description: 'Label: project switcher for portfolio',

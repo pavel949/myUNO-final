@@ -346,7 +346,20 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Confirmed and fixed along the way:** `src/app/admin/finance/reconciliation/page.tsx` — an older duplicate of a newer, correctly-built admin screen — hardcoded English UI text directly. Refactored into a 44-line server component plus a new `reconciliation-client.tsx`, resolving every violation; it is not in the 62-file debt list.
 - **Still needed:** working down the 371-violation debt list file by file, each one a genuine hardcoded-string-to-content-key conversion.
 
-### Q55. The design system isn't consistently followed — OPEN (part 2 started: `MoneyAmount` now exists and is adopted in two screens)
+### Q55. The design system isn't consistently followed — OPEN, but re-measured 2026-09-06 and smaller than written
+
+- **Re-counted against the code rather than the note.** Three of this entry's figures were wrong in the direction of overstating the debt, and one described something that does not exist:
+  - "~30 CRM and buyer-marketplace files outside the design system" → **7 files** repo-wide contain an off-palette Tailwind colour, of which **5** are CRM. The buyer surface is one page and is fully on-token. No file anywhere contains a hex arbitrary value.
+  - "inert dark-mode classes" → there are **zero** `dark:` classes anywhere in `src`, and `tailwind.config.ts` sets no `darkMode` key. Whatever this described is gone, or was never there.
+  - "~12 files with a local `formatCurrency`" → **6**, of which 4 are CRM.
+  - "`MoneyAmount` adopted in two screens" → **four**, and it now formats through `src/lib/money.ts` so a figure cannot differ between a screen and a notification.
+- **What is confirmed and still open**, having been checked directly:
+  - `EmptyState` is used in 3 files and `LoadingState` in 2, against doc 06 §3.2's "every list/table/feed uses it… no blank screens, ever". This is the largest real gap in the entry and was the one it understated.
+  - **11 of the 15 domain components doc 06 §3.3 names do not exist** — `BookingWidget`, `ThreadView`, `StatementView`, `TicketCard`, `MapView` and others. Their behaviour is inlined per page, which is *why* state-component adoption is low: there is no shared component forcing it. `MapView` has no trace at all — no map library in `package.json` — so the map toggle doc 06 specifies for search and unit detail is unbuilt, not partial.
+  - The booking widget's mobile sheet is still missing (the fixed bottom bar exists; tapping it navigates rather than expanding).
+- **Closed since:** the swipeable gallery (T-062), the status→colour single source (T-063), and form-error announcement (T-061).
+
+### Q55 (original entry, superseded above)
 - **Source:** same pass as Q51, UI/UX pillar.
 - **The gap, four parts:**
   1. **The CRM and buyer-marketplace screens (~30 files, docs 17–18) were built entirely outside doc 06** — hand-picked Tailwind colors instead of the brand palette, plus `dark:` variants that do nothing today since the product is light-only in loop one (doc 06 §2.5). It works; it doesn't look or feel like the rest of myUNO. **Not started.**
@@ -368,7 +381,15 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **`reachability.test.ts` has a blind spot worth closing** — it only scans `page.tsx` files, never `route.ts` handlers, which is exactly how the payout-creation routes in Q51 went unnoticed. **Fixed**: extended with a second describe block covering all 166 `route.ts` handlers, matching a caller by exact/superstring text or by a file-scoped dispatcher check (a route whose action name is chosen at runtime — `` `/api/bookings/${id}/${path}` `` — rather than written in the URL). Doing this found real gaps; see Q59, the new item it produced.
 - **Needs:** none of these need a founder decision. Remaining: the MC common-area-services tab.
 
-### Q59. Extending the reachability test found ~40 more built-but-unwired API routes — OPEN (documented debt, not fixed)
+### Q59. Built-but-unwired API routes — LARGELY CLOSED (2 remain, both deliberate)
+
+- **Re-counted 2026-09-06 against the code, not the note:** `API_DEBT` in `src/app/reachability.test.ts` holds exactly **two** routes — `/api/notifications/stream` and `/api/threads/[threadId]/stream`. Both are working SSE endpoints the UI declined to adopt: `NotificationBell.tsx` polls `/api/notifications` every 30s and nothing opens the thread stream. That is a decision to make (adopt the stream, or delete it), not wiring to do.
+- **Everything else on the original list was wired** in the intervening commits — CRM lifecycle, contracts, attribution reports, config history, compliance checklists, prospecting, operational KPIs, organizations, incidents and the admin service-orders board all have screens now. A companion test fails the build if a route on the list turns out to be wired but is not removed from it, so the set cannot go stale in either direction.
+- **Worth recording as a process point:** this entry sat at "~40 unwired routes" long after the number was 2, and was quoted as current in a later production assessment. The register is only useful if closed items get closed.
+
+*Historical text follows.*
+
+### Q59 (original entry, superseded above)
 - **Source:** closing Q57's `reachability.test.ts` blind spot (above). Running the new API-route check for the first time found far more than the two payout routes Q51 already knew about.
 - **The gap:** 40 routes (of 166 total) have no caller anywhere in `src/app` or `src/components` — not a literal fetch, not a linked `<a href>`, not a runtime-dispatched action. They fall into three groups:
   1. **Admin CRUD screens whose backend exists with no UI**: compliance checklists, config-parameter history, content export/import, content namespace edit, management contracts, CRM activities/pipeline/profile-transition, fee calculation, incidents, operational KPIs, organizations, prospecting/transition, attribution reports, the admin-side service-orders list, statement line-items and sign-off (admin side — the owner-side sign-off route is wired and tested), and statement generation itself (no button anywhere triggers it — today it can only run by someone with API access).

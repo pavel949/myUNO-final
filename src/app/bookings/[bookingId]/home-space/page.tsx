@@ -89,8 +89,9 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'services.rating.error_submit': 'Failed to submit rating',
     'services.rating.error_generic': 'An error occurred',
     'services.rating.button_cancel': 'Cancel',
-    'services.rating.button_submit': 'Submit Rating',
+    'services.rating.button_submit': 'Submit rating',
     'services.rating.button_submitting': 'Submitting...',
+    'services.rating.star_label': '{n} out of 5',
   });
 
   // Project-specific shuttle schedule (content key; empty until the founder

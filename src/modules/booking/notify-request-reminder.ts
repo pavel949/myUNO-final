@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
+import { satangToBaht } from '@/lib/money';
 
 /**
  * Half-SLA reminder for unanswered request-to-book (doc 11 N-34).
@@ -24,7 +25,7 @@ export async function notifyRequestReminder(
     if (!booking || !booking.guestIdentity) return;
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const totalBaht = Math.round(booking.totalThb / 100);
+    const totalBaht = satangToBaht(booking.totalThb);
     const msTotal =
       booking.requestExpiresAt && booking.createdAt
         ? booking.requestExpiresAt.getTime() - booking.createdAt.getTime()

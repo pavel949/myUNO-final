@@ -939,7 +939,6 @@ model Project {
   amenityKeys     String[]      @default([]) @map("amenity_keys")
   handbookKey     String        @map("handbook_key")
   status          ProjectStatus @default(draft)
-  defaultCurrency String        @default("THB") @map("default_currency")
 
   // Relations
   /// SetNull, never cascade: deleting an area must not delete the projects in

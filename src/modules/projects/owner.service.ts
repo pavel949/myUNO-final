@@ -5,6 +5,7 @@ import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
 import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
 import { notifyOwnerStayBooked } from './notify-owner-stay';
 import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
+import { satangToBaht } from '@/lib/money';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -224,7 +225,7 @@ export async function getOwnerDashboard(
       projectId: unit.projectId,
       occupancyThisMonth: occupancyNights,
       // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
-      revenueThisMonth: monthRevenue / 100,
+      revenueThisMonth: satangToBaht(monthRevenue),
       nextArrivalDate: nextArrival,
       bookingsCount: unit.bookings.filter((b) => b.status !== 'cancelled').length,
       openTicketsCount: unit.tickets.filter((t) => ACTIVE_TICKET_STATUSES.includes(t.status)).length,
@@ -247,7 +248,7 @@ export async function getOwnerDashboard(
     units: unitData,
     combinedOccupancyThisMonth: combinedOccupancy,
     // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
-    combinedRevenueThisMonth: combinedRevenue / 100,
+    combinedRevenueThisMonth: satangToBaht(combinedRevenue),
     alertsCount: 0, // Placeholder; extended by alerts/tickets/verification logic in later tasks
   };
 }
@@ -301,7 +302,7 @@ export async function getOwnerBookingsList(
   });
 
   // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
-  return bookings.map((booking) => ({ ...booking, totalThb: booking.totalThb / 100 }));
+  return bookings.map((booking) => ({ ...booking, totalThb: satangToBaht(booking.totalThb) }));
 }
 
 /**

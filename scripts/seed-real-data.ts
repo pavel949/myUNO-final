@@ -69,7 +69,6 @@ async function seedRealData() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.ignatev_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',

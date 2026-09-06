@@ -3,6 +3,7 @@ import { findOrCreateThread, addSystemMessage, createNotification } from '@/modu
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
+import { satangToBaht } from '@/lib/money';
 
 /**
  * Shared post-payment transition for service orders: placed → paid.
@@ -608,7 +609,7 @@ export async function markRefundFailed(
   const booking = refundRecord.payment.booking;
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   const reconciliationUrl = `${baseUrl}/admin/finance/reconciliation`;
-  const amountBaht = Math.round(refundRecord.amountThb / 100);
+  const amountBaht = satangToBaht(refundRecord.amountThb);
 
   const admins = await db.identity.findMany({
     where: { isAdmin: true, status: 'active' },

@@ -1,0 +1,17 @@
+-- D11 (doc 01 §12): THB is the only currency in loop one.
+--
+-- `project.default_currency` was written in five places, always the literal
+-- 'THB', and read in none. Meanwhile the payment seam's TypeScript types are
+-- the string literal 'THB', so a second currency is a compile error across the
+-- finance module. The database was asserting a per-project capability the code
+-- forbade.
+--
+-- A column that misdescribes the system is worse than no column: it invites a
+-- future contributor to believe multi-currency is half-built and extend it,
+-- when nothing behind it works. The decision now lives in doc 01 §12, where
+-- decisions live.
+--
+-- Reversible: Q22 (non-THB owner payouts) is what reopens this, and re-adding
+-- the column is one migration. Every existing value is 'THB', so nothing is
+-- lost that could not be reconstructed by a constant.
+ALTER TABLE "project" DROP COLUMN "default_currency";

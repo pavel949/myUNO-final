@@ -1,6 +1,7 @@
 import { PrismaClient, DepositClaim, DepositPreauth, RoleType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification, raiseDispute } from '@/modules/comms';
+import { satangToBaht } from '@/lib/money';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -446,7 +447,7 @@ export async function fileDepositClaim(db: PrismaClient, input: DepositClaimInpu
       bodyKey: 'notify.stay.damage_claim.body',
       params: {
         unit_name: bookingWithGuest.unit?.name ?? 'your stay',
-        amount_thb: Math.round(claimedAmountThb / 100),
+        amount_thb: satangToBaht(claimedAmountThb),
         description,
         hours: responseHours,
       },

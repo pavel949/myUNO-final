@@ -76,7 +76,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.title_legendary_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',
@@ -179,7 +178,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.layantara_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',
@@ -289,7 +287,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.title_heritage_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',

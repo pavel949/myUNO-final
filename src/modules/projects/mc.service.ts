@@ -6,6 +6,7 @@ import {
 import { getConfig } from '@/modules/config';
 import { getProjectIcalConflictAlerts } from '@/modules/integrations';
 import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
+import { satangToBaht } from '@/lib/money';
 
 /**
  * Get all units managed by an MC member.
@@ -644,8 +645,8 @@ export async function getMCFeeReport(
   // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
   const feeLinesThb = feeLines.map((line) => ({
     ...line,
-    grossAmount: line.grossAmount / 100,
-    feeAmount: line.feeAmount / 100,
+    grossAmount: satangToBaht(line.grossAmount),
+    feeAmount: satangToBaht(line.feeAmount),
   }));
 
   return {
@@ -654,8 +655,8 @@ export async function getMCFeeReport(
     periodEnd,
     feeLines: feeLinesThb,
     summaryThb: {
-      grossAmount: grossTotal / 100,
-      platformFeeAmount: feeTotal / 100,
+      grossAmount: satangToBaht(grossTotal),
+      platformFeeAmount: satangToBaht(feeTotal),
     },
   };
 }

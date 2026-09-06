@@ -654,3 +654,84 @@ export async function rejectClaim(
 
   return rejected;
 }
+
+/**
+ * Release the holds whose claim window has closed with nothing outstanding.
+ *
+ * This is the other half of the fix to a real defect: `checkOutBooking` used to
+ * void the pre-authorization unconditionally, the moment the guest checked out.
+ * Since `fileDepositClaim` allows a claim for `booking.deposit.claim_window_hours`
+ * *after* check-out, and `captureDepositPreauthOnClaim` refuses anything that is
+ * no longer `authorized`, the window opened at precisely the moment the deposit
+ * became uncapturable. `getStaysOpenToClaim` counted down staff's remaining
+ * hours against a hold that had already gone.
+ *
+ * So the release moves here, where the window can actually be respected.
+ *
+ * **A hold is released when all of these are true:**
+ * - the stay has checked out, and the claim window has since closed;
+ * - the pre-auth is still `authorized` (a captured one is finished; an already
+ *   voided one has nothing to do);
+ * - no claim is still live. A `filed` or `disputed` claim is unresolved, and
+ *   releasing under it would destroy the money it is about. A `rejected` claim
+ *   is resolved — the guest keeps the deposit, so the hold goes.
+ *
+ * **What this deliberately does not decide.** Whether a deposit *should* be
+ * released early when staff are satisfied nothing is damaged is a policy
+ * question the founder still owns (Q46). Nothing here forecloses it: an
+ * explicit "checked out clean" action would call `voidDepositPreauthIfClean`
+ * directly and this job would simply find nothing left to do.
+ *
+ * The cost of the safe reading is that a guest's card carries the hold for the
+ * length of the window rather than being released at the door. That is what a
+ * deposit pre-authorization is, and it is the reading that cannot lose money.
+ */
+export async function releaseExpiredDepositPreauths(
+  db: PrismaClient,
+  now: Date = new Date()
+): Promise<{ released: number }> {
+  const candidates = await db.depositPreauth.findMany({
+    where: {
+      status: 'authorized',
+      booking: { checkedOutAt: { not: null } },
+    },
+    select: {
+      id: true,
+      bookingId: true,
+      booking: { select: { checkedOutAt: true, projectId: true } },
+    },
+  });
+
+  let released = 0;
+
+  for (const preauth of candidates) {
+    const checkedOutAt = preauth.booking?.checkedOutAt;
+    if (!checkedOutAt) continue;
+
+    // Per project, because the window is configuration and a project may
+    // override it (doc 04).
+    const hours = await windowHours(
+      db,
+      'booking.deposit.claim_window_hours',
+      preauth.booking?.projectId
+    );
+    const windowClosed = now.getTime() - checkedOutAt.getTime() > hours * HOUR_MS;
+    if (!windowClosed) continue;
+
+    const liveClaims = await db.depositClaim.count({
+      where: { bookingId: preauth.bookingId, status: { in: ['filed', 'disputed'] } },
+    });
+    if (liveClaims > 0) continue;
+
+    // Each release is isolated: one booking in a strange state must not stop
+    // every other guest's money being given back.
+    try {
+      await voidDepositPreauthIfClean(db, preauth.bookingId);
+      released += 1;
+    } catch {
+      continue;
+    }
+  }
+
+  return { released };
+}

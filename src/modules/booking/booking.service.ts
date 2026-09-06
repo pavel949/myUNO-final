@@ -4,7 +4,7 @@ import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
-import { ensureDepositPreauthOnStayConfirmed, voidDepositPreauthIfClean } from '@/modules/finance';
+import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
@@ -643,7 +643,21 @@ export async function checkOutBooking(
     identityId: checkedOut.guestIdentityId,
   }).catch(() => null);
 
-  await voidDepositPreauthIfClean(db, bookingId).catch(() => null);
+  // The deposit pre-authorization is deliberately NOT released here.
+  //
+  // It used to be, unconditionally, on every check-out. That defeated the
+  // damage-claim flow entirely: `fileDepositClaim` allows a claim for
+  // `booking.deposit.claim_window_hours` (48 by default) *after* check-out, and
+  // `captureDepositPreauthOnClaim` refuses anything that is not still
+  // `authorized`. So the claim window opened at exactly the moment the deposit
+  // became uncapturable, and `getStaysOpenToClaim` — which shows staff the
+  // hours they have left to act — was counting down against a hold that no
+  // longer existed.
+  //
+  // Release is now `releaseExpiredDepositPreauths` (a scheduled job), which
+  // voids the hold once the window has closed with nothing outstanding. That
+  // makes the documented window real without deciding when a deposit *should*
+  // be released, which is still open (Q46).
 
   return checkedOut;
 }

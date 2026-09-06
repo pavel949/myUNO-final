@@ -43,6 +43,7 @@ export const JOB_KEYS = {
   metricsRollup: 'metrics_rollup',
   guestLifecycle: 'guest_lifecycle',
   serviceOrderExpiry: 'service_order_expiry',
+  depositRelease: 'deposit_release',
 } as const;
 
 export type JobKey = (typeof JOB_KEYS)[keyof typeof JOB_KEYS];
@@ -102,6 +103,10 @@ const JOB_SPECS: readonly JobSpec[] = [
   { key: JOB_KEYS.metricsRollup, cadence: 'nightly', intendedIntervalMs: DAY_MS },
   { key: JOB_KEYS.guestLifecycle, cadence: 'nightly', intendedIntervalMs: DAY_MS },
   { key: JOB_KEYS.serviceOrderExpiry, cadence: 'nightly', intendedIntervalMs: DAY_MS },
+  // Releases deposit holds whose claim window has closed. Nightly is the
+  // right cadence: the window is measured in days, and holding a guest's
+  // money a few hours longer than strictly necessary is the safe error.
+  { key: JOB_KEYS.depositRelease, cadence: 'nightly', intendedIntervalMs: DAY_MS },
 ];
 
 /**

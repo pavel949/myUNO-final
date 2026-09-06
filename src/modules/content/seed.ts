@@ -3816,6 +3816,7 @@ const SCHEDULER_KEYS: KeyDef[] = [
   { key: 'admin.scheduler.job.metrics_rollup', namespace: 'admin', description: 'Scheduler job: rollup', en: 'Nightly metric rollup', ru: 'Ночной расчёт метрик', th: 'สรุปเมตริกรายคืน', status: NR },
   { key: 'admin.scheduler.job.guest_lifecycle', namespace: 'admin', description: 'Scheduler job: guest messages', en: 'Guest lifecycle messages (pre-arrival through re-engage)', ru: 'Сообщения гостевого цикла (до заезда и повторное вовлечение)', th: 'ข้อความวงจรชีวิตแขก (ก่อนเข้าพักถึงการดึงกลับ)', status: NR },
   { key: 'admin.scheduler.job.service_order_expiry', namespace: 'admin', description: 'Scheduler job: service orders', en: 'Service-order SLAs and ticket auto-close', ru: 'SLA заказов услуг и автозакрытие тикетов', th: 'SLA คำสั่งบริการ และปิดตั๋วอัตโนมัติ', status: NR },
+  { key: 'admin.scheduler.job.deposit_release', namespace: 'admin', description: 'Scheduler job: deposit holds', en: 'Deposit holds released after the claim window', ru: 'Снятие блокировок депозита после окна претензий', th: 'ปลดวงเงินมัดจำหลังสิ้นสุดช่วงยื่นเคลม', status: NR },
   { key: 'admin.scheduler.cadence.frequent', namespace: 'admin', description: 'Scheduler cadence: daytime daily slot (Hobby cannot fire more than once per day)', en: 'Daily, afternoon (Phuket)', ru: 'Раз в сутки, днём (Пхукет)', th: 'รายวัน ช่วงบ่าย (ภูเก็ต)', status: NR },
   { key: 'admin.scheduler.cadence.nightly', namespace: 'admin', description: 'Scheduler cadence: nightly slot', en: 'Nightly', ru: 'Раз в сутки', th: 'รายคืน', status: NR },
 ];

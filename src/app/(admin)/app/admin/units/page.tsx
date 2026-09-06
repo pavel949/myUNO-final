@@ -22,6 +22,7 @@ export default async function AdminUnitsPage() {
 
   const labels = await getLabels({
     'admin.units.title': 'Projects & Units',
+    'admin.units.empty': 'No units yet. Add one to get started.',
     'admin.units.create': 'Add a unit',
     'admin.units.cancel': 'Cancel',
     'admin.units.saving': 'Saving…',

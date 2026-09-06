@@ -1260,9 +1260,13 @@ export function MCDashboardClient({
         open={cashSheetBooking !== null}
         onClose={() => setCashSheetBooking(null)}
         closeLabel={labels['mc.bookings.sheet_close']}
-        title={fill(labels['mc.bookings.cash_sheet_title'], {
-          name: cashSheetBooking?.guestIdentity.firstName ?? '',
-        })}
+        title={
+          cashSheetBooking
+            ? fill(labels['mc.bookings.cash_sheet_title'], {
+                name: cashSheetBooking.guestIdentity.firstName,
+              })
+            : ''
+        }
         subtitle={cashSheetBooking?.unit.name ?? ''}
         amountThb={cashSheetBooking?.totalThb ?? 0}
         amountDueLabel={labels['mc.bookings.sheet_amount_due']}
@@ -1273,12 +1277,20 @@ export function MCDashboardClient({
           setBookingReceipts((previous) => ({ ...previous, [cashSheetBooking.id]: value }))
         }
         refHelpText={labels['mc.bookings.cash_sheet_hint']}
-        confirmationLabel={fill(labels['mc.bookings.cash_sheet_counted'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
-        submitLabel={fill(labels['mc.bookings.cash_sheet_submit'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        confirmationLabel={
+          cashSheetBooking
+            ? fill(labels['mc.bookings.cash_sheet_counted'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
+        submitLabel={
+          cashSheetBooking
+            ? fill(labels['mc.bookings.cash_sheet_submit'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['mc.bookings.cash_sheet_required_hint']}
         busy={cashSheetBooking !== null && busyBookingId === cashSheetBooking.id}
         onSubmit={async () => {

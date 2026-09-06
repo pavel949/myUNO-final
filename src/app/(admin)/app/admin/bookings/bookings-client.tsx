@@ -35,6 +35,12 @@ interface AdminBooking {
 
 type Labels = Record<string, string>;
 
+// The full BookingChannel enum (prisma/schema.prisma), not just channels
+// present on the currently-loaded page — this list paginates 50 at a time,
+// so a channel can have zero matches on this page while still having
+// bookings further down the full list (board 19: "filtered to zero").
+const ALL_CHANNELS = ['direct', 'airbnb', 'booking_com', 'agoda', 'agent', 'manual'] as const;
+
 const statusStyle: Record<string, string> = {
   pending_payment: 'bg-state-warning-soft text-state-warning',
   confirmed: 'bg-state-success-soft text-state-success',
@@ -119,7 +125,7 @@ export default function BookingsAdminClient({
     );
   }
 
-  const channels = [...new Set(bookings.map((b) => b.channel))].sort();
+  const channels = ALL_CHANNELS;
   const visible = channelFilter
     ? bookings.filter((b) => b.channel === channelFilter)
     : bookings;
@@ -193,14 +199,6 @@ export default function BookingsAdminClient({
     }
   };
 
-  if (bookings.length === 0) {
-    return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
-        <p className="text-body text-text-secondary">{labels['admin.bookings.empty']}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-surface-paper border border-border-line rounded-lg p-24">
       <div className="mb-16">
@@ -227,6 +225,11 @@ export default function BookingsAdminClient({
           ))}
         </select>
       </div>
+      {visible.length === 0 && (
+        <p className="text-body text-text-secondary py-16">
+          {labels['admin.bookings.filtered_empty']}
+        </p>
+      )}
       {visible.map((booking) => (
         <div
           key={booking.id}
@@ -371,9 +374,11 @@ export default function BookingsAdminClient({
         open={cashSheetBooking !== null}
         onClose={() => setCashSheetBooking(null)}
         closeLabel={labels['admin.bookings.sheet_close']}
-        title={fill(labels['admin.bookings.cash_sheet_title'], {
-          name: cashSheetBooking?.guestName ?? '',
-        })}
+        title={
+          cashSheetBooking
+            ? fill(labels['admin.bookings.cash_sheet_title'], { name: cashSheetBooking.guestName })
+            : ''
+        }
         subtitle={cashSheetBooking?.unitName ?? ''}
         amountThb={cashSheetBooking?.totalThb ?? 0}
         amountDueLabel={labels['admin.bookings.sheet_amount_due']}
@@ -383,12 +388,20 @@ export default function BookingsAdminClient({
           cashSheetBooking && setReceipts((prev) => ({ ...prev, [cashSheetBooking.id]: value }))
         }
         refHelpText={labels['admin.bookings.cash_sheet_hint']}
-        confirmationLabel={fill(labels['admin.bookings.cash_sheet_counted'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
-        submitLabel={fill(labels['admin.bookings.cash_sheet_submit'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        confirmationLabel={
+          cashSheetBooking
+            ? fill(labels['admin.bookings.cash_sheet_counted'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
+        submitLabel={
+          cashSheetBooking
+            ? fill(labels['admin.bookings.cash_sheet_submit'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['admin.bookings.cash_sheet_required_hint']}
         busy={cashSheetBooking !== null && busyId === cashSheetBooking.id}
         onSubmit={async () => {
@@ -404,9 +417,13 @@ export default function BookingsAdminClient({
         open={transferSheetBooking !== null}
         onClose={() => setTransferSheetBooking(null)}
         closeLabel={labels['admin.bookings.sheet_close']}
-        title={fill(labels['admin.bookings.transfer_sheet_title'], {
-          name: transferSheetBooking?.guestName ?? '',
-        })}
+        title={
+          transferSheetBooking
+            ? fill(labels['admin.bookings.transfer_sheet_title'], {
+                name: transferSheetBooking.guestName,
+              })
+            : ''
+        }
         subtitle={transferSheetBooking?.unitName ?? ''}
         amountThb={transferSheetBooking?.totalThb ?? 0}
         amountDueLabel={labels['admin.bookings.sheet_amount_due']}
@@ -417,9 +434,13 @@ export default function BookingsAdminClient({
           setBankRefs((prev) => ({ ...prev, [transferSheetBooking.id]: value }))
         }
         refHelpText={labels['admin.bookings.transfer_sheet_hint']}
-        submitLabel={fill(labels['admin.bookings.transfer_sheet_submit'], {
-          amount: `฿${(transferSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        submitLabel={
+          transferSheetBooking
+            ? fill(labels['admin.bookings.transfer_sheet_submit'], {
+                amount: `฿${transferSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['admin.bookings.transfer_sheet_required_hint']}
         busy={transferSheetBooking !== null && busyId === transferSheetBooking.id}
         onSubmit={async () => {

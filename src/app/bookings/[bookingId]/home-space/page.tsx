@@ -5,7 +5,11 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
+import { ForbiddenState } from '@/components';
 import { InStayHomeSpaceClient } from './client';
+
+/** The stay happened and is now over — the in-stay page is not where that guest belongs any more (board 19: "forbidden — a stay that has ended"). */
+const ENDED_BOOKING_STATUSES = new Set(['checked_out', 'completed']);
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +26,23 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
   }
 
   const data = await fetchInStayHomeSpace(params.bookingId, user.identityId);
+
+  if (ENDED_BOOKING_STATUSES.has(data.booking.status)) {
+    const forbiddenLabels = await getLabels({
+      'home.forbidden.stay_ended_title': 'This stay has ended',
+      'home.forbidden.stay_ended_description':
+        'This home space closed when the stay ended. Your current and past stays are in your trips.',
+      'home.forbidden.trips_link': 'Go to your trips',
+    });
+    return (
+      <ForbiddenState
+        title={forbiddenLabels['home.forbidden.stay_ended_title']}
+        description={forbiddenLabels['home.forbidden.stay_ended_description']}
+        action={{ label: forbiddenLabels['home.forbidden.trips_link'], href: '/trips' }}
+      />
+    );
+  }
+
   const labels = await getLabels({
     'home.welcome': 'Welcome to',
     'home.handbook.title': 'Property Handbook',

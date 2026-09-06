@@ -41,6 +41,9 @@ export default async function OwnerPage() {
     'owner.trends.revenue': 'Revenue by month',
     'owner.trends.occupancy': 'Occupancy by month',
     'owner.trends.empty': 'No history yet — trends appear after the first nightly rollup.',
+    'owner.units.empty_title': 'No units yet',
+    'owner.units.empty_description':
+      'When a unit is registered to you, its occupancy, revenue and statements will appear here.',
     'owner.chart.month': 'Month',
     'owner.chart.revenue': 'Revenue',
     'owner.chart.occupancy': 'Occupancy %',

@@ -14,6 +14,7 @@ import {
   MoneyAmount,
   RoleContextBanner,
   StickyPrimaryAction,
+  EmptyState,
 } from '@/components';
 import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompact } from '@/components/viz';
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
@@ -214,6 +215,25 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
       </Link>
     </div>
   );
+
+  if (dashboard.units.length === 0) {
+    return (
+      <div className="min-h-screen bg-surface-background">
+        <div className="max-w-6xl mx-auto px-24 py-40">
+          <div className="mb-40">
+            <h1 className="text-heading-1 font-bold text-text-ink mb-8">
+              {labels['owner.dashboard.title']}
+            </h1>
+            <p className="text-body text-text-secondary">{labels['owner.dashboard.subtitle']}</p>
+          </div>
+          <EmptyState
+            title={labels['owner.units.empty_title']}
+            description={labels['owner.units.empty_description']}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-background">

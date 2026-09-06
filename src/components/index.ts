@@ -16,7 +16,7 @@ export { StickyPrimaryAction } from './StickyPrimaryAction';
 export { ServiceCategoryIcon, SERVICE_CATEGORY_ICON_NAMES } from './ServiceCategoryIcon';
 export { Avatar } from './Avatar';
 export { Badge, VerifiedBadge } from './Badge';
-export { EmptyState, LoadingState, ErrorState } from './StateComponents';
+export { EmptyState, LoadingState, ErrorState, ForbiddenState, PartialState } from './StateComponents';
 export { MoneyAmount, type MoneyAmountProps } from './MoneyAmount';
 export { PriceBreakdown, type PriceBreakdownItem } from './PriceBreakdown';
 export { StatusTimeline, type StatusTimelineEvent } from './StatusTimeline';

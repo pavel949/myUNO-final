@@ -511,7 +511,11 @@ export default function OpsBoardClient({
         open={cashSheetBooking !== null}
         onClose={() => setCashSheetBooking(null)}
         closeLabel={labels['staff.ops.sheet_close']}
-        title={fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetBooking?.guestName ?? '' })}
+        title={
+          cashSheetBooking
+            ? fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetBooking.guestName })
+            : ''
+        }
         subtitle={cashSheetBooking?.unitName ?? ''}
         amountThb={cashSheetBooking?.totalThb ?? 0}
         amountDueLabel={labels['staff.ops.sheet_amount_due']}
@@ -522,12 +526,20 @@ export default function OpsBoardClient({
           setReceipts((prev) => ({ ...prev, [cashSheetBooking.id]: value }))
         }
         refHelpText={labels['staff.ops.cash_sheet_hint']}
-        confirmationLabel={fill(labels['staff.ops.cash_sheet_counted'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
-        submitLabel={fill(labels['staff.ops.cash_sheet_submit'], {
-          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        confirmationLabel={
+          cashSheetBooking
+            ? fill(labels['staff.ops.cash_sheet_counted'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
+        submitLabel={
+          cashSheetBooking
+            ? fill(labels['staff.ops.cash_sheet_submit'], {
+                amount: `฿${cashSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['staff.ops.cash_sheet_required_hint']}
         busy={cashSheetBooking !== null && busyId === cashSheetBooking.id}
         onSubmit={async () => {
@@ -543,9 +555,11 @@ export default function OpsBoardClient({
         open={transferSheetBooking !== null}
         onClose={() => setTransferSheetBooking(null)}
         closeLabel={labels['staff.ops.sheet_close']}
-        title={fill(labels['staff.ops.transfer_sheet_title'], {
-          name: transferSheetBooking?.guestName ?? '',
-        })}
+        title={
+          transferSheetBooking
+            ? fill(labels['staff.ops.transfer_sheet_title'], { name: transferSheetBooking.guestName })
+            : ''
+        }
         subtitle={transferSheetBooking?.unitName ?? ''}
         amountThb={transferSheetBooking?.totalThb ?? 0}
         amountDueLabel={labels['staff.ops.sheet_amount_due']}
@@ -556,9 +570,13 @@ export default function OpsBoardClient({
           setBankRefs((prev) => ({ ...prev, [transferSheetBooking.id]: value }))
         }
         refHelpText={labels['staff.ops.transfer_sheet_hint']}
-        submitLabel={fill(labels['staff.ops.transfer_sheet_submit'], {
-          amount: `฿${(transferSheetBooking?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        submitLabel={
+          transferSheetBooking
+            ? fill(labels['staff.ops.transfer_sheet_submit'], {
+                amount: `฿${transferSheetBooking.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['staff.ops.transfer_sheet_required_hint']}
         busy={transferSheetBooking !== null && busyId === transferSheetBooking.id}
         onSubmit={async () => {
@@ -607,7 +625,11 @@ export default function OpsBoardClient({
         open={cashSheetOrder !== null}
         onClose={() => setCashSheetOrder(null)}
         closeLabel={labels['staff.ops.sheet_close']}
-        title={fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetOrder?.serviceTitle ?? '' })}
+        title={
+          cashSheetOrder
+            ? fill(labels['staff.ops.cash_sheet_title'], { name: cashSheetOrder.serviceTitle })
+            : ''
+        }
         subtitle={cashSheetOrder?.ordererName ?? ''}
         amountThb={cashSheetOrder?.totalThb ?? 0}
         amountDueLabel={labels['staff.ops.sheet_amount_due']}
@@ -617,12 +639,20 @@ export default function OpsBoardClient({
           cashSheetOrder && setReceipts((prev) => ({ ...prev, [cashSheetOrder.id]: value }))
         }
         refHelpText={labels['staff.ops.cash_sheet_hint']}
-        confirmationLabel={fill(labels['staff.ops.cash_sheet_counted'], {
-          amount: `฿${(cashSheetOrder?.totalThb ?? 0).toLocaleString()}`,
-        })}
-        submitLabel={fill(labels['staff.ops.cash_sheet_submit'], {
-          amount: `฿${(cashSheetOrder?.totalThb ?? 0).toLocaleString()}`,
-        })}
+        confirmationLabel={
+          cashSheetOrder
+            ? fill(labels['staff.ops.cash_sheet_counted'], {
+                amount: `฿${cashSheetOrder.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
+        submitLabel={
+          cashSheetOrder
+            ? fill(labels['staff.ops.cash_sheet_submit'], {
+                amount: `฿${cashSheetOrder.totalThb.toLocaleString()}`,
+              })
+            : ''
+        }
         requiredHint={labels['staff.ops.cash_sheet_required_hint']}
         busy={cashSheetOrder !== null && busyId === cashSheetOrder.id}
         onSubmit={async () => {

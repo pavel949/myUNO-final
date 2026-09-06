@@ -97,6 +97,14 @@ export default function UnitsAdminClient({
     });
   };
 
+  if (units.length === 0) {
+    return (
+      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+        <p className="text-body text-text-secondary">{labels['admin.units.empty']}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface-paper border border-border-line rounded-lg p-24">
       <input

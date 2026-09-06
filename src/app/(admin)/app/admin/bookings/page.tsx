@@ -9,6 +9,7 @@ export default async function AdminBookingsPage() {
     getLabels({
     'admin.bookings.title': 'Bookings',
     'admin.bookings.empty': 'No bookings yet.',
+    'admin.bookings.filtered_empty': 'No bookings match this filter.',
     'admin.bookings.paid': 'Paid',
     'admin.bookings.record_cash': 'Record cash',
     'admin.bookings.record_transfer': 'Record transfer',

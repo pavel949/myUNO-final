@@ -137,6 +137,8 @@ export async function POST(
         startDate: newStartDate,
         endDate: newEndDate,
         actorIdentityId: user.identityId,
+        adults: adultsCount,
+        children: childrenCount,
       });
       balanceThb = result.totalThb - result.previousTotalThb;
       updated = await prisma.booking.findUniqueOrThrow({
@@ -149,19 +151,6 @@ export async function POST(
         { error: error instanceof Error ? error.message : 'Could not change these dates' },
         { status: code === 'DOUBLE_BOOK' ? 409 : 400 }
       );
-    }
-
-    // Party size is not part of the dates transition, so it is applied here —
-    // and only when asked for, so an unchanged party is left alone.
-    if (adultsCount !== undefined || childrenCount !== undefined) {
-      updated = await prisma.booking.update({
-        where: { id: bookingId },
-        data: {
-          ...(adultsCount !== undefined && { adults: adultsCount }),
-          ...(childrenCount !== undefined && { children: childrenCount }),
-        },
-        include: { unit: true },
-      });
     }
 
     // An increase is collected through the same checkout seam as any other

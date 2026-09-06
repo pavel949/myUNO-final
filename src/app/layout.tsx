@@ -146,7 +146,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${outfit.variable} ${manrope.variable} ${notoSansThai.variable}`}
+      className={`bg-surface-ivory ${outfit.variable} ${manrope.variable} ${notoSansThai.variable}`}
     >
       <body className="min-h-screen flex flex-col">
         <Navbar

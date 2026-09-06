@@ -2,12 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  scroll-behavior: smooth;
-}
+@layer base {
+  :root {
+    color-scheme: light;
+  }
 
-body {
-  @apply bg-surface-ivory text-text-ink font-sans;
+  html {
+    @apply bg-surface-ivory;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-surface-ivory text-text-ink font-sans antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 /*

@@ -416,7 +416,7 @@ export async function getOwnerAlerts(
   const unitIds = units.map((u) => u.id);
 
   const now = new Date();
-  const tm30Sla = await getConfig(db, 'compliance.tm30_sla_hours', {}) || 24;
+  const tm30Sla = (await getConfig(db, 'compliance.tm30_sla_hours', {})) ?? 24;
 
   // Alert 1: TM30 overdue or escalated
   const tm30Filings = await db.tm30Filing.findMany({
@@ -506,7 +506,7 @@ export async function getOwnerAlerts(
     },
   });
 
-  const expiryWarningDays = await getConfig(db, 'compliance.expiry_warning_days', {}) || 30;
+  const expiryWarningDays = (await getConfig(db, 'compliance.expiry_warning_days', {})) ?? 30;
 
   const warningDate = new Date(now.getTime() + expiryWarningDays * 24 * 60 * 60 * 1000);
 
@@ -597,7 +597,7 @@ export async function getOwnerComplianceSummary(
       },
     });
 
-    const tm30Sla = await getConfig(db, 'compliance.tm30_sla_hours', {}) || 24;
+    const tm30Sla = (await getConfig(db, 'compliance.tm30_sla_hours', {})) ?? 24;
     const onTimeCount = tm30Filings.filter((f) => {
       if (!f.filedAt) return false;
       const hoursToFile = (f.filedAt.getTime() - f.booking.startDate.getTime()) / (1000 * 60 * 60);

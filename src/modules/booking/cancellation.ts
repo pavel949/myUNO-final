@@ -83,10 +83,15 @@ export async function resolveCancellationPolicy(
   policyKey: string | null | undefined,
   scope?: { projectId?: string; unitId?: string }
 ): Promise<CancellationPolicy> {
-  const key =
-    policyKey ||
-    ((await getConfig(db, 'cancellation.default_policy', scope)) as string | undefined) ||
-    'moderate';
+  // `||` is deliberate here, and is not the hazard T-058 fixed elsewhere. That
+  // hazard is about numbers, where a configured 0 is a real value that `||`
+  // would discard. This value is a policy *name*: an empty string is not a
+  // policy anyone can have configured on purpose, and falling through to the
+  // default beats propagating it into "Unknown cancellation policy: ".
+  const configuredDefault = (await getConfig(db, 'cancellation.default_policy', scope)) as
+    | string
+    | undefined;
+  const key = policyKey || configuredDefault || 'moderate';
 
   const steps = (await getConfig(db, `cancellation.policy.${key}` as never, scope)) as
     | Array<{ days: number; pct: number }>

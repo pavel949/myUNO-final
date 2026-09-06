@@ -3,14 +3,7 @@
 import { BuyerSignalStatus } from '@prisma/client';
 import { useState } from 'react';
 import type { AdminSignal } from '@/app/actions/getAdminSignals';
-
-// doc 06 §3.4 status → color mapping (state tokens only)
-const STATUS_STYLE: Record<string, string> = {
-  open: 'bg-state-warning-soft text-state-warning',
-  reviewed: 'bg-state-info-soft text-state-info',
-  handed_to_capital: 'bg-state-success-soft text-state-success',
-  dismissed: 'bg-surface-ivory text-text-stone',
-};
+import { statusClasses } from '@/lib/status';
 
 /** Strength as a filled-dot scale (1–3) plus the number — never color alone. */
 function StrengthDots({ strength, title }: { strength: number; title: string }) {
@@ -144,7 +137,7 @@ export function SignalsList({
                 <td className="py-12 px-16">
                   <span
                     className={`text-small font-medium px-8 py-4 rounded-full ${
-                      STATUS_STYLE[signal.status] || 'bg-surface-ivory text-text-stone'
+                      statusClasses(signal.status)
                     }`}
                   >
                     {labels[`admin.signals.status.${signal.status}`] || signal.status}

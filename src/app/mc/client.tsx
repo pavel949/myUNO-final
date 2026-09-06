@@ -20,6 +20,7 @@ import {
 } from '@/components/viz';
 import type { HeatDay } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
+import { statusClasses } from '@/lib/status';
 
 interface Unit {
   id: string;
@@ -176,26 +177,6 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   end.setUTCDate(end.getUTCDate() - 1);
   return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
 }
-
-// doc 06 §3.4 status → color mapping, state tokens only
-const bookingStatusStyle: Record<string, string> = {
-  requested: 'bg-state-warning-soft text-state-warning',
-  confirmed: 'bg-state-success-soft text-state-success',
-  checked_in: 'bg-state-info-soft text-state-info',
-  checked_out: 'bg-surface-ivory text-text-stone',
-  pending_payment: 'bg-state-warning-soft text-state-warning',
-  placed: 'bg-state-warning-soft text-state-warning',
-  paid: 'bg-state-info-soft text-state-info',
-  accepted: 'bg-state-info-soft text-state-info',
-};
-
-const ticketStatusStyle: Record<string, string> = {
-  open: 'bg-state-warning-soft text-state-warning',
-  acknowledged: 'bg-state-info-soft text-state-info',
-  in_progress: 'bg-state-info-soft text-state-info',
-  waiting_reporter: 'bg-state-warning-soft text-state-warning',
-  resolved: 'bg-state-success-soft text-state-success',
-};
 
 /** Build the current month's day cells for a unit from its bookings. */
 function monthHeatDays(unitId: string, bookings: Booking[]): HeatDay[] {
@@ -819,7 +800,7 @@ export function MCDashboardClient({
                           <td className="p-16">
                             <span
                               className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
-                                bookingStatusStyle[booking.status] || 'bg-surface-ivory text-text-stone'
+                                statusClasses(booking.status)
                               }`}
                             >
                               {statusLabel(booking.status)}
@@ -869,7 +850,7 @@ export function MCDashboardClient({
                         <div className="flex items-center gap-12">
                           <span
                             className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
-                              ticketStatusStyle[ticket.status] || 'bg-surface-ivory text-text-stone'
+                              statusClasses(ticket.status)
                             }`}
                           >
                             {statusLabel(ticket.status)}
@@ -998,7 +979,7 @@ export function MCDashboardClient({
                       </div>
                       <span
                         className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
-                          bookingStatusStyle[order.status] || 'bg-surface-ivory text-text-stone'
+                          statusClasses(order.status)
                         }`}
                       >
                         {statusLabel(order.status)}

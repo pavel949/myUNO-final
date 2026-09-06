@@ -11,6 +11,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { bahtToSatang } from '../src/lib/money';
 
 const prisma = new PrismaClient();
 
@@ -191,7 +192,9 @@ async function seedRealData() {
           sizeSqm: unitData.sizeSqm,
           floor: unitData.floor,
           addressSupplement: `${unitData.name}, Ignatev Estate, Bang Tao`,
-          baseNightlyThb: unitData.baseNightlyThb,
+          // Baht literals above (45000 is ฿45,000 — see the ~$1400 note);
+          // the column is satang (T-071).
+          baseNightlyThb: bahtToSatang(unitData.baseNightlyThb),
           minNights: unitData.minNights,
           instantBook: true,
           cancellationPolicyKey: 'policy.moderate',
@@ -306,7 +309,9 @@ async function seedRealData() {
           unitId: unit.id,
           startDate: peakStart,
           endDate: peakEnd,
-          nightlyThb: Math.round(unit.baseNightlyThb * 1.3), // 30% premium
+          // `unit.baseNightlyThb` here is the baht literal, so convert after
+          // applying the premium; `nightlyThb` is satang like every rate.
+          nightlyThb: bahtToSatang(Math.round(unit.baseNightlyThb * 1.3)), // 30% premium
           label: 'High Season (Dec-Mar)',
         },
       });

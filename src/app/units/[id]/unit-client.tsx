@@ -296,8 +296,11 @@ export default function UnitDetailClient({
           <div className="lg:col-span-1">
             <div className="bg-surface-paper border border-border-line rounded-lg p-24 sticky top-96 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
+                {/* Already satang — getPublicUnitById returns the column
+                    unchanged. The x100 that was here made it 100x too
+                    high (T-071). */}
                 <MoneyAmount
-                  satang={Math.round((unit.baseNightlyThb || 0) * 100)}
+                  satang={unit.baseNightlyThb || 0}
                   className="text-display font-semibold"
                 />
                 <span className="text-body text-text-stone">{labels.perNight}</span>

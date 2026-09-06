@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, StatTile } from '@/components';
@@ -720,7 +721,7 @@ export function MCDashboardClient({
                           <p className="text-small text-text-secondary mt-4">{unit.description}</p>
                           <div className="flex gap-16 mt-12">
                             <span className="text-small text-text-secondary">
-                              ฿{unit.baseNightlyThb.toLocaleString()} {labels['mc.units.per_night']}
+                              {formatBaht(unit.baseNightlyThb)} {labels['mc.units.per_night']}
                             </span>
                             <span className="text-small font-semibold text-brand-andaman">
                               {unit.status}

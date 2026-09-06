@@ -128,8 +128,25 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 
 **Revisit this before the ownership/title work lands.** Title deeds, lease terms and foreign-quota positions are the most legally sensitive data the platform will ever hold, and the artifact-based backup shares a failure domain with the code. That is adequate for a cash pilot on stays; it is thinner than it should be under title records.
 
+## 8. The money data check — before the T-070/T-071 migrations run
+
+Three write paths stored amounts 100× too small before they were fixed, and any rows they wrote are still in the database. This is an operations data check, not a code task, and it is cheapest to do in one pass. **Do it before deploying**, because the `crm_opportunity` migration multiplies rows by 100 and is only correct if they were entered as baht.
+
+Query each and eyeball the values against what the business actually charges:
+
+| Table / column | Written by | What a wrong row looks like |
+|---|---|---|
+| `crm_opportunity.value_thb` | the admin CRM pipeline form | a deal value that reads sensible in baht (`5000000`) — these are the rows the migration will multiply, and that is correct |
+| `unit.base_nightly_thb` | the admin "create unit" form (T-071) | a villa at `12000` (= ฿120 a night) rather than `1200000` |
+| `service.base_price_thb` | a provider's own price edit (Q49) | a cleaning at `800` (= ฿8) rather than `80000` |
+| `unit_engagement.noi_cap_annual_thb` | the admin onboarding form (Q50) | an annual cap that reads sensible in baht |
+
+Correct anything implausible and record what was changed and why. Units are the urgent one: a unit priced at 1/100 of its rate is bookable at that rate.
+
+**Also check what the seeds put there.** `scripts/seed-three-projects.ts` and `scripts/seed-real-data.ts` wrote baht into the satang column until T-071, and `docs/VERCEL-SETUP.md` instructs running the first of them — so any environment seeded from that doc has every unit at 1/100 of its rate. Re-seeding from the corrected scripts is simpler than patching row by row, if the environment can take it.
+
 ---
 
-## When all seven are done
+## When all eight are done
 
 Re-run `docs/launch_checklist.md` §2 and §3 and update the rows with what you found. Anything you could not verify stays ❓ — the checklist's value is that nothing in it is ticked on the strength of looking likely.

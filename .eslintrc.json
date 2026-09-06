@@ -18,7 +18,9 @@
       ],
       "excludedFiles": [
         "prisma/seed.ts",
-        "prisma/seed-registries.ts"
+        "prisma/seed-registries.ts",
+        "scripts/seed-real-data.ts",
+        "scripts/seed-three-projects.ts"
       ],
       "rules": {
         "no-restricted-imports": [

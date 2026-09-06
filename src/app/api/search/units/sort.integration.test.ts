@@ -198,8 +198,12 @@ describe('GET /api/search/units — ordering', () => {
   it('applies the filters it always did, whichever sort is asked for', async () => {
     await threeVillas();
 
+    // ฿5,000 — the Middle villa's rate. This asserted `500000` when the route
+    // compared the param straight against the satang column; the filter labels
+    // ask the guest for baht, so the param is baht (T-071). Same intent,
+    // corrected contract.
     const filtered = await (
-      await search({ sort: 'top_rated', maxPrice: '500000' })
+      await search({ sort: 'top_rated', maxPrice: '5000' })
     ).json();
 
     expect(filtered.units.map((u: { name: string }) => u.name).sort()).toEqual([

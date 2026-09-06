@@ -1,7 +1,17 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { t } from '@/modules/content';
+import { tWithLocale } from '@/modules/content';
 import type { Locale } from '@/modules/content';
+
+// Board 21's closing rule: "no locale ships partially… an untranslated key
+// falls back to EN and is visibly flagged, never silently English." Appended
+// only when the visitor's locale isn't EN and the value shown didn't actually
+// come from that locale — English visitors seeing English is not a fallback.
+// The tag names whichever locale the borrowed copy actually came from (a TH
+// visitor served a RU row sees "· RU", not a misleading "· EN").
+function fallbackFlag(borrowedFrom: Locale | null): string {
+  return ` · ${(borrowedFrom ?? 'en').toUpperCase()}`;
+}
 
 const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
 
@@ -36,12 +46,19 @@ export async function getLabels<K extends string>(
   const labels = {} as Record<K, string>;
   await Promise.all(
     (Object.keys(keys) as K[]).map(async (key) => {
+      const flagIfBorrowed = (value: string, matchedLocale: Locale | null) =>
+        resolvedLocale !== 'en' && matchedLocale !== resolvedLocale
+          ? `${value}${fallbackFlag(matchedLocale)}`
+          : value;
       try {
-        const value = await t(prisma, key, undefined, resolvedLocale);
-        // t() echoes the key (dev) or '—' (prod) when missing — use the draft instead
-        labels[key] = value && value !== key && value !== '—' ? value : keys[key];
+        const { value, matchedLocale } = await tWithLocale(prisma, key, undefined, resolvedLocale);
+        // tWithLocale echoes the key (dev) or '—' (prod) when missing — use the draft instead
+        labels[key] =
+          value && value !== key && value !== '—'
+            ? flagIfBorrowed(value, matchedLocale)
+            : flagIfBorrowed(keys[key], null);
       } catch {
-        labels[key] = keys[key];
+        labels[key] = flagIfBorrowed(keys[key], null);
       }
     })
   );

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import {
   Locale,
   DEFAULT_LOCALE,
+  LOCALE_BCP47,
   getLocaleFallbackChain,
   TranslationParams,
 } from './types';
@@ -58,7 +59,7 @@ function getCacheKey(contentKey: string, locale: Locale): string {
  * Format ICU-style placeholders in a translation string
  * Simple implementation supporting {var} syntax
  */
-function formatPlaceholders(template: string, params?: TranslationParams): string {
+function formatPlaceholders(template: string, params?: TranslationParams, locale: Locale = DEFAULT_LOCALE): string {
   if (!params || Object.keys(params).length === 0) return template;
 
   let result = template;
@@ -66,9 +67,9 @@ function formatPlaceholders(template: string, params?: TranslationParams): strin
     const regex = new RegExp(`\\{${key}\\}`, 'g');
     let formatted = String(value);
 
-    // Format dates per locale
+    // Format dates per locale (board 21 rule 6 — never en-US month names on a RU/TH/ZH screen)
     if (value instanceof Date) {
-      formatted = value.toLocaleDateString('en-US', {
+      formatted = value.toLocaleDateString(LOCALE_BCP47[locale], {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -81,15 +82,25 @@ function formatPlaceholders(template: string, params?: TranslationParams): strin
   return result;
 }
 
+export interface TranslationResult {
+  value: string;
+  /** The locale the value actually came from; null when nothing in the chain matched (bare fallback). */
+  matchedLocale: Locale | null;
+}
+
 /**
- * Get a translation with fallback chain: requested locale → en → ru → key name
+ * Get a translation with fallback chain: requested locale → en → ru → key name.
+ * Returns which locale the value actually resolved from, so a caller rendering
+ * UI (getLabels) can tell a genuine translation apart from a borrowed one and
+ * flag it — board 21: "an untranslated key falls back to EN and is visibly
+ * flagged, never silently English."
  */
-export async function t(
+export async function tWithLocale(
   db: PrismaClient,
   key: string,
   params?: TranslationParams,
   locale: Locale = DEFAULT_LOCALE
-): Promise<string> {
+): Promise<TranslationResult> {
   const fallbackChain = getLocaleFallbackChain(locale);
 
   // Per locale: cache first, then DB — only then move down the chain.
@@ -101,7 +112,7 @@ export async function t(
   for (const tryLocale of fallbackChain) {
     const cacheKey = getCacheKey(key, tryLocale);
     const cached = cache.get(cacheKey);
-    if (cached) return formatPlaceholders(cached, params);
+    if (cached) return { value: formatPlaceholders(cached, params, locale), matchedLocale: tryLocale };
 
     const translation = await db.translation.findFirst({
       where: {
@@ -112,14 +123,28 @@ export async function t(
 
     if (translation && translation.value) {
       cache.set(cacheKey, translation.value);
-      return formatPlaceholders(translation.value, params);
+      return { value: formatPlaceholders(translation.value, params, locale), matchedLocale: tryLocale };
     }
   }
 
   // Missing translation: log warning and return fallback
   console.warn(`[i18n] Missing translation for key: ${key} (locale: ${locale})`);
   const isDev = process.env.NODE_ENV !== 'production';
-  return isDev ? key : '—';
+  return { value: isDev ? key : '—', matchedLocale: null };
+}
+
+/**
+ * Get a translation with fallback chain: requested locale → en → ru → key name.
+ * Thin wrapper over tWithLocale for callers that only need the string.
+ */
+export async function t(
+  db: PrismaClient,
+  key: string,
+  params?: TranslationParams,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<string> {
+  const { value } = await tWithLocale(db, key, params, locale);
+  return value;
 }
 
 /**

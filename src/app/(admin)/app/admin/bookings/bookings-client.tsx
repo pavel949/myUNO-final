@@ -6,6 +6,15 @@ import { Button } from '@/components/Button';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
+import { TypedPaymentSheet } from '@/components/ops/TypedPaymentSheet';
+
+function fill(template: string, params: Record<string, string>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  }
+  return result;
+}
 
 interface AdminBooking {
   id: string;
@@ -49,6 +58,8 @@ export default function BookingsAdminClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Record<string, string>>({});
   const [bankRefs, setBankRefs] = useState<Record<string, string>>({});
+  const [cashSheetBooking, setCashSheetBooking] = useState<AdminBooking | null>(null);
+  const [transferSheetBooking, setTransferSheetBooking] = useState<AdminBooking | null>(null);
   const [guestLink, setGuestLink] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState<string>('');
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -158,7 +169,7 @@ export default function BookingsAdminClient({
     }
   };
 
-  const act = async (bookingId: string, path: string, body?: unknown) => {
+  const act = async (bookingId: string, path: string, body?: unknown): Promise<boolean> => {
     setBusyId(bookingId);
     setError(null);
     try {
@@ -172,8 +183,11 @@ export default function BookingsAdminClient({
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
       router.refresh();
+      void fetchBookings(0);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -291,50 +305,13 @@ export default function BookingsAdminClient({
             )}
             {booking.status === 'pending_payment' && (
               <>
-                <input
-                  type="text"
-                  value={receipts[booking.id] || ''}
-                  onChange={(e) =>
-                    setReceipts((prev) => ({ ...prev, [booking.id]: e.target.value }))
-                  }
-                  placeholder={labels['admin.bookings.receipt_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-                  style={{ width: '150px' }}
-                />
-                <Button
-                  size="sm"
-                  variant="sun"
-                  onClick={() =>
-                    act(booking.id, 'record-cash-payment', {
-                      receiptRef: (receipts[booking.id] || '').trim(),
-                    })
-                  }
-                  isLoading={busyId === booking.id}
-                  disabled={!(receipts[booking.id] || '').trim()}
-                >
+                <Button size="sm" variant="sun" onClick={() => setCashSheetBooking(booking)}>
                   {labels['admin.bookings.record_cash']}
                 </Button>
-                <input
-                  type="text"
-                  value={bankRefs[booking.id] || ''}
-                  onChange={(e) =>
-                    setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
-                  }
-                  placeholder={labels['admin.bookings.bank_ref_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-                  style={{ width: '150px' }}
-                />
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() =>
-                    act(booking.id, 'record-transfer', {
-                      amountThb: Math.round(booking.totalThb * 100),
-                      bankReference: (bankRefs[booking.id] || '').trim(),
-                    })
-                  }
-                  isLoading={busyId === booking.id}
-                  disabled={!(bankRefs[booking.id] || '').trim()}
+                  onClick={() => setTransferSheetBooking(booking)}
                 >
                   {labels['admin.bookings.record_transfer']}
                 </Button>
@@ -389,6 +366,73 @@ export default function BookingsAdminClient({
           </Button>
         </div>
       )}
+
+      <TypedPaymentSheet
+        open={cashSheetBooking !== null}
+        onClose={() => setCashSheetBooking(null)}
+        closeLabel={labels['admin.bookings.sheet_close']}
+        title={fill(labels['admin.bookings.cash_sheet_title'], {
+          name: cashSheetBooking?.guestName ?? '',
+        })}
+        subtitle={cashSheetBooking?.unitName ?? ''}
+        amountThb={cashSheetBooking?.totalThb ?? 0}
+        amountDueLabel={labels['admin.bookings.sheet_amount_due']}
+        refLabel={labels['admin.bookings.receipt_placeholder']}
+        refValue={cashSheetBooking ? receipts[cashSheetBooking.id] || '' : ''}
+        onRefChange={(value) =>
+          cashSheetBooking && setReceipts((prev) => ({ ...prev, [cashSheetBooking.id]: value }))
+        }
+        refHelpText={labels['admin.bookings.cash_sheet_hint']}
+        confirmationLabel={fill(labels['admin.bookings.cash_sheet_counted'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        submitLabel={fill(labels['admin.bookings.cash_sheet_submit'], {
+          amount: `฿${(cashSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['admin.bookings.cash_sheet_required_hint']}
+        busy={cashSheetBooking !== null && busyId === cashSheetBooking.id}
+        onSubmit={async () => {
+          if (!cashSheetBooking) return;
+          const receiptRef = (receipts[cashSheetBooking.id] || '').trim();
+          if (!receiptRef) return;
+          const ok = await act(cashSheetBooking.id, 'record-cash-payment', { receiptRef });
+          if (ok) setCashSheetBooking(null);
+        }}
+      />
+
+      <TypedPaymentSheet
+        open={transferSheetBooking !== null}
+        onClose={() => setTransferSheetBooking(null)}
+        closeLabel={labels['admin.bookings.sheet_close']}
+        title={fill(labels['admin.bookings.transfer_sheet_title'], {
+          name: transferSheetBooking?.guestName ?? '',
+        })}
+        subtitle={transferSheetBooking?.unitName ?? ''}
+        amountThb={transferSheetBooking?.totalThb ?? 0}
+        amountDueLabel={labels['admin.bookings.sheet_amount_due']}
+        refLabel={labels['admin.bookings.bank_ref_placeholder']}
+        refValue={transferSheetBooking ? bankRefs[transferSheetBooking.id] || '' : ''}
+        onRefChange={(value) =>
+          transferSheetBooking &&
+          setBankRefs((prev) => ({ ...prev, [transferSheetBooking.id]: value }))
+        }
+        refHelpText={labels['admin.bookings.transfer_sheet_hint']}
+        submitLabel={fill(labels['admin.bookings.transfer_sheet_submit'], {
+          amount: `฿${(transferSheetBooking?.totalThb ?? 0).toLocaleString()}`,
+        })}
+        requiredHint={labels['admin.bookings.transfer_sheet_required_hint']}
+        busy={transferSheetBooking !== null && busyId === transferSheetBooking.id}
+        onSubmit={async () => {
+          if (!transferSheetBooking) return;
+          const bankReference = (bankRefs[transferSheetBooking.id] || '').trim();
+          if (!bankReference) return;
+          const ok = await act(transferSheetBooking.id, 'record-transfer', {
+            amountThb: Math.round(transferSheetBooking.totalThb * 100),
+            bankReference,
+          });
+          if (ok) setTransferSheetBooking(null);
+        }}
+      />
     </div>
   );
 }

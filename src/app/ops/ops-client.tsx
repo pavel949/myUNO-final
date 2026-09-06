@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { StatusChip } from '@/components/StatusChip';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
@@ -308,25 +309,24 @@ export default function OpsBoardClient({
           {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
           {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
         </p>
-        <p className="text-small">
-          <span className={booking.paid ? 'text-state-success' : 'text-state-warning'}>
-            {booking.paid ? labels['staff.ops.paid'] : labels['staff.ops.unpaid']}
-          </span>
-          {' · '}
-          <span
-            className={
+        <div className="flex flex-wrap gap-8 mt-4">
+          <StatusChip
+            status={booking.paid ? 'paid' : 'unpaid'}
+            label={booking.paid ? labels['staff.ops.paid'] : labels['staff.ops.unpaid']}
+            variantOverride={booking.paid ? 'success' : 'warning'}
+          />
+          <StatusChip
+            status={booking.verificationStatus === 'passports_received' ? 'verified' : 'not_verified'}
+            label={
               booking.verificationStatus === 'passports_received'
-                ? 'text-state-success'
-                : 'text-state-warning'
+                ? labels['staff.ops.verified']
+                : labels['staff.ops.not_verified']
             }
-          >
-            {booking.verificationStatus === 'passports_received'
-              ? labels['staff.ops.verified']
-              : labels['staff.ops.not_verified']}
-          </span>
-        </p>
+            variantOverride={booking.verificationStatus === 'passports_received' ? 'success' : 'warning'}
+          />
+        </div>
       </div>
-      <div className="flex items-center gap-8">{action}</div>
+      <div className="flex items-center gap-8 shrink-0">{action}</div>
     </div>
   );
 

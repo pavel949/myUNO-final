@@ -7,6 +7,14 @@ export type Locale = 'ru' | 'en' | 'th' | 'zh';
 export const LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
 export const DEFAULT_LOCALE: Locale = 'ru';
 
+/** BCP-47 tags for locale-formatted dates/numbers (board 21 rule 6: locale month names, never en-US on a RU/TH/ZH screen). */
+export const LOCALE_BCP47: Record<Locale, string> = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  th: 'th-TH',
+  zh: 'zh-CN',
+};
+
 export interface TranslationValue {
   value: string;
   status: 'ok' | 'needs_review' | 'missing';

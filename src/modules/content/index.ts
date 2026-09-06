@@ -4,11 +4,10 @@
  * Fallback: requested locale → en → ru → key name (dev) or dash (prod)
  */
 
-export { t, setTranslation, ensureContentKey, clearTranslationCache } from './content.service';
-export { useT } from './content.hook';
+export { t, tWithLocale, setTranslation, ensureContentKey, clearTranslationCache } from './content.service';
 export { seedContent } from './seed';
 export type { Locale, TranslationParams, ContentKeyData, TranslationValue } from './types';
-export { LOCALES, DEFAULT_LOCALE, getLocaleFallbackChain } from './types';
+export { LOCALES, DEFAULT_LOCALE, getLocaleFallbackChain, LOCALE_BCP47 } from './types';
 export {
   updateTranslation,
   createContentKey,

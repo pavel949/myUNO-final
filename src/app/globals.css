@@ -44,3 +44,18 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Kicker tracking is a display-size luxury (board 21 rule 4). RU and TH run
+ * 15-30% longer than the English draft at the same point size, and the
+ * kicker's 2.88px letter-spacing is what pushes a longer string past two
+ * lines below `md` (768px). :lang() reads the nearest ancestor's `lang`
+ * attribute — set on <html> per request locale in src/app/layout.tsx — so
+ * this reaches every text-kicker usage without a per-callsite class.
+ */
+@media (max-width: 767px) {
+  .text-kicker:is(:lang(ru), :lang(th)) {
+    letter-spacing: normal;
+    line-height: 18px;
+  }
+}

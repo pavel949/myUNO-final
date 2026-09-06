@@ -2541,6 +2541,8 @@ model CrmOpportunity {
   stage                CrmOpportunityStage @default(new)
   title                String
   source               String
+  /// Satang, like every other amount in this schema (CLAUDE.md money rules,
+  /// D11). Held baht until 20260906000026; see that migration.
   valueThb             Int?                @map("value_thb")
   probability          Int                 @default(10)
   requirements         Json                @default("{}")

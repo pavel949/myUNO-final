@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
+import { bahtToSatang, formatBaht } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
@@ -85,7 +86,11 @@ export default function CrmPipelineClient({
         type: data.get('type'),
         title: data.get('title'),
         source: data.get('source'),
-        valueThb: data.get('valueThb') ? Number(data.get('valueThb')) : null,
+        // The field asks the operator for baht; the column is satang, like
+        // every other amount (T-070, the Q49/Q50 class on a third form).
+        valueThb: data.get('valueThb')
+          ? bahtToSatang(Number(data.get('valueThb')))
+          : null,
         nextActionAt: data.get('nextActionAt') || null,
         externalPartner: data.get('externalPartner') || null,
       }),
@@ -142,7 +147,7 @@ export default function CrmPipelineClient({
                   </div>
                 </div>
                 <span className="w-24 shrink-0 text-right font-display text-small font-medium tabular-nums text-text-ink">
-                  ฿{(summary[stage]?.valueThb ?? 0).toLocaleString()}
+                  {formatBaht(summary[stage]?.valueThb ?? 0)}
                 </span>
               </div>
             );
@@ -224,7 +229,7 @@ export default function CrmPipelineClient({
                   {item.identity.firstName} {item.identity.lastName}
                 </p>
                 <p className="font-display text-subtitle font-medium tabular-nums text-text-ink mt-8">
-                  ฿{(item.valueThb ?? 0).toLocaleString()}
+                  {formatBaht(item.valueThb ?? 0)}
                 </p>
                 <p className="text-small text-text-stone mt-4">{item.source}</p>
                 {item.externalPartner ? (

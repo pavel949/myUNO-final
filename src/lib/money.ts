@@ -96,3 +96,24 @@ export function formatBaht(satang: number): string {
   const formatted = `฿${Math.abs(baht).toLocaleString('en-US')}`;
   return baht < 0 ? `−${formatted}` : formatted;
 }
+
+/**
+ * Satang → an abbreviated baht string: `฿1.2M`, `฿45.0K`, `฿800`.
+ *
+ * For dense surfaces where a full figure would crowd the layout — pipeline
+ * cards, stage column headers, dashboard tiles. Exact figures belong in
+ * `formatBaht`; this one deliberately loses precision, so it must never be
+ * used where someone reconciles a number against a record.
+ *
+ * It existed as four near-identical copies across the CRM screens, differing
+ * only in whether the sub-thousand branch called `toFixed(0)` — the same
+ * duplication that produced Q47.
+ */
+export function formatBahtCompact(satang: number): string {
+  const baht = satangToBaht(satang);
+  const sign = baht < 0 ? '−' : '';
+  const magnitude = Math.abs(baht);
+  if (magnitude >= 1_000_000) return `${sign}฿${(magnitude / 1_000_000).toFixed(1)}M`;
+  if (magnitude >= 1_000) return `${sign}฿${(magnitude / 1_000).toFixed(1)}K`;
+  return `${sign}฿${magnitude}`;
+}

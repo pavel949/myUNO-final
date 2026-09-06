@@ -28,9 +28,39 @@ export default function AccountClient({
   const [settings, setSettings] = useState<Setting[]>([]);
   const [unmutable, setUnmutable] = useState<string[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [consent, setConsent] = useState<Array<{ purpose: string; status: string | null }>>([]);
+  const [withdrawable, setWithdrawable] = useState<string[]>([]);
+  const [consentError, setConsentError] = useState<string | null>(null);
+
+  // Consent is a ledger: each change appends a decision, so the server
+  // returns the new position rather than the screen assuming it.
+  const setConsentFor = async (purpose: string, granted: boolean) => {
+    setConsentError(null);
+    const res = await fetch('/api/account/consent', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ purpose, granted }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setConsentError(body?.error ?? labels['account.error']);
+      return;
+    }
+    setConsent(body.summary ?? []);
+  };
   const [exportState, setExportState] = useState<'idle' | 'exporting' | 'error'>('idle');
 
   useEffect(() => {
+    fetch('/api/account/consent')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setConsent(data.summary ?? []);
+          setWithdrawable(data.withdrawable ?? []);
+        }
+      })
+      .catch(() => setConsentError(labels['account.error']));
+
     fetch('/api/account/notifications')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -246,6 +276,40 @@ export default function AccountClient({
           {exportState === 'error' && (
             <p className="mt-12 text-small text-state-error">{labels['account.privacy.export_error']}</p>
           )}
+        </section>
+
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+            {labels['account.consent.title']}
+          </h2>
+          <p className="text-small text-text-secondary mb-16">
+            {labels['account.consent.intro']}
+          </p>
+          {consentError && <p className="text-small text-state-error mb-16">{consentError}</p>}
+          <ul className="flex flex-col gap-12">
+            {consent
+              .filter((row) => withdrawable.includes(row.purpose))
+              .map((row) => (
+                <li key={row.purpose} className="flex items-center justify-between gap-16">
+                  <span className="text-body text-text-ink">
+                    {labels[`account.consent.purpose.${row.purpose}`] ?? row.purpose}
+                  </span>
+                  <label className="inline-flex items-center gap-8 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={row.status === 'granted'}
+                      onChange={(e) => setConsentFor(row.purpose, e.target.checked)}
+                      className="h-20 w-20 rounded-sm border-border-line accent-brand-andaman"
+                    />
+                    <span className="text-small text-text-secondary">
+                      {row.status === 'granted'
+                        ? labels['account.consent.granted']
+                        : labels['account.consent.withdrawn']}
+                    </span>
+                  </label>
+                </li>
+              ))}
+          </ul>
         </section>
 
         <section className="bg-surface-paper border border-border-line rounded-lg p-24">

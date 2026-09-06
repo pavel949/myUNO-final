@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { FieldLabel, FieldMessage } from './FieldLabel';
 import { fieldControlWithError } from './fieldStyles';
 
@@ -11,7 +11,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, required, helpText, className, id, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const inputId = id || `input-${generatedId.replace(/:/g, '')}`;
 
     return (
       <div className="flex flex-col gap-8">

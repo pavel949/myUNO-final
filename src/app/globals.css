@@ -16,11 +16,51 @@
     @apply min-h-screen bg-surface-ivory text-text-ink font-sans antialiased;
   }
 
+  ::selection {
+    @apply bg-brand-andaman text-on-dark-text;
+  }
+
+  a {
+    @apply text-brand-andaman underline-offset-4 transition-colors duration-micro;
+  }
+
+  a:hover {
+    @apply text-brand-deep;
+  }
+
   button,
   input,
   select,
   textarea {
     font: inherit;
+  }
+
+  button,
+  [role='button'] {
+    @apply touch-manipulation;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply text-text-ink;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-text-stone-2;
+  }
+
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th {
+    @apply text-left text-small font-medium text-text-stone;
+  }
+
+  :disabled {
+    @apply cursor-not-allowed;
   }
 }
 

@@ -12,7 +12,7 @@ function navLinkClass(pathname: string, href: string, extra = '') {
     href === '/'
       ? pathname === '/'
       : pathname === href || pathname.startsWith(`${href}/`);
-  return `${extra} text-body transition-colors duration-micro ${
+  return `${extra} whitespace-nowrap text-body transition-colors duration-micro ${
     active ? 'text-brand-andaman font-semibold' : 'text-text-ink hover:text-brand-andaman'
   }`;
 }
@@ -96,7 +96,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   return (
     <header className="sticky top-0 z-40 bg-surface-paper border-b border-border-line">
-      <nav className="max-w-6xl mx-auto flex items-center justify-between h-64 px-24">
+      <nav className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-y-8 min-h-64 px-24 py-8">
         <div className="flex items-center gap-40">
           <Link
             href="/"
@@ -105,7 +105,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           >
             myUNO
           </Link>
-          <div className="hidden md:flex items-center gap-24">
+          <div className="hidden md:flex flex-wrap items-center gap-x-24 gap-y-8">
             <Link href="/search" className={navLinkClass(pathname, '/search')}>
               {labels.findStay}
             </Link>
@@ -128,7 +128,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         </div>
 
         {/* Desktop auth area */}
-        <div className="hidden md:flex items-center gap-16">
+        <div className="hidden md:flex flex-wrap items-center justify-end gap-x-16 gap-y-8">
           <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
           {user ? (
             <>

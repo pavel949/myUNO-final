@@ -7,9 +7,56 @@ Work top to bottom. Each step says how to know it worked, because "I clicked the
 
 ---
 
-## 1. Close the public-API exposure (T-045) — do this first
+## 0. Unblock the migration chain — **nothing else deploys until this is done**
 
-**What is wrong right now.** Supabase serves every table in `public` over PostgREST to anyone holding the anon key — a key that ships to browsers. Four tables have row-level security **off**: `ownership_period`, `saved_unit`, `saved_search`, `area`. Two of them hold personal data — which homes a named person is watching, and the searches they saved.
+**Verified against the live database 2026-09-06, and reproduced locally end to end.**
+
+Production is **nine migrations behind** the repository, and a plain `prisma migrate deploy` **fails on the first one**:
+
+```
+Error: P3018 ... Database error code: 42710
+ERROR: type "DisputeSubjectType" already exists
+Migration name: 20260825044246_disputes
+```
+
+**Why.** The `dispute` table and its enum exist in production, but `20260825044246_disputes` is not recorded in `_prisma_migrations`. They were applied by hand — the same failure mode as the RLS incident in §1, and for the same reason: a change made in the dashboard never entered the migration history. The migration's SQL has no `IF NOT EXISTS`, so Prisma tries to create what is already there.
+
+The production table was compared column by column against the migration and **matches exactly** — all eleven columns, same types, same nullability. That is what makes the remedy below safe rather than a guess.
+
+**`postinstall`'s repair script does not fix this.** It clears a *failed* migration row (P3009), which lets the deploy try again — and fail again identically. Left alone, this loops.
+
+**Do, in this order:**
+
+```bash
+# If a deploy has already been attempted and failed, clear the failed row first:
+DATABASE_URL="<production session pooler URL>" npx prisma migrate resolve --rolled-back 20260825044246_disputes
+
+# Record the hand-applied migration as applied, without re-running its SQL:
+DATABASE_URL="<production session pooler URL>" npx prisma migrate resolve --applied 20260825044246_disputes
+
+# Then the rest of the chain applies normally:
+DATABASE_URL="<production session pooler URL>" npx prisma migrate deploy
+```
+
+The remaining eight were checked for the same hazard and are safe to run as they are: `dispute_rls` is an idempotent loop, both `role_assignment` constraint migrations add their checks `NOT VALID` so existing rows cannot fail them, and the objects the others create do not yet exist.
+
+**Evidence it worked:** `prisma migrate deploy` reports "No pending migrations to apply", and `prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-schema-datasource prisma/schema.prisma` prints an empty migration. One row for `20260825044246_disputes` will show `finished_at` null with `rolled_back_at` set — that is the expected marker from the resolve, not a blocker.
+
+**How this was proven, so it does not have to be discovered live:** a scratch database was built to production's exact state — the chain applied up to `20260824000022`, then the disputes SQL applied by hand with no migration row. A deploy against it reproduced the P3018/42710 failure verbatim; the three commands above then took it to a clean, fully-migrated, zero-drift database.
+
+---
+
+## 1. ~~Close the public-API exposure (T-045)~~ — **DONE, verified 2026-09-06**
+
+**Checked against the live database, not the checklist.** `20260824000021_rls_every_table` is recorded in `_prisma_migrations` with `finished_at = 2026-08-24 06:14:01+00`, and a direct query returns **zero** tables in `public` without row-level security (78 of 78 enabled). Supabase's security advisor returns **zero ERROR-level lints**; the `rls_enabled_no_policy` entries it does return are INFO, and that is the intended posture — RLS on with no policy denies the anon key everything, while the application connects as the owner through Prisma rather than through PostgREST.
+
+The four tables this step was written about — `ownership_period`, `saved_unit`, `saved_search`, `area` — are all locked. **Nothing to do here.** The step is kept rather than deleted because the record said otherwise for weeks, and the correction is the useful part.
+
+Two WARN-level advisor items remain, neither a defect and neither blocking: the `citext` and `btree_gist` extensions are installed in the `public` schema rather than their own. Worth tidying when convenient.
+
+*Original text follows.*
+
+**What was wrong.** Supabase serves every table in `public` over PostgREST to anyone holding the anon key — a key that ships to browsers. Four tables had row-level security **off**: `ownership_period`, `saved_unit`, `saved_search`, `area`. Two of them hold personal data — which homes a named person is watching, and the searches they saved.
 
 **Why it happened, which matters more than the fix.** RLS was applied across the database in August 2026 **by hand in the dashboard**, so the decision never entered the repository. Every table created by a migration since was born exposed and nothing noticed for months. The repository fix (`20260824000021_rls_every_table`) plus `rls.integration.test.ts` — which fails the build if any table lacks RLS — is what stops that recurring. Running the SQL by hand again without deploying the migration would recreate the exact condition that caused this.
 
@@ -130,14 +177,32 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 
 ## 8. The money data check — before the T-070/T-071 migrations run
 
-Three write paths stored amounts 100× too small before they were fixed, and any rows they wrote are still in the database. This is an operations data check, not a code task, and it is cheapest to do in one pass. **Do it before deploying**, because the `crm_opportunity` migration multiplies rows by 100 and is only correct if they were entered as baht.
+**No longer hypothetical — confirmed in the live database 2026-09-06. All five production units are priced at 1/100 of their rate.**
+
+| Unit | `base_nightly_thb` | Reads as | Almost certainly meant |
+|---|---|---|---|
+| AG-07 Courtyard Home | 5600 | ฿56 / night | ฿5,600 |
+| LB-11 Lagoon View | 3900 | ฿39 / night | ฿3,900 |
+| LB-25 Family Loft | 7100 | ฿71 / night | ฿7,100 |
+| PH-101 Sky Villa | 9800 | ฿98 / night | ฿9,800 |
+| PH-202 Garden Suite | 6200 | ฿62 / night | ฿6,200 |
+
+All five are `status = live`. **A ฿5,600 villa is currently bookable at ฿56 a night.**
+
+**⚠ Order matters, and getting it wrong is worse than doing nothing.** Before T-071, the display bug cancelled the data bug: search rendered raw satang with a ฿ sign, so `5600` read back as "฿5,600" and looked right. T-071 fixes the display. **Deploying that fix without correcting the data makes every villa show ฿56 — and it is bookable at ฿56, because the stored rate is what the booking engine charges.** Correct the data in the same window as the deploy, or before it.
+
+The correction is `base_nightly_thb = base_nightly_thb * 100` for those five rows, but **confirm the intended rates with whoever entered them first** — this is an assumption about someone's intent, not an arithmetic fact, and it is cheap to confirm and expensive to guess.
+
+`crm_opportunity` is **empty** (0 rows), so the T-070 migration's multiplication is a no-op and its stated assumption is moot. Nothing to check there.
+
+The remaining write paths are still worth a look, since the same class produced them:
 
 Query each and eyeball the values against what the business actually charges:
 
 | Table / column | Written by | What a wrong row looks like |
 |---|---|---|
-| `crm_opportunity.value_thb` | the admin CRM pipeline form | a deal value that reads sensible in baht (`5000000`) — these are the rows the migration will multiply, and that is correct |
-| `unit.base_nightly_thb` | the admin "create unit" form (T-071) | a villa at `12000` (= ฿120 a night) rather than `1200000` |
+| `crm_opportunity.value_thb` | the admin CRM pipeline form | **checked: 0 rows, nothing to do** |
+| `unit.base_nightly_thb` | the admin "create unit" form (T-071) | **checked: all 5 rows wrong, see above** |
 | `service.base_price_thb` | a provider's own price edit (Q49) | a cleaning at `800` (= ฿8) rather than `80000` |
 | `unit_engagement.noi_cap_annual_thb` | the admin onboarding form (Q50) | an annual cap that reads sensible in baht |
 

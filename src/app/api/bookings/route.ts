@@ -20,7 +20,10 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  *   server auto-assigns the first available villa of that category
  *   (hotel-style). With categoryKey, instantBook comes from the assigned
  *   unit and the client value is ignored.
- * - projectId: string
+ * - projectId: string — required on the categoryKey path, where it scopes the
+ *   search. On the unitId path it is optional and never authoritative: the
+ *   booking is filed against the unit's own project, and a projectId that
+ *   disagrees with it is refused rather than silently accepted.
  * - startDate: ISO date string
  * - endDate: ISO date string
  * - adultsCount: number
@@ -58,7 +61,7 @@ export async function POST(req: NextRequest) {
     // Validate required fields — either a concrete unit or a category
     if (
       (!requestedUnitId && !categoryKey) ||
-      !projectId ||
+      (!requestedUnitId && !projectId) ||
       !startDateStr ||
       !endDateStr ||
       adultsCount === undefined ||
@@ -122,22 +125,36 @@ export async function POST(req: NextRequest) {
       // Snapshot the unit's cancellation policy at booking time (doc 07 F-GUEST-8)
       const unit = await prisma.unit.findUnique({
         where: { id: candidate.id },
-        select: { cancellationPolicyKey: true, status: true },
+        select: { cancellationPolicyKey: true, status: true, projectId: true },
       });
       if (!unit || unit.status !== 'live') {
         throw createPublicError('not found', 404);
       }
+
+      // The unit decides which project this booking belongs to — never the
+      // request body. `projectId` used to be taken from the client and filed
+      // as-is, so a mismatched id put the booking in another project's ledger,
+      // metrics and MC dashboard, and — worse — resolved the cancellation
+      // policy against that project's config overrides before snapshotting the
+      // result into a record the database then makes immutable. A client that
+      // disagrees is refused rather than silently corrected, so a broken caller
+      // is visible instead of quietly writing money terms from elsewhere.
+      const bookingProjectId = unit.projectId;
+      if (projectId && projectId !== bookingProjectId) {
+        throw createPublicError('unit does not belong to the given project', 400);
+      }
+
       // Config is the source of truth (doc 04 §5); an unknown policy key
       // fails the booking instead of silently granting the most generous terms.
       const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
-        projectId,
+        projectId: bookingProjectId,
         unitId: candidate.id,
       });
 
       try {
         booking = await createBooking(prisma, {
           unitId: candidate.id,
-          projectId,
+          projectId: bookingProjectId,
           guestIdentityId: user.identityId,
           bookingType: 'guest_stay',
           channel: 'direct',

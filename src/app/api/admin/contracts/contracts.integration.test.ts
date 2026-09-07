@@ -97,4 +97,59 @@ describe('POST /api/admin/contracts', () => {
     expect(body.contract.id).toBeTruthy();
     expect(body.contract.managementFeeBasis).toBe('percentage_noi');
   });
+
+  /**
+   * The unit decides the project. Both ids used to be accepted independently,
+   * each checked only for existence, so a management contract — the document
+   * that decides whether a performance fee is owed — could be filed against a
+   * project that does not contain the unit.
+   */
+  describe('the project comes from the unit', () => {
+    async function setup() {
+      const admin = await createIdentity({ isAdmin: true });
+      const home = await createProject({ slug: 'contract-home', status: 'live' });
+      const other = await createProject({ slug: 'contract-other', status: 'live' });
+      const owner = await createIdentity();
+      const unit = await createUnit({ projectId: home.id, ownerIdentityId: owner.id });
+      mockGetCurrentUser.mockResolvedValue(adminUser(admin));
+      return { home, other, owner, unit };
+    }
+
+    function post(payload: Record<string, unknown>) {
+      return POST(
+        new NextRequest('http://localhost/api/admin/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      );
+    }
+
+    const base = (unitId: string, ownerIdentityId: string) => ({
+      unitId,
+      ownerIdentityId,
+      managementFeeBasis: 'percentage_noi',
+      managementFeeRate: 0.12,
+      contractStartDate: '2026-02-01',
+    });
+
+    it("refuses a projectId that is not the unit's project", async () => {
+      const { other, owner, unit } = await setup();
+
+      const res = await post({ ...base(unit.id, owner.id), projectId: other.id });
+
+      expect(res.status).toBe(400);
+      expect(await db.managementContract.count()).toBe(0);
+    });
+
+    it('needs no projectId, and files the contract under the unit\'s project', async () => {
+      const { home, owner, unit } = await setup();
+
+      const res = await post(base(unit.id, owner.id));
+
+      expect(res.status).toBe(200);
+      const contract = await db.managementContract.findFirstOrThrow();
+      expect(contract.projectId).toBe(home.id);
+    });
+  });
 });

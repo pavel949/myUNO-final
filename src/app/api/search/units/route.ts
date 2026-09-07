@@ -143,9 +143,23 @@ export async function GET(req: NextRequest) {
           ? { projectId }
           : {};
 
+    // A unit is public only when its project is public too — the same rule
+    // `getPublicUnitById` already applies. Without it, archiving a project left
+    // its units in search results and bookable while their pages 404'd: two
+    // reads of one fact disagreeing, with the guest-facing one selling.
+    //
+    // The viewport filter is merged into this same `project` clause rather than
+    // spread beside it, because two `project` keys in one object literal would
+    // silently drop whichever came first.
+    const projectFilter = {
+      status: 'live' as const,
+      ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
+    };
+
     // Build where clause
     const where: any = {
       status: 'live',
+      project: projectFilter,
       ...projectScope,
       // One key, both bounds. Spreading them as two `baseNightlyThb` entries
       // meant the second overwrote the first, so setting a floor *and* a
@@ -162,7 +176,6 @@ export async function GET(req: NextRequest) {
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(categoryKey && { categoryKey }),
-      ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds) : {}),
     };
 
     // If date range provided, exclude units with overlapping bookings or blocks

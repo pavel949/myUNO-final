@@ -27,6 +27,7 @@ import {
  */
 describe('manual availability & pricing overrides', () => {
   let unitId: string;
+  let projectId: string;
   let staffId: string;
 
   beforeEach(async () => {
@@ -35,6 +36,7 @@ describe('manual availability & pricing overrides', () => {
     const owner = await createIdentity();
     const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
     unitId = unit.id;
+    projectId = project.id;
     staffId = (await createIdentity()).id;
   });
 
@@ -60,10 +62,12 @@ describe('manual availability & pricing overrides', () => {
 
     it('refuses to block dates that overlap a confirmed booking', async () => {
       const guest = await createIdentity();
-      const project = await createProject();
+      // The booking must name the unit's own project. This used to create a
+      // second, unrelated project and file the booking under it — a state the
+      // database now refuses (migration 20260907001000).
       await createBooking({
         unitId,
-        projectId: project.id,
+        projectId,
         guestIdentityId: guest.id,
         startDate: new Date('2026-09-10'),
         endDate: new Date('2026-09-15'),

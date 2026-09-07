@@ -7,7 +7,12 @@ export const dynamic = 'force-dynamic';
 
 interface CreateContractRequest {
   unitId: string;
-  projectId: string;
+  /**
+   * Optional and never authoritative — the contract is filed against the
+   * unit's own project. Sent only so a caller that disagrees is refused
+   * instead of silently writing a contract into the wrong project.
+   */
+  projectId?: string;
   ownerIdentityId: string;
   managementFeeBasis: ManagementFeeBasis;
   managementFeeRate?: number;
@@ -74,7 +79,6 @@ export async function POST(req: NextRequest) {
 
     if (
       !body.unitId ||
-      !body.projectId ||
       !body.ownerIdentityId ||
       !body.managementFeeBasis ||
       !body.contractStartDate
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Missing required fields: unitId, projectId, ownerIdentityId, managementFeeBasis, contractStartDate',
+            'Missing required fields: unitId, ownerIdentityId, managementFeeBasis, contractStartDate',
         },
         { status: 400 }
       );
@@ -102,20 +106,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const [unit, project, owner] = await Promise.all([
+    const [unit, owner] = await Promise.all([
       prisma.unit.findUnique({ where: { id: body.unitId } }),
-      prisma.project.findUnique({ where: { id: body.projectId } }),
       prisma.identity.findUnique({ where: { id: body.ownerIdentityId } }),
     ]);
 
     if (!unit) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
-    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     if (!owner) return NextResponse.json({ error: 'Owner identity not found' }, { status: 404 });
+
+    // The unit decides the project. Both ids used to be accepted independently
+    // — each checked only for existence — so a contract could be filed against
+    // a project that does not contain the unit, on the document that decides
+    // whether a performance fee is owed.
+    const contractProjectId = unit.projectId;
+    if (body.projectId && body.projectId !== contractProjectId) {
+      return NextResponse.json(
+        { error: 'Unit does not belong to the given project' },
+        { status: 400 }
+      );
+    }
 
     const contract = await prisma.managementContract.create({
       data: {
         unitId: body.unitId,
-        projectId: body.projectId,
+        projectId: contractProjectId,
         ownerIdentityId: body.ownerIdentityId,
         managementFeeBasis: body.managementFeeBasis,
         managementFeeRate: body.managementFeeRate ?? null,

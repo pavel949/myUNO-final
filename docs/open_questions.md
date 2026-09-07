@@ -415,4 +415,14 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 ---
 
+### Q63. Four places let a unit's project and the recorded `project_id` disagree, and `Area` is unreachable from the admin — OPEN
+- **Source:** canonical-model audit of `Project`/`Area`/`Unit`, `docs/audit/canonical-models-projects-units-2026-09-07.md`.
+- **Defects (fixes are known, no founder ruling needed):** `POST /api/bookings` and `POST /api/admin/contracts` both take `project_id` from the caller and never check it against the unit's own project — the booking case snapshots the *wrong project's* cancellation policy into an immutable record; unit search omits `project: { status: 'live' }`, so an archived project still sells while its unit page 404s; and migration `20260904062200` relaxed the `role_assignment` scope constraint so a unit-scoped role may carry no `project_id`, which makes that role invisible to every project-scoped permission read (the constraint is also `NOT VALID`).
+- **Needs from founder — three rulings before the rest can be built:**
+  1. **Is a unit ever re-parented to a different project?** `updateUnit` refuses it today. If a developer re-plat or strata split can move one, it needs a designed transfer that keeps money history intact, not an editable field.
+  2. **Is `area_label_key` dropped once an Areas admin exists, or kept as a per-project override?** The constitution's answer is drop it; confirming makes the migration writable. Today `area_id` has no admin route and no UI at all, so area pages, area search and area reporting cannot be configured without a developer — and the project form still synthesises `project.{slug}.area`, re-creating the divergence `Area` was introduced to end.
+  3. **Does an amenity inherit from project to unit by default, or only when the unit opts in?** The documented `amenities` search filter is unimplemented and cannot be implemented without this: a project pool currently never makes its villas findable by "pool".
+
+---
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

@@ -85,6 +85,7 @@ export async function listSavedUnits(
           bedrooms: true,
           maxGuests: true,
           coverMediaId: true,
+          coverMedia: { select: { storageKey: true } },
         },
       },
     },

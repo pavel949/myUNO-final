@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { listSavedUnits } from '@/modules/browse';
 import { getLabels } from '@/lib/i18n';
+import { MoneyAmount } from '@/components/MoneyAmount';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,9 +71,9 @@ export default async function SavedPage() {
                 href={`/units/${entry.unit.id}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow"
               >
-                {entry.unit.coverUrl ? (
+                {entry.unit.coverMedia ? (
                   <Image
-                    src={entry.unit.coverUrl}
+                    src={entry.unit.coverMedia.storageKey}
                     alt={entry.unit.name}
                     width={640}
                     height={360}
@@ -86,8 +86,9 @@ export default async function SavedPage() {
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {entry.unit.name}
                   </h3>
-                  <p className="font-display text-title font-semibold text-brand-andaman tabular-nums">
-                    ฿{entry.unit.baseNightlyThb?.toLocaleString()} {labels['saved.per_night']}
+                  <p className="text-title text-brand-andaman">
+                    <MoneyAmount satang={entry.unit.baseNightlyThb} className="font-semibold" />{' '}
+                    {labels['saved.per_night']}
                   </p>
                   {entry.note && (
                     <p className="text-small text-text-secondary mt-8 italic">{entry.note}</p>

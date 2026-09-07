@@ -113,6 +113,31 @@ curl -sS https://my-uno-final.vercel.app/api/health
 ```
 A `503 {"status":"degraded","db":"unreachable"}` means the new string is wrong or the redeploy has not landed.
 
+**Status 2026-09-07 05:03 UTC — the rotation is under way and the new string is not yet right.**
+`/api/health` returns `503 {"status":"degraded","db":"unreachable"}`, and the two production
+builds either side of the change name two different faults, which is the useful part:
+
+| Build | Time (UTC) | What Prisma said |
+|---|---|---|
+| `3247d37` | 04:56 | `Authentication failed … the provided database credentials for "postgres" are not valid` |
+| `f7c8022` | 05:01 | `Error validating datasource "db": the URL must start with the protocol "postgresql://" or "postgres://"` |
+
+The first says the value parsed as a URL but the password was rejected. The second says the value
+no longer parses as a URL at all. Both point at the same root cause: the new password contains a
+character that is not URI-safe — `@ : / ? # [ ] %` all terminate or re-interpret parts of a
+connection string — or the value was pasted with the quotes Supabase shows around it.
+
+**Fix:** reset the password again and either keep it to letters, digits, `-` and `_`, or
+percent-encode it in the URL (`@` → `%40`, `#` → `%23`, `/` → `%2F`). Paste the value with no
+surrounding quotes and no trailing newline. Then redeploy with cache off and re-run the health
+check above.
+
+Note the build tolerates this by design and should not be read as "fine": the migration repair step
+prints `[repair] could not run repair - leaving the database untouched`, and the content gate prints
+`Database unreachable; skipping gate check`. Both are deliberate — a build must not fail because a
+database is briefly away — but it means **a green build does not prove the credential works.**
+`/api/health` is the check that does.
+
 ---
 
 ## 4. Turn on alerting and uptime (T-049)

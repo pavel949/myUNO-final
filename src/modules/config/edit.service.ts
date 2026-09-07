@@ -20,6 +20,31 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
     }
     return { valid: true };
   },
+  // TTLs have no meaningful zero: a token that expires the instant it is
+  // issued locks every user out of email verification or password reset. The
+  // guard belongs here, in the registry that owns the parameter (doc 04), and
+  // not as a `|| 1440` at the read site — a read-site fallback would silently
+  // discard whatever the operator actually typed rather than refusing it.
+  'auth.token_ttl_minutes.email_verify': (value: any) => {
+    if (!Number.isInteger(value) || value <= 0) {
+      return { valid: false, error: 'token TTL must be a positive whole number of minutes' };
+    }
+    return { valid: true };
+  },
+  'auth.token_ttl_minutes.password_reset': (value: any) => {
+    if (!Number.isInteger(value) || value <= 0) {
+      return { valid: false, error: 'token TTL must be a positive whole number of minutes' };
+    }
+    return { valid: true };
+  },
+  // Zero IS meaningful here — warn only on the day a document expires — so
+  // this refuses negatives and fractions, not zero.
+  'compliance.expiry_warning_days': (value: any) => {
+    if (!Number.isInteger(value) || value < 0) {
+      return { valid: false, error: 'expiry warning must be a whole number of days, zero or more' };
+    }
+    return { valid: true };
+  },
   'booking.hold_minutes': (value: any) => {
     if (typeof value !== 'number' || value <= 0) {
       return { valid: false, error: 'hold_minutes must be positive' };

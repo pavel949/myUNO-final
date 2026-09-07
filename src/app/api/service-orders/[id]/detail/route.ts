@@ -90,6 +90,17 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Has the orderer already rated it? The rating route refuses a second
+    // review, so the surface must not offer one.
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        target_type: 'service_order',
+        target_id: order.id,
+        author_identity_id: user.identityId,
+      },
+      select: { id: true },
+    });
+
     // Parse price breakdown
     const priceBreakdown = typeof order.price_breakdown === 'string'
       ? JSON.parse(order.price_breakdown)
@@ -111,6 +122,7 @@ export async function GET(
       addressNote: order.address_note,
       cancelledAt: order.cancelled_at?.toISOString() || null,
       cancellationReason: order.cancellation_reason,
+      rated: Boolean(existingReview),
       service: {
         id: order.service.id,
         title: order.service.title,

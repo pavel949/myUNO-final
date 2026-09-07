@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useMemo, useState } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
 
@@ -44,16 +45,6 @@ const getDaysInStage = (createdAt: string | Date): number => {
   return Math.floor(
     (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
   );
-};
-
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `฿${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `฿${(value / 1_000).toFixed(1)}K`;
-  }
-  return `฿${value}`;
 };
 
 export const OpportunitiesList: FC<OpportunitiesListProps> = ({
@@ -216,7 +207,7 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
                 </div>
               </td>
               <td className="px-4 py-3 text-right font-medium text-text-ink ">
-                {formatCurrency(
+                {formatBahtCompact(
                   ((opp.valueThb ?? 0) * opp.probability) / 100
                 )}
               </td>
@@ -283,7 +274,7 @@ export const OpportunitiesList: FC<OpportunitiesListProps> = ({
 
             <div className="flex items-center justify-between text-sm text-text-stone  pt-2 border-t border-border-line ">
               <span>
-                Value: {formatCurrency(((opp.valueThb ?? 0) * opp.probability) / 100)}
+                Value: {formatBahtCompact(((opp.valueThb ?? 0) * opp.probability) / 100)}
               </span>
               <span>{getDaysInStage(opp.createdAt)} days in stage</span>
             </div>

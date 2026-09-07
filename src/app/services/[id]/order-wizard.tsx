@@ -35,11 +35,15 @@ function fill(template: string, params: Record<string, string | number>): string
 export default function OrderWizard({
   service,
   bookingId,
+  projectId,
+  unitId,
   whatsappNumber,
   labels,
 }: {
   service: WizardService;
   bookingId: string | null;
+  projectId?: string | null;
+  unitId?: string | null;
   whatsappNumber: string | null;
   labels: Labels;
 }) {
@@ -56,7 +60,7 @@ export default function OrderWizard({
   // Arriving without a stay in the URL, attach the guest's current or next
   // confirmed stay automatically — the super-app way: no context questions.
   useEffect(() => {
-    if (bookingId) return;
+    if (bookingId || projectId || unitId) return;
     let cancelled = false;
     (async () => {
       try {
@@ -82,7 +86,7 @@ export default function OrderWizard({
     return () => {
       cancelled = true;
     };
-  }, [bookingId]);
+  }, [bookingId, projectId, unitId]);
 
   const effectiveBookingId = bookingId ?? autoBookingId;
   const selfPath = `/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`;
@@ -136,6 +140,12 @@ export default function OrderWizard({
           scheduledStart: when,
           quantity,
           bookingId: effectiveBookingId || undefined,
+          // Sent only when there is no stay to derive the context from, so a
+          // guest's booking still wins and nobody can order against a
+          // building they only claimed in a query string — the API validates
+          // the caller's role against whatever it is given.
+          ...(!effectiveBookingId && projectId ? { projectId } : {}),
+          ...(!effectiveBookingId && unitId ? { unitId } : {}),
           noteToProvider: note || undefined,
         }),
       });

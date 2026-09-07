@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -419,7 +420,7 @@ export default function SearchResults({
                 <div className="p-16">
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
                   <p className="font-display text-title font-semibold text-brand-andaman mb-4 tabular-nums">
-                    ฿{unit.baseNightlyThb?.toLocaleString()}
+                    {formatBaht(unit.baseNightlyThb ?? 0)}
                   </p>
                   <p className="text-small text-text-secondary">{labels.perNight}</p>
                   {/* A villa nobody has reviewed shows nothing, rather than a

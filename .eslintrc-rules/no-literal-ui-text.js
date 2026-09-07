@@ -91,6 +91,10 @@ module.exports = {
           'className', 'id', 'htmlFor', 'style', 'type', 'href', 'src', 'alt', 'placeholder', 'name', 'value',
           'basePath',
           'role', 'tabIndex', 'rel', 'target', 'method', 'action', 'encType', 'autoComplete',
+          // Numeric-input constraints. `step="any"` is HTML's own vocabulary for
+          // "no stepping" — a validation instruction to the browser, not a word
+          // anyone reads or translates. Same class as `type` and `pattern`.
+          'step', 'min', 'max', 'pattern', 'inputMode',
           'variant', 'size',
           // HTML table accessibility — `scope="col"` is a screen-reader hint,
           // not a word a reader translates (same class as `role`).

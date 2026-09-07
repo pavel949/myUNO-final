@@ -18,6 +18,7 @@ import { syncAllICalAccounts } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
 import { JOB_KEYS } from './registry';
 import { runRegisteredJob } from './record';
+import { releaseExpiredDepositPreauths } from '@/modules/finance';
 
 export type JobDispatchResult = Record<string, string>;
 
@@ -150,6 +151,15 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
  * iCal is last: each feed may block for 15s, and that must not starve
  * hold expiry or TM30 on the same invocation.
  */
+export async function runDepositReleaseJob(db: PrismaClient) {
+  return runRegisteredJob(
+    db,
+    JOB_KEYS.depositRelease,
+    async () => releaseExpiredDepositPreauths(db),
+    (r) => `${r.released} deposit holds released`
+  );
+}
+
 export async function runFrequentJobs(db: PrismaClient): Promise<JobDispatchResult> {
   const results: JobDispatchResult = {};
 
@@ -197,6 +207,9 @@ export async function runNightlyJobs(db: PrismaClient): Promise<JobDispatchResul
 
   const tm30 = await runTm30EscalationsJob(db);
   mark(results, JOB_KEYS.tm30Escalations, tm30.ok, tm30.summary);
+
+  const deposits = await runDepositReleaseJob(db);
+  mark(results, JOB_KEYS.depositRelease, deposits.ok, deposits.summary);
 
   return results;
 }

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { findOrCreateThread, sendMessage, getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
 import { createDirectInquiry } from '@/modules/analytics';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { t } from '@/modules/content';
 
 /** GET /api/threads — the caller's inbox. */
 export async function GET() {
@@ -64,8 +65,25 @@ export async function POST(req: NextRequest) {
       throw createPublicError('unauthorized', 401);
     }
 
-    const { contextType, contextId, body } = await req.json();
-    if (!body || typeof body !== 'string' || !body.trim()) {
+    const { contextType, contextId, body, intent } = await req.json();
+
+    // An intent is a declared action, not a phrase to be spotted in prose.
+    // This used to be `body.includes('sell-interest')`, so any owner whose
+    // message happened to contain that text silently filed a sell signal —
+    // and the client sent the literal '[sell-interest]', which then sat in
+    // the owner's own thread as the message they appeared to have written.
+    const isSellInterest = intent === 'sell_interest';
+    if (intent !== undefined && !isSellInterest) {
+      throw createPublicError('invalid request: unknown intent', 400);
+    }
+
+    // The opening line for a declared intent is ours to write, so it comes
+    // from the content layer rather than from the client (doc 05).
+    const messageBody = isSellInterest
+      ? await t(prisma, 'owner.sell_interest.message')
+      : body;
+
+    if (!messageBody || typeof messageBody !== 'string' || !messageBody.trim()) {
       throw createPublicError('invalid request: message body is required', 400);
     }
 
@@ -127,11 +145,16 @@ export async function POST(req: NextRequest) {
     await sendMessage(prisma, {
       threadId,
       senderIdentityId: user.identityId,
-      body: body.trim(),
+      body: messageBody.trim(),
     });
 
-    if (body.trim().includes('sell-interest')) {
-      await createDirectInquiry(prisma, user.identityId, user.identityId, 'Owner sell-interest thread');
+    if (isSellInterest) {
+      await createDirectInquiry(
+        prisma,
+        user.identityId,
+        user.identityId,
+        'Owner sell-interest thread'
+      );
     }
 
     return NextResponse.json({ threadId }, { status: 201 });

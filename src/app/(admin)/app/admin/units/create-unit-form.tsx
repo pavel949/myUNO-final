@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { bahtToSatang } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -67,7 +68,10 @@ export default function CreateUnitForm({
               bathrooms: Number(form.get('bathrooms')),
               maxGuests: Number(form.get('maxGuests')),
               addressSupplement: String(form.get('addressSupplement') || '').trim(),
-              baseNightlyThb: Number(form.get('baseNightlyThb')),
+              // The field is labelled "Base ฿/night", so this arrives in baht;
+              // the column is satang. Storing it unmultiplied priced every
+              // unit created through this form at 1/100 of its rate (T-071).
+              baseNightlyThb: bahtToSatang(Number(form.get('baseNightlyThb'))),
               minNights: Number(form.get('minNights')) || 1,
             }),
           });

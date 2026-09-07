@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { JOBS, JOB_KEYS, jobDefinition } from './registry';
+import {
+  JOBS,
+  JOB_KEYS,
+  jobDefinition,
+  buildJobs,
+  resolveMaxSilenceMs,
+  schedulerMode,
+} from './registry';
 import { evaluateJobHealth, jobsNeedingAttention } from './health';
 
 const NOW = new Date('2026-09-04T12:00:00Z');
@@ -32,6 +39,70 @@ describe('the scheduler registry', () => {
 
   it('throws on an unknown key rather than inventing a cadence', () => {
     expect(() => jobDefinition('not_a_job' as never)).toThrow(/Unknown scheduler job/);
+  });
+
+  it('carries the cadence doc 15 asks for, not the one Hobby permits', () => {
+    // The intended interval is a property of the job, not of whichever
+    // scheduler happens to be driving it. If these drift from doc 15 the
+    // registry has started describing the workaround instead of the design.
+    const bookingLifecycle = jobDefinition(JOB_KEYS.bookingLifecycle);
+    const icalSync = jobDefinition(JOB_KEYS.icalSync);
+    expect(bookingLifecycle.intendedIntervalMs).toBe(5 * 60 * 1000);
+    expect(icalSync.intendedIntervalMs).toBe(15 * 60 * 1000);
+  });
+});
+
+describe('silence thresholds follow whichever scheduler is actually live', () => {
+  const frequentSpec = {
+    key: JOB_KEYS.bookingLifecycle,
+    cadence: 'frequent' as const,
+    intendedIntervalMs: 5 * 60 * 1000,
+  };
+  const nightlySpec = {
+    key: JOB_KEYS.retention,
+    cadence: 'nightly' as const,
+    intendedIntervalMs: 24 * 60 * 60 * 1000,
+  };
+  const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+
+  it('keeps the two-day window while only the Vercel daily crons run', () => {
+    // Tightening this before the external scheduler exists would paint the
+    // panel red on a schedule that is working exactly as configured.
+    expect(resolveMaxSilenceMs(frequentSpec, 'vercel-daily')).toBe(TWO_DAYS);
+  });
+
+  it('tightens the frequent slot to the real cadence once the workflow is live', () => {
+    // Six intervals of slack absorbs GitHub Actions jitter without hiding a
+    // genuinely stalled scheduler for longer than half an hour.
+    expect(resolveMaxSilenceMs(frequentSpec, 'external')).toBe(30 * 60 * 1000);
+    expect(resolveMaxSilenceMs(frequentSpec, 'external')).toBeLessThan(TWO_DAYS);
+  });
+
+  it('leaves nightly jobs alone — they run daily under either scheduler', () => {
+    expect(resolveMaxSilenceMs(nightlySpec, 'external')).toBe(TWO_DAYS);
+    expect(resolveMaxSilenceMs(nightlySpec, 'vercel-daily')).toBe(TWO_DAYS);
+  });
+
+  it('defaults to the conservative mode, so an unset variable never invents an alarm', () => {
+    const previous = process.env.SCHEDULER_MODE;
+    try {
+      delete process.env.SCHEDULER_MODE;
+      expect(schedulerMode()).toBe('vercel-daily');
+      process.env.SCHEDULER_MODE = 'nonsense';
+      expect(schedulerMode()).toBe('vercel-daily');
+      process.env.SCHEDULER_MODE = 'external';
+      expect(schedulerMode()).toBe('external');
+    } finally {
+      if (previous === undefined) delete process.env.SCHEDULER_MODE;
+      else process.env.SCHEDULER_MODE = previous;
+    }
+  });
+
+  it('builds one definition per registered job in either mode', () => {
+    for (const mode of ['external', 'vercel-daily'] as const) {
+      const built = buildJobs(mode);
+      expect(built.map((job) => job.key).sort()).toEqual(JOBS.map((job) => job.key).sort());
+    }
   });
 });
 

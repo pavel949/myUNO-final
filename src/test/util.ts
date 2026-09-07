@@ -13,13 +13,43 @@ if (!testDatabaseUrl) {
   );
 }
 
-export const db = new PrismaClient({
-  datasources: {
-    db: {
-      url: testDatabaseUrl,
+/**
+ * One client for the whole run, cached on `globalThis` — the same trick
+ * `src/lib/prisma.ts` uses for the application singleton, and for the same
+ * reason.
+ *
+ * Vitest is configured to run every file in a single fork (`singleFork`,
+ * `fileParallelism: false`) so integration tests never race on the shared
+ * database. But it still resets the *module registry* between files, so a
+ * plain module-scope `new PrismaClient()` here was constructed again for each
+ * of the ~130 files that import this helper — inside one process, all alive at
+ * once, none of them disconnected (only three files anywhere call
+ * `$disconnect`).
+ *
+ * Each client opens its own pool, so connections accumulated across the run
+ * until Postgres refused new ones with "sorry, too many clients already". The
+ * failure landed on whichever files happened to run last, as
+ * `PrismaClientInitializationError` with nothing wrong in them — which is why
+ * it read as flakiness rather than as the resource leak it is, and why the
+ * same commit could pass locally and fail in CI.
+ *
+ * `globalThis` survives the module-registry reset, so this is now one client
+ * and one pool for the entire suite. Deliberately never disconnected: it is
+ * reused by every subsequent file, and the process exiting closes it.
+ */
+const globalForTestDb = globalThis as unknown as { __myunoTestDb?: PrismaClient };
+
+export const db =
+  globalForTestDb.__myunoTestDb ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: testDatabaseUrl,
+      },
     },
-  },
-});
+  });
+
+globalForTestDb.__myunoTestDb = db;
 
 /**
  * Reset the database between tests. Enumerates every table from pg_tables so it

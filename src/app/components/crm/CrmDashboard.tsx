@@ -1,6 +1,7 @@
 'use client';
 
 import { FC } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 
 interface SummaryMetrics {
   totalDeals: number;
@@ -34,16 +35,6 @@ interface CrmDashboardProps {
   recentActivities: DashboardActivity[];
 }
 
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `฿${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `฿${(value / 1_000).toFixed(1)}K`;
-  }
-  return `฿${value}`;
-};
-
 const getActivityIcon = (type: string): string => {
   switch (type) {
     case 'call':
@@ -76,11 +67,11 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
         />
         <MetricCard
           label="Total Value"
-          value={formatCurrency(summary.totalValue)}
+          value={formatBahtCompact(summary.totalValue)}
         />
         <MetricCard
           label="Weighted Forecast"
-          value={formatCurrency(summary.weightedForecast)}
+          value={formatBahtCompact(summary.weightedForecast)}
         />
         <MetricCard
           label="Win Rate"
@@ -125,7 +116,7 @@ export const CrmDashboard: FC<CrmDashboardProps> = ({
                     </div>
                   </div>
                   <div className="w-24 text-right text-sm font-medium text-text-ink ">
-                    {formatCurrency(data.weightedValue)}
+                    {formatBahtCompact(data.weightedValue)}
                   </div>
                 </div>
               )

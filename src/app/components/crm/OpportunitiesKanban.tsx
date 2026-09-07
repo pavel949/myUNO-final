@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState, useCallback } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import {
   DragDropContext,
@@ -147,16 +148,14 @@ export const OpportunitiesKanban: FC<OpportunitiesKanbanProps> = ({
                   {groupedByStage[stage].length > 0 && (
                     <div className="text-xs text-text-stone  mb-4 pb-4 border-b border-border-line ">
                       <div>
-                        ฿
-                        {(
+                        {formatBahtCompact(
                           groupedByStage[stage].reduce(
                             (sum, opp) =>
-                              sum +
-                              ((opp.valueThb ?? 0) * opp.probability) / 100,
+                              sum + ((opp.valueThb ?? 0) * opp.probability) / 100,
                             0
-                          ) / 1000
-                        ).toFixed(0)}
-                        K weighted
+                          )
+                        )}{' '}
+                        weighted
                       </div>
                     </div>
                   )}

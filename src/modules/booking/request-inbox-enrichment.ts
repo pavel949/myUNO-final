@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { PriceBreakdown } from '@/modules/core';
+import { satangToBaht } from '@/lib/money';
 
 export interface BookingRequestBreakdownLine {
   labelKey: string;
@@ -51,7 +52,7 @@ function nightsBetween(startDate: Date, endDate: Date): number {
 }
 
 function toBaht(satang: number): number {
-  return Math.round(satang / 100);
+  return satangToBaht(satang);
 }
 
 /**

@@ -1,0 +1,234 @@
+# Nightly logical backup, proven by restoring it (T-048).
+#
+# Doc 15 §5 asks for daily backups, a 30-day recovery window, and a quarterly
+# restore drill into staging. The managed provider's own backup coverage is
+# tier-dependent and cannot be verified from the repository, and the restore
+# drill had never been performed. A backup nobody has restored is a belief,
+# not a backup.
+#
+# So this workflow does not merely take a dump — it takes a dump, restores it
+# into a scratch database, and asserts the restored copy is intact BEFORE
+# storing it. A dump that cannot be restored fails the run rather than sitting
+# in storage looking reassuring. That turns the quarterly drill from a
+# calendar reminder somebody forgets into something that happens every night.
+#
+# Required repository configuration:
+#   Secret BACKUP_DATABASE_URL  — see "Which credential" below.
+#   Secret BACKUP_PASSPHRASE    — symmetric key for the stored dump.
+#                                 Generate with: openssl rand -base64 48
+#                                 Keep it OUTSIDE this repo and outside the
+#                                 database. Losing it makes every stored dump
+#                                 permanently unreadable, exactly like
+#                                 ENCRYPTION_KEY (doc 15 §4).
+#
+# ## Which credential
+#
+# Do NOT use the application's own connection string. Create a role that can
+# read everything and change nothing, and give this workflow that:
+#
+#   CREATE ROLE backup_reader LOGIN PASSWORD '<generated>';
+#   GRANT pg_read_all_data TO backup_reader;
+#
+# `pg_read_all_data` (Postgres 14+) reads through row-level security without
+# needing ownership, which is what a dump requires and nothing more. A
+# compromised backup credential then leaks a copy of the data — bad — but
+# cannot alter or destroy the live database, which is worse.
+#
+# ## Where the dumps go, and the honest limits of that
+#
+# Encrypted dumps are stored as GitHub Actions artifacts with a 30-day
+# retention window, matching the recovery window doc 15 asks for. This is
+# free, private to the repository, and adequate for the pilot. Two limits to
+# hold in mind rather than discover:
+#
+#   1. The backups live in the same account as the code. That is a shared
+#      failure domain: losing access to the GitHub organisation loses both.
+#      A second destination outside GitHub is the right answer before real
+#      owner money or title records are in the database — see the commented
+#      S3 step at the end.
+#   2. Artifact storage counts against the account quota, and 90 days is the
+#      hard ceiling on retention. A growing database will outgrow this. Watch
+#      the reported dump size in the run summary.
+
+name: Backup
+
+on:
+  schedule:
+    # 20:00 UTC / 03:00 ICT — after the nightly job dispatcher at 19:00 UTC,
+    # so the dump captures the state left by retention and rollup rather than
+    # a half-finished night.
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  dump-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      scratch:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: scratch
+          POSTGRES_DB: restore_check
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Runs on the plain runner rather than inside a postgres image, so `gpg`
+    # is guaranteed present. The client is installed explicitly below instead,
+    # which is the half that actually has to match the server.
+    env:
+      PG_HOST: 127.0.0.1
+      PG_PORT: 5433
+
+    steps:
+      - name: Install the Postgres 17 client
+        run: |
+          set -euo pipefail
+          # Must match the production server's major version: pg_dump refuses
+          # to dump from a server newer than itself, and the runner's stock
+          # client trails. Pinning it here is what makes a provider-side major
+          # upgrade fail this workflow loudly instead of silently breaking
+          # backups.
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Check required configuration
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=0
+          [ -n "$BACKUP_DATABASE_URL" ] || { echo "::error::Secret BACKUP_DATABASE_URL is not set."; missing=1; }
+          [ -n "$BACKUP_PASSPHRASE" ]   || { echo "::error::Secret BACKUP_PASSPHRASE is not set."; missing=1; }
+          exit $missing
+
+      - name: Dump the production database
+        env:
+          # Passed via PGPASSWORD-style URL in the environment, never on the
+          # command line — argv is visible to anything that can list processes.
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          # Custom format: compressed, and restorable selectively, which is
+          # what makes a partial recovery ("just the ledger") possible.
+          # --no-owner / --no-privileges so the dump restores into a scratch
+          # database whose roles do not exist.
+          pg_dump "$BACKUP_DATABASE_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file=dump.pgc
+          size="$(du -h dump.pgc | cut -f1)"
+          echo "Dump size: ${size}"
+          echo "DUMP_SIZE=${size}" >> "$GITHUB_ENV"
+
+      - name: Restore it into a scratch database
+        env:
+          PGPASSWORD: scratch
+        run: |
+          set -euo pipefail
+          # This is the step that makes the backup real. If the dump cannot be
+          # restored, the run fails here and nothing is stored.
+          pg_restore \
+            --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check \
+            --no-owner --no-privileges \
+            --exit-on-error \
+            dump.pgc
+
+      - name: Assert the restored copy is intact
+        env:
+          PGPASSWORD: scratch
+        run: |
+          set -euo pipefail
+          q() { psql --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check -tAc "$1"; }
+
+          tables="$(q "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';")"
+          echo "Tables restored: ${tables}"
+          # The schema has been well over 70 tables since the CRM foundation
+          # landed. A dump that restores a handful of them restored *something*
+          # and is still a failed backup.
+          if [ "$tables" -lt 70 ]; then
+            echo "::error::Only ${tables} tables restored — expected the full schema."
+            exit 1
+          fi
+
+          # Migration history is what proves the restored copy is a coherent
+          # point in the chain rather than an arbitrary subset of tables.
+          applied="$(q "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL;")"
+          echo "Migrations applied in the restored copy: ${applied}"
+          if [ "$applied" -lt 1 ]; then
+            echo "::error::Restored copy has no completed migration history."
+            exit 1
+          fi
+
+          # Row counts on the tables a recovery would actually be judged by.
+          # Reported, never asserted against a threshold: an empty pilot
+          # database is legitimate, and a backup job is the wrong place to
+          # start having opinions about how much business there should be.
+          {
+            echo "### Restore verified"
+            echo
+            echo "| Table | Rows |"
+            echo "|---|---|"
+            for t in identity project unit booking payment ledger_entry tm30_filing owner_statement; do
+              n="$(q "SELECT count(*) FROM ${t};" 2>/dev/null || echo 'n/a')"
+              echo "| \`${t}\` | ${n} |"
+            done
+            echo
+            echo "Tables: ${tables} · Migrations: ${applied} · Dump size: ${DUMP_SIZE}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Encrypt the verified dump
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          # AES-256, passphrase from the environment via fd 3 so it never
+          # appears in argv or in the run log.
+          exec 3<<< "$BACKUP_PASSPHRASE"
+          gpg --batch --yes --symmetric \
+            --cipher-algo AES256 \
+            --passphrase-fd 3 \
+            --output "dump-$(date -u +%Y-%m-%d).pgc.gpg" \
+            dump.pgc
+          rm -f dump.pgc
+          ls -lh dump-*.pgc.gpg
+
+      - name: Store it
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: dump-*.pgc.gpg
+          # Matches the 30-day recovery window in doc 15 §5.
+          retention-days: 30
+          if-no-files-found: error
+
+      # A second destination outside GitHub, for when the database holds real
+      # owner money or title records and a shared failure domain with the code
+      # stops being acceptable. Needs an S3-compatible bucket and credentials;
+      # left commented rather than half-configured, so the workflow does not
+      # pretend to an offsite copy it does not have.
+      #
+      # - name: Copy offsite
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET }}
+      #     AWS_DEFAULT_REGION: ${{ vars.BACKUP_S3_REGION }}
+      #   run: aws s3 cp dump-*.pgc.gpg "s3://${{ vars.BACKUP_S3_BUCKET }}/db/"

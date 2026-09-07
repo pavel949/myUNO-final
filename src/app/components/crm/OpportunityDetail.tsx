@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 import { ActivityTimeline } from './ActivityTimeline';
 import { QuickActivityForm } from './QuickActivityForm';
 import { RequirementsPanel } from './RequirementsPanel';
@@ -153,7 +154,7 @@ export const OpportunityDetail: FC<OpportunityDetailProps> = ({
               Value
             </p>
             <p className="text-lg font-bold text-text-ink ">
-              ฿{(weightedValue / 1000).toFixed(1)}K
+              {formatBahtCompact(weightedValue)}
             </p>
           </div>
           <div>

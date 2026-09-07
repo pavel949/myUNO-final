@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.prospecting': 'Prospecting',
     'admin.nav.section.inventory': 'Inventory',
     'admin.nav.projects': 'Projects',
-    'admin.nav.units': 'Projects & Units',
+    'admin.nav.units': 'Units',
     'admin.nav.people': 'People & Roles',
     'admin.nav.organizations': 'Organizations',
     'admin.nav.bookings': 'Bookings',

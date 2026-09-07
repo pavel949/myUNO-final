@@ -141,7 +141,24 @@ valid. Finish the reset, then set the new value in all three environments — th
 point of the rotation is that the leaked one stops working, not that production
 stops using it.
 
-**Fix:** reset the password again and either keep it to letters, digits, `-` and `_`, or
+**Resolved 2026-09-07 ~12:00 UTC — and the reset did happen.** Production now
+answers `200 {"status":"ok","db":"ok"}`. The picture has also inverted: at 05:12
+Preview was healthy and Production was not; at 12:09 Production is healthy and
+**Preview** answers `503 db:unreachable`.
+
+That inversion is the evidence worth keeping. It means the Supabase password was
+genuinely reset — Production was given the new string, and Preview is still
+holding the old one, which no longer authenticates. So the leaked credential
+T-046 exists to kill **is now dead**, which the earlier note could not yet
+confirm.
+
+**Still to do:** set the new connection string in the Preview and Development
+environments too (or give Preview its own database). Until then every preview
+deployment renders with no database, which makes reviewing a PR against a real
+screen impossible — and a preview that is broken for an unrelated reason is how
+a preview that is broken for a *related* reason gets waved through.
+
+**If it needs resetting again:** and either keep it to letters, digits, `-` and `_`, or
 percent-encode it in the URL (`@` → `%40`, `#` → `%23`, `/` → `%2F`). Paste the value with no
 surrounding quotes and no trailing newline. Then redeploy with cache off and re-run the health
 check above.

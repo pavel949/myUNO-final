@@ -127,6 +127,20 @@ no longer parses as a URL at all. Both point at the same root cause: the new pas
 character that is not URI-safe — `@ : / ? # [ ] %` all terminate or re-interpret parts of a
 connection string — or the value was pasted with the quotes Supabase shows around it.
 
+**Narrowed 05:12 UTC — it is the Production variable only.** The preview
+deployment of the same commit answers `200 {"status":"ok","db":"ok"}`, while
+production answers `503`. So Preview and Development still hold a working
+connection string and only the Production value is wrong.
+
+Two things follow. First, the fix is a single variable, not a broken database —
+nothing else needs touching. Second, and more important: **if the old string
+still works in Preview, the credential T-046 exists to kill is still live.** A
+password reset invalidates it everywhere at once; a working Preview means either
+the reset has not happened yet, or Preview holds a different string that is also
+valid. Finish the reset, then set the new value in all three environments — the
+point of the rotation is that the leaked one stops working, not that production
+stops using it.
+
 **Fix:** reset the password again and either keep it to letters, digits, `-` and `_`, or
 percent-encode it in the URL (`@` → `%40`, `#` → `%23`, `/` → `%2F`). Paste the value with no
 surrounding quotes and no trailing newline. Then redeploy with cache off and re-run the health

@@ -3185,6 +3185,23 @@ const SERVICE_ORDER_DETAIL_KEYS: KeyDef[] = [
   { key: 'booking.detail.review_cancel', namespace: 'booking', description: 'Stay review: cancel button', en: 'Cancel', ru: 'Отмена', th: 'ยกเลิก', status: NR },
   { key: 'booking.detail.review_submitted', namespace: 'booking', description: 'Stay review: success confirmation', en: 'Thank you — your review has been published.', ru: 'Спасибо — ваш отзыв опубликован.', th: 'ขอบคุณ — รีวิวของคุณได้รับการเผยแพร่แล้ว', status: NR },
   { key: 'booking.detail.review_error', namespace: 'booking', description: 'Stay review: save failed', en: 'We could not save your review. Please try again.', ru: 'Не удалось сохранить отзыв. Попробуйте ещё раз.', th: 'ไม่สามารถบันทึกรีวิวของคุณได้ กรุณาลองใหม่อีกครั้ง', status: NR },
+
+  // Trip timeline and the saved-villas page, added by the guest-journey work
+  // (PR #51) without seed rows — caught by content-keys-seeded.test.ts on the
+  // merge, which is exactly the regression that guard exists to stop.
+  { key: 'booking.detail.timeline_title', namespace: 'booking', description: 'Trip timeline: section title', en: 'Trip Timeline', ru: 'Хронология поездки', th: 'ไทม์ไลน์ทริป', status: NR },
+  { key: 'booking.detail.timeline_confirmed', namespace: 'booking', description: 'Trip timeline: booking confirmed step', en: 'Booking confirmed', ru: 'Бронирование подтверждено', th: 'ยืนยันการจองแล้ว', status: NR },
+  { key: 'booking.detail.timeline_passports', namespace: 'booking', description: 'Trip timeline: passports submitted step', en: 'Passports submitted', ru: 'Паспорта отправлены', th: 'ส่งหนังสือเดินทางแล้ว', status: NR },
+  { key: 'booking.detail.timeline_checkin', namespace: 'booking', description: 'Trip timeline: check-in step', en: 'Check-in', ru: 'Заезд', th: 'เช็คอิน', status: NR },
+  { key: 'booking.detail.timeline_checkout', namespace: 'booking', description: 'Trip timeline: check-out step', en: 'Check-out', ru: 'Выезд', th: 'เช็คเอาท์', status: NR },
+  { key: 'booking.detail.message_team', namespace: 'booking', description: 'Trip detail: open a thread with the property team', en: 'Message your property team', ru: 'Написать команде объекта', th: 'ส่งข้อความถึงทีมดูแลที่พัก', status: NR },
+  { key: 'saved.title', namespace: 'browse', description: 'Saved villas: page title', en: 'Saved Villas', ru: 'Сохранённые виллы', th: 'วิลล่าที่บันทึกไว้', status: NR },
+  { key: 'saved.per_night', namespace: 'browse', description: 'Saved villas: nightly rate suffix', en: '/ night', ru: '/ ночь', th: '/ คืน', status: NR },
+  { key: 'saved.empty_title', namespace: 'browse', description: 'Saved villas: empty state title', en: 'You have no saved villas yet.', ru: 'У вас пока нет сохранённых вилл.', th: 'คุณยังไม่มีวิลล่าที่บันทึกไว้', status: NR },
+  { key: 'saved.empty_hint', namespace: 'browse', description: 'Saved villas: empty state hint', en: 'Save villas while exploring to compare and plan your trip.', ru: 'Сохраняйте виллы во время поиска, чтобы сравнивать и планировать поездку.', th: 'บันทึกวิลล่าระหว่างค้นหา เพื่อเปรียบเทียบและวางแผนทริปของคุณ', status: NR },
+  { key: 'saved.search_button', namespace: 'browse', description: 'Saved villas: empty-state action', en: 'Search Villas', ru: 'Найти виллы', th: 'ค้นหาวิลล่า', status: NR },
+  { key: 'saved.signin_prompt', namespace: 'browse', description: 'Saved villas: signed-out prompt', en: 'Sign in to view and manage your saved homes and trip shortlists.', ru: 'Войдите, чтобы просматривать сохранённые дома и списки для поездки.', th: 'เข้าสู่ระบบเพื่อดูและจัดการบ้านที่บันทึกไว้และรายการทริปของคุณ', status: NR },
+  { key: 'saved.signin_button', namespace: 'browse', description: 'Saved villas: sign-in action', en: 'Sign In', ru: 'Войти', th: 'เข้าสู่ระบบ', status: NR },
 ];
 
 const PROJECT_PAGE_KEYS: KeyDef[] = [

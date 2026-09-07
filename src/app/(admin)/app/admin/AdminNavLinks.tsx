@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export interface NavItem {
   href: string;
@@ -15,6 +16,15 @@ export interface NavSection {
 
 export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname() ?? '';
+
+  // The href just clicked, highlighted straight away. Server navigation takes a
+  // moment, and until it lands the sidebar gave no sign the click had
+  // registered — which is most of why the app felt unresponsive. Cleared once
+  // the route actually changes.
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => {
+    setPending(null);
+  }, [pathname]);
 
   return (
     <nav className="flex flex-col gap-16">
@@ -31,12 +41,17 @@ export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
                 item.href === '/app/admin'
                   ? pathname === '/app/admin'
                   : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const highlighted = active || pending === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setPending(item.href)}
+                  aria-current={active ? 'page' : undefined}
                   className={`block px-12 py-6 rounded-md text-small transition-colors duration-micro ${
-                    active ? 'bg-brand-andaman text-on-dark-text font-semibold' : 'text-on-dark-text hover:bg-brand-andaman/60'
+                    highlighted
+                      ? 'bg-brand-andaman text-on-dark-text font-semibold'
+                      : 'text-on-dark-text hover:bg-brand-andaman/60'
                   }`}
                 >
                   {item.label}

@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { getBatchTranslations } from '@/modules/content';
+import { tMany } from '@/modules/content';
 import type { Locale } from '@/modules/content';
 
 const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
@@ -20,20 +20,36 @@ export function getRequestLocale(): Locale {
 }
 
 /**
- * Resolve a batch of content keys server-side in a single fast DB query.
+ * Resolve a batch of content keys server-side.
  *
  * Each entry maps a content key to its EN draft fallback. The DB value wins
  * when present (admin-edited copy, any locale); the fallback keeps the page
  * legible when the key is not yet translated or the DB is unreachable.
+ * New keys used here must also be added to the content seed as
+ * `needs_review` drafts (doc 05 §1).
  */
 export async function getLabels<K extends string>(
   keys: Record<K, string>,
   locale?: Locale
 ): Promise<Record<K, string>> {
   const resolvedLocale = locale || getRequestLocale();
+  const keyList = Object.keys(keys) as K[];
+  const labels = {} as Record<K, string>;
+
+  let resolved: Record<string, string | null> = {};
   try {
-    return await getBatchTranslations(prisma, keys, resolvedLocale);
+    // One query for the whole batch (see content.service.tMany). Previously
+    // this fired a query per key, so a page's labels alone cost ~120 round
+    // trips before anything rendered.
+    resolved = await tMany(prisma, keyList, resolvedLocale);
   } catch {
-    return keys;
+    // DB unreachable — every key falls through to its EN draft below.
   }
+
+  for (const key of keyList) {
+    const value = resolved[key];
+    labels[key] = value && value !== key && value !== '\u2014' ? value : keys[key];
+  }
+
+  return labels;
 }

@@ -982,6 +982,8 @@ model Project {
   orgRoles             ProjectOrganizationRole[]
   commercialOfferings  CommercialOffering[]
   regulatoryCredentials RegulatoryCredential[]
+  inventoryCategories  InventoryCategory[]
+  ratePlans            RatePlan[]
   bookings             Booking[]
   ledgerEntries        LedgerEntry[]
   threads              Thread[]
@@ -1006,6 +1008,7 @@ model Unit {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   projectId               String     @map("project_id")
+  inventoryCategoryId     String?    @map("inventory_category_id")
   ownerIdentityId         String?    @map("owner_identity_id")
   name                    String
   unitType                UnitType   @map("unit_type")
@@ -1050,12 +1053,14 @@ model Unit {
 
   // Relations
   project               Project                     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inventoryCategory     InventoryCategory?          @relation(fields: [inventoryCategoryId], references: [id], onDelete: SetNull)
   owner                 Identity?                   @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
   coverMedia            MediaAsset?                 @relation(name: "unitCover", fields: [coverMediaId], references: [id])
   media                 UnitMedia[]
   sleepingSpaces        SleepingSpace[]
   commercialOfferings   CommercialOffering[]
   regulatoryCredentials RegulatoryCredential[]
+  ratePlans             RatePlan[]
   engagements           UnitEngagement[]
   roleAssignments       RoleAssignment[]            @relation("unitScope")
   blockedDates          BlockedDate[]
@@ -3030,4 +3035,59 @@ model RegulatoryCredential {
   @@index([unitId, status])
   @@index([credentialType, status])
   @@map("regulatory_credential")
+}
+
+model InventoryCategory {
+  id                    String    @id @default(uuid())
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  projectId             String    @map("project_id")
+  categoryKey           String    @map("category_key")
+  name                  String
+  bedrooms              Int
+  bathrooms             Int
+  maxGuests             Int       @map("max_guests")
+  baseNightlyThb        Int       @map("base_nightly_thb")
+  minNights             Int       @default(1) @map("min_nights")
+  cancellationPolicyKey String?   @map("cancellation_policy_key")
+  status                String    @default("live")
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  units     Unit[]
+  ratePlans RatePlan[]
+
+  @@unique([projectId, categoryKey])
+  @@map("inventory_category")
+}
+
+model RatePlan {
+  id                    String    @id @default(uuid())
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  projectId             String?   @map("project_id")
+  categoryId            String?   @map("category_id")
+  unitId                String?   @map("unit_id")
+
+  code                  String
+  name                  String
+  isMaster              Boolean   @default(true) @map("is_master")
+  parentRatePlanId      String?   @map("parent_rate_plan_id")
+  adjustmentType        String?   @map("adjustment_type")
+  adjustmentValue       Decimal?  @map("adjustment_value") @db.Decimal(10, 2)
+  cancellationPolicyKey String?   @map("cancellation_policy_key")
+  minNights             Int?      @map("min_nights")
+  status                String    @default("active")
+
+  project         Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category        InventoryCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  unit            Unit?              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  parentRatePlan  RatePlan?          @relation(name: "derivedRatePlan", fields: [parentRatePlanId], references: [id], onDelete: SetNull)
+  derivedRatePlans RatePlan[]        @relation(name: "derivedRatePlan")
+
+  @@unique([projectId, code])
+  @@index([categoryId])
+  @@index([unitId])
+  @@map("rate_plan")
 }

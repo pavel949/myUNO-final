@@ -47,6 +47,7 @@ ADD COLUMN "developer_verification" TEXT DEFAULT 'unverified';
 
 -- Alter Unit
 ALTER TABLE "unit"
+ADD COLUMN "inventory_category_id" TEXT,
 ADD COLUMN "privacy_type" TEXT DEFAULT 'entire_place',
 ADD COLUMN "accommodation_type" TEXT,
 ADD COLUMN "usable_area_sqm" DECIMAL(10,2),
@@ -61,6 +62,59 @@ ADD COLUMN "furnishing_status" TEXT,
 ADD COLUMN "views" TEXT[] DEFAULT ARRAY[]::TEXT[],
 ADD COLUMN "pet_fee_thb" INTEGER,
 ADD COLUMN "pet_rules" TEXT;
+
+-- Create Table: inventory_category
+CREATE TABLE "inventory_category" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "project_id" TEXT NOT NULL,
+    "category_key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "bedrooms" INTEGER NOT NULL,
+    "bathrooms" INTEGER NOT NULL,
+    "max_guests" INTEGER NOT NULL,
+    "base_nightly_thb" INTEGER NOT NULL,
+    "min_nights" INTEGER NOT NULL DEFAULT 1,
+    "cancellation_policy_key" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'live',
+
+    CONSTRAINT "inventory_category_pkey" PRIMARY KEY ("id")
+);
+
+-- Create Table: rate_plan
+CREATE TABLE "rate_plan" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "project_id" TEXT,
+    "category_id" TEXT,
+    "unit_id" TEXT,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "is_master" BOOLEAN NOT NULL DEFAULT true,
+    "parent_rate_plan_id" TEXT,
+    "adjustment_type" TEXT,
+    "adjustment_value" DECIMAL(10,2),
+    "cancellation_policy_key" TEXT,
+    "min_nights" INTEGER,
+    "status" TEXT NOT NULL DEFAULT 'active',
+
+    CONSTRAINT "rate_plan_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "inventory_category_project_id_category_key_key" ON "inventory_category"("project_id", "category_key");
+CREATE UNIQUE INDEX "rate_plan_project_id_code_key" ON "rate_plan"("project_id", "code");
+CREATE INDEX "rate_plan_category_id_idx" ON "rate_plan"("category_id");
+CREATE INDEX "rate_plan_unit_id_idx" ON "rate_plan"("unit_id");
+
+ALTER TABLE "unit" ADD CONSTRAINT "unit_inventory_category_id_fkey" FOREIGN KEY ("inventory_category_id") REFERENCES "inventory_category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "inventory_category" ADD CONSTRAINT "inventory_category_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "rate_plan" ADD CONSTRAINT "rate_plan_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "rate_plan" ADD CONSTRAINT "rate_plan_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "inventory_category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "rate_plan" ADD CONSTRAINT "rate_plan_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "unit"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "rate_plan" ADD CONSTRAINT "rate_plan_parent_rate_plan_id_fkey" FOREIGN KEY ("parent_rate_plan_id") REFERENCES "rate_plan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Create Table: project_organization_role
 CREATE TABLE "project_organization_role" (

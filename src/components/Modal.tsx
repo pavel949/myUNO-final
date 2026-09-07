@@ -34,7 +34,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer }:
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-24">
       {/* Scrim per doc 06 §3.1 */}
       <div
-        className="fixed inset-0 bg-[#0A3733]/50 transition-opacity"
+        className="fixed inset-0 bg-brand-deep/50 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />

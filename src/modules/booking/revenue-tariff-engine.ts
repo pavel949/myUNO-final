@@ -168,14 +168,16 @@ export async function resolveEffectiveStayOffer(
       ? targetCategory.units.filter((u: any) => u.status === 'paused' || u.assetStatus === 'suspended').length
       : 0;
     availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
-    isAvailable = availableCapacity > 0;
+    const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
+    isAvailable = availableCapacity > 0 && !exceedsCapacity;
   } else if (targetUnit) {
     const isUnitBlocked = targetUnit.blockedDates
       ? targetUnit.blockedDates.some(
           (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
         )
       : false;
-    isAvailable = !isUnitBlocked && targetUnit.status === 'live';
+    const exceedsCapacity = targetUnit.maxGuests !== undefined && guests > targetUnit.maxGuests;
+    isAvailable = !isUnitBlocked && targetUnit.status === 'live' && !exceedsCapacity;
     availableCapacity = isAvailable ? 1 : 0;
   }
 

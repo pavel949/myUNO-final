@@ -245,6 +245,35 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 
 All five are `status = live`. **A ฿5,600 villa is currently bookable at ฿56 a night.**
 
+### RESOLVED 2026-09-07 15:45 UTC — corrected on the founder's confirmation
+
+All five were multiplied by 100 and now read as intended (560000, 390000, 710000,
+980000, 620000 satang). Checked first, and the check is the reassuring part: every
+one of the five had **zero bookings and zero pricing rules**, so no guest was ever
+quoted a wrong price and no snapshotted total needs unwinding. A booking's total is
+frozen at the time it is taken, so had any existed this correction would not have
+touched them — they would have needed handling one by one.
+
+### Still outstanding: four service prices with the same defect
+
+The same 100× error sits in `service.base_price_thb`, and the split is clean:
+
+| Service | Stored | Reads as | Almost certainly meant |
+|---|---|---|---|
+| Fresh Flower Delivery | 300 | ฿3 | ฿300 |
+| Private Chef Service | 500 | ฿5 / hour | ฿500 / hour |
+| Airport Transfer | 800 | ฿8 | ฿800 |
+| Extra Cleaning | 1200 | ฿12 | ฿1,200 |
+
+The three `active` services are stored correctly (90000, 180000, 220000 satang —
+฿900, ฿1,800, ฿2,200), which is what makes the diagnosis safe: the four wrong ones
+are exactly the four that were entered through the affected form.
+
+**All four are `status = draft`, so nothing is orderable and nothing is exposed.**
+Not corrected here: the founder confirmed the *unit* rates, and these are different
+numbers. They want the same ×100 once confirmed — or correcting by hand when the
+real service catalogue is entered, which is due anyway (Q60).
+
 **⚠ Order matters, and getting it wrong is worse than doing nothing.** Before T-071, the display bug cancelled the data bug: search rendered raw satang with a ฿ sign, so `5600` read back as "฿5,600" and looked right. T-071 fixes the display. **Deploying that fix without correcting the data makes every villa show ฿56 — and it is bookable at ฿56, because the stored rate is what the booking engine charges.** Correct the data in the same window as the deploy, or before it.
 
 The correction is `base_nightly_thb = base_nightly_thb * 100` for those five rows, but **confirm the intended rates with whoever entered them first** — this is an assumption about someone's intent, not an arithmetic fact, and it is cheap to confirm and expensive to guess.

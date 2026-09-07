@@ -231,6 +231,53 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 
 **Revisit this before the ownership/title work lands.** Title deeds, lease terms and foreign-quota positions are the most legally sensitive data the platform will ever hold, and the artifact-based backup shares a failure domain with the code. That is adequate for a cash pilot on stays; it is thinner than it should be under title records.
 
+## 7b. GitHub Actions is not running anything — **found 2026-09-07 15:50 UTC**
+
+**Every GitHub Actions job in this repository now fails in about four seconds,
+across every workflow and every trigger.** Not a test failure: no logs are
+produced at all (the log endpoint returns 404), and the jobs die before checkout.
+
+| Workflow | Run | Started → ended | Result |
+|---|---|---|---|
+| CI | `98ba5db` (push, docs only) | 15:48:38 → 15:48:42 | failure, 4s |
+| CI | `323a034` (push, the #60 merge) | 15:37:57 → 15:38:01 | failure, 4s |
+| CI | PR #60 ×2 (incl. a re-run) | 15:27 / 15:31 | failure, 3s each |
+| Scheduler | scheduled | 15:46:26 → 15:46:30 | failure, 4s |
+
+Three different workflows and three different event types, all the same. The same
+CI workflow succeeded on `main` at 14:37 in about five minutes, and `ci.yml` has
+not changed since. So this is account- or runner-side, not repository content.
+
+**Two consequences that matter more than the red checks:**
+
+1. **The scheduler (T-047) has never once succeeded.** It has two runs in its
+   entire history — 10:01 and 15:46 — and both failed in about five seconds. It is
+   supposed to fire every 5 minutes for booking-hold expiry and every 15 for iCal
+   import. So holds are expiring only on the daily Vercel backstop, and OTA
+   calendars are up to 24 hours stale — precisely the condition T-047 was built to
+   remove. The backstop is working as designed; the improvement is not.
+
+2. **The nightly backup (T-048) has never run at all — zero runs, ever.** It is
+   scheduled for 20:00 UTC daily and has never fired. Production now holds
+   encrypted passports and the canonical property data, and there is no verified
+   offsite dump of any of it. The managed provider's own coverage is
+   tier-dependent and unverifiable from here, which is the whole reason T-048
+   exists. **This is the most serious open item in this document.**
+
+**What to check, in order:**
+1. https://github.com/pavel949/myUNO-final/actions — does any new run start?
+2. https://github.com/settings/billing — Actions minutes, spending limit.
+3. Repository → Settings → Actions → General — whether Actions is disabled or
+   restricted for this repository.
+4. If the backup workflow is enabled but silent, confirm `BACKUP_DATABASE_URL`
+   and `BACKUP_PASSPHRASE` exist as repository secrets; a scheduled workflow on a
+   fork or with no valid secrets can be skipped without a visible run.
+
+Until this is resolved, **no change to this repository is independently verified
+before it ships** — the only evidence behind recent merges is a local test run.
+
+---
+
 ## 8. The money data check — before the T-070/T-071 migrations run
 
 **No longer hypothetical — confirmed in the live database 2026-09-06. All five production units are priced at 1/100 of their rate.**

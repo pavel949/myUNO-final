@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyIcalFeedToken, icalEventUid } from '@/modules/integrations/ical-token';
+import { toCalendarDay } from '@/lib/date';
 
 // No dynamic request API in this GET — force it dynamic so OTA calendar
 // consumers always see current availability, not a build-time snapshot.
@@ -15,6 +16,15 @@ function escapeText(text: string): string {
 
 function formatDateTime(date: Date): string {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+
+/**
+ * RFC 5545 `VALUE=DATE` form: YYYYMMDD, no separators. Reads the stored
+ * calendar day through the shared helper so this is not a fifth place that
+ * knows how to truncate a Date to a day.
+ */
+function icalDate(date: Date): string {
+  return toCalendarDay(date).replace(/-/g, '');
 }
 
 async function generateICalContent(unitId: string): Promise<string> {
@@ -67,8 +77,8 @@ async function generateICalContent(unitId: string): Promise<string> {
       `DTSTAMP:${modified}`,
       `CREATED:${created}`,
       `LAST-MODIFIED:${modified}`,
-      `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
+      `DTSTART;VALUE=DATE:${icalDate(startDate)}`,
+      `DTEND;VALUE=DATE:${icalDate(endDate)}`,
       // "Unavailable" and nothing more — the convention OTAs expect, and it
       // keeps guest-linked detail out of a URL-authenticated feed.
       `SUMMARY:Unavailable`,
@@ -90,8 +100,8 @@ async function generateICalContent(unitId: string): Promise<string> {
       `DTSTAMP:${modified}`,
       `CREATED:${created}`,
       `LAST-MODIFIED:${modified}`,
-      `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-      `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
+      `DTSTART;VALUE=DATE:${icalDate(startDate)}`,
+      `DTEND;VALUE=DATE:${icalDate(endDate)}`,
       // The reason and the operator's note are internal. A blocked night is
       // simply unavailable, and it must read OPAQUE — TRANSPARENT told the
       // consuming calendar the night was free, which is the opposite of a block.

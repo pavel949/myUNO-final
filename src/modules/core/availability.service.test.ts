@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db as prisma, resetDb, createProject, createUnit } from '@/test/util';
+import {
+  db as prisma,
+  resetDb,
+  createProject,
+  createUnit,
+  createIdentity,
+  createBooking,
+} from '@/test/util';
 import {
   getApplicableSeasonMarkup,
   getApplicableNightlyPrice,
@@ -797,6 +804,47 @@ describe('Availability & Pricing Service', () => {
       expect(only59.total_thb).toBe(3000);
     });
 
+    it('counts the days-before in the project timezone, not in UTC (T-052)', async () => {
+      // The booking instant is 23:00 UTC on 2 April, which is already 06:00
+      // on 3 April in Phuket. Measured in Phuket the guest is 59 days out and
+      // does NOT qualify; measured in UTC they look 60 days out and do.
+      //
+      // The old helper normalised the instant to server-local midnight, which
+      // on Vercel is UTC — so for the seven hours between 00:00 and 07:00 ICT
+      // it handed out an early-bird discount the guest had not earned. Money,
+      // every day, silently.
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 1,
+        maxGuests: 2,
+      });
+      await prisma.configOverride.create({
+        data: {
+          parameterKey: 'pricing.early_bird',
+          scopeType: 'project',
+          scopeId: project.id,
+          value: { min_days_before: 60, pct: 8 } as any,
+          updatedByIdentityId: 'test-admin',
+        },
+      });
+
+      const checkIn = new Date('2026-06-01');
+      const checkOut = new Date('2026-06-04');
+
+      const bookedEarlyMorningInPhuket = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-02T23:00:00.000Z')
+      );
+      expect(bookedEarlyMorningInPhuket.early_bird_discount_thb).toBe(0);
+
+      // Still on 2 April in Phuket (17:00 ICT) — 60 days out, qualifies.
+      const bookedSameDayInPhuket = await computePriceBreakdown(
+        prisma, unit.id, checkIn, checkOut, 2, new Date('2026-04-02T10:00:00.000Z')
+      );
+      expect(bookedSameDayInPhuket.early_bird_discount_thb).toBe(240);
+    });
+
     it('long stay ≥28 nights uses the flat monthly rate and replaces the LOS discount', async () => {
       const project = await createProject();
       await seedLayantaraPricing(project.id, {
@@ -917,7 +965,158 @@ describe('Availability & Pricing Service', () => {
     });
   });
 
+  describe('minNightsOverride — a seasonal minimum stay (T-054)', () => {
+    // The column was written, validated, returned by the API and rendered in
+    // the admin panel, and read by nothing: setting a seasonal minimum stay
+    // did precisely nothing. The arrival night decides, which is how every OTA
+    // expresses this and the only unambiguous reading, since createPricingRule
+    // refuses overlapping rules for a unit.
+    async function unitWithArrivalRule(minNightsOverride: number | null) {
+      const project = await createProject();
+      const unit = await createUnit({
+        projectId: project.id,
+        baseNightlyThb: 1000,
+        minNights: 2,
+        maxGuests: 4,
+      });
+      await prisma.pricingRule.create({
+        data: {
+          unitId: unit.id,
+          startDate: new Date('2026-12-20'),
+          endDate: new Date('2026-12-31'),
+          nightlyThb: 5000,
+          label: 'peak',
+          minNightsOverride,
+        },
+      });
+      return unit.id;
+    }
+
+    it('refuses a stay shorter than the arrival rule’s minimum', async () => {
+      const unitId = await unitWithArrivalRule(5);
+      await expect(
+        computePriceBreakdown(
+          prisma, unitId, new Date('2026-12-22'), new Date('2026-12-26'), 2
+        )
+      ).rejects.toThrow(/below minimum of 5/);
+    });
+
+    it('permits a stay that meets it', async () => {
+      const unitId = await unitWithArrivalRule(5);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-12-22'), new Date('2026-12-27'), 2
+      );
+      expect(breakdown.lines).toHaveLength(5);
+    });
+
+    it('does not apply when arrival falls outside the rule’s window', async () => {
+      // Same 4-night stay, arriving before the peak window: the unit's own
+      // minimum of 2 governs, so this is fine.
+      const unitId = await unitWithArrivalRule(5);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-11-10'), new Date('2026-11-14'), 2
+      );
+      expect(breakdown.lines).toHaveLength(4);
+    });
+
+    it('can relax the unit minimum, not only tighten it', async () => {
+      // A floor-only reading would reject this. Dropping the minimum in low
+      // season is as much a revenue lever as raising it over peak.
+      const unitId = await unitWithArrivalRule(1);
+      const breakdown = await computePriceBreakdown(
+        prisma, unitId, new Date('2026-12-22'), new Date('2026-12-23'), 2
+      );
+      expect(breakdown.lines).toHaveLength(1);
+    });
+
+    it('falls back to the unit minimum when the rule sets no override', async () => {
+      const unitId = await unitWithArrivalRule(null);
+      await expect(
+        computePriceBreakdown(
+          prisma, unitId, new Date('2026-12-22'), new Date('2026-12-23'), 2
+        )
+      ).rejects.toThrow(/below minimum of 2/);
+    });
+  });
+
   describe('checkAvailability', () => {
+    // T-051. This function checked `blocked_date` and nothing else, so it
+    // answered "available" for a range with a confirmed booking in it. Nothing
+    // broke, because no production path called it — the booking flow enforces
+    // overlap itself in a transaction. But it is exported from the module's
+    // public interface under a name with one obvious meaning, and the next
+    // caller to trust it would have been quietly wrong.
+    describe('bookings, not just blocked dates', () => {
+      async function unitWithBooking(
+        status: 'confirmed' | 'checked_in' | 'pending_payment' | 'cancelled',
+        holdExpiresAt?: Date | null
+      ) {
+        const project = await createProject();
+        const unit = await createUnit(project.id);
+        const guest = await createIdentity();
+        await createBooking({
+          unitId: unit.id,
+          projectId: project.id,
+          guestIdentityId: guest.id,
+          startDate: new Date('2026-07-15'),
+          endDate: new Date('2026-07-20'),
+          status,
+          ...(holdExpiresAt !== undefined && { holdExpiresAt }),
+        });
+        return unit.id;
+      }
+
+      it('refuses a range a confirmed booking already occupies', async () => {
+        const unitId = await unitWithBooking('confirmed');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('refuses a range an in-progress stay occupies', async () => {
+        const unitId = await unitWithBooking('checked_in');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('refuses a range held by a live pending_payment hold', async () => {
+        const unitId = await unitWithBooking(
+          'pending_payment',
+          new Date(Date.now() + 30 * 60 * 1000)
+        );
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(false);
+      });
+
+      it('ignores a lapsed hold, matching the booking path exactly', async () => {
+        // A stricter reading here would refuse guests the booking flow would
+        // have accepted, which is a lost sale rather than a safety measure.
+        const unitId = await unitWithBooking(
+          'pending_payment',
+          new Date(Date.now() - 30 * 60 * 1000)
+        );
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(true);
+      });
+
+      it('ignores a cancelled booking', async () => {
+        const unitId = await unitWithBooking('cancelled');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-16'), new Date('2026-07-18'))
+        ).toBe(true);
+      });
+
+      it('treats checkout day as free — the next guest arrives the day one leaves', async () => {
+        const unitId = await unitWithBooking('confirmed');
+        expect(
+          await checkAvailability(prisma, unitId, new Date('2026-07-20'), new Date('2026-07-22'))
+        ).toBe(true);
+      });
+    });
+
     it('returns true when no blocked dates exist', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);

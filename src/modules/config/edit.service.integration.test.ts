@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db as prisma, resetDb, createIdentity, createProject } from '@/test/util';
 import { updateConfigParameter, clearConfigOverride } from './edit.service';
+import { getConfig, clearConfigCache } from './config.service';
 
 describe('Config edit service', () => {
   beforeEach(async () => {
@@ -449,6 +450,74 @@ describe('Config edit service', () => {
       });
 
       expect(override).toBeNull();
+    });
+  });
+});
+
+describe('a configured zero is a value, not an absence (T-058)', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  // Six read sites used `|| <literal>`, which cannot tell "nobody set this"
+  // from "somebody set it to zero". The worst was
+  // `compliance.tm30_sla_hours || 24`: its validator explicitly permits 0–24,
+  // so an operator tightening the statutory TM30 rail to zero had it silently
+  // loosened back to 24 — on the one rail CLAUDE.md says may only ever be
+  // tightened.
+  it('stores a zero TM30 SLA, which the validator permits', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    await updateConfigParameter(prisma, {
+      identityId: admin.id,
+      paramKey: 'compliance.tm30_sla_hours',
+      newValue: 0,
+    });
+    // Read it back the way the application does. This is the whole point: the
+    // old `getConfig(...) || 24` could not tell a configured 0 from an unset
+    // parameter, so the tightest possible setting of the statutory TM30 rail
+    // was silently loosened back to 24 hours.
+    clearConfigCache();
+    expect(await getConfig(prisma, 'compliance.tm30_sla_hours', {})).toBe(0);
+  });
+
+  it('stores a zero expiry warning — warn on the day itself', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    await updateConfigParameter(prisma, {
+      identityId: admin.id,
+      paramKey: 'compliance.expiry_warning_days',
+      newValue: 0,
+    });
+    await expect(
+      updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'compliance.expiry_warning_days',
+        newValue: -1,
+      })
+    ).rejects.toThrow(/whole number of days/);
+  });
+
+  it('refuses a zero token TTL, where it would lock everyone out', async () => {
+    // The guard belongs in the registry that owns the parameter (doc 04), not
+    // as a read-site fallback that would silently discard what was typed.
+    const admin = await createIdentity({ isAdmin: true });
+    await expect(
+      updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'auth.token_ttl_minutes.email_verify',
+        newValue: 0,
+      })
+    ).rejects.toThrow(/positive/);
+    await expect(
+      updateConfigParameter(prisma, {
+        identityId: admin.id,
+        paramKey: 'auth.token_ttl_minutes.password_reset',
+        newValue: 0,
+      })
+    ).rejects.toThrow(/positive/);
+    await updateConfigParameter(prisma, {
+      identityId: admin.id,
+      paramKey: 'auth.token_ttl_minutes.email_verify',
+      newValue: 1440,
     });
   });
 });

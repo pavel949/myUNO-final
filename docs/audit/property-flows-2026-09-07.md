@@ -85,7 +85,7 @@ Two real gaps:
   map or lets a guest pan one. A results-map is a screen composition (doc 06), not a mechanism.
 - **The `amenities` filter is documented in the route contract and not implemented** — and nothing
   inherits amenities from project to unit, so a project pool never makes its villas findable by
-  "pool". Blocked on a founder ruling (**Q63**, item 3).
+  "pool". Blocked on a founder ruling (**Q69**, item 3).
 
 **Fixed today:** search, the unit-detail API and category availability all now require a *live
 project*. Archiving a project used to leave its villas listed and bookable while their pages 404'd.
@@ -145,7 +145,7 @@ Found while tracing, both worth a maintainer's five minutes:
 | 2 | **A real payment rail** | Cash-first is a deliberate loop-one choice, but every card guest is currently turned away |
 | 3 | **Close the go-live gate (Q43)** | A unit can go live with an incomplete mobilization checklist; the legal gate holds but the operational one does not |
 | 4 | **Map view on search** | The strongest guest-expectation gap; the filter behind it is already built and tested |
-| 5 | **Amenity inheritance + the documented filter** | Needs the Q63 ruling first |
+| 5 | **Amenity inheritance + the documented filter** | Needs the Q69 ruling first |
 | 6 | **`BookingItem` and a persisted `Quote`** | Before multi-unit sales or a card rail that revalidates at checkout |
 
 Owner self-serve listing management is deliberately **not** on this list. If it should be, that is a

@@ -292,3 +292,112 @@ describe('changing a booking-s dates', () => {
     });
   });
 });
+
+describe('changing the party (T-060)', () => {
+  const START = new Date('2026-11-10');
+  const END = new Date('2026-11-14');
+
+  let projectId: string;
+  let unitId: string;
+  let bookingId: string;
+
+  beforeEach(async () => {
+    await resetDb();
+    await seedConfig(db);
+
+    const project = await createProject();
+    const unit = await createUnit({
+      projectId: project.id,
+      status: 'live',
+      baseNightlyThb: 100_000,
+      maxGuests: 4,
+    });
+    const guest = await createIdentity();
+
+    projectId = project.id;
+    unitId = unit.id;
+
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: START,
+      endDate: END,
+      totalThb: 400_000,
+      adults: 2,
+      children: 0,
+    });
+    bookingId = booking.id;
+  });
+
+  // The modify route used to apply adults/children with a bare
+  // `booking.update` after changeBookingDates had already returned. That write
+  // skipped the capacity check and the re-price the date path enforces — so a
+  // party could exceed the villa's `max_guests` and the price never moved.
+  it('refuses a party the unit cannot hold, and changes nothing', async () => {
+    await expect(
+      changeBookingDates(db, {
+        bookingId,
+        startDate: START,
+        endDate: END,
+        adults: 5,
+      })
+    ).rejects.toThrow(/exceeds unit max/);
+
+    const unchanged = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+    expect(unchanged.adults).toBe(2);
+  });
+
+  it('refuses a stay with no adult', async () => {
+    await expect(
+      changeBookingDates(db, { bookingId, startDate: START, endDate: END, adults: 0 })
+    ).rejects.toThrow(/at least one adult/);
+  });
+
+  it('refuses a negative party rather than letting the database do it', async () => {
+    await expect(
+      changeBookingDates(db, { bookingId, startDate: START, endDate: END, children: -1 })
+    ).rejects.toThrow(/whole number/);
+  });
+
+  it('applies a party that fits, and records it as a party change', async () => {
+    const result = await changeBookingDates(db, {
+      bookingId,
+      startDate: START,
+      endDate: END,
+      adults: 2,
+      children: 2,
+    });
+    expect(result.bookingId).toBe(bookingId);
+
+    const updated = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+    expect(updated.adults).toBe(2);
+    expect(updated.children).toBe(2);
+
+    const change = await db.bookingChange.findFirst({
+      where: { bookingId },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(change?.changeType).toBe('party');
+    expect((change?.newValue as { children?: number })?.children).toBe(2);
+  });
+
+  it('leaves the party alone when only the dates move', async () => {
+    await changeBookingDates(db, {
+      bookingId,
+      startDate: new Date('2026-11-12'),
+      endDate: new Date('2026-11-16'),
+    });
+
+    const updated = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+    expect(updated.adults).toBe(2);
+    expect(updated.children).toBe(0);
+
+    const change = await db.bookingChange.findFirst({
+      where: { bookingId },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(change?.changeType).toBe('dates');
+  });
+});

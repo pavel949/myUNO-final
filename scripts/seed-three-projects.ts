@@ -8,6 +8,7 @@
  */
 
 import { PrismaClient, Prisma } from '@prisma/client';
+import { bahtToSatang } from '../src/lib/money';
 
 const prisma = new PrismaClient();
 
@@ -76,7 +77,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.title_legendary_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',
@@ -139,7 +139,10 @@ async function seedThreeProjects() {
           sizeSqm: unit.sizeSqm,
           floor: unit.floor,
           addressSupplement: `${unit.name}, The Title Legendary, Bang Tao`,
-          baseNightlyThb: unit.baseNightlyThb,
+          // The literals above are written in baht so a human can read them
+          // ("Legendary Penthouse, 75000" is ฿75,000 a night, not ฿750).
+          // The column is satang (T-071).
+          baseNightlyThb: bahtToSatang(unit.baseNightlyThb),
           minNights: 2,
           instantBook: true,
           cancellationPolicyKey: 'policy.moderate',
@@ -179,7 +182,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.layantara_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',
@@ -250,7 +252,10 @@ async function seedThreeProjects() {
           sizeSqm: unit.sizeSqm,
           floor: unit.floor,
           addressSupplement: `${unit.name}, Layantara Villa Resort, Laguna`,
-          baseNightlyThb: unit.baseNightlyThb,
+          // The literals above are written in baht so a human can read them
+          // ("Legendary Penthouse, 75000" is ฿75,000 a night, not ฿750).
+          // The column is satang (T-071).
+          baseNightlyThb: bahtToSatang(unit.baseNightlyThb),
           minNights: 1,
           instantBook: true,
           cancellationPolicyKey: 'policy.flexible',
@@ -289,7 +294,6 @@ async function seedThreeProjects() {
         timezone: 'Asia/Bangkok',
         handbookKey: 'project.title_heritage_handbook',
         status: 'live',
-        defaultCurrency: 'THB',
         amenityKeys: [
           'pool',
           'wifi',
@@ -351,7 +355,10 @@ async function seedThreeProjects() {
           sizeSqm: unit.sizeSqm,
           floor: unit.floor,
           addressSupplement: `${unit.name}, The Title Heritage, Cherng Talay`,
-          baseNightlyThb: unit.baseNightlyThb,
+          // The literals above are written in baht so a human can read them
+          // ("Legendary Penthouse, 75000" is ฿75,000 a night, not ฿750).
+          // The column is satang (T-071).
+          baseNightlyThb: bahtToSatang(unit.baseNightlyThb),
           minNights: 1,
           instantBook: true,
           cancellationPolicyKey: 'policy.strict',

@@ -88,3 +88,10 @@ export {
   getStayReviewEligibility,
   type WriteStayReviewInput,
 } from './stay-review.service';
+
+export {
+  resolveEffectiveStayOffer,
+  type StayOfferQuery,
+  type EffectiveStayOffer,
+  type PricingTraceNight,
+} from './revenue-tariff-engine';

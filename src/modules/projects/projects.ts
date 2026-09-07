@@ -79,7 +79,6 @@ export async function createProject(input: CreateProjectInput) {
       // content itself can stay an unfilled draft).
       handbookKey: handbookKey || 'project.handbook.default',
       status,
-      defaultCurrency: 'THB',
     },
   });
 

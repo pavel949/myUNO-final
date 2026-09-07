@@ -185,7 +185,22 @@ handbook key, description key, timezone, cover media and gallery exist on the mo
 
 ---
 
-## 6. Structural gaps carried forward (unchanged from 2026-08-18, restated for completeness)
+## 6. Structural gaps — **largely closed by PR #60 while this audit was in flight**
+
+> Merged into `main` as `20260907000000_canonical_property_data_system` on 2026-09-07, after this
+> audit was written and before its fixes landed. It adds `InventoryCategory` (the sellable class as
+> an entity, project-scoped), `RatePlan` (project- or category-scoped), `SleepingSpace` and `Bed`
+> (the space hierarchy inside a unit), `CommercialOffering`, `ChannelMapping`, `ProjectOrganizationRole`
+> and `RegulatoryCredential`, plus ~25 columns on `Project` — country/region/city/district/postcode
+> as fields rather than one `address` string, lifecycle and construction status, building and floor
+> counts, phases and facilities. The list below is kept for the record of what was missing;
+> **three of the four items are now addressed at the schema level.** What the new entities do *not*
+> yet have is adoption: search, pricing and the booking path still read `Unit.categoryKey` and
+> `Unit.baseNightlyThb`, so the old and new shapes coexist. Migrating the read paths onto them —
+> and deciding what happens to `categoryKey` and the price column once they are — is the real
+> remaining work, and it is larger than any item below.
+
+### The original list (2026-08-18), for the record
 
 - **No space hierarchy.** No building/wing/zone/floor entity. A twelve-building condominium project
   is a flat list of units with free-text `floor`. This blocks per-building announcements,
@@ -196,8 +211,8 @@ handbook key, description key, timezone, cover media and gallery exist on the mo
 - **Price and min-nights live on `Unit`.** No dated rate plan; `PricingRule` overrides but does not
   own.
 
-None of these blocks the first loop. All three should be decided before the second project
-onboards, because each one gets more expensive per unit already in the system.
+None of these blocked the first loop. Three now have entities behind them; the fourth — price
+living on `Unit` — is unchanged, since `RatePlan` exists but nothing prices from it yet.
 
 ---
 

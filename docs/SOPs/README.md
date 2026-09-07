@@ -112,6 +112,26 @@ This directory contains comprehensive, step-by-step Standard Operating Procedure
 
 ---
 
+### 6. **Production Cutover — the console actions**
+`06_production_cutover.md`
+
+**Scope:** The remainder of Stage 1 of the production plan — every step that needs a console or a credential no agent has. Unlike the SOPs above, this is a one-time sequence, not a repeating business process.
+
+**Key Sections:**
+- Close the public-API exposure (four tables readable through Supabase's REST endpoint — **do this first**)
+- Verify `ENCRYPTION_KEY`, and establish whether it can still be rotated at all
+- Rotate the production credential leaked into developer `.env` files
+- Turn on error alerting and uptime monitoring
+- Enable the real scheduler (restores doc 15's 5-minute cadence at no cost)
+- Enable backups, and walk the recovery runbook once on purpose
+- Confirm what the provider's plan tier actually gives
+
+**Audience:** Founder, or an operator with Supabase, Vercel and GitHub admin access
+
+**Duration:** ~2 hours, plus one deliberate restore walk-through
+
+---
+
 ## How to Use These SOPs
 
 ### For Guests & Users

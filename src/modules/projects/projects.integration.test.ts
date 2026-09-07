@@ -26,7 +26,6 @@ describe('Projects module', () => {
       expect(project.slug).toBe('test-project');
       expect(project.name).toBe('Test Project');
       expect(project.status).toBe('draft');
-      expect(project.defaultCurrency).toBe('THB');
     });
 
     it('rejects duplicate slug', async () => {

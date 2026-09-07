@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
+import { satangToBaht } from '@/lib/money';
 
 export interface BookingModifiedChange {
   bookingId: string;
@@ -34,7 +35,7 @@ export async function notifyBookingModified(
     if (!booking || !booking.guestIdentity) return;
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const priceDeltaBaht = Math.round((change.totalThb - change.previousTotalThb) / 100);
+    const priceDeltaBaht = satangToBaht(change.totalThb - change.previousTotalThb);
     const priceDeltaLabel =
       priceDeltaBaht === 0
         ? '0'

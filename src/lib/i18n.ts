@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { t } from '@/modules/content';
+import { tMany } from '@/modules/content';
 import type { Locale } from '@/modules/content';
 
 const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
@@ -33,17 +33,23 @@ export async function getLabels<K extends string>(
   locale?: Locale
 ): Promise<Record<K, string>> {
   const resolvedLocale = locale || getRequestLocale();
+  const keyList = Object.keys(keys) as K[];
   const labels = {} as Record<K, string>;
-  await Promise.all(
-    (Object.keys(keys) as K[]).map(async (key) => {
-      try {
-        const value = await t(prisma, key, undefined, resolvedLocale);
-        // t() echoes the key (dev) or '—' (prod) when missing — use the draft instead
-        labels[key] = value && value !== key && value !== '—' ? value : keys[key];
-      } catch {
-        labels[key] = keys[key];
-      }
-    })
-  );
+
+  let resolved: Record<string, string | null> = {};
+  try {
+    // One query for the whole batch (see content.service.tMany). Previously
+    // this fired a query per key, so a page's labels alone cost ~120 round
+    // trips before anything rendered.
+    resolved = await tMany(prisma, keyList, resolvedLocale);
+  } catch {
+    // DB unreachable — every key falls through to its EN draft below.
+  }
+
+  for (const key of keyList) {
+    const value = resolved[key];
+    labels[key] = value && value !== key && value !== '\u2014' ? value : keys[key];
+  }
+
   return labels;
 }

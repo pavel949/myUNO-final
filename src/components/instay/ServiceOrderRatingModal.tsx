@@ -26,8 +26,11 @@ export const ServiceOrderRatingModal: React.FC<ServiceOrderRatingModalProps> = (
     errorSubmit: labels['services.rating.error_submit'] ?? 'Failed to submit rating',
     errorGeneric: labels['services.rating.error_generic'] ?? 'An error occurred',
     buttonCancel: labels['services.rating.button_cancel'] ?? 'Cancel',
-    buttonSubmit: labels['services.rating.button_submit'] ?? 'Submit Rating',
+    buttonSubmit: labels['services.rating.button_submit'] ?? 'Submit rating',
     buttonSubmitting: labels['services.rating.button_submitting'] ?? 'Submitting...',
+    // {n} is substituted with the star value — the screen-reader name for each
+    // star button, which otherwise announces as an unlabelled glyph.
+    starLabel: labels['services.rating.star_label'] ?? '{n} out of 5',
   };
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState('');
@@ -80,21 +83,23 @@ export const ServiceOrderRatingModal: React.FC<ServiceOrderRatingModalProps> = (
 
         <form onSubmit={handleSubmit} className="space-y-20">
           {/* Star rating */}
-          <div>
-            <label className="block text-small font-medium text-text-ink mb-12">
+          <div role="group" aria-label={text.question}>
+            <p className="block text-small font-medium text-text-ink mb-12">
               {text.question}
-            </label>
+            </p>
             <div className="flex gap-8 justify-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className={`text-32 transition ${
+                  aria-label={text.starLabel.replace('{n}', String(star))}
+                  aria-pressed={star <= rating}
+                  className={`flex h-44 w-44 items-center justify-center text-display leading-none transition ${
                     star <= rating ? 'text-brand-sun' : 'text-text-secondary'
                   }`}
                 >
-                  ★
+                  <span aria-hidden="true">★</span>
                 </button>
               ))}
             </div>
@@ -116,8 +121,11 @@ export const ServiceOrderRatingModal: React.FC<ServiceOrderRatingModalProps> = (
 
           {/* Error message */}
           {error && (
-            <div className="p-12 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-small text-red-700">{error}</p>
+            <div
+              role="alert"
+              className="p-12 bg-state-error-soft border border-state-error rounded-md"
+            >
+              <p className="text-small text-state-error">{error}</p>
             </div>
           )}
 

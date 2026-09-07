@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { AccountProfile } from '@/modules/core';
+import { Input } from '@/components/Input';
 
 interface Setting {
   type: string;
@@ -28,9 +29,39 @@ export default function AccountClient({
   const [settings, setSettings] = useState<Setting[]>([]);
   const [unmutable, setUnmutable] = useState<string[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [consent, setConsent] = useState<Array<{ purpose: string; status: string | null }>>([]);
+  const [withdrawable, setWithdrawable] = useState<string[]>([]);
+  const [consentError, setConsentError] = useState<string | null>(null);
+
+  // Consent is a ledger: each change appends a decision, so the server
+  // returns the new position rather than the screen assuming it.
+  const setConsentFor = async (purpose: string, granted: boolean) => {
+    setConsentError(null);
+    const res = await fetch('/api/account/consent', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ purpose, granted }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setConsentError(body?.error ?? labels['account.error']);
+      return;
+    }
+    setConsent(body.summary ?? []);
+  };
   const [exportState, setExportState] = useState<'idle' | 'exporting' | 'error'>('idle');
 
   useEffect(() => {
+    fetch('/api/account/consent')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setConsent(data.summary ?? []);
+          setWithdrawable(data.withdrawable ?? []);
+        }
+      })
+      .catch(() => setConsentError(labels['account.error']));
+
     fetch('/api/account/notifications')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -125,22 +156,16 @@ export default function AccountClient({
             {labels['account.profile.title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['account.profile.first_name']}</span>
-              <input
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-              />
-            </label>
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['account.profile.last_name']}</span>
-              <input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-              />
-            </label>
+            <Input
+              label={labels['account.profile.first_name']}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+            <Input
+              label={labels['account.profile.last_name']}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
           </div>
 
           <label className="block mb-16">
@@ -190,24 +215,18 @@ export default function AccountClient({
           {profile.hasPassword ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
-                <label className="block">
-                  <span className="text-small text-text-secondary">{labels['account.password.current']}</span>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-small text-text-secondary">{labels['account.password.new']}</span>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                  />
-                </label>
+                <Input
+                  label={labels['account.password.current']}
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <Input
+                  label={labels['account.password.new']}
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
               <button
                 type="button"
@@ -246,6 +265,40 @@ export default function AccountClient({
           {exportState === 'error' && (
             <p className="mt-12 text-small text-state-error">{labels['account.privacy.export_error']}</p>
           )}
+        </section>
+
+        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+            {labels['account.consent.title']}
+          </h2>
+          <p className="text-small text-text-secondary mb-16">
+            {labels['account.consent.intro']}
+          </p>
+          {consentError && <p className="text-small text-state-error mb-16">{consentError}</p>}
+          <ul className="flex flex-col gap-12">
+            {consent
+              .filter((row) => withdrawable.includes(row.purpose))
+              .map((row) => (
+                <li key={row.purpose} className="flex items-center justify-between gap-16">
+                  <span className="text-body text-text-ink">
+                    {labels[`account.consent.purpose.${row.purpose}`] ?? row.purpose}
+                  </span>
+                  <label className="inline-flex items-center gap-8 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={row.status === 'granted'}
+                      onChange={(e) => setConsentFor(row.purpose, e.target.checked)}
+                      className="h-20 w-20 rounded-sm border-border-line accent-brand-andaman"
+                    />
+                    <span className="text-small text-text-secondary">
+                      {row.status === 'granted'
+                        ? labels['account.consent.granted']
+                        : labels['account.consent.withdrawn']}
+                    </span>
+                  </label>
+                </li>
+              ))}
+          </ul>
         </section>
 
         <section className="bg-surface-paper border border-border-line rounded-lg p-24">

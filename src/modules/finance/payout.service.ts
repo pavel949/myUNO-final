@@ -1,5 +1,6 @@
 import { PrismaClient, Payout } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { satangToBaht } from '@/lib/money';
 
 export type PayoutPeriodCadence = 'weekly' | 'biweekly' | 'monthly';
 
@@ -262,11 +263,10 @@ export async function getReconciliationData(db: PrismaClient) {
   // (never sent back — the board's actions post ids/reasons, not amounts),
   // so every *Thb/*Amount figure is converted from satang (THB x 100) to
   // baht here, once, at the response boundary.
-  const toBaht = (satang: number) => Math.round(satang / 100);
   return {
     unmatchedPayments: unmatchedPayments.map((p) => ({
       id: p.id,
-      amountThb: toBaht(p.amountThb),
+      amountThb: satangToBaht(p.amountThb),
       method: p.method,
       purpose: p.purpose,
       status: p.status,
@@ -278,8 +278,8 @@ export async function getReconciliationData(db: PrismaClient) {
     failedRefunds: failedRefunds.map((r) => ({
       id: r.id,
       paymentId: r.paymentId,
-      paymentAmount: toBaht(r.payment.amountThb),
-      refundAmount: toBaht(r.amountThb),
+      paymentAmount: satangToBaht(r.payment.amountThb),
+      refundAmount: satangToBaht(r.amountThb),
       reason: r.reason,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
@@ -288,7 +288,7 @@ export async function getReconciliationData(db: PrismaClient) {
     pendingPayouts: pendingPayouts.map((p) => ({
       id: p.id,
       payeeType: p.payeeType,
-      amountThb: toBaht(p.amountThb),
+      amountThb: satangToBaht(p.amountThb),
       reference: p.reference,
       executedOn: p.executedOn.toISOString().split('T')[0],
       status: p.status,

@@ -209,11 +209,38 @@ const API_ENTRY_POINTS = new Set([
  * it here — should shrink this list, never grow it back.
  */
 const API_DEBT = new Set([
-  // SSE endpoints that exist and work, but the frontend they were built for
-  // polls instead (NotificationBell polls /api/notifications every 30s) —
-  // built, never adopted.
+  // Two SSE endpoints that cannot work on this deployment target, kept only
+  // until the founder rules on deleting them (Q59, plan D-9). Do NOT wire
+  // these up to replace the polling in NotificationBell — that would trade
+  // working polling for silence:
+  //   - notification.bus's publishNotification() is called from nowhere, so
+  //     /api/notifications/stream has no publisher even single-process;
+  //   - both buses are per-isolate in-memory Maps (see the bus header), so a
+  //     serverless subscriber is invisible to the publisher's isolate;
+  //   - an SSE response holds a serverless function open against its
+  //     execution-duration cap, so the connection is cut and re-established
+  //     no less often than the 30s poll it would replace.
   '/api/notifications/stream',
   '/api/threads/[threadId]/stream',
+
+  // The API half of the dead CRM island. These five were called only by the
+  // eleven unreachable components under `src/app/components/crm/`, deleted in
+  // this change; the CRM a person actually uses runs on `/api/admin/crm/*`,
+  // which is a second, parallel implementation. So they are not "not wired
+  // yet" — they are provably unreachable, and the same two sessions that
+  // maintained the island maintained these. (`/api/crm/dashboard/summary` and
+  // `/api/crm/dashboard/next-actions` are the exception and stay off this
+  // list: the admin CRM page's dashboard panel calls both.)
+  //
+  // Listed rather than deleted in the same commit, deliberately: an HTTP route
+  // can have callers this repository cannot see, and removing one is a
+  // decision to make on its own rather than as a side effect of a UI cleanup.
+  // The recommendation is to delete all five once that is confirmed.
+  '/api/crm/opportunities',
+  '/api/crm/opportunities/[id]',
+  '/api/crm/opportunities/[id]/activities',
+  '/api/crm/opportunities/[id]/stage',
+  '/api/crm/activities/[id]',
 ]);
 
 describe('every API route can be reached', () => {

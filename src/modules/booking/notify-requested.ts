@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
+import { satangToBaht } from '@/lib/money';
 
 /**
  * Fan-out when a request-to-book is created (doc 07 F-GUEST-4):
@@ -25,7 +26,7 @@ export async function notifyBookingRequested(
     if (!booking || !booking.guestIdentity) return;
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const totalBaht = Math.round(booking.totalThb / 100);
+    const totalBaht = satangToBaht(booking.totalThb);
     const params = {
       booking_id: booking.id,
       unit_name: booking.unit?.name || '',

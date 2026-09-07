@@ -82,7 +82,48 @@ Following v3 §36, loop one **instruments** the high-leverage points and keeps t
 
 TM30 24-hour rule as a first-class SLA object; per-unit permitted-use confirmation gate before go-live; no FX operation; no fund-holding; PDPA handling of passports/PII with field-level encryption and retention rules (doc 12); THB as the single money currency in loop one.
 
-## 12. Decision register
+## 12. D11 — THB is the only currency in loop one, and the code says so
+
+D10 already carried "THB as the single money currency in loop one" as a
+non-negotiable. This makes it a decision in its own right, because the code had
+started to disagree with it in both directions at once.
+
+**What the code actually said.** `Project.defaultCurrency` existed as a column,
+written in five places (all of them the literal `'THB'`) and **read in none** —
+a schema asserting per-project currency that nothing honoured. Meanwhile the
+payment seam types were the string literal `'THB'`, so a second currency was a
+compile error across the finance module. The database promised something the
+types forbade.
+
+**The decision.** THB only. The column is dropped, the seam keeps its literal
+type, and the decision lives here — in the document where decisions live and
+where anyone looking for it will actually look — rather than in a database
+column nobody reads. A field that misdescribes the system's capability is worse
+than no field: it invites a future contributor to believe multi-currency is
+half-built and to extend it, when in fact nothing behind it works.
+
+**Amounts are integer satang** (THB × 100) everywhere in the domain layer, the
+database and the payment seam. Baht exists only at the two edges — what a person
+reads, and what a person types — and both conversions belong to `src/lib/money.ts`.
+That module exists because the conversion had been reimplemented at every
+boundary, which is exactly how Q47 happened, and then Q49 and Q50, its two
+write-path mirrors, where a provider's price edit and an admin's NOI cap were
+stored 100× too low.
+
+**What reopens this.** **Q22** — owner payouts to a non-THB account. That is the
+first real requirement for a second currency, and it is a genuine one for
+foreign owners. When it is ruled, this decision changes first and the suite
+follows: `src/lib/money.ts` grows a currency dimension, the seam's literal type
+widens, and a per-project or per-owner currency column comes back — wired, that
+time. Nothing about dropping the column now makes that harder; re-adding an
+unread column is one migration, and it would have needed wiring either way.
+
+**What this is not.** Not a change to the FX prohibition (D10): the platform
+still never operates currency exchange, and routes to a licensed exchanger
+(AMLO). Charging in one currency and never converting is precisely what keeps
+that line clean.
+
+## 13. Decision register
 
 | # | Decision | Status |
 |---|---|---|
@@ -96,5 +137,6 @@ TM30 24-hour rule as a first-class SLA object; per-unit permitted-use confirmati
 | D8 | Thin OTA (iCal) + capture in loop one | **Locked** |
 | D9 | Instrument high-leverage points only | **Locked** |
 | D10 | Legal non-negotiables in every spec | **Locked** (constitution) |
+| D11 | THB only in loop one; satang integers; one money module | **Locked** (2026-09-05); reopens on Q22 |
 
 *Everything downstream (docs 02–16) is written to these decisions. If any decision must move, this document changes first and the suite follows.*

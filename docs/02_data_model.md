@@ -232,7 +232,7 @@ only so that a caller who disagrees is refused rather than silently corrected.
 **A unit cannot be re-parented.** `updateUnit` accepts no `projectId`, and with
 `@@unique([projectId, name])` plus the money history hanging off both ids, moving
 one is a migration rather than an edit. Whether it should ever be possible is
-**Q63**.
+**Q69**.
 
 ### 2.6 `UnitEngagement` — how the unit is on the platform (the economics selector)
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { getApplicableNightlyPrice } from '@/modules/core';
@@ -22,8 +23,8 @@ import { listAreas, collectDescendantIds } from '@/modules/projects';
  * - endDate?: ISO date string
  * - adultsCount?: number
  * - childrenCount?: number
- * - minPrice?: number (THB)
- * - maxPrice?: number (THB)
+ * - minPrice?: number (baht, as the guest types it — converted to satang here)
+ * - maxPrice?: number (baht, as the guest types it — converted to satang here)
  * - amenities?: comma-separated amenity keys
  * - unitTypes?: comma-separated unit type keys
  * - bedrooms?: number (exact)
@@ -55,11 +56,15 @@ export async function GET(req: NextRequest) {
     const childrenCount = searchParams.get('childrenCount')
       ? parseInt(searchParams.get('childrenCount')!)
       : undefined;
+    // The filter labels ask the guest for "Min/Max nightly THB", so these
+    // arrive in baht. `baseNightlyThb` is satang, and comparing the two
+    // directly made the ceiling 100x too tight: "max ฿10,000" matched only
+    // units under ฿100 a night, which is to say nothing (T-071).
     const minPrice = searchParams.get('minPrice')
-      ? parseInt(searchParams.get('minPrice')!)
+      ? bahtToSatang(parseInt(searchParams.get('minPrice')!))
       : undefined;
     const maxPrice = searchParams.get('maxPrice')
-      ? parseInt(searchParams.get('maxPrice')!)
+      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!))
       : undefined;
     const unitTypesStr = searchParams.get('unitTypes');
     const bedrooms = searchParams.get('bedrooms')
@@ -156,8 +161,17 @@ export async function GET(req: NextRequest) {
       status: 'live',
       project: projectFilter,
       ...projectScope,
-      ...(minPrice !== undefined && { baseNightlyThb: { gte: minPrice } }),
-      ...(maxPrice !== undefined && { baseNightlyThb: { lte: maxPrice } }),
+      // One key, both bounds. Spreading them as two `baseNightlyThb` entries
+      // meant the second overwrote the first, so setting a floor *and* a
+      // ceiling silently dropped the floor (T-071).
+      ...(minPrice !== undefined || maxPrice !== undefined
+        ? {
+            baseNightlyThb: {
+              ...(minPrice !== undefined && { gte: minPrice }),
+              ...(maxPrice !== undefined && { lte: maxPrice }),
+            },
+          }
+        : {}),
       ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),

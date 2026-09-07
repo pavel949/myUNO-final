@@ -4,7 +4,7 @@ import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
-import { ensureDepositPreauthOnStayConfirmed, voidDepositPreauthIfClean } from '@/modules/finance';
+import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
@@ -647,7 +647,21 @@ export async function checkOutBooking(
     identityId: checkedOut.guestIdentityId,
   }).catch(() => null);
 
-  await voidDepositPreauthIfClean(db, bookingId).catch(() => null);
+  // The deposit pre-authorization is deliberately NOT released here.
+  //
+  // It used to be, unconditionally, on every check-out. That defeated the
+  // damage-claim flow entirely: `fileDepositClaim` allows a claim for
+  // `booking.deposit.claim_window_hours` (48 by default) *after* check-out, and
+  // `captureDepositPreauthOnClaim` refuses anything that is not still
+  // `authorized`. So the claim window opened at exactly the moment the deposit
+  // became uncapturable, and `getStaysOpenToClaim` — which shows staff the
+  // hours they have left to act — was counting down against a hold that no
+  // longer existed.
+  //
+  // Release is now `releaseExpiredDepositPreauths` (a scheduled job), which
+  // voids the hold once the window has closed with nothing outstanding. That
+  // makes the documented window real without deciding when a deposit *should*
+  // be released, which is still open (Q46).
 
   return checkedOut;
 }
@@ -887,9 +901,28 @@ export async function changeBookingDates(
     startDate: Date;
     endDate: Date;
     actorIdentityId?: string;
+    /**
+     * A new party, when the guest is changing it. Carried here rather than
+     * applied separately afterwards so it is priced, validated and recorded in
+     * the same transaction as the dates — see the note at the re-price below.
+     */
+    adults?: number;
+    children?: number;
   }
 ): Promise<ChangeDatesResult> {
   const { bookingId, startDate, endDate, actorIdentityId } = input;
+
+  for (const [name, value] of [
+    ['adults', input.adults],
+    ['children', input.children],
+  ] as const) {
+    if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      throw new Error(`${name} must be a whole number, zero or more`);
+    }
+  }
+  if (input.adults !== undefined && input.adults < 1) {
+    throw new Error('A stay needs at least one adult');
+  }
 
   if (endDate <= startDate) {
     throw new Error('The new end date must be after the new start date');
@@ -950,12 +983,24 @@ export async function changeBookingDates(
       throw err;
     }
 
+    // The party is priced here, with the dates, rather than written
+    // afterwards. The route used to apply adults/children with a bare
+    // `booking.update` once this function had already returned, which meant a
+    // party change was never re-priced and never checked against the unit's
+    // capacity — `computePriceBreakdown` refuses a party over `max_guests`,
+    // and that check was simply being stepped around. Occupancy is
+    // adults + children; infants are excluded by the same convention the
+    // breakdown uses.
+    const adults = input.adults ?? booking.adults;
+    const children = input.children ?? booking.children;
+    const partyChanged = adults !== booking.adults || children !== booking.children;
+
     const breakdown = await computePriceBreakdown(
       tx as PrismaClient,
       booking.unitId,
       startDate,
       endDate,
-      booking.adults + booking.children
+      adults + children
     );
 
     const previousTotalThb = booking.totalThb;
@@ -969,7 +1014,14 @@ export async function changeBookingDates(
 
     const updated = await tx.booking.update({
       where: { id: bookingId },
-      data: { startDate, endDate, totalThb, balanceDueThb, refundAccruedThb },
+      data: {
+        startDate,
+        endDate,
+        totalThb,
+        balanceDueThb,
+        refundAccruedThb,
+        ...(partyChanged && { adults, children }),
+      },
     });
 
     // The price breakdown is immutable once set, so the new pricing lives on the
@@ -977,16 +1029,18 @@ export async function changeBookingDates(
     await tx.bookingChange.create({
       data: {
         bookingId,
-        changeType: 'dates',
+        changeType: partyChanged ? 'party' : 'dates',
         oldValue: {
           startDate: booking.startDate.toISOString(),
           endDate: booking.endDate.toISOString(),
           totalThb: previousTotalThb,
+          ...(partyChanged && { adults: booking.adults, children: booking.children }),
         },
         newValue: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           totalThb,
+          ...(partyChanged && { adults, children }),
           priceBreakdown: { ...breakdown } as any,
         } as any,
         priceDeltaThb: difference,

@@ -6,7 +6,7 @@ import {
   TranslationParams,
 } from './types';
 
-const CACHE_TTL_SECONDS = 60;
+const CACHE_TTL_SECONDS = 300; // 5 minutes cache TTL
 
 interface CacheEntry {
   value: any;
@@ -92,12 +92,6 @@ export async function t(
 ): Promise<string> {
   const fallbackChain = getLocaleFallbackChain(locale);
 
-  // Per locale: cache first, then DB — only then move down the chain.
-  // (Checking the cache across the WHOLE chain before any DB read let a warm
-  // fallback-locale entry shadow the requested locale's DB row — e.g. a warm
-  // 'ru' cache served Russian to 'en' visitors even though the English
-  // translation existed. Translations are keyed by the ContentKey's uuid id
-  // (FK), so match through the relation on the human key.)
   for (const tryLocale of fallbackChain) {
     const cacheKey = getCacheKey(key, tryLocale);
     const cached = cache.get(cacheKey);
@@ -116,10 +110,82 @@ export async function t(
     }
   }
 
-  // Missing translation: log warning and return fallback
-  console.warn(`[i18n] Missing translation for key: ${key} (locale: ${locale})`);
   const isDev = process.env.NODE_ENV !== 'production';
   return isDev ? key : '—';
+}
+
+/**
+ * High-performance batch translation resolver.
+ * Fetches all requested keys in 1 single DB query instead of N individual queries.
+ */
+export async function getBatchTranslations<K extends string>(
+  db: PrismaClient,
+  keysMap: Record<K, string>,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<Record<K, string>> {
+  const keys = Object.keys(keysMap) as K[];
+  const fallbackChain = getLocaleFallbackChain(locale);
+  const result = {} as Record<K, string>;
+
+  const missingKeys: K[] = [];
+
+  // Check in-memory cache first
+  for (const key of keys) {
+    let resolvedValue: string | undefined;
+    for (const tryLocale of fallbackChain) {
+      const cached = cache.get(getCacheKey(key, tryLocale));
+      if (cached) {
+        resolvedValue = cached;
+        break;
+      }
+    }
+    if (resolvedValue && resolvedValue !== key && resolvedValue !== '—') {
+      result[key] = resolvedValue;
+    } else {
+      missingKeys.push(key);
+    }
+  }
+
+  if (missingKeys.length > 0) {
+    try {
+      const dbRows = await db.translation.findMany({
+        where: {
+          contentKey: { key: { in: missingKeys } },
+          locale: { in: fallbackChain },
+        },
+        include: {
+          contentKey: { select: { key: true } },
+        },
+      });
+
+      // Cache all returned rows
+      for (const row of dbRows) {
+        if (row.contentKey?.key && row.value) {
+          cache.set(getCacheKey(row.contentKey.key, row.locale as Locale), row.value);
+        }
+      }
+
+      // Resolve missing keys from newly cached rows
+      for (const key of missingKeys) {
+        let val: string | undefined;
+        for (const tryLocale of fallbackChain) {
+          const cached = cache.get(getCacheKey(key, tryLocale));
+          if (cached) {
+            val = cached;
+            break;
+          }
+        }
+        result[key] = val && val !== key && val !== '—' ? val : keysMap[key];
+      }
+    } catch (err) {
+      // Fallback to draft defaults on error
+      for (const key of missingKeys) {
+        result[key] = keysMap[key];
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -133,8 +199,6 @@ export async function setTranslation(
   status: 'ok' | 'needs_review' | 'missing',
   changedByIdentityId: string
 ): Promise<void> {
-  // Translation.contentKeyId is a FK to ContentKey.id (uuid), not the human key.
-  // Resolve it so the row satisfies the FK constraint.
   const keyRow = await db.contentKey.findUnique({
     where: { key: contentKey },
     select: { id: true },

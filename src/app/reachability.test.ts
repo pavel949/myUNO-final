@@ -222,6 +222,25 @@ const API_DEBT = new Set([
   //     no less often than the 30s poll it would replace.
   '/api/notifications/stream',
   '/api/threads/[threadId]/stream',
+
+  // The API half of the dead CRM island. These five were called only by the
+  // eleven unreachable components under `src/app/components/crm/`, deleted in
+  // this change; the CRM a person actually uses runs on `/api/admin/crm/*`,
+  // which is a second, parallel implementation. So they are not "not wired
+  // yet" — they are provably unreachable, and the same two sessions that
+  // maintained the island maintained these. (`/api/crm/dashboard/summary` and
+  // `/api/crm/dashboard/next-actions` are the exception and stay off this
+  // list: the admin CRM page's dashboard panel calls both.)
+  //
+  // Listed rather than deleted in the same commit, deliberately: an HTTP route
+  // can have callers this repository cannot see, and removing one is a
+  // decision to make on its own rather than as a side effect of a UI cleanup.
+  // The recommendation is to delete all five once that is confirmed.
+  '/api/crm/opportunities',
+  '/api/crm/opportunities/[id]',
+  '/api/crm/opportunities/[id]/activities',
+  '/api/crm/opportunities/[id]/stage',
+  '/api/crm/activities/[id]',
 ]);
 
 describe('every API route can be reached', () => {

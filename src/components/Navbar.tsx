@@ -102,10 +102,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         <div className="flex items-center gap-40">
           <Link
             href="/"
-            className="font-display text-heading-3 font-bold text-brand-andaman"
+            className="font-display text-heading-3 font-bold text-brand-andaman flex items-center gap-2"
             onClick={closeMenu}
           >
-            myUNO
+            <span className="opacity-60 font-light">my</span>
+            <span>UN</span>
+            <span className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-brand-andaman relative">
+              <span className="w-6 h-6 rounded-full bg-brand-sun" />
+            </span>
           </Link>
           <div className="hidden md:flex flex-wrap items-center gap-x-24 gap-y-8">
             <Link href="/search" className={navLinkClass(pathname, '/search')}>

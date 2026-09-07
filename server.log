@@ -1,0 +1,316 @@
+
+> myuno@0.1.0 start
+> next start
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 643ms
+[i18n] Missing translation for key: landing.hero.kicker (locale: ru)
+[i18n] Missing translation for key: landing.search.submit (locale: ru)
+[i18n] Missing translation for key: landing.promise.stay_body (locale: ru)
+[i18n] Missing translation for key: landing.promise.stay (locale: ru)
+[i18n] Missing translation for key: landing.promise.live (locale: ru)
+[i18n] Missing translation for key: landing.promise.live_body (locale: ru)
+[i18n] Missing translation for key: landing.search.check_in (locale: ru)
+[i18n] Missing translation for key: landing.hero.title (locale: ru)
+[i18n] Missing translation for key: landing.hero.subtitle (locale: ru)
+[i18n] Missing translation for key: landing.search.adults (locale: ru)
+[i18n] Missing translation for key: landing.search.check_out (locale: ru)
+[i18n] Missing translation for key: landing.search.children (locale: ru)
+[i18n] Missing translation for key: landing.promise.own_body (locale: ru)
+[i18n] Missing translation for key: landing.promise.own (locale: ru)
+[i18n] Missing translation for key: landing.doors.title (locale: ru)
+[i18n] Missing translation for key: audience.developers.title (locale: ru)
+[i18n] Missing translation for key: audience.owners.title (locale: ru)
+[i18n] Missing translation for key: audience.owners.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.owners.cta (locale: ru)
+[i18n] Missing translation for key: audience.guests.title (locale: ru)
+[i18n] Missing translation for key: audience.guests.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.guests.cta (locale: ru)
+[i18n] Missing translation for key: audience.developers.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.mc.subtitle (locale: ru)
+[i18n] Missing translation for key: landing.trust.handled (locale: ru)
+[i18n] Missing translation for key: landing.trust.handled_body (locale: ru)
+[i18n] Missing translation for key: audience.mc.cta (locale: ru)
+[i18n] Missing translation for key: audience.providers.title (locale: ru)
+[i18n] Missing translation for key: landing.trust.protected (locale: ru)
+[i18n] Missing translation for key: audience.developers.cta (locale: ru)
+[i18n] Missing translation for key: audience.providers.subtitle (locale: ru)
+[i18n] Missing translation for key: landing.trust.protected_body (locale: ru)
+[i18n] Missing translation for key: audience.buyers.title (locale: ru)
+[i18n] Missing translation for key: landing.trust.cta (locale: ru)
+[i18n] Missing translation for key: audience.providers.cta (locale: ru)
+[i18n] Missing translation for key: audience.buyers.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.buyers.cta (locale: ru)
+[i18n] Missing translation for key: audience.mc.title (locale: ru)
+[i18n] Missing translation for key: landing.services.body (locale: ru)
+[i18n] Missing translation for key: landing.services.title (locale: ru)
+[i18n] Missing translation for key: landing.services.cta (locale: ru)
+[i18n] Missing translation for key: landing.trust.verified (locale: ru)
+[i18n] Missing translation for key: landing.trust.title (locale: ru)
+[i18n] Missing translation for key: nav.find_stay (locale: ru)
+[i18n] Missing translation for key: nav.logout (locale: ru)
+[i18n] Missing translation for key: landing.trust.verified_body (locale: ru)
+[i18n] Missing translation for key: nav.stay (locale: ru)
+[i18n] Missing translation for key: nav.locale.ru (locale: ru)
+[i18n] Missing translation for key: nav.my_trips (locale: ru)
+[i18n] Missing translation for key: nav.residences (locale: ru)
+[i18n] Missing translation for key: nav.messages (locale: ru)
+[i18n] Missing translation for key: nav.locale.th (locale: ru)
+[i18n] Missing translation for key: nav.residence (locale: ru)
+[i18n] Missing translation for key: nav.services (locale: ru)
+[i18n] Missing translation for key: nav.tickets (locale: ru)
+[i18n] Missing translation for key: nav.locale.zh (locale: ru)
+[i18n] Missing translation for key: nav.bell_empty (locale: ru)
+[i18n] Missing translation for key: nav.juristic_portal (locale: ru)
+[i18n] Missing translation for key: nav.orders (locale: ru)
+[i18n] Missing translation for key: nav.owners (locale: ru)
+[i18n] Missing translation for key: nav.trust (locale: ru)
+[i18n] Missing translation for key: nav.bell_mark_all (locale: ru)
+[i18n] Missing translation for key: nav.provider_portal (locale: ru)
+[i18n] Missing translation for key: nav.buying (locale: ru)
+[i18n] Missing translation for key: nav.owner_dashboard (locale: ru)
+[i18n] Missing translation for key: nav.login (locale: ru)
+[i18n] Missing translation for key: nav.mc_portal (locale: ru)
+[i18n] Missing translation for key: nav.bell_aria (locale: ru)
+[i18n] Missing translation for key: nav.ops (locale: ru)
+[i18n] Missing translation for key: nav.register (locale: ru)
+[i18n] Missing translation for key: nav.about (locale: ru)
+[i18n] Missing translation for key: nav.admin (locale: ru)
+[i18n] Missing translation for key: nav.language (locale: ru)
+[i18n] Missing translation for key: nav.account (locale: ru)
+[i18n] Missing translation for key: nav.locale.en (locale: ru)
+[i18n] Missing translation for key: nav.menu (locale: ru)
+[i18n] Missing translation for key: nav.footer.home (locale: ru)
+[i18n] Missing translation for key: nav.footer.brand_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.guests (locale: ru)
+[i18n] Missing translation for key: nav.footer.legal_index (locale: ru)
+[i18n] Missing translation for key: nav.footer.ombudsman (locale: ru)
+[i18n] Missing translation for key: nav.footer.developers (locale: ru)
+[i18n] Missing translation for key: nav.footer.buyers (locale: ru)
+[i18n] Missing translation for key: nav.footer.legal_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.management (locale: ru)
+[i18n] Missing translation for key: nav.footer.terms (locale: ru)
+[i18n] Missing translation for key: nav.footer.company_line (locale: ru)
+[i18n] Missing translation for key: nav.footer.residences (locale: ru)
+[i18n] Missing translation for key: nav.footer.copyright (locale: ru)
+[i18n] Missing translation for key: nav.footer.providers (locale: ru)
+[i18n] Missing translation for key: nav.footer.privacy (locale: ru)
+[i18n] Missing translation for key: nav.footer.trust (locale: ru)
+[i18n] Missing translation for key: nav.footer.services (locale: ru)
+[i18n] Missing translation for key: nav.footer.partners_column (locale: ru)
+[i18n] Missing translation for key: nav.language (locale: ru)
+[i18n] Missing translation for key: nav.footer.about (locale: ru)
+[i18n] Missing translation for key: nav.footer.search (locale: ru)
+[i18n] Missing translation for key: nav.footer.audience_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.owners (locale: ru)
+prisma:error
+Invalid `prisma.analyticsEvent.create()` invocation:
+
+{
+  data: {
+    eventKey: "page_viewed",
+              ~~~~~~~~~~~~~
+    projectId: null,
+    unitId: null,
+    bookingId: null,
+    serviceOrderId: null,
+    identityId: null,
+    actorIdentityId: null,
+    dimensions: {
+      path: "/"
+    }
+  }
+}
+
+Invalid value for argument `eventKey`. Expected AnalyticsEventKey.
+[Analytics] Failed to track page_viewed: PrismaClientValidationError:
+Invalid `prisma.analyticsEvent.create()` invocation:
+
+{
+  data: {
+    eventKey: "page_viewed",
+              ~~~~~~~~~~~~~
+    projectId: null,
+    unitId: null,
+    bookingId: null,
+    serviceOrderId: null,
+    identityId: null,
+    actorIdentityId: null,
+    dimensions: {
+      path: "/"
+    }
+  }
+}
+
+Invalid value for argument `eventKey`. Expected AnalyticsEventKey.
+    at wn (/app/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async i (/app/.next/server/chunks/4189.js:1:1323)
+    at async c (/app/.next/server/app/api/track/route.js:1:737)
+    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943) {
+  clientVersion: '5.22.0'
+}
+[i18n] Missing translation for key: common.not_found.body (locale: ru)
+[i18n] Missing translation for key: common.not_found.title (locale: ru)
+[i18n] Missing translation for key: common.not_found.home (locale: ru)
+[i18n] Missing translation for key: projects.meta.description (locale: ru)
+[i18n] Missing translation for key: audience.owners.title (locale: ru)
+[i18n] Missing translation for key: projects.meta.title (locale: ru)
+[i18n] Missing translation for key: audience.owners.hero_lede (locale: ru)
+[i18n] Missing translation for key: about.intro (locale: ru)
+[i18n] Missing translation for key: trust.title (locale: ru)
+[i18n] Missing translation for key: trust.intro (locale: ru)
+[i18n] Missing translation for key: audience.guests.title (locale: ru)
+[i18n] Missing translation for key: about.title (locale: ru)
+[i18n] Missing translation for key: audience.guests.subtitle (locale: ru)
+[i18n] Missing translation for key: nav.find_stay (locale: ru)
+[i18n] Missing translation for key: auth.login.subtitle (locale: ru)
+[i18n] Missing translation for key: nav.residences (locale: ru)
+[i18n] Missing translation for key: auth.login.title (locale: ru)
+[i18n] Missing translation for key: auth.login.divider (locale: ru)
+[i18n] Missing translation for key: auth.login.email (locale: ru)
+[i18n] Missing translation for key: auth.login.submit (locale: ru)
+[i18n] Missing translation for key: auth.login.error_generic (locale: ru)
+[i18n] Missing translation for key: nav.locale.zh (locale: ru)
+[i18n] Missing translation for key: nav.trust (locale: ru)
+[i18n] Missing translation for key: auth.login.password (locale: ru)
+[i18n] Missing translation for key: nav.login (locale: ru)
+[i18n] Missing translation for key: nav.register (locale: ru)
+[i18n] Missing translation for key: auth.login.error_invalid_credentials (locale: ru)
+[i18n] Missing translation for key: nav.my_trips (locale: ru)
+[i18n] Missing translation for key: nav.logout (locale: ru)
+[i18n] Missing translation for key: auth.login.error_rate_limited (locale: ru)
+[i18n] Missing translation for key: nav.services (locale: ru)
+[i18n] Missing translation for key: auth.login.no_account (locale: ru)
+[i18n] Missing translation for key: nav.messages (locale: ru)
+[i18n] Missing translation for key: nav.tickets (locale: ru)
+[i18n] Missing translation for key: nav.stay (locale: ru)
+[i18n] Missing translation for key: nav.orders (locale: ru)
+[i18n] Missing translation for key: nav.about (locale: ru)
+[i18n] Missing translation for key: nav.residence (locale: ru)
+[i18n] Missing translation for key: nav.owners (locale: ru)
+[i18n] Missing translation for key: auth.login.register_link (locale: ru)
+[i18n] Missing translation for key: nav.juristic_portal (locale: ru)
+[i18n] Missing translation for key: nav.locale.en (locale: ru)
+[i18n] Missing translation for key: nav.bell_aria (locale: ru)
+[i18n] Missing translation for key: nav.language (locale: ru)
+[i18n] Missing translation for key: nav.locale.ru (locale: ru)
+[i18n] Missing translation for key: auth.login.forgot_password (locale: ru)
+[i18n] Missing translation for key: nav.buying (locale: ru)
+[i18n] Missing translation for key: nav.owner_dashboard (locale: ru)
+[i18n] Missing translation for key: nav.locale.th (locale: ru)
+[i18n] Missing translation for key: nav.bell_empty (locale: ru)
+[i18n] Missing translation for key: nav.provider_portal (locale: ru)
+[i18n] Missing translation for key: auth.login.google_button (locale: ru)
+[i18n] Missing translation for key: nav.bell_mark_all (locale: ru)
+[i18n] Missing translation for key: nav.ops (locale: ru)
+[i18n] Missing translation for key: nav.admin (locale: ru)
+[i18n] Missing translation for key: nav.account (locale: ru)
+[i18n] Missing translation for key: nav.menu (locale: ru)
+[i18n] Missing translation for key: nav.mc_portal (locale: ru)
+[i18n] Missing translation for key: nav.language (locale: ru)
+[i18n] Missing translation for key: nav.footer.about (locale: ru)
+[i18n] Missing translation for key: nav.footer.providers (locale: ru)
+[i18n] Missing translation for key: nav.footer.brand_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.partners_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.owners (locale: ru)
+[i18n] Missing translation for key: nav.footer.audience_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.developers (locale: ru)
+[i18n] Missing translation for key: nav.footer.buyers (locale: ru)
+[i18n] Missing translation for key: nav.footer.management (locale: ru)
+[i18n] Missing translation for key: nav.footer.guests (locale: ru)
+[i18n] Missing translation for key: nav.footer.legal_column (locale: ru)
+[i18n] Missing translation for key: nav.footer.privacy (locale: ru)
+[i18n] Missing translation for key: nav.footer.terms (locale: ru)
+[i18n] Missing translation for key: nav.footer.company_line (locale: ru)
+[i18n] Missing translation for key: nav.footer.home (locale: ru)
+[i18n] Missing translation for key: nav.footer.services (locale: ru)
+[i18n] Missing translation for key: nav.footer.copyright (locale: ru)
+[i18n] Missing translation for key: nav.footer.residences (locale: ru)
+[i18n] Missing translation for key: nav.footer.legal_index (locale: ru)
+[i18n] Missing translation for key: nav.footer.ombudsman (locale: ru)
+[i18n] Missing translation for key: nav.footer.trust (locale: ru)
+[i18n] Missing translation for key: nav.footer.search (locale: ru)
+prisma:error
+Invalid `prisma.analyticsEvent.create()` invocation:
+
+{
+  data: {
+    eventKey: "page_viewed",
+              ~~~~~~~~~~~~~
+    projectId: null,
+    unitId: null,
+    bookingId: null,
+    serviceOrderId: null,
+    identityId: null,
+    actorIdentityId: null,
+    dimensions: {
+      path: "/login"
+    }
+  }
+}
+
+Invalid value for argument `eventKey`. Expected AnalyticsEventKey.
+[Analytics] Failed to track page_viewed: PrismaClientValidationError:
+Invalid `prisma.analyticsEvent.create()` invocation:
+
+{
+  data: {
+    eventKey: "page_viewed",
+              ~~~~~~~~~~~~~
+    projectId: null,
+    unitId: null,
+    bookingId: null,
+    serviceOrderId: null,
+    identityId: null,
+    actorIdentityId: null,
+    dimensions: {
+      path: "/login"
+    }
+  }
+}
+
+Invalid value for argument `eventKey`. Expected AnalyticsEventKey.
+    at wn (/app/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async i (/app/.next/server/chunks/4189.js:1:1323)
+    at async c (/app/.next/server/app/api/track/route.js:1:737)
+    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943) {
+  clientVersion: '5.22.0'
+}
+[i18n] Missing translation for key: common.not_found.home (locale: ru)
+[i18n] Missing translation for key: common.not_found.title (locale: ru)
+[i18n] Missing translation for key: common.not_found.body (locale: ru)
+[i18n] Missing translation for key: audience.owners.hero_lede (locale: ru)
+[i18n] Missing translation for key: audience.owners.title (locale: ru)
+[i18n] Missing translation for key: projects.meta.title (locale: ru)
+[i18n] Missing translation for key: projects.meta.description (locale: ru)
+[i18n] Missing translation for key: about.title (locale: ru)
+[i18n] Missing translation for key: about.intro (locale: ru)
+[i18n] Missing translation for key: trust.intro (locale: ru)
+[i18n] Missing translation for key: trust.title (locale: ru)
+[i18n] Missing translation for key: audience.guests.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.guests.title (locale: ru)
+[i18n] Missing translation for key: audience.providers.title (locale: ru)
+[i18n] Missing translation for key: audience.providers.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.developers.title (locale: ru)
+[i18n] Missing translation for key: audience.developers.hero_lede (locale: ru)
+[i18n] Missing translation for key: audience.mc.title (locale: ru)
+[i18n] Missing translation for key: audience.mc.subtitle (locale: ru)
+[i18n] Missing translation for key: audience.buyers.title (locale: ru)
+[i18n] Missing translation for key: audience.buyers.subtitle (locale: ru)
+[i18n] Missing translation for key: legal.terms.title (locale: ru)
+[i18n] Missing translation for key: legal.privacy.title (locale: ru)

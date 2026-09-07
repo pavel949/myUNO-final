@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 
@@ -20,6 +20,8 @@ interface RegisterFormLabels {
 
 export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams?.get('next') || '';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -45,7 +47,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
         return;
       }
 
-      router.push('/');
+      router.push(next || '/');
       router.refresh();
     } catch {
       setError(labels.errorGeneric);
@@ -95,7 +97,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
       </Button>
       <p className="text-small text-text-secondary text-center">
         {labels.haveAccount}{' '}
-        <Link href="/login" className="text-brand-andaman font-semibold hover:underline">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-brand-andaman font-semibold hover:underline">
           {labels.loginLink}
         </Link>
       </p>

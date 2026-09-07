@@ -35,6 +35,7 @@ export interface NavbarLabels {
   register: string;
   logout: string;
   myTrips: string;
+  saved?: string;
   messages: string;
   tickets: string;
   orders: string;
@@ -84,6 +85,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         // happened to be linked, which meant an order was findable only if you
         // still had the link.
         { href: '/trips', label: labels.myTrips },
+        { href: '/saved', label: labels.saved || 'Saved' },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },

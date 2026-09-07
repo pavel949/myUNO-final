@@ -22,6 +22,7 @@ import {
 import type { HeatDay } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
+import { CHART_SEQUENTIAL } from '@/lib/design-tokens';
 
 interface Unit {
   id: string;
@@ -1057,11 +1058,11 @@ export function MCDashboardClient({
             </h2>
             <div className="flex items-center gap-16 mb-20">
               <span className="inline-flex items-center gap-6 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: '#2E7B74' }} aria-hidden />
+                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: CHART_SEQUENTIAL[3] }} aria-hidden />
                 {labels['mc.calendar.occupied']}
               </span>
               <span className="inline-flex items-center gap-6 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: '#DCEEEB' }} aria-hidden />
+                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: CHART_SEQUENTIAL[0] }} aria-hidden />
                 {labels['mc.calendar.vacant']}
               </span>
             </div>

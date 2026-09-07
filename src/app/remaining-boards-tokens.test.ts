@@ -22,7 +22,9 @@ const onboarding = readFileSync(
   join(process.cwd(), 'src/app/(admin)/app/admin/units/[id]/onboarding-client.tsx'),
   'utf8'
 );
-const tokens = readFileSync(join(process.cwd(), 'tailwind.config.ts'), 'utf8');
+// The colour values moved out of tailwind.config.ts into the token module the
+// theme is now built from, so that is where a token assertion belongs.
+const tokens = readFileSync(join(process.cwd(), 'src/lib/design-tokens.ts'), 'utf8');
 const composer = readFileSync(
   join(process.cwd(), 'src/components/announcements/AnnouncementsComposer.tsx'),
   'utf8'
@@ -88,6 +90,9 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
   it('defines the andaman wash the live chips already use', () => {
     expect(tokens).toContain("'andaman-soft'");
     expect(tokens).toContain('#E3ECEA');
+    // `andaman-soft` is an alias of state.info-soft rather than a second
+    // value — the point of the token module is that #E3ECEA is written once.
+    expect(tokens.match(/#E3ECEA/g)).toHaveLength(1);
   });
 
   it('restyles inbox, thread, integrations, apply, and onboarding on existing data', () => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { COLOR } from '@/lib/design-tokens';
 
 /**
  * The ring-and-point mark (doc 06 VerifiedBadge / trust points).
@@ -29,7 +30,7 @@ export function TrustMark({
         cx="12"
         cy="12"
         r="3"
-        fill={filled ? '#D69A3A' : 'currentColor'}
+        fill={filled ? COLOR.brand.sun : 'currentColor'}
         stroke="none"
       />
     </svg>

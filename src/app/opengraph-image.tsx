@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { COLOR } from '@/lib/design-tokens';
 
 export const runtime = 'edge';
 export const alt = 'myUNO — Serviced living in Phuket';
@@ -16,13 +17,13 @@ export default function OpengraphImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #0E4F4B 0%, #0A3733 100%)',
-          color: '#F5EFE4',
+          background: `linear-gradient(135deg, ${COLOR.brand.andaman} 0%, ${COLOR.brand.deep} 100%)`,
+          color: COLOR.surface.ivory,
           fontFamily: 'sans-serif',
         }}
       >
         <div style={{ fontSize: 96, fontWeight: 700, display: 'flex' }}>
-          my<span style={{ color: '#D69A3A' }}>UNO</span>
+          my<span style={{ color: COLOR.brand.sun }}>UNO</span>
         </div>
         <div style={{ fontSize: 36, marginTop: 24, opacity: 0.9, display: 'flex' }}>
           Serviced living in Phuket — stay, live, own

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CHART_SERIES, CHART_GRID, CHART_AXIS_TEXT } from './palette';
 import ChartTable from './ChartTable';
+import { COLOR } from '@/lib/design-tokens';
 
 export interface LinePoint {
   label: string;
@@ -105,7 +106,7 @@ export default function LineChart({
           {data.map((d, i) => (
             <g key={d.label + i}>
               {hovered === i || data.length === 1 ? (
-                <circle cx={px(i)} cy={py(d.value)} r={4} fill={color} stroke="#FBF8F1" strokeWidth={2} />
+                <circle cx={px(i)} cy={py(d.value)} r={4} fill={color} stroke={COLOR.surface.paper} strokeWidth={2} />
               ) : null}
               <text
                 x={px(i)}

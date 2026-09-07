@@ -1,67 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { handleError } from '@/app/libs/errorHandler';
-import { track } from '@/modules/analytics';
-import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getRequestLocale } from '@/lib/i18n';
-import { pickLocalizedServiceCopy } from '@/modules/services';
+import { NextResponse } from 'next/server'
+import * as svc from './service.service'
 
-// This GET uses no dynamic request API, so without this Next.js would cache
-// its response at build time — the catalog would never reflect DB changes.
-export const dynamic = 'force-dynamic';
+export async function GET(req: Request) {
+  return NextResponse.json({ ok: true, message: 'Services API root' })
+}
 
-/**
- * GET /api/services — active, vetted marketplace services (S11).
- * Public read; optional ?projectId scope (services are platform-wide in
- * loop one — the param is accepted for the project-scoped rail).
- */
-export async function GET(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
-
-    const services = await prisma.service.findMany({
-      where: {
-        status: 'active',
-        provider: { status: 'active', vetted_at: { not: null } },
-        ...(projectId && {
-          OR: [
-            { availableProjects: { none: {} } },
-            { availableProjects: { some: { project_id: projectId } } },
-          ],
-        }),
-      },
-      include: {
-        provider: { select: { id: true, name: true, vetted_at: true } },
-        coverMedia: { select: { storageKey: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
-
-    // Track analytics event
-    const viewer = await getCurrentUser().catch(() => null);
-    await track(prisma, 'service_catalog_viewed', {
-      identityId: viewer?.identityId,
-      serviceCount: services.length,
-    }).catch(() => null);
-
-    const locale = getRequestLocale();
-
-    return NextResponse.json({
-      services: services.map((s) => ({
-        id: s.id,
-        ...pickLocalizedServiceCopy(s, locale),
-        categoryKey: s.categoryKey,
-        priceModel: s.priceModel,
-        basePriceThb: s.basePriceThb,
-        durationMin: s.durationMin,
-        advanceNoticeHours: s.advanceNoticeHours,
-        providerName: s.provider?.name || null,
-        providerVetted: Boolean(s.provider?.vetted_at),
-        coverUrl: s.coverMedia?.storageKey || null,
-      })),
-    });
-  } catch (error) {
-    return handleError(error);
+    const body = await req.json()
+    if (body._op === 'createService') {
+      const created = await svc.createService(body.payload)
+      return NextResponse.json({ created })
+    }
+    return NextResponse.json({ ok: false, error: 'unknown operation' }, { status: 400 })
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
   }
 }

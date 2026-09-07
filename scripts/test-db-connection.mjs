@@ -12,6 +12,11 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.js';
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = resolveDatabaseUrl(process.env.DATABASE_URL);
+}
 
 const execAsync = promisify(exec);
 

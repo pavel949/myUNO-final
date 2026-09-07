@@ -26,6 +26,11 @@
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.js'
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = resolveDatabaseUrl(process.env.DATABASE_URL)
+}
 
 // Same cost the application uses (src/modules/auth/auth.ts). A hash written at
 // a different cost still verifies, but keeping them equal means this account is

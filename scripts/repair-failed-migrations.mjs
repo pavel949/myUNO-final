@@ -17,6 +17,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const schemaPath = join(repoRoot, 'prisma', 'schema.prisma')
@@ -35,6 +36,10 @@ function runPrisma(args) {
 }
 
 function main() {
+  if (process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = resolveDatabaseUrl(process.env.DATABASE_URL)
+  }
+
   if (!process.env.DATABASE_URL) {
     console.log('[repair] DATABASE_URL is not set - skipping migration repair')
     return

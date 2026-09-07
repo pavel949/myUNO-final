@@ -12,6 +12,12 @@
 
 import { PrismaClient } from '@prisma/client';
 import { bahtToSatang } from '../src/lib/money';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl';
+
+const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL);
+if (databaseUrl && databaseUrl !== process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = databaseUrl;
+}
 
 const prisma = new PrismaClient();
 

@@ -1,4 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl';
+
+const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL);
+if (databaseUrl && databaseUrl !== process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = databaseUrl;
+}
+
 import { seedConfig } from '../src/modules/config/seed';
 import { seedContent } from '../src/modules/content/seed';
 import { seedAudienceFAQs } from '../src/modules/content/audience-faq.seed';

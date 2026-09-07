@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { seedConfig } from '../src/modules/config/seed';
 import { seedContent } from '../src/modules/content/seed';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl';
+
+const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL);
+if (databaseUrl && databaseUrl !== process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = databaseUrl;
+}
 
 /**
  * The registries-only seed — safe to run against production.

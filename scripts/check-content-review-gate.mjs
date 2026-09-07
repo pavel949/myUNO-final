@@ -12,6 +12,11 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.js';
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = resolveDatabaseUrl(process.env.DATABASE_URL);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prisma = new PrismaClient();

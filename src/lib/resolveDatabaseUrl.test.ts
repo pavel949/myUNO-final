@@ -90,4 +90,30 @@ describe('resolveDatabaseUrl', () => {
     expect(resolveDatabaseUrl(undefined)).toBeUndefined();
     expect(resolveDatabaseUrl('not-a-url')).toBe('not-a-url');
   });
+
+  it('correctly maps user direct connection string to session pooler', () => {
+    const raw = 'postgresql://postgres:dummy_password_123@db.burcnghheyzbzffzgmjz.supabase.co:5432/postgres';
+    const resolved = resolveDatabaseUrl(raw)!;
+    const url = new URL(resolved);
+    expect(url.hostname).toBe('aws-1-ap-south-1.pooler.supabase.com');
+    expect(url.port).toBe('5432');
+    expect(url.username).toBe('postgres.burcnghheyzbzffzgmjz');
+    expect(url.password).toBe('dummy_password_123');
+    expect(url.pathname).toBe('/postgres');
+    expect(url.searchParams.get('sslmode')).toBe('require');
+    expect(url.searchParams.get('connection_limit')).toBe('1');
+  });
+
+  it('correctly maps user transaction pooler connection string to session pooler', () => {
+    const raw = 'postgresql://postgres.burcnghheyzbzffzgmjz:dummy_password_123@aws-1-ap-south-1.pooler.supabase.com:6543/postgres';
+    const resolved = resolveDatabaseUrl(raw)!;
+    const url = new URL(resolved);
+    expect(url.hostname).toBe('aws-1-ap-south-1.pooler.supabase.com');
+    expect(url.port).toBe('5432');
+    expect(url.username).toBe('postgres.burcnghheyzbzffzgmjz');
+    expect(url.password).toBe('dummy_password_123');
+    expect(url.pathname).toBe('/postgres');
+    expect(url.searchParams.get('sslmode')).toBe('require');
+    expect(url.searchParams.get('connection_limit')).toBe('1');
+  });
 });

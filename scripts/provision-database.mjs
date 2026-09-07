@@ -33,6 +33,11 @@
  */
 
 import { spawnSync } from 'node:child_process'
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.js'
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = resolveDatabaseUrl(process.env.DATABASE_URL)
+}
 
 const DATABASE_URL = process.env.DATABASE_URL
 

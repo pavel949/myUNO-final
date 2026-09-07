@@ -7,6 +7,12 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { resolveDatabaseUrl } from '@/lib/resolveDatabaseUrl';
+
+const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL);
+if (databaseUrl && databaseUrl !== process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = databaseUrl;
+}
 
 async function fixLegalContent() {
   const prisma = new PrismaClient();

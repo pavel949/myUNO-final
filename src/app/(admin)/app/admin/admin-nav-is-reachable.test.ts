@@ -51,4 +51,38 @@ describe('the admin navigation', () => {
     expect(layout).toContain('/app/admin/audit');
     expect(existsSync(join(ADMIN_ROOT, 'audit/page.tsx'))).toBe(true);
   });
+
+  /**
+   * Grouping is the property, not decoration.
+   *
+   * Board 03 names four sections. The failure this guards is not an ugly
+   * sidebar — it is a destination that belongs to no section, which is how the
+   * flat list grew to thirty-one in the first place: each new page was appended
+   * because appending was the only thing to do. With sections, adding a page
+   * forces the question "which of these is it?", and this test is what makes
+   * skipping that question fail rather than pass quietly.
+   */
+  it('puts every destination inside one of the four named sections', () => {
+    const start = layout.indexOf('const groups = [');
+    expect(start, 'the sidebar is a flat list again — it should be grouped').toBeGreaterThan(-1);
+    const groupsBlock = layout.slice(start, layout.indexOf('\n  ];', start));
+
+    for (const section of [
+      'admin.nav.group.grow',
+      'admin.nav.group.inventory',
+      'admin.nav.group.supply',
+      'admin.nav.group.money',
+    ]) {
+      expect(groupsBlock, `section ${section} is missing`).toContain(section);
+    }
+
+    const outsideAnySection = pageDirectories().filter(
+      (dir) => !groupsBlock.includes(`/app/admin/${dir}`)
+    );
+
+    expect(
+      outsideAnySection,
+      'these pages are linked but sit outside every section; put each in the one it belongs to'
+    ).toEqual([]);
+  });
 });

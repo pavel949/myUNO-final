@@ -1,6 +1,4 @@
-import { Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { listSavedUnits } from '@/modules/browse';
@@ -71,17 +69,7 @@ export default async function SavedPage() {
                 href={`/units/${entry.unit.id}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow"
               >
-                {entry.unit.coverUrl ? (
-                  <Image
-                    src={entry.unit.coverUrl}
-                    alt={entry.unit.name}
-                    width={640}
-                    height={360}
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                )}
+                <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
                 <div className="p-16">
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {entry.unit.name}

@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { buffer } from 'micro'
+import { NextResponse } from 'next/server'
 import { markOrderPaid } from '@/modules/services/server/service.service'
-
-// Note: Next.js App Router has a non-trivial webhook setup. This file is a minimal placeholder.
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   try {
@@ -21,10 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
     }
 
+    // Idempotency: record event if not seen
+    const existing = await prisma.serviceOrderEvent.findFirst({ where: { type: 'WEBHOOK_RECEIVED', data: { path: ['webhookId'], equals: event.id } } as any })
+    if (!existing) {
+      await prisma.serviceOrderEvent.create({ data: { orderId: '', actorId: 'system', type: 'WEBHOOK_RECEIVED', data: { webhookId: event.id, raw: raw } } })
+    }
+
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object as Stripe.PaymentIntent
-      // Lookup order by metadata.orderId if we attached it
-      const orderId = (pi.metadata && pi.metadata.orderId) as string | undefined
+      const orderId = (pi.metadata && (pi.metadata as any).orderId) as string | undefined
       if (orderId) {
         await markOrderPaid(orderId, pi.id)
       }

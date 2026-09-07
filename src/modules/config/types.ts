@@ -131,6 +131,10 @@ export interface OtherConfig {
   'finance.statement.requires_admin_signoff': boolean;
   'finance.statement.service_fee_pct': number;
   'finance.occupancy_tax_pct': number;
+  'finance.vat_pct': number;
+  'pricing.rate_plan.non_refundable_discount_pct': number;
+  'pricing.rate_plan.weekly_discount_pct': number;
+  'pricing.rate_plan.weekly_min_nights': number;
   'finance.payout.default_thb_account': string;
   'compliance.tm30_sla_hours': number;
   'compliance.tm30_escalation_hours_before': number;

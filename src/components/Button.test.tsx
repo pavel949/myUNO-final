@@ -95,4 +95,24 @@ describe('Button component', () => {
       expect(onClick).not.toHaveBeenCalled();
     });
   });
+
+  // Board 21, the Russian pass. A button measured off its English label
+  // clips `Забронировать`, which runs about 86% longer than `Reserve`.
+  describe('sizing (board 21)', () => {
+    it.each([
+      ['sm', 'min-w-btn-sm'],
+      ['md', 'min-w-btn-md'],
+      ['lg', 'min-w-btn-lg'],
+    ] as const)('gives the %s size a min-width floor, not a fixed width', (size, token) => {
+      render(<Button size={size}>Reserve</Button>);
+      const button = screen.getByRole('button');
+      expect(button.className).toContain(token);
+      expect(button.className).not.toMatch(/(^|\s)w-\d/);
+    });
+
+    it('keeps a long label inside its container', () => {
+      render(<Button>Забронировать</Button>);
+      expect(screen.getByRole('button').className).toContain('max-w-full');
+    });
+  });
 });

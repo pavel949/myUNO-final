@@ -247,8 +247,7 @@ export default function ProviderOrdersClient({
                         setReasons((prev) => ({ ...prev, [order.id]: e.target.value }))
                       }
                       placeholder={labels['provider.orders.decline_reason']}
-                      className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                      style={{ width: '200px' }}
+                      className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-lg"
                     />
                   )}
                   {order.status === 'accepted' && (

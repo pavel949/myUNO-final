@@ -84,12 +84,12 @@ export function NotificationBell({ labels }: { labels: BellLabels }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-56 w-80 md:w-96 bg-surface-paper border border-border-line rounded-lg shadow-float z-50 overflow-hidden" style={{ width: '320px' }}>
+        <div className="absolute right-0 top-56 w-panel bg-surface-paper border border-border-line rounded-lg shadow-float z-50 overflow-hidden">
           {items.length === 0 ? (
             <p className="text-small text-text-secondary p-16">{labels.empty}</p>
           ) : (
             <>
-              <div className="max-h-96 overflow-y-auto" style={{ maxHeight: '360px' }}>
+              <div className="max-h-panel overflow-y-auto">
                 {items.map((item) => (
                   <div
                     key={item.id}

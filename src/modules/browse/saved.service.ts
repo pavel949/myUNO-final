@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { mediaUrl } from '@/modules/media';
 
 /**
  * Keeping a villa, and keeping a search.
@@ -69,7 +70,7 @@ export async function listSavedUnits(
   identityId: string,
   collection?: string | null
 ) {
-  return db.savedUnit.findMany({
+  const rows = await db.savedUnit.findMany({
     where: {
       identityId,
       ...(collection !== undefined ? { collection } : {}),
@@ -85,11 +86,22 @@ export async function listSavedUnits(
           bedrooms: true,
           maxGuests: true,
           coverMediaId: true,
+          coverMedia: { select: { storageKey: true } },
         },
       },
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  // Resolve the cover to a URL here rather than in the page: a screen should
+  // not have to know that a MediaAsset's storageKey already is its address.
+  return rows.map((row) => ({
+    ...row,
+    unit: {
+      ...row.unit,
+      coverUrl: row.unit.coverMedia ? mediaUrl(row.unit.coverMedia.storageKey) : null,
+    },
+  }));
 }
 
 /** The named lists this person has, so a picker can offer them. */

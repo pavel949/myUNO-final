@@ -126,8 +126,7 @@ export default function UnitsAdminClient({
             />
           ) : (
             <div
-              className="rounded-md bg-gradient-to-br from-brand-andaman to-brand-deep shrink-0"
-              style={{ width: '72px', height: '48px' }}
+              className="rounded-md bg-gradient-to-br from-brand-andaman to-brand-deep shrink-0 w-thumb h-48"
             />
           )}
           <div className="flex-1 min-w-0">

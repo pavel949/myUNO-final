@@ -29,7 +29,7 @@ export function TrustMark({
         cx="12"
         cy="12"
         r="3"
-        fill={filled ? '#D69A3A' : 'currentColor'}
+        className={filled ? 'fill-brand-sun' : 'fill-current'}
         stroke="none"
       />
     </svg>

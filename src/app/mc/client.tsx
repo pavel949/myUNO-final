@@ -527,8 +527,7 @@ export function MCDashboardClient({
               }))
             }
             placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-            style={{ width: '140px' }}
+            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-sm"
           />
           <Button
             size="sm"
@@ -1017,8 +1016,7 @@ export function MCDashboardClient({
                               }))
                             }
                             placeholder={labels['mc.service_orders.receipt_placeholder']}
-                            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                            style={{ width: '150px' }}
+                            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-md"
                           />
                           <Button
                             size="sm"
@@ -1075,11 +1073,11 @@ export function MCDashboardClient({
             </h2>
             <div className="flex items-center gap-16 mb-20">
               <span className="inline-flex items-center gap-6 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: '#2E7B74' }} aria-hidden />
+                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-4" aria-hidden />
                 {labels['mc.calendar.occupied']}
               </span>
               <span className="inline-flex items-center gap-6 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm" style={{ backgroundColor: '#DCEEEB' }} aria-hidden />
+                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-1" aria-hidden />
                 {labels['mc.calendar.vacant']}
               </span>
             </div>

@@ -149,6 +149,31 @@ const config: Config = {
       maxWidth: {
         content: '1080px',
       },
+      // Button floors (board 21, the Russian pass). Buttons size from their
+      // content plus padding; this is only a floor so a one-word label still
+      // reads as a button. It is never a fixed width — `Забронировать` is 86%
+      // longer than `Reserve` and must be allowed to grow.
+      minWidth: {
+        'btn-sm': '80px',
+        'btn-md': '96px',
+        'btn-lg': '112px',
+      },
+      // Fixed widths that are layout, not rhythm, so they sit outside the
+      // 4-based spacing scale. `field-*` are the inline text inputs that sit
+      // in a table row; `panel` is the notification popover; `thumb` is the
+      // unit-list image.
+      // TODO(design): board 20 replaces the inline `field-*` inputs with a
+      // sheet on mobile — these widths go with that change.
+      width: {
+        'field-sm': '140px',
+        'field-md': '150px',
+        'field-lg': '200px',
+        panel: '320px',
+        thumb: '72px',
+      },
+      maxHeight: {
+        panel: '360px',
+      },
     },
   },
   plugins: [],

@@ -49,6 +49,10 @@ const allSources = [...sources, ...componentSources, landingPolicy];
 
 const routes = files
   .filter((path) => path.endsWith('/page.tsx'))
+  // A redirect stub is a forwarder kept alive for old bookmarks, not a
+  // destination. Nothing should link to it — that is the point of the move
+  // that left it behind.
+  .filter((path) => !/\bpermanentRedirect\(/.test(readFileSync(path, 'utf8')))
   .map(routeOf)
   // A dynamic segment is reached from whatever lists it, never linked by name.
   .filter((route) => !route.includes('['));

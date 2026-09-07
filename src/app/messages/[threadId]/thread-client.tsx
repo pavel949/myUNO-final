@@ -148,12 +148,24 @@ export default function ThreadClient({
     );
   }
 
+  const otherParticipants = thread.participants
+    .filter((p) => p.identityId !== myId)
+    .map((p) => `${p.identity.firstName} ${p.identity.lastName}`)
+    .join(', ');
+
   return (
     <div className="flex min-h-[80vh] flex-col bg-surface-ivory">
-      <div className="border-b border-border-line bg-surface-paper px-24 py-16">
-        <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
-          {labels['messages.thread.back']}
-        </Link>
+      <div className="flex items-center justify-between border-b border-border-line bg-surface-paper px-24 py-16">
+        <div className="flex items-center gap-16">
+          <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
+            {labels['messages.thread.back']}
+          </Link>
+          {otherParticipants && (
+            <span className="text-small font-semibold text-text-ink">
+              · {otherParticipants}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 space-y-12 overflow-y-auto px-24 py-20">
@@ -173,26 +185,26 @@ export default function ThreadClient({
               <div
                 className={`max-w-[80%] rounded-lg px-16 py-12 ${
                   mine
-                    ? 'bg-brand-andaman text-surface-ivory'
+                    ? 'bg-brand-andaman text-on-dark-text'
                     : 'border border-border-line bg-surface-paper text-text-ink'
                 }`}
               >
                 {!mine && message.sender && (
-                  <p className={`mb-1 text-small font-medium ${mine ? '' : 'text-brand-andaman'}`}>
+                  <p className="mb-4 text-small font-semibold text-brand-andaman">
                     {message.sender.firstName} {message.sender.lastName}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap text-body">{message.body}</p>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className={`text-small ${mine ? 'text-surface-ivory/70' : 'text-text-stone'}`}>
+                <p className="whitespace-pre-wrap text-body font-normal">
+                  {message.body && message.body !== '—' ? message.body : ''}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-8">
+                  <p className={`text-small ${mine ? 'text-on-dark-muted' : 'text-text-stone'}`}>
                     {new Date(message.createdAt).toLocaleString()}
                   </p>
                   {isStaff && !mine && message.sender ? (
                     <button
                       type="button"
-                      className={`text-small hover:underline disabled:opacity-50 ${
-                        mine ? 'text-surface-ivory' : 'text-brand-andaman'
-                      }`}
+                      className="text-small text-brand-andaman hover:underline disabled:opacity-50"
                       onClick={() => flagPurchase(message.id)}
                       disabled={flaggingId === message.id}
                     >
@@ -211,7 +223,7 @@ export default function ThreadClient({
 
       {error && <p className="px-24 text-small text-state-error">{error}</p>}
 
-      <form onSubmit={send} className="flex gap-8 border-t border-border-line bg-surface-paper px-24 py-16">
+      <form onSubmit={send} className="flex gap-12 border-t border-border-line bg-surface-paper px-24 py-16">
         <input
           type="text"
           value={draft}

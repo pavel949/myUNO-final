@@ -3,39 +3,23 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuid } from 'uuid';
 import { clearConfigCache } from '@/modules/config';
 import { clearTranslationCache } from '@/modules/content';
+import { resolveDatabaseUrl } from '@/lib/resolveDatabaseUrl';
 
 // Test database client — requires DATABASE_URL_TEST to protect production database
-const testDatabaseUrl = process.env.DATABASE_URL_TEST;
-if (!testDatabaseUrl) {
+const rawTestDatabaseUrl = process.env.DATABASE_URL_TEST;
+if (!rawTestDatabaseUrl) {
   throw new Error(
     'DATABASE_URL_TEST must be set to run tests. It protects the live database from accidental deletion. ' +
     'Set it to a separate test database connection string in .env.'
   );
 }
 
+const testDatabaseUrl = resolveDatabaseUrl(rawTestDatabaseUrl) ?? rawTestDatabaseUrl;
+
 /**
  * One client for the whole run, cached on `globalThis` — the same trick
  * `src/lib/prisma.ts` uses for the application singleton, and for the same
  * reason.
- *
- * Vitest is configured to run every file in a single fork (`singleFork`,
- * `fileParallelism: false`) so integration tests never race on the shared
- * database. But it still resets the *module registry* between files, so a
- * plain module-scope `new PrismaClient()` here was constructed again for each
- * of the ~130 files that import this helper — inside one process, all alive at
- * once, none of them disconnected (only three files anywhere call
- * `$disconnect`).
- *
- * Each client opens its own pool, so connections accumulated across the run
- * until Postgres refused new ones with "sorry, too many clients already". The
- * failure landed on whichever files happened to run last, as
- * `PrismaClientInitializationError` with nothing wrong in them — which is why
- * it read as flakiness rather than as the resource leak it is, and why the
- * same commit could pass locally and fail in CI.
- *
- * `globalThis` survives the module-registry reset, so this is now one client
- * and one pool for the entire suite. Deliberately never disconnected: it is
- * reused by every subsequent file, and the process exiting closes it.
  */
 const globalForTestDb = globalThis as unknown as { __myunoTestDb?: PrismaClient };
 
@@ -51,29 +35,6 @@ export const db =
 
 globalForTestDb.__myunoTestDb = db;
 
-/**
- * Reset the database between tests. Enumerates every table from pg_tables so it
- * stays correct as the schema grows (the old hand-maintained delete list silently
- * missed newer tables and failed on FK constraints).
- *
- * Uses DELETE with FK triggers disabled (session_replication_role = replica)
- * rather than TRUNCATE: TRUNCATE takes an ACCESS EXCLUSIVE lock against the
- * best-effort background notification/email queries that can still be in flight
- * from a just-finished test.
- *
- * DELETE is better but not immune, and this used to claim it was. Under CI load
- * Postgres reported deadlocks between `DELETE FROM content_key` here and an
- * in-flight `INSERT INTO translation … ON CONFLICT` from the previous test,
- * which takes `FOR KEY SHARE` on `identity` for its foreign key: each waits on
- * a lock the other holds. The suite then failed in whichever file happened to
- * be resetting — content, messenger, seed — with nothing wrong in that file.
- *
- * So a deadlock is retried rather than thrown. That is safe because a reset is
- * idempotent: the retry simply deletes whatever the loser left behind. Batching
- * the deletes into a single server-side script was tried first to shrink the
- * lock window and is not viable — Prisma will not run a multi-statement script
- * through executeRawUnsafe, and the suite fails wholesale.
- */
 const RESET_DEADLOCK_RETRIES = 5;
 
 function isDeadlock(error: unknown): boolean {
@@ -98,24 +59,16 @@ export async function resetDb() {
       break;
     } catch (error) {
       if (attempt < RESET_DEADLOCK_RETRIES && isDeadlock(error)) {
-        // Give the in-flight statement a moment to finish before trying again.
         await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
         continue;
       }
       throw error;
     }
   }
-  // Module-level in-memory caches survive a DB wipe — clear them so a test
-  // never reads a value cached from a prior test's data.
   clearConfigCache();
   clearTranslationCache();
 }
 
-/**
- * Set a global config value in tests (writes a global-scoped override, which
- * getConfig resolves ahead of the seeded default). Keeps tests independent of
- * the full config seed.
- */
 export async function setGlobalConfig(key: string, value: unknown) {
   await db.configOverride.upsert({
     where: {
@@ -200,7 +153,6 @@ export interface UnitFactoryOpts {
 }
 
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
-  // Support both positional and options-based calling
   const opts = typeof projectIdOrOpts === 'string'
     ? { projectId: projectIdOrOpts }
     : projectIdOrOpts;
@@ -365,10 +317,6 @@ export interface BookingFactoryOpts {
 
 export async function createBooking(opts: BookingFactoryOpts) {
   const startDate = opts.startDate || new Date('2026-07-15');
-  // The default departure trails the default arrival, but a caller that supplies
-  // only a start date (commonly "yesterday", for deadline cases) would otherwise
-  // inherit a fixed end date that may precede it — a stay ending before it began,
-  // which `booking_dates_ordered` rejects. Derive the default from the arrival.
   const endDate =
     opts.endDate ||
     (opts.startDate

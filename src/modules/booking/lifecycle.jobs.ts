@@ -364,6 +364,11 @@ export async function sendPostStayReengage(
     const searchUrl = booking.unit.project.slug
       ? `${baseUrl}/search?project=${booking.unit.project.slug}`
       : `${baseUrl}/search`;
+    // The stay-review form lives on the trip page and is open to this guest
+    // from check-out (stay-review.service.ts). Supplied so the post-stay copy
+    // can invite a review; whether it does is the founder's call (Q62/D-8),
+    // and the body key is deliberately left unchanged here.
+    const reviewUrl = `${baseUrl}/trips/${booking.id}`;
 
     await createNotification(db, {
       identityId: booking.guestIdentityId,
@@ -375,6 +380,7 @@ export async function sendPostStayReengage(
         unit_name: booking.unit.name,
         project_name: booking.unit.project.name,
         search_url: searchUrl,
+        review_url: reviewUrl,
       },
     });
     sent += 1;

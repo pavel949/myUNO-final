@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, FormEvent, useState } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
@@ -79,16 +80,6 @@ const getDaysInStage = (createdAt: string | Date): number => {
     (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
   );
   return days;
-};
-
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `฿${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `฿${(value / 1_000).toFixed(1)}K`;
-  }
-  return `฿${value.toFixed(0)}`;
 };
 
 const formatDate = (dateString: string | null): string => {
@@ -239,13 +230,13 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
             <div>
               <p className="text-small text-text-secondary mb-4">Expected Value</p>
               <p className="text-heading-1 font-semibold text-text-ink">
-                {formatCurrency(opportunity.valueThb ?? 0)}
+                {formatBahtCompact(opportunity.valueThb ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-small text-text-secondary mb-4">Weighted Value</p>
               <p className="text-heading-2 font-semibold text-brand-andaman">
-                {formatCurrency(weightedValue)}
+                {formatBahtCompact(weightedValue)}
               </p>
             </div>
           </div>

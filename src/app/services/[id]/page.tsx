@@ -35,10 +35,16 @@ export default async function ServiceDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { bookingId?: string };
+  searchParams: { bookingId?: string; projectId?: string; unitId?: string };
 }) {
   const { id } = params;
   const bookingId = searchParams.bookingId || null;
+  // A guest arrives with a stay. Everyone else — a resident, an owner, an MC
+  // member — arrives with a building or a unit instead. Without this the order
+  // API fell through to its single-project guess, which is correct only while
+  // exactly one project exists and fails the day a second one goes live.
+  const projectId = searchParams.projectId || null;
+  const unitId = searchParams.unitId || null;
 
   let service: ServiceDetail | null = null;
   try {
@@ -241,6 +247,8 @@ export default async function ServiceDetailPage({
               basePriceThb: service.basePriceThb,
             }}
             bookingId={bookingId}
+            projectId={projectId}
+            unitId={unitId}
             whatsappNumber={whatsappNumber}
             labels={labels}
           />

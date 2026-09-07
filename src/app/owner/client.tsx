@@ -145,7 +145,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contextType: 'general',
-        body: '[sell-interest]',
+        intent: 'sell_interest',
       }),
     });
     if (response.ok) {

@@ -119,11 +119,23 @@
   - **Verification method:** Browser settings → Reduce Motion; inspect Tailwind utilities
   - **Evidence:** `globals.css` includes motion-safe/motion-reduce rules
 
-- [x] **Form errors announced (`aria-live`)**
-  - Input errors wrapped in `<div aria-live="polite">` or aria-describedby
-  - Error text read by screen readers on input blur
-  - **Verification method:** Inspect FormField component; test with screen reader
-  - **Evidence:** Component library includes aria-live error announcements
+- [x] **Form errors announced (`aria-live`)** — *was ticked in error; true as of T-061*
+  - **This row claimed something that was not so.** It read "Input errors wrapped
+    in `<div aria-live="polite">` or aria-describedby — Evidence: Component
+    library includes aria-live error announcements". The component library did
+    not. `FieldMessage` (`src/components/FieldLabel.tsx`), the shared error path
+    for `Input`, `Textarea` and `Select`, rendered a plain `<p>` with no role,
+    no live region and no association to its control — so validation failure was
+    silent to assistive technology across essentially every form in the product.
+    `docs/T-042_hardening_checklist.md` honestly marked this unverified; this
+    file asserted it. The honest one was right.
+  - **Now actually true:** errors carry `role="alert"` (announced when they
+    appear, the submit-time case) and are linked by `aria-describedby` with
+    `aria-invalid` on the control (announced on focus, the tab-back case).
+    Help text gets the association without the alert.
+  - **Evidence:** `src/components/FieldAccessibility.test.tsx` — 9 tests across
+    all three primitives, including that a healthy field is neither `aria-invalid`
+    nor described-by, and that help text does not shout.
 
 - [x] **Empty/loading/error states implemented**
   - Every screen ships with:

@@ -7,6 +7,7 @@ import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
 import OrderDisputePanel from './order-dispute-panel';
 import OrderNoShowPanel from './order-no-show-panel';
+import OrderRatingPanel from './order-rating-panel';
 import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
@@ -28,6 +29,7 @@ interface ServiceOrderDetail {
   addressNote: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
+  rated: boolean;
   service: {
     id: string;
     title: string;
@@ -134,6 +136,19 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.confirm_cancellation': 'Confirm Cancellation',
     'service-order.detail.confirmed_paid': 'Payment received — your order is confirmed. The provider will be in touch.',
     'service-order.detail.confirmed_cash': 'Order placed — pay in cash when the service is delivered. Our staff will record the receipt.',
+    'service-order.rating.action': 'Rate this service',
+    'service-order.rating.thanks': 'Thank you — your rating has been recorded.',
+    'services.rating.title': 'Rate this service',
+    'services.rating.question': 'How would you rate this service?',
+    'services.rating.comment_label': 'Tell us more (optional)',
+    'services.rating.comment_placeholder': 'Share your feedback...',
+    'services.rating.error_select': 'Please select a rating',
+    'services.rating.error_submit': 'Failed to submit rating',
+    'services.rating.error_generic': 'An error occurred',
+    'services.rating.button_cancel': 'Cancel',
+    'services.rating.button_submit': 'Submit rating',
+    'services.rating.button_submitting': 'Submitting...',
+    'services.rating.star_label': '{n} out of 5',
     'services.detail.back': 'Back to services',
     'service-order.detail.phone_label': 'Phone',
     'service-order.detail.email_label': 'Email',
@@ -511,6 +526,15 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {canReportNoShow && <OrderNoShowPanel orderId={order.id} labels={labels} />}
+
+        {/* A fulfilled order can be rated from here, not only from the in-stay
+            home space — after check-out that surface is no longer where anyone
+            goes, and this is. */}
+        {order.status === 'fulfilled' && isOrderer && (
+          <div className="mt-16">
+            <OrderRatingPanel orderId={order.id} rated={order.rated} labels={labels} />
+          </div>
+        )}
 
         {order.status === 'failed' && isOrderer && (
           <div className="bg-state-warning-soft border border-state-warning rounded-lg p-24 mb-24">

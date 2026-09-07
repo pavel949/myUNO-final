@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatBaht, satangToBaht } from '@/lib/money';
 
 export interface MoneyAmountProps {
   /**
@@ -30,9 +31,11 @@ export interface MoneyAmountProps {
  * display bug (Q47) kept recurring across the codebase.
  */
 export const MoneyAmount: React.FC<MoneyAmountProps> = ({ satang, className }) => {
-  const bahtRounded = Math.round(satang / 100);
-  const negative = bahtRounded < 0;
-  const formatted = `฿${Math.abs(bahtRounded).toLocaleString('en-US')}`;
+  // Formatting lives in src/lib/money.ts so a figure never depends on where it
+  // is shown: this component and a notification body render the same amount
+  // identically because they call the same function (T-053).
+  const formatted = formatBaht(satang);
+  const negative = satangToBaht(satang) < 0;
 
   // Board 21: in every label-and-amount pair the label wraps and the figure
   // does not. Carried by the primitive rather than by each call site, so a
@@ -45,5 +48,5 @@ export const MoneyAmount: React.FC<MoneyAmountProps> = ({ satang, className }) =
     .filter(Boolean)
     .join(' ');
 
-  return <span className={classes}>{negative ? `−${formatted}` : formatted}</span>;
+  return <span className={classes}>{formatted}</span>;
 };

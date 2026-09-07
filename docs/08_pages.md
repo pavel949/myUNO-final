@@ -1,5 +1,20 @@
 # 08 · Pages & Admin — every public page and the founder's panel
 
+> **Path note (verified 2026-09-06).** The `/app/*` table below is stale for the
+> whole authenticated product. Those surfaces were relocated to bare roots during
+> implementation — `/trips`, `/bookings/[bookingId]/home-space`, `/owner`,
+> `/owner/units/[id]`, `/messages`, `/tickets`, `/services`, `/services/orders`,
+> `/ops/*`, `/provider/*`, `/mc/*`, `/residence`, `/buying`, `/account`. Only the
+> admin panel kept its documented `/app/admin` prefix, and `/app` itself is now
+> just the adaptive-landing redirector (`src/modules/core/landing.ts`).
+>
+> **Every screen this document specifies exists.** The routing law is
+> `resolveLanding`/`availableSurfaces` in `core/landing.ts`, and reachability is
+> proven structurally by `src/app/reachability.test.ts` — zero page orphans.
+> Read the section headings here for *what* a screen must do; read
+> `landing.ts` for *where* it lives.
+
+
 **What this document is.** Every public page (sections, content keys, calls to action), the authenticated app's page map, and the admin panel. Layouts come from doc 06 (screen compositions referenced as S-numbers); flows entered from pages are doc 07 F-IDs. All public copy lives in the namespaces shown — no inline text.
 
 URL scheme: public site under `/{locale}/…` (`ru` default, `hreflang` alternates); the app under `/app/…` (locale from identity). All pages responsive per doc 06; public pages server-rendered for SEO.

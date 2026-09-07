@@ -97,7 +97,7 @@ export async function register(input: RegisterInput) {
   const token = generateToken();
   const tokenHash = hashToken(token);
   const { getConfig } = await import('@/modules/config');
-  const ttlMinutes = (await getConfig(prisma, 'auth.token_ttl_minutes.email_verify')) || 1440;
+  const ttlMinutes = (await getConfig(prisma, 'auth.token_ttl_minutes.email_verify')) ?? 1440;
 
   await prisma.oneTimeToken.create({
     data: {
@@ -191,7 +191,7 @@ export async function requestPasswordReset(input: PasswordResetRequestInput) {
     const token = generateToken();
     const tokenHash = hashToken(token);
     const { getConfig } = await import('@/modules/config');
-    const ttlMinutes = (await getConfig(prisma, 'auth.token_ttl_minutes.password_reset')) || 60;
+    const ttlMinutes = (await getConfig(prisma, 'auth.token_ttl_minutes.password_reset')) ?? 60;
 
     await prisma.oneTimeToken.create({
       data: {

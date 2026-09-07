@@ -65,6 +65,7 @@ export {
   scheduleDepositPreauthIfConfigured,
   ensureDepositPreauthOnStayConfirmed,
   voidDepositPreauthIfClean,
+  releaseExpiredDepositPreauths,
   captureDepositPreauthOnClaim,
   releaseDepositPreauthOnDispute,
   fileDepositClaim,

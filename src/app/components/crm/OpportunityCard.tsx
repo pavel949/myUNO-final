@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, memo } from 'react';
+import { formatBahtCompact } from '@/lib/money';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
 
@@ -62,16 +63,6 @@ const getDaysInStage = (createdAt: string | Date): number => {
   return days;
 };
 
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `฿${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `฿${(value / 1_000).toFixed(1)}K`;
-  }
-  return `฿${value.toFixed(0)}`;
-};
-
 export const OpportunityCard: FC<OpportunityCardProps> = memo(
   ({ opportunity, draggable = false, onClick }) => {
     const daysInStage = getDaysInStage(opportunity.createdAt);
@@ -120,7 +111,7 @@ export const OpportunityCard: FC<OpportunityCardProps> = memo(
               Value
             </span>
             <span className="text-sm font-bold text-text-ink ">
-              {formatCurrency(weightedValue)}
+              {formatBahtCompact(weightedValue)}
             </span>
           </div>
           <div className="w-full bg-border-line  h-1.5 rounded-full overflow-hidden">
@@ -131,7 +122,7 @@ export const OpportunityCard: FC<OpportunityCardProps> = memo(
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-text-stone ">
-              {formatCurrency(opportunity.valueThb ?? 0)}
+              {formatBahtCompact(opportunity.valueThb ?? 0)}
             </span>
             <span className="font-medium text-text-ink ">
               {opportunity.probability}%

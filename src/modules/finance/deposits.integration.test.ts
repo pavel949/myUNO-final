@@ -8,7 +8,9 @@ import {
   approveClaim,
   rejectClaim,
   getClaimsAwaitingResolution,
+  releaseExpiredDepositPreauths,
 } from './deposits.service';
+import { checkOutBooking, checkInBooking } from '@/modules/booking';
 
 describe('Deposits & Damage Claims (T-032)', () => {
   beforeEach(async () => {
@@ -206,6 +208,110 @@ describe('Deposits & Damage Claims (T-032)', () => {
 
       expect(updated?.status).toBe('voided');
       expect(updated?.voidedAt).toBeDefined();
+    });
+  });
+
+  describe('the claim window survives a real check-out (T-056)', () => {
+    // Every other test in this file sets `checkedOutAt` with a direct DB write.
+    // That is why this defect stayed invisible: `checkOutBooking` used to void
+    // the pre-authorization unconditionally, so through the actual API the
+    // 48-hour claim window opened at exactly the moment the deposit became
+    // uncapturable, and `getStaysOpenToClaim` counted down against a hold that
+    // was already gone.
+    async function stayThroughRealCheckOut() {
+      const guest = await createIdentity();
+      const staff = await createIdentity();
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        status: 'checked_in',
+      });
+      await scheduleDepositPreauth(db, booking.id, 500000);
+      await checkOutBooking(db, booking.id);
+      return { booking, staff, project };
+    }
+
+    it('leaves the hold authorized after check-out, so a claim can still capture it', async () => {
+      const { booking, staff } = await stayThroughRealCheckOut();
+
+      const afterCheckout = await db.depositPreauth.findUnique({
+        where: { bookingId: booking.id },
+      });
+      expect(afterCheckout?.status).toBe('authorized');
+
+      const claim = await fileDepositClaim(db, {
+        bookingId: booking.id,
+        claimantIdentityId: staff.id,
+        description: 'Broken lamp',
+        claimedAmountThb: 200000,
+      });
+      const approved = await approveClaim(db, claim.id, 'Confirmed against the baseline report');
+      expect(approved.status).toBe('approved');
+
+      const captured = await db.depositPreauth.findUnique({
+        where: { bookingId: booking.id },
+      });
+      expect(captured?.status).toBe('captured');
+    });
+
+    it('releases the hold once the window has closed with no claim', async () => {
+      const { booking } = await stayThroughRealCheckOut();
+
+      // Still inside the window: the guest's money stays held.
+      const during = await releaseExpiredDepositPreauths(db, new Date());
+      expect(during.released).toBe(0);
+      expect(
+        (await db.depositPreauth.findUnique({ where: { bookingId: booking.id } }))?.status
+      ).toBe('authorized');
+
+      // Past it: nothing is outstanding, so the hold goes.
+      const later = new Date(Date.now() + 49 * 60 * 60 * 1000);
+      const after = await releaseExpiredDepositPreauths(db, later);
+      expect(after.released).toBe(1);
+      expect(
+        (await db.depositPreauth.findUnique({ where: { bookingId: booking.id } }))?.status
+      ).toBe('voided');
+    });
+
+    it('will not release under an unresolved claim, which would destroy the money it is about', async () => {
+      const { booking, staff } = await stayThroughRealCheckOut();
+      await fileDepositClaim(db, {
+        bookingId: booking.id,
+        claimantIdentityId: staff.id,
+        description: 'Disputed damage',
+        claimedAmountThb: 200000,
+      });
+
+      const later = new Date(Date.now() + 49 * 60 * 60 * 1000);
+      const result = await releaseExpiredDepositPreauths(db, later);
+      expect(result.released).toBe(0);
+      expect(
+        (await db.depositPreauth.findUnique({ where: { bookingId: booking.id } }))?.status
+      ).toBe('authorized');
+    });
+
+    it('is a no-op once a rejected claim has already released the hold', async () => {
+      // `rejectClaim` releases the pre-auth itself — the guest keeps their
+      // deposit the moment the claim fails, without waiting out the window.
+      // The job must not treat that as work left to do.
+      const { booking, staff } = await stayThroughRealCheckOut();
+      const claim = await fileDepositClaim(db, {
+        bookingId: booking.id,
+        claimantIdentityId: staff.id,
+        description: 'Mark on the wall',
+        claimedAmountThb: 200000,
+      });
+      await rejectClaim(db, claim.id, 'Pre-existing, in the baseline report');
+
+      expect(
+        (await db.depositPreauth.findUnique({ where: { bookingId: booking.id } }))?.status
+      ).toBe('voided');
+
+      const later = new Date(Date.now() + 49 * 60 * 60 * 1000);
+      expect((await releaseExpiredDepositPreauths(db, later)).released).toBe(0);
     });
   });
 

@@ -213,9 +213,17 @@ const API_ENTRY_POINTS = new Set([
  * it here — should shrink this list, never grow it back.
  */
 const API_DEBT = new Set([
-  // SSE endpoints that exist and work, but the frontend they were built for
-  // polls instead (NotificationBell polls /api/notifications every 30s) —
-  // built, never adopted.
+  // Two SSE endpoints that cannot work on this deployment target, kept only
+  // until the founder rules on deleting them (Q59, plan D-9). Do NOT wire
+  // these up to replace the polling in NotificationBell — that would trade
+  // working polling for silence:
+  //   - notification.bus's publishNotification() is called from nowhere, so
+  //     /api/notifications/stream has no publisher even single-process;
+  //   - both buses are per-isolate in-memory Maps (see the bus header), so a
+  //     serverless subscriber is invisible to the publisher's isolate;
+  //   - an SSE response holds a serverless function open against its
+  //     execution-duration cap, so the connection is cut and re-established
+  //     no less often than the 30s poll it would replace.
   '/api/notifications/stream',
   '/api/threads/[threadId]/stream',
 ]);

@@ -4,6 +4,13 @@ import {
   type SeasonPeriod,
   type CategoryRates,
 } from '@/modules/config';
+import {
+  addDays,
+  daysBetween,
+  daysUntil,
+  toCalendarDay,
+  DEFAULT_TIME_ZONE,
+} from '@/lib/date';
 
 /**
  * Scope for pricing config resolution. Every pricing read goes through
@@ -33,14 +40,12 @@ export interface PriceBreakdown {
   total_thb: number;
 }
 
-function dateToMonthDay(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${month}-${day}`;
-}
-
 function isDateInSeason(date: Date, season: SeasonPeriod): boolean {
-  const monthDay = dateToMonthDay(date);
+  // A stored night is a `@db.Date` at UTC midnight, so its month-day is read
+  // in UTC. Reading it with `getMonth()`/`getDate()` (server-local) happened
+  // to agree only because Vercel runs UTC — one TZ change would have shifted
+  // every season boundary with nothing failing.
+  const monthDay = toCalendarDay(date).slice(5);
   const from = season.from;
   const to = season.to;
 
@@ -52,14 +57,6 @@ function isDateInSeason(date: Date, season: SeasonPeriod): boolean {
   return monthDay >= from && monthDay <= to;
 }
 
-function getDaysBetween(startDate: Date, endDate: Date): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 /**
  * Approximate duration of a season window in days, used only to rank
  * overlapping seasons (shortest = most specific wins). The year-boundary
@@ -67,15 +64,19 @@ function getDaysBetween(startDate: Date, endDate: Date): number {
  * high) correctly, but do not rely on it for exotic overlapping shapes.
  */
 function seasonDuration(date: Date, season: SeasonPeriod): number {
+  // Built in UTC to match how the night itself is stored; the local-time
+  // `new Date(y, m, d)` constructor used before made the ranking depend on
+  // the server's zone.
+  const year = date.getUTCFullYear();
   if (season.from > season.to) {
-    const part1Start = new Date(date.getFullYear(), 0, 1);
-    const part1End = new Date(date.getFullYear(), 11, 31);
-    const part1Days = getDaysBetween(part1Start, part1End);
+    const part1Start = new Date(Date.UTC(year, 0, 1));
+    const part1End = new Date(Date.UTC(year, 11, 31));
+    const part1Days = daysBetween(part1Start, part1End);
 
     const toMonth = parseInt(season.to.split('-')[0]) - 1;
     const toDay = parseInt(season.to.split('-')[1]);
-    const part2End = new Date(date.getFullYear(), toMonth, toDay);
-    const part2Days = getDaysBetween(part1End, part2End);
+    const part2End = new Date(Date.UTC(year, toMonth, toDay));
+    const part2Days = daysBetween(part1End, part2End);
 
     return part1Days + part2Days;
   }
@@ -85,9 +86,9 @@ function seasonDuration(date: Date, season: SeasonPeriod): number {
   const toMonth = parseInt(season.to.split('-')[0]) - 1;
   const toDay = parseInt(season.to.split('-')[1]);
 
-  const start = new Date(date.getFullYear(), fromMonth, fromDay);
-  const end = new Date(date.getFullYear(), toMonth, toDay);
-  return getDaysBetween(start, end);
+  const start = new Date(Date.UTC(year, fromMonth, fromDay));
+  const end = new Date(Date.UTC(year, toMonth, toDay));
+  return daysBetween(start, end);
 }
 
 /**
@@ -236,7 +237,13 @@ export async function computePriceBreakdown(
   bookingDate: Date = new Date(),
   pets: number = 0
 ): Promise<PriceBreakdown> {
-  const unit = await db.unit.findUnique({ where: { id: unitId } });
+  // The project's timezone rides along on the lookup that was already
+  // happening: `bookingDate` is an instant, and turning it into "today" needs
+  // a zone (see the early-bird comparison below).
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    include: { project: { select: { timezone: true } } },
+  });
   if (!unit) {
     throw new Error(`Unit ${unitId} not found`);
   }
@@ -263,10 +270,32 @@ export async function computePriceBreakdown(
     }
   }
 
-  const nights = getDaysBetween(checkInDate, checkOutDate);
-  if (nights < unit.minNights) {
+  const nights = daysBetween(checkInDate, checkOutDate);
+
+  // The minimum stay is the arrival night's, not the unit's flat default.
+  //
+  // `PricingRule.minNightsOverride` was stored, validated on write, returned by
+  // the API and rendered in the admin panel — and read by nothing, so setting a
+  // seasonal minimum stay silently did nothing (T-054).
+  //
+  // The arrival night decides, which is how every OTA expresses a minimum stay
+  // and the only reading that stays unambiguous: `createPricingRule` refuses
+  // overlapping rules for a unit, so exactly one rule can cover a given night.
+  // It is a genuine override rather than a floor — relaxing the minimum in low
+  // season is as much a revenue lever as raising it over peak, and a rule that
+  // could only tighten would not be one.
+  const arrivalRule = await db.pricingRule.findFirst({
+    where: {
+      unitId: unit.id,
+      startDate: { lte: checkInDate },
+      endDate: { gt: checkInDate },
+    },
+    select: { minNightsOverride: true, label: true },
+  });
+  const minNights = arrivalRule?.minNightsOverride ?? unit.minNights;
+  if (nights < minNights) {
     throw new Error(
-      `Stay length ${nights} nights is below minimum of ${unit.minNights}`
+      `Stay length ${nights} nights is below minimum of ${minNights}`
     );
   }
 
@@ -275,7 +304,7 @@ export async function computePriceBreakdown(
   const lines: PriceBreakdownLine[] = [];
   const nightMonthlyRates: (number | null)[] = [];
   let subtotal = 0;
-  const currentDate = new Date(checkInDate);
+  let currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
     const { price, appliedFrom, monthlyRate } = await resolveNightlyPrice(
@@ -285,13 +314,13 @@ export async function computePriceBreakdown(
       categoryRates
     );
     lines.push({
-      date: currentDate.toISOString().split('T')[0],
+      date: toCalendarDay(currentDate),
       nightly_thb: price,
       applied_from: appliedFrom,
     });
     nightMonthlyRates.push(monthlyRate);
     subtotal += price;
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate = addDays(currentDate, 1);
   }
 
   // Long-stay monthly path: for ≥ 28 nights, when the unit's category
@@ -339,7 +368,14 @@ export async function computePriceBreakdown(
       earlyBird &&
       earlyBird.min_days_before !== null &&
       earlyBird.pct > 0 &&
-      getDaysBetween(bookingDate, checkInDate) >= earlyBird.min_days_before
+      // `bookingDate` is an instant; `checkInDate` is a stored calendar day.
+      // Normalising the instant in UTC (what the old local-midnight helper did
+      // on a UTC server) put "today" a day early for the seven hours between
+      // 00:00 and 07:00 ICT — long enough to hand out, or refuse, an
+      // early-bird discount the guest had not earned. `daysUntil` resolves the
+      // instant to a day in the project's own zone first.
+      daysUntil(bookingDate, checkInDate, unit.project?.timezone ?? DEFAULT_TIME_ZONE) >=
+        earlyBird.min_days_before
     ) {
       earlyBirdDiscount = Math.round(
         (subtotal - losDiscount) * (earlyBird.pct / 100)
@@ -397,20 +433,42 @@ export async function checkAvailability(
   startDate: Date,
   endDate: Date
 ): Promise<boolean> {
-  // Check for blocked dates
-  const blockedDate = await db.blockedDate.findFirst({
-    where: {
-      unitId,
-      startDate: { lt: endDate },
-      endDate: { gt: startDate },
-    },
-  });
+  const now = new Date();
+  const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
 
-  if (blockedDate) {
-    return false;
-  }
+  // Two things make a unit unavailable, and this used to ask about only one.
+  //
+  // It checked `blocked_date` and nothing else, so it answered "available" for
+  // a range with a confirmed booking sitting in it. Nothing was broken in
+  // practice, because no production path called it — the booking flow enforces
+  // this itself inside a transaction (`findBlockingConflict`, an advisory lock,
+  // and the `booking_no_overlap` exclusion constraint as the backstop). But a
+  // function named `checkAvailability`, exported from the module's public
+  // interface, has one obvious meaning, and the next caller to reach for it
+  // would have been quietly wrong.
+  //
+  // The booking rules are mirrored exactly rather than approximated: a lapsed
+  // `pending_payment` hold does not block, a live one does. A stricter reading
+  // here would refuse guests the booking path would have accepted.
+  const [blockedDate, conflictingBooking] = await Promise.all([
+    db.blockedDate.findFirst({
+      where: { unitId, ...overlaps },
+      select: { id: true },
+    }),
+    db.booking.findFirst({
+      where: {
+        unitId,
+        ...overlaps,
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: now } },
+        ],
+      },
+      select: { id: true },
+    }),
+  ]);
 
-  return true;
+  return blockedDate === null && conflictingBooking === null;
 }
 
 // ---------------------------------------------------------------------------

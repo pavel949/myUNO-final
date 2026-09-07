@@ -1,5 +1,5 @@
 import React from 'react';
-import { FieldLabel, FieldMessage } from './FieldLabel';
+import { FieldLabel, FieldMessage, fieldMessageId } from './FieldLabel';
 import { fieldControlWithError } from './fieldStyles';
 
 export interface SelectOption {
@@ -20,7 +20,9 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     { label, error, helpText, required, className, id, options, placeholder, ...props },
     ref
   ) => {
-    const fieldId = id || `select-${Math.random().toString(36).slice(2, 11)}`;
+    const generatedId = React.useId();
+    const fieldId = id || generatedId;
+    const messageId = fieldMessageId(fieldId);
 
     return (
       <div className="flex flex-col gap-8">
@@ -28,6 +30,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={fieldId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || helpText ? messageId : undefined}
           required={required}
           className={`${fieldControlWithError(error, className)} h-48 appearance-none`}
           {...props}
@@ -43,7 +47,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        <FieldMessage error={error} helpText={helpText} />
+        <FieldMessage error={error} helpText={helpText} id={messageId} />
       </div>
     );
   }

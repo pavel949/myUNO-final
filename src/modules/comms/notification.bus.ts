@@ -2,6 +2,13 @@
  * In-memory pub/sub bus for real-time notifications.
  * Each identityId has a set of subscriber handlers that receive new notifications.
  * In production with multiple workers, swap for Redis pub/sub.
+ *
+ * NOT IN USE, and not usable as written (Q59). `publishNotification` below is
+ * called from nowhere — the notification creation path does not publish — and
+ * this Map is per-isolate, so on serverless a subscriber cannot see a
+ * publisher anyway. `NotificationBell` polls `/api/notifications` instead, and
+ * that is the correct behaviour on this deployment target. Awaiting the ruling
+ * on deleting this file with its SSE route.
  */
 
 const notificationSubscribers = new Map<

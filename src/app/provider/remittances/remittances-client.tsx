@@ -216,7 +216,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
                         : '—'}
                     </td>
                     <td className="text-body font-semibold tabular-nums py-12 pr-16">
-                      ฿{formatBaht(payout.amountThb)}
+                      {formatBaht(payout.amountThb)}
                     </td>
                     <td className="text-body py-12 pr-16 whitespace-nowrap">
                       {new Date(payout.executedOn).toLocaleDateString()}

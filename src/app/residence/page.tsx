@@ -193,7 +193,7 @@ export default async function ResidencePage() {
                 {residence.services.map((service) => (
                   <li key={service.id}>
                     <Link
-                      href={`/services/${service.id}`}
+                      href={`/services/${service.id}?projectId=${residence.projectId}`}
                       className="block p-16 bg-surface-paper border border-border-line rounded-lg hover:border-brand-andaman transition-colors"
                     >
                       <p className="text-body font-semibold text-text-ink">{service.title}</p>

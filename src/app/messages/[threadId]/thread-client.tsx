@@ -185,7 +185,7 @@ export default function ThreadClient({
               <div
                 className={`max-w-[80%] rounded-lg px-16 py-12 ${
                   mine
-                    ? 'bg-brand-andaman text-on-dark-text'
+                    ? 'bg-brand-andaman text-surface-ivory'
                     : 'border border-border-line bg-surface-paper text-text-ink'
                 }`}
               >

@@ -2,20 +2,17 @@
 > myuno@0.1.0 dev
 > next dev
 
+ ⚠ Port 3000 is in use, trying 3001 instead.
+ ⚠ Port 3001 is in use, trying 3002 instead.
   ▲ Next.js 14.2.35
-  - Local:        http://localhost:3000
+  - Local:        http://localhost:3002
 
  ✓ Starting...
-Attention: Next.js now collects completely anonymous telemetry regarding usage.
-This information is used to shape Next.js' roadmap and prioritize features.
-You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-https://nextjs.org/telemetry
-
- ✓ Ready in 3.6s
+ ✓ Ready in 2.4s
  ○ Compiling /src/middleware ...
- ✓ Compiled /src/middleware in 1475ms (73 modules)
+ ✓ Compiled /src/middleware in 636ms (73 modules)
  ○ Compiling / ...
- ✓ Compiled / in 11.1s (672 modules)
+ ✓ Compiled / in 9.2s (672 modules)
 prisma:error
 Invalid `prisma.$queryRaw()` invocation:
 
@@ -64,11 +61,90 @@ error: Environment variable not found: DATABASE_URL.
    |
 
 Validation Error Count: 1
- ✓ Compiled in 1516ms (280 modules)
- GET / 200 in 12811ms
+ ✓ Compiled in 1458ms (280 modules)
+ GET / 200 in 10765ms
  ○ Compiling /api/track ...
- ✓ Compiled /app/admin in 6.1s (424 modules)
- ✓ Compiled in 587ms (278 modules)
+ ✓ Compiled /api/track in 6.3s (424 modules)
+[Track API] Error: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5852:19)
+    at successSteps (node:internal/deps/undici/undici:5833:27)
+    at consumeBody (node:internal/deps/undici/undici:5839:9)
+    at NextRequest.json (node:internal/deps/undici/undici:5779:18)
+    at POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:13:36)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:34)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+prisma:error
+Invalid `prisma.$queryRaw()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:10
+   |
+ 9 |   provider = "postgresql"
+10 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+prisma:error
+Invalid `prisma.$queryRaw()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:10
+   |
+ 9 |   provider = "postgresql"
+10 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+prisma:error
+Invalid `prisma.$queryRaw()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:10
+   |
+ 9 |   provider = "postgresql"
+10 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+prisma:error
+Invalid `prisma.$queryRaw()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:10
+   |
+ 9 |   provider = "postgresql"
+10 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+ GET / 200 in 251ms
 prisma:error
 Invalid `prisma.analyticsEvent.create()` invocation:
 
@@ -120,613 +196,4 @@ Validation Error Count: 1
   clientVersion: '5.22.0',
   errorCode: undefined
 }
- POST /api/track 200 in 7519ms
-prisma:error
-Invalid `prisma.unit.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.unit.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.booking.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.booking.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.ticket.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.identity.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- ⨯ PrismaClientInitializationError:
-Invalid `prisma.unit.count()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at async Promise.all (index 0)
-    at async getAdminDashboardStats (./src/modules/analytics/dashboard.service.ts:12:83)
-    at async AdminDashboardPage (app/admin/page.tsx:25:120)
-digest: "981549727"
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /app/admin 200 in 6974ms
-prisma:error
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-[Analytics] Failed to track page_viewed: PrismaClientInitializationError:
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
-    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
-    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
-    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
-    at async track (webpack-internal:///(rsc)/./src/modules/analytics/track.ts:10:9)
-    at async POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:22:9)
-    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
-    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
-    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
-    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '5.22.0',
-  errorCode: undefined
-}
- POST /api/track 200 in 135ms
- ✓ Compiled /login in 468ms (788 modules)
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /login?next=/app/admin 200 in 86ms
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- ✓ Compiled /mc/calendar in 354ms (797 modules)
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /mc/calendar 200 in 644ms
-prisma:error
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-[Analytics] Failed to track page_viewed: PrismaClientInitializationError:
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
-    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
-    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
-    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
-    at async track (webpack-internal:///(rsc)/./src/modules/analytics/track.ts:10:9)
-    at async POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:22:9)
-    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
-    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
-    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
-    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '5.22.0',
-  errorCode: undefined
-}
- POST /api/track 200 in 95ms
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /login?next=/mc/calendar 200 in 78ms
-prisma:error
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-[Analytics] Failed to track page_viewed: PrismaClientInitializationError:
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
-    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
-    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
-    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
-    at async track (webpack-internal:///(rsc)/./src/modules/analytics/track.ts:10:9)
-    at async POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:22:9)
-    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
-    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
-    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
-    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '5.22.0',
-  errorCode: undefined
-}
- POST /api/track 200 in 42ms
- ✓ Compiled /ops/calendar in 414ms (807 modules)
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /ops/calendar 200 in 645ms
-prisma:error
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-[Analytics] Failed to track page_viewed: PrismaClientInitializationError:
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
-    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
-    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
-    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
-    at async track (webpack-internal:///(rsc)/./src/modules/analytics/track.ts:10:9)
-    at async POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:22:9)
-    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
-    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
-    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
-    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '5.22.0',
-  errorCode: undefined
-}
- POST /api/track 200 in 150ms
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-prisma:error
-Invalid `prisma.$queryRaw()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
- GET /login?next=/ops/calendar 200 in 118ms
-prisma:error
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-[Analytics] Failed to track page_viewed: PrismaClientInitializationError:
-Invalid `prisma.analyticsEvent.create()` invocation:
-
-
-error: Environment variable not found: DATABASE_URL.
-  -->  schema.prisma:10
-   |
- 9 |   provider = "postgresql"
-10 |   url      = env("DATABASE_URL")
-   |
-
-Validation Error Count: 1
-    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
-    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
-    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
-    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
-    at async track (webpack-internal:///(rsc)/./src/modules/analytics/track.ts:10:9)
-    at async POST (webpack-internal:///(rsc)/./src/app/api/track/route.ts:22:9)
-    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
-    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
-    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
-    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '5.22.0',
-  errorCode: undefined
-}
- POST /api/track 200 in 66ms
+ POST /api/track 200 in 56ms

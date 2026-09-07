@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Navbar } from './Navbar';
 
 vi.mock('next/navigation', () => ({
@@ -11,7 +11,7 @@ vi.mock('./NotificationBell', () => ({
 }));
 
 describe('Navbar', () => {
-  it('marks the current role surface in andaman', () => {
+  it('marks the current role surface in andaman when user menu is opened', () => {
     render(
       <Navbar
         user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
@@ -39,6 +39,10 @@ describe('Navbar', () => {
         localeOptions={{ en: 'EN', ru: 'RU', th: 'TH', zh: 'ZH' }}
       />
     );
+
+    // Open user dropdown menu
+    fireEvent.click(screen.getByLabelText('Pavel'));
+
     const owner = screen.getAllByRole('link', { name: 'Owner dashboard' })[0];
     expect(owner).toHaveClass('text-brand-andaman');
     expect(owner).toHaveClass('font-semibold');

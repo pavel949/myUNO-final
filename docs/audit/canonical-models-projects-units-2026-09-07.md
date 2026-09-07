@@ -18,11 +18,12 @@ schema-enforced where it matters most, and 77 models hang off it without a rival
 anywhere in the repo — the CRM binds to `Project`/`Unit` by FK rather than duplicating them, which
 is the single most important thing to get right and it is right.
 
-**The models are mature; the joins are not.** The weakness is not the entities, it is the wire
-between them. In four places the platform accepts a `project_id` from a caller and never checks it
-against the unit's actual project, and nothing in the database stops the two from disagreeing.
-That is the answer to "can they be connected": **they already are connected structurally, and the
-connection is not yet trustworthy.**
+**The models were mature; the joins were not.** The weakness was never the entities, it was the
+wire between them: in four places the platform accepted a `project_id` from a caller and never
+checked it against the unit's actual project, and nothing in the database stopped the two from
+disagreeing. That was the answer to "can they be connected" — structurally yes, trustworthily no.
+**All four are now fixed** (§4), and the invariant sits in the database rather than in each
+writer's good intentions.
 
 **Usability verdict: an operator can create a project and a unit without code, and cannot place
 that project on the map of the business without code.** `Area` — the canonical location entity —
@@ -66,9 +67,15 @@ has a service, a cycle guard, an inclusive tree walk, and no admin route and no 
 
 ---
 
-## 4. Link-integrity defects (new findings)
+## 4. Link-integrity defects (new findings) — **all four FIXED 2026-09-07**
 
-### 4.1 `POST /api/bookings` trusts a client-supplied `projectId` — P1
+> Fixed in the same branch as this audit. Each fix carries a test that fails
+> without it, and the invariant now sits in the database as well as the
+> services (doc 02 §2.5.2, migration `20260907001000_unit_project_coherence`).
+> §4.3 turned out to have **three** sites, not one: the guest unit-detail API
+> had the same defect and was found while fixing the others.
+
+### 4.1 `POST /api/bookings` trusts a client-supplied `projectId` — FIXED
 
 `src/app/api/bookings/route.ts` reads `projectId` from the request body and, on the
 specific-unit path, never compares it with the unit's own project. It then uses that value for:
@@ -85,7 +92,7 @@ the booking.
 **Fix:** derive `projectId` from the unit inside the booking transaction. Never accept it from the
 client on the specific-unit path; on the category path it is a *search* input, not a filing input.
 
-### 4.2 `POST /api/admin/contracts` accepts `unitId` and `projectId` independently — P1
+### 4.2 `POST /api/admin/contracts` accepts `unitId` and `projectId` independently — FIXED
 
 `src/app/api/admin/contracts/route.ts` validates that the unit exists and that the project exists,
 then writes both. It never asserts `unit.projectId === body.projectId`. A management contract —
@@ -94,7 +101,7 @@ does not contain the unit.
 
 **Fix:** derive it from the unit; drop it from the request contract.
 
-### 4.3 Unit search ignores project status — P1
+### 4.3 Unit search ignores project status — FIXED (three sites)
 
 `src/app/api/search/units/route.ts` builds `where: { status: 'live', ...projectScope }` with **no
 `project: { status: 'live' }`**, while `getPublicUnitById` correctly returns null unless *both* the
@@ -105,7 +112,14 @@ disagree.
 **Fix:** add `project: { status: 'live' }` to the search predicate, and pin it with a test that
 archives a project and asserts zero results.
 
-### 4.4 `role_assignment` no longer requires a project for unit-scoped roles — P1
+**Shipped.** The same defect was in two more places, both found while fixing this one:
+`GET /api/units/[unitId]` — the API the guest's booking screen actually reads — checked the unit's
+status alone, so an archived project's villa pages stayed live; and
+`findAvailableUnitsForCategory` sold them. All three now require a live project. The viewport filter
+was merged into the same `project` clause rather than spread beside it, because two `project` keys in
+one object literal silently drop the first.
+
+### 4.4 `role_assignment` no longer requires a project for unit-scoped roles — FIXED
 
 Migration `20260904062200_relax_role_assignment_unit_scope_check` dropped the requirement that a
 unit-scoped role carries `project_id`, "for compatibility" with seed and test data, and the
@@ -191,16 +205,17 @@ onboards, because each one gets more expensive per unit already in the system.
 
 | # | Action | Why first |
 |---|---|---|
-| 1 | Derive `project_id` from the unit in bookings (§4.1) | Touches money — an immutable snapshot is taking terms from the wrong project |
-| 2 | Same for management contracts (§4.2) | Same class of defect, decides fee liability |
-| 3 | Project status in search (§4.3) | One-line predicate; today an archived project still sells |
-| 4 | Restore and validate the role-assignment scope constraint (§4.4) | The spine's own enforcement point is currently `NOT VALID` |
+| ~~1~~ | ~~Derive `project_id` from the unit in bookings (§4.1)~~ | **DONE** — derived and refused-on-mismatch, 5 tests |
+| ~~2~~ | ~~Same for management contracts (§4.2)~~ | **DONE** — 2 tests |
+| ~~3~~ | ~~Project status in search (§4.3)~~ | **DONE** — three sites, 8 tests |
+| ~~4~~ | ~~Restore and validate the role-assignment scope constraint (§4.4)~~ | **DONE** — plus a coherence trigger on all three tables, 7 tests |
 | 5 | Admin Areas page + `area_id` on the project contract (§5.1) | Unblocks browse, area reporting, and retires `area_label_key` |
 | 6 | Amenity resolution (unit ∪ project) + implement the documented filter (§4.5) | Forces the inheritance decision the matrix already specifies |
 | 7 | `SpaceNode` and `UnitType` as entities | Structural; decide before the second project onboards |
 
-Items 1–4 are defects with a known fix and belong in one hardening task. Items 5–6 are build tasks.
-Item 7 is an architecture decision (doc 01) before it is code.
+Items 1–4 shipped together as one hardening task (2008 tests green, build and lint clean). Items 5–6
+are build tasks, blocked on the rulings below. Item 7 is an architecture decision (doc 01) before it
+is code.
 
 ---
 

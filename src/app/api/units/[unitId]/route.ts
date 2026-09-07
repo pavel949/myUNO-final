@@ -32,7 +32,7 @@ export async function GET(
         cancellationPolicyKey: true,
         status: true,
         project: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, status: true },
         },
         coverMedia: { select: { storageKey: true } },
         media: {
@@ -42,7 +42,10 @@ export async function GET(
       },
     });
 
-    if (!unit || unit.status !== 'live') {
+    // A unit is public only when its project is public too. Checking the unit
+    // alone left the page live for a villa in an archived or draft project —
+    // the same disagreement search had, on the screen the guest books from.
+    if (!unit || unit.status !== 'live' || unit.project.status !== 'live') {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
@@ -54,7 +57,8 @@ export async function GET(
       identityId: viewer?.identityId,
     });
 
-    const { status: _status, coverMedia, media, ...publicUnit } = unit;
+    const { status: _status, coverMedia, media, project, ...rest } = unit;
+    const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
     const gallery = media.map((m) => m.media.storageKey);
     const cover = coverMedia?.storageKey || gallery[0] || null;
     return NextResponse.json({

@@ -193,6 +193,47 @@ scalar — one transaction. `updateUnit` does **not** accept an owner, so this i
 the only supported path. `ensureOwnershipRecorded` opens a first period for a
 unit created outside that path, and is idempotent.
 
+#### 2.5.2 The unit's project is the only authority — enforced
+
+Three tables carry both a `unit_id` and a `project_id`: `booking`,
+`management_contract` and `role_assignment` (unit scope). The pair must always
+agree with the unit, and the database now enforces it rather than trusting each
+writer (migration `20260907001000_unit_project_coherence`).
+
+**Why it needed enforcing.** Two API routes took `project_id` straight from the
+caller and wrote it beside a unit that lived elsewhere. A booking filed that way
+lands in another project's ledger, metrics and MC dashboard — and resolves its
+cancellation policy against *that* project's config overrides (doc 04 §5) before
+the snapshot trigger freezes the terms, so the guest is sold one project's
+policy on another project's villa, permanently. A management contract filed that
+way decides a performance fee under the wrong project. A role assignment filed
+that way grants scope somewhere its holder was never meant to reach.
+
+**How.** A `project_matches_unit()` trigger on all three tables, `BEFORE INSERT
+OR UPDATE`, raising when `project_id` is not the unit's project. A row with no
+`unit_id` is not its business — a project-scoped role or a project-only ledger
+line is legitimately unit-less. Triggers rather than a composite foreign key
+because the FK is expressible in `schema.prisma` only as a duplicate relation on
+the same columns; left undeclared, the next `prisma migrate dev` would diff it as
+drift and drop it.
+
+**The role-assignment shape check is validated again.** Migration
+`20260904062200` had relaxed doc §2.8's requirement that a unit-scoped role
+carries a `project_id`, to accommodate fixtures that no longer violate it, and
+left the constraint `NOT VALID`. That was never harmless:
+`getIdentityRoles(identity, { projectId })` filters on the column, so a
+unit-scoped role written without one is invisible to every project-scoped
+permission read — the holder silently loses access that was granted to them.
+
+**Consequence for callers:** never send a `project_id` alongside a `unit_id`.
+Derive it. `POST /api/bookings` and `POST /api/admin/contracts` both accept one
+only so that a caller who disagrees is refused rather than silently corrected.
+
+**A unit cannot be re-parented.** `updateUnit` accepts no `projectId`, and with
+`@@unique([projectId, name])` plus the money history hanging off both ids, moving
+one is a migration rather than an edit. Whether it should ever be possible is
+**Q63**.
+
 ### 2.6 `UnitEngagement` — how the unit is on the platform (the economics selector)
 
 > **`UnitEngagement` and `ManagementContract` are not rivals — they answer different questions.**

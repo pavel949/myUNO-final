@@ -846,6 +846,7 @@ model Identity {
   prospectingAccountsAssigned ProspectingAccount[]     @relation("prospectingAssignee")
   managementContractsOwned  ManagementContract[]        @relation("contractOwner")
   managementContractsSigned ManagementContract[]        @relation("contractSignatory")
+  regulatoryCredentialsVerified RegulatoryCredential[] @relation("credentialVerifier")
 
   @@map("identity")
 }
@@ -941,15 +942,46 @@ model Project {
   status          ProjectStatus @default(draft)
   defaultCurrency String        @default("THB") @map("default_currency")
 
+  // Extended Physical Property & Development Facts
+  projectType                String?   @map("project_type")
+  hospitalityClassification String?   @map("hospitality_classification")
+  developmentLifecycleStatus String?   @map("development_lifecycle_status")
+  operationalStatus          String?   @map("operational_status")
+  brand                      String?
+  country                    String    @default("TH")
+  region                     String?
+  city                       String?
+  district                   String?
+  subdistrict                String?
+  postcode                   String?
+  constructionStatus         String?   @map("construction_status")
+  launchDate                 DateTime? @map("launch_date")
+  completionDate             DateTime? @map("completion_date")
+  completionYear             Int?      @map("completion_year")
+  expectedCompletion         DateTime? @map("expected_completion")
+  totalUnits                 Int?      @map("total_units")
+  totalBuildings             Int?      @map("total_buildings")
+  floors                     Int?
+  landAreaSqm                Decimal?  @map("land_area_sqm") @db.Decimal(10, 2)
+  commonAreaSqm              Decimal?  @map("common_area_sqm") @db.Decimal(10, 2)
+  masterplanMediaId          String?   @map("masterplan_media_id")
+  phases                     Json?     @db.JsonB
+  facilities                 String[]  @default([])
+  hospitalityConfig          Json?     @map("hospitality_config") @db.JsonB
+
   // Relations
   /// SetNull, never cascade: deleting an area must not delete the projects in
   /// it. An area is a way of describing where a project is, not its owner.
-  area                 Area?                @relation(fields: [areaId], references: [id], onDelete: SetNull)
-  coverMedia           MediaAsset?          @relation(name: "projectCover", fields: [coverMediaId], references: [id])
+  area                 Area?                    @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  coverMedia           MediaAsset?              @relation(name: "projectCover", fields: [coverMediaId], references: [id])
+  masterplanMedia      MediaAsset?              @relation(name: "projectMasterplan", fields: [masterplanMediaId], references: [id], onDelete: SetNull)
   units                Unit[]
-  roleAssignments      RoleAssignment[]     @relation("projectScope")
+  roleAssignments      RoleAssignment[]         @relation("projectScope")
   galleryMedia         ProjectMedia[]
   organizations        Organization[]
+  orgRoles             ProjectOrganizationRole[]
+  commercialOfferings  CommercialOffering[]
+  regulatoryCredentials RegulatoryCredential[]
   bookings             Booking[]
   ledgerEntries        LedgerEntry[]
   threads              Thread[]
@@ -1000,11 +1032,30 @@ model Unit {
   maxPets                 Int?       @map("max_pets")
   coverMediaId            String?    @map("cover_media_id")
 
+  // Extended Physical Unit Facts
+  privacyType             String?    @default("entire_place") @map("privacy_type")
+  accommodationType       String?    @map("accommodation_type")
+  usableAreaSqm           Decimal?   @map("usable_area_sqm") @db.Decimal(10, 2)
+  grossAreaSqm            Decimal?   @map("gross_area_sqm") @db.Decimal(10, 2)
+  outdoorAreaSqm          Decimal?   @map("outdoor_area_sqm") @db.Decimal(10, 2)
+  plotAreaSqm             Decimal?   @map("plot_area_sqm") @db.Decimal(10, 2)
+  balconyAreaSqm          Decimal?   @map("balcony_area_sqm") @db.Decimal(10, 2)
+  unitFeatures            String[]   @default([]) @map("unit_features")
+  accessibilityFacts      String[]   @default([]) @map("accessibility_facts")
+  safetyFacts             String[]   @default([]) @map("safety_facts")
+  furnishingStatus        String?    @map("furnishing_status")
+  views                   String[]   @default([])
+  petFeeThb               Int?       @map("pet_fee_thb")
+  petRules                String?    @map("pet_rules")
+
   // Relations
   project               Project                     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   owner                 Identity?                   @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
   coverMedia            MediaAsset?                 @relation(name: "unitCover", fields: [coverMediaId], references: [id])
   media                 UnitMedia[]
+  sleepingSpaces        SleepingSpace[]
+  commercialOfferings   CommercialOffering[]
+  regulatoryCredentials RegulatoryCredential[]
   engagements           UnitEngagement[]
   roleAssignments       RoleAssignment[]            @relation("unitScope")
   blockedDates          BlockedDate[]
@@ -1474,11 +1525,32 @@ model Organization {
   contactPhone String             @map("contact_phone")
   status       OrganizationStatus @default(active)
 
+  // Canonical Developer / Organization Facts
+  legalName             String?   @map("legal_name")
+  tradingName           String?   @map("trading_name")
+  logoMediaId           String?   @map("logo_media_id")
+  website               String?
+  hqCountry             String?   @map("hq_country")
+  officeAddress         String?   @map("office_address")
+  registrationNumber    String?   @map("registration_number")
+  taxIdentifier         String?   @map("tax_identifier")
+  yearEstablished       Int?      @map("year_established")
+  profileKey            String?   @map("profile_key")
+  parentOrganizationId  String?   @map("parent_organization_id")
+  listedExchange        String?   @map("listed_exchange")
+  developerTrackRecord  Json?     @map("developer_track_record") @db.JsonB
+  developerVerification String?   @default("unverified") @map("developer_verification")
+
   // Relations
-  project         Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  engagements     UnitEngagement[]
-  roleAssignments RoleAssignment[]
-  announcements   Announcement[]
+  project               Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  logoMedia             MediaAsset?              @relation(name: "orgLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  parentOrg             Organization?            @relation(name: "orgParent", fields: [parentOrganizationId], references: [id], onDelete: SetNull)
+  childOrgs             Organization[]           @relation(name: "orgParent")
+  projectRoles          ProjectOrganizationRole[]
+  regulatoryCredentials RegulatoryCredential[]
+  engagements           UnitEngagement[]
+  roleAssignments       RoleAssignment[]
+  announcements         Announcement[]
 
   @@map("organization")
 }
@@ -1737,6 +1809,9 @@ model MediaAsset {
   complianceRecordDocs  ComplianceRecord[]     @relation("complianceRecordDoc")
   statementPdfs         OwnerStatement[]       @relation("statementPdf")
   claimEvidence         DepositClaim[]         @relation("claimEvidence")
+  orgLogos              Organization[]         @relation("orgLogo")
+  projectMasterplans    Project[]              @relation("projectMasterplan")
+  regulatoryCredentialDocs RegulatoryCredential[] @relation("regulatoryDoc")
 
   @@index([deleteAfter])
   @@map("media_asset")
@@ -2813,4 +2888,146 @@ model JobRun {
 
   @@index([jobKey, startedAt])
   @@map("job_run")
+}
+
+// --- Canonical Property Data System Extensions ---
+
+model ProjectOrganizationRole {
+  id             String    @id @default(uuid())
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  projectId      String    @map("project_id")
+  organizationId String    @map("organization_id")
+  roleKey        String    @map("role_key")
+  effectiveFrom  DateTime? @map("effective_from")
+  effectiveTo    DateTime? @map("effective_to")
+  isPrimary      Boolean   @default(false) @map("is_primary")
+  notes          String?
+  provenance     String?   @default("verified")
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, organizationId, roleKey])
+  @@index([projectId, roleKey])
+  @@index([organizationId])
+  @@map("project_organization_role")
+}
+
+model SleepingSpace {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unitId    String   @map("unit_id")
+  spaceType String   @default("bedroom") @map("space_type")
+  name      String?
+  sortOrder Int      @default(0) @map("sort_order")
+
+  unit Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  beds Bed[]
+
+  @@index([unitId, sortOrder])
+  @@map("sleeping_space")
+}
+
+model Bed {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  sleepingSpaceId String   @map("sleeping_space_id")
+  bedType         String   @map("bed_type")
+  count           Int      @default(1)
+
+  sleepingSpace SleepingSpace @relation(fields: [sleepingSpaceId], references: [id], onDelete: Cascade)
+
+  @@index([sleepingSpaceId])
+  @@map("bed")
+}
+
+model CommercialOffering {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  projectId   String?  @map("project_id")
+  unitId      String?  @map("unit_id")
+  offeringType String   @map("offering_type")
+  status      String   @default("active")
+
+  pricingTerms     Json @default("{}") @map("pricing_terms") @db.JsonB
+  rulesAndPolicies Json @default("{}") @map("rules_and_policies") @db.JsonB
+  ownershipTenure  Json @default("{}") @map("ownership_tenure") @db.JsonB
+
+  project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  channelMappings ChannelMapping[]
+
+  @@index([unitId, offeringType])
+  @@index([projectId, offeringType])
+  @@map("commercial_offering")
+}
+
+model ChannelMapping {
+  id                String    @id @default(uuid())
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  offeringId        String    @map("offering_id")
+  channel           String
+  externalListingId String?   @map("external_listing_id")
+  syncState         String    @default("synced") @map("sync_state")
+  externalStatus    String?   @map("external_status")
+  lastSyncAt        DateTime? @map("last_sync_at")
+  channelOverrides  Json      @default("{}") @map("channel_overrides") @db.JsonB
+  syncErrors        Json      @default("[]") @map("sync_errors") @db.JsonB
+
+  offering CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+
+  @@unique([offeringId, channel])
+  @@map("channel_mapping")
+}
+
+model RegulatoryCredential {
+  id                  String    @id @default(uuid())
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  requirementKey      String    @map("requirement_key")
+  jurisdictionCountry String    @default("TH") @map("jurisdiction_country")
+  credentialType      String    @map("credential_type")
+  scopeLevel          String    @map("scope_level")
+
+  organizationId      String?   @map("organization_id")
+  projectId           String?   @map("project_id")
+  unitId              String?   @map("unit_id")
+
+  registrationNumber  String?   @map("registration_number")
+  issuingAuthority    String?   @map("issuing_authority")
+  legalHolderName     String?   @map("legal_holder_name")
+  issueDate           DateTime? @map("issue_date")
+  effectiveDate       DateTime? @map("effective_date")
+  expiryDate          DateTime? @map("expiry_date")
+  status              String    @default("active")
+  exemptionBasis      String?   @map("exemption_basis")
+
+  evidenceMediaId     String?   @map("evidence_media_id")
+  verificationStatus  String    @default("verified") @map("verification_status")
+  verifiedByIdentityId String?  @map("verified_by_identity_id")
+  verifiedAt          DateTime? @map("verified_at")
+  notes               String?
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  evidenceMedia MediaAsset?  @relation(name: "regulatoryDoc", fields: [evidenceMediaId], references: [id], onDelete: SetNull)
+  verifiedBy   Identity?     @relation(name: "credentialVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([projectId, status])
+  @@index([unitId, status])
+  @@index([credentialType, status])
+  @@map("regulatory_credential")
 }

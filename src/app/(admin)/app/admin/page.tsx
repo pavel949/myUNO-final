@@ -21,6 +21,7 @@ export default async function AdminDashboardPage() {
   // revenue by channel, rental vs ancillary — read-time aggregates.
   const reportEnd = new Date();
   const reportStart = new Date(reportEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const projectCount = await prisma.project.count();
   const liveProjects = (await listProjects('live')).slice(0, 5);
   const projectReports = await Promise.all(
     liveProjects.map(async (project) => ({
@@ -34,6 +35,17 @@ export default async function AdminDashboardPage() {
 
   const labels = await getLabels({
     'admin.dashboard.title': 'Dashboard',
+    'admin.dashboard.setup_title': 'Add to the portfolio',
+    'admin.dashboard.setup_intro':
+      'A project is the development; a unit is a home inside it. Create the project first, then add its units.',
+    'admin.dashboard.setup_projects': 'Projects',
+    'admin.dashboard.setup_projects_hint': 'Create a development and set its pricing and rules.',
+    'admin.dashboard.setup_units': 'Units',
+    'admin.dashboard.setup_units_hint': 'Add a home to a project, set its nightly rate and owner.',
+    'admin.dashboard.setup_people': 'People & roles',
+    'admin.dashboard.setup_people_hint': 'Invite owners, staff and management-company members.',
+    'admin.dashboard.setup_empty':
+      'Nothing in the portfolio yet. Start by creating a project.',
     'admin.dashboard.units': 'Units (live / total)',
     'admin.dashboard.bookings': 'Bookings (awaiting payment / total)',
     'admin.dashboard.tickets': 'Open tickets',
@@ -93,6 +105,55 @@ export default async function AdminDashboardPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.dashboard.title']}
       </h1>
+      {/* Where things are entered. The admin surface opened straight onto
+          analytics, so on a fresh portfolio it was a wall of zeroes with no
+          visible way in — the create screens existed but nothing pointed at
+          them. Shown always, and called out while the portfolio is empty. */}
+      <section
+        className={`mb-32 rounded-lg border p-24 ${
+          projectCount === 0
+            ? 'border-brand-andaman bg-surface-paper'
+            : 'border-border-line bg-surface-paper'
+        }`}
+      >
+        <h2 className="font-display text-title font-semibold text-text-ink mb-8">
+          {labels['admin.dashboard.setup_title']}
+        </h2>
+        <p className="text-small text-text-secondary mb-16">
+          {projectCount === 0
+            ? labels['admin.dashboard.setup_empty']
+            : labels['admin.dashboard.setup_intro']}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+          {[
+            {
+              href: '/app/admin/projects',
+              label: labels['admin.dashboard.setup_projects'],
+              hint: labels['admin.dashboard.setup_projects_hint'],
+            },
+            {
+              href: '/app/admin/units',
+              label: labels['admin.dashboard.setup_units'],
+              hint: labels['admin.dashboard.setup_units_hint'],
+            },
+            {
+              href: '/app/admin/people',
+              label: labels['admin.dashboard.setup_people'],
+              hint: labels['admin.dashboard.setup_people_hint'],
+            },
+          ].map((step) => (
+            <Link
+              key={step.href}
+              href={step.href}
+              className="block rounded-md border border-border-line p-16 hover:border-brand-andaman transition-colors duration-micro"
+            >
+              <p className="text-body font-semibold text-text-ink mb-4">{step.label} →</p>
+              <p className="text-small text-text-secondary">{step.hint}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
         {tiles.map((tile) => (
           <Link

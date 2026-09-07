@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db, resetDb, createIdentity } from '@/test/util';
-import { t, setTranslation, ensureContentKey, clearTranslationCache } from './content.service';
+import { t, tMany, setTranslation, ensureContentKey, clearTranslationCache } from './content.service';
 import { seedContent } from './seed';
 import { DEFAULT_LOCALE } from './types';
 
@@ -267,6 +267,81 @@ describe('T-004 · Content module', () => {
       });
 
       expect(translation?.updatedByIdentityId).toBe(identity.id);
+    });
+  });
+
+  // Navigation latency lived here. `getLabels` asks for ~120 keys to render one
+  // admin page (root layout + admin shell + page); resolving them one at a time
+  // meant 120+ serialized round trips before any HTML, and a *missing* key cost
+  // one query per locale in the fallback chain on every request, forever,
+  // because misses were never cached.
+  describe('batch resolution costs one query', () => {
+    /** Count queries a block issues, via Prisma's query event stream. */
+    async function countQueries(run: () => Promise<void>): Promise<number> {
+      let count = 0;
+      const logged = new (require('@prisma/client').PrismaClient)({
+        datasources: { db: { url: process.env.DATABASE_URL_TEST } },
+        log: [{ emit: 'event', level: 'query' }],
+      });
+      logged.$on('query', (e: { query: string }) => {
+        if (!/^\s*(BEGIN|COMMIT|ROLLBACK|DEALLOCATE)/i.test(e.query)) count += 1;
+      });
+      queryDb = logged;
+      try {
+        await run();
+      } finally {
+        await logged.$disconnect();
+        queryDb = null;
+      }
+      return count;
+    }
+
+    let queryDb: any = null;
+
+    it('resolves many present keys in a single query', async () => {
+      clearTranslationCache();
+      const keys = ['common.action.save', 'common.action.cancel', 'common.action.back'];
+      let out: Record<string, string | null> = {};
+      const queries = await countQueries(async () => {
+        out = await tMany(queryDb, keys, 'ru');
+      });
+
+      expect(queries).toBe(1);
+      expect(out['common.action.save']).toBe('Сохранить');
+    });
+
+    it('caches misses, so a missing key stops hitting the database', async () => {
+      clearTranslationCache();
+      const missing = ['test.batch.absent.one', 'test.batch.absent.two'];
+
+      const first = await countQueries(async () => {
+        const out = await tMany(queryDb, missing, 'ru');
+        expect(out['test.batch.absent.one']).toBeNull();
+      });
+      expect(first).toBe(1);
+
+      // The whole fallback chain is now a known miss for both keys.
+      const second = await countQueries(async () => {
+        const out = await tMany(queryDb, missing, 'ru');
+        expect(out['test.batch.absent.two']).toBeNull();
+      });
+      expect(second).toBe(0);
+    });
+
+    it('falls back down the locale chain within the one query', async () => {
+      clearTranslationCache();
+      const key = 'test.batch.en.only';
+      await ensureContentKey(db, key, 'test', 'EN only');
+      await setTranslation(db, key, 'en', 'English only', 'ok', authorId);
+      clearTranslationCache();
+
+      let out: Record<string, string | null> = {};
+      const queries = await countQueries(async () => {
+        out = await tMany(queryDb, [key], 'ru');
+      });
+
+      expect(queries).toBe(1);
+      expect(out[key]).toBe('English only');
     });
   });
 });

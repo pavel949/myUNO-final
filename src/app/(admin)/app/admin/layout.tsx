@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
-import { AdminNavLinks } from './AdminNavLinks';
+import { AdminNavLinks, type AdminNavGroup } from './AdminNavLinks';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.attribution': 'Attribution',
     'admin.nav.prospecting': 'Prospecting',
     'admin.nav.kpis': 'Operational KPIs',
-    'admin.nav.units': 'Projects & Units',
+    'admin.nav.units': 'Units',
     'admin.nav.projects': 'Projects',
     'admin.nav.config': 'Pricing & Config',
     'admin.nav.bookings': 'Bookings',
@@ -49,51 +49,100 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.audit': 'Audit trail',
     'admin.nav.integrations': 'Integrations',
     'admin.nav.scheduler': 'Scheduler',
+    'admin.nav.group.overview': 'Overview',
+    'admin.nav.group.portfolio': 'Portfolio',
+    'admin.nav.group.commercial': 'Commercial',
+    'admin.nav.group.operations': 'Operations',
+    'admin.nav.group.supply': 'Supply',
+    'admin.nav.group.finance': 'Finance',
+    'admin.nav.group.governance': 'Governance',
     'admin.nav.back_to_site': '← Back to site',
   });
 
-  const items = [
-    { href: '/app/admin', label: labels['admin.nav.dashboard'] },
-    { href: '/app/admin/crm', label: labels['admin.nav.crm'] },
-    { href: '/app/admin/reports/attribution', label: labels['admin.nav.attribution'] },
-    { href: '/app/admin/prospecting', label: labels['admin.nav.prospecting'] },
-    { href: '/app/admin/operational-kpis', label: labels['admin.nav.kpis'] },
-    { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
-    { href: '/app/admin/units', label: labels['admin.nav.units'] },
-    { href: '/app/admin/people', label: labels['admin.nav.people'] },
-    { href: '/app/admin/organizations', label: labels['admin.nav.organizations'] },
-    { href: '/app/admin/config', label: labels['admin.nav.config'] },
-    { href: '/app/admin/bookings', label: labels['admin.nav.bookings'] },
-    { href: '/app/admin/service-orders', label: labels['admin.nav.service_orders'] },
-    { href: '/app/admin/providers', label: labels['admin.nav.providers'] },
-    { href: '/app/admin/services', label: labels['admin.nav.services'] },
-    { href: '/app/admin/announcements', label: labels['admin.nav.announcements'] },
-    { href: '/app/admin/tickets', label: labels['admin.nav.tickets'] },
-    { href: '/app/admin/incidents', label: labels['admin.nav.incidents'] },
-    { href: '/app/admin/compliance', label: labels['admin.nav.compliance'] },
-    { href: '/app/admin/compliance-checklists', label: labels['admin.nav.checklists'] },
-    { href: '/app/admin/content', label: labels['admin.nav.content'] },
-    { href: '/app/admin/signals', label: labels['admin.nav.signals'] },
-    { href: '/app/admin/ledger', label: labels['admin.nav.ledger'] },
-    { href: '/app/admin/contracts', label: labels['admin.nav.contracts'] },
-    { href: '/app/admin/statements', label: labels['admin.nav.statements'] },
-    { href: '/app/admin/payouts', label: labels['admin.nav.payouts'] },
-    // Sits outside the admin group at /admin/finance/reconciliation and was
-    // therefore reachable only by typing it. Linked rather than moved: the
-    // route is in use and changing it would break anyone's bookmark.
-    { href: '/admin/finance/reconciliation', label: labels['admin.nav.reconciliation'] },
-    { href: '/app/admin/claims', label: labels['admin.nav.claims'] },
-    { href: '/app/admin/disputes', label: labels['admin.nav.disputes'] },
-    { href: '/app/admin/audit', label: labels['admin.nav.audit'] },
-    { href: '/app/admin/integrations', label: labels['admin.nav.integrations'] },
-    { href: '/app/admin/scheduler', label: labels['admin.nav.scheduler'] },
+  // Grouped rather than one flat list of thirty links. Portfolio comes first
+  // after the overview because that is where a project or a unit is actually
+  // created — in a flat list it sat mid-scroll between analytics and finance,
+  // and "where do I enter a property?" had no visible answer.
+  const groups: AdminNavGroup[] = [
+    {
+      heading: labels['admin.nav.group.overview'],
+      items: [
+        { href: '/app/admin', label: labels['admin.nav.dashboard'] },
+        { href: '/app/admin/operational-kpis', label: labels['admin.nav.kpis'] },
+        { href: '/app/admin/reports/attribution', label: labels['admin.nav.attribution'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.portfolio'],
+      items: [
+        { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
+        { href: '/app/admin/units', label: labels['admin.nav.units'] },
+        { href: '/app/admin/people', label: labels['admin.nav.people'] },
+        { href: '/app/admin/organizations', label: labels['admin.nav.organizations'] },
+        { href: '/app/admin/config', label: labels['admin.nav.config'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.commercial'],
+      items: [
+        { href: '/app/admin/crm', label: labels['admin.nav.crm'] },
+        { href: '/app/admin/prospecting', label: labels['admin.nav.prospecting'] },
+        { href: '/app/admin/signals', label: labels['admin.nav.signals'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.operations'],
+      items: [
+        { href: '/app/admin/bookings', label: labels['admin.nav.bookings'] },
+        { href: '/app/admin/service-orders', label: labels['admin.nav.service_orders'] },
+        { href: '/app/admin/tickets', label: labels['admin.nav.tickets'] },
+        { href: '/app/admin/incidents', label: labels['admin.nav.incidents'] },
+        { href: '/app/admin/announcements', label: labels['admin.nav.announcements'] },
+        { href: '/app/admin/scheduler', label: labels['admin.nav.scheduler'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.supply'],
+      items: [
+        { href: '/app/admin/providers', label: labels['admin.nav.providers'] },
+        { href: '/app/admin/services', label: labels['admin.nav.services'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.finance'],
+      items: [
+        { href: '/app/admin/ledger', label: labels['admin.nav.ledger'] },
+        { href: '/app/admin/contracts', label: labels['admin.nav.contracts'] },
+        { href: '/app/admin/statements', label: labels['admin.nav.statements'] },
+        { href: '/app/admin/payouts', label: labels['admin.nav.payouts'] },
+        // Sits outside the admin group at /admin/finance/reconciliation and was
+        // therefore reachable only by typing it. Linked rather than moved: the
+        // route is in use and changing it would break anyone's bookmark.
+        { href: '/admin/finance/reconciliation', label: labels['admin.nav.reconciliation'] },
+        { href: '/app/admin/claims', label: labels['admin.nav.claims'] },
+        { href: '/app/admin/disputes', label: labels['admin.nav.disputes'] },
+      ],
+    },
+    {
+      heading: labels['admin.nav.group.governance'],
+      items: [
+        { href: '/app/admin/compliance', label: labels['admin.nav.compliance'] },
+        { href: '/app/admin/compliance-checklists', label: labels['admin.nav.checklists'] },
+        { href: '/app/admin/content', label: labels['admin.nav.content'] },
+        { href: '/app/admin/audit', label: labels['admin.nav.audit'] },
+        { href: '/app/admin/integrations', label: labels['admin.nav.integrations'] },
+      ],
+    },
   ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface-ivory">
-      <aside className="md:w-56 shrink-0 bg-brand-deep text-on-dark-text p-16 md:min-h-screen" style={{ minWidth: '220px' }}>
+      <aside
+        className="md:w-56 shrink-0 bg-brand-deep text-on-dark-text p-16 md:h-screen md:sticky md:top-0 md:overflow-y-auto"
+        style={{ minWidth: '220px' }}
+      >
         <p className="font-display text-subtitle font-bold mb-24">{labels['admin.nav.title']}</p>
-        <AdminNavLinks items={items} />
+        <AdminNavLinks groups={groups} />
         <p className="mt-24">
           <Link href="/" className="text-small text-on-dark-muted hover:underline">
             {labels['admin.nav.back_to_site']}

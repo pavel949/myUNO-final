@@ -10,6 +10,7 @@ import BankTransferInstructions from '@/components/booking/BankTransferInstructi
 interface BookingDetail {
   id: string;
   status: string;
+  createdAt?: string;
   startDate: string;
   endDate: string;
   adults: number;
@@ -407,8 +408,15 @@ export default function BookingDetailClient({
           <div className="flex flex-wrap gap-12">
             {stayStartedOrConfirmed && (
               <Link href={`/bookings/${booking.id}/home-space`}>
-                <Button variant="secondary" size="sm">
+                <Button variant="primary" size="sm">
                   {labels['booking.detail.home_space']}
+                </Button>
+              </Link>
+            )}
+            {booking.viewer.isGuest && booking.project?.id && (
+              <Link href={`/messages?projectId=${booking.project.id}&bookingId=${booking.id}`}>
+                <Button variant="secondary" size="sm">
+                  {labels['booking.detail.message_team'] || 'Message your property team'}
                 </Button>
               </Link>
             )}
@@ -420,6 +428,52 @@ export default function BookingDetailClient({
                   </Button>
                 </Link>
               )}
+          </div>
+        </div>
+
+        {/* Guest Trip Timeline */}
+        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <h2 className="text-heading-3 font-bold text-text-ink mb-16">
+            {labels['booking.detail.timeline_title'] || 'Trip Timeline'}
+          </h2>
+          <div className="space-y-16 pl-16 border-l-2 border-brand-andaman">
+            <div className="relative">
+              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+              <p className="text-body font-semibold text-text-ink">
+                {labels['booking.detail.timeline_confirmed'] || 'Booking confirmed'}
+              </p>
+              {booking.createdAt && (
+                <p className="text-small text-text-secondary">
+                  {new Date(booking.createdAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            {booking.verificationStatus === 'passports_received' && (
+              <div className="relative">
+                <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+                <p className="text-body font-semibold text-text-ink">
+                  {labels['booking.detail.timeline_passports'] || 'Passports submitted'}
+                </p>
+              </div>
+            )}
+            <div className="relative">
+              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+              <p className="text-body font-semibold text-text-ink">
+                {labels['booking.detail.timeline_checkin'] || 'Check-in'}
+              </p>
+              <p className="text-small text-text-secondary">
+                {new Date(booking.startDate).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="relative">
+              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-border-line" />
+              <p className="text-body font-semibold text-text-ink">
+                {labels['booking.detail.timeline_checkout'] || 'Check-out'}
+              </p>
+              <p className="text-small text-text-secondary">
+                {new Date(booking.endDate).toLocaleDateString()}
+              </p>
+            </div>
           </div>
         </div>
 

@@ -109,6 +109,12 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
       'We are returning your payment to the original card. This usually takes a few business days — if it takes longer than expected, contact our team and we will follow up.',
     'booking.detail.refund_support': 'Contact support',
     'booking.detail.cancelled_no_refund': 'This booking was cancelled.',
+    'booking.detail.message_team': 'Message your property team',
+    'booking.detail.timeline_title': 'Trip Timeline',
+    'booking.detail.timeline_confirmed': 'Booking confirmed',
+    'booking.detail.timeline_passports': 'Passports submitted',
+    'booking.detail.timeline_checkin': 'Check-in',
+    'booking.detail.timeline_checkout': 'Check-out',
   });
 
   return (

@@ -105,3 +105,24 @@ export {
   type SaveAreaInput,
   type AreaPerformance,
 } from './area.service';
+
+export {
+  createDeveloperOrganization,
+  addProjectOrganizationRole,
+  getDeveloper360,
+  getProjectFacts360,
+  getUnitFacts360,
+  calculatePropertyFactsCompleteness,
+  calculateDeveloperCompleteness,
+} from './property-facts.service';
+
+export {
+  PROJECT_TYPES,
+  ORGANIZATION_ROLES,
+  PROJECT_FACILITIES,
+  BED_TYPES,
+  VIEWS,
+  OWNERSHIP_TENURES,
+  BLOCKING_REASONS,
+  getLabel,
+} from './taxonomies';

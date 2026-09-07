@@ -4,44 +4,43 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export interface AdminNavItem {
+export interface NavItem {
   href: string;
   label: string;
 }
 
-export interface AdminNavGroup {
-  heading: string;
-  items: AdminNavItem[];
+export interface NavSection {
+  title?: string;
+  items: NavItem[];
 }
 
-function isActive(href: string, pathname: string): boolean {
-  return href === '/app/admin'
-    ? pathname === '/app/admin'
-    : pathname === href || pathname.startsWith(`${href}/`);
-}
-
-export function AdminNavLinks({ groups }: { groups: AdminNavGroup[] }) {
+export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname() ?? '';
 
-  // The href the visitor just clicked, highlighted straight away. Server
-  // navigation can take a moment; without this the sidebar gave no sign the
-  // click had landed, which is what made the app feel unresponsive. Cleared
-  // once the route actually changes.
+  // The href just clicked, highlighted straight away. Server navigation takes a
+  // moment, and until it lands the sidebar gave no sign the click had
+  // registered — which is most of why the app felt unresponsive. Cleared once
+  // the route actually changes.
   const [pending, setPending] = useState<string | null>(null);
   useEffect(() => {
     setPending(null);
   }, [pathname]);
 
   return (
-    <nav className="flex md:flex-col gap-24 flex-wrap">
-      {groups.map((group) => (
-        <div key={group.heading}>
-          <p className="text-caption uppercase tracking-wide text-on-dark-muted px-12 mb-8">
-            {group.heading}
-          </p>
+    <nav className="flex flex-col gap-16">
+      {sections.map((section, idx) => (
+        <div key={section.title || idx} className="flex flex-col gap-4">
+          {section.title && (
+            <p className="text-kicker uppercase font-semibold text-brand-sun tracking-wider mb-4 px-12">
+              {section.title}
+            </p>
+          )}
           <div className="flex md:flex-col gap-4 flex-wrap">
-            {group.items.map((item) => {
-              const active = isActive(item.href, pathname);
+            {section.items.map((item) => {
+              const active =
+                item.href === '/app/admin'
+                  ? pathname === '/app/admin'
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const highlighted = active || pending === item.href;
               return (
                 <Link
@@ -49,8 +48,10 @@ export function AdminNavLinks({ groups }: { groups: AdminNavGroup[] }) {
                   href={item.href}
                   onClick={() => setPending(item.href)}
                   aria-current={active ? 'page' : undefined}
-                  className={`block px-12 py-8 rounded-md text-small transition-colors duration-micro ${
-                    highlighted ? 'bg-brand-andaman text-on-dark-text' : 'hover:bg-brand-andaman'
+                  className={`block px-12 py-6 rounded-md text-small transition-colors duration-micro ${
+                    highlighted
+                      ? 'bg-brand-andaman text-on-dark-text font-semibold'
+                      : 'text-on-dark-text hover:bg-brand-andaman/60'
                   }`}
                 >
                   {item.label}

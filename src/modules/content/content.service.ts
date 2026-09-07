@@ -54,6 +54,18 @@ class TranslationCache {
 
 const cache = new TranslationCache();
 
+// One warning per missing key per process. The old code logged on every request
+// for every missing key; in a serverless runtime that is a synchronous write per
+// key per render, itself a measurable share of the latency. Once per process
+// keeps missing content visible without paying for it on every navigation.
+const warnedMissing = new Set<string>();
+
+function warnMissingOnce(key: string, locale: Locale): void {
+  if (warnedMissing.has(key)) return;
+  warnedMissing.add(key);
+  console.warn(`[i18n] Missing translation for key: ${key} (locale: ${locale})`);
+}
+
 function getCacheKey(contentKey: string, locale: Locale): string {
   return `${contentKey}:${locale}`;
 }
@@ -127,6 +139,7 @@ export async function tMany(
 
     if (chain.every((l) => cache.get(getCacheKey(key, l)) === null)) {
       resolved[key] = null; // every locale is a known miss
+      warnMissingOnce(key, locale);
     } else {
       needsDb.push(key);
     }
@@ -167,16 +180,13 @@ export async function tMany(
         if (found && value === null) value = found;
       }
       resolved[key] = value;
+      if (value === null) warnMissingOnce(key, locale);
     }
   }
 
   return resolved;
 }
 
-// One warning per missing key per process. The old code logged on every
-// request for every missing key; in a serverless runtime that is a synchronous
-// write per key per render, which is itself a measurable share of the latency.
-const warnedMissing = new Set<string>();
 
 /**
  * Get a translation with fallback chain: requested locale → en → ru → key name
@@ -190,10 +200,7 @@ export async function t(
   const value = (await tMany(db, [key], locale))[key];
 
   if (value === null || value === undefined) {
-    if (!warnedMissing.has(key)) {
-      warnedMissing.add(key);
-      console.warn(`[i18n] Missing translation for key: ${key} (locale: ${locale})`);
-    }
+    // tMany has already warned once for this key.
     const isDev = process.env.NODE_ENV !== 'production';
     return isDev ? key : '—';
   }

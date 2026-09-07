@@ -3759,10 +3759,12 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.nav.people', namespace: 'admin', description: 'Admin nav: people and roles', en: 'People & Roles', ru: 'Люди и роли', th: 'ผู้คนและบทบาท', status: NR },
   { key: 'admin.nav.title', namespace: 'admin', description: 'Admin sidebar title', en: 'myUNO Admin', ru: 'myUNO Админ', th: 'myUNO แอดมิน', status: NR },
   { key: 'admin.nav.dashboard', namespace: 'admin', description: 'Admin nav: dashboard', en: 'Dashboard', ru: 'Панель', th: 'แดชบอร์ด', status: NR },
+  { key: 'admin.nav.section.grow', namespace: 'admin', description: 'Admin nav section header: Grow', en: 'Grow', ru: 'Рост', th: 'การเติบโต', status: NR },
+  { key: 'admin.nav.section.inventory', namespace: 'admin', description: 'Admin nav section header: Inventory', en: 'Inventory', ru: 'Инвентарь', th: 'คลังสินค้า', status: NR },
+  { key: 'admin.nav.section.supply_content', namespace: 'admin', description: 'Admin nav section header: Supply & Content', en: 'Supply & Content', ru: 'Поставки и контент', th: 'อุปทานและเนื้อหา', status: NR },
+  { key: 'admin.nav.section.money_record', namespace: 'admin', description: 'Admin nav section header: Money & Record', en: 'Money & Record', ru: 'Финансы и учёт', th: 'การเงินและบันทึก', status: NR },
   { key: 'admin.nav.crm', namespace: 'admin', description: 'Admin nav: CRM & pipeline', en: 'CRM & Pipeline', ru: 'CRM и воронка', th: 'CRM และไปป์ไลน์', status: NR },
   { key: 'admin.nav.units', namespace: 'admin', description: 'Admin nav: units', en: 'Units', ru: 'Юниты', th: 'ยูนิต', status: NR },
-  // Sidebar section headings. The nav was one flat list of thirty links, which
-  // buried the two screens where a project or a unit is actually created.
   // Dashboard "add to the portfolio" block — the entry points into the data model.
   { key: 'admin.dashboard.setup_title', namespace: 'admin', description: 'Admin dashboard: portfolio entry-point block heading', en: 'Add to the portfolio', ru: 'Добавить в портфель', th: 'เพิ่มเข้าพอร์ตโฟลิโอ', status: NR },
   { key: 'admin.dashboard.setup_intro', namespace: 'admin', description: 'Admin dashboard: how projects and units relate', en: 'A project is the development; a unit is a home inside it. Create the project first, then add its units.', ru: 'Проект — это комплекс; юнит — жильё внутри него. Сначала создайте проект, затем добавьте юниты.', th: 'โครงการคือการพัฒนา ส่วนยูนิตคือที่พักภายในโครงการ สร้างโครงการก่อน แล้วจึงเพิ่มยูนิต', status: NR },
@@ -3773,13 +3775,6 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.dashboard.setup_people', namespace: 'admin', description: 'Admin dashboard: people entry point', en: 'People & roles', ru: 'Люди и роли', th: 'ผู้คนและบทบาท', status: NR },
   { key: 'admin.dashboard.setup_people_hint', namespace: 'admin', description: 'Admin dashboard: people entry-point hint', en: 'Invite owners, staff and management-company members.', ru: 'Пригласите владельцев, сотрудников и представителей УК.', th: 'เชิญเจ้าของ พนักงาน และสมาชิกบริษัทบริหาร', status: NR },
   { key: 'admin.dashboard.setup_empty', namespace: 'admin', description: 'Admin dashboard: empty-portfolio prompt', en: 'Nothing in the portfolio yet. Start by creating a project.', ru: 'В портфеле пока ничего нет. Начните с создания проекта.', th: 'ยังไม่มีอะไรในพอร์ตโฟลิโอ เริ่มด้วยการสร้างโครงการ', status: NR },
-  { key: 'admin.nav.group.overview', namespace: 'admin', description: 'Admin nav section: overview', en: 'Overview', ru: 'Обзор', th: 'ภาพรวม', status: NR },
-  { key: 'admin.nav.group.portfolio', namespace: 'admin', description: 'Admin nav section: portfolio (projects, units, people, config)', en: 'Portfolio', ru: 'Портфель', th: 'พอร์ตโฟลิโอ', status: NR },
-  { key: 'admin.nav.group.commercial', namespace: 'admin', description: 'Admin nav section: commercial (CRM, prospecting, signals)', en: 'Commercial', ru: 'Коммерция', th: 'การพาณิชย์', status: NR },
-  { key: 'admin.nav.group.operations', namespace: 'admin', description: 'Admin nav section: operations', en: 'Operations', ru: 'Операции', th: 'ปฏิบัติการ', status: NR },
-  { key: 'admin.nav.group.supply', namespace: 'admin', description: 'Admin nav section: supply (providers, services)', en: 'Supply', ru: 'Поставщики', th: 'ซัพพลาย', status: NR },
-  { key: 'admin.nav.group.finance', namespace: 'admin', description: 'Admin nav section: finance', en: 'Finance', ru: 'Финансы', th: 'การเงิน', status: NR },
-  { key: 'admin.nav.group.governance', namespace: 'admin', description: 'Admin nav section: governance (compliance, content, audit)', en: 'Governance', ru: 'Управление', th: 'การกำกับดูแล', status: NR },
   { key: 'admin.nav.content', namespace: 'admin', description: 'Admin nav: content / i18n', en: 'Content', ru: 'Контент', th: 'เนื้อหา', status: NR },
   { key: 'admin.nav.signals', namespace: 'admin', description: 'Admin nav: buyer signals', en: 'Signals', ru: 'Сигналы', th: 'สัญญาณ', status: NR },
   { key: 'admin.nav.integrations', namespace: 'admin', description: 'Admin nav: integrations', en: 'Integrations', ru: 'Интеграции', th: 'การเชื่อมต่อ', status: NR },

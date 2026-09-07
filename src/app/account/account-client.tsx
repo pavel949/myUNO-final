@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { AccountProfile } from '@/modules/core';
+import { Input } from '@/components/Input';
 
 interface Setting {
   type: string;
@@ -155,22 +156,16 @@ export default function AccountClient({
             {labels['account.profile.title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['account.profile.first_name']}</span>
-              <input
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-              />
-            </label>
-            <label className="block">
-              <span className="text-small text-text-secondary">{labels['account.profile.last_name']}</span>
-              <input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-              />
-            </label>
+            <Input
+              label={labels['account.profile.first_name']}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+            <Input
+              label={labels['account.profile.last_name']}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
           </div>
 
           <label className="block mb-16">
@@ -220,24 +215,18 @@ export default function AccountClient({
           {profile.hasPassword ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
-                <label className="block">
-                  <span className="text-small text-text-secondary">{labels['account.password.current']}</span>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-small text-text-secondary">{labels['account.password.new']}</span>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="mt-4 w-full h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                  />
-                </label>
+                <Input
+                  label={labels['account.password.current']}
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <Input
+                  label={labels['account.password.new']}
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
               <button
                 type="button"

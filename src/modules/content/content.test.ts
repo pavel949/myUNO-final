@@ -343,5 +343,26 @@ describe('T-004 · Content module', () => {
       expect(queries).toBe(1);
       expect(out[key]).toBe('English only');
     });
+
+    it('warns once per missing key, not once per render', async () => {
+      clearTranslationCache();
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const missing = ['test.warn.once.a', 'test.warn.once.b'];
+        // Three renders of the same screen, as navigation would produce.
+        await tMany(db, missing, 'ru');
+        await tMany(db, missing, 'ru');
+        await tMany(db, missing, 'ru');
+
+        const forMissing = warn.mock.calls.filter((c) =>
+          String(c[0]).includes('test.warn.once.')
+        );
+        // One per key, not one per key per render — but never zero: a batch
+        // caller must still surface untranslated copy.
+        expect(forMissing).toHaveLength(2);
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 });

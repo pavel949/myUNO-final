@@ -608,7 +608,7 @@ export async function markRefundFailed(
 
   const booking = refundRecord.payment.booking;
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const reconciliationUrl = `${baseUrl}/admin/finance/reconciliation`;
+  const reconciliationUrl = `${baseUrl}/app/admin/reconciliation`;
   const amountBaht = satangToBaht(refundRecord.amountThb);
 
   const admins = await db.identity.findMany({

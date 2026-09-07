@@ -67,6 +67,11 @@ const ENTRY_POINTS = new Set([
   '/auth/verify', // opened from a verification email
   '/auth/reset-password', // opened from a reset email
   '/design', // the design-system reference, for the team not the product
+  // A permanent redirect kept for the bookmarks of anyone who used the
+  // reconciliation board before it moved inside the admin shell. Deliberately
+  // unlinked — the sidebar points at /app/admin/reconciliation, and this exists
+  // only so an old link does not 404 during a month-end close.
+  '/admin/finance/reconciliation',
 ]);
 
 describe('every page can be reached', () => {

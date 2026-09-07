@@ -1,35 +1,25 @@
 /**
  * Chart palette — doc 06 §"Data visualization".
  *
- * Categorical slots were validated with the dataviz palette validator against
- * the card surface (surface.paper #FBF8F1, light mode):
- *   validate_palette.js "#00937F,#D69A3A,#C05840,#4477CC" --mode light --surface "#FBF8F1"
- *   → ALL CHECKS PASS (worst adjacent CVD ΔE 12.8; normal-vision 17.1).
- * Slot 2 (sun gold) sits at 2.32:1 contrast on paper — the relief rule
- * applies: every chart ships direct labels and a table view.
+ * The values live in `src/lib/design-tokens.ts`, which Tailwind also reads, so
+ * a chart series and its `bg-chart-1` swatch cannot drift apart. This module
+ * re-exports them under the names the chart components already use, and adds
+ * the chrome colours and the THB formatters.
  *
  * Rules (doc 06): assign slots in fixed order, never cycled; ≤4 series, fold
  * the rest into "Other"; status colors (state.*) are never series colors;
  * text always wears text tokens, never a series color.
  */
 
-/** Categorical series slots, fixed order. */
-export const CHART_SERIES = ['#00937F', '#D69A3A', '#C05840', '#4477CC'] as const;
+import { COLOR, CHART_SERIES, CHART_SEQUENTIAL } from '@/lib/design-tokens';
 
-/** Sequential ramp (magnitude): andaman teal, light→dark, monotonic lightness. */
-export const CHART_SEQUENTIAL = [
-  '#DCEEEB',
-  '#9CCFC8',
-  '#5BA79E',
-  '#2E7B74',
-  '#0E4F4B',
-] as const;
+export { CHART_SERIES, CHART_SEQUENTIAL };
 
 /** Chart chrome. */
-export const CHART_GRID = '#E6DFD1'; // border.line — hairline gridlines
-export const CHART_AXIS_TEXT = '#7E8C88'; // text.stone
-export const CHART_INK = '#16211F'; // text.ink — direct labels
-export const CHART_SURFACE = '#FBF8F1'; // surface.paper — spacer gaps ring
+export const CHART_GRID = COLOR.border.line; // hairline gridlines
+export const CHART_AXIS_TEXT = COLOR.text.stone;
+export const CHART_INK = COLOR.text.ink; // direct labels
+export const CHART_SURFACE = COLOR.surface.paper; // spacer gaps ring
 
 /** Format THB without decimals, e.g. ฿12,500. */
 export function formatThb(value: number): string {

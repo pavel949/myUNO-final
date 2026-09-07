@@ -9,16 +9,22 @@ import { Chip } from '@/components/Chip';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Counter } from '@/components/Counter';
 import { DataTable } from '@/components/DataTable';
+import { FeedList } from '@/components/FeedList';
 import { Input } from '@/components/Input';
+import { Modal } from '@/components/Modal';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { Select } from '@/components/Select';
+import { ServiceCard } from '@/components/ServiceCard';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { SlaCountdown } from '@/components/SlaCountdown';
 import { EmptyState, ErrorState } from '@/components/StateComponents';
 import { StatTile } from '@/components/StatTile';
 import { StatusTimeline } from '@/components/StatusTimeline';
+import { Tabs, Accordion } from '@/components/TabsAndAccordion';
 import { Textarea } from '@/components/Textarea';
+import { ToastProvider, useToast } from '@/components/Toast';
 import { TrustMark } from '@/components/TrustMark';
+import { UnitCard } from '@/components/UnitCard';
 import DeltaChip from '@/components/viz/DeltaChip';
 import MonthHeatStrip from '@/components/viz/MonthHeatStrip';
 import Sparkline from '@/components/viz/Sparkline';
@@ -65,10 +71,39 @@ const TABLE_ROWS = [
   { id: '3', unit: 'Villa Kata 3 · Kata', guest: 'J. Weber', checkIn: '11 Jan 2026', amount: '฿92,000', status: 'checked_in' as const },
 ];
 
+function ToastDemoButton() {
+  const { toast } = useToast();
+  return (
+    <Button
+      variant="secondary"
+      onClick={() =>
+        toast({
+          type: 'success',
+          title: 'TM30 Filed Successfully',
+          message: 'Guest receipt #TM-99214 recorded with immigration.',
+          action: { label: 'View filing', onClick: () => alert('Filing clicked') },
+        })
+      }
+    >
+      Trigger Toast
+    </Button>
+  );
+}
+
 export default function DesignPage() {
+  return (
+    <ToastProvider>
+      <DesignPageContent />
+    </ToastProvider>
+  );
+}
+
+function DesignPageContent() {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('overview');
   const [guests, setGuests] = useState(2);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [switchOn, setSwitchOn] = useState(true);
   const now = Date.now();
 
@@ -134,17 +169,14 @@ export default function DesignPage() {
                 <div className="flex-1 h-24 rounded-sm bg-chart-seq-5" />
               </div>
               <p className="text-small text-text-stone mt-12 mb-0">
-                Status colours are reserved — never series colours. Slot 2 (sun)
-                sits at 2.32:1 on paper, so every chart using it ships direct
-                labels and a table view.
+                Status colours are reserved — never series colours.
               </p>
             </Panel>
 
             <Panel className="w-full max-w-[520px]">
               <h3 className="font-display text-title mb-4">Type</h3>
               <p className="text-small text-text-stone mb-24">
-                Display Outfit, body Manrope. Outfit is Latin-only; Cyrillic
-                display falls through to Manrope. Thai uses Noto Sans Thai.
+                Display Outfit, body Manrope. Thai uses Noto Sans Thai.
               </p>
               <div className="flex flex-col gap-20">
                 {TYPE_ROWS.map((row) => (
@@ -187,22 +219,6 @@ export default function DesignPage() {
                   r.full
                 </div>
               </div>
-              <p className="text-small text-text-stone mb-28">
-                Inputs and chips 8 · buttons 12 · cards and modals 16 · pills and
-                avatars full.
-              </p>
-              <div className="flex gap-24">
-                <div className="flex-1 h-72 bg-surface-paper border border-border-line rounded-lg shadow-card flex items-center justify-center text-small text-text-stone">
-                  shadow.card
-                </div>
-                <div className="flex-1 h-72 bg-surface-paper border border-border-line rounded-lg shadow-float flex items-center justify-center text-small text-text-stone">
-                  shadow.float
-                </div>
-              </div>
-              <p className="text-small text-text-stone mt-8 mb-0">
-                Flat by default. Motion 150ms ease-out micro, 250ms ease-in-out
-                structural, skeletons pulse 1.2s. Nothing bounces.
-              </p>
             </Panel>
           </div>
         </section>
@@ -236,11 +252,36 @@ export default function DesignPage() {
                 <Button size="md">md 48</Button>
                 <Button size="lg">lg 56</Button>
               </div>
-              <div className="flex flex-wrap items-center gap-16">
+              <div className="flex flex-wrap items-center gap-16 mb-24">
                 <Button disabled>Disabled</Button>
                 <Button isLoading>Loading</Button>
-                <Button fullWidth>Full width</Button>
               </div>
+              <div className="flex flex-wrap items-center gap-16">
+                <ToastDemoButton />
+                <Button variant="secondary" onClick={() => setModalOpen(true)}>
+                  Open Modal / Sheet
+                </Button>
+              </div>
+              <Modal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                title="Guest Verification"
+                description="Verify identity document before TM30 submission."
+                footer={
+                  <>
+                    <Button variant="ghost" onClick={() => setModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="primary" onClick={() => setModalOpen(false)}>
+                      Approve Document
+                    </Button>
+                  </>
+                }
+              >
+                <p className="text-body text-text-ink">
+                  Passport snapshot for foreign arrival in unit B-707. AES-256 encrypted storage active.
+                </p>
+              </Modal>
             </Panel>
 
             <Panel className="w-full max-w-[400px]">
@@ -338,6 +379,75 @@ export default function DesignPage() {
                 <Radio name="pay" label="Card via provider" />
                 <Switch checked={switchOn} onCheckedChange={setSwitchOn} label="Notify on ticket update" />
               </div>
+            </Panel>
+
+            <Panel className="w-full max-w-[700px]">
+              <h3 className="font-display text-title mb-20">Navigation: Tabs & Accordion</h3>
+              <div className="mb-24">
+                <Tabs
+                  tabs={[
+                    { id: 'overview', label: 'Overview', badge: 3 },
+                    { id: 'statements', label: 'Statements' },
+                    { id: 'tickets', label: 'Tickets', badge: 1 },
+                  ]}
+                  activeTab={activeTab}
+                  onChange={setActiveTab}
+                />
+              </div>
+              <Accordion
+                items={[
+                  {
+                    id: 'faq-1',
+                    title: 'What is TM30 compliance?',
+                    content: 'TM30 is Thailand immigration notification required within 24 hours of guest arrival.',
+                  },
+                  {
+                    id: 'faq-2',
+                    title: 'How are owner payouts calculated?',
+                    content: 'Payouts equal gross revenue minus verified operational expenses and statutory fees.',
+                  },
+                ]}
+              />
+            </Panel>
+
+            <Panel className="w-full max-w-[700px]">
+              <h3 className="font-display text-title mb-20">Domain Cards & Feeds</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-24">
+                <UnitCard
+                  id="b707"
+                  name="Villa B-707"
+                  projectName="Layan Green Park"
+                  bedrooms={2}
+                  guests={4}
+                  pricePerNightSatang={450000}
+                />
+                <ServiceCard
+                  id="clean"
+                  title="Deep Villa Clean"
+                  providerName="Andaman Cleaners"
+                  priceFromSatang={150000}
+                  durationMinutes={120}
+                />
+              </div>
+              <FeedList
+                items={[
+                  {
+                    id: '1',
+                    title: 'Booking Confirmed',
+                    caption: 'Villa B-707 · Layan',
+                    body: 'Guest A. Sokolova confirmed check-in for Jan 4–12.',
+                    timestamp: '10m ago',
+                    unread: true,
+                  },
+                  {
+                    id: '2',
+                    title: 'TM30 Auto-Filed',
+                    caption: 'System action',
+                    body: 'Receipt TM-98123 generated successfully.',
+                    timestamp: '2h ago',
+                  },
+                ]}
+              />
             </Panel>
 
             <Panel className="w-full max-w-[700px]">

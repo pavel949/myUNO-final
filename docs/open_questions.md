@@ -542,4 +542,14 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 ---
 
+### Q73. Provider remittance pays on `fulfilled`, but the dispute window closes later — OPEN
+
+- **Source:** building the confirm/dispute window (doc 07 F-PROV-3), 2026-09-08.
+- **What shipped:** a fulfilled service order now has an end. The orderer gets `[cfg] service.fulfilment_confirm_window_hours` (default 48, the spec's own figure) to confirm the work or dispute it; confirming closes the order immediately, and a nightly sweep closes the rest once the window lapses. A dispute raised after the window is refused. Before this, `closed` was a dead enum value nothing ever wrote and a fulfilled order stayed disputable forever.
+- **The tension this exposes.** Doc 10 §5 defines the provider remittance report verbatim as *"fulfilled orders, gross, take-rate, net"*, and `payout.service.ts` implements exactly that. So an order can be remitted to the provider while the orderer's window is still open — and then disputed, with the money already gone out. The window bounds the platform's liability but does not align it with the payout.
+- **Why this was not silently fixed:** changing the remittance basis from `fulfilled` to `closed` would contradict a locked spec line, and it has a real cost — providers would wait up to the window length longer to be paid, which is a commercial decision about provider relations, not a technical one.
+- **Needs from founder, one ruling:** does remittance move to `closed` (providers paid slightly later, no clawback exposure), stay on `fulfilled` (paid fast, disputes clawed back from the next period — which `payout.service.ts` already computes via `refundsClawedBack`), or gate on `closed` only above a value threshold? Whichever way it goes, doc 10 §5 changes in the same commit.
+
+---
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

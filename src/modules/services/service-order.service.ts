@@ -423,6 +423,148 @@ export async function fulfillServiceOrder(
 }
 
 /**
+ * The confirm/dispute window (doc 07 F-PROV-3).
+ *
+ * `fulfilled` is not the end of an order. The orderer gets
+ * `[cfg] service.fulfilment_confirm_window_hours` to say the work was
+ * actually done — or to dispute it — and only then does the order reach its
+ * terminal `closed` state. Before this existed the `closed` status was dead
+ * and a fulfilled order stayed disputable forever, which is an unbounded
+ * liability sitting behind every provider remittance.
+ *
+ * The deadline is computed, never stored: the window is a config value that
+ * a project may tighten, and a stored deadline would freeze the old value on
+ * every order already in flight.
+ */
+export async function getFulfilmentConfirmWindowHours(
+  db: PrismaClient,
+  projectId: string
+): Promise<number> {
+  const hours = (await getConfig(db, 'service.fulfilment_confirm_window_hours', {
+    projectId,
+  })) as number | undefined;
+  return hours ?? 48;
+}
+
+/** When the orderer's confirm/dispute window closes, or null if not fulfilled. */
+export function fulfilmentConfirmDeadline(
+  fulfilledAt: Date | null,
+  windowHours: number
+): Date | null {
+  if (!fulfilledAt) return null;
+  return new Date(fulfilledAt.getTime() + windowHours * 60 * 60 * 1000);
+}
+
+/**
+ * Orderer confirms the work was done, closing the order ahead of the window.
+ *
+ * Confirming is the orderer waiving the rest of their window, so only the
+ * orderer may do it — staff closing an order on a guest's behalf would be
+ * the platform waiving the guest's own recourse.
+ */
+export async function confirmServiceOrderFulfilment(
+  db: PrismaClient,
+  serviceOrderId: string,
+  confirmedByIdentityId: string
+): Promise<void> {
+  const order = await db.serviceOrder.findUnique({ where: { id: serviceOrderId } });
+
+  if (!order) {
+    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
+  }
+
+  if (order.orderer_identity_id !== confirmedByIdentityId) {
+    throw new Error('Only the orderer can confirm this order was fulfilled');
+  }
+
+  if (order.status !== 'fulfilled') {
+    throw new Error(`Cannot confirm an order in ${order.status} status`);
+  }
+
+  await db.serviceOrder.update({
+    where: { id: serviceOrderId },
+    data: {
+      status: 'closed',
+      closed_at: new Date(),
+      closed_by_identity_id: confirmedByIdentityId,
+    },
+  });
+
+  await track(db, 'service_order_closed', {
+    serviceOrderId: order.id,
+    projectId: order.project_id,
+    unitId: order.unit_id ?? undefined,
+    identityId: confirmedByIdentityId,
+    totalThb: order.total_thb,
+  });
+}
+
+/**
+ * Nightly sweep: close fulfilled orders whose window has lapsed.
+ *
+ * An order carrying an open dispute is left alone — closing it would end the
+ * window the dispute is still being argued inside. It closes when the dispute
+ * is decided, or on the next sweep after that.
+ */
+export async function closeSettledServiceOrders(
+  db: PrismaClient
+): Promise<{ closed: number }> {
+  const fulfilled = await db.serviceOrder.findMany({
+    where: { status: 'fulfilled', fulfilled_at: { not: null } },
+    select: { id: true, project_id: true, unit_id: true, total_thb: true, fulfilled_at: true },
+  });
+
+  if (fulfilled.length === 0) return { closed: 0 };
+
+  // One config read per project, not per order — a nightly sweep over a busy
+  // project would otherwise hammer the resolver with identical lookups.
+  const windowByProject = new Map<string, number>();
+  for (const projectId of new Set(fulfilled.map((o) => o.project_id))) {
+    windowByProject.set(projectId, await getFulfilmentConfirmWindowHours(db, projectId));
+  }
+
+  const openDisputes = await db.dispute.findMany({
+    where: {
+      subjectType: 'service_order',
+      subjectId: { in: fulfilled.map((o) => o.id) },
+      decidedAt: null,
+    },
+    select: { subjectId: true },
+  });
+  const disputed = new Set(openDisputes.map((d) => d.subjectId));
+
+  const now = new Date();
+  let closed = 0;
+
+  for (const order of fulfilled) {
+    if (disputed.has(order.id)) continue;
+
+    const deadline = fulfilmentConfirmDeadline(
+      order.fulfilled_at,
+      windowByProject.get(order.project_id) ?? 48
+    );
+    if (!deadline || deadline > now) continue;
+
+    await db.serviceOrder.update({
+      where: { id: order.id },
+      // No `closed_by_identity_id`: nobody confirmed, the window lapsed.
+      data: { status: 'closed', closed_at: now },
+    });
+
+    await track(db, 'service_order_closed', {
+      serviceOrderId: order.id,
+      projectId: order.project_id,
+      unitId: order.unit_id ?? undefined,
+      totalThb: order.total_thb,
+    });
+
+    closed++;
+  }
+
+  return { closed };
+}
+
+/**
  * Orderer reports that the provider did not show (doc 07 F-PROV-3).
  * accepted → failed, refund per `[cfg] service.provider_no_show_refund_pct`,
  * auto-ticket for ops, provider notified.

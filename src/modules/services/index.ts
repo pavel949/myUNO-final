@@ -25,6 +25,10 @@ export {
   getServiceOrder,
   getServiceOrdersByProvider,
   expireStaleServiceOrders,
+  confirmServiceOrderFulfilment,
+  closeSettledServiceOrders,
+  getFulfilmentConfirmWindowHours,
+  fulfilmentConfirmDeadline,
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';

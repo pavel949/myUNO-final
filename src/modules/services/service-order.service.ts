@@ -481,6 +481,19 @@ export async function confirmServiceOrderFulfilment(
     throw new Error(`Cannot confirm an order in ${order.status} status`);
   }
 
+  // The window bounds confirming exactly as it bounds disputing. Without this
+  // the two disagree: past the deadline an orderer could no longer dispute but
+  // could still confirm, for as long as it took the nightly sweep to run — and
+  // the order would close carrying `closed_by_identity_id`, which is the audit
+  // trail's way of saying "a person confirmed this inside their window".
+  const windowHours = await getFulfilmentConfirmWindowHours(db, order.project_id);
+  const deadline = fulfilmentConfirmDeadline(order.fulfilled_at, windowHours);
+  if (deadline && deadline <= new Date()) {
+    throw new Error(
+      `The ${windowHours}-hour window for confirming this order has passed`
+    );
+  }
+
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
     data: {
@@ -537,6 +550,11 @@ export async function closeSettledServiceOrders(
   let closed = 0;
 
   for (const order of fulfilled) {
+    // The batch read above is a cheap filter, not the decision. A dispute
+    // request that passed its own validation a moment ago may still be
+    // mid-flight — it creates its rows after `openDisputes` was read — so
+    // closing on that read alone can strand a `closed` order under an open
+    // dispute. The lock below is what actually decides.
     if (disputed.has(order.id)) continue;
 
     const deadline = fulfilmentConfirmDeadline(
@@ -545,11 +563,33 @@ export async function closeSettledServiceOrders(
     );
     if (!deadline || deadline > now) continue;
 
-    await db.serviceOrder.update({
-      where: { id: order.id },
-      // No `closed_by_identity_id`: nobody confirmed, the window lapsed.
-      data: { status: 'closed', closed_at: now },
+    const didClose = await db.$transaction(async (tx) => {
+      // Same row lock `raiseDispute` takes. Whichever arrives second blocks
+      // here and then reads what the first actually wrote, so the pair can
+      // never both succeed.
+      await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${order.id} FOR UPDATE`;
+
+      const fresh = await tx.serviceOrder.findUnique({
+        where: { id: order.id },
+        select: { status: true },
+      });
+      if (fresh?.status !== 'fulfilled') return false;
+
+      const openDispute = await tx.dispute.findFirst({
+        where: { subjectType: 'service_order', subjectId: order.id, decidedAt: null },
+        select: { id: true },
+      });
+      if (openDispute) return false;
+
+      await tx.serviceOrder.update({
+        where: { id: order.id },
+        // No `closed_by_identity_id`: nobody confirmed, the window lapsed.
+        data: { status: 'closed', closed_at: now },
+      });
+      return true;
     });
+
+    if (!didClose) continue;
 
     await track(db, 'service_order_closed', {
       serviceOrderId: order.id,

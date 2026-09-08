@@ -151,20 +151,51 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
     throw new Error('A dispute has already been raised for this record');
   }
 
-  const { id: ticketId } = await raiseTicket(db, {
-    projectId: subject.projectId,
-    unitId: subject.unitId ?? undefined,
-    raisedByIdentityId,
-    raisedByRole,
-    categoryKey: 'complaint',
-    title,
-    description,
-    priority: 'high',
-  });
+  // Everything above read the subject a moment ago. For a service order that
+  // read races the nightly close sweep (doc 07 F-PROV-3): the sweep can commit
+  // between the window check above and the rows written below, leaving a
+  // `closed` order carrying an open dispute — precisely the state the window
+  // exists to prevent. The sweep takes this same row lock before it closes, so
+  // whichever arrives second sees what the first actually wrote.
+  //
+  // The ticket moves inside the transaction with the dispute, which also fixes
+  // a smaller pre-existing flaw: a failing `dispute.create` used to leave an
+  // orphan complaint ticket behind with nothing pointing at it.
+  return db.$transaction(
+    async (tx) => {
+      if (subjectType === 'service_order') {
+        await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${subjectId} FOR UPDATE`;
 
-  return db.dispute.create({
-    data: { ticketId, subjectType, subjectId },
-  });
+        const fresh = await tx.serviceOrder.findUnique({
+          where: { id: subjectId },
+          select: { status: true },
+        });
+        if (fresh?.status === 'closed') {
+          throw new Error(
+            'This order is closed — its window for raising a dispute has passed'
+          );
+        }
+      }
+
+      const { id: ticketId } = await raiseTicket(tx as unknown as PrismaClient, {
+        projectId: subject.projectId,
+        unitId: subject.unitId ?? undefined,
+        raisedByIdentityId,
+        raisedByRole,
+        categoryKey: 'complaint',
+        title,
+        description,
+        priority: 'high',
+      });
+
+      return tx.dispute.create({
+        data: { ticketId, subjectType, subjectId },
+      });
+    },
+    // raiseTicket resolves the SLA and the default assignee before writing, so
+    // the default 5s interactive-transaction budget is tighter than it looks.
+    { timeout: 15000 }
+  );
 }
 
 export interface DecideDisputeInput {

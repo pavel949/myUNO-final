@@ -106,6 +106,22 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
       ).rejects.toThrow('Cannot confirm an order in closed status');
     });
 
+    it('refuses a confirmation once the window has passed, before the sweep runs', async () => {
+      // The gap this closes: the order is still `fulfilled` because the nightly
+      // sweep has not run yet, but the orderer's window is over. Confirming
+      // here would stamp `closed_by_identity_id` on a late confirmation and
+      // contradict the dispute path, which already refuses at this point.
+      const { orderId, orderer } = await fulfilledOrder({ fulfilledAt: hoursAgo(49) });
+
+      await expect(
+        serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id)
+      ).rejects.toThrow('48-hour window');
+
+      const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
+      expect(order?.status).toBe('fulfilled');
+      expect(order?.closed_by_identity_id).toBeNull();
+    });
+
     it('emits service_order_closed', async () => {
       const { orderId, orderer } = await fulfilledOrder();
       await serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id);
@@ -185,6 +201,78 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
 
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
       expect(order?.status).toBe('fulfilled');
+    });
+
+    it('never leaves a closed order carrying an open dispute, under concurrency', async () => {
+      // The race CodeRabbit found: the sweep reads open disputes up front, then
+      // updates by id. A dispute committing between those two steps produced a
+      // `closed` order under an open dispute — the exact state the window
+      // exists to prevent.
+      //
+      // Interleaving cannot be forced deterministically from here, so this
+      // asserts the invariant instead of one ordering: whoever wins, the end
+      // state must be one of the two coherent pairs. The row lock in both
+      // paths is what makes the third pair unreachable.
+      const { orderId, orderer } = await fulfilledOrder({ fulfilledAt: hoursAgo(49) });
+
+      const [sweep, dispute] = await Promise.allSettled([
+        serviceOrderService.closeSettledServiceOrders(db),
+        raiseDispute(db, {
+          subjectType: 'service_order',
+          subjectId: orderId,
+          raisedByIdentityId: orderer.id,
+          raisedByRole: 'owner',
+          title: 'Racing the sweep',
+          description: 'Filed as the window lapsed.',
+        }),
+      ]);
+
+      const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
+      const openDispute = await db.dispute.findFirst({
+        where: { subjectType: 'service_order', subjectId: orderId, decidedAt: null },
+      });
+
+      // The forbidden pair, stated directly.
+      expect(order?.status === 'closed' && openDispute !== null).toBe(false);
+
+      if (order?.status === 'closed') {
+        expect(openDispute).toBeNull();
+        expect(dispute.status).toBe('rejected');
+      } else {
+        expect(order?.status).toBe('fulfilled');
+        expect(openDispute).not.toBeNull();
+        expect(sweep.status === 'fulfilled' && sweep.value.closed).toBe(0);
+      }
+    });
+
+    it('leaves no orphan ticket when a dispute cannot be created', async () => {
+      // raiseTicket and dispute.create now share one transaction. A second
+      // dispute on the same order is refused before any writing, so the
+      // ticket count must not move.
+      const { orderId, orderer } = await fulfilledOrder({ fulfilledAt: hoursAgo(1) });
+
+      await raiseDispute(db, {
+        subjectType: 'service_order',
+        subjectId: orderId,
+        raisedByIdentityId: orderer.id,
+        raisedByRole: 'owner',
+        title: 'First',
+        description: 'The only dispute this order may carry.',
+      });
+      const ticketsAfterFirst = await db.ticket.count();
+
+      await expect(
+        raiseDispute(db, {
+          subjectType: 'service_order',
+          subjectId: orderId,
+          raisedByIdentityId: orderer.id,
+          raisedByRole: 'owner',
+          title: 'Second',
+          description: 'Should be refused.',
+        })
+      ).rejects.toThrow('already been raised');
+
+      expect(await db.ticket.count()).toBe(ticketsAfterFirst);
     });
 
     it('ignores orders that were never fulfilled', async () => {

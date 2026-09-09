@@ -38,11 +38,11 @@ describe('Payouts & Reconciliation (T-031)', () => {
       const provider = await createProvider();
       const service = await createService({ providerId: provider.id });
 
-      // Create service order (fulfilled). Dated inside the remittance period —
-      // computeProviderRemittance selects orders by updatedAt within it (the
-      // best available proxy for "when it was fulfilled": doc 10 §5 remits
-      // per period on fulfilled work, and the schema has no dedicated
-      // fulfilled-at timestamp).
+      // A fulfilled order carries `fulfilled_at` — `fullfillServiceOrder`
+      // sets it — and that immutable date, not `updatedAt`, is what places
+      // the order in a remittance period. This fixture predates that column
+      // being used and dated the order by `updatedAt` alone, which stopped
+      // matching once the query moved to the real fulfilment date.
       await db.serviceOrder.create({
         data: {
           service_id: service.id,
@@ -57,6 +57,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
           scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
           status: 'fulfilled',
+          fulfilled_at: new Date('2026-07-10'),
           price_breakdown: { total: 10000, fee: 1000, provider: 9000 },
           take_rate_pct_snapshot: 10,
         },
@@ -97,6 +98,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
           scheduled_end: new Date('2026-07-10T02:00:00Z'),
           total_thb: 10000,
           status: 'fulfilled',
+          fulfilled_at: new Date('2026-07-10'),
           price_breakdown: { total: 10000, fee: 1000, provider: 9000 },
           take_rate_pct_snapshot: 10,
         },

@@ -107,7 +107,15 @@ export async function sendServiceOrderReviewPrompts(
 
   const candidates = await db.serviceOrder.findMany({
     where: {
-      status: 'fulfilled',
+      // `closed` belongs here as much as `fulfilled` (T-023b). An order the
+      // orderer confirmed early closes within minutes of the work being done,
+      // long before this prompt is due, and a project may shorten
+      // `service.fulfilment_confirm_window_hours` below the prompt delay so
+      // the sweep closes it first. Filtering on `fulfilled` alone dropped the
+      // prompt for both — losing ratings from the most satisfied customers,
+      // the ones who bothered to confirm. The work was still delivered; only
+      // the lifecycle moved on.
+      status: { in: ['fulfilled', 'closed'] },
       fulfilled_at: { not: null, lte: cutoff },
     },
     include: {

@@ -32,6 +32,17 @@ export interface ProjectReadinessReport {
   facts: ProjectReadinessFacts;
 }
 
+/**
+ * Evaluate property launch readiness from canonical facts.
+ *
+ * Pricing authority is intentionally singular in the current production loop:
+ * `Unit.baseNightlyThb` plus `PricingRule` is what search/quote/booking reads.
+ * `RatePlan` is the future cutover model, but production currently has no rate
+ * plan rows and the runtime is not migrated to it. Treating either model as a
+ * valid go-live source would create two editable truths. Until the cutover is
+ * complete, rate plans are diagnostic only and cannot make an unpriced unit
+ * launch-ready.
+ */
 export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectReadinessReport {
   const findings: ReadinessFinding[] = [];
   const blocker = (code: string, area: ReadinessFinding['area'], message: string) =>
@@ -49,8 +60,20 @@ export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectR
   if (facts.publishableUnitCount < 1) blocker('inventory.no_publishable_units', 'inventory', 'Complete at least one unit for publication.');
   if (facts.unitCount > facts.publishableUnitCount) warning('inventory.incomplete_units', 'inventory', 'Some units are still missing public inventory facts.');
 
-  if (facts.pricedUnitCount < 1 && facts.ratePlanCount < 1) blocker('pricing.no_sellable_price', 'pricing', 'Configure a unit price or canonical rate plan.');
-  if (facts.ratePlanCount < 1) warning('pricing.no_rate_plan', 'pricing', 'No canonical rate plan is configured yet.');
+  if (facts.pricedUnitCount < 1) {
+    blocker(
+      'pricing.no_sellable_price',
+      'pricing',
+      'Configure a sellable unit price in the current canonical pricing engine.'
+    );
+  }
+  if (facts.ratePlanCount > 0) {
+    warning(
+      'pricing.deferred_rate_plan_present',
+      'pricing',
+      'Rate plans exist but are not the runtime pricing authority until the canonical cutover is complete.'
+    );
+  }
 
   if (facts.complianceCredentialCount < 1) blocker('compliance.no_credentials', 'compliance', 'Attach an active, verified operating/compliance credential.');
   if (facts.activeRoleAssignmentCount < 1) blocker('team.no_operator', 'team', 'Assign at least one active operator/admin role to the property.');
@@ -91,6 +114,8 @@ export async function getProjectReadiness(
           permittedUseConfirmedAt: true,
         },
       },
+      // Diagnostic only until the rate-plan cutover is complete. Do not use
+      // these rows to satisfy current sellable-price readiness.
       ratePlans: { where: { status: 'active' }, select: { id: true } },
       regulatoryCredentials: {
         where: { status: 'active', verificationStatus: 'verified' },

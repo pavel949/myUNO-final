@@ -11,7 +11,7 @@ import OrderConfirmPanel from './order-confirm-panel';
 import { buildCloseWindowState } from './order-close-window';
 import OrderRatingPanel from './order-rating-panel';
 import { buildOrderTimeline } from './order-timeline';
-import { baht, formatBreakdownValue } from './order-money';
+import { baht, formatBreakdownValue, isOrderPaid } from './order-money';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 
@@ -232,9 +232,7 @@ export default async function ServiceOrderDetailPage({
   // ./order-money) convert only at render, see that module's doc comment.
   const isPaymentRequired =
     order.status === 'placed' && order.totalThb > 0;
-  const isPaid =
-    order.payments.some((p) => p.status === 'completed') ||
-    order.status === 'fulfilled';
+  const isPaid = isOrderPaid(order.status, order.payments);
 
   const isOrderer = order.orderer.id === user.identityId;
   const slotStarted = new Date() >= new Date(order.scheduledStart);

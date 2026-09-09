@@ -12,7 +12,12 @@ import {
   sendPostStayPrompts,
   sendPostStayReengage,
 } from '@/modules/booking';
-import { expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
+import {
+  closeSettledServiceOrders,
+  expireStaleServiceOrders,
+  remindUnansweredServiceOrders,
+  sendServiceOrderReviewPrompts,
+} from '@/modules/services';
 import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { syncAllICalAccounts } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
@@ -132,15 +137,19 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
       const reminded = await remindUnansweredServiceOrders(db);
       const reviewPrompted = await sendServiceOrderReviewPrompts(db);
       const expired = await expireStaleServiceOrders(db, slaHours ?? 12);
+      // Fulfilled orders whose confirm/dispute window has lapsed reach their
+      // terminal state here (doc 07 F-PROV-3) — otherwise `closed` is never
+      // written and the dispute window never actually ends.
+      const settled = await closeSettledServiceOrders(db);
       const autoCloseDays = (await getConfig(db, 'tickets.auto_close_resolved_days')) as
         | number
         | null;
       const closed = await autoCloseResolvedTickets(db, autoCloseDays ?? 7);
       const breached = await checkAndTrackSLABreaches(db);
-      return { reminded, reviewPrompted, ...expired, closed, breached };
+      return { reminded, reviewPrompted, ...expired, ordersClosed: settled.closed, closed, breached };
     },
     (r) =>
-      `${r.reminded} reminded, ${r.reviewPrompted} review prompts, ${r.expired} expired, ${r.refunded} refunded, ${r.closed} tickets closed, ${r.breached} SLA escalated`
+      `${r.reminded} reminded, ${r.reviewPrompted} review prompts, ${r.expired} expired, ${r.refunded} refunded, ${r.ordersClosed} orders closed, ${r.closed} tickets closed, ${r.breached} SLA escalated`
   );
 }
 

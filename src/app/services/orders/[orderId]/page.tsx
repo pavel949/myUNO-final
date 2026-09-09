@@ -7,10 +7,13 @@ import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
 import OrderDisputePanel from './order-dispute-panel';
 import OrderNoShowPanel from './order-no-show-panel';
+import OrderConfirmPanel from './order-confirm-panel';
+import { buildCloseWindowState } from './order-close-window';
 import OrderRatingPanel from './order-rating-panel';
 import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
+import { getConfig } from '@/modules/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +32,8 @@ interface ServiceOrderDetail {
   addressNote: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
+  fulfilledAt: string | null;
+  closedAt: string | null;
   rated: boolean;
   service: {
     id: string;
@@ -181,6 +186,18 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.no_show_error': 'Could not submit the report. Please try again.',
     'service-order.detail.no_show_done':
       'No-show reported. Any refund due is being processed — our team has opened a ticket.',
+    'service-order.detail.confirm_work_title': 'Was the work done?',
+    'service-order.detail.confirm_work_hint':
+      'Confirming closes this order and tells the provider it went well. If something was wrong, raise a dispute instead — once the order closes, you can no longer dispute it.',
+    'service-order.detail.confirm_work_remaining':
+      'You have about {hours} hours left to confirm or dispute. After that this order closes on its own.',
+    'service-order.detail.confirm_work_submit': 'Confirm the work was done',
+    'service-order.detail.confirm_work_confirm':
+      'Confirm this order is complete? You will not be able to dispute it afterwards.',
+    'service-order.detail.confirm_work_error': 'Could not confirm the order. Please try again.',
+    'service-order.detail.closed': 'Closed',
+    'service-order.detail.closed_note':
+      'This order is closed — its window for confirming or disputing has passed.',
   });
 
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
@@ -199,6 +216,7 @@ export default async function ServiceOrderDetailPage({
     fulfilled: labels['service-order.detail.fulfilled'],
     cancelled: labels['service-order.detail.cancelled'],
     failed: labels['service-order.detail.failed'],
+    closed: labels['service-order.detail.closed'],
   };
 
   const timeline = buildOrderTimeline(order.status);
@@ -221,17 +239,31 @@ export default async function ServiceOrderDetailPage({
   const isOrderer = order.orderer.id === user.identityId;
   const slotStarted = new Date() >= new Date(order.scheduledStart);
   const canReportNoShow = isOrderer && order.status === 'accepted' && slotStarted;
-  const disputableStatuses = ['accepted', 'fulfilled', 'closed', 'failed'];
-  const canDispute =
-    isOrderer && disputableStatuses.includes(order.status);
 
-  const existingDispute =
-    canDispute
-      ? await prisma.dispute.findFirst({
-          where: { subjectType: 'service_order', subjectId: order.id },
-          select: { id: true, ticketId: true },
-        })
-      : null;
+  // The confirm/dispute window (doc 07 F-PROV-3). `closed` used to sit in the
+  // disputable list, which offered an action the server now refuses; the
+  // window decides instead, and the server re-checks the same rule.
+  const existingDispute = isOrderer
+    ? await prisma.dispute.findFirst({
+        where: { subjectType: 'service_order', subjectId: order.id },
+        select: { id: true, ticketId: true },
+      })
+    : null;
+
+  const confirmWindowHours =
+    ((await getConfig(prisma, 'service.fulfilment_confirm_window_hours', {
+      projectId: order.project.id,
+    })) as number | undefined) ?? 48;
+
+  const closeWindow = buildCloseWindowState({
+    status: order.status,
+    fulfilledAt: order.fulfilledAt ?? null,
+    windowHours: confirmWindowHours,
+    hasDispute: Boolean(existingDispute),
+  });
+
+  const canConfirmWork = isOrderer && closeWindow.canConfirm;
+  const canDispute = isOrderer && closeWindow.canDispute;
 
   const breadcrumbs = [
     { label: labels['service-order.breadcrumb_home'], href: '/' },
@@ -527,6 +559,14 @@ export default async function ServiceOrderDetailPage({
 
         {canReportNoShow && <OrderNoShowPanel orderId={order.id} labels={labels} />}
 
+        {canConfirmWork && (
+          <OrderConfirmPanel
+            orderId={order.id}
+            hoursRemaining={closeWindow.hoursRemaining}
+            labels={labels}
+          />
+        )}
+
         {/* A fulfilled order can be rated from here, not only from the in-stay
             home space — after check-out that surface is no longer where anyone
             goes, and this is. */}
@@ -547,9 +587,7 @@ export default async function ServiceOrderDetailPage({
           </div>
         )}
 
-        {canDispute && !existingDispute && (
-          <OrderDisputePanel orderId={order.id} labels={labels} />
-        )}
+        {canDispute && <OrderDisputePanel orderId={order.id} labels={labels} />}
 
         {existingDispute && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">

@@ -524,6 +524,7 @@ enum AnalyticsEventKey {
   service_order_fulfilled
   service_order_cancelled
   service_order_no_show
+  service_order_closed
   review_submitted
   message_thread_started
   ticket_raised
@@ -810,6 +811,7 @@ model Identity {
   ticketEvents                  TicketEvent[]
   serviceOrdersPlaced           ServiceOrder[]                @relation("serviceOrderOrderer")
   serviceOrdersCancelled        ServiceOrder[]                @relation("serviceOrderCancelledBy")
+  serviceOrdersClosed           ServiceOrder[]                @relation("serviceOrderClosedBy")
   reviewsWritten                Review[]
   reviewsReplied                Review[]                      @relation("reviewRepliedBy")
   announcementsCreated          Announcement[]
@@ -1705,6 +1707,13 @@ model ServiceOrder {
   fulfilled_at             DateTime?          @map("fulfilled_at")
   refund_accrued_thb       Int                @default(0) @map("refund_accrued_thb")
 
+  // Finalisation (doc 07 F-PROV-3). `closed_at` is set when the confirm/
+  // dispute window ends: either the orderer confirmed early — then
+  // `closed_by_identity_id` names them — or the nightly job closed it and the
+  // column stays null. Null-means-system is the audit trail, not an omission.
+  closed_at             DateTime? @map("closed_at")
+  closed_by_identity_id String?   @map("closed_by_identity_id")
+
   // Notes
   note_to_provider String? @map("note_to_provider")
   address_note     String? @map("address_note")
@@ -1717,6 +1726,7 @@ model ServiceOrder {
   booking         Booking?         @relation(fields: [booking_id], references: [id], onDelete: SetNull)
   orderer         Identity         @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
   cancelledBy     Identity?        @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  closedBy        Identity?        @relation(name: "serviceOrderClosedBy", fields: [closed_by_identity_id], references: [id])
   payments        Payment[]
   analyticsEvents AnalyticsEvent[]
 

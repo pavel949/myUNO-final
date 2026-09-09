@@ -542,4 +542,33 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 
 ---
 
+### Q73. Provider remittance pays on `fulfilled`, but the dispute window closes later — OPEN
+
+- **Source:** building the confirm/dispute window (doc 07 F-PROV-3), 2026-09-08.
+- **What shipped:** a fulfilled service order now has an end. The orderer gets `[cfg] service.fulfilment_confirm_window_hours` (default 48, the spec's own figure) to confirm the work or dispute it; confirming closes the order immediately, and a nightly sweep closes the rest once the window lapses. A dispute raised after the window is refused. Before this, `closed` was a dead enum value nothing ever wrote and a fulfilled order stayed disputable forever.
+- **The tension this exposes.** Doc 10 §5 defines the provider remittance report verbatim as *"fulfilled orders, gross, take-rate, net"*, and `payout.service.ts` implements exactly that. So an order can be remitted to the provider while the orderer's window is still open — and then disputed, with the money already gone out. The window bounds the platform's liability but does not align it with the payout.
+- **Why this was not silently fixed:** changing the remittance basis from `fulfilled` to `closed` would contradict a locked spec line, and it has a real cost — providers would wait up to the window length longer to be paid, which is a commercial decision about provider relations, not a technical one.
+- **Needs from founder, one ruling:** does remittance move to `closed` (providers paid slightly later, no clawback exposure), stay on `fulfilled` (paid fast, disputes clawed back from the next period — which `payout.service.ts` already computes via `refundsClawedBack`), or gate on `closed` only above a value threshold? Whichever way it goes, doc 10 §5 changes in the same commit.
+
+---
+
+### Q74. An owner's service order is paid like a guest's — the marketplace never reaches the statement — OPEN
+
+- **Source:** the services-marketplace audit, `docs/audit/services-marketplace-2026-09-08.md` §3.1.
+- **What the specs say.** Doc 09 §4: the order form derives its context from the role wearing the order *"so fulfilment knows where to go and money knows where to land (an owner-unit repair can be statement-charged; a guest transfer is paid directly)."* Doc 07 F-OWN-4: *"cost, if charged to the unit, appears as a ledger entry on the next statement (take-rate applies per config)."*
+- **What is built.** `orderer_role` is stored on every order and **never branched on for money**. A fulfilled order writes exactly one ledger entry — `service_commission`, myUNO's own take. `maintenance_cost` and `cleaning_cost` are written only by the manual staff cost-recording flow (F-OPS-3) and the owner-stay turnover job; nothing links a service order to either. An owner ordering a deep clean pays out of pocket like a guest, and ops must re-key the cost by hand for it to appear on the statement.
+- **Why it matters beyond the flow.** This is what makes the marketplace part of the owner-side economics rather than a guest upsell. An owner statement is only authoritative if every cost touching the unit lands in one ledger.
+- **Needs from founder, one ruling before the code:** is an owner-role order **paid at order time** (card/cash now, and the ledger entry is a record of a cost already settled) or **accrued to the statement** (no payment step at all; the cost is netted from the owner's distributable cash)? It cannot be both, and the answer decides whether the payment step is skipped entirely for owner-role orders. A secondary question follows: does the take-rate apply to an owner-charged order the same way it does to a guest order?
+
+---
+
+### Q75. Providers are never told where the job is — and `fulfilment_mode` decides nothing — OPEN (one defect, one ruling)
+
+- **Source:** the services-marketplace audit, `docs/audit/services-marketplace-2026-09-08.md` §§2, 7.
+- **The defect (no ruling needed, fix planned as step 1).** Doc 07 F-PROV-3 says accepting an order reveals the address details. It does not. The provider portal shows service title, time, quantity, total, note and SLA countdown — **no unit, no project, no address, no customer contact**, before or after acceptance. The data is on the order (`unit_id`, `address_note`); it is simply never returned. Every order placed today needs a human to phone the provider, which puts the fulfilment record outside the platform and makes the SLA, the no-show report and the rating measurements of something that happened elsewhere.
+- **The ruling (Q3, still open, now blocking).** `Service.fulfilmentMode` (`referred` / `operated`) is set at creation, returned by the detail API, has content keys — and nothing branches on it. It is a modelled distinction that changes no behaviour, the same class of defect `ServiceOrderStatus.closed` was before T-023b.
+- **Needs from founder:** does `referred` vs `operated` change anything real — who holds the customer relationship, who carries liability if the work is bad, whether the take-rate differs, whether myUNO or the provider is the counterparty on the receipt? If it changes nothing, the field should come out of the schema rather than teach a distinction the system does not honour. This becomes urgent at the same moment as Q74, because "who is the counterparty" and "whose statement does the cost land on" are the same question asked twice.
+
+---
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

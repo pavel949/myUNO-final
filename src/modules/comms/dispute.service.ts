@@ -1,6 +1,7 @@
 import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
 import { refund, recordCashRefund } from '@/modules/finance/finance.service';
+import { getConfig } from '@/modules/config';
 import { recordCost } from '@/modules/finance/ledger.service';
 
 /**
@@ -37,6 +38,12 @@ interface SubjectContext {
   ownerIdentityId: string;
   /** The Payment to refund against, if this subject has one. */
   paymentId: string | null;
+  /**
+   * Set when the subject has stopped accepting disputes — a service order
+   * whose confirm window has closed (doc 07 F-PROV-3). The message is shown
+   * to the raiser, so it must say why, not merely that.
+   */
+  closedReason?: string;
 }
 
 async function loadSubject(
@@ -70,15 +77,41 @@ async function loadSubject(
         project_id: true,
         unit_id: true,
         orderer_identity_id: true,
+        status: true,
+        fulfilled_at: true,
         payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
     if (!order) throw new Error('Service order not found');
+
+    // The confirm/dispute window (doc 07 F-PROV-3). A closed order is
+    // finished: the orderer either confirmed it or let the window lapse, and
+    // the provider has been remitted against it. Reopening that from an
+    // unbounded past is what the window exists to prevent.
+    let closedReason: string | undefined;
+    if (order.status === 'closed') {
+      closedReason = 'This order is closed — its window for raising a dispute has passed';
+    } else if (order.status === 'fulfilled' && order.fulfilled_at) {
+      // Read the window here rather than through the services module: comms
+      // must not import services, which already imports comms. `loadSubject`
+      // is where each subject type's shape is known, so the rule lives with
+      // the other per-subject knowledge instead of inverting the dependency.
+      const windowHours =
+        ((await getConfig(db, 'service.fulfilment_confirm_window_hours', {
+          projectId: order.project_id,
+        })) as number | undefined) ?? 48;
+      const deadline = new Date(order.fulfilled_at.getTime() + windowHours * 60 * 60 * 1000);
+      if (deadline <= new Date()) {
+        closedReason = `The ${windowHours}-hour window for disputing this order has passed`;
+      }
+    }
+
     return {
       projectId: order.project_id,
       unitId: order.unit_id,
       ownerIdentityId: order.orderer_identity_id,
       paymentId: order.payments[0]?.id ?? null,
+      closedReason,
     };
   }
 
@@ -109,25 +142,60 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
     throw new Error('You can only raise a dispute over your own booking, order, or statement');
   }
 
+  if (subject.closedReason) {
+    throw new Error(subject.closedReason);
+  }
+
   const existing = await db.dispute.findFirst({ where: { subjectType, subjectId } });
   if (existing) {
     throw new Error('A dispute has already been raised for this record');
   }
 
-  const { id: ticketId } = await raiseTicket(db, {
-    projectId: subject.projectId,
-    unitId: subject.unitId ?? undefined,
-    raisedByIdentityId,
-    raisedByRole,
-    categoryKey: 'complaint',
-    title,
-    description,
-    priority: 'high',
-  });
+  // Everything above read the subject a moment ago. For a service order that
+  // read races the nightly close sweep (doc 07 F-PROV-3): the sweep can commit
+  // between the window check above and the rows written below, leaving a
+  // `closed` order carrying an open dispute — precisely the state the window
+  // exists to prevent. The sweep takes this same row lock before it closes, so
+  // whichever arrives second sees what the first actually wrote.
+  //
+  // The ticket moves inside the transaction with the dispute, which also fixes
+  // a smaller pre-existing flaw: a failing `dispute.create` used to leave an
+  // orphan complaint ticket behind with nothing pointing at it.
+  return db.$transaction(
+    async (tx) => {
+      if (subjectType === 'service_order') {
+        await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${subjectId} FOR UPDATE`;
 
-  return db.dispute.create({
-    data: { ticketId, subjectType, subjectId },
-  });
+        const fresh = await tx.serviceOrder.findUnique({
+          where: { id: subjectId },
+          select: { status: true },
+        });
+        if (fresh?.status === 'closed') {
+          throw new Error(
+            'This order is closed — its window for raising a dispute has passed'
+          );
+        }
+      }
+
+      const { id: ticketId } = await raiseTicket(tx as unknown as PrismaClient, {
+        projectId: subject.projectId,
+        unitId: subject.unitId ?? undefined,
+        raisedByIdentityId,
+        raisedByRole,
+        categoryKey: 'complaint',
+        title,
+        description,
+        priority: 'high',
+      });
+
+      return tx.dispute.create({
+        data: { ticketId, subjectType, subjectId },
+      });
+    },
+    // raiseTicket resolves the SLA and the default assignee before writing, so
+    // the default 5s interactive-transaction budget is tighter than it looks.
+    { timeout: 15000 }
+  );
 }
 
 export interface DecideDisputeInput {

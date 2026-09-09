@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { getProjectReadiness } from '@/modules/projects/readiness.service';
 
 export const dynamic = 'force-dynamic';
@@ -53,9 +52,8 @@ const STAGE_DEFINITIONS = [
 ] as const;
 
 export default async function ProjectOnboardingPage({ params }: { params: { id: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
-
+  // Authentication/role enforcement is centralized in the protected admin layout.
+  // This page only performs project-scoped reads after that layout has admitted the caller.
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     select: { id: true, name: true, slug: true, status: true },
@@ -151,9 +149,9 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
                     {blockers.length > 0 ? (
                       <div>
                         <p className="text-small font-semibold text-state-error">{labels['admin.project_onboarding.blockers']}</p>
-                        <ul className="mt-4 flex flex-col gap-4">
+                        <ul className="mt-4 list-disc pl-20 flex flex-col gap-4">
                           {blockers.map((finding) => (
-                            <li key={finding.code} className="text-small text-text-ink">• {finding.message}</li>
+                            <li key={finding.code} className="text-small text-text-ink">{finding.message}</li>
                           ))}
                         </ul>
                       </div>
@@ -161,9 +159,9 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
                     {warnings.length > 0 ? (
                       <div>
                         <p className="text-small font-semibold text-state-warning">{labels['admin.project_onboarding.warnings']}</p>
-                        <ul className="mt-4 flex flex-col gap-4">
+                        <ul className="mt-4 list-disc pl-20 flex flex-col gap-4">
                           {warnings.map((finding) => (
-                            <li key={finding.code} className="text-small text-text-secondary">• {finding.message}</li>
+                            <li key={finding.code} className="text-small text-text-secondary">{finding.message}</li>
                           ))}
                         </ul>
                       </div>

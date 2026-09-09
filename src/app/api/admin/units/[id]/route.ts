@@ -1,8 +1,15 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
+import { canWithAccess } from '@/modules/core/authority.service';
 import { updateUnit, getUnitDetail } from '@/modules/projects';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+
+async function loadUnitScope(unitId: string) {
+  return prisma.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, projectId: true },
+  });
+}
 
 export async function PUT(
   req: NextRequest,
@@ -11,21 +18,20 @@ export async function PUT(
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const identity = await prisma.identity.findUnique({
-    where: { id: user.identityId },
-  });
+  const [identity, unitScope] = await Promise.all([
+    prisma.identity.findUnique({ where: { id: user.identityId } }),
+    loadUnitScope(params.id),
+  ]);
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+  if (!unitScope) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 
-  // Check admin permission
-  if (
-    !(await can({
-      identity,
-      action: 'units:update',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const allowed = await canWithAccess(prisma, {
+    identity,
+    action: 'units:edit_listing',
+    requiredAccess: 'allow',
+    resource: { projectId: unitScope.projectId, unitId: unitScope.id },
+  });
+  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
     const body = await req.json();
@@ -50,21 +56,20 @@ export async function GET(
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const identity = await prisma.identity.findUnique({
-    where: { id: user.identityId },
-  });
+  const [identity, unitScope] = await Promise.all([
+    prisma.identity.findUnique({ where: { id: user.identityId } }),
+    loadUnitScope(params.id),
+  ]);
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+  if (!unitScope) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 
-  // Check admin permission
-  if (
-    !(await can({
-      identity,
-      action: 'units:view',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const allowed = await canWithAccess(prisma, {
+    identity,
+    action: 'units:view_full_record',
+    requiredAccess: 'read',
+    resource: { projectId: unitScope.projectId, unitId: unitScope.id },
+  });
+  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
     const unit = await getUnitDetail(params.id);

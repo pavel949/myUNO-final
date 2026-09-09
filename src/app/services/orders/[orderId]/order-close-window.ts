@@ -12,7 +12,7 @@
  */
 
 /** Statuses whose grievance is not about fulfilment, so no window applies. */
-const ALWAYS_DISPUTABLE = new Set(['accepted', 'failed']);
+const ALWAYS_DISPUTABLE = new Set(['accepted', 'failed', 'cancelled']);
 
 export interface CloseWindowState {
   /** The orderer may confirm the work was done, closing the order early. */
@@ -37,8 +37,6 @@ export function buildCloseWindowState(input: {
   const { status, windowHours, hasDispute } = input;
   const now = input.now ?? new Date();
 
-  // A closed order is finished: confirmed, or the window lapsed and the
-  // sweep caught it. Either way there is nothing left to act on.
   if (status === 'closed') {
     return { canConfirm: false, canDispute: false, deadline: null, hoursRemaining: null, lapsed: true };
   }
@@ -46,8 +44,6 @@ export function buildCloseWindowState(input: {
   if (status !== 'fulfilled') {
     return {
       canConfirm: false,
-      // An order disputed for reasons other than fulfilment — a provider who
-      // never came, a charge on a cancelled order — has no fulfilment clock.
       canDispute: ALWAYS_DISPUTABLE.has(status) && !hasDispute,
       deadline: null,
       hoursRemaining: null,
@@ -57,8 +53,6 @@ export function buildCloseWindowState(input: {
 
   const fulfilledAt = input.fulfilledAt ? new Date(input.fulfilledAt) : null;
   if (!fulfilledAt || Number.isNaN(fulfilledAt.getTime())) {
-    // Fulfilled without a timestamp should not happen; treat the window as
-    // open rather than silently stripping the orderer of their recourse.
     return {
       canConfirm: true,
       canDispute: !hasDispute,

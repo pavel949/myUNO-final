@@ -55,6 +55,20 @@ Quote-priced offers use `QuoteRequest → response → QuoteVersion → expiry �
 ## 13. Order state dimensions
 Keep commercial acceptance, fulfillment, payment, dispute/case, settlement and administrative closure independent. Exact enums must reconcile existing schema first.
 
+### 13.1 Fulfilment confirmation and dispute window
+`service.fulfilment_confirm_window_hours` is a canonical commercial/recourse control. Default: **48 hours** when no valid property override exists.
+
+- only positive whole-hour values are valid; `0` and negatives are rejected;
+- provider fulfillment moves an accepted order to `fulfilled` and records immutable `fulfilled_at`;
+- the orderer may confirm fulfillment or raise an allowed dispute before `fulfilled_at + windowHours`;
+- explicit confirmation closes the order early;
+- if no dispute exists, expiry of the window allows the system sweep to move `fulfilled → closed`;
+- an undecided dispute prevents close/remittance eligibility according to finance rules;
+- confirm, dispute creation and auto-close must serialize against the same canonical service-order row so they cannot produce contradictory terminal states;
+- configuration changes must not rewrite already accepted financial terms. Where a future commercial rule requires an immutable accepted-window snapshot, introduce it explicitly rather than silently reinterpreting old orders.
+
+The UI must show the actual deadline/status and must not offer actions the server will reject.
+
 ## 14. Reschedule
 Request → validate new slot/resource/terms → hold replacement → price delta → customer/provider agreement → funding adjustment → commit new reservation → release old. Do not release old capacity before replacement is safely reserved.
 
@@ -84,6 +98,8 @@ Today’s work, new requests/deadlines, calendar, task card, accept/decline reas
 
 ## 23. Settlement
 Eligibility considers collector, actual receipt/approved credit terms, fulfillment acceptance, disputes/holds and prior allocations. Financial period uses immutable recognition/fulfillment date, not `updatedAt`. Provider-collects may create a commission receivable rather than provider gross payable.
+
+Closed/recorded payout periods are immutable accounting history. A refund arising after payout must be represented in a later payable period or explicit adjustment; it must never disappear by retroactively changing only an already paid historic remittance. Requested/processing refunds block payout where the economic result is not yet known.
 
 ## 24. Quality
 Measure response, acceptance, on-time, cancellation, no-show, complaint, refund, repeat, guest/operator ratings and evidence completeness. Do not rank only by average stars.

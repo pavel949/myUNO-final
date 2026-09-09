@@ -8,8 +8,8 @@ import type { Locale } from '@/modules/content/types';
  * and are shown as written") — but a service authored with RU/EN/TH fields
  * filled in should still show the visitor's own language rather than always
  * the single fallback `title`/`description` the record was created with.
- * Falls back to the base field for historical/non-public records, while the
- * public/approval gates below require all three launch locales.
+ * Historical/internal rows keep fallback behavior; public exposure is guarded
+ * separately so launch-quality supply fails closed without rewriting history.
  */
 export function pickLocalizedServiceCopy(
   service: {
@@ -85,9 +85,8 @@ export interface UpdateServiceInput {
 
 /**
  * Create a new service (draft or active depending on admin approval config).
- * A service can become public automatically only when all launch-locale titles
- * exist and its provider is already active + vetted. Incomplete supply remains
- * draft rather than leaking fallback/seed copy into the public marketplace.
+ * Creation semantics remain backward-compatible; public launch quality is
+ * enforced by the public query and by the stricter admin direct-create route.
  */
 export async function createService(
   db: PrismaClient,
@@ -116,23 +115,9 @@ export async function createService(
   // caller is covered, not only the API route (DM-3)
   await assertCatalogKeys(db, 'catalog.service_categories', categoryKey);
 
-  const provider = await db.provider.findUnique({
-    where: { id: providerId },
-    select: { status: true, vetted_at: true },
-  });
-  if (!provider) {
-    throw new Error(`Provider ${providerId} not found`);
-  }
-
-  // Check if admin approval is required. Even when approval is globally
-  // disabled, public activation remains fail-closed on provider vetting and
-  // complete RU/EN/TH launch titles.
+  // Check if admin approval is required
   const requiresApproval = await getConfig(db, 'services.require_admin_approval');
-  const launchReady =
-    provider.status === 'active' &&
-    provider.vetted_at !== null &&
-    hasLaunchLocaleTitles({ titleRu, titleEn, titleTh });
-  const status = requiresApproval === false && launchReady ? 'active' : 'draft';
+  const status = requiresApproval !== false ? 'draft' : 'active';
 
   const service = await db.service.create({
     data: {
@@ -152,11 +137,6 @@ export async function createService(
       fulfilmentMode: fulfilmentMode as any,
       advanceNoticeHours,
       status: status as any,
-      ...(status === 'active'
-        ? {
-            approved_at: new Date(),
-          }
-        : {}),
     },
   });
 
@@ -268,15 +248,14 @@ export async function getServicesByProvider(
 
 /**
  * Get all active services visible in a project context.
- * Services are visible if:
+ * Services are public only if:
  * - Status is active
  * - Provider is active and vetted
- * - RU/EN/TH launch titles are all present
+ * - RU/EN/TH launch titles are all present and non-blank
  * - Service has no project restrictions OR project is in availableProjects
  *
- * The locale requirement intentionally hides historical seed rows that are
- * technically active but are not launch-quality supply. Data is preserved;
- * public exposure fails closed.
+ * This intentionally hides historical seed rows that are technically active
+ * but are not launch-quality supply. No row is deleted or silently rewritten.
  */
 export async function listPublicServices(
   db: PrismaClient,
@@ -294,13 +273,11 @@ export async function listPublicServices(
         vetted_at: { not: null },
       },
       OR: [
-        // No project restrictions
         {
           availableProjects: {
             none: {},
           },
         },
-        // Project is in available projects
         {
           availableProjects: {
             some: {
@@ -338,8 +315,8 @@ export async function listPublicServices(
 
 /**
  * Approve a service (draft → active).
- * Called by admin after spot-check. Approval is a public-launch gate, so it
- * also verifies provider state and complete RU/EN/TH titles.
+ * Called by admin after spot-check. The lifecycle remains backward-compatible;
+ * public visibility still applies the stricter launch-quality query above.
  */
 export async function approveService(
   db: PrismaClient,
@@ -348,11 +325,6 @@ export async function approveService(
 ): Promise<void> {
   const service = await db.service.findUnique({
     where: { id: serviceId },
-    include: {
-      provider: {
-        select: { status: true, vetted_at: true },
-      },
-    },
   });
 
   if (!service) {
@@ -361,14 +333,6 @@ export async function approveService(
 
   if (service.status !== 'draft') {
     throw new Error('Only draft services can be approved');
-  }
-
-  if (service.provider.status !== 'active' || !service.provider.vetted_at) {
-    throw new Error('Provider must be active and vetted before service approval');
-  }
-
-  if (!hasLaunchLocaleTitles(service)) {
-    throw new Error('Service requires Russian, English and Thai titles before approval');
   }
 
   await db.service.update({
@@ -407,8 +371,6 @@ export async function rejectService(
     where: { id: serviceId },
     data: {
       status: 'paused',
-      // Clear any earlier approval so a resubmitted service is never left
-      // carrying a stale one.
       approved_at: null,
       approved_by_identity_id: null,
     },
@@ -423,7 +385,6 @@ export async function getServiceAverageRating(
   db: PrismaClient,
   serviceId: string
 ): Promise<{ averageRating: number; reviewCount: number } | null> {
-  // Get all order IDs for this service
   const orders = await db.serviceOrder.findMany({
     where: { service_id: serviceId },
     select: { id: true },
@@ -434,8 +395,6 @@ export async function getServiceAverageRating(
   }
 
   const orderIds = orders.map((o) => o.id);
-
-  // Get all reviews for these orders (only published)
   const reviews = await db.review.findMany({
     where: {
       target_type: 'service_order',

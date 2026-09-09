@@ -23,5 +23,10 @@ These findings were observed against a prior repository state. Before implementa
 - **F19** Service catalog content/localization/supply must be verified; seed IDs alone do not prove fake supply.
 - **F20** Public homepage needs real property imagery, practical-value hierarchy and localization/content review.
 
+## Classified so far
+
+- **F04–F09, F15** (services and order-to-money) are classified with evidence in `docs/audit/reconciliation-services-money-2026-09-09.md`, against `feat/canonical-platform-v3` @ `e9094b4` plus PR #65. Summary: F04, F05, F06, F08 already fixed; F07 fixed with a superseded non-atomic path still exported; F15 partially fixed, its own commit having removed seven `devDependencies` and broken every v3 branch's build until PR #65 restored them; **F09 (reschedule) still valid and unbuilt**.
+- The remaining findings are `not verified` here.
+
 ## Agent rule
 Before touching a finding: locate current code; check HEAD; inspect related open/merged PRs; classify; never duplicate a fix already merged.

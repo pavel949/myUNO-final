@@ -3,6 +3,7 @@ import { db, resetDb, createIdentity, createProject, createProvider, createServi
 import { seedConfig, setConfigOverride } from '@/modules/config';
 import * as serviceOrderService from './service-order.service';
 import { raiseDispute } from '@/modules/comms/dispute.service';
+import { fulfillServiceOrderAtomic } from './fulfilment-atomic.service';
 
 /**
  * The confirm/dispute window (doc 07 F-PROV-3).
@@ -45,7 +46,10 @@ async function fulfilledOrder(options: { fulfilledAt?: Date } = {}) {
   });
 
   await serviceOrderService.acceptServiceOrder(db, order.id, provider.id);
-  await serviceOrderService.fulfillServiceOrder(db, order.id, provider.id);
+  // The atomic seam is what the fulfil route runs; the older
+  // `fulfillServiceOrder` no longer has a production caller. Testing through
+  // the path production actually takes is the point of an integration test.
+  await fulfillServiceOrderAtomic(db, order.id, provider.id);
 
   // Backdating the fulfilment is how we move time: the deadline is derived
   // from `fulfilled_at`, never stored, so this is the only lever needed.

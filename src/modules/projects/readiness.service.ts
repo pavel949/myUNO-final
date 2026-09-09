@@ -32,7 +32,6 @@ export interface ProjectReadinessReport {
   facts: ProjectReadinessFacts;
 }
 
-/** Canonical, deterministic go-live evaluator shared by API and UI. */
 export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectReadinessReport {
   const findings: ReadinessFinding[] = [];
   const blocker = (code: string, area: ReadinessFinding['area'], message: string) =>
@@ -47,38 +46,22 @@ export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectR
   if (facts.galleryCount < 3) warning('project.gallery_thin', 'content', 'Add at least three project gallery images.');
 
   if (facts.unitCount < 1) blocker('inventory.no_units', 'inventory', 'Add at least one unit.');
-  if (facts.publishableUnitCount < 1) {
-    blocker('inventory.no_publishable_units', 'inventory', 'Complete at least one unit for publication.');
-  }
-  if (facts.unitCount > facts.publishableUnitCount) {
-    warning('inventory.incomplete_units', 'inventory', 'Some units are still missing public inventory facts.');
-  }
+  if (facts.publishableUnitCount < 1) blocker('inventory.no_publishable_units', 'inventory', 'Complete at least one unit for publication.');
+  if (facts.unitCount > facts.publishableUnitCount) warning('inventory.incomplete_units', 'inventory', 'Some units are still missing public inventory facts.');
 
-  if (facts.pricedUnitCount < 1 && facts.ratePlanCount < 1) {
-    blocker('pricing.no_sellable_price', 'pricing', 'Configure a unit price or canonical rate plan.');
-  }
-  if (facts.ratePlanCount < 1) {
-    warning('pricing.no_rate_plan', 'pricing', 'No canonical rate plan is configured yet.');
-  }
+  if (facts.pricedUnitCount < 1 && facts.ratePlanCount < 1) blocker('pricing.no_sellable_price', 'pricing', 'Configure a unit price or canonical rate plan.');
+  if (facts.ratePlanCount < 1) warning('pricing.no_rate_plan', 'pricing', 'No canonical rate plan is configured yet.');
 
-  if (facts.complianceCredentialCount < 1) {
-    blocker('compliance.no_credentials', 'compliance', 'Attach the required operating/compliance credential.');
-  }
-  if (facts.activeRoleAssignmentCount < 1) {
-    blocker('team.no_operator', 'team', 'Assign at least one active operator/admin role to the property.');
-  }
-  if (facts.activeServiceCount < 1) {
-    warning('services.none_enabled', 'services', 'No active services are enabled for this property.');
-  }
+  if (facts.complianceCredentialCount < 1) blocker('compliance.no_credentials', 'compliance', 'Attach an active, verified operating/compliance credential.');
+  if (facts.activeRoleAssignmentCount < 1) blocker('team.no_operator', 'team', 'Assign at least one active operator/admin role to the property.');
+  if (facts.activeServiceCount < 1) warning('services.none_enabled', 'services', 'No active services are enabled for this property.');
 
   const blockers = findings.filter((f) => f.severity === 'blocker');
   const warnings = findings.filter((f) => f.severity === 'warning');
   const score = Math.max(0, Math.min(100, 100 - blockers.length * 10 - warnings.length * 3));
-
   return { ready: blockers.length === 0, score, blockers, warnings, facts };
 }
 
-/** Build readiness from canonical project/unit relations. */
 export async function getProjectReadiness(
   db: PrismaClient,
   projectId: string
@@ -108,8 +91,11 @@ export async function getProjectReadiness(
           permittedUseConfirmedAt: true,
         },
       },
-      ratePlans: { select: { id: true } },
-      regulatoryCredentials: { select: { id: true } },
+      ratePlans: { where: { status: 'active' }, select: { id: true } },
+      regulatoryCredentials: {
+        where: { status: 'active', verificationStatus: 'verified' },
+        select: { id: true },
+      },
       roleAssignments: { where: { status: 'active' }, select: { id: true } },
       serviceProjects: {
         where: { service: { status: 'active', provider: { status: 'active' } } },

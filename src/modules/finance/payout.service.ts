@@ -39,7 +39,7 @@ export interface ProviderRemittancesView {
 }
 
 /**
- * Resolve the active provider payout period for a cadence (doc 10 §5).
+ * Resolve the active provider payout period for a cadence.
  * Periods are half-open: [periodStart, periodEnd).
  */
 export function resolveProviderPayoutPeriod(
@@ -83,10 +83,7 @@ export function resolveProviderPayoutPeriod(
   return { periodStart, periodEnd };
 }
 
-/**
- * Provider portal remittance view (F-PROV-4): current-period report plus
- * recorded payout history scoped to the caller's provider.
- */
+/** Provider portal current-period report plus recorded payout history. */
 export async function getProviderRemittancesView(
   db: PrismaClient,
   providerId: string,
@@ -100,12 +97,7 @@ export async function getProviderRemittancesView(
   const remittance = await computeProviderRemittance(db, providerId, periodStart, periodEnd);
 
   const currentPayout = await db.payout.findFirst({
-    where: {
-      providerId,
-      payeeType: 'provider',
-      periodStart,
-      periodEnd,
-    },
+    where: { providerId, payeeType: 'provider', periodStart, periodEnd },
     select: { id: true },
   });
 
@@ -137,20 +129,17 @@ export async function getProviderRemittancesView(
 }
 
 /**
- * Compute provider remittance for a period (doc 10 §5, Q34).
+ * Compute provider remittance for a period.
  *
- * Formula, verbatim from doc 10 §5: "report per provider = fulfilled
- * orders' totals − take-rate − refunds clawed back". Two implementations of
- * this used to exist and disagreed — this one is now the only one. It
- * matches what has actually been wired and tested against real scenarios
- * (`src/app/api/admin/payouts/provider/route.ts`,
- * `src/app/api/admin/payouts/payouts.integration.test.ts`) rather than the
- * version nothing ever called.
+ * Canonical v3 rules:
+ * - the financial period is based on immutable `fulfilled_at`, never `updatedAt`;
+ * - commission uses each order's accepted `take_rate_pct_snapshot`, never the current global config;
+ * - both `fulfilled` and subsequently `closed` orders remain eligible for the period in which they were fulfilled;
+ * - an undecided dispute holds the disputed order out of remittance;
+ * - refunds are clawed back from the same eligible order set.
  *
- * Only `fulfilled` orders remit — an `accepted` order has not yet been
- * delivered and is not owed to the provider yet (doc 10 §5: "disputed/
- * failed orders are excluded until resolved" is the same principle applied
- * to the fulfilled/unfulfilled boundary).
+ * Whether commercial policy ultimately pays at fulfilment or only after close remains a configurable/business
+ * decision. This function fixes the accounting basis independently of that future decision.
  */
 export async function computeProviderRemittance(
   db: PrismaClient,
@@ -158,32 +147,42 @@ export async function computeProviderRemittance(
   periodStart: Date,
   periodEnd: Date
 ): Promise<RemittanceReport> {
-  const fulfilledOrders = await db.serviceOrder.findMany({
+  const candidateOrders = await db.serviceOrder.findMany({
     where: {
       provider_id: providerId,
-      status: 'fulfilled',
-      updatedAt: {
+      status: { in: ['fulfilled', 'closed'] },
+      fulfilled_at: {
         gte: periodStart,
         lt: periodEnd,
       },
     },
   });
 
-  const fulfilledOrdersTotal = fulfilledOrders.reduce((sum, order) => sum + (order.total_thb || 0), 0);
+  const candidateIds = candidateOrders.map((order) => order.id);
+  const openDisputes = candidateIds.length
+    ? await db.dispute.findMany({
+        where: {
+          subjectType: 'service_order',
+          subjectId: { in: candidateIds },
+          decidedAt: null,
+        },
+        select: { subjectId: true },
+      })
+    : [];
+  const heldOrderIds = new Set(openDisputes.map((row) => row.subjectId));
+  const eligibleOrders = candidateOrders.filter((order) => !heldOrderIds.has(order.id));
 
-  // The take-rate can vary by service category (services.take_rate_pct[.category]
-  // per doc 10 §3); loop one reads the flat default until category overrides
-  // are wired to this calculation.
-  const takeRatePercent = await getConfig(db, 'services.take_rate_pct');
-  const takeRateValue = typeof takeRatePercent === 'number' ? takeRatePercent : 10;
-  const takeRateThb = Math.round((fulfilledOrdersTotal * takeRateValue) / 100);
+  const fulfilledOrdersTotal = eligibleOrders.reduce((sum, order) => sum + order.total_thb, 0);
+  const takeRateThb = eligibleOrders.reduce(
+    (sum, order) =>
+      sum + Math.round(order.total_thb * (Number(order.take_rate_pct_snapshot) / 100)),
+    0
+  );
 
-  // Refunds clawed back: succeeded refunds against a payment for one of
-  // this period's fulfilled orders.
-  const fulfilledOrderIds = fulfilledOrders.map((o) => o.id);
-  const paymentsForOrders = fulfilledOrderIds.length
+  const eligibleOrderIds = eligibleOrders.map((order) => order.id);
+  const paymentsForOrders = eligibleOrderIds.length
     ? await db.payment.findMany({
-        where: { serviceOrderId: { in: fulfilledOrderIds } },
+        where: { serviceOrderId: { in: eligibleOrderIds } },
         include: { refunds: { where: { status: 'succeeded' } } },
       })
     : [];
@@ -193,7 +192,6 @@ export async function computeProviderRemittance(
     0
   );
   const refundCount = paymentsForOrders.reduce((sum, payment) => sum + payment.refunds.length, 0);
-
   const netThb = fulfilledOrdersTotal - takeRateThb - refundsClawedBack;
 
   return {
@@ -204,16 +202,12 @@ export async function computeProviderRemittance(
     takeRateThb,
     refundsClawedBack,
     netThb,
-    orderCount: fulfilledOrders.length,
+    orderCount: eligibleOrders.length,
     refundCount,
   };
 }
 
-/**
- * Admin reconciliation board data: payments with nothing to match them,
- * refunds that failed provider-side, and payouts recorded but not yet
- * matched against a bank statement.
- */
+/** Admin reconciliation board data. */
 export async function getReconciliationData(db: PrismaClient) {
   const unmatchedPayments = await db.payment.findMany({
     where: {
@@ -259,10 +253,6 @@ export async function getReconciliationData(db: PrismaClient) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Display boundary: this DTO feeds the admin reconciliation board only
-  // (never sent back — the board's actions post ids/reasons, not amounts),
-  // so every *Thb/*Amount figure is converted from satang (THB x 100) to
-  // baht here, once, at the response boundary.
   return {
     unmatchedPayments: unmatchedPayments.map((p) => ({
       id: p.id,
@@ -307,14 +297,9 @@ export async function getReconciliationData(db: PrismaClient) {
   };
 }
 
-/**
- * Mark a payout as reconciled (matched against the bank statement).
- */
 export async function reconcilePayout(db: PrismaClient, payoutId: string): Promise<Payout> {
   const payout = await db.payout.findUnique({ where: { id: payoutId } });
-  if (!payout) {
-    throw new Error('Payout not found');
-  }
+  if (!payout) throw new Error('Payout not found');
 
   return db.payout.update({
     where: { id: payoutId },
@@ -326,19 +311,13 @@ export async function reconcilePayout(db: PrismaClient, payoutId: string): Promi
   });
 }
 
-/**
- * Resolve a failed refund: retry it through the payment seam, or write it
- * off with a ledger adjustment when the provider-side retry isn't viable.
- */
 export async function resolveFailedRefund(
   db: PrismaClient,
   refundId: string,
   action: 'retry' | 'write_off'
 ) {
   const refundRecord = await db.refund.findUnique({ where: { id: refundId } });
-  if (!refundRecord) {
-    throw new Error('Refund not found');
-  }
+  if (!refundRecord) throw new Error('Refund not found');
 
   if (action === 'write_off') {
     const payment = await db.payment.findUnique({
@@ -359,17 +338,12 @@ export async function resolveFailedRefund(
       });
     }
 
-    // Written off, not truly succeeded — but cleared from the reconciliation
-    // board (`getReconciliationData` only surfaces `status: 'failed'`), which
-    // is the same "cleared" semantics the reconciliation board's own test
-    // suite already exercises.
     return db.refund.update({
       where: { id: refundId },
       data: { status: 'succeeded' },
     });
   }
 
-  // 'retry' — reset to requested and let the payment seam handle it.
   return db.refund.update({
     where: { id: refundId },
     data: { status: 'requested' },

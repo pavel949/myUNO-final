@@ -241,6 +241,20 @@ const API_DEBT = new Set([
   '/api/crm/opportunities/[id]/activities',
   '/api/crm/opportunities/[id]/stage',
   '/api/crm/activities/[id]',
+
+  // Canonical v3 backends whose UI has not landed yet. Each has a service, a
+  // test and an authorization guard behind it; what is missing is the screen
+  // that calls it, which the roadmap places in a later phase than the service
+  // it depends on. Tracked rather than deleted because they are deliberately
+  // ahead of their UI, not abandoned:
+  //   - account ownership assignment (CRM_SPEC account owner + audit trail);
+  //   - the CRM daily worklist (ROLE_WORKSPACES "Today");
+  //   - project go-live readiness (READINESS_ACCEPTANCE).
+  // Remove each entry with the commit that wires its screen; the companion
+  // test below fails if one is wired and left listed here.
+  '/api/admin/crm/profiles/[profileId]/owner',
+  '/api/admin/crm/worklist',
+  '/api/admin/projects/[id]/readiness',
 ]);
 
 describe('every API route can be reached', () => {

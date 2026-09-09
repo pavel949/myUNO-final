@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { profileId: string } }
 ) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
@@ -23,7 +23,7 @@ export async function PUT(
     }
 
     const profile = await setCrmAccountOwner(prisma, {
-      profileId: params.id,
+      profileId: params.profileId,
       accountOwnerIdentityId,
       changedByIdentityId: guard.actorIdentityId,
     });

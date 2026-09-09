@@ -10,7 +10,7 @@ const readyFacts: ProjectReadinessFacts = {
   unitCount: 2,
   publishableUnitCount: 2,
   pricedUnitCount: 2,
-  ratePlanCount: 1,
+  ratePlanCount: 0,
   complianceCredentialCount: 1,
   activeRoleAssignmentCount: 1,
   activeServiceCount: 2,
@@ -31,7 +31,6 @@ describe('project go-live readiness', () => {
       hasCover: false,
       publishableUnitCount: 0,
       pricedUnitCount: 0,
-      ratePlanCount: 0,
       complianceCredentialCount: 0,
       activeRoleAssignmentCount: 0,
     });
@@ -49,17 +48,33 @@ describe('project go-live readiness', () => {
     );
   });
 
-  it('treats thin gallery, missing canonical rate plan and no services as warnings only', () => {
+  it('does not let a rate plan substitute for the current runtime pricing authority', () => {
+    const report = evaluateProjectReadiness({
+      ...readyFacts,
+      pricedUnitCount: 0,
+      ratePlanCount: 1,
+    });
+
+    expect(report.ready).toBe(false);
+    expect(report.blockers.map((b) => b.code)).toContain('pricing.no_sellable_price');
+    expect(report.warnings.map((w) => w.code)).toContain('pricing.deferred_rate_plan_present');
+  });
+
+  it('treats thin gallery, deferred rate-plan data and no services as warnings only when current pricing exists', () => {
     const report = evaluateProjectReadiness({
       ...readyFacts,
       galleryCount: 1,
-      ratePlanCount: 0,
+      ratePlanCount: 1,
       activeServiceCount: 0,
     });
 
     expect(report.ready).toBe(true);
     expect(report.warnings.map((w) => w.code)).toEqual(
-      expect.arrayContaining(['project.gallery_thin', 'pricing.no_rate_plan', 'services.none_enabled'])
+      expect.arrayContaining([
+        'project.gallery_thin',
+        'pricing.deferred_rate_plan_present',
+        'services.none_enabled',
+      ])
     );
   });
 });

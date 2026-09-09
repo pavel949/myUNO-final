@@ -1,8 +1,5 @@
 import { Prisma, PrismaClient, LedgerEntry, LedgerEntryType } from '@prisma/client';
 
-// Finance helpers are valid both on the root client and inside a Prisma
-// transaction. Keeping this explicit lets state transitions and their ledger
-// effects commit atomically instead of forcing callers into two writes.
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export interface RecordCostInput {
@@ -21,7 +18,7 @@ export interface LedgerEntryWithRelations extends LedgerEntry {
   createdBy?: { id: string; firstName: string; lastName: string } | null;
 }
 
-/** Record a cost entry. Append-only. */
+/** Record a cost entry in the ledger. Append-only. */
 export async function recordCost(db: DbClient, input: RecordCostInput): Promise<LedgerEntry> {
   const entry = await db.ledgerEntry.create({
     data: {
@@ -89,9 +86,9 @@ export async function recordRefundOut(
 }
 
 /**
- * Create an auto entry for service commission.
- * Append-only; callers may pass a transaction client so the operational state
- * transition and the financial earning commit together.
+ * Create an auto entry for service commission. Append-only.
+ * Accepting a transaction client lets callers commit the operational state
+ * transition and its financial earning atomically.
  */
 export async function recordServiceCommission(
   db: DbClient,
@@ -138,23 +135,88 @@ export async function reverseLedgerEntry(
   });
 }
 
-/**
- * Get all ledger entries for a unit within a period.
- */
-export async function getLedgerEntries(
+/** Get ledger entries for a unit within a date range. */
+export async function getUnitLedgerEntries(
   db: DbClient,
   unitId: string,
-  periodStart: Date,
-  periodEnd: Date
-): Promise<LedgerEntry[]> {
+  startDate: Date,
+  endDate: Date
+): Promise<LedgerEntryWithRelations[]> {
   return db.ledgerEntry.findMany({
     where: {
       unitId,
-      occurredOn: {
-        gte: periodStart,
-        lt: periodEnd,
-      },
+      occurredOn: { gte: startDate, lte: endDate },
     },
-    orderBy: { occurredOn: 'asc' },
+    include: {
+      unit: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+    },
+    orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
   });
+}
+
+/** Get all ledger entries for a project within a date range. */
+export async function getProjectLedgerEntries(
+  db: DbClient,
+  projectId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<LedgerEntryWithRelations[]> {
+  return db.ledgerEntry.findMany({
+    where: {
+      projectId,
+      occurredOn: { gte: startDate, lte: endDate },
+    },
+    include: {
+      unit: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+    },
+    orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
+  });
+}
+
+/** Get a specific ledger entry by ID. */
+export async function getLedgerEntry(
+  db: DbClient,
+  entryId: string
+): Promise<LedgerEntryWithRelations | null> {
+  return db.ledgerEntry.findUnique({
+    where: { id: entryId },
+    include: {
+      unit: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+    },
+  });
+}
+
+/** Compute total revenue and costs for a unit in a period. */
+export async function computeUnitLedgerTotals(
+  db: DbClient,
+  unitId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ totalRevenueTh: number; totalCostsTh: number; netTh: number }> {
+  const result = await db.ledgerEntry.aggregate({
+    where: {
+      unitId,
+      occurredOn: { gte: startDate, lte: endDate },
+    },
+    _sum: { amountThb: true },
+  });
+
+  const net = result._sum.amountThb || 0;
+  const entries = await getUnitLedgerEntries(db, unitId, startDate, endDate);
+  const totalRevenue = entries.filter((e) => e.amountThb > 0).reduce((sum, e) => sum + e.amountThb, 0);
+  const totalCosts = Math.abs(
+    entries.filter((e) => e.amountThb < 0).reduce((sum, e) => sum + e.amountThb, 0)
+  );
+
+  return {
+    totalRevenueTh: totalRevenue,
+    totalCostsTh: totalCosts,
+    netTh: net,
+  };
 }

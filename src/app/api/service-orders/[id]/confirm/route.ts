@@ -9,9 +9,7 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * POST /api/service-orders/[id]/confirm
  *
  * The orderer confirms the work was done, closing the order ahead of its
- * confirm/dispute window (doc 07 F-PROV-3). Only the orderer may call it:
- * confirming waives the rest of their own window, which is not a waiver
- * staff can make on their behalf.
+ * confirm/dispute window (doc 07 F-PROV-3). Only the orderer may call it.
  */
 export async function POST(
   _req: NextRequest,
@@ -38,7 +36,9 @@ export async function POST(
       }
       if (
         error.message.includes('Only the orderer') ||
-        error.message.includes('Cannot confirm')
+        error.message.includes('Cannot confirm') ||
+        error.message.includes('window for confirming this order has passed') ||
+        error.message.includes('open dispute')
       ) {
         return handleError(createPublicError(`invalid request: ${error.message}`, 400));
       }

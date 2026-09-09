@@ -31,8 +31,6 @@ interface PipelineStage {
   count: number;
   totalValue: number;
   avgValue: number;
-  // This array is page-scoped for backward-compatible UI rendering.
-  // The count/value metrics above are computed over the full permitted dataset.
   profiles: PipelineProfileRow[];
 }
 
@@ -47,12 +45,23 @@ export async function GET(req: NextRequest) {
   if (!guard.ok) return guard.error;
 
   try {
-    const limit = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get('limit') || '50'), 1), 100);
-    const offset = Math.max(parseInt(req.nextUrl.searchParams.get('offset') || '0'), 0);
+    const rawLimit = req.nextUrl.searchParams.get('limit');
+    const rawOffset = req.nextUrl.searchParams.get('offset');
+    const requestedLimit = rawLimit === null ? 50 : Number(rawLimit);
+    const requestedOffset = rawOffset === null ? 0 : Number(rawOffset);
 
-    // Page data and aggregate data are intentionally separate. The previous
-    // implementation built totals from this paginated page, which made the
-    // CRM summary change as the user paged through the same permitted dataset.
+    if (
+      (rawLimit !== null && rawLimit.trim() === '') ||
+      (rawOffset !== null && rawOffset.trim() === '') ||
+      !Number.isInteger(requestedLimit) ||
+      !Number.isInteger(requestedOffset)
+    ) {
+      return NextResponse.json({ error: 'limit and offset must be integers' }, { status: 400 });
+    }
+
+    const limit = Math.min(Math.max(requestedLimit, 1), 100);
+    const offset = Math.max(requestedOffset, 0);
+
     const [pageProfiles, aggregateProfiles, total] = await Promise.all([
       prisma.crmProfile.findMany({
         include: {
@@ -91,7 +100,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Full-scope aggregates first.
     for (const profile of aggregateProfiles) {
       const stageData = stageMap.get(profile.lifecycleStage);
       if (!stageData) continue;
@@ -99,7 +107,6 @@ export async function GET(req: NextRequest) {
       stageData.totalValue += profileValue(profile);
     }
 
-    // Only the current page's profile cards are attached to each stage.
     for (const profile of pageProfiles) {
       const stageData = stageMap.get(profile.lifecycleStage);
       if (!stageData) continue;

@@ -25,13 +25,14 @@ export {
   getServiceOrder,
   getServiceOrdersByProvider,
   expireStaleServiceOrders,
-  confirmServiceOrderFulfilment,
   closeSettledServiceOrders,
   getFulfilmentConfirmWindowHours,
   fulfilmentConfirmDeadline,
   type CreateServiceOrderInput,
   type ServiceOrderDetails,
 } from './service-order.service';
+
+export { confirmServiceOrderFulfilment } from './confirm-service-order.service';
 
 export { remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from './notify-order-reminder';
 

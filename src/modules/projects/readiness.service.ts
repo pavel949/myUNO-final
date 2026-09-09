@@ -32,10 +32,7 @@ export interface ProjectReadinessReport {
   facts: ProjectReadinessFacts;
 }
 
-/**
- * Canonical, deterministic readiness evaluator. It contains no database calls
- * so the same go-live rules can power onboarding UI, API gates and tests.
- */
+/** Canonical, deterministic go-live evaluator shared by API and UI. */
 export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectReadinessReport {
   const findings: ReadinessFinding[] = [];
   const blocker = (code: string, area: ReadinessFinding['area'], message: string) =>
@@ -65,7 +62,7 @@ export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectR
   }
 
   if (facts.complianceCredentialCount < 1) {
-    blocker('compliance.no_credentials', 'compliance', 'Add and verify the required operating/compliance credential.');
+    blocker('compliance.no_credentials', 'compliance', 'Attach the required operating/compliance credential.');
   }
   if (facts.activeRoleAssignmentCount < 1) {
     blocker('team.no_operator', 'team', 'Assign at least one active operator/admin role to the property.');
@@ -76,20 +73,12 @@ export function evaluateProjectReadiness(facts: ProjectReadinessFacts): ProjectR
 
   const blockers = findings.filter((f) => f.severity === 'blocker');
   const warnings = findings.filter((f) => f.severity === 'warning');
-  const totalChecks = 12;
-  const penalty = blockers.length * 8 + warnings.length * 2;
-  const score = Math.max(0, Math.min(100, Math.round(100 - (penalty / totalChecks) * 10)));
+  const score = Math.max(0, Math.min(100, 100 - blockers.length * 10 - warnings.length * 3));
 
-  return {
-    ready: blockers.length === 0,
-    score,
-    blockers,
-    warnings,
-    facts,
-  };
+  return { ready: blockers.length === 0, score, blockers, warnings, facts };
 }
 
-/** Build the readiness report from canonical project/unit relations. */
+/** Build readiness from canonical project/unit relations. */
 export async function getProjectReadiness(
   db: PrismaClient,
   projectId: string
@@ -120,7 +109,7 @@ export async function getProjectReadiness(
         },
       },
       ratePlans: { select: { id: true } },
-      regulatoryCredentials: { select: { id: true, status: true } },
+      regulatoryCredentials: { select: { id: true } },
       roleAssignments: { where: { status: 'active' }, select: { id: true } },
       serviceProjects: {
         where: { service: { status: 'active', provider: { status: 'active' } } },
@@ -158,7 +147,7 @@ export async function getProjectReadiness(
     publishableUnitCount,
     pricedUnitCount: project.units.filter((unit) => unit.baseNightlyThb > 0).length,
     ratePlanCount: project.ratePlans.length,
-    complianceCredentialCount: project.regulatoryCredentials.filter((credential) => credential.status === 'verified').length,
+    complianceCredentialCount: project.regulatoryCredentials.length,
     activeRoleAssignmentCount: project.roleAssignments.length,
     activeServiceCount: project.serviceProjects.length,
   };

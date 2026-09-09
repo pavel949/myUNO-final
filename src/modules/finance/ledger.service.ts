@@ -46,7 +46,6 @@ export async function recordBookingRevenue(
 ): Promise<LedgerEntry> {
   const booking = await db.booking.findUnique({ where: { id: bookingId }, select: { id: true } });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
-
   const unit = await db.unit.findUnique({ where: { id: unitId }, select: { projectId: true } });
   return db.ledgerEntry.create({
     data: {
@@ -86,15 +85,14 @@ export async function recordRefundOut(
 }
 
 /**
- * Create an auto entry for service commission. Append-only.
- * Accepting a transaction client lets callers commit the operational state
- * transition and its financial earning atomically.
+ * Create an auto entry for service commission. Append-only. Standalone Phuket
+ * commerce intentionally has no synthetic project, so projectId is nullable.
  */
 export async function recordServiceCommission(
   db: DbClient,
   serviceOrderId: string,
   unitId: string | null,
-  projectId: string,
+  projectId: string | null,
   commissionAmountThb: number,
   occurredOn: Date
 ): Promise<LedgerEntry> {
@@ -121,7 +119,6 @@ export async function reverseLedgerEntry(
 ): Promise<LedgerEntry> {
   const original = await db.ledgerEntry.findUnique({ where: { id: entryId } });
   if (!original) throw new Error(`LedgerEntry ${entryId} not found`);
-
   return db.ledgerEntry.create({
     data: {
       entryType: 'adjustment',
@@ -143,10 +140,7 @@ export async function getUnitLedgerEntries(
   endDate: Date
 ): Promise<LedgerEntryWithRelations[]> {
   return db.ledgerEntry.findMany({
-    where: {
-      unitId,
-      occurredOn: { gte: startDate, lte: endDate },
-    },
+    where: { unitId, occurredOn: { gte: startDate, lte: endDate } },
     include: {
       unit: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
@@ -164,10 +158,7 @@ export async function getProjectLedgerEntries(
   endDate: Date
 ): Promise<LedgerEntryWithRelations[]> {
   return db.ledgerEntry.findMany({
-    where: {
-      projectId,
-      occurredOn: { gte: startDate, lte: endDate },
-    },
+    where: { projectId, occurredOn: { gte: startDate, lte: endDate } },
     include: {
       unit: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
@@ -200,23 +191,12 @@ export async function computeUnitLedgerTotals(
   endDate: Date
 ): Promise<{ totalRevenueTh: number; totalCostsTh: number; netTh: number }> {
   const result = await db.ledgerEntry.aggregate({
-    where: {
-      unitId,
-      occurredOn: { gte: startDate, lte: endDate },
-    },
+    where: { unitId, occurredOn: { gte: startDate, lte: endDate } },
     _sum: { amountThb: true },
   });
-
   const net = result._sum.amountThb || 0;
   const entries = await getUnitLedgerEntries(db, unitId, startDate, endDate);
   const totalRevenue = entries.filter((e) => e.amountThb > 0).reduce((sum, e) => sum + e.amountThb, 0);
-  const totalCosts = Math.abs(
-    entries.filter((e) => e.amountThb < 0).reduce((sum, e) => sum + e.amountThb, 0)
-  );
-
-  return {
-    totalRevenueTh: totalRevenue,
-    totalCostsTh: totalCosts,
-    netTh: net,
-  };
+  const totalCosts = Math.abs(entries.filter((e) => e.amountThb < 0).reduce((sum, e) => sum + e.amountThb, 0));
+  return { totalRevenueTh: totalRevenue, totalCostsTh: totalCosts, netTh: net };
 }

@@ -567,10 +567,11 @@ export default async function ServiceOrderDetailPage({
           />
         )}
 
-        {/* A fulfilled order can be rated from here, not only from the in-stay
+        {/* A delivered order can be rated from here, not only from the in-stay
             home space — after check-out that surface is no longer where anyone
-            goes, and this is. */}
-        {order.status === 'fulfilled' && isOrderer && (
+            goes, and this is. `closed` belongs alongside `fulfilled`: the work
+            was done, and the review prompt is sent for both. */}
+        {(order.status === 'fulfilled' || order.status === 'closed') && isOrderer && (
           <div className="mt-16">
             <OrderRatingPanel orderId={order.id} rated={order.rated} labels={labels} />
           </div>

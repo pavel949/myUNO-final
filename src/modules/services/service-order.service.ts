@@ -872,7 +872,11 @@ export async function rateServiceOrder(
     throw new Error('Only the orderer can rate this service order');
   }
 
-  if (order.status !== 'fulfilled') {
+  // `closed` counts as much as `fulfilled`: the work was delivered either
+  // way, and an order the orderer confirmed closes within minutes — long
+  // before the review prompt is due. Refusing here would make that prompt a
+  // dead end and lose the ratings of the customers who confirmed.
+  if (order.status !== 'fulfilled' && order.status !== 'closed') {
     throw new Error(`Cannot rate order in ${order.status} status`);
   }
 

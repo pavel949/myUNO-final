@@ -13,7 +13,7 @@ ALTER TABLE "service_order"
   ADD COLUMN IF NOT EXISTS "service_context" JSONB NOT NULL DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS "quantity_dimensions" JSONB NOT NULL DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS "terms_snapshot" JSONB NOT NULL DEFAULT '{}'::jsonb,
-  ADD COLUMN IF NOT EXISTS "quote_version_id" UUID;
+  ADD COLUMN IF NOT EXISTS "quote_version_id" TEXT;
 
 ALTER TABLE "service_order"
   ADD CONSTRAINT "service_order_context_required"
@@ -61,12 +61,12 @@ ALTER TABLE "service_project"
 -- insert; accepting one only stamps accepted_at and the service order references
 -- the exact version used for pricing/terms.
 CREATE TABLE IF NOT EXISTS "service_quote_request" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "service_id" UUID NOT NULL REFERENCES "service"("id") ON DELETE CASCADE,
-  "project_id" UUID REFERENCES "project"("id") ON DELETE SET NULL,
-  "orderer_identity_id" UUID NOT NULL REFERENCES "identity"("id") ON DELETE CASCADE,
+  "service_id" TEXT NOT NULL REFERENCES "service"("id") ON DELETE CASCADE,
+  "project_id" TEXT REFERENCES "project"("id") ON DELETE SET NULL,
+  "orderer_identity_id" TEXT NOT NULL REFERENCES "identity"("id") ON DELETE CASCADE,
   "service_context" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "quantity_dimensions" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "status" TEXT NOT NULL DEFAULT 'open',
@@ -78,11 +78,11 @@ CREATE INDEX IF NOT EXISTS "service_quote_request_service_status_idx"
   ON "service_quote_request"("service_id", "status");
 
 CREATE TABLE IF NOT EXISTS "service_quote_version" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "request_id" UUID NOT NULL REFERENCES "service_quote_request"("id") ON DELETE CASCADE,
+  "request_id" TEXT NOT NULL REFERENCES "service_quote_request"("id") ON DELETE CASCADE,
   "version" INTEGER NOT NULL,
-  "provider_id" UUID NOT NULL REFERENCES "provider"("id") ON DELETE RESTRICT,
+  "provider_id" TEXT NOT NULL REFERENCES "provider"("id") ON DELETE RESTRICT,
   "price_breakdown" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "total_thb" INTEGER NOT NULL,
   "terms_snapshot" JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -122,11 +122,11 @@ FOR EACH ROW EXECUTE FUNCTION prevent_service_quote_version_mutation();
 -- F09: replacement-hold rescheduling. The original booking remains untouched
 -- while status is pending_funding; the new interval is a held replacement.
 CREATE TABLE IF NOT EXISTS "booking_reschedule" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "booking_id" UUID NOT NULL REFERENCES "booking"("id") ON DELETE CASCADE,
-  "requested_by_identity_id" UUID NOT NULL REFERENCES "identity"("id") ON DELETE RESTRICT,
+  "booking_id" TEXT NOT NULL REFERENCES "booking"("id") ON DELETE CASCADE,
+  "requested_by_identity_id" TEXT NOT NULL REFERENCES "identity"("id") ON DELETE RESTRICT,
   "old_start_date" DATE NOT NULL,
   "old_end_date" DATE NOT NULL,
   "new_start_date" DATE NOT NULL,
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS "booking_reschedule" (
   "pricing_snapshot" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "status" TEXT NOT NULL DEFAULT 'pending_funding',
   "hold_expires_at" TIMESTAMPTZ NOT NULL,
-  "payment_id" UUID REFERENCES "payment"("id") ON DELETE SET NULL,
+  "payment_id" TEXT REFERENCES "payment"("id") ON DELETE SET NULL,
   "committed_at" TIMESTAMPTZ,
   "released_at" TIMESTAMPTZ,
   CONSTRAINT "booking_reschedule_dates_valid" CHECK ("new_end_date" > "new_start_date"),
@@ -155,7 +155,7 @@ CREATE INDEX IF NOT EXISTS "booking_reschedule_booking_idx"
 -- external_system_id, which itself includes environment. Inbox dedup is exact;
 -- checkpointing prevents older/out-of-order aggregate events from regressing state.
 CREATE TABLE IF NOT EXISTS "external_system" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "system_key" TEXT NOT NULL,
@@ -167,10 +167,10 @@ CREATE TABLE IF NOT EXISTS "external_system" (
 );
 
 CREATE TABLE IF NOT EXISTS "external_mapping" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "external_system_id" UUID NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
+  "external_system_id" TEXT NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
   "entity_type" TEXT NOT NULL,
   "internal_id" TEXT NOT NULL,
   "external_id" TEXT NOT NULL,
@@ -184,9 +184,9 @@ CREATE INDEX IF NOT EXISTS "external_mapping_internal_idx"
   ON "external_mapping"("entity_type", "internal_id");
 
 CREATE TABLE IF NOT EXISTS "external_event_inbox" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "received_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "external_system_id" UUID NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
+  "external_system_id" TEXT NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
   "event_id" TEXT NOT NULL,
   "aggregate_type" TEXT NOT NULL,
   "aggregate_external_id" TEXT NOT NULL,
@@ -204,7 +204,7 @@ CREATE INDEX IF NOT EXISTS "external_event_inbox_work_idx"
   ON "external_event_inbox"("status", "received_at");
 
 CREATE TABLE IF NOT EXISTS "external_aggregate_checkpoint" (
-  "external_system_id" UUID NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
+  "external_system_id" TEXT NOT NULL REFERENCES "external_system"("id") ON DELETE CASCADE,
   "aggregate_type" TEXT NOT NULL,
   "aggregate_external_id" TEXT NOT NULL,
   "last_event_id" TEXT NOT NULL,
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS "external_aggregate_checkpoint" (
 -- F18: reusable templates + inherited configuration + autosave draft. The
 -- operational tables remain authoritative; this is onboarding state only.
 CREATE TABLE IF NOT EXISTS "property_onboarding_template" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" TEXT PRIMARY KEY DEFAULT (gen_random_uuid())::text,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "template_key" TEXT NOT NULL,
@@ -231,14 +231,14 @@ CREATE TABLE IF NOT EXISTS "property_onboarding_template" (
 );
 
 CREATE TABLE IF NOT EXISTS "project_onboarding_draft" (
-  "project_id" UUID PRIMARY KEY REFERENCES "project"("id") ON DELETE CASCADE,
+  "project_id" TEXT PRIMARY KEY REFERENCES "project"("id") ON DELETE CASCADE,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "template_id" UUID REFERENCES "property_onboarding_template"("id") ON DELETE SET NULL,
+  "template_id" TEXT REFERENCES "property_onboarding_template"("id") ON DELETE SET NULL,
   "stage_data" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "inherited_configuration" JSONB NOT NULL DEFAULT '{}'::jsonb,
   "last_stage" TEXT,
-  "updated_by_identity_id" UUID REFERENCES "identity"("id") ON DELETE SET NULL,
+  "updated_by_identity_id" TEXT REFERENCES "identity"("id") ON DELETE SET NULL,
   "autosaved_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

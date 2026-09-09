@@ -4,109 +4,68 @@ import { getLabels } from '@/lib/i18n';
 import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
 import { TrustMark } from '@/components/TrustMark';
+import { listPublicProjects } from '@/modules/projects/public.service';
 
 export const metadata: Metadata = {
-  title: 'myUNO | Serviced Living in Phuket',
+  title: 'myUNO | Stays, homes and services in Phuket',
   description:
-    'Invest with confidence. Live worry-free. One platform for owners, guests, and providers.',
+    'Find places to stay in Phuket, manage your trip, access trusted local services, and manage or list a property with myUNO.',
   alternates: publicPageAlternates('/'),
 };
 
 export const dynamic = 'force-dynamic';
 
 export default async function LandingPage() {
+  const projects = await listPublicProjects();
+  const heroCover = projects.find((project) => project.coverUrl)?.coverUrl ?? null;
+
   const labels = await getLabels({
-    'landing.hero.kicker': 'Serviced living in Phuket',
-    'landing.hero.title': 'Your place.',
+    'landing.hero.kicker': 'Phuket, Thailand',
+    'landing.hero.title': 'Phuket, better connected.',
     'landing.hero.subtitle':
-      'Stop managing. Start living. One portal for all your needs.',
+      'Stay in places we know. Manage your trip. Get trusted local services.',
     'landing.search.check_in': 'Check-in',
     'landing.search.check_out': 'Check-out',
     'landing.search.adults': 'Adults',
     'landing.search.children': 'Children',
     'landing.search.submit': 'Find your stay',
-    'landing.promise.stay': 'Stay',
+    'landing.promise.stay': 'Places on myUNO',
     'landing.promise.stay_body':
-      'Find home, book in one click, pay in cash. No card fees here.',
-    'landing.promise.live': 'Live',
+      'Private villas, managed residences and homes connected to one operating network.',
+    'landing.promise.live': 'Your Phuket, handled',
     'landing.promise.live_body':
-      'Order a service, tell your neighbours, decide together. Living becomes simpler.',
-    'landing.promise.own': 'Own',
+      'Transfers, cars, chefs, wellness and property services before arrival or whenever you need them.',
+    'landing.promise.own': 'One trip, one place',
     'landing.promise.own_body':
-      'Earn income. See every guest, every payment, every request. Management is fact-based.',
-    'landing.doors.title': 'Who are you?',
-    'audience.owners.title': 'For Owners',
-    'audience.owners.subtitle': 'Invest with confidence. See results. Sleep soundly.',
-    'audience.owners.cta': 'Entrust your unit →',
-    'audience.guests.title': 'For Guests',
-    'audience.guests.subtitle': 'Hotels unnecessary. Here: home, safety, support.',
-    'audience.guests.cta': 'Search stays →',
-    'audience.developers.title': 'For Developers',
-    'audience.developers.subtitle':
-      'Uplift your project class. Managed platform, integrated ops.',
-    'audience.developers.cta': 'Talk to us →',
-    'audience.buyers.title': 'For Buyers',
-    'audience.buyers.subtitle':
-      'Purchase already underway? Our team eases the handoff.',
-    'audience.buyers.cta': 'Start the conversation →',
-    'audience.mc.title': 'For Management Companies',
-    'audience.mc.subtitle': 'Demanded ops. Single platform. More income.',
-    'audience.mc.cta': 'Learn more →',
-    'audience.providers.title': 'For Providers',
-    'audience.providers.subtitle': 'Steady order flow. Direct comms. Fair pay.',
-    'audience.providers.cta': 'Apply →',
-    'landing.trust.title': 'Trust, made visible',
-    'landing.trust.verified': 'Guests verified',
-    'landing.trust.verified_body': 'Passports, backgrounds, proof of funds.',
-    'landing.trust.handled': 'Compliance handled',
-    'landing.trust.handled_body': 'TM30, taxes, PDPA — we file it all.',
-    'landing.trust.protected': 'Data protected',
-    'landing.trust.protected_body': 'Encrypted fields, access logs, retention policies.',
-    'landing.trust.cta': 'Learn how →',
-    'landing.services.title': 'Everything around the stay',
+      'Arrival, services, messages, requests and checkout stay connected in My myUNO.',
+    'audience.owners.title': 'Own a property?',
+    'audience.owners.subtitle':
+      'Ask myUNO to manage it, or submit your unit and operate it yourself where your setup allows.',
+    'audience.owners.cta': 'For owners →',
+    'audience.mc.title': 'Manage properties?',
+    'audience.mc.subtitle':
+      'Bring your managed inventory, team and operating scope onto one shared platform.',
+    'audience.mc.cta': 'For property managers →',
+    'audience.providers.title': 'Provide services in Phuket?',
+    'audience.providers.subtitle':
+      'Join the network, receive qualified orders and build a verified fulfilment record.',
+    'audience.providers.cta': 'For providers →',
+    'landing.trust.title': 'Responsibility made visible',
+    'landing.trust.verified': 'Know who is responsible',
+    'landing.trust.verified_body':
+      'Every stay, home and service shows the role myUNO or a partner actually performs.',
+    'landing.trust.handled': 'Work leaves a record',
+    'landing.trust.handled_body':
+      'Bookings, requests, service orders and operational evidence stay connected to the right context.',
+    'landing.trust.protected': 'One relationship, scoped access',
+    'landing.trust.protected_body':
+      'Your identity can span trips and ownership while each operator sees only what they are allowed to see.',
+    'landing.trust.cta': 'How myUNO works →',
+    'landing.services.title': 'Find services across Phuket',
     'landing.services.body':
-      'Cleaning, repairs, deliveries — every service vetted and led.',
-    'landing.services.cta': 'Browse services',
+      'Book for an upcoming stay, for your own home, or simply because you need something in Phuket.',
+    'landing.services.cta': 'Explore services',
   });
-
-  const doors = [
-    {
-      href: '/owners',
-      title: labels['audience.owners.title'],
-      body: labels['audience.owners.subtitle'],
-      cta: labels['audience.owners.cta'],
-    },
-    {
-      href: '/guests',
-      title: labels['audience.guests.title'],
-      body: labels['audience.guests.subtitle'],
-      cta: labels['audience.guests.cta'],
-    },
-    {
-      href: '/developers',
-      title: labels['audience.developers.title'],
-      body: labels['audience.developers.subtitle'],
-      cta: labels['audience.developers.cta'],
-    },
-    {
-      href: '/buyers',
-      title: labels['audience.buyers.title'],
-      body: labels['audience.buyers.subtitle'],
-      cta: labels['audience.buyers.cta'],
-    },
-    {
-      href: '/management-companies',
-      title: labels['audience.mc.title'],
-      body: labels['audience.mc.subtitle'],
-      cta: labels['audience.mc.cta'],
-    },
-    {
-      href: '/providers',
-      title: labels['audience.providers.title'],
-      body: labels['audience.providers.subtitle'],
-      cta: labels['audience.providers.cta'],
-    },
-  ];
 
   const trustPoints = [
     {
@@ -139,111 +98,186 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
       />
-      {/* Hero + search */}
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="font-display text-kicker uppercase text-brand-sun-soft mb-16">
+
+      <section
+        className="relative min-h-screen bg-brand-deep bg-cover bg-center text-on-dark-text flex items-end"
+        style={heroCover ? { backgroundImage: `url(${heroCover})` } : undefined}
+      >
+        <div className="absolute inset-0 bg-brand-deep/60" aria-hidden="true" />
+        <div className="relative w-full max-w-6xl mx-auto px-24 pb-56 pt-80">
+          <div className="max-w-3xl mb-40">
+            <p className="font-display text-kicker uppercase tracking-widest text-brand-sun-soft mb-16">
+              {labels['landing.hero.kicker']}
+            </p>
+            <h1 className="font-display text-display-xl font-semibold mb-20">
+              {labels['landing.hero.title']}
+            </h1>
+            <p className="text-body text-on-dark-text/90 max-w-2xl">
+              {labels['landing.hero.subtitle']}
+            </p>
+          </div>
+
+          <div className="max-w-5xl">
+            <SearchBar
+              labels={{
+                checkIn: labels['landing.search.check_in'],
+                checkOut: labels['landing.search.check_out'],
+                adults: labels['landing.search.adults'],
+                children: labels['landing.search.children'],
+                submit: labels['landing.search.submit'],
+              }}
+            />
+            <Link
+              href="/services"
+              className="inline-flex mt-20 text-small font-semibold text-on-dark-text underline underline-offset-4"
+            >
+              {labels['landing.services.cta']}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto py-80 px-24">
+        <div className="max-w-2xl mb-40">
+          <p className="font-display text-kicker uppercase text-brand-sun mb-12">
             {labels['landing.hero.kicker']}
           </p>
-          <h1 className="font-display text-display-xl font-semibold mb-16">
-            {labels['landing.hero.title']}
-          </h1>
-          <p className="text-body text-surface-ivory/90 mb-32">
-            {labels['landing.hero.subtitle']}
-          </p>
-          <SearchBar
-            labels={{
-              checkIn: labels['landing.search.check_in'],
-              checkOut: labels['landing.search.check_out'],
-              adults: labels['landing.search.adults'],
-              children: labels['landing.search.children'],
-              submit: labels['landing.search.submit'],
-            }}
-          />
-        </div>
-      </section>
-
-      {/* Promise Pillars */}
-      <section className="max-w-6xl mx-auto py-64 px-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-40">
-          {(
-            [
-              ['stay', 'stay_body'],
-              ['live', 'live_body'],
-              ['own', 'own_body'],
-            ] as const
-          ).map(([titleKey, bodyKey]) => (
-            <div key={titleKey}>
-              <h3 className="font-display text-display font-semibold text-text-ink mb-16">
-                {labels[`landing.promise.${titleKey}`]}
-              </h3>
-              <p className="text-body text-text-secondary">
-                {labels[`landing.promise.${bodyKey}`]}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Audience Doors */}
-      <section className="bg-surface-ivory py-64 px-24">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
-            {labels['landing.doors.title']}
+          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-16">
+            {labels['landing.promise.stay']}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-32">
-            {doors.map((door) => (
+          <p className="text-body text-text-stone">
+            {labels['landing.promise.stay_body']}
+          </p>
+        </div>
+
+        {projects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
+            {projects.slice(0, 6).map((project, index) => (
               <Link
-                key={door.href}
-                href={door.href}
-                className="bg-surface-paper border border-border-line rounded-lg p-32 hover:shadow-card transition-shadow duration-micro"
+                key={project.id}
+                href={`/projects/${project.slug}`}
+                className={
+                  index === 0
+                    ? 'group relative min-h-96 md:col-span-2 overflow-hidden rounded-lg bg-brand-deep'
+                    : 'group relative min-h-72 overflow-hidden rounded-lg bg-brand-deep'
+                }
+                style={
+                  project.coverUrl
+                    ? { backgroundImage: `url(${project.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                    : undefined
+                }
               >
-                <h3 className="font-display text-display font-semibold text-text-ink mb-12">{door.title}</h3>
-                <p className="text-body text-text-secondary mb-24">{door.body}</p>
-                <span className="text-brand-andaman font-semibold">{door.cta}</span>
+                <span className="absolute inset-0 bg-brand-deep/45 group-hover:bg-brand-deep/35 transition-colors" aria-hidden="true" />
+                <span className="absolute inset-x-0 bottom-0 p-24 md:p-32 text-on-dark-text">
+                  <span className="block font-display text-display font-semibold mb-8">
+                    {project.name}
+                  </span>
+                  <span className="block text-small text-on-dark-text/80">
+                    {labels['landing.search.submit']}
+                  </span>
+                </span>
               </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="border border-border-line rounded-lg bg-surface-paper p-32">
+            <p className="text-body text-text-stone">{labels['landing.promise.stay_body']}</p>
+          </div>
+        )}
+      </section>
+
+      <section className="bg-surface-paper border-y border-border-line">
+        <div className="max-w-6xl mx-auto py-80 px-24 grid grid-cols-1 lg:grid-cols-2 gap-56 items-center">
+          <div>
+            <p className="font-display text-kicker uppercase text-brand-sun mb-12">
+              {labels['landing.promise.live']}
+            </p>
+            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-20">
+              {labels['landing.services.title']}
+            </h2>
+            <p className="text-body text-text-stone mb-28 max-w-xl">
+              {labels['landing.services.body']}
+            </p>
+            <Link
+              href="/services"
+              className="inline-flex items-center justify-center bg-brand-andaman text-surface-ivory px-32 py-16 rounded-lg font-semibold"
+            >
+              {labels['landing.services.cta']}
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-16">
+            {[
+              labels['landing.promise.live_body'],
+              labels['landing.promise.own_body'],
+              labels['audience.owners.subtitle'],
+              labels['audience.providers.subtitle'],
+            ].map((copy) => (
+              <div key={copy} className="min-h-40 rounded-lg border border-border-line bg-surface-ivory p-20 flex items-end">
+                <p className="text-small text-text-ink">{copy}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="max-w-6xl mx-auto py-64 px-24">
-        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
-          {labels['landing.trust.title']}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-40 mb-40">
-          {trustPoints.map((point) => (
-            <div key={point.title} className="text-center">
-              <div className="flex justify-center mb-16 text-brand-andaman">
-                <TrustMark size={48} filled />
-              </div>
-              <h3 className="font-display text-title text-text-ink mb-12">{point.title}</h3>
-              <p className="text-body text-text-secondary">{point.body}</p>
-            </div>
-          ))}
-        </div>
-        <div className="text-center">
-          <Link href="/trust" className="text-brand-andaman font-semibold hover:underline">
-            {labels['landing.trust.cta']}
+      <section className="max-w-6xl mx-auto py-80 px-24">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
+          <Link href="/owners" className="border-t border-border-line-2 pt-24 group">
+            <h3 className="font-display text-title text-text-ink mb-12">
+              {labels['audience.owners.title']}
+            </h3>
+            <p className="text-body text-text-stone mb-20">
+              {labels['audience.owners.subtitle']}
+            </p>
+            <span className="text-brand-andaman font-semibold">
+              {labels['audience.owners.cta']}
+            </span>
+          </Link>
+
+          <Link href="/management-companies" className="border-t border-border-line-2 pt-24 group">
+            <h3 className="font-display text-title text-text-ink mb-12">
+              {labels['audience.mc.title']}
+            </h3>
+            <p className="text-body text-text-stone mb-20">
+              {labels['audience.mc.subtitle']}
+            </p>
+            <span className="text-brand-andaman font-semibold">
+              {labels['audience.mc.cta']}
+            </span>
+          </Link>
+
+          <Link href="/providers" className="border-t border-border-line-2 pt-24 group">
+            <h3 className="font-display text-title text-text-ink mb-12">
+              {labels['audience.providers.title']}
+            </h3>
+            <p className="text-body text-text-stone mb-20">
+              {labels['audience.providers.subtitle']}
+            </p>
+            <span className="text-brand-andaman font-semibold">
+              {labels['audience.providers.cta']}
+            </span>
           </Link>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="bg-surface-ivory py-64 px-24">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-32">
-            {labels['landing.services.title']}
+      <section className="bg-brand-deep text-on-dark-text">
+        <div className="max-w-6xl mx-auto py-80 px-24">
+          <h2 className="font-display text-display-xl font-semibold mb-40">
+            {labels['landing.trust.title']}
           </h2>
-          <p className="text-body text-text-secondary mb-40">
-            {labels['landing.services.body']}
-          </p>
-          <Link
-            href="/services"
-            className="inline-flex items-center justify-center bg-brand-andaman text-surface-ivory px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
-          >
-            {labels['landing.services.cta']}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-32 mb-40">
+            {trustPoints.map((point) => (
+              <div key={point.title} className="border-t border-on-dark-muted/40 pt-20">
+                <div className="mb-16 text-brand-sun-soft">
+                  <TrustMark size={32} filled />
+                </div>
+                <h3 className="font-display text-title mb-12">{point.title}</h3>
+                <p className="text-body text-on-dark-muted">{point.body}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/trust" className="text-brand-sun-soft font-semibold">
+            {labels['landing.trust.cta']}
           </Link>
         </div>
       </section>

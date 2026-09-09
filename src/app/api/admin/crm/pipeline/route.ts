@@ -18,18 +18,28 @@ const STAGE_ORDER = [
   'former_client',
 ] as const;
 
+interface PipelineProfileRow {
+  id: string;
+  email: string | null;
+  stage: CrmLifecycleStage;
+  leadScore: number | null;
+  totalValue: number;
+}
+
 interface PipelineStage {
   stage: CrmLifecycleStage;
   count: number;
   totalValue: number;
   avgValue: number;
-  profiles: Array<{
-    id: string;
-    email: string | null;
-    stage: CrmLifecycleStage;
-    leadScore: number | null;
-    totalValue: number;
-  }>;
+  // This array is page-scoped for backward-compatible UI rendering.
+  // The count/value metrics above are computed over the full permitted dataset.
+  profiles: PipelineProfileRow[];
+}
+
+function profileValue(profile: {
+  identity: { crmOpportunities: Array<{ valueThb: number | null }> };
+}) {
+  return profile.identity.crmOpportunities.reduce((sum, opp) => sum + (opp.valueThb ?? 0), 0);
 }
 
 export async function GET(req: NextRequest) {
@@ -37,25 +47,38 @@ export async function GET(req: NextRequest) {
   if (!guard.ok) return guard.error;
 
   try {
-    const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '50'), 100);
-    const offset = parseInt(req.nextUrl.searchParams.get('offset') || '0');
+    const limit = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get('limit') || '50'), 1), 100);
+    const offset = Math.max(parseInt(req.nextUrl.searchParams.get('offset') || '0'), 0);
 
-    const profiles = await prisma.crmProfile.findMany({
-      include: {
-        identity: {
-          select: {
-            id: true,
-            email: true,
-            crmOpportunities: { select: { valueThb: true } },
+    // Page data and aggregate data are intentionally separate. The previous
+    // implementation built totals from this paginated page, which made the
+    // CRM summary change as the user paged through the same permitted dataset.
+    const [pageProfiles, aggregateProfiles, total] = await Promise.all([
+      prisma.crmProfile.findMany({
+        include: {
+          identity: {
+            select: {
+              id: true,
+              email: true,
+              crmOpportunities: { select: { valueThb: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-    });
-
-    const total = await prisma.crmProfile.count();
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.crmProfile.findMany({
+        select: {
+          id: true,
+          lifecycleStage: true,
+          identity: {
+            select: { crmOpportunities: { select: { valueThb: true } } },
+          },
+        },
+      }),
+      prisma.crmProfile.count(),
+    ]);
 
     const stageMap = new Map<CrmLifecycleStage, PipelineStage>();
     for (const stage of STAGE_ORDER) {
@@ -68,22 +91,24 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    for (const profile of profiles) {
-      const stage = profile.lifecycleStage;
-      const stageData = stageMap.get(stage)!;
-      const profileValue = profile.identity.crmOpportunities.reduce(
-        (sum, opp) => sum + (opp.valueThb ?? 0),
-        0
-      );
-
+    // Full-scope aggregates first.
+    for (const profile of aggregateProfiles) {
+      const stageData = stageMap.get(profile.lifecycleStage);
+      if (!stageData) continue;
       stageData.count += 1;
-      stageData.totalValue += profileValue;
+      stageData.totalValue += profileValue(profile);
+    }
+
+    // Only the current page's profile cards are attached to each stage.
+    for (const profile of pageProfiles) {
+      const stageData = stageMap.get(profile.lifecycleStage);
+      if (!stageData) continue;
       stageData.profiles.push({
         id: profile.id,
         email: profile.identity?.email || null,
         stage: profile.lifecycleStage,
         leadScore: profile.leadScore,
-        totalValue: profileValue,
+        totalValue: profileValue(profile),
       });
     }
 
@@ -93,13 +118,14 @@ export async function GET(req: NextRequest) {
       profiles: stage.profiles.sort((a, b) => b.totalValue - a.totalValue),
     }));
 
+    const totalValue = pipeline.reduce((sum, stage) => sum + stage.totalValue, 0);
     const totals = {
-      totalProfiles: profiles.length,
-      totalValue: pipeline.reduce((sum, stage) => sum + stage.totalValue, 0),
+      totalProfiles: total,
+      totalValue,
       stageDistribution: pipeline.map((stage) => ({
         stage: stage.stage,
         count: stage.count,
-        percentage: profiles.length > 0 ? ((stage.count / profiles.length) * 100).toFixed(1) : '0',
+        percentage: total > 0 ? ((stage.count / total) * 100).toFixed(1) : '0',
       })),
     };
 
@@ -111,6 +137,7 @@ export async function GET(req: NextRequest) {
         limit,
         offset,
         total,
+        returned: pageProfiles.length,
         hasMore: offset + limit < total,
       },
     });

@@ -94,8 +94,9 @@ export async function remindUnansweredServiceOrders(
 }
 
 /**
- * Send review prompts (N-27) for fulfilled service orders past the configured
- * delay (default 12h). Skips orders that already have a review or prompt.
+ * Send review prompts (N-27) for delivered service orders past the configured
+ * delay (default 12h). Closed orders remain delivered and must not lose their
+ * review prompt after early confirmation or automatic closure.
  */
 export async function sendServiceOrderReviewPrompts(
   db: PrismaClient,
@@ -107,7 +108,7 @@ export async function sendServiceOrderReviewPrompts(
 
   const candidates = await db.serviceOrder.findMany({
     where: {
-      status: 'fulfilled',
+      status: { in: ['fulfilled', 'closed'] },
       fulfilled_at: { not: null, lte: cutoff },
     },
     include: {

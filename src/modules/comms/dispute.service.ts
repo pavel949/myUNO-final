@@ -14,7 +14,7 @@ export interface RaiseDisputeInput {
 }
 
 interface SubjectContext {
-  projectId: string;
+  projectId: string | null;
   unitId: string | null;
   ownerIdentityId: string;
   paymentId: string | null;
@@ -122,6 +122,13 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
     throw new Error('You can only raise a dispute over your own booking, order, or statement');
   }
   if (subject.closedReason) throw new Error(subject.closedReason);
+
+  // Ticket is still the canonical dispute conversation record and currently
+  // requires property scope. Fail closed for a standalone service instead of
+  // inventing a synthetic project or creating an orphan dispute.
+  if (!subject.projectId) {
+    throw new Error('Standalone service disputes require operator support until projectless tickets are enabled');
+  }
 
   try {
     return await db.$transaction(

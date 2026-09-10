@@ -85,24 +85,41 @@ export default function OrderWizard({
   const q1 = Math.max(1, positive(quantity, 1));
   const previewThb = computeOrderPreviewBaht(service.priceModel, service.basePriceThb, q1);
 
-  const quantityDimensions = useMemo<Dimensions>(() => {
+  const quantityDimensions = useMemo((): Dimensions => {
+    const dimensions: Dimensions = {};
+
     switch (service.categoryKey) {
       case 'transfer':
-        return { passengers: q1, luggage: positive(secondary, 0), vehicles: Math.max(1, positive(tertiary, 1)) };
+        dimensions.passengers = q1;
+        dimensions.luggage = positive(secondary, 0);
+        dimensions.vehicles = Math.max(1, positive(tertiary, 1));
+        break;
       case 'chef':
-        return { guests: q1, hours: Math.max(1, positive(secondary, 1)) };
+        dimensions.guests = q1;
+        dimensions.hours = Math.max(1, positive(secondary, 1));
+        break;
       case 'cleaning':
-        return { rooms: q1, hours: positive(secondary, 0), areaSqm: positive(tertiary, 0) };
+        dimensions.rooms = q1;
+        dimensions.hours = positive(secondary, 0);
+        dimensions.areaSqm = positive(tertiary, 0);
+        break;
       case 'car_hire':
       case 'car_rental':
-        return { days: q1, vehicles: Math.max(1, positive(secondary, 1)) };
+        dimensions.days = q1;
+        dimensions.vehicles = Math.max(1, positive(secondary, 1));
+        break;
       case 'flowers':
       case 'deliveries':
       case 'groceries':
-        return { items: q1 };
+        dimensions.items = q1;
+        break;
       default:
-        return service.priceModel === 'per_hour' ? { units: 1, hours: q1 } : service.priceModel === 'per_person' ? { units: q1, persons: q1 } : { units: q1 };
+        dimensions.units = service.priceModel === 'per_hour' ? 1 : q1;
+        if (service.priceModel === 'per_hour') dimensions.hours = q1;
+        if (service.priceModel === 'per_person') dimensions.persons = q1;
     }
+
+    return dimensions;
   }, [service.categoryKey, service.priceModel, q1, secondary, tertiary]);
 
   const context = standalone ? { area: area.trim() || undefined, address: address.trim() || undefined } : undefined;

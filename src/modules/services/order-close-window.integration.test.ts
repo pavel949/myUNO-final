@@ -3,6 +3,11 @@ import { db, resetDb, createIdentity, createProject, createProvider, createServi
 import { seedConfig, setConfigOverride } from '@/modules/config';
 import * as serviceOrderService from './service-order.service';
 import { raiseDispute } from '@/modules/comms/dispute.service';
+import { fulfillServiceOrderAtomic } from './fulfilment-atomic.service';
+// The row-locked confirm the module interface exports and the confirm route
+// runs. An earlier unlocked copy lived in service-order.service.ts; these
+// tests followed it there and so were green against code nothing called.
+import { confirmServiceOrderFulfilment } from './confirm-service-order.service';
 
 /**
  * The confirm/dispute window (doc 07 F-PROV-3).
@@ -45,7 +50,10 @@ async function fulfilledOrder(options: { fulfilledAt?: Date } = {}) {
   });
 
   await serviceOrderService.acceptServiceOrder(db, order.id, provider.id);
-  await serviceOrderService.fulfillServiceOrder(db, order.id, provider.id);
+  // The atomic seam is what the fulfil route runs; the older
+  // `fulfillServiceOrder` no longer has a production caller. Testing through
+  // the path production actually takes is the point of an integration test.
+  await fulfillServiceOrderAtomic(db, order.id, provider.id);
 
   // Backdating the fulfilment is how we move time: the deadline is derived
   // from `fulfilled_at`, never stored, so this is the only lever needed.
@@ -77,7 +85,7 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
     it('closes the order and records who confirmed', async () => {
       const { orderId, orderer } = await fulfilledOrder();
 
-      await serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id);
+      await confirmServiceOrderFulfilment(db, orderId, orderer.id);
 
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
       expect(order?.status).toBe('closed');
@@ -90,7 +98,7 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
       const someoneElse = await createIdentity();
 
       await expect(
-        serviceOrderService.confirmServiceOrderFulfilment(db, orderId, someoneElse.id)
+        confirmServiceOrderFulfilment(db, orderId, someoneElse.id)
       ).rejects.toThrow('Only the orderer');
 
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
@@ -99,10 +107,10 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
 
     it('refuses an order that is not fulfilled', async () => {
       const { orderId, orderer } = await fulfilledOrder();
-      await serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id);
+      await confirmServiceOrderFulfilment(db, orderId, orderer.id);
 
       await expect(
-        serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id)
+        confirmServiceOrderFulfilment(db, orderId, orderer.id)
       ).rejects.toThrow('Cannot confirm an order in closed status');
     });
 
@@ -114,7 +122,7 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
       const { orderId, orderer } = await fulfilledOrder({ fulfilledAt: hoursAgo(49) });
 
       await expect(
-        serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id)
+        confirmServiceOrderFulfilment(db, orderId, orderer.id)
       ).rejects.toThrow('48-hour window');
 
       const order = await db.serviceOrder.findUnique({ where: { id: orderId } });
@@ -124,7 +132,7 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
 
     it('emits service_order_closed', async () => {
       const { orderId, orderer } = await fulfilledOrder();
-      await serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id);
+      await confirmServiceOrderFulfilment(db, orderId, orderer.id);
 
       const event = await db.analyticsEvent.findFirst({
         where: { eventKey: 'service_order_closed', serviceOrderId: orderId },
@@ -288,6 +296,37 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
     });
   });
 
+  describe('rating survives the close', () => {
+    it('lets the orderer rate an order that has already closed', async () => {
+      // The review prompt is sent for closed orders too (an early confirm
+      // closes within minutes, long before the prompt is due). If rating
+      // still required `fulfilled`, that prompt would lead to
+      // "Cannot rate order in closed status" — a dead end, and the ratings
+      // would be lost from exactly the customers who confirmed.
+      const { orderId, orderer } = await fulfilledOrder();
+      await confirmServiceOrderFulfilment(db, orderId, orderer.id);
+
+      await serviceOrderService.rateServiceOrder(db, orderId, orderer.id, 5, 'Faultless');
+
+      const review = await db.review.findFirst({
+        where: { target_type: 'service_order', target_id: orderId },
+      });
+      expect(review?.rating).toBe(5);
+    });
+
+    it('still refuses to rate an order that was never delivered', async () => {
+      const { orderId, orderer } = await fulfilledOrder();
+      await db.serviceOrder.update({
+        where: { id: orderId },
+        data: { status: 'cancelled', fulfilled_at: null },
+      });
+
+      await expect(
+        serviceOrderService.rateServiceOrder(db, orderId, orderer.id, 5, 'Never happened')
+      ).rejects.toThrow('Cannot rate order in cancelled status');
+    });
+  });
+
   describe('the window bounds disputes', () => {
     it('accepts a dispute raised inside the window', async () => {
       const { orderId, orderer } = await fulfilledOrder({ fulfilledAt: hoursAgo(2) });
@@ -321,7 +360,7 @@ describe('service-order confirm/dispute window (F-PROV-3)', () => {
 
     it('refuses a dispute against an order that is already closed', async () => {
       const { orderId, orderer } = await fulfilledOrder();
-      await serviceOrderService.confirmServiceOrderFulfilment(db, orderId, orderer.id);
+      await confirmServiceOrderFulfilment(db, orderId, orderer.id);
 
       await expect(
         raiseDispute(db, {

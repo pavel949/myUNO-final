@@ -130,7 +130,9 @@ describe('Payouts & Reconciliation (T-031)', () => {
           unitId: unit.id,
           raisedByIdentityId: orderer.id,
           raisedByRole: 'owner',
-          category: 'complaint',
+          // The model field is `categoryKey`; `category` is silently rejected
+          // by Prisma at create time, so the test threw before it asserted.
+          categoryKey: 'complaint',
           priority: 'high',
           title: 'Service dispute',
           description: 'Work is disputed',

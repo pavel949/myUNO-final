@@ -176,4 +176,58 @@ describe('sendServiceOrderReviewPrompts (N-27)', () => {
     expect(notifications[0].identityId).toBe(orderer.id);
     expect((notifications[0].params as { order_id?: string }).order_id).toBe(order.id);
   });
+
+  it('still prompts an order that has already closed (T-023b regression)', async () => {
+    // T-023b gave a fulfilled order a terminal `closed` state. This query
+    // filtered on `fulfilled` alone, so any order that closed before its
+    // prompt was due silently lost its review prompt forever.
+    //
+    // Two ordinary paths reach that: the orderer confirming early — which
+    // closes the order within minutes of fulfilment, well before the 12h
+    // prompt — and a project shortening
+    // `service.fulfilment_confirm_window_hours` below the prompt delay.
+    // Both mean the happiest customers are the ones never asked to rate.
+    const project = await createProject();
+    const unit = await createUnit(project.id);
+    const provider = await createProvider({ status: 'active' });
+    const orderer = await createIdentity();
+    const service = await createService({
+      providerId: provider.id,
+      status: 'active',
+      title: 'Private chef',
+    });
+
+    const fulfilledAt = new Date('2026-08-01T00:00:00Z');
+    const now = new Date('2026-08-01T13:00:00Z'); // 13h later, prompt is due
+
+    const order = await db.serviceOrder.create({
+      data: {
+        service_id: service.id,
+        provider_id: provider.id,
+        project_id: project.id,
+        unit_id: unit.id,
+        orderer_identity_id: orderer.id,
+        orderer_role: 'guest',
+        // Confirmed early by the orderer, an hour after the work was done.
+        status: 'closed',
+        fulfilled_at: fulfilledAt,
+        closed_at: new Date('2026-08-01T01:00:00Z'),
+        closed_by_identity_id: orderer.id,
+        scheduled_start: new Date('2026-08-02'),
+        scheduled_end: new Date('2026-08-02T02:00:00Z'),
+        quantity: 1,
+        price_breakdown: { base: 3000 },
+        total_thb: 3000,
+        take_rate_pct_snapshot: 15,
+      },
+    });
+
+    expect(await sendServiceOrderReviewPrompts(db, now)).toBe(1);
+
+    const notifications = await db.notification.findMany({
+      where: { type: 'order_review_prompt' },
+    });
+    expect(notifications).toHaveLength(1);
+    expect((notifications[0].params as { order_id?: string }).order_id).toBe(order.id);
+  });
 });

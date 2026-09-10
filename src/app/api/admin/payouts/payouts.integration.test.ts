@@ -65,6 +65,9 @@ describe('T-031: Payouts & Reconciliation', () => {
           scheduled_start: new Date('2026-01-15'),
           scheduled_end: new Date('2026-01-15T02:00:00'),
           status: 'fulfilled',
+          // The immutable fulfilment date is what places an order in a
+          // remittance period; `updatedAt` moves whenever the row is touched.
+          fulfilled_at: new Date('2026-01-15'),
           total_thb: 5000,
           take_rate_pct_snapshot: 10,
           price_breakdown: {},
@@ -100,6 +103,8 @@ describe('T-031: Payouts & Reconciliation', () => {
           scheduled_start: new Date('2026-02-15'),
           scheduled_end: new Date('2026-02-15T02:00:00'),
           status: 'fulfilled',
+          // Fulfilled after the period — must not be counted.
+          fulfilled_at: new Date('2026-02-15'),
           total_thb: 5000,
           take_rate_pct_snapshot: 10,
           price_breakdown: {},

@@ -456,63 +456,6 @@ export function fulfilmentConfirmDeadline(
 }
 
 /**
- * Orderer confirms the work was done, closing the order ahead of the window.
- *
- * Confirming is the orderer waiving the rest of their window, so only the
- * orderer may do it — staff closing an order on a guest's behalf would be
- * the platform waiving the guest's own recourse.
- */
-export async function confirmServiceOrderFulfilment(
-  db: PrismaClient,
-  serviceOrderId: string,
-  confirmedByIdentityId: string
-): Promise<void> {
-  const order = await db.serviceOrder.findUnique({ where: { id: serviceOrderId } });
-
-  if (!order) {
-    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
-  }
-
-  if (order.orderer_identity_id !== confirmedByIdentityId) {
-    throw new Error('Only the orderer can confirm this order was fulfilled');
-  }
-
-  if (order.status !== 'fulfilled') {
-    throw new Error(`Cannot confirm an order in ${order.status} status`);
-  }
-
-  // The window bounds confirming exactly as it bounds disputing. Without this
-  // the two disagree: past the deadline an orderer could no longer dispute but
-  // could still confirm, for as long as it took the nightly sweep to run — and
-  // the order would close carrying `closed_by_identity_id`, which is the audit
-  // trail's way of saying "a person confirmed this inside their window".
-  const windowHours = await getFulfilmentConfirmWindowHours(db, order.project_id);
-  const deadline = fulfilmentConfirmDeadline(order.fulfilled_at, windowHours);
-  if (deadline && deadline <= new Date()) {
-    throw new Error(
-      `The ${windowHours}-hour window for confirming this order has passed`
-    );
-  }
-
-  await db.serviceOrder.update({
-    where: { id: serviceOrderId },
-    data: {
-      status: 'closed',
-      closed_at: new Date(),
-      closed_by_identity_id: confirmedByIdentityId,
-    },
-  });
-
-  await track(db, 'service_order_closed', {
-    serviceOrderId: order.id,
-    projectId: order.project_id,
-    unitId: order.unit_id ?? undefined,
-    identityId: confirmedByIdentityId,
-    totalThb: order.total_thb,
-  });
-}
-
-/**
  * Nightly sweep: close fulfilled orders whose window has lapsed.
  *
  * An order carrying an open dispute is left alone — closing it would end the
@@ -872,7 +815,11 @@ export async function rateServiceOrder(
     throw new Error('Only the orderer can rate this service order');
   }
 
-  if (order.status !== 'fulfilled') {
+  // `closed` counts as much as `fulfilled`: the work was delivered either
+  // way, and an order the orderer confirmed closes within minutes — long
+  // before the review prompt is due. Refusing here would make that prompt a
+  // dead end and lose the ratings of the customers who confirmed.
+  if (order.status !== 'fulfilled' && order.status !== 'closed') {
     throw new Error(`Cannot rate order in ${order.status} status`);
   }
 

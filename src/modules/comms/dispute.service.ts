@@ -126,7 +126,8 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
   // Ticket is still the canonical dispute conversation record and currently
   // requires property scope. Fail closed for a standalone service instead of
   // inventing a synthetic project or creating an orphan dispute.
-  if (!subject.projectId) {
+  const projectId = subject.projectId;
+  if (!projectId) {
     throw new Error('Standalone service disputes require operator support until projectless tickets are enabled');
   }
 
@@ -166,7 +167,7 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
         if (existing) throw new Error('A dispute has already been raised for this record');
 
         const { id: ticketId } = await raiseTicket(tx as unknown as PrismaClient, {
-          projectId: subject.projectId,
+          projectId,
           unitId: subject.unitId ?? undefined,
           raisedByIdentityId,
           raisedByRole,

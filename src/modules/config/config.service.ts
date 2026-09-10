@@ -52,19 +52,24 @@ class ConfigCache {
 
 const cache = new ConfigCache();
 
-function getCacheKey(paramKey: string, unitId?: string, projectId?: string): string {
+function getCacheKey(paramKey: string, unitId?: string | null, projectId?: string | null): string {
   if (unitId) return `${paramKey}:unit:${unitId}`;
   if (projectId) return `${paramKey}:project:${projectId}`;
   return `${paramKey}:global`;
 }
 
+/**
+ * Get a configuration value with resolution order: unit → project → global.
+ * Nullable scope IDs are accepted deliberately so standalone marketplace
+ * orders can fall through to global defaults without inventing a fake project.
+ */
 export async function getConfig<K extends ConfigKey>(
   db: PrismaClient,
   key: K,
-  options?: { unitId?: string; projectId?: string }
+  options?: { unitId?: string | null; projectId?: string | null }
 ): Promise<AllConfig[K] | undefined> {
-  const unitId = options?.unitId;
-  const projectId = options?.projectId;
+  const unitId = options?.unitId ?? undefined;
+  const projectId = options?.projectId ?? undefined;
 
   if (unitId) {
     const cacheKey = getCacheKey(key, unitId);

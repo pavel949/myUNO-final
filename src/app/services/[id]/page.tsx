@@ -39,34 +39,22 @@ export default async function ServiceDetailPage({
 }) {
   const { id } = params;
   const bookingId = searchParams.bookingId || null;
-  // A guest arrives with a stay. Everyone else — a resident, an owner, an MC
-  // member — arrives with a building or a unit instead. Without this the order
-  // API fell through to its single-project guess, which is correct only while
-  // exactly one project exists and fails the day a second one goes live.
   const projectId = searchParams.projectId || null;
   const unitId = searchParams.unitId || null;
 
   let service: ServiceDetail | null = null;
   try {
-    const res = await fetch(`/api/services/${id}`, {
-      cache: 'no-store',
-    });
-    if (res.ok) {
-      service = await res.json();
-    }
+    const res = await fetch(`/api/services/${id}`, { cache: 'no-store' });
+    if (res.ok) service = await res.json();
   } catch {
-    // Service fetch failed
+    // Service fetch failed.
   }
-
-  if (!service) {
-    notFound();
-  }
+  if (!service) notFound();
 
   const labels = await getLabels({
     'services.breadcrumb_home': 'Home',
     'services.breadcrumb_services': 'Services',
     'services.breadcrumb_detail': 'Service Details',
-    'services.detail.title': 'Service',
     'services.detail.by_provider': 'By {provider}',
     'services.detail.vetted_badge': 'Vetted',
     'services.detail.price_model': 'Price model',
@@ -80,41 +68,48 @@ export default async function ServiceDetailPage({
     'services.detail.advance_notice_hours': '{hours}h',
     'services.detail.advance_notice_none': 'None',
     'services.detail.about_provider': 'About the provider',
-    'services.detail.order': 'Order this service',
     'services.detail.photos': 'Photos',
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
     'services.wizard.when': 'When',
+    'services.wizard.when_required': 'Choose the date and time.',
     'services.wizard.quantity': 'Quantity',
+    'services.wizard.passengers': 'Passengers',
+    'services.wizard.guests': 'Guests',
+    'services.wizard.rooms': 'Rooms',
+    'services.wizard.days': 'Days',
+    'services.wizard.hours': 'Hours',
+    'services.wizard.people': 'People',
+    'services.wizard.luggage': 'Luggage',
+    'services.wizard.vehicles': 'Vehicles',
+    'services.wizard.area': 'Phuket area',
+    'services.wizard.address': 'Address / hotel / villa',
+    'services.wizard.location_required': 'Enter a Phuket area or service address.',
     'services.wizard.note': 'Note to provider (optional)',
-    'services.wizard.total_preview': 'Total',
+    'services.wizard.total_preview': 'Estimated total',
     'services.wizard.place': 'Order — ฿{total}',
     'services.wizard.place_no_total': 'Place order',
     'services.wizard.pay_title': 'Order placed — choose how to pay',
     'services.wizard.pay_subtitle': 'Pay now by card, or in cash when the service is delivered.',
     'services.wizard.pay_card': 'Pay by card',
     'services.wizard.pay_cash': 'Cash on fulfilment',
-    'services.wizard.pay_cash_note': 'Cash payments are recorded by our staff with a receipt number.',
-    'services.wizard.quote_title': 'Priced individually',
-    'services.wizard.quote_body': 'This service is quoted for your dates and party — the concierge will confirm the price with you directly.',
-    'services.wizard.quote_whatsapp': 'Ask the concierge on WhatsApp',
-    'services.wizard.quote_messages': 'Message us',
-    'services.wizard.error_generic': 'Could not place the order. Please try again.',
+    'services.wizard.quote_title': 'Request a tailored quote',
+    'services.wizard.request_quote': 'Request quote',
+    'services.wizard.quote_requested': 'Quote request sent',
+    'services.wizard.quote_requested_body': 'The provider will prepare a price for the details you submitted. You can continue from My myUNO when the quote is ready.',
+    'services.wizard.error_generic': 'Could not complete this request. Please try again.',
   });
 
-  // Quote CTA: the concierge WhatsApp is a project-scoped parameter — when
-  // the guest arrives from a stay, resolve it through their booking's project.
   let whatsappNumber: string | null = null;
   try {
-    let projectId: string | undefined;
+    let scopedProjectId: string | undefined;
     if (bookingId) {
-      const booking = await prisma.booking.findUnique({
-        where: { id: bookingId },
-        select: { projectId: true },
-      });
-      projectId = booking?.projectId ?? undefined;
+      const booking = await prisma.booking.findUnique({ where: { id: bookingId }, select: { projectId: true } });
+      scopedProjectId = booking?.projectId ?? undefined;
+    } else if (projectId) {
+      scopedProjectId = projectId;
     }
-    const value = await getConfig(prisma, 'comms.whatsapp_number', projectId ? { projectId } : undefined);
+    const value = await getConfig(prisma, 'comms.whatsapp_number', scopedProjectId ? { projectId: scopedProjectId } : undefined);
     whatsappNumber = typeof value === 'string' && value.trim() ? value.trim() : null;
   } catch {
     whatsappNumber = null;
@@ -127,141 +122,96 @@ export default async function ServiceDetailPage({
     quote: labels['services.detail.quote'],
   };
 
-  const breadcrumbs = [
-    { label: labels['services.breadcrumb_home'], href: '/' },
-    { label: labels['services.breadcrumb_services'], href: '/services' },
-    { label: labels['services.breadcrumb_detail'], current: true },
-  ];
-
   return (
     <main className="min-h-screen bg-surface-ivory">
-      <Breadcrumb items={breadcrumbs} />
+      <Breadcrumb items={[
+        { label: labels['services.breadcrumb_home'], href: '/' },
+        { label: labels['services.breadcrumb_services'], href: '/services' },
+        { label: labels['services.breadcrumb_detail'], current: true },
+      ]} />
       <div className="p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
-        {/* Cover image */}
-        {service.coverUrl && (
-          <div className="mb-24 rounded-lg overflow-hidden bg-surface-paper">
-            <Image
-              src={`/api/uploads/${service.coverUrl}`}
-              alt={service.title}
-              width={640}
-              height={384}
-              priority
-              className="w-full h-64 md:h-96 object-cover"
-            />
-          </div>
-        )}
-
-        {/* Title & provider */}
-        <div className="mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{service.title}</h1>
-          <div className="flex items-center gap-8 text-body text-text-secondary mb-16">
-            <span>
-              {labels['services.detail.by_provider'].replace('{provider}', service.provider.name)}
-            </span>
-            {service.provider.vetted && (
-              <span className="inline-flex items-center gap-4 px-8 py-4 bg-status-good bg-opacity-10 text-status-good rounded-full text-small font-semibold">
-                ✓ {labels['services.detail.vetted_badge']}
-              </span>
-            )}
-          </div>
-          {service.description && (
-            <p className="text-body text-text-secondary">{service.description}</p>
-          )}
-        </div>
-
-        {/* Key details grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-24">
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <p className="text-small text-text-secondary mb-8">{labels['services.detail.price_model']}</p>
-            <p className="text-heading-3 font-semibold text-text-ink">
-              {priceModelLabel[service.priceModel] || service.priceModel}
-            </p>
-            {service.basePriceThb !== null && (
-              <p className="text-body text-text-secondary mt-4">
-                {/* service.basePriceThb is satang from the DB; the raw satang
-                    value is still passed to OrderWizard below, unconverted,
-                    since it feeds order-total math — see price-label.ts. */}
-                {formatServicePriceLabel(service.priceModel, service.basePriceThb)}
-              </p>
-            )}
-          </div>
-
-          {service.durationMin !== null && (
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-              <p className="text-small text-text-secondary mb-8">{labels['services.detail.duration']}</p>
-              <p className="text-heading-3 font-semibold text-text-ink">
-                {labels['services.detail.duration_hours'].replace('{minutes}', String(service.durationMin))}
-              </p>
+        <div className="max-w-4xl mx-auto">
+          {service.coverUrl && (
+            <div className="mb-24 rounded-lg overflow-hidden bg-surface-paper">
+              <Image src={`/api/uploads/${service.coverUrl}`} alt={service.title} width={640} height={384} priority className="w-full h-64 md:h-96 object-cover" />
             </div>
           )}
 
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <p className="text-small text-text-secondary mb-8">
-              {labels['services.detail.advance_notice']}
-            </p>
-            <p className="text-heading-3 font-semibold text-text-ink">
-              {service.advanceNoticeHours > 0
-                ? labels['services.detail.advance_notice_hours'].replace('{hours}', String(service.advanceNoticeHours))
-                : labels['services.detail.advance_notice_none']}
-            </p>
-          </div>
-        </div>
-
-        {/* Provider details */}
-        {service.provider.description && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">
-              {labels['services.detail.about_provider']}
-            </h2>
-            <p className="text-body text-text-secondary">{service.provider.description}</p>
-          </div>
-        )}
-
-        {/* Gallery */}
-        {service.mediaUrls.length > 0 && (
           <div className="mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
-              {service.mediaUrls.map((url, idx) => (
-                <Image
-                  key={idx}
-                  src={`/api/uploads/${url}`}
-                  alt={`${service.title} ${idx + 1}`}
-                  width={320}
-                  height={160}
-                  className="w-full h-40 object-cover rounded-lg"
-                />
-              ))}
+            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{service.title}</h1>
+            <div className="flex items-center gap-8 text-body text-text-secondary mb-16">
+              <span>{labels['services.detail.by_provider'].replace('{provider}', service.provider.name)}</span>
+              {service.provider.vetted && (
+                <span className="inline-flex items-center gap-4 px-8 py-4 bg-status-good bg-opacity-10 text-status-good rounded-full text-small font-semibold">
+                  ✓ {labels['services.detail.vetted_badge']}
+                </span>
+              )}
+            </div>
+            {service.description && <p className="text-body text-text-secondary">{service.description}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-24">
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <p className="text-small text-text-secondary mb-8">{labels['services.detail.price_model']}</p>
+              <p className="text-heading-3 font-semibold text-text-ink">{priceModelLabel[service.priceModel] || service.priceModel}</p>
+              {service.basePriceThb !== null && <p className="text-body text-text-secondary mt-4">{formatServicePriceLabel(service.priceModel, service.basePriceThb)}</p>}
+            </div>
+            {service.durationMin !== null && (
+              <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+                <p className="text-small text-text-secondary mb-8">{labels['services.detail.duration']}</p>
+                <p className="text-heading-3 font-semibold text-text-ink">{labels['services.detail.duration_hours'].replace('{minutes}', String(service.durationMin))}</p>
+              </div>
+            )}
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <p className="text-small text-text-secondary mb-8">{labels['services.detail.advance_notice']}</p>
+              <p className="text-heading-3 font-semibold text-text-ink">
+                {service.advanceNoticeHours > 0
+                  ? labels['services.detail.advance_notice_hours'].replace('{hours}', String(service.advanceNoticeHours))
+                  : labels['services.detail.advance_notice_none']}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* SA-2: the ordering surface — refine → place → pay → confirm */}
-        <div className="mt-32">
-          <OrderWizard
-            service={{
-              id: service.id,
-              title: service.title,
-              priceModel: service.priceModel,
-              basePriceThb: service.basePriceThb,
-            }}
-            bookingId={bookingId}
-            projectId={projectId}
-            unitId={unitId}
-            whatsappNumber={whatsappNumber}
-            labels={labels}
-          />
-          <div className="mt-16">
-            <Link
-              href={bookingId ? `/services?bookingId=${bookingId}` : '/services'}
-              className="text-small font-semibold text-brand-andaman hover:underline"
-            >
-              ← {labels['services.detail.back']}
-            </Link>
+          {service.provider.description && (
+            <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.about_provider']}</h2>
+              <p className="text-body text-text-secondary">{service.provider.description}</p>
+            </div>
+          )}
+
+          {service.mediaUrls.length > 0 && (
+            <div className="mb-24">
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
+                {service.mediaUrls.map((url, idx) => (
+                  <Image key={url} src={`/api/uploads/${url}`} alt={`${service.title} ${idx + 1}`} width={320} height={160} className="w-full h-40 object-cover rounded-lg" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-32">
+            <OrderWizard
+              service={{
+                id: service.id,
+                title: service.title,
+                categoryKey: service.categoryKey,
+                priceModel: service.priceModel,
+                basePriceThb: service.basePriceThb,
+              }}
+              bookingId={bookingId}
+              projectId={projectId}
+              unitId={unitId}
+              whatsappNumber={whatsappNumber}
+              labels={labels}
+            />
+            <div className="mt-16">
+              <Link href={bookingId ? `/services?bookingId=${bookingId}` : '/services'} className="text-small font-semibold text-brand-andaman hover:underline">
+                ← {labels['services.detail.back']}
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </main>
   );

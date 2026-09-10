@@ -16,14 +16,18 @@ type Draft = {
   autosavedAt: string | Date;
 } | null;
 
+type Labels = Record<string, string>;
+
 export default function OnboardingStateClient({
   projectId,
   templates,
   initialDraft,
+  labels,
 }: {
   projectId: string;
   templates: Template[];
   initialDraft: Draft;
+  labels: Labels;
 }) {
   const initialNotes = useMemo(() => {
     const data = (initialDraft?.stageData || {}) as Record<string, unknown>;
@@ -51,7 +55,7 @@ export default function OnboardingStateClient({
             stageData: { notes },
           }),
         });
-        if (!response.ok) throw new Error('autosave failed');
+        if (!response.ok) throw new Error('onboarding_autosave_failed');
         setState('saved');
       } catch {
         setState('error');
@@ -60,55 +64,66 @@ export default function OnboardingStateClient({
     return () => window.clearTimeout(timer);
   }, [hydrated, projectId, templateId, lastStage, notes]);
 
+  const stateLabel =
+    state === 'saving'
+      ? labels['admin.project_onboarding.autosave_saving']
+      : state === 'saved'
+        ? labels['admin.project_onboarding.autosave_saved']
+        : state === 'error'
+          ? labels['admin.project_onboarding.autosave_failed']
+          : '';
+
   return (
     <section className="rounded-xl border border-border-line bg-surface-paper p-20">
       <div className="flex flex-wrap items-end justify-between gap-16">
         <div>
-          <h2 className="text-subtitle font-semibold text-text-ink">Setup template & progress</h2>
+          <h2 className="text-subtitle font-semibold text-text-ink">
+            {labels['admin.project_onboarding.setup_title']}
+          </h2>
           <p className="mt-4 text-small text-text-secondary">
-            Template values are inherited defaults only. Operational editors remain the source of truth.
+            {labels['admin.project_onboarding.setup_description']}
           </p>
         </div>
         <span className="text-small text-text-secondary" aria-live="polite">
-          {state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'error' ? 'Autosave failed' : ''}
+          {stateLabel}
         </span>
       </div>
       <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12">
         <label className="flex flex-col gap-4 text-small text-text-secondary">
-          Template
+          {labels['admin.project_onboarding.template_label']}
           <select
             value={templateId}
             onChange={(event) => setTemplateId(event.target.value)}
             className="h-48 rounded-sm border border-border-line bg-surface-paper px-12 text-text-ink"
           >
-            <option value="">No template</option>
+            <option value="">{labels['admin.project_onboarding.no_template']}</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>{template.name}</option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-4 text-small text-text-secondary">
-          Resume at stage
+          {labels['admin.project_onboarding.resume_stage']}
           <select
             value={lastStage}
             onChange={(event) => setLastStage(event.target.value)}
             className="h-48 rounded-sm border border-border-line bg-surface-paper px-12 text-text-ink"
           >
-            <option value="identity">1. Property identity</option>
-            <option value="inventory">2. Units & inventory</option>
-            <option value="commercial">3. Pricing & commercial rules</option>
-            <option value="compliance">4. Compliance & authority</option>
-            <option value="operations">5. Team & services</option>
-            <option value="publish">6. Content & launch</option>
+            <option value="identity">{labels['admin.project_onboarding.stage_identity']}</option>
+            <option value="inventory">{labels['admin.project_onboarding.stage_inventory']}</option>
+            <option value="commercial">{labels['admin.project_onboarding.stage_commercial']}</option>
+            <option value="compliance">{labels['admin.project_onboarding.stage_compliance']}</option>
+            <option value="operations">{labels['admin.project_onboarding.stage_operations']}</option>
+            <option value="publish">{labels['admin.project_onboarding.stage_publish']}</option>
           </select>
         </label>
         <label className="flex flex-col gap-4 text-small text-text-secondary md:col-span-1">
-          Working notes
+          {labels['admin.project_onboarding.working_notes']}
           <input
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             className="h-48 rounded-sm border border-border-line bg-surface-paper px-12 text-text-ink"
-            placeholder="What still needs attention?"
+            placeholder={labels['admin.project_onboarding.working_notes_placeholder']}
           />
         </label>
       </div>

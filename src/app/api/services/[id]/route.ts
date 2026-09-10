@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getRequestLocale } from '@/lib/i18n';
+import { getRequestLocale } from '@/lib/i18n-request';
 import { pickLocalizedServiceCopy } from '@/modules/services';
 
 export const dynamic = 'force-dynamic';
@@ -42,12 +42,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
 
-    // Verify provider is active and vetted
     if (!service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
       return NextResponse.json({ error: 'Service not available' }, { status: 404 });
     }
 
-    // Track analytics event
     const viewer = await getCurrentUser().catch(() => null);
     await track(prisma, 'service_service_viewed', {
       serviceId: service.id,

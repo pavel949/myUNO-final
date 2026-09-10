@@ -72,6 +72,16 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
       'admin.project_onboarding.warnings': 'Warnings',
       'admin.project_onboarding.no_blockers': 'No blockers in this stage.',
       'admin.project_onboarding.open_stage': 'Open stage',
+      'admin.project_onboarding.setup_title': 'Setup template & progress',
+      'admin.project_onboarding.setup_description': 'Template values are inherited defaults only. Operational editors remain the source of truth.',
+      'admin.project_onboarding.template_label': 'Template',
+      'admin.project_onboarding.no_template': 'No template',
+      'admin.project_onboarding.resume_stage': 'Resume at stage',
+      'admin.project_onboarding.working_notes': 'Working notes',
+      'admin.project_onboarding.working_notes_placeholder': 'What still needs attention?',
+      'admin.project_onboarding.autosave_saving': 'Saving…',
+      'admin.project_onboarding.autosave_saved': 'Saved',
+      'admin.project_onboarding.autosave_failed': 'Autosave failed',
       'admin.project_onboarding.stage_identity': '1. Property identity',
       'admin.project_onboarding.stage_identity_help': 'Location, address and canonical project identity.',
       'admin.project_onboarding.stage_inventory': '2. Units & inventory',
@@ -132,6 +142,7 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
         projectId={project.id}
         templates={templates}
         initialDraft={draft}
+        labels={labels}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">

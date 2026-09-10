@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getProjectReadiness } from '@/modules/projects/readiness.service';
+import OnboardingStateClient from './onboarding-state-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,15 +53,13 @@ const STAGE_DEFINITIONS = [
 ] as const;
 
 export default async function ProjectOnboardingPage({ params }: { params: { id: string } }) {
-  // Authentication/role enforcement is centralized in the protected admin layout.
-  // This page only performs project-scoped reads after that layout has admitted the caller.
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     select: { id: true, name: true, slug: true, status: true },
   });
   if (!project) notFound();
 
-  const [readiness, labels] = await Promise.all([
+  const [readiness, labels, templates, draft] = await Promise.all([
     getProjectReadiness(prisma, project.id),
     getLabels({
       'admin.project_onboarding.back': 'All projects',
@@ -78,13 +77,22 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
       'admin.project_onboarding.stage_inventory': '2. Units & inventory',
       'admin.project_onboarding.stage_inventory_help': 'Create units and complete the facts required for publication.',
       'admin.project_onboarding.stage_commercial': '3. Pricing & commercial rules',
-      'admin.project_onboarding.stage_commercial_help': 'Configure sellable pricing, rate plans and property rules.',
+      'admin.project_onboarding.stage_commercial_help': 'Configure sellable pricing and property rules.',
       'admin.project_onboarding.stage_compliance': '4. Compliance & authority',
       'admin.project_onboarding.stage_compliance_help': 'Verify the operating credentials required for launch.',
       'admin.project_onboarding.stage_operations': '5. Team & services',
       'admin.project_onboarding.stage_operations_help': 'Assign operators and enable the property service network.',
       'admin.project_onboarding.stage_publish': '6. Content & launch',
       'admin.project_onboarding.stage_publish_help': 'Complete imagery/content, review warnings and activate only when ready.',
+    }),
+    prisma.propertyOnboardingTemplate.findMany({
+      where: { active: true },
+      orderBy: [{ propertyType: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, propertyType: true, configuration: true },
+    }),
+    prisma.projectOnboardingDraft.findUnique({
+      where: { projectId: project.id },
+      select: { templateId: true, lastStage: true, stageData: true, autosavedAt: true },
     }),
   ]);
 
@@ -119,6 +127,12 @@ export default async function ProjectOnboardingPage({ params }: { params: { id: 
           </div>
         </div>
       </div>
+
+      <OnboardingStateClient
+        projectId={project.id}
+        templates={templates}
+        initialDraft={draft}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {STAGE_DEFINITIONS.map((stage) => {

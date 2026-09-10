@@ -1,105 +1,160 @@
-# RELEASE_EVIDENCE_2026-09-09.md — canonical v3 release-candidate evidence
+# RELEASE_EVIDENCE — myUNO canonical v3 release candidate
 
-This file records what is actually verified for PR #64 (`feat/canonical-platform-v3`). It is evidence, not a launch declaration. A code file or green static review is not equivalent to deployed runtime acceptance.
+**Repository:** `pavel949/myUNO-final`  
+**Branch:** `feat/canonical-platform-v3`  
+**PR:** #64  
+**Evidence refreshed:** 2026-09-10
 
-## 1. Release candidate
+This file separates branch implementation from production verification. `implemented` does not mean `deployed`.
 
-- Repository: `pavel949/myUNO-final`
-- Branch: `feat/canonical-platform-v3`
-- Integration PR: #64
-- Base: `main`
-- Current release policy: remain draft until required acceptance evidence and deploy gates are green.
+## 1. Acceptance status
 
-## 2. Verification dimensions
+| Capability | Specification | Branch implementation | Migration | UI/API | Test evidence | Production/runtime |
+|---|---|---|---|---|---|---|
+| AT01 standalone Phuket services | verified | **implemented** | additive migration prepared + rollback rehearsed | standalone area/address ordering exposed | contract coverage added | not deployed |
+| AT03 property-specific service economics | verified | **implemented** | prepared | price/cost/take-rate/SLA/cancellation/collector/effective terms | immutable order snapshots | not deployed |
+| AT04 typed quantities + QuoteVersion | verified | **implemented** | prepared | typed order inputs + quote request/version/accept APIs | quantity contract tests | not deployed |
+| AT09 replacement-hold reschedule | verified | **implemented** | prepared | modify flow creates hold/funding/commit workflow | concurrency/payment seams implemented | not deployed |
+| F11 inline owner invite/assignment/claim | verified | **implemented** | existing identity/ownership schema | admin owner API orchestration | transaction invariants implemented | not deployed |
+| AT25 federation replay/out-of-order | verified | **implemented at ingress contract** | prepared | authenticated federation event ingress | replay/order contract tests | Layantara adapter runtime not deployed |
+| F18 templates/inheritance/autosave | verified | **implemented** | prepared + seed templates | resumable six-stage cockpit + autosave | readiness tests already present | not deployed |
+| AT29 RU/EN/TH/mobile/keyboard/slow network | verified | partial static implementation | n/a | responsive/i18n surfaces exist | not sufficient | **not checked on v3 deployment** |
+| AT30 restore/migration/replay | verified | migration/replay mechanisms implemented | **DDL rollback rehearsal passed** | n/a | replay contracts present | **backup/restore rehearsal not available through connected tooling** |
 
-| Capability | specification_complete | code_present | migration_applied | data_config_ready | permission_verified | ui_reachable | critical_test_passed | deployed | runtime_checked | Evidence / blocker |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Service confirm/dispute/close | verified | verified | not checked | partial | partial | verified | partial | failed | partial | CodeRabbit accepted concurrency/closure fixes; deployment blocked externally. |
-| Provider remittance / late refunds | verified | verified | not applicable | partial | partial | partial | partial | failed | partial | Immutable fulfillment period, take-rate snapshot, dispute hold and late-refund carry are implemented; CI runner unavailable. |
-| CRM scope-wide metrics/worklist | verified | verified | not applicable | partial | partial | verified | partial | failed | partial | Pagination and aggregate-scope findings resolved by review. |
-| Project onboarding/readiness | verified | verified | not applicable | partial | partial | verified | partial | failed | partial | Six-stage cockpit + hard live gate exist; templates/inheritance/autosave remain. |
-| Owner identity onboarding | verified | partial | not applicable | partial | partial | verified | partial | failed | partial | Exact CITEXT email match and canonical invite/claim exist; inline invite + E2E login/scope remain. |
-| Integration environment isolation | verified | partial | not applicable | partial | partial | not applicable | partial | failed | partial | Cross-environment overwrite fails closed; first-class external-system mapping/replay model remains. |
-| Standalone Phuket services | verified | failed | failed | failed | not checked | partial | failed | failed | failed | `ServiceOrder.project_id` remains non-null and POST requires project context. AT01 is a hard blocker. |
-| Property-specific service terms | verified | failed | failed | failed | not checked | partial | failed | failed | failed | `ServiceProject` remains a two-FK join table. AT03 not satisfied. |
-| Typed service quantities / QuoteVersion | verified | partial | failed | failed | not checked | partial | failed | failed | failed | Generic `quantity` remains; immutable accepted quote version not implemented. AT04 not satisfied. |
-| Booking reschedule | verified | partial | not applicable | partial | verified | verified | partial | failed | partial | Current date-change reprices and serializes capacity, but positive delta commits dates before funding. AT09 not satisfied. |
-| Canonical pricing authority | verified | partial | not applicable | partial | partial | verified | partial | failed | partial | `Unit.baseNightlyThb` and `RatePlan` still overlap. AT19 not satisfied as a single-authority claim. |
-| Public services content/supply | verified | partial | not applicable | failed | not applicable | verified | not applicable | production data exists | verified | Production DB has 3 active legacy seed services without EN/RU/TH localized titles; 4 localized services remain draft. Real external-supply evidence not proven. |
+## 2. Newly completed structural work
 
-## 3. Static/code review evidence
+### Standalone services and property economics
 
-At the current reconciliation point:
+- `ServiceOrder.project_id` is nullable in the v3 schema/migration.
+- Standalone orders require an explicit Phuket area or service address; no fake `All Phuket` project exists.
+- `ServiceProject` now carries property-local price/cost/take-rate/lead-time/SLA/cancellation/collector/fulfillment/complaint/inclusions/effective-date/version terms.
+- Client-supplied totals are never authoritative; canonical creation calculates the total on the server.
+- Accepted orders store immutable `terms_snapshot` and typed `quantity_dimensions`.
 
-- all original CodeRabbit inline findings on PR #64 are resolved;
-- CodeRabbit combined status on commit `47deb44dd4928fc30cd1b7b53f301aa05e41e237` is `success`;
-- no new unresolved review thread was returned by the review-thread query at that point;
-- the NOI-cap display boundary bug found during release verification was fixed in commit `47deb44dd4928fc30cd1b7b53f301aa05e41e237`.
+### Quotes
 
-Static review is necessary but does not replace build, migration or runtime verification.
+- `ServiceQuoteRequest` and versioned `ServiceQuoteVersion` are implemented.
+- Quote commercial fields are immutable after creation; accepting a quote stamps acceptance and links the exact version to the resulting order.
+- Provider/admin authorization is required for quote creation; only the requesting customer can accept.
 
-## 4. GitHub Actions blocker — external
+### Rescheduling
 
-The CI workflow itself defines checkout, Node setup, `npm ci`, lint, PostgreSQL, `prisma migrate deploy`, Next build and Vitest.
+- Confirmed-booking date changes now use `BookingReschedule`.
+- Original booking dates stay unchanged while the replacement range is held.
+- The replacement hold is also represented by a normal `BlockedDate`, so existing availability readers see it.
+- Positive price delta must be funded before commit.
+- Browser payment confirmation and provider webhook both commit or recover the linked reschedule.
+- DB trigger removes replacement holds whenever the reschedule leaves an open state.
 
-The latest inspected CI job (`run 34327756997`, job `102388874089`) failed before any step executed:
+### Owner onboarding
 
-- `steps=[]`
-- `runner_id=0`
-- `runner_name=""`
-- created and completed in about three seconds.
+`onboardUnitOwner` performs exact normalized email resolution and, in one transaction:
+- creates an invited Identity only when absent;
+- closes/replaces chain-of-title as applicable;
+- updates the Unit current-owner pointer;
+- grants/reactivates unit-scoped `owner` role;
+- invalidates older unused claim tokens;
+- issues a seven-day account-claim token for invited owners.
 
-Therefore this is a runner/provisioning/billing availability failure, not an observed application test failure. Do not modify application code or CI YAML merely to make this symptom disappear.
+Existing active users are not downgraded or forced through claim again.
 
-## 5. Vercel blocker — external quota
+### Federation
 
-The current Vercel status URL resolves to the account-level reason:
+- `ExternalSystem` unique by system + environment.
+- Environment-scoped external mappings.
+- Durable event inbox with exact `(system,event_id)` dedup.
+- Canonical payload hash prevents changed-payload replay under the same event id.
+- Aggregate checkpoint rejects/stores older events as stale rather than regressing state.
+- Generic ingress is disabled unless `MYUNO_FEDERATION_SECRET` is configured server-side.
 
-`upgradeToPro=build-rate-limit`
+### Property onboarding
 
-The deployment status remains red/pending because the Hobby build rate limit has been reached. This is not evidence of a TypeScript/Next.js compile error, and it is also not evidence that the build passes. A fresh build must execute once quota/capacity is available.
+- Six-stage onboarding/readiness cockpit.
+- Hard activation readiness gate.
+- Versioned reusable templates.
+- Resort / managed-condominium / standalone-villa starter templates.
+- One resumable `ProjectOnboardingDraft` per project.
+- Template configuration is inherited/default state only; operational editors remain authoritative.
+- Server autosave/resume UI added.
 
-## 6. Production data verification — services
+## 3. Previously completed critical controls
 
-Read-only production verification against the myUNO database on 2026-09-09 found:
+- fulfillment + service commission is atomic/idempotent;
+- provider remittance uses immutable `fulfilled_at` and accepted take-rate snapshot;
+- late refunds carry into later payable periods rather than rewriting recorded payout periods;
+- unresolved refunds/disputes block payout;
+- confirmation/dispute race is serialized;
+- duplicate disputes have application and database concurrency protection;
+- `service.fulfilment_confirm_window_hours` must be a positive whole number;
+- normal install/build never mutates migration history;
+- RBAC differentiates read/write and project/unit/provider/organization scope;
+- CRM has account ownership, worklist and scope-wide-before-pagination metrics;
+- current live pricing authority is `Unit.baseNightlyThb + PricingRule`; unused RatePlan is not treated as a second go-live truth;
+- NOI cap is converted from satang to THB exactly once in presentation.
 
-- 2 providers total;
-- 2 providers marked `active`;
-- 2 providers marked active with `vetted_at` populated;
-- 3 services marked `active`; all three are legacy seed services and their `title_en`, `title_ru`, `title_th` fields are empty;
-- 4 additional services have EN/RU/TH localized titles but remain `draft`.
+## 4. Database evidence
 
-The database `vetted_at` flag is system evidence, not independent proof that an external supplier relationship is commercially live. Consequently the platform must not claim a verified Phuket supplier network until business evidence is attached/confirmed.
+Production project: `burcnghheyzbzffzgmjz`.
 
-## 7. Money correctness check discovered during release pass
+Read-only verification on 2026-09-10:
+- project: 3
+- unit: 5
+- provider: 2
+- service: 7
+- booking: 0
+- service_order: 0
+- ledger_entry: 0
 
-The unit onboarding page was converting `noiCapAnnualThb` from satang to baht before passing it to `OnboardingClient`, while the client independently performed the same `/100` display conversion. A real annual NOI cap therefore appeared 100× too small.
+The v3 migrations are not present in production migration history.
 
-The server now passes canonical satang unchanged. The client remains the single presentation conversion boundary.
+A transaction-wrapped rehearsal of `20260909160000_canonical_commerce_federation_onboarding` initially caught a real TEXT-vs-UUID mismatch. The migration was corrected to use the same TEXT representation as existing Prisma IDs. Rehearsal then returned:
 
-## 8. Hard acceptance blockers
+`rollback_rehearsal_ok`
 
-The following acceptance scenarios cannot be marked passed yet:
+The transaction was rolled back; production schema and data were not changed.
 
-- **AT01** — standalone service order without property/stay: structural schema/runtime blocker.
-- **AT03** — same provider, separate per-property commercial terms: no canonical runtime configuration model yet.
-- **AT04** — typed quantity/duration/capacity + quote contract: incomplete.
-- **AT09** — reschedule with payment failure preserving capacity: replacement-hold/funding workflow incomplete.
-- **AT19** — one pricing engine across search/quote/booking/extension: overlapping authorities remain.
-- **AT25** — Layantara replay/out-of-order/environment collision: environment guard exists, full federation mapping/replay verification remains.
-- **AT29** — RU/EN/TH + mobile + keyboard + slow-network: final runtime/device evidence unavailable while deployment is blocked.
-- **AT30** — restore/migration/webhook/job replay rehearsal: not executed for this release candidate.
+## 5. Review evidence
 
-## 9. Release decision
+- All original CodeRabbit inline review threads are resolved.
+- CodeRabbit combined status is green on the integrated branch revisions inspected during this release pass.
+- A fresh manual CodeRabbit review was requested specifically for schema/migration alignment, standalone ordering, quote immutability, reschedule payment recovery, owner claim security, federation replay and onboarding autosave.
+- Focused tests exist for authority, readiness, order closure, finance/concurrency, typed service quantities and federation ordering.
 
-**DO NOT MERGE PR #64 TO `main` YET.**
+## 6. Current external release blockers
 
-Reasons:
+### GitHub Actions
 
-1. AT01 remains a structural product requirement and is not representable by the current non-null `ServiceOrder.project_id` schema.
-2. Vercel cannot execute a fresh build because of account build-rate limiting.
-3. GitHub Actions is not receiving a runner, so migrations/build/tests have not executed on the current candidate.
-4. Several canonical acceptance scenarios remain partial/failed as listed above.
-5. Production services content/supply is not yet suitable for a truthful final marketplace launch claim.
+The workflow itself includes checkout, Node/npm, lint, PostgreSQL migration, build and tests. The observed run still fails before checkout: no runner and no steps are allocated. This is not evidence that application tests fail, but it means CI is **not passed**.
 
-When execution capacity returns, the required sequence is: apply the remaining schema/runtime changes → run clean migration chain → lint/build/tests → deploy preview → execute relevant AT scenarios → verify production data/config → only then mark PR ready and merge.
+### Vercel
+
+GitHub reports a real failed preview deployment and provides deployment IDs (latest inspected branch status included `dpl_31waTzmUueDzAEQHrb7UcbmsxLbR`). The connected Vercel identity receives 403 when listing project deployments and 404 when opening the deployment ID, so its build log cannot be retrieved from this session. Vercel therefore remains a hard release-verification blocker.
+
+### AT29
+
+The v3 branch cannot be marked mobile/localization/accessibility passed until a successful preview is available for real-device/viewport, RU/EN/TH, keyboard and slow-network checks.
+
+### AT30
+
+Migration rehearsal and replay design/testing are complete to the level available without destructive production operations. The connected Supabase interface does not expose backup snapshot creation / point-in-time recovery rehearsal. A genuine backup→restore→external-side-effect reconciliation drill therefore remains operational evidence, not something to fake in production.
+
+## 7. Security advisor note
+
+The current production Supabase security advisor reports many `RLS enabled, no policy` informational findings across the existing Prisma-managed public schema and two legacy extension-placement warnings (`citext`, `btree_gist`). This release does not broadly change those controls: the application uses scoped server authorization/Prisma access and the newly introduced operational tables are explicitly revoked from PUBLIC. A broad RLS/extension migration is separate security-hardening work and must not be mixed into this release without validating the actual DB role/Data API architecture.
+
+## 8. Release decision
+
+The requested F01/F02/F03/F09/F11/F16/F18 functionality is implemented in the release-candidate branch and documented as such.
+
+**Do not apply the production migration or merge #64 while the Vercel build is red and GitHub CI cannot execute.** The remaining blockers are verification/infrastructure blockers rather than missing domain architecture.
+
+Required cutover sequence once a real build can run:
+1. successful Prisma generate/lint/build/tests;
+2. no unresolved blocking review findings;
+3. immediate pre-cutover production migration/history/data check;
+4. apply migrations once;
+5. deploy the same reviewed SHA;
+6. smoke AT01/03/04/09/11/25 plus auth/booking/payment paths;
+7. run AT29 deployed UX checks;
+8. record backup/restore operational evidence for AT30;
+9. merge/promote only after the above evidence is green.

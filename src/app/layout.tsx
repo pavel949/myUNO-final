@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Manrope, Noto_Sans_Thai, Outfit } from 'next/font/google';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n-request';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -26,8 +26,6 @@ const SURFACE_LABEL_KEYS = {
 } as const satisfies Record<Landing['reason'], string>;
 
 const outfit = Outfit({
-  // Google does not ship a Cyrillic cut of Outfit. Asking for one fails
-  // `next build`. Russian display type falls through to Manrope (below).
   subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-outfit',
@@ -54,8 +52,6 @@ export const metadata: Metadata = {
   description: 'Operating platform for serviced living in Phuket',
 };
 
-// Root layout reads per-request cookies/session-derived navigation state.
-// Mark dynamic to avoid static prerender trying to evaluate request-bound hooks.
 export const dynamic = 'force-dynamic';
 
 export default async function RootLayout({
@@ -99,11 +95,8 @@ export default async function RootLayout({
     'nav.admin': 'Admin',
     'nav.account': 'Account',
     'nav.menu': 'Menu',
-  });
+  }, locale);
 
-  // The surfaces this person's roles give them, from the same policy the `/app`
-  // landing redirects on — so the menu can never offer a different set of hats
-  // than the landing picks between.
   const activeBookingId = user ? await getActiveStayId(user.identityId) : null;
   const roleLinks = user
     ? availableSurfaces({
@@ -141,7 +134,7 @@ export default async function RootLayout({
     'nav.footer.company_line':
       'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com',
     'nav.footer.copyright': '© 2026 myUNO. All rights reserved.',
-  });
+  }, locale);
 
   return (
     <html

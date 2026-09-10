@@ -85,7 +85,7 @@ export default function OrderWizard({
   const q1 = Math.max(1, positive(quantity, 1));
   const previewThb = computeOrderPreviewBaht(service.priceModel, service.basePriceThb, q1);
 
-  const quantityDimensions: Dimensions = useMemo(() => {
+  const quantityDimensions = useMemo<Dimensions>(() => {
     switch (service.categoryKey) {
       case 'transfer':
         return { passengers: q1, luggage: positive(secondary, 0), vehicles: Math.max(1, positive(tertiary, 1)) };

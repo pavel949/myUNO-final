@@ -84,6 +84,12 @@ export {
 } from './owner-onboarding.service';
 
 export {
+  listOnboardingTemplates,
+  getProjectOnboardingDraft,
+  saveProjectOnboardingDraft,
+} from './onboarding-draft.service';
+
+export {
   listAreas,
   listBrowsableAreas,
   getAreaForBrowse,

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels } from '@/lib/i18n-request';
 import PayOrderButton from './pay-order-button';
 import OrderDisputePanel from './order-dispute-panel';
 import OrderNoShowPanel from './order-no-show-panel';
@@ -54,7 +54,7 @@ interface ServiceOrderDetail {
   project: {
     id: string;
     name: string;
-  };
+  } | null;
   unit: { id: string; name: string; addressSupplement: string | null } | null;
   orderer: {
     id: string;
@@ -230,8 +230,7 @@ export default async function ServiceOrderDetailPage({
   // `order.totalThb` itself stays satang for the isPaymentRequired check
   // below (a sign check, not a display) — baht/formatBreakdownValue (from
   // ./order-money) convert only at render, see that module's doc comment.
-  const isPaymentRequired =
-    order.status === 'placed' && order.totalThb > 0;
+  const isPaymentRequired = order.status === 'placed' && order.totalThb > 0;
   const isPaid = isOrderPaid(order.status, order.payments);
 
   const isOrderer = order.orderer.id === user.identityId;
@@ -250,7 +249,7 @@ export default async function ServiceOrderDetailPage({
 
   const confirmWindowHours =
     ((await getConfig(prisma, 'service.fulfilment_confirm_window_hours', {
-      projectId: order.project.id,
+      projectId: order.project?.id ?? null,
     })) as number | undefined) ?? 48;
 
   const closeWindow = buildCloseWindowState({
@@ -469,10 +468,7 @@ export default async function ServiceOrderDetailPage({
             {order.provider.phone && (
               <div>
                 <p className="text-small text-text-secondary mb-4">{labels['service-order.detail.phone_label']}</p>
-                <a
-                  href={`tel:${order.provider.phone}`}
-                  className="text-body text-brand-deep hover:underline"
-                >
+                <a href={`tel:${order.provider.phone}`} className="text-body text-brand-deep hover:underline">
                   {order.provider.phone}
                 </a>
               </div>
@@ -480,10 +476,7 @@ export default async function ServiceOrderDetailPage({
             {order.provider.email && (
               <div>
                 <p className="text-small text-text-secondary mb-4">{labels['service-order.detail.email_label']}</p>
-                <a
-                  href={`mailto:${order.provider.email}`}
-                  className="text-body text-brand-deep hover:underline"
-                >
+                <a href={`mailto:${order.provider.email}`} className="text-body text-brand-deep hover:underline">
                   {order.provider.email}
                 </a>
               </div>
@@ -517,9 +510,7 @@ export default async function ServiceOrderDetailPage({
                 <p className="text-small text-text-secondary mb-4">
                   {labels['service-order.detail.note_to_provider']}
                 </p>
-                <p className="text-body text-text-secondary">
-                  {order.noteToProvider}
-                </p>
+                <p className="text-body text-text-secondary">{order.noteToProvider}</p>
               </div>
             )}
             {order.addressNote && (
@@ -527,9 +518,7 @@ export default async function ServiceOrderDetailPage({
                 <p className="text-small text-text-secondary mb-4">
                   {labels['service-order.detail.address_note']}
                 </p>
-                <p className="text-body text-text-secondary">
-                  {order.addressNote}
-                </p>
+                <p className="text-body text-text-secondary">{order.addressNote}</p>
               </div>
             )}
           </div>
@@ -543,8 +532,7 @@ export default async function ServiceOrderDetailPage({
             </h3>
             {order.cancellationReason && (
               <p className="text-body text-status-serious">
-                {labels['service-order.detail.cancellation_reason']}:{' '}
-                {order.cancellationReason}
+                {labels['service-order.detail.cancellation_reason']}: {order.cancellationReason}
               </p>
             )}
             {order.refundAccruedThb > 0 && (
@@ -565,10 +553,6 @@ export default async function ServiceOrderDetailPage({
           />
         )}
 
-        {/* A delivered order can be rated from here, not only from the in-stay
-            home space — after check-out that surface is no longer where anyone
-            goes, and this is. `closed` belongs alongside `fulfilled`: the work
-            was done, and the review prompt is sent for both. */}
         {(order.status === 'fulfilled' || order.status === 'closed') && isOrderer && (
           <div className="mt-16">
             <OrderRatingPanel orderId={order.id} rated={order.rated} labels={labels} />

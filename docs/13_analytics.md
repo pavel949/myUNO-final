@@ -36,7 +36,7 @@ Naming `domain.action`; every event carries `occurred_at`, actor (identity or an
 | `stay.confirmed / .modified / .cancelled / .checked_in / .checked_out / .completed / .no_show` | Lifecycle | booking, channel, nights, values |
 | `stay.extension_requested` | In-stay extension | booking, added nights |
 | `service.catalog_viewed / .service_viewed` | Marketplace browsing | category, service, viewer role |
-| `service.order_placed / .paid / .accepted / .declined / .fulfilled / .cancelled / .no_show / .closed` | Order lifecycle | order, category, provider, role of orderer, value. `.closed` is the terminal transition (doc 07 F-PROV-3): the orderer's confirm/dispute window ended — confirmed early, or lapsed. It is the point at which the order's revenue stops being reversible, so the take is only final once this fires. |
+| `service.order_placed / .paid / .accepted / .declined / .fulfilled / .cancelled / .no_show` | Order lifecycle | order, category, provider, role of orderer, value |
 | `review.submitted` | Stay/order reviews | target, rating |
 | `message.thread_started` | New thread | context type |
 | `ticket.raised / .resolved / .sla_breached` | Ticket lifecycle | category, priority, role of reporter, hours-to-resolve |
@@ -72,7 +72,7 @@ One `track(eventKey, dims)` helper server-side (events emitted where the truth c
 
 ### Implementation status (build phase)
 
-**Emitters live today** (10 of the §2 catalog): `stay_confirmed`, `stay_cancelled` (booking service); `stay_checked_in`, `stay_checked_out` (booking service state transitions); `service_order_placed`, `service_order_fulfilled` (service-order service); `service_order_paid` (finance seam — cash record and card confirm both emit it); `service_order_cancelled` (service-order cancel); `service_order_closed` (service-order confirm + the nightly close sweep); `page_unit_viewed` (unit detail API — feeds `listing_engagement`); `search_performed` / `search_no_results` (search API). The remaining catalog events are specified-not-yet-emitted; add emitters at the module seams as their features land.
+**Emitters live today** (10 of the §2 catalog): `stay_confirmed`, `stay_cancelled` (booking service); `stay_checked_in`, `stay_checked_out` (booking service state transitions); `service_order_placed`, `service_order_fulfilled` (service-order service); `service_order_paid` (finance seam — cash record and card confirm both emit it); `service_order_cancelled` (service-order cancel); `page_unit_viewed` (unit detail API — feeds `listing_engagement`); `search_performed` / `search_no_results` (search API). The remaining catalog events are specified-not-yet-emitted; add emitters at the module seams as their features land.
 
 **`MetricDaily` definitions as built** (`src/modules/analytics/rollup.ts`): grain = unit × UTC day. `nightsAvailable` ∈ {0,1} — 1 when the unit existed that day and was occupied or live-and-unblocked; 0 before creation, while not `live`, or under a `BlockedDate`. `nightsOccupied` ∈ {0,1} — any confirmed/checked_in/checked_out/completed booking covering the night (owner stays occupy at zero revenue). Rental revenue is attributed **per night** (booking total ÷ nights), so summing days never double-counts a stay. Backfill: `GET /api/cron/rollup-metrics?from=YYYY-MM-DD&to=YYYY-MM-DD` (CRON_SECRET, ≤400 days per call).
 

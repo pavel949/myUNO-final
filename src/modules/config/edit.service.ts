@@ -10,6 +10,9 @@ interface ConfigChangeInput {
   unitId?: string;
 }
 
+/**
+ * Validation rules for specific config parameters
+ */
 const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?: string }> = {
   'compliance.tm30_sla_hours': (value: any) => {
     if (typeof value !== 'number' || value < 0 || value > 24) {
@@ -17,6 +20,11 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
     }
     return { valid: true };
   },
+  // TTLs have no meaningful zero: a token that expires the instant it is
+  // issued locks every user out of email verification or password reset. The
+  // guard belongs here, in the registry that owns the parameter (doc 04), and
+  // not as a `|| 1440` at the read site — a read-site fallback would silently
+  // discard whatever the operator actually typed rather than refusing it.
   'auth.token_ttl_minutes.email_verify': (value: any) => {
     if (!Number.isInteger(value) || value <= 0) {
       return { valid: false, error: 'token TTL must be a positive whole number of minutes' };
@@ -29,6 +37,8 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
     }
     return { valid: true };
   },
+  // Zero IS meaningful here — warn only on the day a document expires — so
+  // this refuses negatives and fractions, not zero.
   'compliance.expiry_warning_days': (value: any) => {
     if (!Number.isInteger(value) || value < 0) {
       return { valid: false, error: 'expiry warning must be a whole number of days, zero or more' };
@@ -38,15 +48,6 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
   'booking.hold_minutes': (value: any) => {
     if (typeof value !== 'number' || value <= 0) {
       return { valid: false, error: 'hold_minutes must be positive' };
-    }
-    return { valid: true };
-  },
-  'service.fulfilment_confirm_window_hours': (value: any) => {
-    if (!Number.isInteger(value) || value <= 0) {
-      return {
-        valid: false,
-        error: 'fulfilment confirm window must be a positive whole number of hours',
-      };
     }
     return { valid: true };
   },
@@ -64,6 +65,8 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
     }
     return { valid: true };
   },
+  // LY-9: satang guard — a nightly rate under ฿100 (10,000 satang) is almost
+  // certainly a raw-THB paste; reject it loudly instead of charging 1% prices.
   'pricing.category_rates': (value: any) => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return { valid: false, error: 'category rates must be an object keyed by category' };
@@ -152,12 +155,16 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
   },
 };
 
+/**
+ * Update a configuration parameter and log the change
+ */
 export async function updateConfigParameter(
   db: PrismaClient,
   input: ConfigChangeInput
 ): Promise<void> {
   const { identityId, paramKey, newValue, projectId, unitId } = input;
 
+  // Validate the parameter value against business rules
   const validator = VALIDATION_RULES[paramKey];
   if (validator) {
     const validation = validator(newValue);
@@ -166,6 +173,7 @@ export async function updateConfigParameter(
     }
   }
 
+  // Determine the scope
   let scopeType = 'global';
   let scopeId = 'global';
   if (unitId) {
@@ -176,8 +184,10 @@ export async function updateConfigParameter(
     scopeId = projectId;
   }
 
+  // Get the old value for the change record
   const oldValue = await getConfig(db, paramKey, { projectId, unitId });
 
+  // Write or update the override
   await db.configOverride.upsert({
     where: {
       parameterKey_scopeType_scopeId: {
@@ -199,6 +209,7 @@ export async function updateConfigParameter(
     },
   });
 
+  // Log the change
   await db.configChange.create({
     data: {
       parameterKey: paramKey as string,
@@ -210,9 +221,13 @@ export async function updateConfigParameter(
     } as any,
   });
 
+  // Invalidate cache so the new value takes effect immediately
   invalidateConfig(paramKey as string);
 }
 
+/**
+ * Clear an override and revert to the next level down
+ */
 export async function clearConfigOverride(
   db: PrismaClient,
   identityId: string,
@@ -220,6 +235,7 @@ export async function clearConfigOverride(
   projectId?: string,
   unitId?: string
 ): Promise<void> {
+  // Determine the scope
   let scopeType = 'global';
   let scopeId = 'global';
   if (unitId) {
@@ -230,8 +246,12 @@ export async function clearConfigOverride(
     scopeId = projectId;
   }
 
+  // Get the current value before deletion
   const oldValue = await getConfig(db, paramKey, { projectId, unitId });
 
+  // Delete the override
+  // deleteMany is idempotent — clearing a scope with no override is a no-op,
+  // not an error (delete() would throw P2025).
   await db.configOverride.deleteMany({
     where: {
       parameterKey: paramKey as string,
@@ -240,6 +260,7 @@ export async function clearConfigOverride(
     },
   });
 
+  // Log the change as a revert
   await db.configChange.create({
     data: {
       parameterKey: paramKey as string,
@@ -251,5 +272,6 @@ export async function clearConfigOverride(
     } as any,
   });
 
+  // Invalidate cache so the reverted value takes effect immediately
   invalidateConfig(paramKey as string);
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { baht, formatBreakdownValue, isOrderPaid } from './order-money';
+import { baht, formatBreakdownValue } from './order-money';
 
 // Q47 regression guard: every money field on the order-detail page
 // (totalThb, refundAccruedThb, payments[].amountThb, priceBreakdown's
@@ -25,29 +25,5 @@ describe('formatBreakdownValue', () => {
 
   it('leaves non-money keys (e.g. quantity) untouched', () => {
     expect(formatBreakdownValue('quantity', 5)).toBe('5');
-  });
-});
-
-describe('isOrderPaid', () => {
-  const paid = [{ status: 'completed' }];
-  const none: Array<{ status: string }> = [];
-
-  it('is paid when a payment completed, whatever the status', () => {
-    expect(isOrderPaid('placed', paid)).toBe(true);
-    expect(isOrderPaid('accepted', paid)).toBe(true);
-  });
-
-  it('treats delivery as payment for cash-on-fulfilment, in both delivered states', () => {
-    // The regression: a cash order has no payment row, so `fulfilled` alone
-    // flipped the badge to "unpaid" the moment the order closed — at exactly
-    // the point the orderer confirmed the work was done.
-    expect(isOrderPaid('fulfilled', none)).toBe(true);
-    expect(isOrderPaid('closed', none)).toBe(true);
-  });
-
-  it('does not call an undelivered order paid without a payment', () => {
-    for (const status of ['placed', 'paid', 'accepted', 'cancelled', 'declined', 'expired', 'failed']) {
-      expect(isOrderPaid(status, none)).toBe(false);
-    }
   });
 });

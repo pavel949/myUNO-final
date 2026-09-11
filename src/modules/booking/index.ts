@@ -31,16 +31,6 @@ export {
 } from './booking.service';
 
 export {
-  createBookingReschedule,
-  attachReschedulePayment,
-  commitBookingReschedule,
-  releaseBookingReschedule,
-  expireBookingReschedules,
-  commitRescheduleForPayment,
-  type CreateRescheduleInput,
-} from './reschedule.service';
-
-export {
   BOOKING_REQUEST_DECLINE_REASONS,
   bookingRequestDeclineReasonLabelKey,
   formatDeclineCancellationReason,
@@ -66,7 +56,10 @@ export {
   type CancellationPolicy,
 } from './cancellation';
 
-export { getInStayHomeSpace, type InStayHomeSpaceData } from './home-space.service';
+export {
+  getInStayHomeSpace,
+  type InStayHomeSpaceData,
+} from './home-space.service';
 
 export {
   sendPrearrivalReminders,
@@ -78,6 +71,8 @@ export {
 
 export { remindUnansweredRequests } from './notify-request-reminder';
 
+// Reviews of the guest, after their stay — the other direction from stay
+// reviews. Built on the polymorphic Review with target_type 'guest'.
 export {
   writeGuestReview,
   getGuestReviewEligibility,
@@ -86,6 +81,8 @@ export {
   type GuestReputation,
 } from './guest-review.service';
 
+// Stay reviews by guests — the input side of the rating system.
+// Built on the polymorphic Review with target_type 'stay'.
 export {
   writeStayReview,
   getStayReviewEligibility,

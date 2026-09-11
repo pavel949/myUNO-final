@@ -1,5 +1,6 @@
-// module: integrations — public interface
-// Owns: Integration accounts, federation contracts, channel adapters and exports
+// module: integrations — public interface (see docs/14_tech_spec.md §3)
+// Owns: Integration accounts and channel adapters (OTA, messenger, payment, exports)
+// Depends on: core, booking, comms, finance
 
 export {
   registerIntegrationAccount,
@@ -11,14 +12,6 @@ export {
   listIntegrationAccounts,
   type IntegrationAccountConfig,
 } from './integrations';
-
-export {
-  ingestFederationEvent,
-  upsertExternalMapping,
-  markFederationEventProcessed,
-  markFederationEventFailed,
-  type FederationEventInput,
-} from './federation.service';
 
 export {
   importICalEvents,
@@ -45,7 +38,11 @@ export {
 
 export { parseICal, type ParseResult } from './ical-parse';
 
-export { fetchICalFeed, assertSafeFeedUrl, ICalFetchError } from './ical-fetch';
+export {
+  fetchICalFeed,
+  assertSafeFeedUrl,
+  ICalFetchError,
+} from './ical-fetch';
 
 export {
   registerWhatsAppAccount,

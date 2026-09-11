@@ -4,7 +4,8 @@
  * payments[].amountThb, priceBreakdown's *_thb entries) is satang
  * (THB × 100) straight from the DB — the detail API
  * (src/app/api/service-orders/[id]/detail/route.ts) is a straight
- * passthrough. Convert to baht only here, at final render.
+ * passthrough. Convert to baht only here, at final render
+ * (CLAUDE.md "Money rules").
  */
 export function baht(satang: number): string {
   return (satang / 100).toLocaleString();
@@ -18,21 +19,4 @@ export function baht(satang: number): string {
 export function formatBreakdownValue(key: string, value: unknown): string {
   const isMoney = key.endsWith('_thb');
   return isMoney ? `฿${baht(Number(value))}` : String(Number(value));
-}
-
-/**
- * Whether the customer-facing payment badge should read "paid".
- *
- * Card orders carry a completed payment row. Cash-on-fulfilment orders do not,
- * so a delivered order is considered paid by delivery. Both `fulfilled` and
- * terminal `closed` therefore count as delivered; closing an order must not
- * make a settled cash order appear unpaid again.
- */
-const DELIVERED_STATUSES = new Set(['fulfilled', 'closed']);
-
-export function isOrderPaid(
-  status: string,
-  payments: Array<{ status: string }>
-): boolean {
-  return payments.some((p) => p.status === 'completed') || DELIVERED_STATUSES.has(status);
 }

@@ -3,14 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getRequestLocale } from '@/lib/i18n-request';
+import { getRequestLocale } from '@/lib/i18n';
 import { pickLocalizedServiceCopy } from '@/modules/services';
 
+// This GET uses no dynamic request API, so without this Next.js would cache
+// its response at build time — the catalog would never reflect DB changes.
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/services — active, vetted marketplace services (S11).
- * Public read; optional ?projectId scope.
+ * Public read; optional ?projectId scope (services are platform-wide in
+ * loop one — the param is accepted for the project-scoped rail).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -35,6 +38,7 @@ export async function GET(req: NextRequest) {
       take: 100,
     });
 
+    // Track analytics event
     const viewer = await getCurrentUser().catch(() => null);
     await track(prisma, 'service_catalog_viewed', {
       identityId: viewer?.identityId,

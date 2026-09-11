@@ -443,18 +443,6 @@ export async function seedConfig(db: PrismaClient) {
         groupKey: 'cancellation',
         description: 'Hours provider has to accept order',
       },
-      {
-        // Doc 07 F-PROV-3: after the provider marks an order fulfilled the
-        // orderer has this long to confirm or dispute; then the order closes.
-        // 48 is the spec's own figure, made configurable rather than fixed so
-        // a project can shorten it — the window is a liability, not a feature.
-        key: 'service.fulfilment_confirm_window_hours',
-        valueType: 'int',
-        defaultValue: 48,
-        scopeableTo: 'project',
-        groupKey: 'cancellation',
-        description: 'Hours after fulfilment the orderer may confirm or dispute before auto-close',
-      },
     ],
   });
 

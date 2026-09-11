@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   });
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
+  // Check admin permission
   if (
     !(await can({
       identity,
@@ -24,38 +25,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const query = (req.nextUrl.searchParams.get('q') || '').trim();
-    const rawLimit = req.nextUrl.searchParams.get('limit');
-    const rawOffset = req.nextUrl.searchParams.get('offset');
-    const requestedLimit = rawLimit === null ? 20 : Number(rawLimit);
-    const requestedOffset = rawOffset === null ? 0 : Number(rawOffset);
-
-    if (
-      (rawLimit !== null && rawLimit.trim() === '') ||
-      (rawOffset !== null && rawOffset.trim() === '') ||
-      !Number.isInteger(requestedLimit) ||
-      !Number.isInteger(requestedOffset)
-    ) {
-      return NextResponse.json({ error: 'limit and offset must be integers' }, { status: 400 });
-    }
-
-    const limit = Math.min(Math.max(requestedLimit, 1), 100);
-    const offset = Math.max(requestedOffset, 0);
-
-    // Email is an identity key, not fuzzy search text. Unit onboarding uses
-    // this route to resolve an owner by email; returning the first partial
-    // match could assign legal/financial ownership to the wrong person.
-    // Identity.email is CITEXT+unique, so findUnique gives case-insensitive
-    // exact resolution and zero ambiguity.
-    if (query.includes('@')) {
-      const exact = await prisma.identity.findUnique({ where: { email: query } });
-      const identities = exact ? [exact] : [];
-      return NextResponse.json({
-        identities: identities.map(publicIdentity),
-        total: identities.length,
-        matchMode: 'exact_email',
-      });
-    }
+    const query = req.nextUrl.searchParams.get('q') || '';
+    const limit = parseInt(req.nextUrl.searchParams.get('limit') || '20');
+    const offset = parseInt(req.nextUrl.searchParams.get('offset') || '0');
 
     const { identities, total } = await people.searchIdentities(prisma, {
       query,
@@ -63,28 +35,22 @@ export async function GET(req: NextRequest) {
       offset,
     });
 
-    return NextResponse.json({
-      identities: identities.map(publicIdentity),
-      total,
-      matchMode: 'search',
-    });
+    const result = identities.map((i: any) => ({
+      id: i.id,
+      email: i.email,
+      firstName: i.firstName,
+      lastName: i.lastName,
+      phone: i.phone,
+      status: i.status,
+      isAdmin: i.isAdmin,
+      createdAt: i.createdAt,
+    }));
+
+    return NextResponse.json({ identities: result, total });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to search identities' },
       { status: 400 }
     );
   }
-}
-
-function publicIdentity(i: any) {
-  return {
-    id: i.id,
-    email: i.email,
-    firstName: i.firstName,
-    lastName: i.lastName,
-    phone: i.phone,
-    status: i.status,
-    isAdmin: i.isAdmin,
-    createdAt: i.createdAt,
-  };
 }

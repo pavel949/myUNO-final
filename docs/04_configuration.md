@@ -80,7 +80,6 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `service.cancel_window_hours` | int | project | `24` (confirmed Q12) | Service orders: full refund until this many hours before the slot; none after. |
 | `service.provider_no_show_refund_pct` | percent | global | `100` | Always full refund on provider no-show (also auto-raises a ticket). |
 | `service.accept_sla_hours` | int | project | `12` | Hours a provider has to accept a paid order before auto-decline + full refund. |
-| `service.fulfilment_confirm_window_hours` | int | project | `48` (doc 07 F-PROV-3) | After the provider marks an order fulfilled, how long the orderer has to confirm or dispute it. On expiry the order auto-closes (`fulfilled → closed`) and no dispute may be raised against it. |
 
 ## 6. Group `services` & `tickets` — marketplace and SLAs
 

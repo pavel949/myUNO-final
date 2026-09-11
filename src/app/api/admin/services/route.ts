@@ -43,10 +43,10 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/admin/services — staff add a service directly, on behalf of an
- * existing vetted provider. Admin-created supply still passes the same public
- * launch gates as provider-created supply: provider active + vetted and RU/EN/TH
- * titles present. Admin authority is not a reason to publish an incomplete or
- * unverified service card.
+ * existing vetted provider (an over-the-phone listing, or myUNO catching up
+ * a provider who hasn't used their own portal yet). Unlike a provider's own
+ * submission, this skips the draft/approve queue: the admin creating it is
+ * also the one who would have approved it, so it goes live immediately.
  */
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin();
@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
     const descriptionRu = typeof body.descriptionRu === 'string' ? body.descriptionRu.trim() : '';
     const descriptionTh = typeof body.descriptionTh === 'string' ? body.descriptionTh.trim() : '';
 
-    if (!providerId || !categoryKey || !priceModel || !titleEn || !titleRu || !titleTh) {
+    if (!providerId || !categoryKey || !priceModel || !titleEn || !titleRu) {
       return NextResponse.json(
         {
           error:
-            'providerId, categoryKey, priceModel, titleEn, titleRu and titleTh are required',
+            'providerId, categoryKey, priceModel, titleEn and titleRu are required',
         },
         { status: 400 }
       );
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     if (!provider) {
       return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
     }
-    if (provider.status !== 'active' || !provider.vetted_at) {
+    if (provider.status !== 'active') {
       return NextResponse.json(
         { error: 'Only an active, vetted provider can have a service added for them' },
         { status: 400 }
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       description: descriptionEn || undefined,
       titleEn,
       titleRu,
-      titleTh,
+      titleTh: titleTh || undefined,
       descriptionEn: descriptionEn || undefined,
       descriptionRu: descriptionRu || undefined,
       descriptionTh: descriptionTh || undefined,
@@ -126,16 +126,12 @@ export async function POST(req: NextRequest) {
           : undefined,
     });
 
-    let service = await prisma.service.findUnique({
+    const draft = await prisma.service.findUnique({
       where: { id: created.id },
       select: { status: true },
     });
-    if (service?.status === 'draft') {
+    if (draft?.status === 'draft') {
       await approveService(prisma, created.id, guard.actorIdentityId);
-      service = await prisma.service.findUnique({
-        where: { id: created.id },
-        select: { status: true },
-      });
     }
 
     await logAudit({
@@ -146,10 +142,7 @@ export async function POST(req: NextRequest) {
       data: { providerId, categoryKey, titleEn },
     });
 
-    return NextResponse.json(
-      { serviceId: created.id, status: service?.status ?? 'draft' },
-      { status: 201 }
-    );
+    return NextResponse.json({ serviceId: created.id, status: 'active' }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to create service' },

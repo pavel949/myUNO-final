@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma generate && node scripts/check-content-review-gate.mjs && NODE_ENV=production next build",
+    "build": "prisma generate && node scripts/check-content-review-gate.mjs && mkdir -p public && (npx tsc --noEmit > public/ts-errors.txt 2>&1 || true) && NODE_ENV=production next build",
     "db:repair": "node scripts/repair-failed-migrations.mjs",
     "check:content-gate": "node scripts/check-content-review-gate.mjs",
     "start": "next start",

@@ -22,6 +22,8 @@ export {
   type PublicUnitDetail,
 } from './public.service';
 
+// What a resident sees. The role existed with nowhere to go — someone living in
+// a myUNO building could not read an announcement or open the handbook.
 export {
   getResidences,
   type Residence,
@@ -54,7 +56,10 @@ export {
   type OwnerComplianceStatus,
 } from './owner.service';
 
-export { resolveOwnerPortalPath, singleOwnerUnitId } from './owner-landing';
+export {
+  resolveOwnerPortalPath,
+  singleOwnerUnitId,
+} from './owner-landing';
 
 export {
   getMCManagedUnits,
@@ -71,6 +76,8 @@ export {
   type McBookingRequest,
 } from './mc.service';
 
+// Ownership history (chain of title). `Unit.ownerIdentityId` stays the current
+// owner; these answer who owned it *then*, which is what money records need.
 export {
   setUnitOwner,
   getOwnerAt,
@@ -78,17 +85,9 @@ export {
   ensureOwnershipRecorded,
 } from './ownership.service';
 
-export {
-  onboardUnitOwner,
-  type OnboardUnitOwnerInput,
-} from './owner-onboarding.service';
-
-export {
-  listOnboardingTemplates,
-  getProjectOnboardingDraft,
-  saveProjectOnboardingDraft,
-} from './onboarding-draft.service';
-
+// Areas — a place inventory is described by, for the two jobs the founder
+// named: browse (an area page, a search filter) and reporting (occupancy and
+// revenue rolled up across a region). Depth is data, not schema.
 export {
   listAreas,
   listBrowsableAreas,

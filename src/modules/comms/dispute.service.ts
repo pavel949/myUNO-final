@@ -1,8 +1,25 @@
 import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
 import { refund, recordCashRefund } from '@/modules/finance/finance.service';
-import { getConfig } from '@/modules/config';
 import { recordCost } from '@/modules/finance/ledger.service';
+
+/**
+ * Disputes (doc 07 F-DIS-2, Q52).
+ *
+ * A dispute is a `Ticket(category='complaint', priority='high')` — the
+ * shared comms layer, never rebuilt (CLAUDE.md) — plus a thin `Dispute` row
+ * naming what is disputed and, once decided, the money movement the
+ * decision produced. The ticket is the conversation and the record of
+ * status; the `Dispute` row is what makes "resolve this" mean something
+ * more specific than "close this ticket."
+ *
+ * Money always travels through the existing finance seam: a booking or
+ * service-order dispute refunds the guest's original payment
+ * (`RefundReason.dispute_resolution`, doc 10 §8's dispute-resolution
+ * refund trigger); a statement dispute — no guest payment to refund —
+ * posts a ledger adjustment against the unit instead. This module never
+ * creates money itself, only decides which existing seam to call.
+ */
 
 export interface RaiseDisputeInput {
   subjectType: DisputeSubjectType;
@@ -14,14 +31,14 @@ export interface RaiseDisputeInput {
 }
 
 interface SubjectContext {
-  projectId: string | null;
+  projectId: string;
   unitId: string | null;
+  /** The identity allowed to raise a dispute over this subject. */
   ownerIdentityId: string;
+  /** The Payment to refund against, if this subject has one. */
   paymentId: string | null;
-  closedReason?: string;
 }
 
-/** Load the canonical subject and the identity allowed to dispute it. */
 async function loadSubject(
   db: PrismaClient,
   subjectType: DisputeSubjectType,
@@ -34,12 +51,7 @@ async function loadSubject(
         projectId: true,
         unitId: true,
         guestIdentityId: true,
-        payments: {
-          where: { status: 'succeeded' },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { id: true },
-        },
+        payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
     if (!booking) throw new Error('Booking not found');
@@ -58,44 +70,19 @@ async function loadSubject(
         project_id: true,
         unit_id: true,
         orderer_identity_id: true,
-        status: true,
-        fulfilled_at: true,
-        payments: {
-          where: { status: 'succeeded' },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { id: true },
-        },
+        payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
     if (!order) throw new Error('Service order not found');
-
-    let closedReason: string | undefined;
-    if (order.status === 'closed') {
-      closedReason = 'This order is closed — its window for raising a dispute has passed';
-    } else if (order.status === 'fulfilled' && order.fulfilled_at) {
-      const windowHours =
-        ((await getConfig(db, 'service.fulfilment_confirm_window_hours', {
-          projectId: order.project_id,
-        })) as number | undefined) ?? 48;
-      if (!Number.isInteger(windowHours) || windowHours <= 0) {
-        throw new Error('Invalid fulfilment confirmation window configuration');
-      }
-      const deadline = new Date(order.fulfilled_at.getTime() + windowHours * 60 * 60 * 1000);
-      if (deadline <= new Date()) {
-        closedReason = `The ${windowHours}-hour window for disputing this order has passed`;
-      }
-    }
-
     return {
       projectId: order.project_id,
       unitId: order.unit_id,
       ownerIdentityId: order.orderer_identity_id,
       paymentId: order.payments[0]?.id ?? null,
-      closedReason,
     };
   }
 
+  // statement
   const statement = await db.ownerStatement.findUnique({
     where: { id: subjectId },
     select: { unit: { select: { id: true, projectId: true } }, ownerIdentityId: true },
@@ -110,117 +97,88 @@ async function loadSubject(
 }
 
 /**
- * Raise one dispute for a canonical subject.
- * Service-order creation shares the order row lock with confirm/auto-close;
- * the database unique constraint protects all subject types from duplicates.
+ * Raise a dispute over a booking, service order, or statement.
+ * Refuses on behalf of the wrong identity — a dispute is the raiser's own
+ * grievance, not one anyone can file about anyone else's record.
  */
 export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): Promise<Dispute> {
   const { subjectType, subjectId, raisedByIdentityId, raisedByRole, title, description } = input;
-  const subject = await loadSubject(db, subjectType, subjectId);
 
+  const subject = await loadSubject(db, subjectType, subjectId);
   if (subject.ownerIdentityId !== raisedByIdentityId) {
     throw new Error('You can only raise a dispute over your own booking, order, or statement');
   }
-  if (subject.closedReason) throw new Error(subject.closedReason);
 
-  // Ticket is still the canonical dispute conversation record and currently
-  // requires property scope. Fail closed for a standalone service instead of
-  // inventing a synthetic project or creating an orphan dispute.
-  const projectId = subject.projectId;
-  if (!projectId) {
-    throw new Error('Standalone service disputes require operator support until projectless tickets are enabled');
+  const existing = await db.dispute.findFirst({ where: { subjectType, subjectId } });
+  if (existing) {
+    throw new Error('A dispute has already been raised for this record');
   }
 
-  try {
-    return await db.$transaction(
-      async (tx) => {
-        if (subjectType === 'service_order') {
-          await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${subjectId} FOR UPDATE`;
+  const { id: ticketId } = await raiseTicket(db, {
+    projectId: subject.projectId,
+    unitId: subject.unitId ?? undefined,
+    raisedByIdentityId,
+    raisedByRole,
+    categoryKey: 'complaint',
+    title,
+    description,
+    priority: 'high',
+  });
 
-          const fresh = await tx.serviceOrder.findUnique({
-            where: { id: subjectId },
-            select: { status: true, fulfilled_at: true, project_id: true },
-          });
-          if (!fresh) throw new Error('Service order not found');
-          if (fresh.status === 'closed') {
-            throw new Error('This order is closed — its window for raising a dispute has passed');
-          }
-          if (fresh.status === 'fulfilled' && fresh.fulfilled_at) {
-            const configured =
-              ((await getConfig(tx as unknown as PrismaClient, 'service.fulfilment_confirm_window_hours', {
-                projectId: fresh.project_id,
-              })) as number | undefined) ?? 48;
-            if (!Number.isInteger(configured) || configured <= 0) {
-              throw new Error('Invalid fulfilment confirmation window configuration');
-            }
-            const deadline = new Date(fresh.fulfilled_at.getTime() + configured * 60 * 60 * 1000);
-            if (deadline <= new Date()) {
-              throw new Error(`The ${configured}-hour window for disputing this order has passed`);
-            }
-          }
-        }
-
-        const existing = await tx.dispute.findFirst({
-          where: { subjectType, subjectId },
-          select: { id: true },
-        });
-        if (existing) throw new Error('A dispute has already been raised for this record');
-
-        const { id: ticketId } = await raiseTicket(tx as unknown as PrismaClient, {
-          projectId,
-          unitId: subject.unitId ?? undefined,
-          raisedByIdentityId,
-          raisedByRole,
-          categoryKey: 'complaint',
-          title,
-          description,
-          priority: 'high',
-        });
-
-        return tx.dispute.create({ data: { ticketId, subjectType, subjectId } });
-      },
-      { timeout: 15000 }
-    );
-  } catch (error) {
-    if ((error as { code?: string })?.code === 'P2002') {
-      throw new Error('A dispute has already been raised for this record');
-    }
-    throw error;
-  }
+  return db.dispute.create({
+    data: { ticketId, subjectType, subjectId },
+  });
 }
 
 export interface DecideDisputeInput {
   disputeId: string;
   decidedByIdentityId: string;
+  /** Satang (THB x 100) — CLAUDE.md money rules. Omit/0 for "no money owed." */
   resolutionAmountThb?: number;
+  /** The written decision — becomes the ledger/refund's audit trail. */
   decisionNote: string;
 }
 
-/** Resolve a dispute and route any money through canonical finance seams. */
+/**
+ * Decide a dispute: record the admin's written decision, move the money
+ * it calls for (if any) through the existing finance seam, and close the
+ * ticket. Doc 10 §8: "Dispute resolution / goodwill: Admin-entered amount,
+ * decision-referenced, audit-logged" — every branch below produces exactly
+ * that.
+ */
 export async function decideDispute(db: PrismaClient, input: DecideDisputeInput): Promise<Dispute> {
   const { disputeId, decidedByIdentityId, resolutionAmountThb, decisionNote } = input;
+
   const dispute = await db.dispute.findUnique({
     where: { id: disputeId },
     include: { ticket: { select: { id: true, status: true } } },
   });
-  if (!dispute) throw new Error('Dispute not found');
-  if (dispute.decidedAt) throw new Error('This dispute has already been decided');
+  if (!dispute) {
+    throw new Error('Dispute not found');
+  }
+  if (dispute.decidedAt) {
+    throw new Error('This dispute has already been decided');
+  }
 
   const subject = await loadSubject(db, dispute.subjectType, dispute.subjectId);
   const amount = resolutionAmountThb ?? 0;
-  if (amount < 0) throw new Error('resolutionAmountThb must not be negative');
+  if (amount < 0) {
+    throw new Error('resolutionAmountThb must not be negative');
+  }
 
   let refundId: string | null = null;
   let ledgerEntryId: string | null = null;
 
   if (amount > 0) {
     if (subject.paymentId) {
-      const payment = await db.payment.findUnique({
-        where: { id: subject.paymentId },
-        select: { method: true },
-      });
+      // A real payment exists — refund it through the provider, never a
+      // wallet (doc 10 §8).
+      let paymentMethod: string | null = null;
+      const payment = await db.payment.findUnique({ where: { id: subject.paymentId }, select: { method: true } });
+      paymentMethod = payment?.method ?? null;
+
       const created =
-        payment?.method === 'cash'
+        paymentMethod === 'cash'
           ? await recordCashRefund(db, {
               paymentId: subject.paymentId,
               amountThb: amount,
@@ -231,6 +189,9 @@ export async function decideDispute(db: PrismaClient, input: DecideDisputeInput)
           : await refund(db, subject.paymentId, amount, 'dispute_resolution', decidedByIdentityId);
       refundId = created.id;
     } else {
+      // No underlying payment (e.g. a statement dispute) — a direct ledger
+      // adjustment against the unit, same shape as a failed-refund write-off
+      // (payout.service.ts's resolveFailedRefund).
       if (!subject.unitId) {
         throw new Error(
           'Cannot resolve this dispute with an amount: the disputed record has no payment to refund and no unit to post a ledger adjustment against'
@@ -268,8 +229,9 @@ export async function decideDispute(db: PrismaClient, input: DecideDisputeInput)
     closed: [],
     cancelled: [],
   };
+  const transitions = resolvePathByStatus[dispute.ticket.status] || [];
 
-  for (const nextStatus of resolvePathByStatus[dispute.ticket.status] || []) {
+  for (const nextStatus of transitions) {
     await updateTicketStatus(db, {
       ticketId: dispute.ticketId,
       newStatus: nextStatus,
@@ -281,12 +243,14 @@ export async function decideDispute(db: PrismaClient, input: DecideDisputeInput)
   return decided;
 }
 
-/** Open disputes for the admin queue. */
+/** Open (undecided) disputes, most recently raised first — the admin queue. */
 export async function getOpenDisputes(db: PrismaClient, options: { projectId?: string } = {}) {
   return db.dispute.findMany({
     where: {
       decidedAt: null,
-      ...(options.projectId ? { ticket: { projectId: options.projectId } } : {}),
+      ...(options.projectId
+        ? { ticket: { projectId: options.projectId } }
+        : {}),
     },
     include: {
       ticket: {
@@ -307,7 +271,7 @@ export async function getOpenDisputes(db: PrismaClient, options: { projectId?: s
   });
 }
 
-/** Full dispute detail including decision metadata. */
+/** One dispute's full detail, including its decision once made. */
 export async function getDisputeDetail(db: PrismaClient, disputeId: string) {
   return db.dispute.findUnique({
     where: { id: disputeId },

@@ -74,9 +74,12 @@ export default function ProjectsAdminClient({
           slug: draft.slug,
           name: draft.name,
           address: draft.address,
+          // Sent raw: the server decodes it against the configured reference,
+          // so every entry point resolves a code identically.
           ...(draft.plusCode.trim() ? { plusCode: draft.plusCode.trim() } : {}),
           latitude: Number(draft.latitude),
           longitude: Number(draft.longitude),
+          // Content keys follow the project.{slug}.* convention (doc 05 §4)
           areaLabelKey: `project.${draft.slug}.area`,
           descriptionKey: `project.${draft.slug}.description`,
           handbookKey: `project.${draft.slug}.handbook`,
@@ -123,16 +126,10 @@ export default function ProjectsAdminClient({
                 </p>
                 <p className="text-small text-text-secondary">{project.address}</p>
               </div>
-              <div className="flex flex-wrap items-center gap-8">
+              <div className="flex items-center gap-8">
                 <span className="px-12 py-4 rounded-full text-small font-semibold bg-surface-ivory text-text-ink">
                   {project.status}
                 </span>
-                <Link
-                  href={`/app/admin/projects/${project.id}/onboarding`}
-                  className="text-small text-brand-andaman font-semibold"
-                >
-                  {labels['admin.projects.onboarding_link']}
-                </Link>
                 <Link
                   href={`/app/admin/config?projectId=${project.id}`}
                   className="text-small text-brand-andaman font-semibold"
@@ -256,6 +253,12 @@ export default function ProjectsAdminClient({
               onChange={(e) => setDraft((d) => ({ ...d, address: e.target.value }))}
             />
           </div>
+          {/*
+            Position is entered as a Plus Code, copied straight from Google
+            Maps. Two decimal numbers are easy to transpose and impossible to
+            eyeball; one token that fails visibly is not. The coordinate boxes
+            stay below for the cases a code cannot express.
+          */}
           <div>
             <label className="text-small text-text-secondary block mb-4">
               {labels['admin.projects.plus_code']}

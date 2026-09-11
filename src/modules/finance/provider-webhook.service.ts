@@ -1,6 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
 import { verifyAndConfirm, markRefundFailed } from './finance.service';
-import { commitRescheduleForPayment } from '@/modules/booking';
 
 export interface OpnWebhookEvent {
   id: string;
@@ -20,7 +19,10 @@ interface OpnRefundPayload {
   voided?: boolean;
 }
 
-async function findPaymentForCharge(db: PrismaClient, charge: OpnChargePayload) {
+async function findPaymentForCharge(
+  db: PrismaClient,
+  charge: OpnChargePayload
+) {
   if (!charge.id) return null;
 
   const bySession = await db.payment.findFirst({
@@ -37,8 +39,9 @@ async function findPaymentForCharge(db: PrismaClient, charge: OpnChargePayload) 
 }
 
 /**
- * Handle a verified Opn/Omise webhook event.
- * The caller must re-fetch the event from the provider before invoking this.
+ * Handle a verified Opn/Omise webhook event (doc 10 §1, doc 01 D6).
+ * The caller must re-fetch the event from the API before invoking this —
+ * the request body is only a hint that something happened.
  */
 export async function processOpnEvent(
   db: PrismaClient,
@@ -56,21 +59,11 @@ export async function processOpnEvent(
     }
 
     if (payment.status === 'succeeded') {
-      // Recovery is still attempted: a previous process may have committed the
-      // provider payment and crashed before committing the linked reschedule.
-      const recovered = await commitRescheduleForPayment(db, payment.id);
-      return {
-        handled: true,
-        action: recovered ? 'already_confirmed_reschedule_committed' : 'already_confirmed',
-      };
+      return { handled: true, action: 'already_confirmed' };
     }
 
     await verifyAndConfirm(db, payment.id);
-    const reschedule = await commitRescheduleForPayment(db, payment.id);
-    return {
-      handled: true,
-      action: reschedule ? 'payment_confirmed_reschedule_committed' : 'payment_confirmed',
-    };
+    return { handled: true, action: 'payment_confirmed' };
   }
 
   if (event.key === 'refund.create' || event.key === 'refund.update') {

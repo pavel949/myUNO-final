@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { updateProject, getProjectDetail } from '@/modules/projects';
-import { getProjectReadiness } from '@/modules/projects/readiness.service';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -17,6 +16,7 @@ export async function PUT(
   });
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
+  // Check admin permission
   if (
     !(await can({
       identity,
@@ -29,20 +29,6 @@ export async function PUT(
 
   try {
     const body = await req.json();
-
-    if (body?.status === 'live') {
-      const readiness = await getProjectReadiness(prisma, params.id);
-      if (!readiness.ready) {
-        return NextResponse.json(
-          {
-            error: 'Project is not ready for go-live',
-            readiness,
-          },
-          { status: 409 }
-        );
-      }
-    }
-
     const updated = await updateProject({
       projectId: params.id,
       ...body,
@@ -69,6 +55,7 @@ export async function GET(
   });
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
+  // Check admin permission
   if (
     !(await can({
       identity,

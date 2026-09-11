@@ -121,10 +121,6 @@ export async function GET(
       noteToProvider: order.note_to_provider,
       addressNote: order.address_note,
       cancelledAt: order.cancelled_at?.toISOString() || null,
-      // Drives the orderer's confirm/dispute window on the detail page
-      // (doc 07 F-PROV-3) — the deadline is derived from this, never stored.
-      fulfilledAt: order.fulfilled_at?.toISOString() || null,
-      closedAt: order.closed_at?.toISOString() || null,
       cancellationReason: order.cancellation_reason,
       rated: Boolean(existingReview),
       service: {

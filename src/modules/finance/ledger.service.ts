@@ -1,4 +1,6 @@
-import { PrismaClient, LedgerEntry, LedgerEntryType } from '@prisma/client';
+import { Prisma, PrismaClient, LedgerEntry, LedgerEntryType } from '@prisma/client';
+
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export interface RecordCostInput {
   unitId: string;
@@ -16,11 +18,8 @@ export interface LedgerEntryWithRelations extends LedgerEntry {
   createdBy?: { id: string; firstName: string; lastName: string } | null;
 }
 
-/**
- * Record a cost entry in the ledger (manual entry by staff).
- * Append-only: creates a new LedgerEntry row, never updates.
- */
-export async function recordCost(db: PrismaClient, input: RecordCostInput): Promise<LedgerEntry> {
+/** Record a cost entry in the ledger. Append-only. */
+export async function recordCost(db: DbClient, input: RecordCostInput): Promise<LedgerEntry> {
   const entry = await db.ledgerEntry.create({
     data: {
       entryType: input.entryType,
@@ -34,36 +33,21 @@ export async function recordCost(db: PrismaClient, input: RecordCostInput): Prom
         : undefined,
     },
   });
-
   return entry;
 }
 
-/**
- * Create an auto entry for booking revenue (called on payment confirmation).
- * Append-only; no update path.
- */
+/** Create an auto entry for booking revenue. Append-only. */
 export async function recordBookingRevenue(
-  db: PrismaClient,
+  db: DbClient,
   bookingId: string,
   unitId: string,
   amountThb: number,
   occurredOn: Date
 ): Promise<LedgerEntry> {
-  const booking = await db.booking.findUnique({
-    where: { id: bookingId },
-    select: { id: true },
-  });
-
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
-
-  const unit = await db.unit.findUnique({
-    where: { id: unitId },
-    select: { projectId: true },
-  });
-
-  const entry = await db.ledgerEntry.create({
+  const booking = await db.booking.findUnique({ where: { id: bookingId }, select: { id: true } });
+  if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { projectId: true } });
+  return db.ledgerEntry.create({
     data: {
       entryType: 'rental_revenue',
       amountThb,
@@ -75,23 +59,18 @@ export async function recordBookingRevenue(
       createdByIdentityId: null,
     },
   });
-
-  return entry;
 }
 
-/**
- * Create an auto entry for a refund (called on refund processing).
- * Append-only; no update path.
- */
+/** Create an auto entry for a refund. Append-only. */
 export async function recordRefundOut(
-  db: PrismaClient,
+  db: DbClient,
   refundId: string,
   unitId: string | null,
   projectId: string | null,
   amountThb: number,
   occurredOn: Date
 ): Promise<LedgerEntry> {
-  const entry = await db.ledgerEntry.create({
+  return db.ledgerEntry.create({
     data: {
       entryType: 'refund_out',
       amountThb: -Math.abs(amountThb),
@@ -103,23 +82,21 @@ export async function recordRefundOut(
       createdByIdentityId: null,
     },
   });
-
-  return entry;
 }
 
 /**
- * Create an auto entry for service commission (called on service order payment).
- * Append-only; no update path.
+ * Create an auto entry for service commission. Append-only. Standalone Phuket
+ * commerce intentionally has no synthetic project, so projectId is nullable.
  */
 export async function recordServiceCommission(
-  db: PrismaClient,
+  db: DbClient,
   serviceOrderId: string,
   unitId: string | null,
-  projectId: string,
+  projectId: string | null,
   commissionAmountThb: number,
   occurredOn: Date
 ): Promise<LedgerEntry> {
-  const entry = await db.ledgerEntry.create({
+  return db.ledgerEntry.create({
     data: {
       entryType: 'service_commission',
       amountThb: commissionAmountThb,
@@ -131,38 +108,18 @@ export async function recordServiceCommission(
       createdByIdentityId: null,
     },
   });
-
-  return entry;
 }
 
-/**
- * Reverse a ledger entry via an admin-only reversal entry.
- * Append-only: creates a new negative entry instead of updating the original.
- */
+/** Reverse a ledger entry via a new append-only adjustment. */
 export async function reverseLedgerEntry(
-  db: PrismaClient,
+  db: DbClient,
   entryId: string,
   reverseReason: string,
   reversedByIdentityId: string
 ): Promise<LedgerEntry> {
-  const original = await db.ledgerEntry.findUnique({
-    where: { id: entryId },
-  });
-
-  if (!original) {
-    throw new Error(`LedgerEntry ${entryId} not found`);
-  }
-
-  // Create a reversal entry: same amount but opposite sign.
-  //
-  // The reversal carries the ORIGINAL's occurredOn, not today's date. occurredOn
-  // is the accrual date — "which month's statement it lands in" (doc 02 §5.3) —
-  // and statements sweep ledger entries by occurredOn within the period
-  // (statement.service). Dating the reversal today would leave the wrong entry
-  // standing in its own period's NOI and drop the correction into a different
-  // month, so the correction would never cancel what it corrects. createdAt
-  // still records when the reversal was actually made (the audit trail).
-  const reversal = await db.ledgerEntry.create({
+  const original = await db.ledgerEntry.findUnique({ where: { id: entryId } });
+  if (!original) throw new Error(`LedgerEntry ${entryId} not found`);
+  return db.ledgerEntry.create({
     data: {
       entryType: 'adjustment',
       amountThb: -original.amountThb,
@@ -173,59 +130,35 @@ export async function reverseLedgerEntry(
       createdByIdentityId: reversedByIdentityId,
     },
   });
-
-  return reversal;
 }
 
-/**
- * Get ledger entries for a unit within a date range.
- * Used for statement generation and reconciliation.
- */
+/** Get ledger entries for a unit within a date range. */
 export async function getUnitLedgerEntries(
-  db: PrismaClient,
+  db: DbClient,
   unitId: string,
   startDate: Date,
   endDate: Date
 ): Promise<LedgerEntryWithRelations[]> {
-  const entries = await db.ledgerEntry.findMany({
-    where: {
-      unitId,
-      occurredOn: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
+  return db.ledgerEntry.findMany({
+    where: { unitId, occurredOn: { gte: startDate, lte: endDate } },
     include: {
       unit: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, firstName: true, lastName: true } },
     },
-    // createdAt breaks ties so entries sharing an accrual date (an original and
-    // its reversal, for instance) always read back in the order they were written.
     orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
   });
-
-  return entries;
 }
 
-/**
- * Get all ledger entries for a project within a date range.
- * Used for admin reporting.
- */
+/** Get all ledger entries for a project within a date range. */
 export async function getProjectLedgerEntries(
-  db: PrismaClient,
+  db: DbClient,
   projectId: string,
   startDate: Date,
   endDate: Date
 ): Promise<LedgerEntryWithRelations[]> {
-  const entries = await db.ledgerEntry.findMany({
-    where: {
-      projectId,
-      occurredOn: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
+  return db.ledgerEntry.findMany({
+    where: { projectId, occurredOn: { gte: startDate, lte: endDate } },
     include: {
       unit: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
@@ -233,15 +166,11 @@ export async function getProjectLedgerEntries(
     },
     orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }],
   });
-
-  return entries;
 }
 
-/**
- * Get a specific ledger entry by ID.
- */
+/** Get a specific ledger entry by ID. */
 export async function getLedgerEntry(
-  db: PrismaClient,
+  db: DbClient,
   entryId: string
 ): Promise<LedgerEntryWithRelations | null> {
   return db.ledgerEntry.findUnique({
@@ -254,37 +183,20 @@ export async function getLedgerEntry(
   });
 }
 
-/**
- * Compute total revenue and costs for a unit in a period.
- * Used by statement generation.
- */
+/** Compute total revenue and costs for a unit in a period. */
 export async function computeUnitLedgerTotals(
-  db: PrismaClient,
+  db: DbClient,
   unitId: string,
   startDate: Date,
   endDate: Date
 ): Promise<{ totalRevenueTh: number; totalCostsTh: number; netTh: number }> {
   const result = await db.ledgerEntry.aggregate({
-    where: {
-      unitId,
-      occurredOn: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
+    where: { unitId, occurredOn: { gte: startDate, lte: endDate } },
     _sum: { amountThb: true },
   });
-
   const net = result._sum.amountThb || 0;
-
-  // Separate positive (revenue) and negative (costs)
   const entries = await getUnitLedgerEntries(db, unitId, startDate, endDate);
   const totalRevenue = entries.filter((e) => e.amountThb > 0).reduce((sum, e) => sum + e.amountThb, 0);
   const totalCosts = Math.abs(entries.filter((e) => e.amountThb < 0).reduce((sum, e) => sum + e.amountThb, 0));
-
-  return {
-    totalRevenueTh: totalRevenue,
-    totalCostsTh: totalCosts,
-    netTh: net,
-  };
+  return { totalRevenueTh: totalRevenue, totalCostsTh: totalCosts, netTh: net };
 }

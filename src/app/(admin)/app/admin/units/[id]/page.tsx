@@ -136,10 +136,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           id: e.id,
           engagementType: e.engagementType,
           status: e.status,
-          // Display boundary: noiCapAnnualThb is satang (THB x 100) in the
-          // domain layer — the finance module compares it directly against
-          // satang NOI totals (src/modules/finance/statement.service.ts).
-          noiCapAnnualThb: e.noiCapAnnualThb !== null ? Math.round(e.noiCapAnnualThb / 100) : null,
+          // Keep the domain amount in satang all the way into OnboardingClient.
+          // The client performs the only display conversion to THB. Dividing
+          // here as well would make a real NOI cap appear 100x too small.
+          noiCapAnnualThb: e.noiCapAnnualThb,
         }))}
         complianceRecords={unit.complianceRecords.map((r) => ({
           id: r.id,

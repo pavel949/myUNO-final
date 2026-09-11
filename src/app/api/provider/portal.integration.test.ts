@@ -228,6 +228,7 @@ describe('provider portal routes (S2)', () => {
           total_thb: 10000,
           take_rate_pct_snapshot: 10,
           status: 'fulfilled',
+          fulfilled_at: fulfilledAt,
           updatedAt: fulfilledAt,
         },
       });
@@ -267,7 +268,13 @@ describe('provider portal routes (S2)', () => {
         new Date(body.currentPeriod.periodEnd)
       );
       expect(body.currentPeriod.remittance.netThb).toBe(expected.netThb);
-      expect(body.currentPeriod.remittance.netThb).toBe(8500);
+      // 10000 − 10% = 9000. The 10% is this order's own
+      // `take_rate_pct_snapshot`, not the 15% global default: commission is
+      // computed from the rate accepted when the order was placed, so a later
+      // config change cannot restate what a provider is owed for past work.
+      // The literal is kept alongside the comparison above, which would
+      // otherwise pass if both sides drifted together.
+      expect(body.currentPeriod.remittance.netThb).toBe(9000);
     });
   });
 

@@ -10,8 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums — kept early for readability
-
 enum IdentityStatus {
   active
   invited
@@ -37,8 +35,6 @@ enum ProjectStatus {
   archived
 }
 
-/// An area is public only when it is worth a page of its own. One project in a
-/// region is a project, not a destination.
 enum AreaStatus {
   draft
   live
@@ -225,16 +221,11 @@ enum OwnerStatementStatus {
   draft
   published
   superseded
-  // Appended, in this order, by 20260813000010_owner_reporting_and_transparency.
-  // The order has to match the database, or Prisma sees a difference and
-  // rewrites the type.
   pending_owner_review
   signed_off
   distributed
 }
 
-// Every line on an owner statement traces to one of these (CLAUDE.md, "Fee
-// Transparency for Owners": line-item drill-down to booking, receipt or fee).
 enum LineItemCategory {
   booking_revenue
   refund
@@ -441,8 +432,6 @@ enum ServiceOrderStatus {
 enum ReviewTargetType {
   stay
   service_order
-  /// A review *of* the guest, written after their stay. `target_id` is the
-  /// booking, not the identity — see the 20260818000018 migration for why.
   guest
 }
 
@@ -524,6 +513,7 @@ enum AnalyticsEventKey {
   service_order_fulfilled
   service_order_cancelled
   service_order_no_show
+  service_order_closed
   review_submitted
   message_thread_started
   ticket_raised
@@ -741,14 +731,10 @@ enum ContractStatus {
   terminated
 }
 
-/// Last-run outcome for a scheduled job (doc 15 §5). Append-only; the admin
-/// panel reads the latest row per job_key.
 enum JobRunOutcome {
   ok
   failed
 }
-
-// --- The spine ---
 
 model Identity {
   id        String   @id @default(uuid())
@@ -771,7 +757,6 @@ model Identity {
   notesInternal   String?        @map("notes_internal")
   mergedIntoId    String?        @map("merged_into_id")
 
-  // Relations
   avatarMedia MediaAsset? @relation(name: "identityAvatar", fields: [avatarMediaId], references: [id])
   mergedInto  Identity?   @relation(name: "identityMerge", fields: [mergedIntoId], references: [id])
   mergedFrom  Identity[]  @relation(name: "identityMerge")
@@ -810,6 +795,7 @@ model Identity {
   ticketEvents                  TicketEvent[]
   serviceOrdersPlaced           ServiceOrder[]                @relation("serviceOrderOrderer")
   serviceOrdersCancelled        ServiceOrder[]                @relation("serviceOrderCancelledBy")
+  serviceOrdersClosed           ServiceOrder[]                @relation("serviceOrderClosedBy")
   reviewsWritten                Review[]
   reviewsReplied                Review[]                      @relation("reviewRepliedBy")
   announcementsCreated          Announcement[]
@@ -847,6 +833,9 @@ model Identity {
   managementContractsOwned      ManagementContract[]          @relation("contractOwner")
   managementContractsSigned     ManagementContract[]          @relation("contractSignatory")
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
+  serviceQuoteRequests          ServiceQuoteRequest[]
+  bookingRescheduleRequests     BookingReschedule[]
+  onboardingDrafts              ProjectOnboardingDraft[]
 
   @@map("identity")
 }
@@ -855,13 +844,10 @@ model AuthAccount {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId        String       @map("identity_id")
   provider          AuthProvider
   providerAccountId String       @map("provider_account_id")
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@unique([provider, providerAccountId])
   @@map("auth_account")
 }
@@ -870,49 +856,28 @@ model OneTimeToken {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId String              @map("identity_id")
   purpose    OneTimeTokenPurpose
   tokenHash  String              @map("token_hash")
   expiresAt  DateTime            @map("expires_at")
   consumedAt DateTime?           @map("consumed_at")
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@map("one_time_token")
 }
 
-/// A place inventory is described by — "Bang Tao", "Phuket west coast".
-///
-/// Before this, a location was a content key on the project: a display string,
-/// so nothing could be asked *about* an area. Areas exist for two jobs the
-/// founder named — **browse** (an area page, a search filter, "near here") and
-/// **reporting** (occupancy and revenue rolled up across the projects in a
-/// region). Both concern myUNO's own inventory, so an area holds projects the
-/// platform operates rather than a market-wide comparables set.
-///
-/// The parent link makes depth **data rather than schema**: island → coast →
-/// beach, or a flat list, without a migration either way. A report or a browse
-/// page for an area includes everything beneath it.
 model Area {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  /// The URL segment. Browse is half the reason this model exists.
   slug           String     @unique
   nameKey        String     @map("name_key")
   descriptionKey String?    @map("description_key")
   parentId       String?    @map("parent_id")
   status         AreaStatus @default(draft)
-  /// Display order among siblings; ties fall back to slug.
   sort           Int        @default(0)
-
-  // Relations
   parent   Area?     @relation(name: "areaParent", fields: [parentId], references: [id], onDelete: SetNull)
   children Area[]    @relation(name: "areaParent")
   projects Project[]
-
   @@index([parentId])
   @@index([status])
   @@map("area")
@@ -922,13 +887,8 @@ model Project {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   slug           String        @unique
   name           String
-  /// Legacy: the project's own label for where it is. Superseded by `areaId` —
-  /// two projects in Bang Tao must not be able to name Bang Tao differently.
-  /// Read through `resolveAreaLabelKey`, which prefers the area when one is
-  /// set. Droppable once every project has an area.
   areaLabelKey   String        @map("area_label_key")
   areaId         String?       @map("area_id")
   descriptionKey String        @map("description_key")
@@ -940,8 +900,6 @@ model Project {
   amenityKeys    String[]      @default([]) @map("amenity_keys")
   handbookKey    String        @map("handbook_key")
   status         ProjectStatus @default(draft)
-
-  // Extended Physical Property & Development Facts
   projectType                String?   @map("project_type")
   hospitalityClassification  String?   @map("hospitality_classification")
   developmentLifecycleStatus String?   @map("development_lifecycle_status")
@@ -967,10 +925,6 @@ model Project {
   phases                     Json?     @db.JsonB
   facilities                 String[]  @default([])
   hospitalityConfig          Json?     @map("hospitality_config") @db.JsonB
-
-  // Relations
-  /// SetNull, never cascade: deleting an area must not delete the projects in
-  /// it. An area is a way of describing where a project is, not its owner.
   area                  Area?                     @relation(fields: [areaId], references: [id], onDelete: SetNull)
   coverMedia            MediaAsset?               @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   masterplanMedia       MediaAsset?               @relation(name: "projectMasterplan", fields: [masterplanMediaId], references: [id], onDelete: SetNull)
@@ -996,7 +950,8 @@ model Project {
   integrationAccounts   IntegrationAccount[]
   crmOpportunities      CrmOpportunity[]
   managementContracts   ManagementContract[]
-
+  serviceQuoteRequests  ServiceQuoteRequest[]
+  onboardingDraft       ProjectOnboardingDraft?
   @@index([areaId])
   @@map("project")
 }
@@ -1005,7 +960,6 @@ model Unit {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId               String      @map("project_id")
   inventoryCategoryId     String?     @map("inventory_category_id")
   ownerIdentityId         String?     @map("owner_identity_id")
@@ -1029,12 +983,9 @@ model Unit {
   assetStatusChangedAt    DateTime?   @map("asset_status_changed_at")
   assetStatusReason       String?     @map("asset_status_reason")
   permittedUseConfirmedAt DateTime?   @map("permitted_use_confirmed_at")
-  /// Null means the unit has not said — which is not the same as "no".
   petsAllowed             Boolean?    @map("pets_allowed")
   maxPets                 Int?        @map("max_pets")
   coverMediaId            String?     @map("cover_media_id")
-
-  // Extended Physical Unit Facts
   privacyType        String?  @default("entire_place") @map("privacy_type")
   accommodationType  String?  @map("accommodation_type")
   usableAreaSqm      Decimal? @map("usable_area_sqm") @db.Decimal(10, 2)
@@ -1049,8 +1000,6 @@ model Unit {
   views              String[] @default([])
   petFeeThb          Int?     @map("pet_fee_thb")
   petRules           String?  @map("pet_rules")
-
-  // Relations
   project                      Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inventoryCategory            InventoryCategory?            @relation(fields: [inventoryCategoryId], references: [id], onDelete: SetNull)
   owner                        Identity?                     @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
@@ -1082,7 +1031,6 @@ model Unit {
   managementContracts          ManagementContract[]
   ownershipPeriods             OwnershipPeriod[]
   savedBy                      SavedUnit[]
-
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
   @@index([assetStatus])
@@ -1093,7 +1041,6 @@ model BlockedDate {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId              String            @map("unit_id")
   startDate           DateTime          @map("start_date") @db.Date
   endDate             DateTime          @map("end_date") @db.Date
@@ -1101,11 +1048,8 @@ model BlockedDate {
   note                String?
   createdByIdentityId String?           @map("created_by_identity_id")
   externalRef         String?           @map("external_ref")
-
-  // Relations
   unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([unitId, startDate, endDate])
   @@map("blocked_date")
 }
@@ -1114,17 +1058,13 @@ model PricingRule {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId            String   @map("unit_id")
   startDate         DateTime @map("start_date") @db.Date
   endDate           DateTime @map("end_date") @db.Date
   nightlyThb        Int      @map("nightly_thb")
   label             String?
   minNightsOverride Int?     @map("min_nights_override")
-
-  // Relations
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   @@index([unitId, startDate, endDate])
   @@map("pricing_rule")
 }
@@ -1133,7 +1073,6 @@ model Booking {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId                     String             @map("unit_id")
   projectId                  String             @map("project_id")
   guestIdentityId            String             @map("guest_identity_id")
@@ -1145,9 +1084,7 @@ model Booking {
   endDate                    DateTime           @map("end_date") @db.Date
   adults                     Int
   children                   Int
-  /// Not counted toward occupancy — an infant needs a cot, not a bed.
   infants                    Int                @default(0)
-  /// Recorded against the unit's pet policy, not against its bed count.
   pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
@@ -1164,8 +1101,6 @@ model Booking {
   cancellationReason         String?            @map("cancellation_reason")
   guestNote                  String?            @map("guest_note")
   internalNote               String?            @map("internal_note")
-
-  // Relations
   unit             Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   guestIdentity    Identity            @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
@@ -1181,7 +1116,7 @@ model Booking {
   depositPreauth   DepositPreauth?
   analyticsEvents  AnalyticsEvent[]
   statementLines   StatementLineItem[]
-
+  reschedules      BookingReschedule[]
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])
@@ -1194,25 +1129,18 @@ model BookingGuest {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   bookingId       String  @map("booking_id")
   identityId      String? @map("identity_id")
-  // 🔒 fullName, passportNumber, and dateOfBirth hold AES-256-GCM ciphertext
-  // (ops/guest-pii seam). nationality stays plaintext: the TM30 obligation
-  // filters on it in SQL (doc 02 §3.2 note).
   fullName        String  @map("full_name")
   nationality     String
   passportNumber  String  @map("passport_number")
   dateOfBirth     String? @map("date_of_birth")
   passportMediaId String? @map("passport_media_id")
   isLead          Boolean @default(false)
-
-  // Relations
   booking       Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   identity      Identity?   @relation(fields: [identityId], references: [id], onDelete: SetNull)
   passportMedia MediaAsset? @relation(fields: [passportMediaId], references: [id], onDelete: SetNull)
   tm30Filing    Tm30Filing?
-
   @@index([bookingId])
   @@map("booking_guest")
 }
@@ -1220,18 +1148,14 @@ model BookingGuest {
 model BookingChange {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   bookingId       String            @map("booking_id")
   changeType      BookingChangeType @map("change_type")
   oldValue        Json?             @map("old_value") @db.JsonB
   newValue        Json?             @map("new_value") @db.JsonB
   priceDeltaThb   Int               @default(0) @map("price_delta_thb")
   actorIdentityId String            @map("actor_identity_id")
-
-  // Relations
   booking Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   actor   Identity @relation(fields: [actorIdentityId], references: [id])
-
   @@index([bookingId])
   @@map("booking_change")
 }
@@ -1239,7 +1163,6 @@ model BookingChange {
 model Payment {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   purpose              PaymentPurpose
   bookingId            String?         @map("booking_id")
   serviceOrderId       String?         @map("service_order_id")
@@ -1255,8 +1178,6 @@ model Payment {
   status               PaymentStatus   @default(created)
   succeededAt          DateTime?       @map("succeeded_at")
   failureReason        String?         @map("failure_reason")
-
-  // Relations
   booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   serviceOrder  ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
   payer         Identity      @relation(name: "paymentPayer", fields: [payerIdentityId], references: [id])
@@ -1264,7 +1185,7 @@ model Payment {
   receiptMedia  MediaAsset?   @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
   refunds       Refund[]
   ledgerEntries LedgerEntry[]
-
+  bookingReschedules BookingReschedule[]
   @@unique([providerSessionId, provider])
   @@index([bookingId])
   @@index([payerIdentityId])
@@ -1275,7 +1196,6 @@ model Payment {
 model Refund {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   paymentId             String       @map("payment_id")
   method                RefundMethod
   amountThb             Int          @map("amount_thb")
@@ -1284,14 +1204,11 @@ model Refund {
   providerRefundId      String?      @map("provider_refund_id")
   paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
   initiatedByIdentityId String       @map("initiated_by_identity_id")
-
-  // Relations
   payment       Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   paidBackBy    Identity?     @relation(name: "refundPaidBy", fields: [paidBackByIdentityId], references: [id])
   initiatedBy   Identity      @relation(name: "refundInitiatedBy", fields: [initiatedByIdentityId], references: [id])
   ledgerEntries LedgerEntry[]
   disputes      Dispute[]
-
   @@index([paymentId])
   @@index([status])
   @@map("refund")
@@ -1300,7 +1217,6 @@ model Refund {
 model LedgerEntry {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   entryType           LedgerEntryType @map("entry_type")
   amountThb           Int             @map("amount_thb")
   unitId              String?         @map("unit_id")
@@ -1313,8 +1229,6 @@ model LedgerEntry {
   occurredOn          DateTime        @map("occurred_on")
   description         String
   createdByIdentityId String?         @map("created_by_identity_id")
-
-  // Relations
   unit      Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
   project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
   booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
@@ -1323,7 +1237,6 @@ model LedgerEntry {
   statement OwnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
   createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
   disputes  Dispute[]
-
   @@index([unitId, occurredOn])
   @@index([projectId, occurredOn])
   @@index([bookingId])
@@ -1336,7 +1249,6 @@ model OwnerStatement {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId                String               @map("unit_id")
   ownerIdentityId       String               @map("owner_identity_id")
   engagementId          String               @map("engagement_id")
@@ -1352,11 +1264,6 @@ model OwnerStatement {
   publishedAt           DateTime?            @map("published_at")
   publishedByIdentityId String?              @map("published_by_identity_id")
   pdfMediaId            String?              @map("pdf_media_id")
-
-  // The transparency block CLAUDE.md requires on every monthly statement:
-  // gross bookings, service fees, expenses, adjusted NOI, distributable cash and
-  // the performance fee with the basis it was calculated on. Nullable because
-  // statements drafted before this existed have none of it.
   grossBookingsAmountTh     Int?      @map("gross_bookings_amount_thb")
   guestPaymentsReceivedTh   Int?      @map("guest_payments_received_thb")
   serviceFeesAmountTh       Int?      @map("service_fees_amount_thb")
@@ -1369,8 +1276,6 @@ model OwnerStatement {
   signedOffByOwnerAt        DateTime? @map("signed_off_by_owner_at")
   signedOffByOperatorAt     DateTime? @map("signed_off_by_operator_at")
   approvedAt                DateTime? @map("approved_at")
-
-  // Relations
   unit          Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner         Identity            @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
   engagement    UnitEngagement      @relation(fields: [engagementId], references: [id])
@@ -1379,34 +1284,24 @@ model OwnerStatement {
   ledgerEntries LedgerEntry[]
   payouts       Payout[]
   lineItems     StatementLineItem[]
-
   @@index([unitId, periodStart, periodEnd])
   @@index([ownerIdentityId, status])
   @@index([status, publishedAt])
   @@map("owner_statement")
 }
 
-// One line on a statement, so an owner can trace any figure to its source
-// (CLAUDE.md, "Fee Transparency for Owners": line-item drill-down).
 model StatementLineItem {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   statementId String           @map("statement_id")
   category    LineItemCategory
   description String
   amountTh    Int              @map("amount_thb")
-
-  // What the line traces back to: a booking for revenue and refunds, an uploaded
-  // receipt for an expense. Both optional — a performance fee traces to the
-  // management contract, which the statement already identifies.
   bookingId            String? @map("booking_id")
   supportingDocumentId String? @map("supporting_document_id")
-
   statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
   booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-
   @@index([statementId, category])
   @@index([bookingId])
   @@map("statement_line_item")
@@ -1415,7 +1310,6 @@ model StatementLineItem {
 model Payout {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   payeeType            PayoutPayeeType @map("payee_type")
   ownerStatementId     String?         @map("owner_statement_id")
   providerId           String?         @map("provider_id")
@@ -1427,12 +1321,9 @@ model Payout {
   executedOn           DateTime        @map("executed_on") @db.Date
   recordedByIdentityId String          @map("recorded_by_identity_id")
   status               PayoutStatus    @default(recorded)
-
-  // Relations
   ownerStatement OwnerStatement? @relation(fields: [ownerStatementId], references: [id], onDelete: SetNull)
   provider       Provider?       @relation(fields: [providerId], references: [id], onDelete: SetNull)
   recordedBy     Identity        @relation(fields: [recordedByIdentityId], references: [id])
-
   @@index([payeeType, status])
   @@index([ownerStatementId])
   @@index([providerId, periodStart, periodEnd])
@@ -1444,7 +1335,6 @@ model DepositClaim {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   bookingId          String             @map("booking_id")
   claimantIdentityId String             @map("claimant_identity_id")
   description        String
@@ -1454,13 +1344,10 @@ model DepositClaim {
   filedAt            DateTime           @map("filed_at")
   resolutionAt       DateTime?          @map("resolution_at")
   resolutionNote     String?
-
-  // Relations
   booking           Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   claimant          Identity        @relation(name: "depositClaimFiled", fields: [claimantIdentityId], references: [id])
   evidenceMedia     MediaAsset[]    @relation(name: "claimEvidence")
   depositPreauthCap DepositPreauth? @relation("depositClaimCapture")
-
   @@index([bookingId, status])
   @@index([claimantIdentityId, filedAt])
   @@map("deposit_claim")
@@ -1470,7 +1357,6 @@ model DepositPreauth {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   bookingId         String               @map("booking_id")
   amountThb         Int                  @map("amount_thb")
   providerSessionId String?              @map("provider_session_id")
@@ -1479,11 +1365,8 @@ model DepositPreauth {
   voidedAt          DateTime?            @map("voided_at")
   capturedAt        DateTime?            @map("captured_at")
   captureViaClaimId String?              @unique @map("capture_via_claim_id")
-
-  // Relations
   booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   captureClaim DepositClaim? @relation(name: "depositClaimCapture", fields: [captureViaClaimId], references: [id], onDelete: SetNull)
-
   @@unique([bookingId])
   @@index([status, authorizedAt])
   @@map("deposit_preauth")
@@ -1493,7 +1376,6 @@ model UnitEngagement {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId          String               @map("unit_id")
   engagementType  UnitEngagementType   @map("engagement_type")
   ownerIdentityId String               @map("owner_identity_id")
@@ -1505,14 +1387,11 @@ model UnitEngagement {
   startsOn        DateTime?            @map("starts_on")
   endsOn          DateTime?            @map("ends_on")
   status          UnitEngagementStatus @default(draft)
-
-  // Relations
   unit          Unit             @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner         Identity         @relation(name: "engagementOwner", fields: [ownerIdentityId], references: [id])
   managementOrg Organization?    @relation(fields: [managementOrgId], references: [id])
   mandateMedia  MediaAsset?      @relation(name: "engagementMandate", fields: [mandateMediaId], references: [id])
   statements    OwnerStatement[]
-
   @@index([unitId, status])
   @@map("unit_engagement")
 }
@@ -1521,15 +1400,12 @@ model Organization {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   name         String
   orgType      OrganizationType   @map("org_type")
   projectId    String?            @map("project_id")
   contactEmail String             @map("contact_email")
   contactPhone String             @map("contact_phone")
   status       OrganizationStatus @default(active)
-
-  // Canonical Developer / Organization Facts
   legalName             String? @map("legal_name")
   tradingName           String? @map("trading_name")
   logoMediaId           String? @map("logo_media_id")
@@ -1544,8 +1420,6 @@ model Organization {
   listedExchange        String? @map("listed_exchange")
   developerTrackRecord  Json?   @map("developer_track_record") @db.JsonB
   developerVerification String? @default("unverified") @map("developer_verification")
-
-  // Relations
   project               Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   logoMedia             MediaAsset?               @relation(name: "orgLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
   parentOrg             Organization?             @relation(name: "orgParent", fields: [parentOrganizationId], references: [id], onDelete: SetNull)
@@ -1555,7 +1429,6 @@ model Organization {
   engagements           UnitEngagement[]
   roleAssignments       RoleAssignment[]
   announcements         Announcement[]
-
   @@map("organization")
 }
 
@@ -1563,7 +1436,6 @@ model Provider {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   name                  String
   description           String?
   contactEmail          String         @map("contact_email")
@@ -1572,13 +1444,9 @@ model Provider {
   status                ProviderStatus @default(applied)
   vetted_at             DateTime?      @map("vetted_at")
   vetted_by_identity_id String?        @map("vetted_by_identity_id")
-  // The identity that submitted the application — receives the
-  // provider_member role and the N-18/N-19 vetting outcome (F-PROV-1).
   applicant_identity_id String?        @map("applicant_identity_id")
   payoutMethod          Json?          @map("payout_method") @db.JsonB
   logoMediaId           String?        @map("logo_media_id")
-
-  // Relations
   vetted_by       Identity?         @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)
   applicant       Identity?         @relation("providerApplicant", fields: [applicant_identity_id], references: [id], onDelete: SetNull)
   logoMedia       MediaAsset?       @relation("providerLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
@@ -1587,7 +1455,7 @@ model Provider {
   serviceAreas    ProviderProject[]
   serviceOrders   ServiceOrder[]
   payouts         Payout[]
-
+  quoteVersions   ServiceQuoteVersion[]
   @@index([status, vetted_at])
   @@map("provider")
 }
@@ -1595,10 +1463,8 @@ model Provider {
 model ProviderProject {
   provider_id String @map("provider_id")
   project_id  String @map("project_id")
-
   provider Provider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
   project  Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-
   @@id([provider_id, project_id])
   @@map("provider_project")
 }
@@ -1607,7 +1473,6 @@ model Service {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   provider_id        String         @map("provider_id")
   categoryKey        String         @map("category_key")
   title              String
@@ -1625,22 +1490,15 @@ model Service {
   advanceNoticeHours Int            @default(0) @map("advance_notice_hours")
   status             ServiceStatus  @default(draft)
   coverMediaId       String?        @map("cover_media_id")
-
-  // Who approved this service and when. Mirrors Provider.vetted_at /
-  // vetted_by_identity_id: approval is a gate an admin passes a service through,
-  // so it needs the same audit trail (CLAUDE.md, "Audit Logging"). Cleared on
-  // rejection so a resubmitted service is not left carrying a stale approval.
   approved_at             DateTime? @map("approved_at")
   approved_by_identity_id String?   @map("approved_by_identity_id")
-
-  // Relations
   provider          Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
   approved_by       Identity?        @relation("serviceApprovedBy", fields: [approved_by_identity_id], references: [id], onDelete: SetNull)
   coverMedia        MediaAsset?      @relation("serviceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   media             ServiceMedia[]   @relation("serviceMediaList")
   availableProjects ServiceProject[]
   serviceOrders     ServiceOrder[]
-
+  quoteRequests     ServiceQuoteRequest[]
   @@index([provider_id, status])
   @@index([categoryKey])
   @@index([status, approved_at])
@@ -1651,10 +1509,8 @@ model ServiceMedia {
   service_id String @map("service_id")
   media_id   String @map("media_id")
   position   Int    @default(0)
-
   service Service    @relation("serviceMediaList", fields: [service_id], references: [id], onDelete: Cascade)
   media   MediaAsset @relation("serviceImage", fields: [media_id], references: [id], onDelete: Cascade)
-
   @@id([service_id, media_id])
   @@map("service_media")
 }
@@ -1662,11 +1518,26 @@ model ServiceMedia {
 model ServiceProject {
   service_id String @map("service_id")
   project_id String @map("project_id")
-
+  enabled Boolean @default(true)
+  public Boolean @default(true)
+  priceOverrideThb Int? @map("price_override_thb")
+  costThb Int? @map("cost_thb")
+  takeRatePct Decimal? @map("take_rate_pct") @db.Decimal(5, 2)
+  leadTimeHours Int? @map("lead_time_hours")
+  slaMinutes Int? @map("sla_minutes")
+  cancellationPolicy Json @default("{}") @map("cancellation_policy") @db.JsonB
+  collector String @default("platform")
+  fulfillmentOwner String @default("provider") @map("fulfillment_owner")
+  complaintOwner String @default("platform") @map("complaint_owner")
+  inclusions Json @default("[]") @db.JsonB
+  effectiveFrom DateTime? @map("effective_from")
+  effectiveTo DateTime? @map("effective_to")
+  termsVersion Int @default(1) @map("terms_version")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-
   @@id([service_id, project_id])
+  @@index([project_id, enabled, public])
   @@map("service_project")
 }
 
@@ -1674,29 +1545,23 @@ model ServiceOrder {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // What and where
   service_id  String  @map("service_id")
   provider_id String  @map("provider_id")
-  project_id  String  @map("project_id")
+  project_id  String? @map("project_id")
   unit_id     String? @map("unit_id")
   booking_id  String? @map("booking_id")
-
-  // Who ordered
   orderer_identity_id String   @map("orderer_identity_id")
   orderer_role        RoleType @map("orderer_role")
-
-  // Slot and quantity
   scheduled_start DateTime @map("scheduled_start")
   scheduled_end   DateTime @map("scheduled_end")
   quantity        Int      @default(1)
-
-  // Pricing
+  serviceContext Json @default("{}") @map("service_context") @db.JsonB
+  quantityDimensions Json @default("{}") @map("quantity_dimensions") @db.JsonB
   price_breakdown        Json    @map("price_breakdown") @db.JsonB
   total_thb              Int     @map("total_thb")
   take_rate_pct_snapshot Decimal @map("take_rate_pct_snapshot")
-
-  // Status and lifecycle
+  termsSnapshot Json @default("{}") @map("terms_snapshot") @db.JsonB
+  quoteVersionId String? @unique @map("quote_version_id")
   status                   ServiceOrderStatus @default(placed)
   cancelled_at             DateTime?          @map("cancelled_at")
   cancelled_by_identity_id String?            @map("cancelled_by_identity_id")
@@ -1704,50 +1569,81 @@ model ServiceOrder {
   expired_at               DateTime?          @map("expired_at")
   fulfilled_at             DateTime?          @map("fulfilled_at")
   refund_accrued_thb       Int                @default(0) @map("refund_accrued_thb")
-
-  // Notes
+  closed_at             DateTime? @map("closed_at")
+  closed_by_identity_id String?   @map("closed_by_identity_id")
   note_to_provider String? @map("note_to_provider")
   address_note     String? @map("address_note")
-
-  // Relations
   service         Service          @relation(fields: [service_id], references: [id], onDelete: Cascade)
   provider        Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  project         Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project         Project?         @relation(fields: [project_id], references: [id], onDelete: SetNull)
   unit            Unit?            @relation(fields: [unit_id], references: [id], onDelete: SetNull)
   booking         Booking?         @relation(fields: [booking_id], references: [id], onDelete: SetNull)
   orderer         Identity         @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
   cancelledBy     Identity?        @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  closedBy        Identity?        @relation(name: "serviceOrderClosedBy", fields: [closed_by_identity_id], references: [id])
+  quoteVersion    ServiceQuoteVersion? @relation(fields: [quoteVersionId], references: [id], onDelete: SetNull)
   payments        Payment[]
   analyticsEvents AnalyticsEvent[]
-
   @@index([project_id, status, createdAt])
   @@index([provider_id, status])
   @@index([orderer_identity_id, createdAt])
   @@map("service_order")
 }
 
+model ServiceQuoteRequest {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  serviceId String @map("service_id")
+  projectId String? @map("project_id")
+  ordererIdentityId String @map("orderer_identity_id")
+  serviceContext Json @default("{}") @map("service_context") @db.JsonB
+  quantityDimensions Json @default("{}") @map("quantity_dimensions") @db.JsonB
+  status String @default("open")
+  expiresAt DateTime? @map("expires_at")
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  orderer Identity @relation(fields: [ordererIdentityId], references: [id], onDelete: Cascade)
+  versions ServiceQuoteVersion[]
+  @@index([ordererIdentityId, createdAt])
+  @@index([serviceId, status])
+  @@map("service_quote_request")
+}
+
+model ServiceQuoteVersion {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  requestId String @map("request_id")
+  version Int
+  providerId String @map("provider_id")
+  priceBreakdown Json @default("{}") @map("price_breakdown") @db.JsonB
+  totalThb Int @map("total_thb")
+  termsSnapshot Json @default("{}") @map("terms_snapshot") @db.JsonB
+  expiresAt DateTime @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+  request ServiceQuoteRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  serviceOrder ServiceOrder?
+  @@unique([requestId, version])
+  @@index([providerId, createdAt])
+  @@map("service_quote_version")
+}
+
 model Review {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   target_type        ReviewTargetType @map("target_type")
   target_id          String           @map("target_id")
   author_identity_id String           @map("author_identity_id")
-
-  rating  Int // 1-5
+  rating  Int
   comment String?
-
   reply               String?
   replied_at          DateTime? @map("replied_at")
   replier_identity_id String?   @map("replier_identity_id")
-
-  status String @default("published") // "published" or "hidden"
-
-  // Relations — polymorphic pattern (target_type determines what target_id references)
+  status String @default("published")
   author  Identity  @relation(fields: [author_identity_id], references: [id], onDelete: Cascade)
   replier Identity? @relation(name: "reviewRepliedBy", fields: [replier_identity_id], references: [id], onDelete: SetNull)
-
   @@unique([target_type, target_id, author_identity_id])
   @@index([target_type, target_id])
   @@index([author_identity_id])
@@ -1758,7 +1654,6 @@ model RoleAssignment {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId          String        @map("identity_id")
   role                RoleType
   scopeType           RoleScopeType @map("scope_type")
@@ -1768,15 +1663,12 @@ model RoleAssignment {
   providerId          String?       @map("provider_id")
   status              RoleStatus    @default(active)
   grantedByIdentityId String?       @map("granted_by_identity_id")
-
-  // Relations
   identity     Identity      @relation(name: "roleAssignmentIdentity", fields: [identityId], references: [id], onDelete: Cascade)
   project      Project?      @relation(name: "projectScope", fields: [projectId], references: [id], onDelete: Cascade)
   unit         Unit?         @relation(name: "unitScope", fields: [unitId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   provider     Provider?     @relation(fields: [providerId], references: [id], onDelete: Cascade)
   grantedBy    Identity?     @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
-
   @@index([identityId, status])
   @@map("role_assignment")
 }
@@ -1785,7 +1677,6 @@ model MediaAsset {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   storageKey           String         @unique @map("storage_key")
   kind                 MediaAssetKind
   mimeType             String         @map("mime_type")
@@ -1793,8 +1684,6 @@ model MediaAsset {
   uploadedByIdentityId String         @map("uploaded_by_identity_id")
   encrypted            Boolean        @default(false)
   deleteAfter          DateTime?      @map("delete_after")
-
-  // Relations
   uploadedBy               Identity               @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
   identityAvatars          Identity[]             @relation("identityAvatar")
   projectCovers            Project[]              @relation("projectCover")
@@ -1816,7 +1705,6 @@ model MediaAsset {
   orgLogos                 Organization[]         @relation("orgLogo")
   projectMasterplans       Project[]              @relation("projectMasterplan")
   regulatoryCredentialDocs RegulatoryCredential[] @relation("regulatoryDoc")
-
   @@index([deleteAfter])
   @@map("media_asset")
 }
@@ -1824,32 +1712,24 @@ model MediaAsset {
 model AuditLog {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   actorIdentityId String?  @map("actor_identity_id")
   action          String
   entityType      String   @map("entity_type")
   entityId        String   @map("entity_id")
   data            Json?    @db.JsonB
   at              DateTime @default(now())
-
-  // Relations
   actor Identity? @relation(name: "actor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
-
   @@index([entityType, entityId])
   @@index([actorIdentityId])
   @@map("audit_log")
 }
 
-// --- Join tables for many-to-many relationships ---
-
 model UnitMedia {
   unitId  String @map("unit_id")
   mediaId String @map("media_id")
   sort    Int    @default(0)
-
   unit  Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
   media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
   @@id([unitId, mediaId])
   @@map("unit_media")
 }
@@ -1858,21 +1738,16 @@ model ProjectMedia {
   projectId String @map("project_id")
   mediaId   String @map("media_id")
   sort      Int    @default(0)
-
   project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   media   MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
   @@id([projectId, mediaId])
   @@map("project_media")
 }
-
-// --- Configuration & content (minimal stubs for T-002, full schema in T-003/T-004) ---
 
 model ConfigParameter {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   key          String @unique
   valueType    String @map("value_type")
   defaultValue Json?  @map("default_value") @db.JsonB
@@ -1881,7 +1756,6 @@ model ConfigParameter {
   scopeableTo  String @map("scopeable_to")
   groupKey     String @map("group_key")
   description  String
-
   @@map("config_parameter")
 }
 
@@ -1889,13 +1763,11 @@ model ConfigOverride {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   parameterKey        String @map("parameter_key")
   scopeType           String @map("scope_type")
   scopeId             String @map("scope_id")
   value               Json   @db.JsonB
   updatedByIdentityId String @map("updated_by_identity_id")
-
   @@unique([parameterKey, scopeType, scopeId])
   @@map("config_override")
 }
@@ -1903,16 +1775,13 @@ model ConfigOverride {
 model ConfigChange {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   parameterKey        String  @map("parameter_key")
   scopeType           String? @map("scope_type")
   scopeId             String? @map("scope_id")
   oldValue            Json?   @map("old_value") @db.JsonB
   newValue            Json?   @map("new_value") @db.JsonB
   changedByIdentityId String  @map("changed_by_identity_id")
-
   changedBy Identity @relation(name: "changedBy", fields: [changedByIdentityId], references: [id])
-
   @@index([parameterKey])
   @@map("config_change")
 }
@@ -1921,14 +1790,11 @@ model ContentKey {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   key          String  @unique
   namespace    String
   description  String
   supportsRich Boolean @default(false) @map("supports_rich")
-
   translations Translation[]
-
   @@index([namespace])
   @@map("content_key")
 }
@@ -1937,36 +1803,28 @@ model Translation {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   contentKeyId        String @map("content_key_id")
   locale              String
   value               String
   status              String @default("ok")
   updatedByIdentityId String @map("updated_by_identity_id")
-
   contentKey ContentKey @relation(fields: [contentKeyId], references: [id], onDelete: Cascade)
   updatedBy  Identity   @relation(name: "updatedBy", fields: [updatedByIdentityId], references: [id])
-
   @@unique([contentKeyId, locale])
   @@map("translation")
 }
 
-// --- Notifications & messaging ---
-
 model Notification {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   identityId String           @map("identity_id")
   type       NotificationType
   params     Json             @db.JsonB
   titleKey   String           @map("title_key")
   bodyKey    String           @map("body_key")
   readAt     DateTime?        @map("read_at")
-
   identity   Identity               @relation(fields: [identityId], references: [id], onDelete: Cascade)
   deliveries NotificationDelivery[]
-
   @@index([identityId, createdAt])
   @@map("notification")
 }
@@ -1975,16 +1833,13 @@ model NotificationDelivery {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   notificationId String                     @map("notification_id")
   channel        NotificationChannel
   status         NotificationDeliveryStatus @default(pending)
   sentAt         DateTime?                  @map("sent_at")
   failureReason  String?                    @map("failure_reason")
   externalRef    String?                    @map("external_ref")
-
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-
   @@index([notificationId, channel])
   @@map("notification_delivery")
 }
@@ -1993,36 +1848,27 @@ model NotificationPreference {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId String              @map("identity_id")
   type       NotificationType
   channel    NotificationChannel
   muted      Boolean             @default(false)
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@unique([identityId, type, channel])
   @@map("notification_preference")
 }
-
-// --- Messaging ---
 
 model Thread {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   contextType   ThreadContextType @map("context_type")
   contextId     String?           @map("context_id")
   projectId     String?           @map("project_id")
   lastMessageAt DateTime?         @map("last_message_at")
-
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-
   participants ThreadParticipant[]
   messages     Message[]
   tickets      Ticket[]
-
   @@index([projectId, lastMessageAt])
   @@index([contextType, contextId])
   @@map("thread")
@@ -2032,16 +1878,13 @@ model ThreadParticipant {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   threadId        String    @map("thread_id")
   identityId      String    @map("identity_id")
   participantRole String    @map("participant_role")
   lastReadAt      DateTime? @map("last_read_at")
   muted           Boolean   @default(false)
-
   thread   Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@unique([threadId, identityId])
   @@index([identityId])
   @@map("thread_participant")
@@ -2050,15 +1893,12 @@ model ThreadParticipant {
 model Message {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   threadId         String      @map("thread_id")
   senderIdentityId String?     @map("sender_identity_id")
   body             String?
   messageKind      MessageKind @default(user) @map("message_kind")
-
   thread Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sender Identity? @relation(fields: [senderIdentityId], references: [id], onDelete: SetNull)
-
   @@index([threadId, createdAt])
   @@map("message")
 }
@@ -2067,26 +1907,20 @@ model Ticket {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId          String   @map("project_id")
   unitId             String?  @map("unit_id")
   raisedByIdentityId String   @map("raised_by_identity_id")
   raisedByRole       RoleType @map("raised_by_role")
   assigneeIdentityId String?  @map("assignee_identity_id")
-
   categoryKey String         @map("category_key")
   title       String
   description String?
   priority    TicketPriority @default(normal)
   status      TicketStatus   @default(open)
-
   slaDueAt       DateTime? @map("sla_due_at")
   resolvedAt     DateTime? @map("resolved_at")
   resolutionNote String?   @map("resolution_note")
-
   threadId String? @map("thread_id")
-
-  // Relations
   project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit     Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   raisedBy Identity      @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
@@ -2095,7 +1929,6 @@ model Ticket {
   events   TicketEvent[]
   media    TicketMedia[]
   dispute  Dispute?
-
   @@index([projectId, status])
   @@index([assigneeIdentityId, slaDueAt])
   @@map("ticket")
@@ -2104,16 +1937,12 @@ model Ticket {
 model TicketEvent {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   ticketId        String          @map("ticket_id")
   eventType       TicketEventType @map("event_type")
   actorIdentityId String?         @map("actor_identity_id")
   data            Json?
-
-  // Relations
   ticket Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   actor  Identity? @relation(fields: [actorIdentityId], references: [id], onDelete: SetNull)
-
   @@index([ticketId, createdAt])
   @@map("ticket_event")
 }
@@ -2121,15 +1950,11 @@ model TicketEvent {
 model TicketMedia {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   ticketId String @map("ticket_id")
   mediaId  String @map("media_id")
   position Int    @default(0)
-
-  // Relations
   ticket Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   media  MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
-
   @@unique([ticketId, mediaId])
   @@index([ticketId, position])
   @@map("ticket_media")
@@ -2141,35 +1966,22 @@ enum DisputeSubjectType {
   statement
 }
 
-// F-DIS-2 (doc 07 §8): "any party from a booking/order/statement raises a
-// dispute" → a Ticket(category=complaint, priority=high) whose thread is the
-// record — but a plain ticket has nowhere to hold *what* is disputed or the
-// money that comes out of the decision. This is that thin wrapper: one row
-// per ticket, naming the disputed record and, once decided, the refund or
-// ledger adjustment the admin's written decision produced. Money always
-// travels through the existing finance seam (refund / ledgerEntry); this
-// table only references the result, never creates money itself.
 model Dispute {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   ticketId    String             @unique @map("ticket_id")
   subjectType DisputeSubjectType @map("subject_type")
   subjectId   String             @map("subject_id")
-
   resolutionAmountThb Int?      @map("resolution_amount_thb")
   refundId            String?   @map("refund_id")
   ledgerEntryId       String?   @map("ledger_entry_id")
   decidedByIdentityId String?   @map("decided_by_identity_id")
   decidedAt           DateTime? @map("decided_at")
-
-  // Relations
   ticket      Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   refund      Refund?      @relation(fields: [refundId], references: [id], onDelete: SetNull)
   ledgerEntry LedgerEntry? @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
   decidedBy   Identity?    @relation(name: "disputeDecidedBy", fields: [decidedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([subjectType, subjectId])
   @@map("dispute")
 }
@@ -2178,11 +1990,9 @@ model Announcement {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId           String  @map("project_id")
   createdByIdentityId String  @map("created_by_identity_id")
   organizationId      String? @map("organization_id")
-
   title       String
   body        String
   audience    AnnouncementAudience
@@ -2191,13 +2001,10 @@ model Announcement {
   isPinned    Boolean              @default(false) @map("is_pinned")
   isImportant Boolean              @default(false) @map("is_important")
   expiresAt   DateTime?            @map("expires_at")
-
-  // Relations
   project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy    Identity           @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
   organization Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   reads        AnnouncementRead[]
-
   @@index([projectId, status, createdAt])
   @@index([postedAs, organizationId])
   @@map("announcement")
@@ -2206,43 +2013,32 @@ model Announcement {
 model AnnouncementRead {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   announcementId String @map("announcement_id")
   identityId     String @map("identity_id")
-
-  // Relations
   announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   identity     Identity     @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@unique([announcementId, identityId])
   @@index([identityId, createdAt])
   @@map("announcement_read")
 }
 
-// --- Operations (TM30, condition reports, compliance) ---
-
 model Tm30Filing {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   bookingId      String           @map("booking_id")
   bookingGuestId String           @unique @map("booking_guest_id")
   dueAt          DateTime         @map("due_at")
   status         Tm30FilingStatus @default(pending)
-
   filedAt           DateTime? @map("filed_at")
   filedByIdentityId String?   @map("filed_by_identity_id")
   receiptMediaId    String?   @map("receipt_media_id")
   failureNote       String?   @map("failure_note")
   escalatedAt       DateTime? @map("escalated_at")
-
-  // Relations
   booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingGuest BookingGuest @relation(fields: [bookingGuestId], references: [id], onDelete: Cascade)
   filedBy      Identity?    @relation(name: "tm30FilingFiled", fields: [filedByIdentityId], references: [id], onDelete: SetNull)
   receiptMedia MediaAsset?  @relation(name: "tm30Receipt", fields: [receiptMediaId], references: [id], onDelete: SetNull)
-
   @@index([bookingId, status])
   @@index([dueAt, status])
   @@index([filedByIdentityId])
@@ -2253,19 +2049,15 @@ model ConditionReport {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId              String              @map("unit_id")
   bookingId           String?             @map("booking_id")
   reportType          ConditionReportType @map("report_type")
   notes               String?
   createdByIdentityId String              @map("created_by_identity_id")
-
-  // Relations
   unit      Unit                   @relation(fields: [unitId], references: [id], onDelete: Cascade)
   booking   Booking?               @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   createdBy Identity               @relation(fields: [createdByIdentityId], references: [id], onDelete: Cascade)
   media     ConditionReportMedia[]
-
   @@index([unitId, reportType, createdAt])
   @@index([bookingId])
   @@map("condition_report")
@@ -2274,16 +2066,12 @@ model ConditionReport {
 model ConditionReportMedia {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   reportId String  @map("report_id")
   mediaId  String  @map("media_id")
   sort     Int     @default(0)
   caption  String?
-
-  // Relations
   report ConditionReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   media  MediaAsset      @relation(name: "conditionReportPhoto", fields: [mediaId], references: [id], onDelete: Restrict)
-
   @@unique([reportId, mediaId])
   @@index([reportId, sort])
   @@map("condition_report_media")
@@ -2293,23 +2081,18 @@ model ComplianceRecord {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId     String                 @map("unit_id")
   recordType ComplianceRecordType   @map("record_type")
   status     ComplianceRecordStatus @default(pending)
-
   label                String?
   expiresOn            DateTime? @map("expires_on") @db.Date
   mediaId              String?   @map("media_id")
   notes                String?
   verifiedAt           DateTime? @map("verified_at")
   verifiedByIdentityId String?   @map("verified_by_identity_id")
-
-  // Relations
   unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
   media      MediaAsset? @relation(name: "complianceRecordDoc", fields: [mediaId], references: [id], onDelete: SetNull)
   verifiedBy Identity?   @relation(name: "complianceVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([unitId, status])
   @@index([unitId, recordType])
   @@map("compliance_record")
@@ -2319,31 +2102,23 @@ model MobilizationChecklistItem {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId String                          @map("unit_id")
   step   MobilizationChecklistItemStep
   status MobilizationChecklistItemStatus @default(pending)
-
   completedAt           DateTime? @map("completed_at")
   completedByIdentityId String?   @map("completed_by_identity_id")
   notes                 String?
   requirementLabel      String?   @map("requirement_label")
-
-  // Relations
   unit        Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   completedBy Identity? @relation(name: "mobilizationCompletedBy", fields: [completedByIdentityId], references: [id], onDelete: SetNull)
-
   @@unique([unitId, step])
   @@index([unitId, status])
   @@map("mobilization_checklist_item")
 }
 
-// --- Phase 3: Operational KPIs & Compliance ---
-
 model OperationalKpi {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   unitId      String    @map("unit_id")
   metricName  String    @map("metric_name")
   periodStart DateTime  @map("period_start") @db.Date
@@ -2351,10 +2126,7 @@ model OperationalKpi {
   targetValue Decimal?  @map("target_value") @db.Decimal(10, 2)
   actualValue Decimal?  @map("actual_value") @db.Decimal(10, 2)
   status      KPIStatus @default(on_track)
-
-  // Relations
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   @@index([unitId, periodStart, periodEnd])
   @@index([metricName, status])
   @@map("operational_kpi")
@@ -2364,7 +2136,6 @@ model IncidentLog {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId               String           @map("unit_id")
   incidentType         IncidentType     @map("incident_type")
   severity             IncidentSeverity
@@ -2374,12 +2145,9 @@ model IncidentLog {
   status               IncidentStatus   @default(open)
   resolvedAt           DateTime?        @map("resolved_at")
   resolutionNotes      String?          @map("resolution_notes")
-
-  // Relations
   unit       Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   reportedBy Identity  @relation(name: "incidentReportedBy", fields: [reportedByIdentityId], references: [id], onDelete: Restrict)
   assignedTo Identity? @relation(name: "incidentAssignedTo", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
-
   @@index([unitId, status])
   @@index([severity])
   @@index([createdAt])
@@ -2390,14 +2158,10 @@ model ComplianceChecklistTemplate {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   name      String
   frequency ComplianceChecklistFrequency
   items     Json                         @default("[]") @db.JsonB
-
-  // Relations
   instances ComplianceChecklistInstance[]
-
   @@map("compliance_checklist_template")
 }
 
@@ -2405,7 +2169,6 @@ model ComplianceChecklistInstance {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId              String    @map("unit_id")
   templateId          String    @map("template_id")
   dueDate             DateTime  @map("due_date") @db.Date
@@ -2413,23 +2176,17 @@ model ComplianceChecklistInstance {
   checkedByIdentityId String?   @map("checked_by_identity_id")
   passed              Boolean?
   notes               String?
-
-  // Relations
   unit      Unit                        @relation(fields: [unitId], references: [id], onDelete: Cascade)
   template  ComplianceChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   checkedBy Identity?                   @relation(name: "complianceChecklistCheckedBy", fields: [checkedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([unitId, dueDate])
   @@index([passed])
   @@map("compliance_checklist_instance")
 }
 
-// --- Analytics & signals ---
-
 model AnalyticsEvent {
   id         String   @id @default(uuid())
   occurredAt DateTime @default(now()) @map("occurred_at")
-
   eventKey        AnalyticsEventKey @map("event_key")
   projectId       String?           @map("project_id")
   unitId          String?           @map("unit_id")
@@ -2437,18 +2194,13 @@ model AnalyticsEvent {
   serviceOrderId  String?           @map("service_order_id")
   identityId      String?           @map("identity_id")
   actorIdentityId String?           @map("actor_identity_id")
-
-  // JSON payload for event-specific dimensions (no PII per doc 12)
   dimensions Json @default("{}")
-
-  // Relations
   project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   unit          Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   serviceOrder  ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
   identity      Identity?     @relation(name: "analyticsEventIdentity", fields: [identityId], references: [id], onDelete: SetNull)
   actorIdentity Identity?     @relation(name: "analyticsEventActor", fields: [actorIdentityId], references: [id], onDelete: SetNull)
-
   @@index([eventKey, occurredAt])
   @@index([projectId, occurredAt])
   @@index([unitId, occurredAt])
@@ -2459,27 +2211,19 @@ model AnalyticsEvent {
 model MetricDaily {
   id   String   @id @default(uuid())
   date DateTime @map("date") @db.Date
-
   projectId String @map("project_id")
   unitId    String @map("unit_id")
-
-  // Core metrics
   nightsAvailable          Int @default(0) @map("nights_available")
   nightsOccupied           Int @default(0) @map("nights_occupied")
   ownerStayNights          Int @default(0) @map("owner_stay_nights")
   rentalRevenueCents       Int @default(0) @map("rental_revenue_cents")
   serviceOrderCount        Int @default(0) @map("service_order_count")
   serviceOrderRevenueCents Int @default(0) @map("service_order_revenue_cents")
-
-  // Derived metrics (computed on read)
   occupancyPct Float? @map("occupancy_pct")
   adrCents     Int?   @map("adr_cents")
   revpanCents  Int?   @map("revpan_cents")
-
-  // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit    Unit    @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   @@unique([unitId, date])
   @@index([projectId, date])
   @@index([date])
@@ -2490,34 +2234,25 @@ model BuyerSignal {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId String            @map("identity_id")
   signalKey  BuyerSignalKey    @map("signal_key")
   status     BuyerSignalStatus @default(open)
   strength   Int               @default(1)
-
-  // Dedup: only one open signal per identity+key at a time
   closedAt             DateTime? @map("closed_at")
   notes                String?
   reviewedByIdentityId String?   @map("reviewed_by_identity_id")
-
-  // Relations
   identity   Identity  @relation(fields: [identityId], references: [id], onDelete: Cascade)
   reviewedBy Identity? @relation(name: "buyerSignalReviewer", fields: [reviewedByIdentityId], references: [id], onDelete: SetNull)
-
   @@unique([identityId, signalKey])
   @@index([status, createdAt])
   @@index([signalKey, status])
   @@map("buyer_signal")
 }
 
-// --- CRM: one commercial memory around the same Identity used by Stay and Own ---
-
 model CrmProfile {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId                String            @unique @map("identity_id")
   lifecycleStage            CrmLifecycleStage @default(contact) @map("lifecycle_stage")
   accountOwnerIdentityId    String?           @map("account_owner_identity_id")
@@ -2538,13 +2273,11 @@ model CrmProfile {
   sourceMedium              String?           @map("source_medium")
   sourceCampaign            String?           @map("source_campaign")
   referrerIdentityId        String?           @map("referrer_identity_id")
-
   identity             Identity                 @relation(fields: [identityId], references: [id], onDelete: Cascade)
   accountOwner         Identity?                @relation("accountOwner", fields: [accountOwnerIdentityId], references: [id], onDelete: SetNull)
   sourceChannel        Channel?                 @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
   referrer             Identity?                @relation("referrerTo", fields: [referrerIdentityId], references: [id], onDelete: SetNull)
   lifecycleTransitions LifecycleTransitionLog[] @relation("profileTransitions")
-
   @@index([lifecycleStage, nextActionAt])
   @@index([leadScore])
   @@index([accountOwnerIdentityId])
@@ -2556,16 +2289,13 @@ model CrmProfile {
 model LifecycleTransitionLog {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   profileId            String            @map("profile_id")
   fromStage            CrmLifecycleStage @map("from_stage")
   toStage              CrmLifecycleStage @map("to_stage")
   reason               String?
   approvedByIdentityId String?           @map("approved_by_identity_id")
-
   profile    CrmProfile @relation("profileTransitions", fields: [profileId], references: [id], onDelete: Cascade)
   approvedBy Identity?  @relation("lifecycleApprover", fields: [approvedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([profileId])
   @@index([createdAt])
   @@map("lifecycle_transition_log")
@@ -2578,9 +2308,7 @@ model Channel {
   name        String
   category    ChannelCategory
   description String?
-
   crmProfiles CrmProfile[]
-
   @@index([category])
   @@map("channel")
 }
@@ -2597,10 +2325,8 @@ model ProspectingAccount {
   assignedToIdentityId String?                  @map("assigned_to_identity_id")
   lastContactedAt      DateTime?                @map("last_contacted_at")
   expectedCloseAt      DateTime?                @map("expected_close_at")
-
   identity   Identity  @relation("prospectingContact", fields: [identityId], references: [id], onDelete: Cascade)
   assignedTo Identity? @relation("prospectingAssignee", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
-
   @@index([identityId])
   @@index([status])
   @@index([assignedToIdentityId])
@@ -2612,7 +2338,6 @@ model CrmOpportunity {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId           String              @map("identity_id")
   assignedToIdentityId String?             @map("assigned_to_identity_id")
   projectId            String?             @map("project_id")
@@ -2621,8 +2346,6 @@ model CrmOpportunity {
   stage                CrmOpportunityStage @default(new)
   title                String
   source               String
-  /// Satang, like every other amount in this schema (CLAUDE.md money rules,
-  /// D11). Held baht until 20260906000026; see that migration.
   valueThb             Int?                @map("value_thb")
   probability          Int                 @default(10)
   requirements         Json                @default("{}")
@@ -2632,13 +2355,11 @@ model CrmOpportunity {
   lostAt               DateTime?           @map("lost_at")
   lostReason           String?             @map("lost_reason")
   externalPartner      String?             @map("external_partner")
-
   identity   Identity      @relation("crmOpportunityContact", fields: [identityId], references: [id], onDelete: Cascade)
   assignedTo Identity?     @relation("crmOpportunityAssignee", fields: [assignedToIdentityId], references: [id], onDelete: SetNull)
   project    Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   unit       Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   activities CrmActivity[]
-
   @@index([stage, nextActionAt])
   @@index([identityId, createdAt])
   @@index([assignedToIdentityId, stage])
@@ -2650,7 +2371,6 @@ model CrmActivity {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId          String            @map("identity_id")
   opportunityId       String?           @map("opportunity_id")
   createdByIdentityId String?           @map("created_by_identity_id")
@@ -2662,11 +2382,9 @@ model CrmActivity {
   completedAt         DateTime?         @map("completed_at")
   channelReference    String?           @map("channel_reference")
   metadata            Json              @default("{}")
-
   identity    Identity        @relation("crmActivityContact", fields: [identityId], references: [id], onDelete: Cascade)
   opportunity CrmOpportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   createdBy   Identity?       @relation("crmActivityCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([status, dueAt])
   @@index([identityId, createdAt])
   @@index([opportunityId, createdAt])
@@ -2677,7 +2395,6 @@ model CrmConsent {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   identityId String            @map("identity_id")
   purpose    CrmConsentPurpose
   status     CrmConsentStatus
@@ -2685,9 +2402,7 @@ model CrmConsent {
   capturedAt DateTime          @default(now()) @map("captured_at")
   expiresAt  DateTime?         @map("expires_at")
   evidence   Json              @default("{}")
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@index([identityId, purpose, capturedAt])
   @@index([status, expiresAt])
   @@map("crm_consent")
@@ -2696,7 +2411,6 @@ model CrmConsent {
 model CrmAttributionTouch {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   identityId  String       @map("identity_id")
   touchType   CrmTouchType @map("touch_type")
   source      String
@@ -2707,21 +2421,16 @@ model CrmAttributionTouch {
   referrer    String?
   occurredAt  DateTime     @default(now()) @map("occurred_at")
   metadata    Json         @default("{}")
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@index([identityId, occurredAt])
   @@index([source, campaign, occurredAt])
   @@map("crm_attribution_touch")
 }
 
-// --- Business Model Tracking (management contracts and earned fees) ---
-
 model ManagementContract {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId                   String             @map("unit_id")
   projectId                String             @map("project_id")
   ownerIdentityId          String             @map("owner_identity_id")
@@ -2737,14 +2446,11 @@ model ManagementContract {
   status                   ContractStatus     @default(active)
   signedAt                 DateTime?          @map("signed_at")
   signedByOwnerIdentityId  String?            @map("signed_by_owner_identity_id")
-
-  // Relations
   unit             Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
   project          Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   ownerIdentity    Identity    @relation("contractOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
   signedByIdentity Identity?   @relation("contractSignatory", fields: [signedByOwnerIdentityId], references: [id], onDelete: SetNull)
   earnedFees       EarnedFee[]
-
   @@index([unitId])
   @@index([projectId])
   @@index([ownerIdentityId])
@@ -2756,7 +2462,6 @@ model ManagementContract {
 model EarnedFee {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   managementContractId String    @map("management_contract_id")
   feeType              FeeType   @map("fee_type")
   periodStart          DateTime  @map("period_start") @db.Date
@@ -2766,10 +2471,7 @@ model EarnedFee {
   status               FeeStatus @default(accrued)
   invoiceId            String?   @map("invoice_id")
   paidAt               DateTime? @map("paid_at")
-
-  // Relations
   managementContract ManagementContract @relation(fields: [managementContractId], references: [id], onDelete: Cascade)
-
   @@index([managementContractId])
   @@index([periodStart, periodEnd])
   @@index([status])
@@ -2777,32 +2479,21 @@ model EarnedFee {
   @@map("earned_fee")
 }
 
-// --- Integrations (iCal, payment providers, messaging, controlled exports) ---
-
 model IntegrationAccount {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // What integration and where it's scoped
   integrationKey IntegrationKey       @map("integration_key")
   scopeType      IntegrationScopeType @map("scope_type")
-
-  // Scope IDs: only one of these is populated based on scopeType
   platformId String? @map("platform_id")
   projectId  String? @map("project_id")
   unitId     String? @map("unit_id")
-
-  // Integration state & secrets
-  config     Json              @default("{}") // contains provider_account, auth tokens, etc. — encrypted per doc 12
+  config     Json              @default("{}")
   status     IntegrationStatus @default(active)
   lastSyncAt DateTime?         @map("last_sync_at")
   lastError  String?           @map("last_error")
-
-  // Relations
   project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit    Unit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   @@unique([integrationKey, scopeType, projectId, unitId])
   @@index([scopeType, projectId])
   @@index([scopeType, unitId])
@@ -2810,80 +2501,52 @@ model IntegrationAccount {
   @@map("integration_account")
 }
 
-/// Who held title to a unit, and when.
-///
-/// `Unit.ownerIdentityId` remains the denormalised current owner that most reads
-/// use; this is the record of fact behind it. Both are written in one
-/// transaction by `setUnitOwner`, and a database exclusion constraint stops one
-/// unit having two owners on the same day.
 model OwnershipPeriod {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   unitId               String    @map("unit_id")
   ownerIdentityId      String    @map("owner_identity_id")
   startsOn             DateTime  @map("starts_on") @db.Date
-  /// Null means this is the current owner.
   endsOn               DateTime? @map("ends_on") @db.Date
   note                 String?
   recordedByIdentityId String?   @map("recorded_by_identity_id")
-
-  // Relations
   unit       Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner      Identity  @relation(name: "ownershipPeriodOwner", fields: [ownerIdentityId], references: [id])
   recordedBy Identity? @relation(name: "ownershipPeriodRecorder", fields: [recordedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([unitId, startsOn])
   @@index([ownerIdentityId])
   @@map("ownership_period")
 }
 
-/// A villa someone kept, so a browse that ends has something to come back to.
 model SavedUnit {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-
   identityId String  @map("identity_id")
   unitId     String  @map("unit_id")
-  /// Free-text list name. Null is the default list.
   collection String?
   note       String?
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
   unit     Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   @@index([identityId])
   @@index([unitId])
   @@map("saved_unit")
 }
 
-/// A filter set someone kept, so we can tell them when something matches.
 model SavedSearch {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-  /// `@default(now())` mirrors the DEFAULT the creating migration wrote. Prisma
-  /// always supplies this value, so the default never fires — but without it
-  /// declared, `migrate diff` reports drift on an otherwise clean database.
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
   identityId    String    @map("identity_id")
   name          String?
-  /// The criteria themselves, not a query string — a URL shape is presentation.
   criteria      Json      @db.JsonB
   alertsEnabled Boolean   @default(true) @map("alerts_enabled")
   lastAlertedAt DateTime? @map("last_alerted_at")
-
   identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-
   @@index([identityId])
   @@index([alertsEnabled])
   @@map("saved_search")
 }
 
-/// One execution of a registered scheduler job (doc 14 §1, doc 15 §5).
-/// Append-only: the health panel shows the latest row per `job_key`. A job
-/// that has never written a row, or whose last success is older than its
-/// cadence, is a red light — not a mystery.
 model JobRun {
   id         String        @id @default(uuid())
   createdAt  DateTime      @default(now()) @map("created_at")
@@ -2891,21 +2554,15 @@ model JobRun {
   startedAt  DateTime      @map("started_at")
   finishedAt DateTime      @map("finished_at")
   outcome    JobRunOutcome
-  /// Short count/status text. Never error messages — Prisma failures can carry
-  /// connection strings, and a stack can carry PII.
   summary    String?
-
   @@index([jobKey, startedAt])
   @@map("job_run")
 }
-
-// --- Canonical Property Data System Extensions ---
 
 model ProjectOrganizationRole {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId      String    @map("project_id")
   organizationId String    @map("organization_id")
   roleKey        String    @map("role_key")
@@ -2914,10 +2571,8 @@ model ProjectOrganizationRole {
   isPrimary      Boolean   @default(false) @map("is_primary")
   notes          String?
   provenance     String?   @default("verified")
-
   project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
   @@unique([projectId, organizationId, roleKey])
   @@index([projectId, roleKey])
   @@index([organizationId])
@@ -2928,15 +2583,12 @@ model SleepingSpace {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   unitId    String  @map("unit_id")
   spaceType String  @default("bedroom") @map("space_type")
   name      String?
   sortOrder Int     @default(0) @map("sort_order")
-
   unit Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
   beds Bed[]
-
   @@index([unitId, sortOrder])
   @@map("sleeping_space")
 }
@@ -2945,13 +2597,10 @@ model Bed {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   sleepingSpaceId String @map("sleeping_space_id")
   bedType         String @map("bed_type")
   count           Int    @default(1)
-
   sleepingSpace SleepingSpace @relation(fields: [sleepingSpaceId], references: [id], onDelete: Cascade)
-
   @@index([sleepingSpaceId])
   @@map("bed")
 }
@@ -2960,20 +2609,16 @@ model CommercialOffering {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId    String? @map("project_id")
   unitId       String? @map("unit_id")
   offeringType String  @map("offering_type")
   status       String  @default("active")
-
   pricingTerms     Json @default("{}") @map("pricing_terms") @db.JsonB
   rulesAndPolicies Json @default("{}") @map("rules_and_policies") @db.JsonB
   ownershipTenure  Json @default("{}") @map("ownership_tenure") @db.JsonB
-
   project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
-
   @@index([unitId, offeringType])
   @@index([projectId, offeringType])
   @@map("commercial_offering")
@@ -2983,7 +2628,6 @@ model ChannelMapping {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   offeringId        String    @map("offering_id")
   channel           String
   externalListingId String?   @map("external_listing_id")
@@ -2992,9 +2636,7 @@ model ChannelMapping {
   lastSyncAt        DateTime? @map("last_sync_at")
   channelOverrides  Json      @default("{}") @map("channel_overrides") @db.JsonB
   syncErrors        Json      @default("[]") @map("sync_errors") @db.JsonB
-
   offering CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
-
   @@unique([offeringId, channel])
   @@map("channel_mapping")
 }
@@ -3003,16 +2645,13 @@ model RegulatoryCredential {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   requirementKey      String @map("requirement_key")
   jurisdictionCountry String @default("TH") @map("jurisdiction_country")
   credentialType      String @map("credential_type")
   scopeLevel          String @map("scope_level")
-
   organizationId String? @map("organization_id")
   projectId      String? @map("project_id")
   unitId         String? @map("unit_id")
-
   registrationNumber String?   @map("registration_number")
   issuingAuthority   String?   @map("issuing_authority")
   legalHolderName    String?   @map("legal_holder_name")
@@ -3021,19 +2660,16 @@ model RegulatoryCredential {
   expiryDate         DateTime? @map("expiry_date")
   status             String    @default("active")
   exemptionBasis     String?   @map("exemption_basis")
-
   evidenceMediaId      String?   @map("evidence_media_id")
   verificationStatus   String    @default("verified") @map("verification_status")
   verifiedByIdentityId String?   @map("verified_by_identity_id")
   verifiedAt           DateTime? @map("verified_at")
   notes                String?
-
   organization  Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   unit          Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   evidenceMedia MediaAsset?   @relation(name: "regulatoryDoc", fields: [evidenceMediaId], references: [id], onDelete: SetNull)
   verifiedBy    Identity?     @relation(name: "credentialVerifier", fields: [verifiedByIdentityId], references: [id], onDelete: SetNull)
-
   @@index([organizationId, status])
   @@index([projectId, status])
   @@index([unitId, status])
@@ -3045,7 +2681,6 @@ model InventoryCategory {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId             String  @map("project_id")
   categoryKey           String  @map("category_key")
   name                  String
@@ -3056,11 +2691,9 @@ model InventoryCategory {
   minNights             Int     @default(1) @map("min_nights")
   cancellationPolicyKey String? @map("cancellation_policy_key")
   status                String  @default("live")
-
   project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   units     Unit[]
   ratePlans RatePlan[]
-
   @@unique([projectId, categoryKey])
   @@map("inventory_category")
 }
@@ -3069,11 +2702,9 @@ model RatePlan {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   projectId  String? @map("project_id")
   categoryId String? @map("category_id")
   unitId     String? @map("unit_id")
-
   code                  String
   name                  String
   isMaster              Boolean  @default(true) @map("is_master")
@@ -3083,15 +2714,140 @@ model RatePlan {
   cancellationPolicyKey String?  @map("cancellation_policy_key")
   minNights             Int?     @map("min_nights")
   status                String   @default("active")
-
   project          Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   category         InventoryCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   unit             Unit?              @relation(fields: [unitId], references: [id], onDelete: Cascade)
   parentRatePlan   RatePlan?          @relation(name: "derivedRatePlan", fields: [parentRatePlanId], references: [id], onDelete: SetNull)
   derivedRatePlans RatePlan[]         @relation(name: "derivedRatePlan")
-
   @@unique([projectId, code])
   @@index([categoryId])
   @@index([unitId])
   @@map("rate_plan")
+}
+
+model BookingReschedule {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  bookingId String @map("booking_id")
+  requestedByIdentityId String @map("requested_by_identity_id")
+  oldStartDate DateTime @map("old_start_date") @db.Date
+  oldEndDate DateTime @map("old_end_date") @db.Date
+  newStartDate DateTime @map("new_start_date") @db.Date
+  newEndDate DateTime @map("new_end_date") @db.Date
+  previousTotalThb Int @map("previous_total_thb")
+  newTotalThb Int @map("new_total_thb")
+  priceDeltaThb Int @map("price_delta_thb")
+  pricingSnapshot Json @default("{}") @map("pricing_snapshot") @db.JsonB
+  status String @default("pending_funding")
+  holdExpiresAt DateTime @map("hold_expires_at")
+  paymentId String? @map("payment_id")
+  committedAt DateTime? @map("committed_at")
+  releasedAt DateTime? @map("released_at")
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  requestedBy Identity @relation(fields: [requestedByIdentityId], references: [id], onDelete: Restrict)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  @@index([bookingId, createdAt])
+  @@index([status, holdExpiresAt])
+  @@map("booking_reschedule")
+}
+
+model ExternalSystem {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  systemKey String @map("system_key")
+  environment String
+  displayName String @map("display_name")
+  status String @default("active")
+  config Json @default("{}") @db.JsonB
+  mappings ExternalMapping[]
+  inboxEvents ExternalEventInbox[]
+  checkpoints ExternalAggregateCheckpoint[]
+  @@unique([systemKey, environment])
+  @@map("external_system")
+}
+
+model ExternalMapping {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  externalSystemId String @map("external_system_id")
+  entityType String @map("entity_type")
+  internalId String @map("internal_id")
+  externalId String @map("external_id")
+  externalVersion BigInt? @map("external_version")
+  lastSeenAt DateTime? @map("last_seen_at")
+  metadata Json @default("{}") @db.JsonB
+  externalSystem ExternalSystem @relation(fields: [externalSystemId], references: [id], onDelete: Cascade)
+  @@unique([externalSystemId, entityType, externalId])
+  @@unique([externalSystemId, entityType, internalId])
+  @@index([entityType, internalId])
+  @@map("external_mapping")
+}
+
+model ExternalEventInbox {
+  id String @id @default(uuid())
+  receivedAt DateTime @default(now()) @map("received_at")
+  externalSystemId String @map("external_system_id")
+  eventId String @map("event_id")
+  aggregateType String @map("aggregate_type")
+  aggregateExternalId String @map("aggregate_external_id")
+  eventType String @map("event_type")
+  eventVersion BigInt? @map("event_version")
+  occurredAt DateTime @map("occurred_at")
+  payload Json @db.JsonB
+  payloadHash String @map("payload_hash")
+  status String @default("received")
+  processedAt DateTime? @map("processed_at")
+  errorCode String? @map("error_code")
+  externalSystem ExternalSystem @relation(fields: [externalSystemId], references: [id], onDelete: Cascade)
+  @@unique([externalSystemId, eventId])
+  @@index([status, receivedAt])
+  @@map("external_event_inbox")
+}
+
+model ExternalAggregateCheckpoint {
+  externalSystemId String @map("external_system_id")
+  aggregateType String @map("aggregate_type")
+  aggregateExternalId String @map("aggregate_external_id")
+  lastEventId String @map("last_event_id")
+  lastEventVersion BigInt? @map("last_event_version")
+  lastOccurredAt DateTime @map("last_occurred_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  externalSystem ExternalSystem @relation(fields: [externalSystemId], references: [id], onDelete: Cascade)
+  @@id([externalSystemId, aggregateType, aggregateExternalId])
+  @@map("external_aggregate_checkpoint")
+}
+
+model PropertyOnboardingTemplate {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  templateKey String @map("template_key")
+  version Int
+  name String
+  propertyType String @map("property_type")
+  configuration Json @default("{}") @db.JsonB
+  checklist Json @default("[]") @db.JsonB
+  active Boolean @default(true)
+  drafts ProjectOnboardingDraft[]
+  @@unique([templateKey, version])
+  @@map("property_onboarding_template")
+}
+
+model ProjectOnboardingDraft {
+  projectId String @id @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  templateId String? @map("template_id")
+  stageData Json @default("{}") @map("stage_data") @db.JsonB
+  inheritedConfiguration Json @default("{}") @map("inherited_configuration") @db.JsonB
+  lastStage String? @map("last_stage")
+  updatedByIdentityId String? @map("updated_by_identity_id")
+  autosavedAt DateTime @default(now()) @map("autosaved_at")
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  template PropertyOnboardingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  updatedBy Identity? @relation(fields: [updatedByIdentityId], references: [id], onDelete: SetNull)
+  @@map("project_onboarding_draft")
 }

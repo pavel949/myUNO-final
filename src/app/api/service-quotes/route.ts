@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
       quantityDimensions: body.quantityDimensions && typeof body.quantityDimensions === 'object' ? body.quantityDimensions : {},
       noteToProvider: typeof body.noteToProvider === 'string' ? body.noteToProvider : undefined,
     });
-    return NextResponse.json({ quoteRequest: request }, { status: 201 });
+    // `request` is the canonical public response key used by the order wizard.
+    // Keep `quoteRequest` as a compatibility alias for API consumers created
+    // while the endpoint was first introduced.
+    return NextResponse.json({ request, quoteRequest: request }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       return NextResponse.json({ error: error.message }, { status: 400 });

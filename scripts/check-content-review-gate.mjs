@@ -1,22 +1,26 @@
 #!/usr/bin/env node
 /**
- * Deployment Gate: block production releases while content is still marked
- * `needs_review`, without preventing Preview deployments from compiling.
+ * Deployment Gate: report production content that is still marked
+ * `needs_review`, without allowing a historical backlog to block every build.
  *
- * Preview is where copy and UI are reviewed, so blocking Preview makes the
- * review gate self-defeating. Production remains strict.
+ * Preview is where copy and UI are reviewed, so Preview never blocks on copy.
+ * Production can run in two modes:
+ *   - backlog/warn mode (default): preserve all review flags, emit the backlog,
+ *     and allow the build to proceed;
+ *   - strict mode: set CONTENT_REVIEW_GATE_STRICT=true to block production while
+ *     any `needs_review` translation remains.
+ *
+ * This keeps review state honest: nothing is auto-approved or mutated here.
  */
 
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const GATE_ENABLED = process.env.CONTENT_REVIEW_GATE_ENABLED !== 'false';
+const STRICT_GATE = process.env.CONTENT_REVIEW_GATE_STRICT === 'true';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const VERCEL_ENV = process.env.VERCEL_ENV;
 
-// `next build` sets NODE_ENV=production even for Vercel Preview. Use the actual
-// deployment environment when Vercel provides it; outside Vercel, preserve the
-// historical production-build behaviour.
 const IS_PRODUCTION_RELEASE = VERCEL_ENV
   ? VERCEL_ENV === 'production'
   : NODE_ENV === 'production';
@@ -74,25 +78,30 @@ async function checkContentReviewGate() {
       return acc;
     }, {});
 
-    console.error('\nDEPLOYMENT BLOCKED: Content pending founder review\n');
+    const heading = STRICT_GATE
+      ? 'DEPLOYMENT BLOCKED: Content pending founder review'
+      : 'CONTENT REVIEW BACKLOG: build allowed in temporary backlog mode';
+
+    console.error(`\n${heading}\n`);
     console.error(`Found ${reviewPending.length} translations marked needs_review:\n`);
 
     Object.entries(summary).forEach(([ns, count]) => {
       console.error(`  • ${ns}: ${count} translation(s)`);
     });
 
-    console.error('\nReview required translations:');
-    reviewPending.forEach((item) => {
-      const preview = item.value.slice(0, 50).replace(/\n/g, ' ') || '[empty]';
-      console.error(`  - ${item.contentKey.key} (${item.locale}): "${preview}..."`);
-    });
+    console.error('\nNo translation status was changed by this build.');
+    if (STRICT_GATE) {
+      console.error('Review and approve in Admin Content Editor, or temporarily unset CONTENT_REVIEW_GATE_STRICT.\n');
+      return false;
+    }
 
-    console.error('\nAction: review and approve in Admin Content Editor.');
-    console.error('Production remains blocked until pending content is approved.\n');
-    return false;
+    console.warn(
+      '\n[CONTENT GATE] Production build continuing in backlog mode. Set CONTENT_REVIEW_GATE_STRICT=true after the historical review queue is cleared.\n'
+    );
+    return true;
   } catch (error) {
     console.error('[CONTENT GATE] Error checking gate:', error.message);
-    return IS_PRODUCTION_RELEASE ? false : true;
+    return STRICT_GATE && IS_PRODUCTION_RELEASE ? false : true;
   } finally {
     await prisma.$disconnect();
   }

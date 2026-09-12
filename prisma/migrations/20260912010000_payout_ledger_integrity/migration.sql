@@ -2,7 +2,7 @@
 -- ledger consequence and payout creation must be race-safe.
 
 ALTER TABLE "ledger_entry"
-  ADD COLUMN "payout_id" UUID;
+  ADD COLUMN "payout_id" TEXT;
 
 ALTER TABLE "ledger_entry"
   ADD CONSTRAINT "ledger_entry_payout_id_fkey"

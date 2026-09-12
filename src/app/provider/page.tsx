@@ -49,6 +49,7 @@ export default async function ProviderPage() {
       'provider.orders.sla_left': 'Respond within {time}',
       'provider.orders.sla_overdue': 'Response overdue',
       'provider.orders.note': 'Customer note',
+      'provider.orders.location': 'Fulfillment location',
       'provider.orders.error_generic': 'Something went wrong. Please try again.',
       'services.order_status.placed': 'New',
       'services.order_status.paid': 'Paid',

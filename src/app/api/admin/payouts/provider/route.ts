@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { Prisma } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -147,6 +148,12 @@ export async function POST(req: NextRequest) {
       message: `Provider payout recorded for ${payout.provider?.name}: ฿${(payout.amountThb / 100).toLocaleString()}`,
     })
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Payout already recorded for this provider and period' },
+        { status: 409 }
+      )
+    }
     return handleError(error)
   }
 }

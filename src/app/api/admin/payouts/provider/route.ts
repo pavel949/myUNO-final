@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
 import { computeProviderRemittance } from '@/modules/finance'
+import { recordProviderPayoutAtomic } from '@/modules/finance/payout-ledger.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,8 +40,14 @@ export async function POST(req: NextRequest) {
 
     const periodStart = new Date(body.periodStart)
     const periodEnd = new Date(body.periodEnd)
-    if (Number.isNaN(periodStart.getTime()) || Number.isNaN(periodEnd.getTime()) || periodStart >= periodEnd) {
-      return NextResponse.json({ error: 'periodStart and periodEnd must be valid dates with start before end' }, { status: 400 })
+    const executedOn = new Date(body.executedOn)
+    if (
+      Number.isNaN(periodStart.getTime()) ||
+      Number.isNaN(periodEnd.getTime()) ||
+      Number.isNaN(executedOn.getTime()) ||
+      periodStart >= periodEnd
+    ) {
+      return NextResponse.json({ error: 'Payout dates must be valid and periodStart must be before periodEnd' }, { status: 400 })
     }
 
     const remittance = await computeProviderRemittance(prisma, body.providerId, periodStart, periodEnd)
@@ -82,20 +89,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payout already recorded for this provider and period' }, { status: 409 })
     }
 
-    const payout = await prisma.payout.create({
-      data: {
-        payeeType: 'provider',
-        providerId: body.providerId,
-        periodStart,
-        periodEnd,
-        amountThb: body.amountThb,
-        method: 'bank_transfer_thb',
-        reference: body.reference,
-        executedOn: new Date(body.executedOn),
-        recordedByIdentityId: guard.actorIdentityId,
-        status: 'recorded',
-      },
-      include: { provider: { select: { name: true } } },
+    const payout = await recordProviderPayoutAtomic(prisma, {
+      providerId: body.providerId,
+      periodStart,
+      periodEnd,
+      amountThb: body.amountThb,
+      reference: body.reference,
+      executedOn,
+      recordedByIdentityId: guard.actorIdentityId,
     })
 
     return NextResponse.json({
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
         createdAt: payout.createdAt.toISOString(),
       },
       remittanceDetails: remittance,
-      message: `Provider payout recorded for ${payout.provider?.name}: ฿${(payout.amountThb / 100).toLocaleString()}`,
+      message: `Provider payout recorded for ${provider.name}: ฿${(payout.amountThb / 100).toLocaleString()}`,
     })
   } catch (error) {
     return handleError(error)

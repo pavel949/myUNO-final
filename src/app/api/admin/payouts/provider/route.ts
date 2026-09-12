@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -39,8 +40,14 @@ export async function POST(req: NextRequest) {
 
     const periodStart = new Date(body.periodStart)
     const periodEnd = new Date(body.periodEnd)
-    if (Number.isNaN(periodStart.getTime()) || Number.isNaN(periodEnd.getTime()) || periodStart >= periodEnd) {
-      return NextResponse.json({ error: 'periodStart and periodEnd must be valid dates with start before end' }, { status: 400 })
+    const executedOn = new Date(body.executedOn)
+    if (
+      Number.isNaN(periodStart.getTime()) ||
+      Number.isNaN(periodEnd.getTime()) ||
+      Number.isNaN(executedOn.getTime()) ||
+      periodStart >= periodEnd
+    ) {
+      return NextResponse.json({ error: 'periodStart, periodEnd and executedOn must be valid dates with start before end' }, { status: 400 })
     }
 
     const remittance = await computeProviderRemittance(prisma, body.providerId, periodStart, periodEnd)
@@ -85,20 +92,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payout already recorded for this provider and period' }, { status: 409 })
     }
 
-    const payout = await prisma.payout.create({
-      data: {
-        payeeType: 'provider',
-        providerId: body.providerId,
-        periodStart,
-        periodEnd,
-        amountThb: body.amountThb,
-        method: 'bank_transfer_thb',
-        reference: body.reference,
-        executedOn: new Date(body.executedOn),
-        recordedByIdentityId: guard.actorIdentityId,
-        status: 'recorded',
-      },
-      include: { provider: { select: { name: true } } },
+    const payout = await prisma.$transaction(async (tx) => {
+      // The database has a unique provider+period guard as the final concurrency
+      // barrier. The pre-check above exists only to return a friendly 409.
+      const created = await tx.payout.create({
+        data: {
+          payeeType: 'provider',
+          providerId: body.providerId,
+          periodStart,
+          periodEnd,
+          amountThb: body.amountThb,
+          method: 'bank_transfer_thb',
+          reference: body.reference,
+          executedOn,
+          recordedByIdentityId: guard.actorIdentityId,
+          status: 'recorded',
+        },
+        include: { provider: { select: { name: true } } },
+      })
+
+      // `payout_id` is deliberately written with SQL until the Prisma model is
+      // regenerated with the relation. The FK + unique index make this ledger
+      // consequence immutable and idempotent at the database boundary.
+      await tx.$executeRaw`
+        INSERT INTO "ledger_entry" (
+          "id", "entry_type", "amount_thb", "occurred_on", "description",
+          "created_by_identity_id", "payout_id"
+        ) VALUES (
+          ${randomUUID()}, CAST('payout_provider' AS "LedgerEntryType"), ${-body.amountThb},
+          ${executedOn}, ${`Provider payout ${body.reference} for ${periodStart.toISOString()}–${periodEnd.toISOString()}`},
+          ${guard.actorIdentityId}, ${created.id}
+        )
+      `
+
+      return created
     })
 
     return NextResponse.json({

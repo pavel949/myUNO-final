@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createServiceOrder } from '@/modules/services';
-import { getConfig } from '@/modules/config';
+import { createCanonicalServiceOrder } from '@/modules/services';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
@@ -11,9 +10,7 @@ import type { RoleType } from '@prisma/client';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      throw createPublicError('unauthorized', 401);
-    }
+    if (!user) throw createPublicError('unauthorized', 401);
     const orders = await prisma.serviceOrder.findMany({
       where: { orderer_identity_id: user.identityId },
       include: { service: { select: { title: true } } },
@@ -27,140 +24,85 @@ export async function GET() {
 }
 
 /**
- * POST /api/service-orders — place an order (F-SVC-2). Any role may order.
- * Body: { serviceId, scheduledStart, quantity?, bookingId?, noteToProvider? }
- * Total is ALWAYS computed server-side (base price × quantity); the take
- * rate is snapshotted from config (doc 10 §3).
+ * POST /api/service-orders — F01/F02/F03 canonical order creation.
+ *
+ * Property/stay context is optional. Without it the customer must supply an
+ * explicit Phuket `serviceContext.area` or `serviceContext.address`; there is
+ * never an "All Phuket" synthetic project. Money, take-rate and property terms
+ * are always resolved server-side and snapshotted on the order.
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      throw createPublicError('unauthorized', 401);
-    }
+    if (!user) throw createPublicError('unauthorized', 401);
 
     const body = await req.json();
-    const { serviceId, scheduledStart, quantity = 1, bookingId, unitId: requestedUnitId, noteToProvider } = body;
-    if (!serviceId || !scheduledStart) {
-      throw createPublicError(
-        'invalid request: serviceId and scheduledStart are required',
-        400
-      );
+    const serviceId = typeof body.serviceId === 'string' ? body.serviceId : '';
+    const scheduledStart = new Date(body.scheduledStart);
+    if (!serviceId || Number.isNaN(scheduledStart.getTime())) {
+      throw createPublicError('invalid request: serviceId and scheduledStart are required', 400);
     }
 
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId },
-      include: { provider: { select: { status: true } } },
-    });
-    if (!service || service.status !== 'active' || service.provider?.status !== 'active') {
-      throw createPublicError('not found', 404);
-    }
-    if (service.priceModel === 'quote' || !service.basePriceThb) {
-      throw createPublicError('invalid request: this service is quoted individually — message us instead', 400);
-    }
+    let projectId: string | null = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
+    let unitId: string | undefined = typeof body.unitId === 'string' && body.unitId ? body.unitId : undefined;
+    const bookingId = typeof body.bookingId === 'string' && body.bookingId ? body.bookingId : undefined;
+    let bookingValidated = false;
 
-    const start = new Date(scheduledStart);
-    if (isNaN(start.getTime()) || start < new Date()) {
-      throw createPublicError('invalid request: scheduledStart must be in the future', 400);
-    }
-    const noticeMs = service.advanceNoticeHours * 60 * 60 * 1000;
-    if (start.getTime() - Date.now() < noticeMs) {
-      throw createPublicError(
-        `invalid request: this service needs ${service.advanceNoticeHours}h advance notice`,
-        400
-      );
-    }
-
-    const qty = Math.max(1, Math.min(20, Number(quantity) || 1));
-    const durationMs = (service.durationMin || 60) * 60 * 1000;
-    const end = new Date(start.getTime() + durationMs * qty);
-
-    // Project/unit context must be deterministic — never an arbitrary row.
-    // Priority: booking (validated as the caller's) → explicit projectId in
-    // the body (validated) → the single project when only one exists → 400.
-    let projectId: string | null = null;
-    let unitId: string | undefined;
-    let contextIsValidated = false;
     if (bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         select: { guestIdentityId: true, projectId: true, unitId: true },
       });
-      if (!booking || booking.guestIdentityId !== user.identityId) {
-        throw createPublicError('not found', 404);
-      }
+      if (!booking || booking.guestIdentityId !== user.identityId) throw createPublicError('not found', 404);
       projectId = booking.projectId;
       unitId = booking.unitId;
-      contextIsValidated = true;
-    } else if (typeof body.projectId === 'string' && body.projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: body.projectId },
-        select: { id: true },
-      });
-      if (!project) {
-        throw createPublicError('invalid request: unknown project', 400);
-      }
-      projectId = project.id;
-      unitId = typeof requestedUnitId === 'string' ? requestedUnitId : undefined;
-    } else {
-      const projects = await prisma.project.findMany({ select: { id: true }, take: 2 });
-      projectId = projects.length === 1 ? projects[0].id : null;
-      unitId = typeof requestedUnitId === 'string' ? requestedUnitId : undefined;
-    }
-    if (!projectId) {
-      throw createPublicError('invalid request: no project context', 400);
+      bookingValidated = true;
     }
 
-    if (unitId) {
-      const unit = await prisma.unit.findUnique({
-        where: { id: unitId },
-        select: { projectId: true },
-      });
-      if (!unit || unit.projectId !== projectId) {
-        throw createPublicError('not found', 404);
-      }
+    // Property ordering without a booking is an owner/resident/operator action,
+    // not a way for any authenticated customer to probe another property's data.
+    if (projectId && !bookingValidated) {
+      const hasScopedRole = user.isAdmin || user.roles.some(
+        (role) =>
+          (unitId && role.unitId === unitId) ||
+          role.projectId === projectId
+      );
+      if (!hasScopedRole) throw createPublicError('not found', 404);
     }
 
-    // A booking proves the guest's context. Without one, the caller must have
-    // an active role scoped to this project or unit; a platform-shaped role is
-    // not a substitute for resource scope.
-    const hasScopedRole = user.isAdmin || user.roles.some(
-      (role) =>
-        (unitId && role.unitId === unitId) ||
-        (!unitId && role.projectId === projectId) ||
-        (unitId && role.projectId === projectId)
-    );
-    if (!contextIsValidated && !hasScopedRole) {
-      throw createPublicError('not found', 404);
-    }
+    const rawDimensions =
+      body.quantityDimensions && typeof body.quantityDimensions === 'object'
+        ? body.quantityDimensions
+        : body.quantity != null
+          ? { units: body.quantity }
+          : { units: 1 };
 
-    const totalThb = service.basePriceThb * qty;
-    const takeRatePct =
-      ((await getConfig(prisma, 'services.take_rate_pct', { projectId })) as number) ?? 15;
-
-    const order = await createServiceOrder(prisma, {
+    const order = await createCanonicalServiceOrder(prisma, {
       serviceId,
       projectId,
       unitId,
       bookingId,
       ordererIdentityId: user.identityId,
       ordererRole: (user.roles[0]?.role || 'guest') as RoleType,
-      scheduledStart: start,
-      scheduledEnd: end,
-      quantity: qty,
-      priceBreakdown: { base_thb: service.basePriceThb, quantity: qty, total_thb: totalThb },
-      totalThb,
-      tookRatePctSnapshot: takeRatePct,
-      noteToProvider: noteToProvider ? String(noteToProvider) : undefined,
+      scheduledStart,
+      serviceContext:
+        body.serviceContext && typeof body.serviceContext === 'object'
+          ? {
+              area: typeof body.serviceContext.area === 'string' ? body.serviceContext.area : undefined,
+              address: typeof body.serviceContext.address === 'string' ? body.serviceContext.address : undefined,
+              recipientName: typeof body.serviceContext.recipientName === 'string' ? body.serviceContext.recipientName : undefined,
+              recipientPhone: typeof body.serviceContext.recipientPhone === 'string' ? body.serviceContext.recipientPhone : undefined,
+              note: typeof body.serviceContext.note === 'string' ? body.serviceContext.note : undefined,
+            }
+          : undefined,
+      quantityDimensions: rawDimensions,
+      noteToProvider: typeof body.noteToProvider === 'string' ? body.noteToProvider : undefined,
     });
 
-    return NextResponse.json({ order }, { status: 201 });
+    return NextResponse.json({ order: serializeOrder(order as any) }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
-      const msg = error.message;
-      if (msg.includes('notice') || msg.includes('not found') || msg.includes('slot')) {
-        return NextResponse.json({ error: msg }, { status: 400 });
-      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return handleError(error);
   }

@@ -1,49 +1,49 @@
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { tMany } from '@/modules/content';
 import type { Locale } from '@/modules/content';
 
-const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
+export const SUPPORTED_LOCALES: Locale[] = ['ru', 'en', 'th', 'zh'];
 
-// RU-first: the clientele is Russian-speaking (doc 05, Q19). Default to RU when
-// the visitor hasn't chosen a locale; the navbar switcher sets the cookie.
-const DEFAULT_UI_LOCALE: Locale = 'ru';
+// RU-first: the clientele is Russian-speaking (doc 05, Q19). Request-bound
+// locale resolution lives in i18n-request.ts; this shared module must stay free
+// of next/headers so it is safe in static/error/legacy-compatible bundles.
+export const DEFAULT_UI_LOCALE: Locale = 'ru';
 
-/** The request's UI locale: `locale` cookie (set by the navbar switcher), default RU. */
-export function getRequestLocale(): Locale {
-  try {
-    const value = cookies().get('locale')?.value as Locale | undefined;
-    return value && SUPPORTED_LOCALES.includes(value) ? value : DEFAULT_UI_LOCALE;
-  } catch {
-    return DEFAULT_UI_LOCALE;
-  }
+/** Normalize an explicit locale without touching request-only Next.js APIs. */
+export function normalizeLocale(value?: string | null): Locale {
+  return value && SUPPORTED_LOCALES.includes(value as Locale)
+    ? (value as Locale)
+    : DEFAULT_UI_LOCALE;
 }
 
 /**
- * Resolve a batch of content keys server-side.
+ * Pure/shared locale fallback. Request-aware server code should import
+ * getRequestLocale from '@/lib/i18n-request'. Keeping this function here avoids
+ * breaking non-request consumers while making the dependency boundary explicit.
+ */
+export function getRequestLocale(): Locale {
+  return DEFAULT_UI_LOCALE;
+}
+
+/**
+ * Resolve a batch of content keys for an explicit locale.
  *
  * Each entry maps a content key to its EN draft fallback. The DB value wins
- * when present (admin-edited copy, any locale); the fallback keeps the page
- * legible when the key is not yet translated or the DB is unreachable.
- * New keys used here must also be added to the content seed as
- * `needs_review` drafts (doc 05 §1).
+ * when present; the fallback keeps the page legible when the key is not yet
+ * translated or the DB is unreachable.
  */
-export async function getLabels<K extends string>(
+export async function getLabelsForLocale<K extends string>(
   keys: Record<K, string>,
-  locale?: Locale
+  locale: Locale = DEFAULT_UI_LOCALE
 ): Promise<Record<K, string>> {
-  const resolvedLocale = locale || getRequestLocale();
   const keyList = Object.keys(keys) as K[];
   const labels = {} as Record<K, string>;
 
   let resolved: Record<string, string | null> = {};
   try {
-    // One query for the whole batch (see content.service.tMany). Previously
-    // this fired a query per key, so a page's labels alone cost ~120 round
-    // trips before anything rendered.
-    resolved = await tMany(prisma, keyList, resolvedLocale);
+    resolved = await tMany(prisma, keyList, locale);
   } catch {
-    // DB unreachable — every key falls through to its EN draft below.
+    // DB unreachable — every key falls through to its draft below.
   }
 
   for (const key of keyList) {
@@ -52,4 +52,16 @@ export async function getLabels<K extends string>(
   }
 
   return labels;
+}
+
+/**
+ * Backward-compatible shared resolver. It intentionally has no request-cookie
+ * dependency. App Router server pages that need the visitor cookie locale use
+ * getLabels from '@/lib/i18n-request'.
+ */
+export async function getLabels<K extends string>(
+  keys: Record<K, string>,
+  locale?: Locale
+): Promise<Record<K, string>> {
+  return getLabelsForLocale(keys, locale ?? DEFAULT_UI_LOCALE);
 }

@@ -1,46 +1,49 @@
 #!/usr/bin/env node
 /**
- * Deployment Gate: Ensure no content with `needs_review=true` exists before deployment.
+ * Deployment Gate: block production releases while content is still marked
+ * `needs_review`, without preventing Preview deployments from compiling.
  *
- * This script runs as part of the build pipeline and blocks deployment if any
- * content flagged for review (legal pages, copy tone checks, etc.) is still pending.
- *
- * Run manually: npm run check:content-gate
- * Part of build: npm run build (will fail if gate blocks)
+ * Preview is where copy and UI are reviewed, so blocking Preview makes the
+ * review gate self-defeating. Production remains strict.
  */
 
 import { PrismaClient } from '@prisma/client';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prisma = new PrismaClient();
-
 const GATE_ENABLED = process.env.CONTENT_REVIEW_GATE_ENABLED !== 'false';
-const ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const VERCEL_ENV = process.env.VERCEL_ENV;
+
+// `next build` sets NODE_ENV=production even for Vercel Preview. Use the actual
+// deployment environment when Vercel provides it; outside Vercel, preserve the
+// historical production-build behaviour.
+const IS_PRODUCTION_RELEASE = VERCEL_ENV
+  ? VERCEL_ENV === 'production'
+  : NODE_ENV === 'production';
 
 async function checkContentReviewGate() {
   try {
     if (!GATE_ENABLED) {
-      console.log('[CONTENT GATE] ℹ️  Gate is disabled (CONTENT_REVIEW_GATE_ENABLED=false)');
+      console.log('[CONTENT GATE] Gate disabled (CONTENT_REVIEW_GATE_ENABLED=false)');
       return true;
     }
 
-    // Check if DATABASE_URL is set; if not, skip in build environments
+    if (!IS_PRODUCTION_RELEASE) {
+      console.log(
+        `[CONTENT GATE] Preview/non-production build (${VERCEL_ENV || NODE_ENV}); pending copy is allowed for review`
+      );
+      return true;
+    }
+
     if (!process.env.DATABASE_URL) {
-      console.log('[CONTENT GATE] ⓘ  DATABASE_URL not set; skipping gate (CI/build environment)');
+      console.log('[CONTENT GATE] DATABASE_URL not set; skipping gate in build environment');
       return true;
     }
 
-    // Pre-check database connectivity before querying
     try {
       await prisma.$queryRaw`SELECT 1`;
-    } catch (connError) {
-      console.warn('[CONTENT GATE] ⚠️  Database unreachable; skipping gate check');
-      console.warn('[CONTENT GATE] ℹ️  This may be expected in some CI/build environments (e.g., Vercel)');
-      // Database connectivity errors are allowed in all environments
-      // Only block if we CAN connect and find review-pending content
-      // This prevents false positives when building in sandboxed environments
+    } catch {
+      console.warn('[CONTENT GATE] Database unreachable; skipping gate check');
       return true;
     }
 
@@ -61,18 +64,17 @@ async function checkContentReviewGate() {
     });
 
     if (reviewPending.length === 0) {
-      console.log('[CONTENT GATE] ✅ All content reviewed and approved');
+      console.log('[CONTENT GATE] All content reviewed and approved');
       return true;
     }
 
-    // Content pending review found
     const summary = reviewPending.reduce((acc, item) => {
       const ns = item.contentKey.namespace;
       acc[ns] = (acc[ns] || 0) + 1;
       return acc;
     }, {});
 
-    console.error('\n❌ DEPLOYMENT BLOCKED: Content pending founder review\n');
+    console.error('\nDEPLOYMENT BLOCKED: Content pending founder review\n');
     console.error(`Found ${reviewPending.length} translations marked needs_review:\n`);
 
     Object.entries(summary).forEach(([ns, count]) => {
@@ -85,31 +87,16 @@ async function checkContentReviewGate() {
       console.error(`  - ${item.contentKey.key} (${item.locale}): "${preview}..."`);
     });
 
-    console.error(`\n→ Action: Review and approve in Admin Content Editor`);
-    console.error(`→ Then set needs_review=false on each key`);
-    console.error(`→ To skip this gate: CONTENT_REVIEW_GATE_ENABLED=false npm run build`);
-    console.error(`\nDocs: CLAUDE.md § Legal non-negotiables\n`);
-
-    // In production, always block. In dev, allow override
-    if (ENV === 'production') {
-      return false;
-    }
-
-    // In dev, warn but continue
-    console.warn('[CONTENT GATE] ⚠️  WARNING: Gate would block in production');
-    return true;
+    console.error('\nAction: review and approve in Admin Content Editor.');
+    console.error('Production remains blocked until pending content is approved.\n');
+    return false;
   } catch (error) {
-    console.error('[CONTENT GATE] ❌ Error checking gate:', error.message);
-    // Don't block the build on database errors in development
-    if (ENV === 'production') {
-      return false;
-    }
-    return true;
+    console.error('[CONTENT GATE] Error checking gate:', error.message);
+    return IS_PRODUCTION_RELEASE ? false : true;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Run the gate
 const passed = await checkContentReviewGate();
 process.exit(passed ? 0 : 1);

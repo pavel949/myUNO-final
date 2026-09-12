@@ -54,7 +54,7 @@ export default function CreateServiceForm({
           categoryKey,
           titleEn,
           titleRu,
-          titleTh: titleTh || undefined,
+          titleTh,
           descriptionEn: descriptionEn || undefined,
           descriptionRu: descriptionRu || undefined,
           descriptionTh: descriptionTh || undefined,
@@ -176,7 +176,12 @@ export default function CreateServiceForm({
           <span className="text-small text-text-secondary">
             {labels['admin.services.field_title_th']}
           </span>
-          <input className={inputClass} value={titleTh} onChange={(e) => setTitleTh(e.target.value)} />
+          <input
+            className={inputClass}
+            value={titleTh}
+            onChange={(e) => setTitleTh(e.target.value)}
+            required
+          />
         </label>
       </div>
 

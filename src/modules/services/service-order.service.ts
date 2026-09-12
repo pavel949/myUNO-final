@@ -276,7 +276,6 @@ export async function acceptServiceOrder(
     data: { status: 'accepted' },
   });
 
-  // Track analytics event
   await track(db, 'service_order_accepted', {
     serviceOrderId: order.id,
     serviceId: order.service_id,
@@ -286,7 +285,6 @@ export async function acceptServiceOrder(
     totalThb: order.total_thb,
   });
 
-  // Notify orderer of acceptance (N-21)
   await createNotification(db, {
     identityId: order.orderer_identity_id,
     type: 'order_accepted',
@@ -326,7 +324,6 @@ export async function declineServiceOrder(
     throw new Error(`Cannot decline order in ${order.status} status`);
   }
 
-  // Find paid payment if any
   const paidAmount = order.payments
     .filter((payment) => payment.status === 'succeeded')
     .reduce((sum, payment) => sum + payment.amountThb, 0);
@@ -338,13 +335,11 @@ export async function declineServiceOrder(
     targetRefundThb: paidAmount,
   });
 
-  // Update order status
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
     data: { status: 'declined', refund_accrued_thb: issuedRefundThb },
   });
 
-  // Track analytics event
   await track(db, 'service_order_declined', {
     serviceOrderId: order.id,
     serviceId: order.service_id,
@@ -355,7 +350,6 @@ export async function declineServiceOrder(
     reason: reason || 'no reason provided',
   });
 
-  // Notify orderer of decline (N-22)
   await createNotification(db, {
     identityId: order.orderer_identity_id,
     type: 'order_declined',
@@ -400,7 +394,6 @@ export async function fulfillServiceOrder(
     data: { status: 'fulfilled', fulfilled_at: fulfilledAt },
   });
 
-  // Record commission on fulfillment (S5)
   const commissionThb = Math.round(
     order.total_thb * (Number(order.take_rate_pct_snapshot) / 100)
   );
@@ -422,17 +415,113 @@ export async function fulfillServiceOrder(
   });
 }
 
+/** Resolve the configured confirm/dispute window for property or standalone orders. */
+export async function getFulfilmentConfirmWindowHours(
+  db: PrismaClient,
+  projectId: string | null
+): Promise<number> {
+  const hours = (await getConfig(db, 'service.fulfilment_confirm_window_hours', {
+    projectId,
+  })) as number | undefined;
+  return hours ?? 48;
+}
+
+/** When the orderer's confirm/dispute window closes, or null if not fulfilled. */
+export function fulfilmentConfirmDeadline(
+  fulfilledAt: Date | null,
+  windowHours: number
+): Date | null {
+  if (!fulfilledAt) return null;
+  return new Date(fulfilledAt.getTime() + windowHours * 60 * 60 * 1000);
+}
+
+/** Nightly sweep: close fulfilled orders whose window has lapsed. */
+export async function closeSettledServiceOrders(
+  db: PrismaClient
+): Promise<{ closed: number }> {
+  const fulfilled = await db.serviceOrder.findMany({
+    where: { status: 'fulfilled', fulfilled_at: { not: null } },
+    select: { id: true, project_id: true, unit_id: true, total_thb: true, fulfilled_at: true },
+  });
+
+  if (fulfilled.length === 0) return { closed: 0 };
+
+  const windowByProject = new Map<string | null, number>();
+  for (const projectId of new Set(fulfilled.map((order) => order.project_id))) {
+    windowByProject.set(projectId, await getFulfilmentConfirmWindowHours(db, projectId));
+  }
+
+  const openDisputes = await db.dispute.findMany({
+    where: {
+      subjectType: 'service_order',
+      subjectId: { in: fulfilled.map((order) => order.id) },
+      decidedAt: null,
+    },
+    select: { subjectId: true },
+  });
+  const disputed = new Set(openDisputes.map((dispute) => dispute.subjectId));
+
+  const now = new Date();
+  let closed = 0;
+
+  for (const order of fulfilled) {
+    if (disputed.has(order.id)) continue;
+
+    const deadline = fulfilmentConfirmDeadline(
+      order.fulfilled_at,
+      windowByProject.get(order.project_id) ?? 48
+    );
+    if (!deadline || deadline > now) continue;
+
+    const didClose = await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${order.id} FOR UPDATE`;
+
+      const fresh = await tx.serviceOrder.findUnique({
+        where: { id: order.id },
+        select: { status: true },
+      });
+      if (fresh?.status !== 'fulfilled') return false;
+
+      const openDispute = await tx.dispute.findFirst({
+        where: { subjectType: 'service_order', subjectId: order.id, decidedAt: null },
+        select: { id: true },
+      });
+      if (openDispute) return false;
+
+      await tx.serviceOrder.update({
+        where: { id: order.id },
+        data: { status: 'closed', closed_at: now },
+      });
+      return true;
+    });
+
+    if (!didClose) continue;
+
+    await track(db, 'service_order_closed', {
+      serviceOrderId: order.id,
+      projectId: order.project_id,
+      unitId: order.unit_id ?? undefined,
+      totalThb: order.total_thb,
+    });
+
+    closed++;
+  }
+
+  return { closed };
+}
+
 /**
  * Orderer reports that the provider did not show (doc 07 F-PROV-3).
- * accepted → failed, refund per `[cfg] service.provider_no_show_refund_pct`,
- * auto-ticket for ops, provider notified.
+ * For property-scoped orders a complaint ticket is created. Standalone orders
+ * remain valid without inventing a synthetic project; the failed order,
+ * refund record, notifications and analytics provide the canonical audit trail.
  */
 export async function reportProviderNoShow(
   db: PrismaClient,
   serviceOrderId: string,
   reportedByIdentityId: string,
   note?: string
-): Promise<{ ticketId: string; refundThb: number }> {
+): Promise<{ ticketId: string | null; refundThb: number }> {
   const order = await db.serviceOrder.findUnique({
     where: { id: serviceOrderId },
     include: { service: true, provider: true, payments: true },
@@ -480,18 +569,22 @@ export async function reportProviderNoShow(
   });
 
   const serviceTitle = order.service?.title || 'Service';
-  const { id: ticketId } = await raiseTicket(db, {
-    projectId: order.project_id,
-    unitId: order.unit_id ?? undefined,
-    raisedByIdentityId: reportedByIdentityId,
-    raisedByRole: order.orderer_role,
-    categoryKey: 'complaint',
-    title: `Provider no-show: ${serviceTitle}`,
-    description:
-      note?.trim() ||
-      `Order ${order.id}: the provider did not arrive for the scheduled service.`,
-    priority: 'high',
-  });
+  let ticketId: string | null = null;
+  if (order.project_id) {
+    const ticket = await raiseTicket(db, {
+      projectId: order.project_id,
+      unitId: order.unit_id ?? undefined,
+      raisedByIdentityId: reportedByIdentityId,
+      raisedByRole: order.orderer_role,
+      categoryKey: 'complaint',
+      title: `Provider no-show: ${serviceTitle}`,
+      description:
+        note?.trim() ||
+        `Order ${order.id}: the provider did not arrive for the scheduled service.`,
+      priority: 'high',
+    });
+    ticketId = ticket.id;
+  }
 
   await createNotification(db, {
     identityId: order.orderer_identity_id,
@@ -549,15 +642,12 @@ export async function cancelServiceOrder(
     throw new Error(`Cannot cancel order in ${order.status} status`);
   }
 
-  // Get cancellation window from config
   const cancelWindowHours = ((await getConfig(db, 'service.cancel_window_hours', {
     projectId: order.project_id,
   })) as number | undefined) || 24;
 
   const now = new Date();
   const cancelWindowMs = cancelWindowHours * 60 * 60 * 1000;
-  // Cancelling with more than the window's notice before the scheduled start
-  // earns a full refund; cancelling inside the window earns nothing.
   const refundPct =
     order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 100 : 0;
 
@@ -570,7 +660,6 @@ export async function cancelServiceOrder(
     targetRefundThb: refundTargetThb,
   });
 
-  // Update order
   await db.serviceOrder.update({
     where: { id: serviceOrderId },
     data: {
@@ -582,8 +671,6 @@ export async function cancelServiceOrder(
     },
   });
 
-  // Notify orderer of cancellation (staff/ops cancels included; when the
-  // orderer cancelled themselves this doubles as the confirmation).
   await createNotification(db, {
     identityId: order.orderer_identity_id,
     type: 'order_cancelled',
@@ -596,7 +683,6 @@ export async function cancelServiceOrder(
     },
   });
 
-  // The provider's members lose a job — tell them too.
   await notifyProviderMembers(db, order.provider_id, {
     type: 'order_cancelled',
     titleKey: 'order.cancelled.title',
@@ -617,9 +703,7 @@ export async function cancelServiceOrder(
   });
 }
 
-/**
- * Get a service order with full context.
- */
+/** Get a service order with full context. */
 export async function getServiceOrder(
   db: PrismaClient,
   serviceOrderId: string
@@ -643,12 +727,7 @@ export async function getServiceOrder(
   return order as any;
 }
 
-/**
- * Rate a service order (create a review).
- * List a provider's orders for the portal queue, newest first. Actionable
- * statuses (placed/paid/accepted) sort ahead of terminal ones so the queue
- * reads work-first.
- */
+/** List a provider's orders for the portal queue, newest first. */
 export async function getServiceOrdersByProvider(
   db: PrismaClient,
   providerId: string,
@@ -662,14 +741,11 @@ export async function getServiceOrdersByProvider(
   });
   const actionable = new Set(['placed', 'paid', 'accepted']);
   return orders.sort(
-    (a, b) =>
-      Number(actionable.has(b.status)) - Number(actionable.has(a.status))
+    (a, b) => Number(actionable.has(b.status)) - Number(actionable.has(a.status))
   );
 }
 
-/**
- * Creates a polymorphic Review record with target_type=service_order.
- */
+/** Creates a polymorphic Review record with target_type=service_order. */
 export async function rateServiceOrder(
   db: PrismaClient,
   serviceOrderId: string,
@@ -677,10 +753,7 @@ export async function rateServiceOrder(
   rating: number,
   comment?: string
 ): Promise<{ id: string }> {
-  // Validate order exists
-  const order = await db.serviceOrder.findUnique({
-    where: { id: serviceOrderId },
-  });
+  const order = await db.serviceOrder.findUnique({ where: { id: serviceOrderId } });
 
   if (!order) {
     throw new Error(`ServiceOrder ${serviceOrderId} not found`);
@@ -690,7 +763,7 @@ export async function rateServiceOrder(
     throw new Error('Only the orderer can rate this service order');
   }
 
-  if (order.status !== 'fulfilled') {
+  if (order.status !== 'fulfilled' && order.status !== 'closed') {
     throw new Error(`Cannot rate order in ${order.status} status`);
   }
 
@@ -698,7 +771,6 @@ export async function rateServiceOrder(
     throw new Error('Rating must be 1-5');
   }
 
-  // Check if already reviewed
   const existing = await db.review.findFirst({
     where: {
       target_type: 'service_order',
@@ -741,15 +813,12 @@ export async function expireStaleServiceOrders(
       createdAt: { lt: cutoffTime },
       expired_at: null,
     },
-    include: {
-      payments: true,
-    },
+    include: { payments: true },
   });
 
   let refunded = 0;
 
   for (const order of expiredOrders) {
-    // Mark as expired
     await db.serviceOrder.update({
       where: { id: order.id },
       data: {
@@ -768,14 +837,10 @@ export async function expireStaleServiceOrders(
     if (issuedRefundThb > 0) {
       await db.serviceOrder.update({
         where: { id: order.id },
-        data: {
-          refund_accrued_thb: issuedRefundThb,
-        },
+        data: { refund_accrued_thb: issuedRefundThb },
       });
       refunded++;
     }
-
-    // Note: order expired due to no response; provider sees it in queue (status=expired)
   }
 
   return {

@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { getLabels } from '@/lib/i18n';
+import { getStaticLabels } from '@/lib/i18n-static';
 
 export default async function NotFound() {
-  const labels = await getLabels({
+  const labels = await getStaticLabels({
     'common.not_found.title': 'Page not found',
     'common.not_found.body': "The page you're looking for doesn't exist or has moved.",
     'common.not_found.home': 'Back to home',

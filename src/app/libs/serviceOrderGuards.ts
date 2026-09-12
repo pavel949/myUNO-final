@@ -9,6 +9,10 @@ import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projec
  * one place: the orderer, an active provider member of the order's provider,
  * staff_ops, or admin — everyone else sees 404 (not 403 — don't reveal the
  * order exists).
+ *
+ * Standalone Phuket service orders intentionally have no project_id. In that
+ * case project-scoped staff/MC authority does not exist and must not be
+ * synthesized; access is limited to the orderer, provider member, or admin.
  */
 export async function loadOrderForUser(orderId: string, user: CurrentUser) {
   const order = await prisma.serviceOrder.findUnique({
@@ -27,8 +31,10 @@ export async function loadOrderForUser(orderId: string, user: CurrentUser) {
   const isProviderMember = user.roles.some(
     (r) => r.role === 'provider_member' && r.providerId === order.provider_id
   );
-  const isStaff = hasProjectStaffAccess(user, order.project_id);
-  const isManagedMc = order.unit_id
+  const isStaff = order.project_id
+    ? hasProjectStaffAccess(user, order.project_id)
+    : false;
+  const isManagedMc = order.unit_id && order.project_id
     ? await hasManagedUnitMcAccess(user, {
         projectId: order.project_id,
         unitId: order.unit_id,

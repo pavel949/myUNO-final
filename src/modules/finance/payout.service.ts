@@ -11,6 +11,8 @@ export interface RemittanceReport {
   fulfilledOrdersTotal: number;
   takeRateThb: number;
   refundsClawedBack: number;
+  lateRefundAdjustments: number;
+  pendingRefundCount: number;
   netThb: number;
   orderCount: number;
   refundCount: number;
@@ -38,10 +40,7 @@ export interface ProviderRemittancesView {
   payouts: ProviderRemittancePayoutRow[];
 }
 
-/**
- * Resolve the active provider payout period for a cadence (doc 10 §5).
- * Periods are half-open: [periodStart, periodEnd).
- */
+/** Resolve a half-open provider payout period [start, end). */
 export function resolveProviderPayoutPeriod(
   now: Date,
   cadence: PayoutPeriodCadence
@@ -83,10 +82,7 @@ export function resolveProviderPayoutPeriod(
   return { periodStart, periodEnd };
 }
 
-/**
- * Provider portal remittance view (F-PROV-4): current-period report plus
- * recorded payout history scoped to the caller's provider.
- */
+/** Provider portal current-period report plus immutable payout history. */
 export async function getProviderRemittancesView(
   db: PrismaClient,
   providerId: string,
@@ -100,12 +96,7 @@ export async function getProviderRemittancesView(
   const remittance = await computeProviderRemittance(db, providerId, periodStart, periodEnd);
 
   const currentPayout = await db.payout.findFirst({
-    where: {
-      providerId,
-      payeeType: 'provider',
-      periodStart,
-      periodEnd,
-    },
+    where: { providerId, payeeType: 'provider', periodStart, periodEnd },
     select: { id: true },
   });
 
@@ -136,21 +127,37 @@ export async function getProviderRemittancesView(
   };
 }
 
+/** Whether a timestamp belongs to a recorded provider payout period. */
+function wasCoveredByPayout(
+  fulfilledAt: Date | null,
+  refundCreatedAt: Date,
+  payouts: Array<{ periodStart: Date | null; periodEnd: Date | null; createdAt: Date }>
+): boolean {
+  if (!fulfilledAt) return false;
+  return payouts.some(
+    (payout) =>
+      payout.periodStart &&
+      payout.periodEnd &&
+      payout.createdAt < refundCreatedAt &&
+      fulfilledAt >= payout.periodStart &&
+      fulfilledAt < payout.periodEnd
+  );
+}
+
 /**
- * Compute provider remittance for a period (doc 10 §5, Q34).
+ * Compute a provider remittance without rewriting closed history.
  *
- * Formula, verbatim from doc 10 §5: "report per provider = fulfilled
- * orders' totals − take-rate − refunds clawed back". Two implementations of
- * this used to exist and disagreed — this one is now the only one. It
- * matches what has actually been wired and tested against real scenarios
- * (`src/app/api/admin/payouts/provider/route.ts`,
- * `src/app/api/admin/payouts/payouts.integration.test.ts`) rather than the
- * version nothing ever called.
- *
- * Only `fulfilled` orders remit — an `accepted` order has not yet been
- * delivered and is not owed to the provider yet (doc 10 §5: "disputed/
- * failed orders are excluded until resolved" is the same principle applied
- * to the fulfilled/unfulfilled boundary).
+ * Rules:
+ * - service revenue belongs to immutable `fulfilled_at`;
+ * - commission comes from each order's take-rate snapshot;
+ * - open disputes hold an order out of the payable set;
+ * - succeeded refunds initiated before this period ends are charged to the
+ *   order's own period only when that period has not already been paid;
+ * - a refund initiated after an earlier payout is carried into the period in
+ *   which the refund was initiated (`lateRefundAdjustments`);
+ * - requested/processing refunds on current-period orders block payout record
+ *   creation, preventing an unresolved refund from becoming a later hidden
+ *   historical mutation.
  */
 export async function computeProviderRemittance(
   db: PrismaClient,
@@ -158,43 +165,107 @@ export async function computeProviderRemittance(
   periodStart: Date,
   periodEnd: Date
 ): Promise<RemittanceReport> {
-  const fulfilledOrders = await db.serviceOrder.findMany({
+  const candidateOrders = await db.serviceOrder.findMany({
     where: {
       provider_id: providerId,
-      status: 'fulfilled',
-      updatedAt: {
-        gte: periodStart,
-        lt: periodEnd,
+      status: { in: ['fulfilled', 'closed'] },
+      fulfilled_at: { gte: periodStart, lt: periodEnd },
+    },
+  });
+
+  const candidateIds = candidateOrders.map((order) => order.id);
+  const openDisputes = candidateIds.length
+    ? await db.dispute.findMany({
+        where: {
+          subjectType: 'service_order',
+          subjectId: { in: candidateIds },
+          decidedAt: null,
+        },
+        select: { subjectId: true },
+      })
+    : [];
+  const heldOrderIds = new Set(openDisputes.map((row) => row.subjectId));
+  const eligibleOrders = candidateOrders.filter((order) => !heldOrderIds.has(order.id));
+  const eligibleOrderIds = eligibleOrders.map((order) => order.id);
+
+  const fulfilledOrdersTotal = eligibleOrders.reduce((sum, order) => sum + order.total_thb, 0);
+  const takeRateThb = eligibleOrders.reduce(
+    (sum, order) =>
+      sum + Math.round(order.total_thb * (Number(order.take_rate_pct_snapshot) / 100)),
+    0
+  );
+
+  const paymentsForOrders = eligibleOrderIds.length
+    ? await db.payment.findMany({
+        where: { serviceOrderId: { in: eligibleOrderIds } },
+        include: {
+          refunds: {
+            where: {
+              createdAt: { lt: periodEnd },
+              status: { in: ['requested', 'processing', 'succeeded'] },
+            },
+          },
+        },
+      })
+    : [];
+
+  const succeededCurrentRefunds = paymentsForOrders.flatMap((payment) =>
+    payment.refunds.filter((refund) => refund.status === 'succeeded')
+  );
+  const pendingRefundCount = paymentsForOrders.reduce(
+    (sum, payment) =>
+      sum + payment.refunds.filter((refund) =>
+        refund.status === 'requested' || refund.status === 'processing'
+      ).length,
+    0
+  );
+  const refundsClawedBack = succeededCurrentRefunds.reduce(
+    (sum, refund) => sum + refund.amountThb,
+    0
+  );
+
+  const priorPayouts = await db.payout.findMany({
+    where: {
+      providerId,
+      payeeType: 'provider',
+      periodEnd: { lte: periodStart },
+    },
+    select: { periodStart: true, periodEnd: true, createdAt: true },
+  });
+
+  const lateRefundCandidates = await db.refund.findMany({
+    where: {
+      status: 'succeeded',
+      createdAt: { gte: periodStart, lt: periodEnd },
+      payment: {
+        serviceOrder: {
+          provider_id: providerId,
+          fulfilled_at: { lt: periodStart },
+        },
+      },
+    },
+    select: {
+      amountThb: true,
+      createdAt: true,
+      payment: {
+        select: {
+          serviceOrder: { select: { fulfilled_at: true } },
+        },
       },
     },
   });
 
-  const fulfilledOrdersTotal = fulfilledOrders.reduce((sum, order) => sum + (order.total_thb || 0), 0);
-
-  // The take-rate can vary by service category (services.take_rate_pct[.category]
-  // per doc 10 §3); loop one reads the flat default until category overrides
-  // are wired to this calculation.
-  const takeRatePercent = await getConfig(db, 'services.take_rate_pct');
-  const takeRateValue = typeof takeRatePercent === 'number' ? takeRatePercent : 10;
-  const takeRateThb = Math.round((fulfilledOrdersTotal * takeRateValue) / 100);
-
-  // Refunds clawed back: succeeded refunds against a payment for one of
-  // this period's fulfilled orders.
-  const fulfilledOrderIds = fulfilledOrders.map((o) => o.id);
-  const paymentsForOrders = fulfilledOrderIds.length
-    ? await db.payment.findMany({
-        where: { serviceOrderId: { in: fulfilledOrderIds } },
-        include: { refunds: { where: { status: 'succeeded' } } },
-      })
-    : [];
-
-  const refundsClawedBack = paymentsForOrders.reduce(
-    (sum, payment) => sum + payment.refunds.reduce((refundSum, r) => refundSum + r.amountThb, 0),
-    0
+  const carriedRefunds = lateRefundCandidates.filter((refund) =>
+    wasCoveredByPayout(
+      refund.payment.serviceOrder?.fulfilled_at ?? null,
+      refund.createdAt,
+      priorPayouts
+    )
   );
-  const refundCount = paymentsForOrders.reduce((sum, payment) => sum + payment.refunds.length, 0);
+  const lateRefundAdjustments = carriedRefunds.reduce((sum, refund) => sum + refund.amountThb, 0);
 
-  const netThb = fulfilledOrdersTotal - takeRateThb - refundsClawedBack;
+  const refundCount = succeededCurrentRefunds.length + carriedRefunds.length;
+  const netThb = fulfilledOrdersTotal - takeRateThb - refundsClawedBack - lateRefundAdjustments;
 
   return {
     providerId,
@@ -203,17 +274,15 @@ export async function computeProviderRemittance(
     fulfilledOrdersTotal,
     takeRateThb,
     refundsClawedBack,
+    lateRefundAdjustments,
+    pendingRefundCount,
     netThb,
-    orderCount: fulfilledOrders.length,
+    orderCount: eligibleOrders.length,
     refundCount,
   };
 }
 
-/**
- * Admin reconciliation board data: payments with nothing to match them,
- * refunds that failed provider-side, and payouts recorded but not yet
- * matched against a bank statement.
- */
+/** Admin reconciliation board data. */
 export async function getReconciliationData(db: PrismaClient) {
   const unmatchedPayments = await db.payment.findMany({
     where: {
@@ -259,10 +328,6 @@ export async function getReconciliationData(db: PrismaClient) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Display boundary: this DTO feeds the admin reconciliation board only
-  // (never sent back — the board's actions post ids/reasons, not amounts),
-  // so every *Thb/*Amount figure is converted from satang (THB x 100) to
-  // baht here, once, at the response boundary.
   return {
     unmatchedPayments: unmatchedPayments.map((p) => ({
       id: p.id,
@@ -307,14 +372,10 @@ export async function getReconciliationData(db: PrismaClient) {
   };
 }
 
-/**
- * Mark a payout as reconciled (matched against the bank statement).
- */
+/** Mark a recorded payout reconciled; its amount and period remain immutable. */
 export async function reconcilePayout(db: PrismaClient, payoutId: string): Promise<Payout> {
   const payout = await db.payout.findUnique({ where: { id: payoutId } });
-  if (!payout) {
-    throw new Error('Payout not found');
-  }
+  if (!payout) throw new Error('Payout not found');
 
   return db.payout.update({
     where: { id: payoutId },
@@ -326,19 +387,14 @@ export async function reconcilePayout(db: PrismaClient, payoutId: string): Promi
   });
 }
 
-/**
- * Resolve a failed refund: retry it through the payment seam, or write it
- * off with a ledger adjustment when the provider-side retry isn't viable.
- */
+/** Resolve a failed refund without silently losing its ledger consequence. */
 export async function resolveFailedRefund(
   db: PrismaClient,
   refundId: string,
   action: 'retry' | 'write_off'
 ) {
   const refundRecord = await db.refund.findUnique({ where: { id: refundId } });
-  if (!refundRecord) {
-    throw new Error('Refund not found');
-  }
+  if (!refundRecord) throw new Error('Refund not found');
 
   if (action === 'write_off') {
     const payment = await db.payment.findUnique({
@@ -359,17 +415,12 @@ export async function resolveFailedRefund(
       });
     }
 
-    // Written off, not truly succeeded — but cleared from the reconciliation
-    // board (`getReconciliationData` only surfaces `status: 'failed'`), which
-    // is the same "cleared" semantics the reconciliation board's own test
-    // suite already exercises.
     return db.refund.update({
       where: { id: refundId },
       data: { status: 'succeeded' },
     });
   }
 
-  // 'retry' — reset to requested and let the payment seam handle it.
   return db.refund.update({
     where: { id: refundId },
     data: { status: 'requested' },

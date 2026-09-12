@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { t, type Locale } from '@/modules/content';
+import { t } from '@/modules/content/content.service';
+import type { Locale } from '@/modules/content/types';
 
 /** Host-selected decline reasons for request-to-book (doc 07 F-OPS-5). */
 export const BOOKING_REQUEST_DECLINE_REASONS = [

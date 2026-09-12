@@ -8,8 +8,8 @@ import type { Locale } from '@/modules/content/types';
  * and are shown as written") — but a service authored with RU/EN/TH fields
  * filled in should still show the visitor's own language rather than always
  * the single fallback `title`/`description` the record was created with.
- * Falls back to the base field for services (most of them, today) that only
- * ever had one language entered.
+ * Historical/internal rows keep fallback behavior; public exposure is guarded
+ * separately so launch-quality supply fails closed without rewriting history.
  */
 export function pickLocalizedServiceCopy(
   service: {
@@ -35,6 +35,18 @@ export function pickLocalizedServiceCopy(
     title: localized.title || service.title,
     description: localized.description || service.description,
   };
+}
+
+function hasLaunchLocaleTitles(service: {
+  titleRu?: string | null;
+  titleEn?: string | null;
+  titleTh?: string | null;
+}): boolean {
+  return Boolean(
+    service.titleRu?.trim() &&
+      service.titleEn?.trim() &&
+      service.titleTh?.trim()
+  );
 }
 
 export interface CreateServiceInput {
@@ -73,6 +85,8 @@ export interface UpdateServiceInput {
 
 /**
  * Create a new service (draft or active depending on admin approval config).
+ * Creation semantics remain backward-compatible; public launch quality is
+ * enforced by the public query and by the stricter admin direct-create route.
  */
 export async function createService(
   db: PrismaClient,
@@ -234,10 +248,14 @@ export async function getServicesByProvider(
 
 /**
  * Get all active services visible in a project context.
- * Services are visible if:
+ * Services are public only if:
  * - Status is active
- * - Provider is active (vetted)
+ * - Provider is active and vetted
+ * - RU/EN/TH launch titles are all present and non-blank
  * - Service has no project restrictions OR project is in availableProjects
+ *
+ * This intentionally hides historical seed rows that are technically active
+ * but are not launch-quality supply. No row is deleted or silently rewritten.
  */
 export async function listPublicServices(
   db: PrismaClient,
@@ -247,18 +265,19 @@ export async function listPublicServices(
   const services = await db.service.findMany({
     where: {
       status: 'active',
+      titleRu: { not: null },
+      titleEn: { not: null },
+      titleTh: { not: null },
       provider: {
         status: 'active',
         vetted_at: { not: null },
       },
       OR: [
-        // No project restrictions
         {
           availableProjects: {
             none: {},
           },
         },
-        // Project is in available projects
         {
           availableProjects: {
             some: {
@@ -284,15 +303,20 @@ export async function listPublicServices(
     orderBy: [{ createdAt: 'desc' }],
   });
 
-  return services.map((s) => ({
-    ...s,
-    isVetted: s.provider.vetted_at !== null,
-  }));
+  // Prisma's non-null filter does not reject empty strings; keep the public
+  // boundary fail-closed for legacy rows with blank localized fields.
+  return services
+    .filter(hasLaunchLocaleTitles)
+    .map((s) => ({
+      ...s,
+      isVetted: s.provider.vetted_at !== null,
+    }));
 }
 
 /**
  * Approve a service (draft → active).
- * Called by admin after spot-check.
+ * Called by admin after spot-check. The lifecycle remains backward-compatible;
+ * public visibility still applies the stricter launch-quality query above.
  */
 export async function approveService(
   db: PrismaClient,
@@ -347,8 +371,6 @@ export async function rejectService(
     where: { id: serviceId },
     data: {
       status: 'paused',
-      // Clear any earlier approval so a resubmitted service is never left
-      // carrying a stale one.
       approved_at: null,
       approved_by_identity_id: null,
     },
@@ -363,7 +385,6 @@ export async function getServiceAverageRating(
   db: PrismaClient,
   serviceId: string
 ): Promise<{ averageRating: number; reviewCount: number } | null> {
-  // Get all order IDs for this service
   const orders = await db.serviceOrder.findMany({
     where: { service_id: serviceId },
     select: { id: true },
@@ -374,8 +395,6 @@ export async function getServiceAverageRating(
   }
 
   const orderIds = orders.map((o) => o.id);
-
-  // Get all reviews for these orders (only published)
   const reviews = await db.review.findMany({
     where: {
       target_type: 'service_order',

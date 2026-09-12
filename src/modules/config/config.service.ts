@@ -8,9 +8,15 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-/**
- * In-memory cache for config values with TTL
- */
+/** Reject config values that can invalidate a contractual service-order window. */
+function validateProtectedOverride(key: string, value: any): void {
+  if (key === 'service.fulfilment_confirm_window_hours') {
+    if (!Number.isInteger(value) || value <= 0) {
+      throw new Error('fulfilment confirm window must be a positive whole number of hours');
+    }
+  }
+}
+
 class ConfigCache {
   private cache = new Map<string, CacheEntry>();
 
@@ -35,9 +41,7 @@ class ConfigCache {
 
   invalidatePrefix(prefix: string): void {
     for (const key of this.cache.keys()) {
-      if (key.startsWith(prefix)) {
-        this.cache.delete(key);
-      }
+      if (key.startsWith(prefix)) this.cache.delete(key);
     }
   }
 
@@ -48,55 +52,45 @@ class ConfigCache {
 
 const cache = new ConfigCache();
 
-/**
- * Build a cache key from parameter key and scope
- */
-function getCacheKey(
-  paramKey: string,
-  unitId?: string,
-  projectId?: string
-): string {
+function getCacheKey(paramKey: string, unitId?: string | null, projectId?: string | null): string {
   if (unitId) return `${paramKey}:unit:${unitId}`;
   if (projectId) return `${paramKey}:project:${projectId}`;
   return `${paramKey}:global`;
 }
 
 /**
- * Get a configuration value with resolution order: unit → project → global
+ * Get a configuration value with resolution order: unit → project → global.
+ * Nullable scope IDs are accepted deliberately so standalone marketplace
+ * orders can fall through to global defaults without inventing a fake project.
  */
 export async function getConfig<K extends ConfigKey>(
   db: PrismaClient,
   key: K,
-  options?: { unitId?: string; projectId?: string }
+  options?: { unitId?: string | null; projectId?: string | null }
 ): Promise<AllConfig[K] | undefined> {
-  const unitId = options?.unitId;
-  const projectId = options?.projectId;
+  const unitId = options?.unitId ?? undefined;
+  const projectId = options?.projectId ?? undefined;
 
-  // Try unit-level cache first
   if (unitId) {
     const cacheKey = getCacheKey(key, unitId);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
   }
 
-  // Try project-level cache
   if (projectId && !unitId) {
     const cacheKey = getCacheKey(key, undefined, projectId);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
   }
 
-  // Try global cache
   if (!unitId && !projectId) {
     const cacheKey = getCacheKey(key);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
   }
 
-  // Resolve from database
   let value: any = undefined;
 
-  // 1. Try unit-level override
   if (unitId) {
     const override = await db.configOverride.findUnique({
       where: {
@@ -114,7 +108,6 @@ export async function getConfig<K extends ConfigKey>(
     }
   }
 
-  // 2. Try project-level override
   if (projectId) {
     const override = await db.configOverride.findUnique({
       where: {
@@ -132,9 +125,6 @@ export async function getConfig<K extends ConfigKey>(
     }
   }
 
-  // 3. Try a global override (scopeType/scopeId = 'global'). This is what the
-  //    admin editor writes for a platform-wide value change; without reading it
-  //    here, every global config edit was silently ignored.
   const globalOverride = await db.configOverride.findUnique({
     where: {
       parameterKey_scopeType_scopeId: {
@@ -150,11 +140,7 @@ export async function getConfig<K extends ConfigKey>(
     return value;
   }
 
-  // 4. Fall back to the seeded ConfigParameter default
-  const param = await db.configParameter.findUnique({
-    where: { key },
-  });
-
+  const param = await db.configParameter.findUnique({ where: { key } });
   if (param) {
     value = param.defaultValue;
     cache.set(getCacheKey(key), value);
@@ -164,9 +150,6 @@ export async function getConfig<K extends ConfigKey>(
   return undefined;
 }
 
-/**
- * Set a configuration override and invalidate cache
- */
 export async function setConfigOverride(
   db: PrismaClient,
   key: string,
@@ -177,7 +160,8 @@ export async function setConfigOverride(
     changedByIdentityId: string;
   }
 ): Promise<void> {
-  // Get current value for audit trail
+  validateProtectedOverride(key, value);
+
   const existing = await db.configOverride.findUnique({
     where: {
       parameterKey_scopeType_scopeId: {
@@ -188,7 +172,6 @@ export async function setConfigOverride(
     },
   });
 
-  // Upsert the override
   await db.configOverride.upsert({
     where: {
       parameterKey_scopeType_scopeId: {
@@ -210,7 +193,6 @@ export async function setConfigOverride(
     },
   });
 
-  // Write audit log
   await db.configChange.create({
     data: {
       parameterKey: key,
@@ -222,21 +204,13 @@ export async function setConfigOverride(
     },
   });
 
-  // Invalidate cache for this parameter
   cache.invalidatePrefix(key);
 }
 
-/**
- * Invalidate every cached scope of one parameter key. Call after any write to
- * a parameter's value (override or default) so readers don't serve stale config.
- */
 export function invalidateConfig(key: string): void {
   cache.invalidatePrefix(key);
 }
 
-/**
- * Clear the entire config cache (e.g., when database is reset in tests)
- */
 export function clearConfigCache(): void {
   cache.clear();
 }

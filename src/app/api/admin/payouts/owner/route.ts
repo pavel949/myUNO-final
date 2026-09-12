@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
+import { recordOwnerPayoutAtomic } from '@/modules/finance/payout-ledger.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ interface RecordOwnerPayoutRequest {
   statementId: string
   amountThb: number
   reference: string
-  executedOn: string // ISO date string
+  executedOn: string
 }
 
 export async function POST(req: NextRequest) {
@@ -26,11 +27,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (body.amountThb <= 0) {
-      return NextResponse.json(
-        { error: 'amountThb must be positive' },
-        { status: 400 }
-      )
+    if (!Number.isInteger(body.amountThb) || body.amountThb <= 0) {
+      return NextResponse.json({ error: 'amountThb must be a positive satang integer' }, { status: 400 })
+    }
+
+    const executedOn = new Date(body.executedOn)
+    if (Number.isNaN(executedOn.getTime())) {
+      return NextResponse.json({ error: 'executedOn must be a valid date' }, { status: 400 })
     }
 
     const statement = await prisma.ownerStatement.findUnique({
@@ -38,12 +41,7 @@ export async function POST(req: NextRequest) {
       include: { unit: true },
     })
 
-    if (!statement) {
-      return NextResponse.json(
-        { error: 'Statement not found' },
-        { status: 404 }
-      )
-    }
+    if (!statement) return NextResponse.json({ error: 'Statement not found' }, { status: 404 })
 
     if (!['signed_off', 'published', 'distributed'].includes(statement.status)) {
       return NextResponse.json(
@@ -63,43 +61,22 @@ export async function POST(req: NextRequest) {
     }
 
     const existingPayout = await prisma.payout.findFirst({
-      where: {
-        ownerStatementId: body.statementId,
-        payeeType: 'owner',
-      },
+      where: { ownerStatementId: body.statementId, payeeType: 'owner' },
     })
-
     if (existingPayout) {
-      return NextResponse.json(
-        { error: 'Payout already recorded for this statement' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Payout already recorded for this statement' }, { status: 409 })
     }
 
-    const payout = await prisma.payout.create({
-      data: {
-        payeeType: 'owner',
-        ownerStatementId: body.statementId,
-        periodStart: statement.periodStart,
-        periodEnd: statement.periodEnd,
-        amountThb: body.amountThb,
-        method: 'bank_transfer_thb',
-        reference: body.reference,
-        executedOn: new Date(body.executedOn),
-        recordedByIdentityId: guard.actorIdentityId,
-        status: 'recorded',
-      },
-      include: {
-        ownerStatement: {
-          select: {
-            id: true,
-            periodStart: true,
-            periodEnd: true,
-            status: true,
-            unit: { select: { name: true, projectId: true } },
-          },
-        },
-      },
+    const payout = await recordOwnerPayoutAtomic(prisma, {
+      ownerStatementId: body.statementId,
+      unitId: statement.unitId,
+      projectId: statement.unit.projectId,
+      periodStart: statement.periodStart,
+      periodEnd: statement.periodEnd,
+      amountThb: body.amountThb,
+      reference: body.reference,
+      executedOn,
+      recordedByIdentityId: guard.actorIdentityId,
     })
 
     return NextResponse.json({
@@ -115,7 +92,7 @@ export async function POST(req: NextRequest) {
         statementId: payout.ownerStatementId,
         createdAt: payout.createdAt.toISOString(),
       },
-      message: `Owner payout recorded for ${payout.ownerStatement?.unit?.name}: ฿${payout.amountThb.toLocaleString()}`,
+      message: `Owner payout recorded for ${statement.unit.name}: ฿${(payout.amountThb / 100).toLocaleString()}`,
     })
   } catch (error) {
     return handleError(error)

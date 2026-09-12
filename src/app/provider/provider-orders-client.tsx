@@ -4,6 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 
+interface FulfillmentLocation {
+  projectName: string | null;
+  projectAddress: string | null;
+  unitName: string | null;
+  unitAddressSupplement: string | null;
+  addressNote: string | null;
+}
+
 interface ProviderOrder {
   id: string;
   status: string;
@@ -14,6 +22,7 @@ interface ProviderOrder {
   serviceTitle: string | null;
   noteToProvider: string | null;
   acceptDeadline: string | null;
+  fulfillmentLocation: FulfillmentLocation | null;
 }
 
 type Labels = Record<string, string>;
@@ -34,6 +43,7 @@ function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
   const scheduledStart = raw.scheduledStart ?? raw.scheduled_start;
   const scheduledEnd = raw.scheduledEnd ?? raw.scheduled_end;
   const acceptDeadline = raw.acceptDeadline;
+  const rawLocation = raw.fulfillmentLocation as Record<string, unknown> | null | undefined;
 
   return {
     id: String(raw.id),
@@ -50,7 +60,24 @@ function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
       (raw.note_to_provider as string | null | undefined) ??
       null,
     acceptDeadline: acceptDeadline ? new Date(String(acceptDeadline)).toISOString() : null,
+    fulfillmentLocation: rawLocation
+      ? {
+          projectName: (rawLocation.projectName as string | null | undefined) ?? null,
+          projectAddress: (rawLocation.projectAddress as string | null | undefined) ?? null,
+          unitName: (rawLocation.unitName as string | null | undefined) ?? null,
+          unitAddressSupplement:
+            (rawLocation.unitAddressSupplement as string | null | undefined) ?? null,
+          addressNote: (rawLocation.addressNote as string | null | undefined) ?? null,
+        }
+      : null,
   };
+}
+
+function formatLocation(location: FulfillmentLocation): string[] {
+  const unit = [location.unitName, location.unitAddressSupplement].filter(Boolean).join(' · ');
+  return [location.projectName, unit || null, location.projectAddress, location.addressNote].filter(
+    (value): value is string => Boolean(value)
+  );
 }
 
 export default function ProviderOrdersClient({
@@ -127,7 +154,11 @@ export default function ProviderOrdersClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['provider.orders.error_generic']);
       }
-      if (initialOrders) {
+      // Reload from the API after acceptance so the server can release the exact
+      // fulfillment location only after the state transition has committed.
+      if (!initialOrders) {
+        await loadQueue();
+      } else {
         setOrders((prev) =>
           prev.map((order) =>
             order.id === orderId
@@ -145,8 +176,6 @@ export default function ProviderOrdersClient({
               : order
           )
         );
-      } else {
-        await loadQueue();
       }
     } catch (err) {
       setError(
@@ -183,6 +212,9 @@ export default function ProviderOrdersClient({
         ) : (
           orders.map((order) => {
             const actionable = order.status === 'placed' || order.status === 'paid';
+            const locationLines = order.fulfillmentLocation
+              ? formatLocation(order.fulfillmentLocation)
+              : [];
             return (
               <div
                 key={order.id}
@@ -202,6 +234,18 @@ export default function ProviderOrdersClient({
                     {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
                     {(order.totalThb / 100).toLocaleString()}
                   </p>
+                  {locationLines.length > 0 && (
+                    <div className="mt-8 rounded-sm border border-border-line bg-surface-subtle p-12">
+                      <p className="text-small font-semibold text-text-ink">
+                        {labels['provider.orders.location']}
+                      </p>
+                      {locationLines.map((line, index) => (
+                        <p key={`${order.id}-location-${index}`} className="text-small text-text-secondary">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">
                       {labels['provider.orders.note']}: {order.noteToProvider}

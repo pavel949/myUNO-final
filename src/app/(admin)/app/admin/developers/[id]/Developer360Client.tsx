@@ -67,6 +67,11 @@ export default function Developer360Client({
   labels,
 }: Developer360ClientProps) {
   const trackRecord = organization.developerTrackRecord || {};
+  const replace = (template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce(
+      (result, [key, value]) => result.replace(`{${key}}`, String(value)),
+      template
+    );
 
   return (
     <div className="space-y-24">
@@ -85,10 +90,13 @@ export default function Developer360Client({
         </div>
         <div className="flex items-center gap-8 flex-wrap">
           <span className="px-12 py-4 text-small bg-brand-sand text-text-ink rounded-full uppercase font-medium">
-            {organization.developerVerification || 'unverified'}
+            {organization.developerVerification || labels['admin.dev360.verification_unverified']}
           </span>
           <span className="px-12 py-4 text-small bg-surface-ivory border border-border-line text-text-ink rounded-full">
-            {credentialSummary.verified}/{credentialSummary.total} credentials verified
+            {replace(labels['admin.dev360.credentials_verified'], {
+              verified: credentialSummary.verified,
+              total: credentialSummary.total,
+            })}
           </span>
         </div>
       </div>
@@ -112,7 +120,7 @@ export default function Developer360Client({
               <dd className="font-medium text-text-ink">{valueOrDash(organization.registrationNumber)}</dd>
             </div>
             <div className="border-b border-border-line pb-6">
-              <dt className="text-text-secondary">Established</dt>
+              <dt className="text-text-secondary">{labels['admin.dev360.established']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.yearEstablished)}</dd>
             </div>
             <div>
@@ -125,35 +133,35 @@ export default function Developer360Client({
         </section>
 
         <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
-          <h2 className="font-semibold text-subtitle text-text-ink">Contact & verification</h2>
+          <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.dev360.contact_title']}</h2>
           <dl className="space-y-8 text-small">
             <div className="border-b border-border-line pb-6">
-              <dt className="text-text-secondary">Email</dt>
+              <dt className="text-text-secondary">{labels['admin.dev360.email']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.contactEmail)}</dd>
             </div>
             <div className="border-b border-border-line pb-6">
-              <dt className="text-text-secondary">Phone</dt>
+              <dt className="text-text-secondary">{labels['admin.dev360.phone']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.contactPhone)}</dd>
             </div>
             <div className="border-b border-border-line pb-6">
-              <dt className="text-text-secondary">Website</dt>
+              <dt className="text-text-secondary">{labels['admin.dev360.website']}</dt>
               <dd className="font-medium text-text-ink break-all">{valueOrDash(organization.website)}</dd>
             </div>
             <div>
-              <dt className="text-text-secondary">Active credentials</dt>
+              <dt className="text-text-secondary">{labels['admin.dev360.active_credentials']}</dt>
               <dd className="font-medium text-text-ink">{credentialSummary.active}</dd>
             </div>
           </dl>
         </section>
 
         <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
-          <h2 className="font-semibold text-subtitle text-text-ink">Track record</h2>
+          <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.dev360.track_record_title']}</h2>
           <div className="grid grid-cols-2 gap-8">
             {[
-              ['Completed', trackRecord.completedProjects],
-              ['Active', trackRecord.activeProjects],
-              ['Planned', trackRecord.plannedProjects],
-              ['Units delivered', trackRecord.totalUnitsDelivered],
+              [labels['admin.dev360.track_completed'], trackRecord.completedProjects],
+              [labels['admin.dev360.track_active'], trackRecord.activeProjects],
+              [labels['admin.dev360.track_planned'], trackRecord.plannedProjects],
+              [labels['admin.dev360.track_units_delivered'], trackRecord.totalUnitsDelivered],
             ].map(([label, value]) => (
               <div key={String(label)} className="p-12 rounded-md bg-surface-ivory border border-border-line">
                 <p className="text-micro text-text-secondary">{label}</p>
@@ -195,7 +203,9 @@ export default function Developer360Client({
                   </div>
                   <div className="flex gap-6 flex-wrap justify-end">
                     {relationship.isPrimary ? (
-                      <span className="text-micro px-8 py-2 bg-brand-andaman text-on-dark-text rounded-full">Primary</span>
+                      <span className="text-micro px-8 py-2 bg-brand-andaman text-on-dark-text rounded-full">
+                        {labels['admin.dev360.primary']}
+                      </span>
                     ) : null}
                     <span className="text-micro px-8 py-2 bg-brand-sand text-text-ink rounded-full">
                       {relationship.roleKey.replace(/_/g, ' ')}
@@ -203,10 +213,10 @@ export default function Developer360Client({
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-8 text-center">
-                  <div><p className="text-micro text-text-secondary">Units</p><p className="font-semibold">{relationship.project.unitsCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">Categories</p><p className="font-semibold">{relationship.project.categoryCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">Rate plans</p><p className="font-semibold">{relationship.project.ratePlanCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">Bookings</p><p className="font-semibold">{relationship.project.bookingsCount}</p></div>
+                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_units']}</p><p className="font-semibold">{relationship.project.unitsCount}</p></div>
+                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_categories']}</p><p className="font-semibold">{relationship.project.categoryCount}</p></div>
+                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_rate_plans']}</p><p className="font-semibold">{relationship.project.ratePlanCount}</p></div>
+                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_bookings']}</p><p className="font-semibold">{relationship.project.bookingsCount}</p></div>
                 </div>
               </Link>
             ))}

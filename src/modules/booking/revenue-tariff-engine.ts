@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { formatBaht } from '@/lib/money';
 import { toCalendarDay } from '@/lib/date';
@@ -121,14 +121,14 @@ export async function resolveEffectiveStayOffer(
     throw new Error('startDate must be before endDate');
   }
 
-  const blockingBookingWhere = {
+  const blockingBookingWhere: Prisma.BookingWhereInput = {
     startDate: { lt: end },
     endDate: { gt: start },
     OR: [
       { status: { in: ['confirmed', 'checked_in'] } },
       { status: 'pending_payment', holdExpiresAt: { gt: now } },
     ],
-  } as const;
+  };
 
   let targetUnit: any = null;
   let targetCategory: any = null;
@@ -187,7 +187,6 @@ export async function resolveEffectiveStayOffer(
     defaultMinNights = targetCategory.minNights || 1;
     defaultCancellationKey = targetCategory.cancellationPolicyKey || 'flexible';
   } else if (targetUnit) {
-    // Compatibility only for a draft/not-yet-migrated unit.
     baseNightlyRate = targetUnit.baseNightlyThb || 0;
     defaultMinNights = targetUnit.minNights || 1;
     defaultCancellationKey = targetUnit.cancellationPolicyKey || 'flexible';

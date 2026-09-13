@@ -17,12 +17,12 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  *
  * Canonical request contract:
  * - unitId: string — book a specific physical unit; OR
- * - inventoryCategoryId: string — book a canonical sellable category and let
+ * - inventoryCategoryId/categoryId: string — book a canonical sellable category and let
  *   the server assign an available unit.
  *
  * Compatibility contract during migration:
  * - categoryKey + projectId remains accepted for older clients. The key is not
- *   authoritative when inventoryCategoryId is present; the InventoryCategory
+ *   authoritative when a canonical category id is present; the InventoryCategory
  *   row supplies both the project and compatibility key.
  *
  * Other fields:
@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       unitId: requestedUnitId,
-      inventoryCategoryId,
+      inventoryCategoryId: requestedInventoryCategoryId,
+      categoryId,
       categoryKey,
       projectId,
       startDate: startDateStr,
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
       paymentMethod = 'cash',
     } = body;
 
+    const inventoryCategoryId = requestedInventoryCategoryId || categoryId;
     const hasCategorySelector = Boolean(inventoryCategoryId || categoryKey);
 
     if (
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     // Resolve a canonical category once, at the API boundary. Older internals
     // still accept categoryKey while they are migrated, but every canonical
-    // caller is now anchored to an InventoryCategory row and its own project.
+    // caller is anchored to an InventoryCategory row and its own project.
     let resolvedProjectId = projectId as string | undefined;
     let resolvedCategoryKey = categoryKey as string | undefined;
     let resolvedInventoryCategoryId = inventoryCategoryId as string | undefined;
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!category || category.status !== 'active') {
+      if (!category || category.status !== 'live') {
         throw createPublicError('inventory category not found', 404);
       }
       if (projectId && projectId !== category.projectId) {
@@ -144,8 +146,6 @@ export async function POST(req: NextRequest) {
     for (const [index, candidate] of candidates.entries()) {
       const isLastCandidate = index === candidates.length - 1;
 
-      // Preserve the proven production money path while category contracts are
-      // canonicalized. Pricing parity with EffectiveStayOffer is a separate gate.
       const candidateBreakdown = await computePriceBreakdown(
         prisma,
         candidate.id,

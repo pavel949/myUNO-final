@@ -40,9 +40,6 @@ async function resolveCanonicalRatePlan(
   db: PrismaClient,
   input: { projectId?: string; categoryId?: string; unitId?: string; code: string }
 ) {
-  // Unit tests and older adapters may provide a narrow Prisma seam that predates
-  // RatePlan. Treat absence as "not migrated yet" rather than crashing before
-  // the config-backed compatibility path can price the stay.
   const ratePlan = (db as any).ratePlan;
   if (!ratePlan?.findFirst) return null;
 
@@ -102,18 +99,36 @@ function applyCanonicalRatePlanAdjustment(
 }
 
 /**
- * Flexible Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine.
+ * Canonical stay quotation engine.
  *
- * Canonical precedence:
- * Project → InventoryCategory → Unit → RatePlan → date-specific PricingRule.
- * Legacy config-backed rate-plan discounts remain as a compatibility fallback
- * when no RatePlan record exists yet.
+ * Source of truth:
+ * Project -> InventoryCategory -> Unit -> RatePlan -> date-specific PricingRule.
+ *
+ * Once a unit is linked to InventoryCategory, category commercial facts are
+ * authoritative. Unit.baseNightlyThb/minNights/cancellationPolicyKey are only a
+ * compatibility fallback for not-yet-migrated draft inventory.
  */
 export async function resolveEffectiveStayOffer(
   db: PrismaClient,
   query: StayOfferQuery
 ): Promise<EffectiveStayOffer> {
   const { projectId, categoryId, unitId, ratePlanCode = 'BAR', startDate, endDate, guests } = query;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const now = new Date();
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+    throw new Error('startDate must be before endDate');
+  }
+
+  const blockingBookingWhere = {
+    startDate: { lt: end },
+    endDate: { gt: start },
+    OR: [
+      { status: { in: ['confirmed', 'checked_in'] } },
+      { status: 'pending_payment', holdExpiresAt: { gt: now } },
+    ],
+  } as const;
 
   let targetUnit: any = null;
   let targetCategory: any = null;
@@ -127,6 +142,7 @@ export async function resolveEffectiveStayOffer(
         inventoryCategory: true,
         pricingRules: true,
         blockedDates: true,
+        bookings: { where: blockingBookingWhere, select: { id: true } },
       },
     });
     if (targetUnit) {
@@ -142,6 +158,7 @@ export async function resolveEffectiveStayOffer(
           include: {
             blockedDates: true,
             pricingRules: true,
+            bookings: { where: blockingBookingWhere, select: { id: true } },
           },
         },
       },
@@ -151,24 +168,33 @@ export async function resolveEffectiveStayOffer(
     targetProject = await db.project.findUnique({ where: { id: projectId } });
   }
 
-  const resolvedProjectId = targetProject?.id || projectId || 'unknown-project';
+  if (!targetProject) throw new Error('Project not found');
+  if (unitId && !targetUnit) throw new Error('Unit not found');
+  if (categoryId && !targetCategory) throw new Error('Inventory category not found');
+
+  if (projectId && targetProject.id !== projectId) {
+    throw new Error('Inventory does not belong to the requested project');
+  }
+
+  const resolvedProjectId = targetProject.id;
 
   let baseNightlyRate = 0;
   let defaultMinNights = 1;
   let defaultCancellationKey = 'flexible';
 
-  if (targetUnit) {
-    baseNightlyRate = targetUnit.baseNightlyThb || 0;
-    defaultMinNights = targetUnit.minNights || 1;
-    defaultCancellationKey = targetUnit.cancellationPolicyKey || 'flexible';
-  } else if (targetCategory) {
+  if (targetCategory) {
     baseNightlyRate = targetCategory.baseNightlyThb || 0;
     defaultMinNights = targetCategory.minNights || 1;
     defaultCancellationKey = targetCategory.cancellationPolicyKey || 'flexible';
+  } else if (targetUnit) {
+    // Compatibility only for a draft/not-yet-migrated unit.
+    baseNightlyRate = targetUnit.baseNightlyThb || 0;
+    defaultMinNights = targetUnit.minNights || 1;
+    defaultCancellationKey = targetUnit.cancellationPolicyKey || 'flexible';
   }
 
   const canonicalRatePlan = await resolveCanonicalRatePlan(db, {
-    projectId: resolvedProjectId !== 'unknown-project' ? resolvedProjectId : undefined,
+    projectId: resolvedProjectId,
     categoryId: targetCategory?.id,
     unitId: targetUnit?.id,
     code: ratePlanCode,
@@ -179,11 +205,12 @@ export async function resolveEffectiveStayOffer(
     defaultCancellationKey = canonicalRatePlan.cancellationPolicyKey;
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const nightsCount = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
+  const nightsCount = Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24))
+  );
 
-  const configScope = targetProject ? { projectId: targetProject.id } : undefined;
+  const configScope = { projectId: targetProject.id };
   const vatPct = (await getConfig(db, 'finance.vat_pct', configScope)) ?? 0;
   const nonRefundableDiscountPct =
     (await getConfig(db, 'pricing.rate_plan.non_refundable_discount_pct', configScope)) ?? 0;
@@ -204,9 +231,9 @@ export async function resolveEffectiveStayOffer(
     let nightRate = baseNightlyRate;
 
     if (targetCategory) {
-      sourceTrace.push(`Category (${targetCategory.name}) base: ${formatBaht(baseNightlyRate)}`);
+      sourceTrace.push(`InventoryCategory (${targetCategory.name}) base: ${formatBaht(baseNightlyRate)}`);
     } else if (targetUnit) {
-      sourceTrace.push(`Unit (${targetUnit.name}) base: ${formatBaht(baseNightlyRate)}`);
+      sourceTrace.push(`Legacy Unit (${targetUnit.name}) base: ${formatBaht(baseNightlyRate)}`);
     }
 
     if (targetUnit?.pricingRules) {
@@ -216,15 +243,16 @@ export async function resolveEffectiveStayOffer(
       if (overrideRule) {
         nightRate = overrideRule.nightlyThb;
         sourceTrace.push(
-          `Specific Unit override (${overrideRule.label || 'seasonal'}): ${formatBaht(overrideRule.nightlyThb)}`
+          `Unit date override (${overrideRule.label || 'seasonal'}): ${formatBaht(overrideRule.nightlyThb)}`
         );
       }
     }
 
     if (canonicalRatePlan) {
-      const adjustmentValue = canonicalRatePlan.adjustmentValue === null
-        ? null
-        : Number(canonicalRatePlan.adjustmentValue);
+      const adjustmentValue =
+        canonicalRatePlan.adjustmentValue === null
+          ? null
+          : Number(canonicalRatePlan.adjustmentValue);
       const adjusted = applyCanonicalRatePlanAdjustment(
         nightRate,
         canonicalRatePlan.adjustmentType,
@@ -233,17 +261,17 @@ export async function resolveEffectiveStayOffer(
       if (adjusted !== null) {
         nightRate = adjusted;
         sourceTrace.push(
-          `Rate Plan ${canonicalRatePlan.code} (${canonicalRatePlan.adjustmentType} ${adjustmentValue})`
+          `RatePlan ${canonicalRatePlan.code} (${canonicalRatePlan.adjustmentType} ${adjustmentValue})`
         );
       } else {
-        sourceTrace.push(`Rate Plan ${canonicalRatePlan.code}`);
+        sourceTrace.push(`RatePlan ${canonicalRatePlan.code}`);
       }
     } else if (ratePlanCode === 'NON_REFUNDABLE') {
       nightRate = Math.round(nightRate * (1 - nonRefundableDiscountPct / 100));
-      sourceTrace.push(`Rate Plan NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
+      sourceTrace.push(`Compatibility rate NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
     } else if (ratePlanCode === 'WEEKLY' && nightsCount >= weeklyMinNights) {
       nightRate = Math.round(nightRate * (1 - weeklyDiscountPct / 100));
-      sourceTrace.push(`Rate Plan WEEKLY (-${weeklyDiscountPct}%)`);
+      sourceTrace.push(`Compatibility rate WEEKLY (-${weeklyDiscountPct}%)`);
     }
 
     subtotalThb += nightRate;
@@ -258,25 +286,41 @@ export async function resolveEffectiveStayOffer(
   const vatTaxThb = Math.round(subtotalThb * (vatPct / 100));
   const totalThb = subtotalThb + vatTaxThb;
 
-  let availableCapacity = 1;
-  let isAvailable = true;
+  const rangeBlocked = (blockedDates: any[]) =>
+    blockedDates.some(
+      (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
+    );
+
+  let availableCapacity = 0;
+  let isAvailable = false;
 
   if (targetCategory) {
-    const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
-    const outOfServiceUnits = targetCategory.units
-      ? targetCategory.units.filter((u: any) => u.status === 'paused' || u.assetStatus === 'suspended').length
-      : 0;
-    availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
-    const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
-    isAvailable = availableCapacity > 0 && !exceedsCapacity;
+    const eligibleUnits = (targetCategory.units || []).filter((u: any) => {
+      const operational = u.status === 'live' && u.assetStatus !== 'suspended';
+      const blocked = rangeBlocked(u.blockedDates || []);
+      const booked = (u.bookings || []).length > 0;
+      return operational && !blocked && !booked;
+    });
+    availableCapacity = eligibleUnits.length;
+    const exceedsCapacity = guests > targetCategory.maxGuests;
+    isAvailable =
+      targetProject.status === 'live' &&
+      targetCategory.status === 'live' &&
+      availableCapacity > 0 &&
+      !exceedsCapacity &&
+      nightsCount >= defaultMinNights;
   } else if (targetUnit) {
-    const isUnitBlocked = targetUnit.blockedDates
-      ? targetUnit.blockedDates.some(
-          (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
-        )
-      : false;
-    const exceedsCapacity = targetUnit.maxGuests !== undefined && guests > targetUnit.maxGuests;
-    isAvailable = !isUnitBlocked && targetUnit.status === 'live' && !exceedsCapacity;
+    const blocked = rangeBlocked(targetUnit.blockedDates || []);
+    const booked = (targetUnit.bookings || []).length > 0;
+    const exceedsCapacity = guests > targetUnit.maxGuests;
+    isAvailable =
+      targetProject.status === 'live' &&
+      targetUnit.status === 'live' &&
+      targetUnit.assetStatus !== 'suspended' &&
+      !blocked &&
+      !booked &&
+      !exceedsCapacity &&
+      nightsCount >= defaultMinNights;
     availableCapacity = isAvailable ? 1 : 0;
   }
 

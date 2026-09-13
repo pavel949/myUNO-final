@@ -6,19 +6,36 @@ import CreateUnitForm from './create-unit-form';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUnitsPage() {
-  const units = await prisma.unit.findMany({
-    include: {
-      project: { select: { name: true } },
-      coverMedia: { select: { storageKey: true } },
-      owner: { select: { firstName: true, lastName: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const projects = await prisma.project.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  });
+  const [units, projects, categories] = await Promise.all([
+    prisma.unit.findMany({
+      include: {
+        project: { select: { name: true } },
+        inventoryCategory: true,
+        coverMedia: { select: { storageKey: true } },
+        owner: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.project.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.inventoryCategory.findMany({
+      where: { status: 'live' },
+      select: {
+        id: true,
+        projectId: true,
+        categoryKey: true,
+        name: true,
+        bedrooms: true,
+        bathrooms: true,
+        maxGuests: true,
+        baseNightlyThb: true,
+        minNights: true,
+      },
+      orderBy: [{ projectId: 'asc' }, { name: 'asc' }],
+    }),
+  ]);
 
   const labels = await getLabels({
     'admin.units.title': 'Projects & Units',
@@ -26,18 +43,20 @@ export default async function AdminUnitsPage() {
     'admin.units.cancel': 'Cancel',
     'admin.units.saving': 'Saving…',
     'admin.units.project': 'Project',
+    'admin.units.category': 'Inventory category',
+    'admin.units.category_required': 'Create an inventory category before adding a live-ready unit.',
     'admin.units.name': 'Name',
     'admin.units.type': 'Type',
     'admin.units.bedrooms': 'Bedrooms',
     'admin.units.bathrooms': 'Bathrooms',
     'admin.units.max_guests': 'Sleeps',
     'admin.units.address_supplement': 'Address detail (unit number, building)',
-    'admin.units.base_nightly': 'Base ฿/night',
+    'admin.units.base_nightly': 'Canonical base ฿/night',
     'admin.units.min_nights': 'Minimum nights',
     'admin.units.no_projects': 'Create a project before adding units.',
     'admin.units.status': 'Status',
     'admin.units.owner': 'Owner',
-    'admin.units.price': 'Base ฿/night',
+    'admin.units.price': 'Canonical base ฿/night',
     'admin.units.permitted_use': 'Permitted use',
     'admin.units.confirmed': 'Confirmed',
     'admin.units.confirm_action': 'Confirm permitted use',
@@ -58,7 +77,7 @@ export default async function AdminUnitsPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.units.title']}
       </h1>
-      <CreateUnitForm projects={projects} labels={labels} />
+      <CreateUnitForm projects={projects} categories={categories} labels={labels} />
       <UnitsAdminClient
         units={units.map((unit) => ({
           id: unit.id,
@@ -66,8 +85,9 @@ export default async function AdminUnitsPage() {
           projectName: unit.project?.name || '—',
           status: unit.status,
           assetStatus: unit.assetStatus,
-          // Display boundary: baseNightlyThb is satang (THB x 100).
-          baseNightlyThb: Math.round(unit.baseNightlyThb / 100),
+          baseNightlyThb: Math.round(
+            (unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb) / 100
+          ),
           permittedUseConfirmed: Boolean(unit.permittedUseConfirmedAt),
           coverUrl: unit.coverMedia?.storageKey || null,
           ownerName: unit.owner ? `${unit.owner.firstName} ${unit.owner.lastName}` : '—',

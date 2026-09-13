@@ -11,9 +11,6 @@ import {
 } from '@/modules/projects';
 
 export async function fetchMCDashboard(projectId: string, organizationId: string) {
-  // `getMCDashboard` already refuses a project/organization this member has no
-  // role assignment for. That check is only worth anything once the member is
-  // the caller rather than whoever the caller named.
   const mcIdentityId = await requireSessionIdentityId();
   try {
     const dashboard = await getMCDashboard(prisma, mcIdentityId, projectId, organizationId);
@@ -28,15 +25,50 @@ export async function fetchMCDashboard(projectId: string, organizationId: string
       50
     );
 
-    // Cast to any to avoid type mismatches between Prisma and client types.
-    // baseNightlyThb / totalThb are satang like every other amount in the
-    // platform (CLAUDE.md); convert to baht here, once, at the boundary to
-    // the client component (Q47 — the MC dashboard previously showed every
-    // nightly rate and booking total 100x too large).
-    const units = (unitsRaw as any[]).map((unit) => ({
-      ...unit,
-      baseNightlyThb: unit.baseNightlyThb / 100,
-    }));
+    const unitIds = (unitsRaw as any[]).map((unit) => unit.id);
+    const canonicalRows = unitIds.length
+      ? await prisma.unit.findMany({
+          where: { id: { in: unitIds } },
+          select: {
+            id: true,
+            inventoryCategory: {
+              select: {
+                id: true,
+                categoryKey: true,
+                name: true,
+                baseNightlyThb: true,
+                minNights: true,
+                ratePlans: {
+                  where: { status: 'active', code: 'BAR' },
+                  take: 1,
+                  select: { code: true, minNights: true },
+                },
+              },
+            },
+          },
+        })
+      : [];
+    const canonicalByUnit = new Map(canonicalRows.map((row) => [row.id, row.inventoryCategory]));
+
+    const units = (unitsRaw as any[]).map((unit) => {
+      const category = canonicalByUnit.get(unit.id);
+      return {
+        ...unit,
+        // Keep the client field for compatibility, but derive it from the
+        // canonical sellable category rather than Unit.baseNightlyThb.
+        baseNightlyThb: (category?.baseNightlyThb ?? unit.baseNightlyThb) / 100,
+        inventoryCategory: category
+          ? {
+              id: category.id,
+              categoryKey: category.categoryKey,
+              name: category.name,
+              minNights: category.ratePlans[0]?.minNights ?? category.minNights,
+              ratePlanCode: category.ratePlans[0]?.code ?? 'BAR',
+            }
+          : null,
+      };
+    });
+
     const bookings = (bookingsRaw as any[]).map((booking) => ({
       ...booking,
       totalThb: booking.totalThb / 100,
@@ -50,13 +82,7 @@ export async function fetchMCDashboard(projectId: string, organizationId: string
       paid: order.payments.length > 0,
     }));
 
-    return {
-      dashboard,
-      units,
-      bookings,
-      tickets,
-      serviceOrders,
-    };
+    return { dashboard, units, bookings, tickets, serviceOrders };
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC dashboard');
   }

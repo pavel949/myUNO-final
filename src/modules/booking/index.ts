@@ -31,6 +31,11 @@ export {
 } from './booking.service';
 
 export {
+  resolveInventoryCategory,
+  findAvailableUnitsForInventoryCategory,
+} from './inventory-category.service';
+
+export {
   BOOKING_REQUEST_DECLINE_REASONS,
   bookingRequestDeclineReasonLabelKey,
   formatDeclineCancellationReason,

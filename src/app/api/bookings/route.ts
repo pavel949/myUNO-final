@@ -4,7 +4,9 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
   createBooking,
   resolveCancellationPolicy,
-  findAvailableUnitsForCategory,
+  resolveInventoryCategory,
+  findAvailableUnitsForInventoryCategory,
+  resolveEffectiveStayOffer,
 } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
 import { computePriceBreakdown } from '@/modules/core';
@@ -12,45 +14,23 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
  * POST /api/bookings
- * Create a new booking (instant or request-to-book).
- * Requires authentication.
  *
- * Canonical request contract:
- * - unitId: string — book a specific physical unit; OR
- * - inventoryCategoryId: string — book a canonical sellable category and let
- *   the server assign an available unit.
- *
- * Compatibility contract during migration:
- * - categoryKey + projectId remains accepted for older clients. The key is not
- *   authoritative when inventoryCategoryId is present; the InventoryCategory
- *   row supplies both the project and compatibility key.
- *
- * Other fields:
- * - projectId?: string — optional on the canonical category path and on the
- *   specific-unit path. If supplied it must agree with the server-side asset.
- * - startDate/endDate: ISO dates
- * - adultsCount/childrenCount
- * - instantBook: required only for the specific-unit path; category booking
- *   gets this from the assigned unit.
- * - guestNote?
- * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
- *
- * The total is ALWAYS computed server-side from the production pricing engine;
- * any client-sent amount is ignored.
+ * Canonical category contract: `categoryId` is authoritative. `categoryKey`
+ * remains accepted only as a compatibility public slug and is resolved through
+ * InventoryCategory before availability or booking logic runs.
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      throw createPublicError('unauthorized', 401);
-    }
+    if (!user) throw createPublicError('unauthorized', 401);
 
     const body = await req.json();
     const {
       unitId: requestedUnitId,
-      inventoryCategoryId,
+      categoryId: requestedCategoryId,
       categoryKey,
       projectId,
+      ratePlanCode = 'BAR',
       startDate: startDateStr,
       endDate: endDateStr,
       adultsCount,
@@ -62,11 +42,9 @@ export async function POST(req: NextRequest) {
       paymentMethod = 'cash',
     } = body;
 
-    const hasCategorySelector = Boolean(inventoryCategoryId || categoryKey);
-
     if (
-      (!requestedUnitId && !hasCategorySelector) ||
-      (!requestedUnitId && !inventoryCategoryId && !projectId) ||
+      (!requestedUnitId && !requestedCategoryId && !categoryKey) ||
+      (!requestedUnitId && !projectId && !requestedCategoryId) ||
       !startDateStr ||
       !endDateStr ||
       adultsCount === undefined ||
@@ -78,64 +56,35 @@ export async function POST(req: NextRequest) {
 
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
-
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate >= endDate) {
       throw createPublicError('invalid request: startDate must be before endDate', 400);
     }
 
     const guestCount = Number(adultsCount) + Number(childrenCount);
-    if (!Number.isFinite(guestCount) || guestCount < 1) {
-      throw createPublicError('invalid request: at least one guest is required', 400);
-    }
 
-    // Resolve a canonical category once, at the API boundary. Older internals
-    // still accept categoryKey while they are migrated, but every canonical
-    // caller is now anchored to an InventoryCategory row and its own project.
-    let resolvedProjectId = projectId as string | undefined;
-    let resolvedCategoryKey = categoryKey as string | undefined;
-    let resolvedInventoryCategoryId = inventoryCategoryId as string | undefined;
+    const canonicalCategory = requestedUnitId
+      ? null
+      : await resolveInventoryCategory(prisma, {
+          projectId,
+          categoryId: requestedCategoryId,
+          categoryKey,
+        });
 
-    if (!requestedUnitId && inventoryCategoryId) {
-      const category = await prisma.inventoryCategory.findUnique({
-        where: { id: inventoryCategoryId },
-        select: {
-          id: true,
-          projectId: true,
-          categoryKey: true,
-          status: true,
-        },
-      });
-
-      if (!category || category.status !== 'active') {
-        throw createPublicError('inventory category not found', 404);
-      }
-      if (projectId && projectId !== category.projectId) {
-        throw createPublicError('inventory category does not belong to the given project', 400);
-      }
-      if (categoryKey && categoryKey !== category.categoryKey) {
-        throw createPublicError('categoryKey disagrees with inventoryCategoryId', 400);
-      }
-
-      resolvedProjectId = category.projectId;
-      resolvedCategoryKey = category.categoryKey;
-      resolvedInventoryCategoryId = category.id;
+    if (!requestedUnitId && !canonicalCategory) {
+      throw createPublicError('inventory category not found', 404);
     }
 
     const candidates = requestedUnitId
       ? [{ id: requestedUnitId, instantBook: requestedInstantBook }]
-      : await findAvailableUnitsForCategory(
+      : await findAvailableUnitsForInventoryCategory(
           prisma,
-          resolvedProjectId as string,
-          resolvedCategoryKey as string,
+          canonicalCategory!.id,
           startDate,
           endDate
         );
 
     if (candidates.length === 0) {
-      throw createPublicError(
-        'no villa of this category is available for these dates',
-        409
-      );
+      throw createPublicError('no unit of this category is available for these dates', 409);
     }
 
     let booking!: Awaited<ReturnType<typeof createBooking>>;
@@ -144,8 +93,41 @@ export async function POST(req: NextRequest) {
     for (const [index, candidate] of candidates.entries()) {
       const isLastCandidate = index === candidates.length - 1;
 
-      // Preserve the proven production money path while category contracts are
-      // canonicalized. Pricing parity with EffectiveStayOffer is a separate gate.
+      const unit = await prisma.unit.findUnique({
+        where: { id: candidate.id },
+        select: {
+          id: true,
+          status: true,
+          projectId: true,
+          inventoryCategoryId: true,
+          inventoryCategory: { select: { id: true } },
+        },
+      });
+      if (!unit || unit.status !== 'live') throw createPublicError('not found', 404);
+      if (projectId && projectId !== unit.projectId) {
+        throw createPublicError('unit does not belong to the given project', 400);
+      }
+      if (canonicalCategory && unit.inventoryCategoryId !== canonicalCategory.id) {
+        throw createPublicError('unit does not belong to the selected inventory category', 400);
+      }
+
+      const offer = await resolveEffectiveStayOffer(prisma, {
+        projectId: unit.projectId,
+        categoryId: unit.inventoryCategoryId ?? undefined,
+        unitId: unit.id,
+        ratePlanCode,
+        startDate,
+        endDate,
+        guests: guestCount,
+      });
+      if (!offer.isAvailable) {
+        if (!isLastCandidate) continue;
+        throw createPublicError('selected inventory is unavailable for these dates', 409);
+      }
+
+      // Full booking breakdown retains taxes/fees/LOS/early-bird rules while its
+      // nightly base is migrated to canonical InventoryCategory in the core
+      // pricing service. Client-provided totals are never trusted.
       const candidateBreakdown = await computePriceBreakdown(
         prisma,
         candidate.id,
@@ -156,40 +138,15 @@ export async function POST(req: NextRequest) {
         Number(petsCount)
       );
 
-      const unit = await prisma.unit.findUnique({
-        where: { id: candidate.id },
-        select: {
-          cancellationPolicyKey: true,
-          status: true,
-          projectId: true,
-          inventoryCategoryId: true,
-        },
-      });
-      if (!unit || unit.status !== 'live') {
-        throw createPublicError('not found', 404);
-      }
-
-      const bookingProjectId = unit.projectId;
-      if (projectId && projectId !== bookingProjectId) {
-        throw createPublicError('unit does not belong to the given project', 400);
-      }
-      if (
-        resolvedInventoryCategoryId &&
-        unit.inventoryCategoryId &&
-        unit.inventoryCategoryId !== resolvedInventoryCategoryId
-      ) {
-        throw createPublicError('assigned unit does not belong to the requested inventory category', 409);
-      }
-
-      const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
-        projectId: bookingProjectId,
+      const policy = await resolveCancellationPolicy(prisma, offer.cancellationPolicyKey, {
+        projectId: unit.projectId,
         unitId: candidate.id,
       });
 
       try {
         booking = await createBooking(prisma, {
           unitId: candidate.id,
-          projectId: bookingProjectId,
+          projectId: unit.projectId,
           guestIdentityId: user.identityId,
           bookingType: 'guest_stay',
           channel: 'direct',
@@ -204,16 +161,17 @@ export async function POST(req: NextRequest) {
           guestNote,
           priceBreakdown: {
             ...candidateBreakdown,
-            ...(resolvedInventoryCategoryId && {
-              inventory_category_id: resolvedInventoryCategoryId,
-            }),
+            canonical: {
+              categoryId: offer.categoryId ?? null,
+              ratePlanCode: offer.ratePlanCode,
+              minNights: offer.minNights,
+              source: 'InventoryCategory+RatePlan',
+            },
           },
           cancellationPolicySnapshot: { ...policy },
         });
       } catch (error) {
-        if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) {
-          continue;
-        }
+        if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) continue;
         throw error;
       }
 
@@ -234,42 +192,23 @@ export async function POST(req: NextRequest) {
         payerIdentityId: user.identityId,
         amountThb: breakdown.total_thb,
       });
-
-      return NextResponse.json(
-        {
-          booking,
-          checkout,
-          ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
-        },
-        { status: 201 }
-      );
+      return NextResponse.json({ booking, checkout }, { status: 201 });
     }
 
     if (instantBook && (method === 'cash' || method === 'bank_transfer')) {
       return NextResponse.json(
-        {
-          booking,
-          ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
-          message: 'Booking created. Payment to be recorded.',
-        },
+        { booking, message: 'Booking created. Payment to be recorded.' },
         { status: 201 }
       );
     }
 
     return NextResponse.json(
-      {
-        booking,
-        ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
-        message: 'Request to book created. Awaiting host approval.',
-      },
+      { booking, message: 'Request to book created. Awaiting host approval.' },
       { status: 201 }
     );
   } catch (error) {
     if (error instanceof Error && (error as { code?: string }).code === 'DOUBLE_BOOK') {
-      return NextResponse.json(
-        { error: error.message, code: 'DOUBLE_BOOK' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: error.message, code: 'DOUBLE_BOOK' }, { status: 409 });
     }
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;
@@ -277,7 +216,8 @@ export async function POST(req: NextRequest) {
         msg.includes('unavailable') ||
         msg.includes('minimum') ||
         msg.includes('exceeds') ||
-        msg.includes('not found')
+        msg.includes('not found') ||
+        msg.includes('category')
       ) {
         return NextResponse.json({ error: msg }, { status: 400 });
       }

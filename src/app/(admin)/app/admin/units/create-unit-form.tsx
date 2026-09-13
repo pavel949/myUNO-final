@@ -1,49 +1,63 @@
 'use client';
 
-import { useState } from 'react';
-import { bahtToSatang } from '@/lib/money';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
-
-/**
- * Creating a unit.
- *
- * `POST /api/admin/units` existed but no screen called it, so every unit had to
- * be created by hand-writing a request — which is not an onboarding flow, it is
- * a workaround the founder cannot use.
- *
- * The form does not offer a status field. `createUnit` refuses to create a unit
- * live (permitted use is a legal gate), so a status picker here could only
- * offer draft — a control with one option is noise, and one with two would
- * invite the error the service exists to refuse.
- */
 
 const UNIT_TYPES = ['villa', 'condo', 'townhouse'];
 
 type Labels = Record<string, string>;
+type Category = {
+  id: string;
+  projectId: string;
+  categoryKey: string;
+  name: string;
+  bedrooms: number;
+  bathrooms: number;
+  maxGuests: number;
+  baseNightlyThb: number;
+  minNights: number;
+};
 
 export default function CreateUnitForm({
   projects,
+  categories,
   labels,
 }: {
   projects: Array<{ id: string; name: string }>;
+  categories: Category[];
   labels: Labels;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
+  const availableCategories = useMemo(
+    () => categories.filter((category) => category.projectId === projectId),
+    [categories, projectId]
+  );
+  const [categoryId, setCategoryId] = useState('');
+  const selectedCategory =
+    availableCategories.find((category) => category.id === categoryId) ?? availableCategories[0] ?? null;
 
   if (projects.length === 0) {
-    // Without a project there is nothing to create a unit inside, and an empty
-    // picker is a dead end rather than an explanation.
     return <p className="text-body text-text-secondary mb-16">{labels['admin.units.no_projects']}</p>;
   }
 
   if (!open) {
     return (
       <div className="mb-24">
-        <Button onClick={() => setOpen(true)}>{labels['admin.units.create']}</Button>
+        <Button
+          onClick={() => {
+            setOpen(true);
+            const firstProject = projects[0]?.id ?? '';
+            setProjectId(firstProject);
+            setCategoryId(categories.find((c) => c.projectId === firstProject)?.id ?? '');
+          }}
+        >
+          {labels['admin.units.create']}
+        </Button>
       </div>
     );
   }
@@ -54,6 +68,13 @@ export default function CreateUnitForm({
       onSubmit={async (event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget as HTMLFormElement);
+        const category =
+          availableCategories.find((item) => item.id === String(form.get('inventoryCategoryId'))) ?? null;
+        if (!category) {
+          setError(labels['admin.units.category_required']);
+          return;
+        }
+
         setBusy(true);
         setError(null);
         try {
@@ -61,18 +82,14 @@ export default function CreateUnitForm({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              projectId: form.get('projectId'),
+              projectId,
+              inventoryCategoryId: category.id,
               name: String(form.get('name') || '').trim(),
               unitType: form.get('unitType'),
-              bedrooms: Number(form.get('bedrooms')),
-              bathrooms: Number(form.get('bathrooms')),
-              maxGuests: Number(form.get('maxGuests')),
+              bedrooms: category.bedrooms,
+              bathrooms: category.bathrooms,
+              maxGuests: category.maxGuests,
               addressSupplement: String(form.get('addressSupplement') || '').trim(),
-              // The field is labelled "Base ฿/night", so this arrives in baht;
-              // the column is satang. Storing it unmultiplied priced every
-              // unit created through this form at 1/100 of its rate (T-071).
-              baseNightlyThb: bahtToSatang(Number(form.get('baseNightlyThb'))),
-              minNights: Number(form.get('minNights')) || 1,
             }),
           });
           if (!response.ok) {
@@ -80,8 +97,6 @@ export default function CreateUnitForm({
             throw new Error(data?.error || labels['admin.units.error_generic']);
           }
           const unit = await response.json();
-          // Straight into the onboarding workspace: a created unit is the
-          // beginning of mobilization, not the end of a form.
           router.push(`/app/admin/units/${unit.id}`);
         } catch (err) {
           setError(err instanceof Error ? err.message : labels['admin.units.error_generic']);
@@ -101,6 +116,12 @@ export default function CreateUnitForm({
           {labels['admin.units.project']}
           <select
             name="projectId"
+            value={projectId}
+            onChange={(e) => {
+              const nextProjectId = e.target.value;
+              setProjectId(nextProjectId);
+              setCategoryId(categories.find((c) => c.projectId === nextProjectId)?.id ?? '');
+            }}
             required
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
           >
@@ -111,6 +132,29 @@ export default function CreateUnitForm({
             ))}
           </select>
         </label>
+
+        <label className="text-small text-text-secondary md:col-span-2">
+          {labels['admin.units.category']}
+          <select
+            name="inventoryCategoryId"
+            value={selectedCategory?.id ?? ''}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+            disabled={availableCategories.length === 0}
+            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+          >
+            {availableCategories.length === 0 ? (
+              <option value="">{labels['admin.units.category_required']}</option>
+            ) : (
+              availableCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name} · {category.bedrooms}BR · ฿{Math.round(category.baseNightlyThb / 100).toLocaleString()}/night
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+
         <label className="text-small text-text-secondary">
           {labels['admin.units.name']}
           <input
@@ -132,39 +176,6 @@ export default function CreateUnitForm({
             ))}
           </select>
         </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.bedrooms']}
-          <input
-            name="bedrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
-        </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.bathrooms']}
-          <input
-            name="bathrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
-        </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.max_guests']}
-          <input
-            name="maxGuests"
-            type="number"
-            min="1"
-            defaultValue={2}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
-        </label>
         <label className="text-small text-text-secondary md:col-span-2">
           {labels['admin.units.address_supplement']}
           <input
@@ -173,30 +184,20 @@ export default function CreateUnitForm({
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
           />
         </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.base_nightly']}
-          <input
-            name="baseNightlyThb"
-            type="number"
-            min="0"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
-        </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.min_nights']}
-          <input
-            name="minNights"
-            type="number"
-            min="1"
-            defaultValue={1}
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
-        </label>
       </div>
 
+      {selectedCategory && (
+        <div className="mt-16 rounded-sm bg-surface-ivory border border-border-line p-12 text-small text-text-secondary">
+          {selectedCategory.bedrooms} {labels['admin.units.bedrooms'].toLowerCase()} ·{' '}
+          {selectedCategory.bathrooms} {labels['admin.units.bathrooms'].toLowerCase()} ·{' '}
+          {selectedCategory.maxGuests} {labels['admin.units.max_guests'].toLowerCase()} ·{' '}
+          ฿{Math.round(selectedCategory.baseNightlyThb / 100).toLocaleString()}/night ·{' '}
+          {selectedCategory.minNights} min nights
+        </div>
+      )}
+
       <div className="flex gap-12 mt-24">
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy || !selectedCategory}>
           {busy ? labels['admin.units.saving'] : labels['admin.units.create']}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>

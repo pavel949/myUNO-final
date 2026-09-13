@@ -27,7 +27,7 @@ export * as people from './people.service';
 export {
   getApplicableSeasonMarkup,
   getApplicableNightlyPrice,
-  computePriceBreakdown,
+  computePriceBreakdown as computeLegacyPriceBreakdown,
   isActiveHold,
   checkAvailability,
   getUnitBlockedDates,
@@ -41,6 +41,12 @@ export {
   type CreateManualBlockInput,
   type CreatePricingRuleInput,
 } from './availability.service';
+
+// Canonical booking/commercial calculator. All module-level callers importing
+// computePriceBreakdown from @/modules/core now resolve InventoryCategory +
+// RatePlan first; the legacy calculator remains explicitly named for migration
+// tests and compatibility diagnostics only.
+export { computeCanonicalPriceBreakdown as computePriceBreakdown } from './canonical-pricing.service';
 
 export {
   createComplianceRecord,
@@ -81,8 +87,6 @@ export {
   scrubExpiredPassportData,
 } from './retention.service';
 
-// A person's own account: who they are, how they sign in, and what reaches
-// them. The notification half is the PDPA withdrawal surface, not a nicety.
 export {
   getAccountProfile,
   updateAccountProfile,
@@ -96,8 +100,6 @@ export {
   type NotificationSetting,
 } from './account.service';
 
-// Where a person belongs when they arrive with no particular destination
-// (doc 08 §5). Pure policy — the routing rule is worth reading and testing.
 export {
   resolveLanding,
   availableSurfaces,

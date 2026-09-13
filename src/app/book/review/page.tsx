@@ -12,17 +12,33 @@ export default async function BookingReviewPage({
 }: {
   searchParams: {
     unitId?: string;
+    inventoryCategoryId?: string;
     categoryKey?: string;
     projectId?: string;
     startDate?: string;
     endDate?: string;
   };
 }) {
-  if ((!searchParams.unitId && !searchParams.categoryKey) || !searchParams.startDate || !searchParams.endDate) {
+  if (
+    (!searchParams.unitId && !searchParams.inventoryCategoryId && !searchParams.categoryKey) ||
+    !searchParams.startDate ||
+    !searchParams.endDate
+  ) {
     redirect('/search');
   }
 
   let projectId = searchParams.projectId;
+
+  if (searchParams.inventoryCategoryId) {
+    const category = await prisma.inventoryCategory.findUnique({
+      where: { id: searchParams.inventoryCategoryId },
+      select: { projectId: true, status: true },
+    });
+    if (!category || category.status !== 'active') redirect('/search');
+    if (projectId && projectId !== category.projectId) redirect('/search');
+    projectId = category.projectId;
+  }
+
   if (!projectId && searchParams.unitId) {
     const unit = await prisma.unit.findUnique({
       where: { id: searchParams.unitId },
@@ -30,9 +46,10 @@ export default async function BookingReviewPage({
     });
     projectId = unit?.projectId;
   }
-  if (!projectId) {
-    redirect('/search');
-  }
+
+  // Legacy categoryKey requests still need an explicit project because the key
+  // is unique only inside a project. Canonical InventoryCategory ids do not.
+  if (!projectId) redirect('/search');
 
   const enabled =
     (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId })) ?? [

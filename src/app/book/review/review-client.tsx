@@ -62,7 +62,8 @@ export default function BookingReviewClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const unitId = searchParams?.get('unitId');
-  const inventoryCategoryId = searchParams?.get('inventoryCategoryId');
+  const inventoryCategoryId =
+    searchParams?.get('inventoryCategoryId') || searchParams?.get('categoryId');
   const categoryKey = searchParams?.get('categoryKey');
   const projectId = searchParams?.get('projectId') || resolvedProjectId;
   const startDate = searchParams?.get('startDate');

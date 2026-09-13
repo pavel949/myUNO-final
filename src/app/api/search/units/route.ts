@@ -32,32 +32,45 @@ export async function GET(req: NextRequest) {
     const startDateStr = searchParams.get('startDate');
     const endDateStr = searchParams.get('endDate');
     const adultsCount = searchParams.get('adultsCount')
-      ? parseInt(searchParams.get('adultsCount')!)
+      ? parseInt(searchParams.get('adultsCount')!, 10)
       : undefined;
     const childrenCount = searchParams.get('childrenCount')
-      ? parseInt(searchParams.get('childrenCount')!)
+      ? parseInt(searchParams.get('childrenCount')!, 10)
       : undefined;
     const minPrice = searchParams.get('minPrice')
-      ? bahtToSatang(parseInt(searchParams.get('minPrice')!))
+      ? bahtToSatang(parseInt(searchParams.get('minPrice')!, 10))
       : undefined;
     const maxPrice = searchParams.get('maxPrice')
-      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!))
+      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!, 10))
       : undefined;
     const unitTypesStr = searchParams.get('unitTypes');
     const bedrooms = searchParams.get('bedrooms')
-      ? parseInt(searchParams.get('bedrooms')!)
+      ? parseInt(searchParams.get('bedrooms')!, 10)
       : undefined;
     const categoryKey = searchParams.get('categoryKey') || undefined;
     const groupBy = searchParams.get('groupBy') || undefined;
     const sort = parseUnitSort(searchParams.get('sort'));
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const parsedLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const parsedOffset = parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
+
+    if ((startDateStr && !endDateStr) || (!startDateStr && endDateStr)) {
+      return NextResponse.json(
+        { error: 'startDate and endDate must be supplied together' },
+        { status: 400 }
+      );
+    }
 
     const startDate = startDateStr ? new Date(startDateStr) : undefined;
     const endDate = endDateStr ? new Date(endDateStr) : undefined;
 
-    if (startDate && endDate && startDate >= endDate) {
-      return NextResponse.json({ error: 'startDate must be before endDate' }, { status: 400 });
+    if (
+      (startDate && Number.isNaN(startDate.getTime())) ||
+      (endDate && Number.isNaN(endDate.getTime())) ||
+      (startDate && endDate && startDate >= endDate)
+    ) {
+      return NextResponse.json({ error: 'invalid stay dates' }, { status: 400 });
     }
 
     const totalGuests = (adultsCount || 0) + (childrenCount || 0);
@@ -109,7 +122,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const unitTypes = unitTypesStr ? unitTypesStr.split(',') : [];
+    const unitTypes = unitTypesStr ? unitTypesStr.split(',').filter(Boolean) : [];
     const effectiveProjectId = canonicalCategory?.projectId || projectId;
 
     const projectScope =
@@ -132,6 +145,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {
       status: 'live',
+      assetStatus: { not: 'suspended' },
       project: projectFilter,
       ...projectScope,
       ...(minPrice !== undefined || maxPrice !== undefined
@@ -142,7 +156,7 @@ export async function GET(req: NextRequest) {
             },
           }
         : {}),
-      ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),
+      maxGuests: { gte: totalGuests },
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(inventoryCategoryId

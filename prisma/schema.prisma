@@ -1322,6 +1322,9 @@ model LedgerEntry {
   paymentId           String?         @map("payment_id")
   refundId            String?         @map("refund_id")
   statementId         String?         @map("statement_id")
+  // One ledger entry per payout, enforced by a unique index: a payout must
+  // have exactly one append-only ledger consequence, never two.
+  payoutId            String?         @unique @map("payout_id")
   occurredOn          DateTime        @map("occurred_on")
   description         String
   createdByIdentityId String?         @map("created_by_identity_id")
@@ -1334,6 +1337,7 @@ model LedgerEntry {
   refund    Refund?         @relation(fields: [refundId], references: [id], onDelete: SetNull)
   statement OwnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
   createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
+  payout    Payout?         @relation(fields: [payoutId], references: [id], onDelete: Restrict)
   disputes  Dispute[]
 
   @@index([unitId, occurredOn])
@@ -1444,6 +1448,7 @@ model Payout {
   ownerStatement OwnerStatement? @relation(fields: [ownerStatementId], references: [id], onDelete: SetNull)
   provider       Provider?       @relation(fields: [providerId], references: [id], onDelete: SetNull)
   recordedBy     Identity        @relation(fields: [recordedByIdentityId], references: [id])
+  ledgerEntry    LedgerEntry?
 
   @@index([payeeType, status])
   @@index([ownerStatementId])

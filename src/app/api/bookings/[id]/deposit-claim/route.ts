@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
+import { canWithAccess } from '@/modules/core/authority.service';
 import { prisma } from '@/lib/prisma';
 import { fileDepositClaim } from '@/modules/finance';
 import { logAudit } from '@/modules/audit';
 
-/**
- * File a damage claim against a finished stay (doc 07 F-DIS-1).
- *
- * `fileDepositClaim` existed and was tested with no caller, so a deposit could
- * be pre-authorized and a claim against it could never be raised — the hold
- * simply expired at the provider whatever the unit looked like.
- */
+/** File a damage claim against a finished stay (doc 07 F-DIS-1). */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,15 +19,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-  if (
-    !(await can({
-      identity,
-      action: 'stays:record_checkin_checkout_and_reports',
-      resource: { projectId: booking.projectId, unitId: booking.unitId },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const allowed = await canWithAccess(prisma, {
+    identity,
+    action: 'stays:record_checkin_checkout_and_reports',
+    requiredAccess: 'allow',
+    resource: { projectId: booking.projectId, unitId: booking.unitId },
+  });
+  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });

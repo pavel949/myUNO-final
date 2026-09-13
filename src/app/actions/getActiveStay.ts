@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { requireSessionIdentityId } from './session-identity';
 
 /**
  * The stay this person is in the middle of, if any.
@@ -9,7 +10,8 @@ import { prisma } from '@/lib/prisma';
  * dates — a booking that starts next month is a plan, not a context. Compared
  * on the date alone because a stay's dates are dates, not instants.
  */
-export async function getActiveStayId(identityId: string): Promise<string | null> {
+export async function getActiveStayId(): Promise<string | null> {
+  const identityId = await requireSessionIdentityId();
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
@@ -31,9 +33,11 @@ export async function getActiveStayId(identityId: string): Promise<string | null
 }
 
 /** Active stay context for RoleContextBanner on owner surfaces (F-OWN-6). */
-export async function getActiveStayBanner(
-  identityId: string
-): Promise<{ bookingId: string; unitName: string } | null> {
+export async function getActiveStayBanner(): Promise<{
+  bookingId: string;
+  unitName: string;
+} | null> {
+  const identityId = await requireSessionIdentityId();
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 

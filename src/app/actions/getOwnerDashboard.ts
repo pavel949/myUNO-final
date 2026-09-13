@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { requireSessionIdentityId } from './session-identity';
 import { getOwnerDashboard, getOwnerPortfolioShape, getOwnerProjects, getOwnerBookingsList, getOwnerAlerts, getOwnerComplianceSummary, getOwnerStatements } from '@/modules/projects';
 import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytics';
 import type { MetricsPoint } from '@/modules/analytics';
@@ -27,7 +28,8 @@ interface OwnerDashboardData {
   statements: OwnerStatement[];
 }
 
-export async function fetchOwnerDashboard(ownerIdentityId: string): Promise<OwnerDashboardData> {
+export async function fetchOwnerDashboard(): Promise<OwnerDashboardData> {
+  const ownerIdentityId = await requireSessionIdentityId();
   try {
     const dashboard = await getOwnerDashboard(prisma, ownerIdentityId);
     const shape = await getOwnerPortfolioShape(prisma, ownerIdentityId);

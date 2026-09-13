@@ -20,8 +20,8 @@ export default async function OwnerPage() {
     redirect('/');
   }
 
-  const data = await fetchOwnerDashboard(user.identityId);
-  const activeStay = await getActiveStayBanner(user.identityId);
+  const data = await fetchOwnerDashboard();
+  const activeStay = await getActiveStayBanner();
   const ownerPath = resolveOwnerPortalPath(data.shape, data.dashboard.units);
   if (ownerPath !== '/owner') {
     redirect(ownerPath);

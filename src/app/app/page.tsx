@@ -26,7 +26,7 @@ export default async function AppLandingPage() {
     redirect('/login?next=/app');
   }
 
-  const activeBookingId = await getActiveStayId(user.identityId);
+  const activeBookingId = await getActiveStayId();
 
   const isOwner = user.roles.some((r) => r.role === 'owner');
   let ownerUnitId: string | null = null;

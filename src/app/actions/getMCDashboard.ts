@@ -1,20 +1,20 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { requireSessionIdentityId } from './session-identity';
 import {
   getMCDashboard,
   getMCManagedUnits,
   getMCBookings,
   getMCTickets,
-  getMCFeeReport,
   getMCServiceOrders,
 } from '@/modules/projects';
 
-export async function fetchMCDashboard(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string
-) {
+export async function fetchMCDashboard(projectId: string, organizationId: string) {
+  // `getMCDashboard` already refuses a project/organization this member has no
+  // role assignment for. That check is only worth anything once the member is
+  // the caller rather than whoever the caller named.
+  const mcIdentityId = await requireSessionIdentityId();
   try {
     const dashboard = await getMCDashboard(prisma, mcIdentityId, projectId, organizationId);
     const unitsRaw = await getMCManagedUnits(prisma, mcIdentityId, projectId, organizationId);
@@ -59,54 +59,5 @@ export async function fetchMCDashboard(
     };
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC dashboard');
-  }
-}
-
-export async function fetchMCBookings(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  limit: number = 50,
-  offset: number = 0
-) {
-  try {
-    return await getMCBookings(prisma, mcIdentityId, projectId, organizationId, limit, offset);
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC bookings');
-  }
-}
-
-export async function fetchMCTickets(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  limit: number = 50,
-  offset: number = 0
-) {
-  try {
-    return await getMCTickets(prisma, mcIdentityId, projectId, organizationId, limit, offset);
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC tickets');
-  }
-}
-
-export async function fetchMCFeeReport(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  periodStart: Date,
-  periodEnd: Date
-) {
-  try {
-    return await getMCFeeReport(
-      prisma,
-      mcIdentityId,
-      projectId,
-      organizationId,
-      periodStart,
-      periodEnd
-    );
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC fee report');
   }
 }

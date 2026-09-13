@@ -3,7 +3,8 @@ import { PrismaClient } from '@prisma/client';
 /**
  * Read-time project reports (LY-10) — no new rollup dimensions. Money comes
  * from the append-only ledger (the truth, doc 10); nights come from bookings
- * joined to the unit's category. MetricDaily stays untouched.
+ * joined to the unit's canonical InventoryCategory, with categoryKey retained
+ * only as a compatibility fallback for units not yet linked.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -22,6 +23,9 @@ function overlapNights(
 
 export interface CategoryOccupancyRow {
   categoryKey: string;
+  categoryName?: string;
+  inventoryCategoryId?: string;
+  canonical: boolean;
   unitCount: number;
   bookedNights: number;
   availableNights: number;
@@ -29,9 +33,12 @@ export interface CategoryOccupancyRow {
 }
 
 /**
- * Occupancy by villa category over a range: booked nights (occupying
- * statuses, clipped to the range) ÷ available nights (units × range nights).
- * Units without a category report under 'uncategorized'.
+ * Occupancy by sellable inventory category over a range: booked nights
+ * (occupying statuses, clipped to the range) ÷ available nights
+ * (units × range nights).
+ *
+ * InventoryCategory is authoritative whenever linked. Older units without the
+ * FK still report under categoryKey so migration does not make them disappear.
  */
 export async function occupancyByCategory(
   db: PrismaClient,
@@ -42,7 +49,13 @@ export async function occupancyByCategory(
   const rangeNights = Math.max(0, Math.round((rangeEnd.getTime() - rangeStart.getTime()) / DAY_MS));
   const units = await db.unit.findMany({
     where: { projectId, status: 'live' },
-    select: { id: true, categoryKey: true },
+    select: {
+      id: true,
+      categoryKey: true,
+      inventoryCategory: {
+        select: { id: true, categoryKey: true, name: true },
+      },
+    },
   });
   const bookings = await db.booking.findMany({
     where: {
@@ -55,27 +68,52 @@ export async function occupancyByCategory(
     select: { unitId: true, startDate: true, endDate: true },
   });
 
-  const unitCategory = new Map(units.map((u) => [u.id, u.categoryKey ?? 'uncategorized']));
+  const unitCategory = new Map(
+    units.map((unit) => {
+      const canonical = unit.inventoryCategory;
+      return [
+        unit.id,
+        {
+          key: canonical?.categoryKey ?? unit.categoryKey ?? 'uncategorized',
+          name: canonical?.name,
+          inventoryCategoryId: canonical?.id,
+          canonical: Boolean(canonical),
+        },
+      ] as const;
+    })
+  );
+
   const rows = new Map<string, CategoryOccupancyRow>();
   for (const unit of units) {
-    const key = unit.categoryKey ?? 'uncategorized';
-    const row = rows.get(key) ?? {
-      categoryKey: key,
+    const category = unitCategory.get(unit.id)!;
+    const rowKey = category.inventoryCategoryId
+      ? `id:${category.inventoryCategoryId}`
+      : `legacy:${category.key}`;
+    const row = rows.get(rowKey) ?? {
+      categoryKey: category.key,
+      categoryName: category.name,
+      inventoryCategoryId: category.inventoryCategoryId,
+      canonical: category.canonical,
       unitCount: 0,
       bookedNights: 0,
       availableNights: 0,
       occupancyPct: 0,
     };
     row.unitCount += 1;
-    rows.set(key, row);
+    rows.set(rowKey, row);
   }
+
   for (const booking of bookings) {
-    const key = unitCategory.get(booking.unitId);
-    if (!key) continue; // booking on a non-live unit — out of the availability base
-    const row = rows.get(key);
+    const category = unitCategory.get(booking.unitId);
+    if (!category) continue;
+    const rowKey = category.inventoryCategoryId
+      ? `id:${category.inventoryCategoryId}`
+      : `legacy:${category.key}`;
+    const row = rows.get(rowKey);
     if (!row) continue;
     row.bookedNights += overlapNights(booking.startDate, booking.endDate, rangeStart, rangeEnd);
   }
+
   for (const row of rows.values()) {
     row.availableNights = row.unitCount * rangeNights;
     row.occupancyPct =
@@ -84,7 +122,9 @@ export async function occupancyByCategory(
         : 0;
   }
 
-  return [...rows.values()].sort((a, b) => a.categoryKey.localeCompare(b.categoryKey));
+  return [...rows.values()].sort((a, b) =>
+    (a.categoryName || a.categoryKey).localeCompare(b.categoryName || b.categoryKey)
+  );
 }
 
 export interface ChannelRevenueRow {
@@ -120,8 +160,6 @@ export async function revenueByChannel(
   const countedBookings = new Map<string, Set<string>>();
   for (const entry of entries) {
     const channel = entry.booking?.channel ?? 'unattributed';
-    // Accumulated in satang (the ledger's native unit) so per-entry rounding
-    // never compounds; only the total is converted to baht, once, below.
     const row = rows.get(channel) ?? { channel, revenueThb: 0, bookings: 0 };
     row.revenueThb += entry.amountThb;
     rows.set(channel, row);
@@ -133,7 +171,6 @@ export async function revenueByChannel(
     countedBookings.set(channel, seen);
   }
 
-  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
   return [...rows.values()]
     .map((row) => ({ ...row, revenueThb: row.revenueThb / 100 }))
     .sort((a, b) => b.revenueThb - a.revenueThb);
@@ -166,7 +203,6 @@ export async function revenueSplit(
   });
 
   const byType = Object.fromEntries(grouped.map((g) => [g.entryType, g._sum.amountThb ?? 0]));
-  // Satang -> baht at the display boundary (CLAUDE.md money rules; Q47).
   return {
     rentalThb: (byType.rental_revenue ?? 0) / 100,
     ancillaryThb: (byType.service_commission ?? 0) / 100,

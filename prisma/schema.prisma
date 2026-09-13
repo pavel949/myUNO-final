@@ -543,6 +543,7 @@ enum AnalyticsEventKey {
   auth_claimed
   notify_delivered
   notify_failed
+  service_order_closed
 }
 
 enum BuyerSignalKey {
@@ -810,6 +811,10 @@ model Identity {
   ticketEvents                  TicketEvent[]
   serviceOrdersPlaced           ServiceOrder[]                @relation("serviceOrderOrderer")
   serviceOrdersCancelled        ServiceOrder[]                @relation("serviceOrderCancelledBy")
+  serviceOrdersClosed           ServiceOrder[]                @relation("serviceOrderClosedBy")
+  serviceQuoteRequests          ServiceQuoteRequest[]         @relation("serviceQuoteRequestOrderer")
+  bookingReschedulesRequested   BookingReschedule[]           @relation("bookingRescheduleRequestedBy")
+  projectOnboardingDraftsSaved  ProjectOnboardingDraft[]      @relation("projectOnboardingDraftUpdatedBy")
   reviewsWritten                Review[]
   reviewsReplied                Review[]                      @relation("reviewRepliedBy")
   announcementsCreated          Announcement[]
@@ -997,6 +1002,9 @@ model Project {
   crmOpportunities      CrmOpportunity[]
   managementContracts   ManagementContract[]
 
+  serviceQuoteRequests ServiceQuoteRequest[]
+  onboardingDraft      ProjectOnboardingDraft?
+
   @@index([areaId])
   @@map("project")
 }
@@ -1182,6 +1190,8 @@ model Booking {
   analyticsEvents  AnalyticsEvent[]
   statementLines   StatementLineItem[]
 
+  reschedules BookingReschedule[]
+
   @@unique([externalRef, channel])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])
@@ -1264,6 +1274,8 @@ model Payment {
   receiptMedia  MediaAsset?   @relation(name: "paymentReceipt", fields: [receiptMediaId], references: [id])
   refunds       Refund[]
   ledgerEntries LedgerEntry[]
+
+  bookingReschedules BookingReschedule[]
 
   @@unique([providerSessionId, provider])
   @@index([bookingId])
@@ -1588,6 +1600,8 @@ model Provider {
   serviceOrders   ServiceOrder[]
   payouts         Payout[]
 
+  quoteVersions ServiceQuoteVersion[]
+
   @@index([status, vetted_at])
   @@map("provider")
 }
@@ -1641,6 +1655,8 @@ model Service {
   availableProjects ServiceProject[]
   serviceOrders     ServiceOrder[]
 
+  quoteRequests ServiceQuoteRequest[]
+
   @@index([provider_id, status])
   @@index([categoryKey])
   @@index([status, approved_at])
@@ -1663,6 +1679,25 @@ model ServiceProject {
   service_id String @map("service_id")
   project_id String @map("project_id")
 
+  // Per-project commercial overrides, added by the canonical v3 commerce
+  // federation migration. In the database today; not yet read by any code.
+  enabled             Boolean   @default(true)
+  public              Boolean   @default(true)
+  price_override_thb  Int?      @map("price_override_thb")
+  cost_thb            Int?      @map("cost_thb")
+  take_rate_pct       Decimal?  @map("take_rate_pct") @db.Decimal(5, 2)
+  collector           String    @default("platform")
+  fulfillment_owner   String    @default("provider") @map("fulfillment_owner")
+  complaint_owner     String    @default("platform") @map("complaint_owner")
+  lead_time_hours     Int?      @map("lead_time_hours")
+  sla_minutes         Int?      @map("sla_minutes")
+  inclusions          Json      @default("[]") @db.JsonB
+  cancellation_policy Json      @default("{}") @map("cancellation_policy") @db.JsonB
+  terms_version       Int       @default(1) @map("terms_version")
+  effective_from      DateTime? @map("effective_from") @db.Timestamptz(6)
+  effective_to        DateTime? @map("effective_to") @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
   service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
@@ -1678,7 +1713,9 @@ model ServiceOrder {
   // What and where
   service_id  String  @map("service_id")
   provider_id String  @map("provider_id")
-  project_id  String  @map("project_id")
+  // Nullable since the canonical v3 commerce migration: an order need not
+  // belong to a project (SERVICES_MARKETPLACE.md §7 standalone commerce).
+  project_id  String? @map("project_id")
   unit_id     String? @map("unit_id")
   booking_id  String? @map("booking_id")
 
@@ -1703,20 +1740,31 @@ model ServiceOrder {
   cancellation_reason      String?            @map("cancellation_reason")
   expired_at               DateTime?          @map("expired_at")
   fulfilled_at             DateTime?          @map("fulfilled_at")
+  closed_at                DateTime?          @map("closed_at")
+  closed_by_identity_id    String?            @map("closed_by_identity_id")
   refund_accrued_thb       Int                @default(0) @map("refund_accrued_thb")
+
+  // Canonical v3 order context. Present in the database since the commerce
+  // federation migration; no application code reads these yet.
+  service_context     Json    @default("{}") @map("service_context") @db.JsonB
+  quantity_dimensions Json    @default("{}") @map("quantity_dimensions") @db.JsonB
+  terms_snapshot      Json    @default("{}") @map("terms_snapshot") @db.JsonB
+  quote_version_id    String? @map("quote_version_id")
 
   // Notes
   note_to_provider String? @map("note_to_provider")
   address_note     String? @map("address_note")
 
   // Relations
-  service         Service          @relation(fields: [service_id], references: [id], onDelete: Cascade)
-  provider        Provider         @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  project         Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  unit            Unit?            @relation(fields: [unit_id], references: [id], onDelete: SetNull)
-  booking         Booking?         @relation(fields: [booking_id], references: [id], onDelete: SetNull)
-  orderer         Identity         @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
-  cancelledBy     Identity?        @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  service         Service              @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  provider        Provider             @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  project         Project?             @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  unit            Unit?                @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  booking         Booking?             @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  orderer         Identity             @relation(name: "serviceOrderOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade)
+  cancelledBy     Identity?            @relation(name: "serviceOrderCancelledBy", fields: [cancelled_by_identity_id], references: [id])
+  closedBy        Identity?            @relation(name: "serviceOrderClosedBy", fields: [closed_by_identity_id], references: [id], onDelete: SetNull)
+  quoteVersion    ServiceQuoteVersion? @relation(fields: [quote_version_id], references: [id], onDelete: SetNull)
   payments        Payment[]
   analyticsEvents AnalyticsEvent[]
 
@@ -3094,4 +3142,223 @@ model RatePlan {
   @@index([categoryId])
   @@index([unitId])
   @@map("rate_plan")
+}
+
+// ---------------------------------------------------------------------------
+// Canonical v3 operational tables
+//
+// These nine models exist in production and in the migration chain. Their
+// application layer was reverted in #71 and has not yet returned, so nothing
+// in src/ reads them today. They are represented here because the datamodel's
+// job is to describe the database as it is — a model the code does not use is
+// inert, whereas a table the datamodel does not know about makes every
+// `migrate diff` propose dropping it.
+//
+// Row-level security is enabled on all of them and the Supabase Data API roles
+// are revoked, by 20260912000000_secure_canonical_v3_operational_tables.
+// ---------------------------------------------------------------------------
+
+/// Quote-mode service enquiry (SERVICES_MARKETPLACE.md §3 QUOTE).
+model ServiceQuoteRequest {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  service_id          String    @map("service_id")
+  project_id          String?   @map("project_id")
+  orderer_identity_id String    @map("orderer_identity_id")
+  service_context     Json      @default("{}") @map("service_context") @db.JsonB
+  quantity_dimensions Json      @default("{}") @map("quantity_dimensions") @db.JsonB
+  status              String    @default("open")
+  expires_at          DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  service  Service               @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  project  Project?              @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  orderer  Identity              @relation(name: "serviceQuoteRequestOrderer", fields: [orderer_identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  versions ServiceQuoteVersion[]
+
+  @@index([orderer_identity_id, created_at], map: "service_quote_request_orderer_created_idx")
+  @@index([service_id, status], map: "service_quote_request_service_status_idx")
+  @@map("service_quote_request")
+}
+
+/// One immutable priced revision of a quote. A database trigger blocks updates.
+model ServiceQuoteVersion {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request_id      String    @map("request_id")
+  version         Int
+  provider_id     String    @map("provider_id")
+  price_breakdown Json      @default("{}") @map("price_breakdown") @db.JsonB
+  total_thb       Int       @map("total_thb")
+  terms_snapshot  Json      @default("{}") @map("terms_snapshot") @db.JsonB
+  expires_at      DateTime  @map("expires_at") @db.Timestamptz(6)
+  accepted_at     DateTime? @map("accepted_at") @db.Timestamptz(6)
+
+  request  ServiceQuoteRequest @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  provider Provider            @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
+  orders   ServiceOrder[]
+
+  @@unique([request_id, version], map: "service_quote_version_request_version_key")
+  @@map("service_quote_version")
+}
+
+/// A held booking date change, funded before it commits (§14).
+model BookingReschedule {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  booking_id               String @map("booking_id")
+  requested_by_identity_id String @map("requested_by_identity_id")
+
+  old_start_date DateTime @map("old_start_date") @db.Date
+  old_end_date   DateTime @map("old_end_date") @db.Date
+  new_start_date DateTime @map("new_start_date") @db.Date
+  new_end_date   DateTime @map("new_end_date") @db.Date
+
+  previous_total_thb Int  @map("previous_total_thb")
+  new_total_thb      Int  @map("new_total_thb")
+  price_delta_thb    Int  @map("price_delta_thb")
+  pricing_snapshot   Json @default("{}") @map("pricing_snapshot") @db.JsonB
+
+  status          String    @default("pending_funding")
+  hold_expires_at DateTime  @map("hold_expires_at") @db.Timestamptz(6)
+  payment_id      String?   @map("payment_id")
+  committed_at    DateTime? @map("committed_at") @db.Timestamptz(6)
+  released_at     DateTime? @map("released_at") @db.Timestamptz(6)
+
+  booking     Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment     Payment? @relation(fields: [payment_id], references: [id], onUpdate: NoAction)
+  requestedBy Identity @relation(name: "bookingRescheduleRequestedBy", fields: [requested_by_identity_id], references: [id], onUpdate: NoAction)
+
+  @@index([booking_id, created_at], map: "booking_reschedule_booking_idx")
+  @@index([status, hold_expires_at], map: "booking_reschedule_hold_idx")
+  @@map("booking_reschedule")
+}
+
+/// A federated counterparty system (PMS, channel manager, accounting).
+model ExternalSystem {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  system_key   String @map("system_key")
+  environment  String
+  display_name String @map("display_name")
+  status       String @default("active")
+  config       Json   @default("{}") @db.JsonB
+
+  mappings    ExternalMapping[]
+  inbox       ExternalEventInbox[]
+  checkpoints ExternalAggregateCheckpoint[]
+
+  @@unique([system_key, environment], map: "external_system_key_environment_key")
+  @@map("external_system")
+}
+
+/// Identity correspondence between a local row and its counterpart.
+model ExternalMapping {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  external_system_id String    @map("external_system_id")
+  entity_type        String    @map("entity_type")
+  internal_id        String    @map("internal_id")
+  external_id        String    @map("external_id")
+  external_version   BigInt?   @map("external_version")
+  last_seen_at       DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  metadata           Json      @default("{}") @db.JsonB
+
+  externalSystem ExternalSystem @relation(fields: [external_system_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([external_system_id, entity_type, external_id], map: "external_mapping_external_key")
+  @@unique([external_system_id, entity_type, internal_id], map: "external_mapping_internal_key")
+  @@index([entity_type, internal_id], map: "external_mapping_internal_idx")
+  @@map("external_mapping")
+}
+
+/// Inbound events, deduplicated on (system, event id) so replay is safe.
+model ExternalEventInbox {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  received_at DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+
+  external_system_id    String    @map("external_system_id")
+  event_id              String    @map("event_id")
+  aggregate_type        String    @map("aggregate_type")
+  aggregate_external_id String    @map("aggregate_external_id")
+  event_type            String    @map("event_type")
+  event_version         BigInt?   @map("event_version")
+  occurred_at           DateTime  @map("occurred_at") @db.Timestamptz(6)
+  payload               Json      @db.JsonB
+  payload_hash          String    @map("payload_hash")
+  status                String    @default("received")
+  processed_at          DateTime? @map("processed_at") @db.Timestamptz(6)
+  error_code            String?   @map("error_code")
+
+  externalSystem ExternalSystem @relation(fields: [external_system_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([external_system_id, event_id], map: "external_event_inbox_dedup_key")
+  @@index([status, received_at], map: "external_event_inbox_work_idx")
+  @@map("external_event_inbox")
+}
+
+/// Per-aggregate high-water mark, so an out-of-order event is ignored.
+model ExternalAggregateCheckpoint {
+  external_system_id    String  @map("external_system_id")
+  aggregate_type        String  @map("aggregate_type")
+  aggregate_external_id String  @map("aggregate_external_id")
+  last_event_id         String  @map("last_event_id")
+  last_event_version    BigInt? @map("last_event_version")
+
+  last_occurred_at DateTime @map("last_occurred_at") @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  externalSystem ExternalSystem @relation(fields: [external_system_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([external_system_id, aggregate_type, aggregate_external_id])
+  @@map("external_aggregate_checkpoint")
+}
+
+/// A versioned property onboarding template.
+model PropertyOnboardingTemplate {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  template_key  String  @map("template_key")
+  version       Int
+  name          String
+  property_type String  @map("property_type")
+  configuration Json    @default("{}") @db.JsonB
+  checklist     Json    @default("[]") @db.JsonB
+  active        Boolean @default(true)
+
+  drafts ProjectOnboardingDraft[]
+
+  @@unique([template_key, version], map: "property_onboarding_template_key_version_key")
+  @@map("property_onboarding_template")
+}
+
+/// Autosaved in-progress onboarding for one project.
+model ProjectOnboardingDraft {
+  project_id String   @id @map("project_id")
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  template_id             String? @map("template_id")
+  stage_data              Json    @default("{}") @map("stage_data") @db.JsonB
+  inherited_configuration Json    @default("{}") @map("inherited_configuration") @db.JsonB
+  last_stage              String? @map("last_stage")
+  updated_by_identity_id  String? @map("updated_by_identity_id")
+
+  autosaved_at DateTime @default(now()) @map("autosaved_at") @db.Timestamptz(6)
+
+  project   Project                     @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  template  PropertyOnboardingTemplate? @relation(fields: [template_id], references: [id], onUpdate: NoAction)
+  updatedBy Identity?                   @relation(name: "projectOnboardingDraftUpdatedBy", fields: [updated_by_identity_id], references: [id], onUpdate: NoAction)
+
+  @@map("project_onboarding_draft")
 }

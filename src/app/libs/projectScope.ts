@@ -61,10 +61,15 @@ export function getMCOrganizationIdsForProject(
 
 export async function hasManagedUnitMcAccess(
   user: CurrentUser,
-  input: { projectId: string; unitId: string }
+  input: { projectId: string | null; unitId: string }
 ): Promise<boolean> {
   if (user.isAdmin) {
     return true;
+  }
+
+  // No project means no MC engagement scope to match against.
+  if (input.projectId === null) {
+    return false;
   }
 
   const organizationIds = getMCOrganizationIdsForProject(user, input.projectId);
@@ -85,9 +90,15 @@ export async function hasManagedUnitMcAccess(
   return Boolean(engagement);
 }
 
-export function hasProjectStaffAccess(user: CurrentUser, projectId: string): boolean {
+export function hasProjectStaffAccess(user: CurrentUser, projectId: string | null): boolean {
   if (user.isAdmin) {
     return true;
+  }
+
+  // A subject with no project (a standalone service order) is outside every
+  // project's staff scope. Admin above is the only way in.
+  if (projectId === null) {
+    return false;
   }
 
   return user.roles.some(

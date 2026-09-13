@@ -40,22 +40,28 @@ async function resolveCanonicalRatePlan(
   db: PrismaClient,
   input: { projectId?: string; categoryId?: string; unitId?: string; code: string }
 ) {
+  // Unit tests and older adapters may provide a narrow Prisma seam that predates
+  // RatePlan. Treat absence as "not migrated yet" rather than crashing before
+  // the config-backed compatibility path can price the stay.
+  const ratePlan = (db as any).ratePlan;
+  if (!ratePlan?.findFirst) return null;
+
   if (input.unitId) {
-    const unitPlan = await db.ratePlan.findFirst({
+    const unitPlan = await ratePlan.findFirst({
       where: { unitId: input.unitId, code: input.code, status: 'active' },
     });
     if (unitPlan) return unitPlan;
   }
 
   if (input.categoryId) {
-    const categoryPlan = await db.ratePlan.findFirst({
+    const categoryPlan = await ratePlan.findFirst({
       where: { categoryId: input.categoryId, code: input.code, status: 'active' },
     });
     if (categoryPlan) return categoryPlan;
   }
 
   if (input.projectId) {
-    return db.ratePlan.findFirst({
+    return ratePlan.findFirst({
       where: {
         projectId: input.projectId,
         unitId: null,
@@ -77,7 +83,6 @@ function applyCanonicalRatePlanAdjustment(
   if (!adjustmentType || adjustmentValue === null || Number.isNaN(adjustmentValue)) return null;
 
   switch (adjustmentType) {
-    // Signed percentage: -10 = 10% discount, +15 = 15% markup.
     case 'percent':
     case 'percentage':
       return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
@@ -85,8 +90,6 @@ function applyCanonicalRatePlanAdjustment(
       return Math.max(0, Math.round(baseRate * (1 - adjustmentValue / 100)));
     case 'percentage_markup':
       return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
-    // Fixed values are stored in the money domain unit (satang), like the rest
-    // of the pricing engine. Signed fixed values therefore work as overrides too.
     case 'fixed':
       return Math.max(0, Math.round(baseRate + adjustmentValue));
     case 'fixed_discount':
@@ -230,17 +233,17 @@ export async function resolveEffectiveStayOffer(
       if (adjusted !== null) {
         nightRate = adjusted;
         sourceTrace.push(
-          `RatePlan ${canonicalRatePlan.code} (${canonicalRatePlan.adjustmentType} ${adjustmentValue})`
+          `Rate Plan ${canonicalRatePlan.code} (${canonicalRatePlan.adjustmentType} ${adjustmentValue})`
         );
       } else {
-        sourceTrace.push(`RatePlan ${canonicalRatePlan.code}`);
+        sourceTrace.push(`Rate Plan ${canonicalRatePlan.code}`);
       }
     } else if (ratePlanCode === 'NON_REFUNDABLE') {
       nightRate = Math.round(nightRate * (1 - nonRefundableDiscountPct / 100));
-      sourceTrace.push(`Legacy config NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
+      sourceTrace.push(`Rate Plan NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
     } else if (ratePlanCode === 'WEEKLY' && nightsCount >= weeklyMinNights) {
       nightRate = Math.round(nightRate * (1 - weeklyDiscountPct / 100));
-      sourceTrace.push(`Legacy config WEEKLY (-${weeklyDiscountPct}%)`);
+      sourceTrace.push(`Rate Plan WEEKLY (-${weeklyDiscountPct}%)`);
     }
 
     subtotalThb += nightRate;

@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { getApplicableNightlyPrice } from '@/modules/core';
-import { t, type Locale } from '@/modules/content';
-import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
 import {
   parseUnitSort,
   rankByRating,
@@ -13,103 +10,64 @@ import {
   boundsWhere,
 } from '@/modules/browse';
 import { listAreas, collectDescendantIds } from '@/modules/projects';
+import { resolveEffectiveStayOffer } from '@/modules/booking';
 
 /**
- * GET /api/search/units
- * Search for available units with optional filters.
- * Query params:
- * - projectId?: string
- * - startDate?: ISO date string
- * - endDate?: ISO date string
- * - adultsCount?: number
- * - childrenCount?: number
- * - minPrice?: number (baht, as the guest types it — converted to satang here)
- * - maxPrice?: number (baht, as the guest types it — converted to satang here)
- * - amenities?: comma-separated amenity keys
- * - unitTypes?: comma-separated unit type keys
- * - bedrooms?: number (exact)
- * - categoryKey?: string (unit category, LY-6)
- * - areaSlug?: an area, including every area beneath it — "the west coast"
- *   covers its beaches without anyone restating the list.
- * - swLat/swLng/neLat/neLng?: a map viewport, all four or none. Filters on the
- *   project's coordinates — a unit's location is its project's.
- * - sort?: one of the browse sort keys (recommended | price_asc | price_desc |
- *   bedrooms_desc | capacity_desc | top_rated). An unknown value falls back to
- *   the default rather than failing the search.
- * - groupBy=category: return per-category availability instead of a unit
- *   list — {categories: [{category_key, available_count, from_nightly_thb}]}.
- *   from_nightly_thb is the first-night price when dates are given (the
- *   category seasonal rate via the pricing engine), else the cheapest base.
- * - limit?: number (default 50)
- * - offset?: number (default 0)
+ * Canonical guest inventory search.
+ *
+ * InventoryCategory and the effective stay-pricing engine are authoritative.
+ * `categoryKey` remains accepted only as a backwards-compatible public slug;
+ * it is resolved through InventoryCategory rather than Unit.categoryKey.
  */
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-
     const projectId = searchParams.get('projectId') || undefined;
+    const categoryId = searchParams.get('categoryId') || undefined;
+    const categoryKey = searchParams.get('categoryKey') || undefined;
     const startDateStr = searchParams.get('startDate');
     const endDateStr = searchParams.get('endDate');
     const adultsCount = searchParams.get('adultsCount')
-      ? parseInt(searchParams.get('adultsCount')!)
+      ? parseInt(searchParams.get('adultsCount')!, 10)
       : undefined;
     const childrenCount = searchParams.get('childrenCount')
-      ? parseInt(searchParams.get('childrenCount')!)
+      ? parseInt(searchParams.get('childrenCount')!, 10)
       : undefined;
-    // The filter labels ask the guest for "Min/Max nightly THB", so these
-    // arrive in baht. `baseNightlyThb` is satang, and comparing the two
-    // directly made the ceiling 100x too tight: "max ฿10,000" matched only
-    // units under ฿100 a night, which is to say nothing (T-071).
     const minPrice = searchParams.get('minPrice')
-      ? bahtToSatang(parseInt(searchParams.get('minPrice')!))
+      ? bahtToSatang(parseInt(searchParams.get('minPrice')!, 10))
       : undefined;
     const maxPrice = searchParams.get('maxPrice')
-      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!))
+      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!, 10))
       : undefined;
     const unitTypesStr = searchParams.get('unitTypes');
+    const amenitiesStr = searchParams.get('amenities');
     const bedrooms = searchParams.get('bedrooms')
-      ? parseInt(searchParams.get('bedrooms')!)
+      ? parseInt(searchParams.get('bedrooms')!, 10)
       : undefined;
-    const categoryKey = searchParams.get('categoryKey') || undefined;
     const groupBy = searchParams.get('groupBy') || undefined;
     const sort = parseUnitSort(searchParams.get('sort'));
-    const limit = Math.min(
-      parseInt(searchParams.get('limit') || '50'),
-      100
-    );
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 100);
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
 
     const startDate = startDateStr ? new Date(startDateStr) : undefined;
     const endDate = endDateStr ? new Date(endDateStr) : undefined;
-
-    // Validate dates
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+      return NextResponse.json({ error: 'startDate and endDate must be supplied together' }, { status: 400 });
+    }
     if (startDate && endDate && startDate >= endDate) {
-      return NextResponse.json(
-        { error: 'startDate must be before endDate' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'startDate must be before endDate' }, { status: 400 });
     }
 
-    // Validate guest counts
     const totalGuests = (adultsCount || 0) + (childrenCount || 0);
     if (totalGuests < 1) {
-      return NextResponse.json(
-        { error: 'At least one guest is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'At least one guest is required' }, { status: 400 });
     }
 
-    // A partly-given map viewport is refused rather than ignored: dropping it
-    // would return villas outside the map the guest is looking at, while
-    // appearing to respect it.
     const parsedBounds = parseMapBounds((key) => searchParams.get(key));
     if (!parsedBounds.ok) {
       return NextResponse.json({ error: parsedBounds.error }, { status: 400 });
     }
 
-    // An area covers everything beneath it. An unknown slug matches nothing
-    // rather than everything — silently widening a filtered search to the whole
-    // portfolio is the dangerous direction to fail in.
     const areaSlug = searchParams.get('areaSlug') || undefined;
     let areaProjectIds: string[] | null = null;
     if (areaSlug) {
@@ -126,12 +84,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Parse filters
-    const unitTypes = unitTypesStr ? unitTypesStr.split(',') : [];
+    const unitTypes = unitTypesStr ? unitTypesStr.split(',').filter(Boolean) : [];
+    const amenities = amenitiesStr ? amenitiesStr.split(',').filter(Boolean) : [];
 
-    // Project scope: an explicit project, an area, or both — in which case the
-    // answer is the intersection. Spreading them separately would let one
-    // silently overwrite the other and widen the search past what was asked.
     const projectScope =
       areaProjectIds !== null
         ? {
@@ -143,116 +98,133 @@ export async function GET(req: NextRequest) {
           ? { projectId }
           : {};
 
-    // A unit is public only when its project is public too — the same rule
-    // `getPublicUnitById` already applies. Without it, archiving a project left
-    // its units in search results and bookable while their pages 404'd: two
-    // reads of one fact disagreeing, with the guest-facing one selling.
-    //
-    // The viewport filter is merged into this same `project` clause rather than
-    // spread beside it, because two `project` keys in one object literal would
-    // silently drop whichever came first.
     const projectFilter = {
       status: 'live' as const,
       ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
     };
 
-    // Build where clause
+    const now = new Date();
+    const overlaps =
+      startDate && endDate
+        ? { startDate: { lt: endDate }, endDate: { gt: startDate } }
+        : null;
+
     const where: any = {
       status: 'live',
+      assetStatus: { not: 'suspended' },
       project: projectFilter,
       ...projectScope,
-      // One key, both bounds. Spreading them as two `baseNightlyThb` entries
-      // meant the second overwrote the first, so setting a floor *and* a
-      // ceiling silently dropped the floor (T-071).
-      ...(minPrice !== undefined || maxPrice !== undefined
+      inventoryCategoryId: { not: null },
+      ...(totalGuests > 0 && { maxGuests: { gte: totalGuests } }),
+      ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
+      ...(amenities.length > 0 && { amenityKeys: { hasEvery: amenities } }),
+      ...(bedrooms !== undefined && { bedrooms }),
+      ...(categoryId
+        ? { inventoryCategoryId: categoryId }
+        : categoryKey
+          ? { inventoryCategory: { categoryKey, status: 'live' } }
+          : { inventoryCategory: { status: 'live' } }),
+      ...(overlaps
         ? {
-            baseNightlyThb: {
-              ...(minPrice !== undefined && { gte: minPrice }),
-              ...(maxPrice !== undefined && { lte: maxPrice }),
+            bookings: {
+              none: {
+                ...overlaps,
+                OR: [
+                  { status: { in: ['confirmed', 'checked_in'] } },
+                  { status: 'pending_payment', holdExpiresAt: { gt: now } },
+                ],
+              },
             },
+            blockedDates: { none: overlaps },
           }
         : {}),
-      ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),
-      ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
-      ...(bedrooms !== undefined && { bedrooms }),
-      ...(categoryKey && { categoryKey }),
     };
 
-    // If date range provided, exclude units with overlapping bookings or blocks
-    if (startDate && endDate) {
-      const conflictingUnits = await prisma.booking.findMany({
-        where: {
-          startDate: { lt: endDate },
-          endDate: { gt: startDate },
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            // Unpaid holds only block while still live
-            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-          ],
+    const candidates = await prisma.unit.findMany({
+      where,
+      include: {
+        project: { select: { id: true, name: true } },
+        inventoryCategory: true,
+        coverMedia: { select: { storageKey: true } },
+        media: {
+          orderBy: { sort: 'asc' },
+          take: 1,
+          select: { media: { select: { storageKey: true } } },
         },
-        select: { unitId: true },
-        distinct: ['unitId'],
-      });
+      },
+      take: 500,
+    });
 
-      const blockedUnits = await prisma.blockedDate.findMany({
-        where: {
-          startDate: { lt: endDate },
-          endDate: { gt: startDate },
-        },
-        select: { unitId: true },
-        distinct: ['unitId'],
-      });
+    const priced = await Promise.all(
+      candidates.map(async (unit) => {
+        let effectiveNightlyThb = unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb;
+        let stayTotalThb: number | null = null;
+        if (startDate && endDate) {
+          const offer = await resolveEffectiveStayOffer(prisma, {
+            unitId: unit.id,
+            projectId: unit.projectId,
+            startDate,
+            endDate,
+            guests: totalGuests,
+          });
+          if (!offer.isAvailable) return null;
+          effectiveNightlyThb = offer.nightlyBreakdown[0]?.effectiveRateThb ?? effectiveNightlyThb;
+          stayTotalThb = offer.totalThb;
+        }
+        return { unit, effectiveNightlyThb, stayTotalThb };
+      })
+    );
 
-      const unavailableUnitIds = new Set(
-        conflictingUnits
-          .map((b) => b.unitId)
-          .concat(blockedUnits.map((b) => b.unitId))
-      );
+    let filtered = priced.filter(
+      (entry): entry is NonNullable<(typeof priced)[number]> => Boolean(entry)
+    );
 
-      if (unavailableUnitIds.size > 0) {
-        where.id = { notIn: Array.from(unavailableUnitIds) };
-      }
+    if (minPrice !== undefined) {
+      filtered = filtered.filter((entry) => entry.effectiveNightlyThb >= minPrice);
+    }
+    if (maxPrice !== undefined) {
+      filtered = filtered.filter((entry) => entry.effectiveNightlyThb <= maxPrice);
     }
 
-    // Category rollup (LY-6): one card per sellable category instead of a
-    // flat unit list. Uses the same availability-filtered where clause.
     if (groupBy === 'category') {
-      const categoryUnits = await prisma.unit.findMany({
-        where: { ...where, categoryKey: categoryKey ?? { not: null } },
-        select: { id: true, categoryKey: true, baseNightlyThb: true },
-        orderBy: { baseNightlyThb: 'asc' },
-      });
+      const grouped = new Map<
+        string,
+        {
+          categoryId: string;
+          categoryKey: string;
+          label: string;
+          availableCount: number;
+          fromNightlyThb: number;
+        }
+      >();
 
-      const grouped = new Map<string, { count: number; cheapestUnitId: string; minBase: number }>();
-      for (const unit of categoryUnits) {
-        const key = unit.categoryKey as string;
-        const entry = grouped.get(key);
-        if (!entry) {
-          grouped.set(key, { count: 1, cheapestUnitId: unit.id, minBase: unit.baseNightlyThb });
+      for (const entry of filtered) {
+        const category = entry.unit.inventoryCategory;
+        if (!category) continue;
+        const existing = grouped.get(category.id);
+        if (!existing) {
+          grouped.set(category.id, {
+            categoryId: category.id,
+            categoryKey: category.categoryKey,
+            label: category.name,
+            availableCount: 1,
+            fromNightlyThb: entry.effectiveNightlyThb,
+          });
         } else {
-          entry.count += 1;
+          existing.availableCount += 1;
+          existing.fromNightlyThb = Math.min(existing.fromNightlyThb, entry.effectiveNightlyThb);
         }
       }
 
-      const cookieLocale = req.cookies.get('locale')?.value as Locale | undefined;
-      const locale =
-        cookieLocale && LOCALES.includes(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
-
-      const categories = await Promise.all(
-        Array.from(grouped.entries()).map(async ([key, entry]) => {
-          const labelKey = `catalog.unit_categories.${key}.label`;
-          const label = await t(prisma, labelKey, undefined, locale).catch(() => key);
-          return {
-            category_key: key,
-            label: label && label !== labelKey && label !== '—' ? label : key,
-            available_count: entry.count,
-            from_nightly_thb: startDate
-              ? await getApplicableNightlyPrice(prisma, startDate, entry.cheapestUnitId)
-              : entry.minBase,
-          };
-        })
-      );
-      categories.sort((a, b) => a.from_nightly_thb - b.from_nightly_thb);
+      const categories = Array.from(grouped.values())
+        .sort((a, b) => a.fromNightlyThb - b.fromNightlyThb)
+        .map((category) => ({
+          category_id: category.categoryId,
+          category_key: category.categoryKey,
+          label: category.label,
+          available_count: category.availableCount,
+          from_nightly_thb: category.fromNightlyThb,
+        }));
 
       await track(prisma, categories.length > 0 ? 'search_performed' : 'search_no_results', {
         projectId,
@@ -265,76 +237,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ categories }, { status: 200 });
     }
 
-    const listInclude = {
-      project: {
-        select: { id: true, name: true },
-      },
-      coverMedia: { select: { storageKey: true } },
-      media: {
-        orderBy: { sort: 'asc' as const },
-        take: 1,
-        select: { media: { select: { storageKey: true } } },
-      },
-    };
+    const ratings = await getUnitRatings(prisma, filtered.map((entry) => entry.unit.id));
 
-    // Most sorts are a database ORDER BY; "top rated" is not, because the
-    // rating lives across review → booking → unit rather than in a column. So
-    // it ranks the whole matching set and then takes the page. Ranking only the
-    // page would order whichever villas the database happened to return first —
-    // a different list entirely.
-    let rankedPageIds: string[] | null = null;
-    if (sort.needsRating) {
-      const candidates = await prisma.unit.findMany({
-        where,
-        select: { id: true, createdAt: true },
-      });
-      const candidateRatings = await getUnitRatings(
-        prisma,
-        candidates.map((u) => u.id)
+    if (sort.key === 'price_asc' || sort.key === 'price_desc') {
+      const direction = sort.key === 'price_asc' ? 1 : -1;
+      filtered.sort(
+        (a, b) =>
+          direction * (a.effectiveNightlyThb - b.effectiveNightlyThb) ||
+          a.unit.id.localeCompare(b.unit.id)
       );
-      rankedPageIds = rankByRating(
-        candidates.map((u) => ({
-          id: u.id,
-          createdAt: u.createdAt,
-          ...(candidateRatings.get(u.id) ?? { averageRating: null, reviewCount: 0 }),
+    } else if (sort.needsRating) {
+      const rankedIds = rankByRating(
+        filtered.map((entry) => ({
+          id: entry.unit.id,
+          createdAt: entry.unit.createdAt,
+          ...(ratings.get(entry.unit.id) ?? { averageRating: null, reviewCount: 0 }),
         }))
-      )
-        .slice(offset, offset + limit)
-        .map((u) => u.id);
+      ).map((row) => row.id);
+      const order = new Map(rankedIds.map((id, index) => [id, index]));
+      filtered.sort((a, b) => (order.get(a.unit.id) ?? 0) - (order.get(b.unit.id) ?? 0));
+    } else if (sort.key === 'bedrooms_desc') {
+      filtered.sort((a, b) => b.unit.bedrooms - a.unit.bedrooms || a.effectiveNightlyThb - b.effectiveNightlyThb || a.unit.id.localeCompare(b.unit.id));
+    } else if (sort.key === 'capacity_desc') {
+      filtered.sort((a, b) => b.unit.maxGuests - a.unit.maxGuests || a.effectiveNightlyThb - b.effectiveNightlyThb || a.unit.id.localeCompare(b.unit.id));
+    } else {
+      filtered.sort((a, b) => b.unit.createdAt.getTime() - a.unit.createdAt.getTime() || a.unit.id.localeCompare(b.unit.id));
     }
 
-    const page = rankedPageIds
-      ? await prisma.unit.findMany({
-          where: { id: { in: rankedPageIds } },
-          include: listInclude,
-        })
-      : await prisma.unit.findMany({
-          where,
-          include: listInclude,
-          take: limit,
-          skip: offset,
-          orderBy: sort.orderBy,
-        });
-
-    // `IN` gives no order back, so the ranked order is restored here.
-    const units = rankedPageIds
-      ? rankedPageIds
-          .map((id) => page.find((u) => u.id === id))
-          .filter((u): u is (typeof page)[number] => Boolean(u))
-      : page;
-
-    // Fetch total count
-    const total = await prisma.unit.count({ where });
-
-    // Ratings for the cards on this page — a villa nobody has reviewed gets
-    // null, not zero: it is unknown, not bad.
-    const ratings = await getUnitRatings(
-      prisma,
-      units.map((u) => u.id)
-    );
+    const total = filtered.length;
+    const page = filtered.slice(offset, offset + limit);
 
     await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
       projectId,
+      categoryId,
       resultsCount: total,
       hasDates: Boolean(startDate && endDate),
       guests: totalGuests,
@@ -343,11 +278,23 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        units: units.map((unit) => {
-          const { coverMedia, media, ...rest } = unit;
+        units: page.map(({ unit, effectiveNightlyThb, stayTotalThb }) => {
+          const { coverMedia, media, inventoryCategory, ...rest } = unit;
           const rating = ratings.get(unit.id);
           return {
             ...rest,
+            // Compatibility field, now derived from the canonical category/quote.
+            baseNightlyThb: effectiveNightlyThb,
+            effectiveNightlyThb,
+            stayTotalThb,
+            inventoryCategory: inventoryCategory
+              ? {
+                  id: inventoryCategory.id,
+                  categoryKey: inventoryCategory.categoryKey,
+                  name: inventoryCategory.name,
+                  minNights: inventoryCategory.minNights,
+                }
+              : null,
             coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,

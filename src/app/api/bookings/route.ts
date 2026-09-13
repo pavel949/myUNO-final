@@ -15,25 +15,28 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * Create a new booking (instant or request-to-book).
  * Requires authentication.
  *
- * Request body:
- * - unitId: string — OR categoryKey (LY-6): book a villa CATEGORY and the
- *   server auto-assigns the first available villa of that category
- *   (hotel-style). With categoryKey, instantBook comes from the assigned
- *   unit and the client value is ignored.
- * - projectId: string — required on the categoryKey path, where it scopes the
- *   search. On the unitId path it is optional and never authoritative: the
- *   booking is filed against the unit's own project, and a projectId that
- *   disagrees with it is refused rather than silently accepted.
- * - startDate: ISO date string
- * - endDate: ISO date string
- * - adultsCount: number
- * - childrenCount: number
- * - instantBook: boolean (required on the unitId path)
- * - guestNote?: string
+ * Canonical request contract:
+ * - unitId: string — book a specific physical unit; OR
+ * - inventoryCategoryId: string — book a canonical sellable category and let
+ *   the server assign an available unit.
+ *
+ * Compatibility contract during migration:
+ * - categoryKey + projectId remains accepted for older clients. The key is not
+ *   authoritative when inventoryCategoryId is present; the InventoryCategory
+ *   row supplies both the project and compatibility key.
+ *
+ * Other fields:
+ * - projectId?: string — optional on the canonical category path and on the
+ *   specific-unit path. If supplied it must agree with the server-side asset.
+ * - startDate/endDate: ISO dates
+ * - adultsCount/childrenCount
+ * - instantBook: required only for the specific-unit path; category booking
+ *   gets this from the assigned unit.
+ * - guestNote?
  * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
  *
- * The total is ALWAYS computed server-side from the pricing engine —
- * any client-sent amount is ignored (doc 10: never trust client totals).
+ * The total is ALWAYS computed server-side from the production pricing engine;
+ * any client-sent amount is ignored.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       unitId: requestedUnitId,
+      inventoryCategoryId,
       categoryKey,
       projectId,
       startDate: startDateStr,
@@ -58,15 +62,16 @@ export async function POST(req: NextRequest) {
       paymentMethod = 'cash',
     } = body;
 
-    // Validate required fields — either a concrete unit or a category
+    const hasCategorySelector = Boolean(inventoryCategoryId || categoryKey);
+
     if (
-      (!requestedUnitId && !categoryKey) ||
-      (!requestedUnitId && !projectId) ||
+      (!requestedUnitId && !hasCategorySelector) ||
+      (!requestedUnitId && !inventoryCategoryId && !projectId) ||
       !startDateStr ||
       !endDateStr ||
       adultsCount === undefined ||
       childrenCount === undefined ||
-      (requestedUnitId && !categoryKey && requestedInstantBook === undefined)
+      (requestedUnitId && requestedInstantBook === undefined)
     ) {
       throw createPublicError('invalid request: missing required fields', 400);
     }
@@ -79,19 +84,49 @@ export async function POST(req: NextRequest) {
     }
 
     const guestCount = Number(adultsCount) + Number(childrenCount);
+    if (!Number.isFinite(guestCount) || guestCount < 1) {
+      throw createPublicError('invalid request: at least one guest is required', 400);
+    }
 
-    // The villas we may book, in the order we will try them. A specific request
-    // is a list of one. A category request (LY-6) is every free villa of that
-    // category, because availability read outside the booking transaction is a
-    // hint, not a promise: by the time we try to commit, someone else may hold
-    // the one we picked. Refusing the guest while a sibling villa stands empty
-    // would be a lost sale, not a safety measure.
+    // Resolve a canonical category once, at the API boundary. Older internals
+    // still accept categoryKey while they are migrated, but every canonical
+    // caller is now anchored to an InventoryCategory row and its own project.
+    let resolvedProjectId = projectId as string | undefined;
+    let resolvedCategoryKey = categoryKey as string | undefined;
+    let resolvedInventoryCategoryId = inventoryCategoryId as string | undefined;
+
+    if (!requestedUnitId && inventoryCategoryId) {
+      const category = await prisma.inventoryCategory.findUnique({
+        where: { id: inventoryCategoryId },
+        select: {
+          id: true,
+          projectId: true,
+          categoryKey: true,
+          status: true,
+        },
+      });
+
+      if (!category || category.status !== 'active') {
+        throw createPublicError('inventory category not found', 404);
+      }
+      if (projectId && projectId !== category.projectId) {
+        throw createPublicError('inventory category does not belong to the given project', 400);
+      }
+      if (categoryKey && categoryKey !== category.categoryKey) {
+        throw createPublicError('categoryKey disagrees with inventoryCategoryId', 400);
+      }
+
+      resolvedProjectId = category.projectId;
+      resolvedCategoryKey = category.categoryKey;
+      resolvedInventoryCategoryId = category.id;
+    }
+
     const candidates = requestedUnitId
       ? [{ id: requestedUnitId, instantBook: requestedInstantBook }]
       : await findAvailableUnitsForCategory(
           prisma,
-          projectId,
-          categoryKey as string,
+          resolvedProjectId as string,
+          resolvedCategoryKey as string,
           startDate,
           endDate
         );
@@ -109,9 +144,8 @@ export async function POST(req: NextRequest) {
     for (const [index, candidate] of candidates.entries()) {
       const isLastCandidate = index === candidates.length - 1;
 
-      // Price and policy belong to the villa, not the category — two units of
-      // one category can carry different nightly rates and different terms — so
-      // both are recomputed for whichever villa we are actually attempting.
+      // Preserve the proven production money path while category contracts are
+      // canonicalized. Pricing parity with EffectiveStayOffer is a separate gate.
       const candidateBreakdown = await computePriceBreakdown(
         prisma,
         candidate.id,
@@ -122,30 +156,31 @@ export async function POST(req: NextRequest) {
         Number(petsCount)
       );
 
-      // Snapshot the unit's cancellation policy at booking time (doc 07 F-GUEST-8)
       const unit = await prisma.unit.findUnique({
         where: { id: candidate.id },
-        select: { cancellationPolicyKey: true, status: true, projectId: true },
+        select: {
+          cancellationPolicyKey: true,
+          status: true,
+          projectId: true,
+          inventoryCategoryId: true,
+        },
       });
       if (!unit || unit.status !== 'live') {
         throw createPublicError('not found', 404);
       }
 
-      // The unit decides which project this booking belongs to — never the
-      // request body. `projectId` used to be taken from the client and filed
-      // as-is, so a mismatched id put the booking in another project's ledger,
-      // metrics and MC dashboard, and — worse — resolved the cancellation
-      // policy against that project's config overrides before snapshotting the
-      // result into a record the database then makes immutable. A client that
-      // disagrees is refused rather than silently corrected, so a broken caller
-      // is visible instead of quietly writing money terms from elsewhere.
       const bookingProjectId = unit.projectId;
       if (projectId && projectId !== bookingProjectId) {
         throw createPublicError('unit does not belong to the given project', 400);
       }
+      if (
+        resolvedInventoryCategoryId &&
+        unit.inventoryCategoryId &&
+        unit.inventoryCategoryId !== resolvedInventoryCategoryId
+      ) {
+        throw createPublicError('assigned unit does not belong to the requested inventory category', 409);
+      }
 
-      // Config is the source of truth (doc 04 §5); an unknown policy key
-      // fails the booking instead of silently granting the most generous terms.
       const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
         projectId: bookingProjectId,
         unitId: candidate.id,
@@ -165,15 +200,17 @@ export async function POST(req: NextRequest) {
           infants: Number(infantsCount),
           pets: Number(petsCount),
           totalThb: candidateBreakdown.total_thb,
-          // Booking type is a property of the assigned unit, never a client choice
           instantBook: candidate.instantBook,
           guestNote,
-          priceBreakdown: { ...candidateBreakdown },
+          priceBreakdown: {
+            ...candidateBreakdown,
+            ...(resolvedInventoryCategoryId && {
+              inventory_category_id: resolvedInventoryCategoryId,
+            }),
+          },
           cancellationPolicySnapshot: { ...policy },
         });
       } catch (error) {
-        // Someone took this villa while we were pricing it. Try the next one;
-        // if there is no next one, the guest genuinely cannot be housed.
         if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) {
           continue;
         }
@@ -190,7 +227,6 @@ export async function POST(req: NextRequest) {
         ? paymentMethod
         : 'cash';
 
-    // If instant book and card payment method, create checkout session
     if (instantBook && method === 'card_provider') {
       const checkout = await createCheckout(prisma, {
         purpose: 'stay',
@@ -203,40 +239,38 @@ export async function POST(req: NextRequest) {
         {
           booking,
           checkout,
+          ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
         },
         { status: 201 }
       );
     }
 
-    // Cash and bank transfer stay pending until staff record the receipt.
     if (instantBook && (method === 'cash' || method === 'bank_transfer')) {
       return NextResponse.json(
         {
           booking,
+          ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
           message: 'Booking created. Payment to be recorded.',
         },
         { status: 201 }
       );
     }
 
-    // For request-to-book, return the booking
     return NextResponse.json(
       {
         booking,
+        ...(resolvedInventoryCategoryId && { inventoryCategoryId: resolvedInventoryCategoryId }),
         message: 'Request to book created. Awaiting host approval.',
       },
       { status: 201 }
     );
   } catch (error) {
-    // Dates taken is a 409 conflict (doc 07 F-GUEST-3), not a generic 400.
     if (error instanceof Error && (error as { code?: string }).code === 'DOUBLE_BOOK') {
       return NextResponse.json(
         { error: error.message, code: 'DOUBLE_BOOK' },
         { status: 409 }
       );
     }
-    // Domain errors from the pricing/booking engine carry guest-actionable
-    // messages (dates unavailable, below min nights, party too large)
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;
       if (

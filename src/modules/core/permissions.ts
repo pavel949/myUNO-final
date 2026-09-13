@@ -3,6 +3,21 @@ import { prisma } from '@/lib/prisma';
 
 export type AccessLevel = 'allow' | 'read';
 
+/** What a caller intends to do with a grant. */
+export type RequiredAccess = 'read' | 'allow';
+
+/**
+ * Does a granted access level satisfy what the caller needs?
+ *
+ * 'allow' satisfies both; 'read' satisfies only a read. Lives here, beside
+ * the PERMISSIONS rows it interprets, so `can()` and `canWithAccess()` cannot
+ * drift apart on what a row means.
+ */
+export function accessSatisfies(granted: AccessLevel, required: RequiredAccess): boolean {
+  if (required === 'read') return granted === 'read' || granted === 'allow';
+  return granted === 'allow';
+}
+
 interface PermissionEntry {
   action: string;
   role: RoleType;
@@ -276,6 +291,16 @@ export function isKnownPermissionAction(action: string): boolean {
 interface CanContext {
   identity: Identity;
   action: string;
+  /**
+   * What the caller intends to do with the grant.
+   *
+   * Defaults to 'read', which is what `can()` has always effectively meant:
+   * it matched any PERMISSIONS row for the action and ignored that row's
+   * `access`, so a role marked read-only passed exactly like one marked
+   * 'allow'. Reads are unaffected by this default; a mutation must say
+   * 'allow' and will then be refused a read-only row.
+   */
+  requiredAccess?: RequiredAccess;
   resource?: {
     projectId?: string;
     unitId?: string;
@@ -295,6 +320,7 @@ interface CanContext {
  */
 export async function can(context: CanContext): Promise<boolean> {
   const { identity, action, resource } = context;
+  const requiredAccess: RequiredAccess = context.requiredAccess ?? 'read';
   const resolvedAction = resolvePermissionAction(action);
 
   // Rule 1: Blocked identities cannot do anything
@@ -312,7 +338,12 @@ export async function can(context: CanContext): Promise<boolean> {
     return false;
   }
 
-  const relevantPermissions = PERMISSIONS.filter((p) => p.action === resolvedAction);
+  // `access` is now honoured. Until this line existed it was declared on every
+  // PERMISSIONS row and read by nothing, so doc 03's read-only markings ("owner
+  // 👁 own units") described an intent the code did not implement.
+  const relevantPermissions = PERMISSIONS.filter(
+    (p) => p.action === resolvedAction && accessSatisfies(p.access, requiredAccess)
+  );
 
   if (relevantPermissions.length === 0) {
     // No permission entries for this action = deny by default

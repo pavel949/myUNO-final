@@ -5,25 +5,18 @@ import { requireAction, failed } from '@/app/libs/onboardingGuard';
 import { logAudit } from '@/modules/audit';
 
 /**
- * A unit's compliance records — the **legal audit** step of doc 07 F-OWN-1.
+ * A unit's compliance records — the legal audit step of doc 07 F-OWN-1.
  *
- * `createComplianceRecord` existed with no caller, while the owner dashboard
- * already *read* these records (`owner.service.ts`). So the platform showed a
- * compliance list nothing could add to.
- *
- * This matters beyond convenience: `permittedUseConfirmedAt` can be stamped
- * from the units screen, and that timestamp is what gates go-live. Until now a
- * unit could be marked cleared with no evidence recorded anywhere — which is
- * what ClearView's proof-of-evidence mandate exists to prevent. Whether
- * confirmation should be *refused* without a `permitted_use` record is a
- * tightening of a legal gate, so it is Q43 rather than something done here.
- *
- * Guarded on the doc 03 capability that already covers this — "Manage
- * compliance records (permitted use, licenses)".
+ * Read and write access are intentionally separated. The permission matrix
+ * gives owner/MC roles read-only visibility for compliance records; mutation
+ * requires an explicit `allow` grant so a read permission cannot become a
+ * legal-record write capability.
  */
-
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAction('compliance:manage_compliance_records');
+  const guard = await requireAction('compliance:manage_compliance_records', {
+    requiredAccess: 'read',
+    unitId: params.id,
+  });
   if (!guard.ok) return guard.error;
 
   const records = await getUnitComplianceRecords(prisma, params.id);
@@ -31,7 +24,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAction('compliance:manage_compliance_records');
+  const guard = await requireAction('compliance:manage_compliance_records', {
+    requiredAccess: 'allow',
+    unitId: params.id,
+  });
   if (!guard.ok) return guard.error;
 
   try {

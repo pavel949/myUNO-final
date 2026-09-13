@@ -14,7 +14,7 @@ export interface StayOfferQuery {
 }
 
 export interface PricingTraceNight {
-  date: string; // YYYY-MM-DD
+  date: string;
   baseRateThb: number;
   effectiveRateThb: number;
   sourceTrace: string[];
@@ -28,7 +28,7 @@ export interface EffectiveStayOffer {
   nightsCount: number;
   nightlyBreakdown: PricingTraceNight[];
   subtotalThb: number;
-  vatTaxThb: number; // Thailand VAT at the configured finance.vat_pct
+  vatTaxThb: number;
   totalThb: number;
   minNights: number;
   cancellationPolicyKey: string;
@@ -36,11 +36,75 @@ export interface EffectiveStayOffer {
   isAvailable: boolean;
 }
 
+async function resolveCanonicalRatePlan(
+  db: PrismaClient,
+  input: { projectId?: string; categoryId?: string; unitId?: string; code: string }
+) {
+  if (input.unitId) {
+    const unitPlan = await db.ratePlan.findFirst({
+      where: { unitId: input.unitId, code: input.code, status: 'active' },
+    });
+    if (unitPlan) return unitPlan;
+  }
+
+  if (input.categoryId) {
+    const categoryPlan = await db.ratePlan.findFirst({
+      where: { categoryId: input.categoryId, code: input.code, status: 'active' },
+    });
+    if (categoryPlan) return categoryPlan;
+  }
+
+  if (input.projectId) {
+    return db.ratePlan.findFirst({
+      where: {
+        projectId: input.projectId,
+        unitId: null,
+        categoryId: null,
+        code: input.code,
+        status: 'active',
+      },
+    });
+  }
+
+  return null;
+}
+
+function applyCanonicalRatePlanAdjustment(
+  baseRate: number,
+  adjustmentType: string | null,
+  adjustmentValue: number | null
+): number | null {
+  if (!adjustmentType || adjustmentValue === null || Number.isNaN(adjustmentValue)) return null;
+
+  switch (adjustmentType) {
+    // Signed percentage: -10 = 10% discount, +15 = 15% markup.
+    case 'percent':
+    case 'percentage':
+      return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
+    case 'percentage_discount':
+      return Math.max(0, Math.round(baseRate * (1 - adjustmentValue / 100)));
+    case 'percentage_markup':
+      return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
+    // Fixed values are stored in the money domain unit (satang), like the rest
+    // of the pricing engine. Signed fixed values therefore work as overrides too.
+    case 'fixed':
+      return Math.max(0, Math.round(baseRate + adjustmentValue));
+    case 'fixed_discount':
+      return Math.max(0, Math.round(baseRate - adjustmentValue));
+    case 'fixed_markup':
+      return Math.max(0, Math.round(baseRate + adjustmentValue));
+    default:
+      return null;
+  }
+}
+
 /**
- * Flexible Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine
+ * Flexible Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine.
  *
- * Resolves Effective Stay Offers across single condo units, standalone villas,
- * category-booked hotel/resort rooms, or mixed property inventory.
+ * Canonical precedence:
+ * Project → InventoryCategory → Unit → RatePlan → date-specific PricingRule.
+ * Legacy config-backed rate-plan discounts remain as a compatibility fallback
+ * when no RatePlan record exists yet.
  */
 export async function resolveEffectiveStayOffer(
   db: PrismaClient,
@@ -48,7 +112,6 @@ export async function resolveEffectiveStayOffer(
 ): Promise<EffectiveStayOffer> {
   const { projectId, categoryId, unitId, ratePlanCode = 'BAR', startDate, endDate, guests } = query;
 
-  // Resolve Physical / Category Inventory
   let targetUnit: any = null;
   let targetCategory: any = null;
   let targetProject: any = null;
@@ -80,18 +143,13 @@ export async function resolveEffectiveStayOffer(
         },
       },
     });
-    if (targetCategory) {
-      targetProject = targetCategory.project;
-    }
+    if (targetCategory) targetProject = targetCategory.project;
   } else if (projectId) {
-    targetProject = await db.project.findUnique({
-      where: { id: projectId },
-    });
+    targetProject = await db.project.findUnique({ where: { id: projectId } });
   }
 
   const resolvedProjectId = targetProject?.id || projectId || 'unknown-project';
 
-  // Base Nightly Rate resolution
   let baseNightlyRate = 0;
   let defaultMinNights = 1;
   let defaultCancellationKey = 'flexible';
@@ -106,15 +164,22 @@ export async function resolveEffectiveStayOffer(
     defaultCancellationKey = targetCategory.cancellationPolicyKey || 'flexible';
   }
 
-  // Calculate dates & night count
+  const canonicalRatePlan = await resolveCanonicalRatePlan(db, {
+    projectId: resolvedProjectId !== 'unknown-project' ? resolvedProjectId : undefined,
+    categoryId: targetCategory?.id,
+    unitId: targetUnit?.id,
+    code: ratePlanCode,
+  });
+
+  if (canonicalRatePlan?.minNights) defaultMinNights = canonicalRatePlan.minNights;
+  if (canonicalRatePlan?.cancellationPolicyKey) {
+    defaultCancellationKey = canonicalRatePlan.cancellationPolicyKey;
+  }
+
   const start = new Date(startDate);
   const end = new Date(endDate);
   const nightsCount = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
 
-  // Every rate below is a registered parameter (doc 04), resolved at the
-  // project scope for this quote. CLAUDE.md admits no exception: a commission,
-  // fee, rate or cap that is compiled in cannot be changed without a deploy,
-  // and VAT in particular is a statutory number that has moved before.
   const configScope = targetProject ? { projectId: targetProject.id } : undefined;
   const vatPct = (await getConfig(db, 'finance.vat_pct', configScope)) ?? 0;
   const nonRefundableDiscountPct =
@@ -130,10 +195,6 @@ export async function resolveEffectiveStayOffer(
   for (let i = 0; i < nightsCount; i++) {
     const curDate = new Date(start);
     curDate.setDate(curDate.getDate() + i);
-    // Through the canonical date module rather than a fourth hand-rolled
-    // `toISOString().slice(0, 10)` (T-052). These are booking calendar days —
-    // the `@db.Date` semantics `toCalendarDay` is built for — so the UTC read
-    // is the correct one here, and is what the rest of the booking code does.
     const dateStr = toCalendarDay(curDate);
 
     const sourceTrace: string[] = [];
@@ -145,7 +206,6 @@ export async function resolveEffectiveStayOffer(
       sourceTrace.push(`Unit (${targetUnit.name}) base: ${formatBaht(baseNightlyRate)}`);
     }
 
-    // Check specific unit pricing rule overrides if unit exists
     if (targetUnit?.pricingRules) {
       const overrideRule = targetUnit.pricingRules.find(
         (r: any) => new Date(r.startDate) <= curDate && new Date(r.endDate) >= curDate
@@ -158,13 +218,29 @@ export async function resolveEffectiveStayOffer(
       }
     }
 
-    // Apply Rate Plan Derivation (e.g., Non-refundable -10%)
-    if (ratePlanCode === 'NON_REFUNDABLE') {
+    if (canonicalRatePlan) {
+      const adjustmentValue = canonicalRatePlan.adjustmentValue === null
+        ? null
+        : Number(canonicalRatePlan.adjustmentValue);
+      const adjusted = applyCanonicalRatePlanAdjustment(
+        nightRate,
+        canonicalRatePlan.adjustmentType,
+        adjustmentValue
+      );
+      if (adjusted !== null) {
+        nightRate = adjusted;
+        sourceTrace.push(
+          `RatePlan ${canonicalRatePlan.code} (${canonicalRatePlan.adjustmentType} ${adjustmentValue})`
+        );
+      } else {
+        sourceTrace.push(`RatePlan ${canonicalRatePlan.code}`);
+      }
+    } else if (ratePlanCode === 'NON_REFUNDABLE') {
       nightRate = Math.round(nightRate * (1 - nonRefundableDiscountPct / 100));
-      sourceTrace.push(`Rate Plan NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
+      sourceTrace.push(`Legacy config NON_REFUNDABLE (-${nonRefundableDiscountPct}%)`);
     } else if (ratePlanCode === 'WEEKLY' && nightsCount >= weeklyMinNights) {
       nightRate = Math.round(nightRate * (1 - weeklyDiscountPct / 100));
-      sourceTrace.push(`Rate Plan WEEKLY (-${weeklyDiscountPct}%)`);
+      sourceTrace.push(`Legacy config WEEKLY (-${weeklyDiscountPct}%)`);
     }
 
     subtotalThb += nightRate;
@@ -179,7 +255,6 @@ export async function resolveEffectiveStayOffer(
   const vatTaxThb = Math.round(subtotalThb * (vatPct / 100));
   const totalThb = subtotalThb + vatTaxThb;
 
-  // Capacity calculation
   let availableCapacity = 1;
   let isAvailable = true;
 
@@ -204,8 +279,8 @@ export async function resolveEffectiveStayOffer(
 
   return {
     projectId: resolvedProjectId,
-    categoryId,
-    unitId,
+    categoryId: targetCategory?.id || categoryId,
+    unitId: targetUnit?.id || unitId,
     ratePlanCode,
     nightsCount,
     nightlyBreakdown,

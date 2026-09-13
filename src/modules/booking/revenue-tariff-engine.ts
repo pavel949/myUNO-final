@@ -40,9 +40,6 @@ async function resolveCanonicalRatePlan(
   db: PrismaClient,
   input: { projectId?: string; categoryId?: string; unitId?: string; code: string }
 ) {
-  // Unit tests and older adapters may provide a narrow Prisma seam that predates
-  // RatePlan. Treat absence as "not migrated yet" rather than crashing before
-  // the config-backed compatibility path can price the stay.
   const ratePlan = (db as any).ratePlan;
   if (!ratePlan?.findFirst) return null;
 
@@ -85,17 +82,15 @@ function applyCanonicalRatePlanAdjustment(
   switch (adjustmentType) {
     case 'percent':
     case 'percentage':
+    case 'percentage_markup':
       return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
     case 'percentage_discount':
       return Math.max(0, Math.round(baseRate * (1 - adjustmentValue / 100)));
-    case 'percentage_markup':
-      return Math.max(0, Math.round(baseRate * (1 + adjustmentValue / 100)));
     case 'fixed':
+    case 'fixed_markup':
       return Math.max(0, Math.round(baseRate + adjustmentValue));
     case 'fixed_discount':
       return Math.max(0, Math.round(baseRate - adjustmentValue));
-    case 'fixed_markup':
-      return Math.max(0, Math.round(baseRate + adjustmentValue));
     default:
       return null;
   }
@@ -104,16 +99,26 @@ function applyCanonicalRatePlanAdjustment(
 /**
  * Flexible Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine.
  *
- * Canonical precedence:
- * Project → InventoryCategory → Unit → RatePlan → date-specific PricingRule.
- * Legacy config-backed rate-plan discounts remain as a compatibility fallback
- * when no RatePlan record exists yet.
+ * Commercial base/restrictions resolve from InventoryCategory for a linked
+ * physical unit. Unit-level commercial fields are compatibility fallback only;
+ * an explicit unit-scoped RatePlan and date-specific PricingRule remain valid
+ * canonical overrides.
  */
 export async function resolveEffectiveStayOffer(
   db: PrismaClient,
   query: StayOfferQuery
 ): Promise<EffectiveStayOffer> {
   const { projectId, categoryId, unitId, ratePlanCode = 'BAR', startDate, endDate, guests } = query;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end <= start
+  ) {
+    throw new Error('Stay end date must be after start date');
+  }
 
   let targetUnit: any = null;
   let targetCategory: any = null;
@@ -151,20 +156,25 @@ export async function resolveEffectiveStayOffer(
     targetProject = await db.project.findUnique({ where: { id: projectId } });
   }
 
+  if (unitId && !targetUnit) throw new Error(`Unit ${unitId} not found`);
+  if (categoryId && !targetCategory) throw new Error(`InventoryCategory ${categoryId} not found`);
+
   const resolvedProjectId = targetProject?.id || projectId || 'unknown-project';
 
+  // InventoryCategory is the canonical commercial base for a linked unit.
+  // Unit values remain fallback for draft/unmigrated fixtures only.
   let baseNightlyRate = 0;
   let defaultMinNights = 1;
   let defaultCancellationKey = 'flexible';
 
-  if (targetUnit) {
-    baseNightlyRate = targetUnit.baseNightlyThb || 0;
-    defaultMinNights = targetUnit.minNights || 1;
-    defaultCancellationKey = targetUnit.cancellationPolicyKey || 'flexible';
-  } else if (targetCategory) {
+  if (targetCategory) {
     baseNightlyRate = targetCategory.baseNightlyThb || 0;
     defaultMinNights = targetCategory.minNights || 1;
     defaultCancellationKey = targetCategory.cancellationPolicyKey || 'flexible';
+  } else if (targetUnit) {
+    baseNightlyRate = targetUnit.baseNightlyThb || 0;
+    defaultMinNights = targetUnit.minNights || 1;
+    defaultCancellationKey = targetUnit.cancellationPolicyKey || 'flexible';
   }
 
   const canonicalRatePlan = await resolveCanonicalRatePlan(db, {
@@ -179,9 +189,7 @@ export async function resolveEffectiveStayOffer(
     defaultCancellationKey = canonicalRatePlan.cancellationPolicyKey;
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const nightsCount = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
+  const nightsCount = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
 
   const configScope = targetProject ? { projectId: targetProject.id } : undefined;
   const vatPct = (await getConfig(db, 'finance.vat_pct', configScope)) ?? 0;
@@ -206,12 +214,12 @@ export async function resolveEffectiveStayOffer(
     if (targetCategory) {
       sourceTrace.push(`Category (${targetCategory.name}) base: ${formatBaht(baseNightlyRate)}`);
     } else if (targetUnit) {
-      sourceTrace.push(`Unit (${targetUnit.name}) base: ${formatBaht(baseNightlyRate)}`);
+      sourceTrace.push(`Unit (${targetUnit.name}) legacy base: ${formatBaht(baseNightlyRate)}`);
     }
 
     if (targetUnit?.pricingRules) {
       const overrideRule = targetUnit.pricingRules.find(
-        (r: any) => new Date(r.startDate) <= curDate && new Date(r.endDate) >= curDate
+        (r: any) => new Date(r.startDate) <= curDate && new Date(r.endDate) > curDate
       );
       if (overrideRule) {
         nightRate = overrideRule.nightlyThb;
@@ -222,9 +230,10 @@ export async function resolveEffectiveStayOffer(
     }
 
     if (canonicalRatePlan) {
-      const adjustmentValue = canonicalRatePlan.adjustmentValue === null
-        ? null
-        : Number(canonicalRatePlan.adjustmentValue);
+      const adjustmentValue =
+        canonicalRatePlan.adjustmentValue === null
+          ? null
+          : Number(canonicalRatePlan.adjustmentValue);
       const adjusted = applyCanonicalRatePlanAdjustment(
         nightRate,
         canonicalRatePlan.adjustmentType,
@@ -264,7 +273,9 @@ export async function resolveEffectiveStayOffer(
   if (targetCategory) {
     const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
     const outOfServiceUnits = targetCategory.units
-      ? targetCategory.units.filter((u: any) => u.status === 'paused' || u.assetStatus === 'suspended').length
+      ? targetCategory.units.filter(
+          (u: any) => u.status === 'paused' || u.assetStatus === 'suspended'
+        ).length
       : 0;
     availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
     const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
@@ -276,7 +287,12 @@ export async function resolveEffectiveStayOffer(
         )
       : false;
     const exceedsCapacity = targetUnit.maxGuests !== undefined && guests > targetUnit.maxGuests;
-    isAvailable = !isUnitBlocked && targetUnit.status === 'live' && !exceedsCapacity;
+    isAvailable =
+      !isUnitBlocked &&
+      targetUnit.status === 'live' &&
+      targetUnit.assetStatus !== 'suspended' &&
+      targetUnit.project?.status === 'live' &&
+      !exceedsCapacity;
     availableCapacity = isAvailable ? 1 : 0;
   }
 

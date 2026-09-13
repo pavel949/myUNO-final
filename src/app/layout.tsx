@@ -104,7 +104,7 @@ export default async function RootLayout({
   // The surfaces this person's roles give them, from the same policy the `/app`
   // landing redirects on — so the menu can never offer a different set of hats
   // than the landing picks between.
-  const activeBookingId = user ? await getActiveStayId(user.identityId) : null;
+  const activeBookingId = user ? await getActiveStayId() : null;
   const roleLinks = user
     ? availableSurfaces({
         isAdmin: user.isAdmin,

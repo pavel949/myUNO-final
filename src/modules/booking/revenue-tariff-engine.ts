@@ -112,11 +112,7 @@ export async function resolveEffectiveStayOffer(
 
   const start = new Date(startDate);
   const end = new Date(endDate);
-  if (
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(end.getTime()) ||
-    end <= start
-  ) {
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
     throw new Error('Stay end date must be after start date');
   }
 
@@ -161,8 +157,6 @@ export async function resolveEffectiveStayOffer(
 
   const resolvedProjectId = targetProject?.id || projectId || 'unknown-project';
 
-  // InventoryCategory is the canonical commercial base for a linked unit.
-  // Unit values remain fallback for draft/unmigrated fixtures only.
   let baseNightlyRate = 0;
   let defaultMinNights = 1;
   let defaultCancellationKey = 'flexible';
@@ -270,17 +264,10 @@ export async function resolveEffectiveStayOffer(
   let availableCapacity = 1;
   let isAvailable = true;
 
-  if (targetCategory) {
-    const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
-    const outOfServiceUnits = targetCategory.units
-      ? targetCategory.units.filter(
-          (u: any) => u.status === 'paused' || u.assetStatus === 'suspended'
-        ).length
-      : 0;
-    availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
-    const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
-    isAvailable = availableCapacity > 0 && !exceedsCapacity;
-  } else if (targetUnit) {
+  // A unit quote must use unit availability even though the unit also has a
+  // targetCategory. The previous category-first branch saw no `units` relation
+  // on the unit's included category and incorrectly returned capacity 0.
+  if (targetUnit) {
     const isUnitBlocked = targetUnit.blockedDates
       ? targetUnit.blockedDates.some(
           (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
@@ -294,6 +281,16 @@ export async function resolveEffectiveStayOffer(
       targetUnit.project?.status === 'live' &&
       !exceedsCapacity;
     availableCapacity = isAvailable ? 1 : 0;
+  } else if (targetCategory) {
+    const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
+    const outOfServiceUnits = targetCategory.units
+      ? targetCategory.units.filter(
+          (u: any) => u.status === 'paused' || u.assetStatus === 'suspended'
+        ).length
+      : 0;
+    availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
+    const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
+    isAvailable = availableCapacity > 0 && !exceedsCapacity;
   }
 
   return {

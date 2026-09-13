@@ -16,18 +16,12 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const searchParams = req.nextUrl.searchParams;
     const statusFilter = searchParams.get('status');
-    const limit = Math.min(
-      parseInt(searchParams.get('limit') || '50'),
-      100
-    );
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
     const offset = parseInt(searchParams.get('offset') || '0');
 
     const statuses = statusFilter ? statusFilter.split(',') : undefined;
@@ -47,7 +41,6 @@ export async function GET(req: NextRequest) {
           select: {
             id: true,
             name: true,
-            baseNightlyThb: true,
           },
         },
         project: {
@@ -73,8 +66,8 @@ export async function GET(req: NextRequest) {
 
     const total = await prisma.booking.count({ where });
 
-    // Display boundary: totalThb is stored in satang (THB x 100); convert to
-    // baht here so the client never has to know about the domain unit.
+    // A trip is a historical booking snapshot. It should display the amount
+    // actually booked, not recompute or expose today's Unit base rate.
     const bookingsForClient = bookings.map((b) => ({
       ...b,
       totalThb: Math.round(b.totalThb / 100),

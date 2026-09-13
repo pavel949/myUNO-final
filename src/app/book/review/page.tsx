@@ -12,27 +12,45 @@ export default async function BookingReviewPage({
 }: {
   searchParams: {
     unitId?: string;
+    categoryId?: string;
     categoryKey?: string;
     projectId?: string;
     startDate?: string;
     endDate?: string;
   };
 }) {
-  if ((!searchParams.unitId && !searchParams.categoryKey) || !searchParams.startDate || !searchParams.endDate) {
+  if (
+    (!searchParams.unitId && !searchParams.categoryId && !searchParams.categoryKey) ||
+    !searchParams.startDate ||
+    !searchParams.endDate
+  ) {
     redirect('/search');
   }
 
   let projectId = searchParams.projectId;
-  if (!projectId && searchParams.unitId) {
+  let categoryId = searchParams.categoryId;
+
+  if (searchParams.unitId) {
     const unit = await prisma.unit.findUnique({
       where: { id: searchParams.unitId },
-      select: { projectId: true },
+      select: { projectId: true, inventoryCategoryId: true },
     });
-    projectId = unit?.projectId;
+    projectId = projectId ?? unit?.projectId;
+    categoryId = categoryId ?? unit?.inventoryCategoryId ?? undefined;
+  } else if (!categoryId && projectId && searchParams.categoryKey) {
+    const category = await prisma.inventoryCategory.findUnique({
+      where: {
+        projectId_categoryKey: {
+          projectId,
+          categoryKey: searchParams.categoryKey,
+        },
+      },
+      select: { id: true },
+    });
+    categoryId = category?.id;
   }
-  if (!projectId) {
-    redirect('/search');
-  }
+
+  if (!projectId || (!searchParams.unitId && !categoryId)) redirect('/search');
 
   const enabled =
     (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId })) ?? [
@@ -56,7 +74,7 @@ export default async function BookingReviewPage({
     'booking.review.back': '← Back',
     'booking.review.error': 'Could not complete the booking. Please try again.',
     'booking.review.category_note':
-      'We assign a free home in this category when you confirm. The total is calculated on that home.',
+      'We assign an available home in this category when you confirm. Your quote uses the same canonical category and booking pricing engine.',
     'listing.payment_method': 'Payment method',
     'listing.pay_cash': 'Cash on arrival',
     'listing.pay_card': 'Card (online)',
@@ -77,35 +95,25 @@ export default async function BookingReviewPage({
     <Suspense>
       <BookingReviewClient
         projectId={projectId}
+        resolvedCategoryId={categoryId ?? null}
         methods={enabled}
         defaultPolicy={labels['listing.cancellation_default']}
         labels={{
-          title: labels['booking.review.title'],
-          recap: labels['booking.review.recap'],
-          checkIn: labels['booking.review.check_in'],
-          checkOut: labels['booking.review.check_out'],
-          guests: labels['booking.review.guests'],
-          policy: labels['booking.review.policy'],
+          title: labels['booking.review.title'], recap: labels['booking.review.recap'],
+          checkIn: labels['booking.review.check_in'], checkOut: labels['booking.review.check_out'],
+          guests: labels['booking.review.guests'], policy: labels['booking.review.policy'],
           policyConsent: labels['booking.review.policy_consent'],
           verificationNote: labels['booking.review.verification_note'],
-          paymentMethod: labels['listing.payment_method'],
-          payCash: labels['listing.pay_cash'],
-          payCard: labels['listing.pay_card'],
-          payTransfer: labels['listing.pay_transfer'],
-          confirm: labels['booking.review.confirm'],
-          confirming: labels['booking.review.confirming'],
-          back: labels['booking.review.back'],
-          error: labels['booking.review.error'],
-          conflictTitle: labels['listing.conflict_title'],
-          conflictBody: labels['listing.conflict_body'],
-          searchAgain: labels['listing.search_again'],
-          categoryNote: labels['booking.review.category_note'],
-          total: labels['listing.total'],
-          nights: labels['listing.price_nights'],
+          paymentMethod: labels['listing.payment_method'], payCash: labels['listing.pay_cash'],
+          payCard: labels['listing.pay_card'], payTransfer: labels['listing.pay_transfer'],
+          confirm: labels['booking.review.confirm'], confirming: labels['booking.review.confirming'],
+          back: labels['booking.review.back'], error: labels['booking.review.error'],
+          conflictTitle: labels['listing.conflict_title'], conflictBody: labels['listing.conflict_body'],
+          searchAgain: labels['listing.search_again'], categoryNote: labels['booking.review.category_note'],
+          total: labels['listing.total'], nights: labels['listing.price_nights'],
           discountLongStay: labels['listing.discount_long_stay'],
           discountEarlyBird: labels['listing.discount_early_bird'],
-          cleaningFee: labels['listing.cleaning_fee'],
-          occupancyTax: labels['listing.occupancy_tax'],
+          cleaningFee: labels['listing.cleaning_fee'], occupancyTax: labels['listing.occupancy_tax'],
         }}
       />
     </Suspense>

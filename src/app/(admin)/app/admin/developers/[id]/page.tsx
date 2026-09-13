@@ -8,6 +8,13 @@ import Developer360Client from './Developer360Client';
 
 export const dynamic = 'force-dynamic';
 
+type DeveloperTrackRecord = {
+  completedProjects?: number;
+  activeProjects?: number;
+  plannedProjects?: number;
+  totalUnitsDelivered?: number;
+};
+
 export default async function Developer360Page({ params }: { params: { id: string } }) {
   const data = await getDeveloper360(prisma, params.id);
   if (!data) notFound();
@@ -56,13 +63,31 @@ export default async function Developer360Page({ params }: { params: { id: strin
           hqCountry: data.organization.hqCountry,
           officeAddress: data.organization.officeAddress,
           registrationNumber: data.organization.registrationNumber,
+          yearEstablished: data.organization.yearEstablished,
           developerVerification: data.organization.developerVerification,
+          developerTrackRecord: (data.organization.developerTrackRecord as DeveloperTrackRecord | null) || null,
         }}
         completeness={data.completeness}
-        projects={data.projects.map((p) => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
+        credentialSummary={data.credentialSummary}
+        projectRelationships={data.projectRelationships.map((relationship) => ({
+          id: relationship.id,
+          roleKey: relationship.roleKey,
+          isPrimary: relationship.isPrimary,
+          provenance: relationship.provenance,
+          effectiveFrom: relationship.effectiveFrom?.toISOString() ?? null,
+          effectiveTo: relationship.effectiveTo?.toISOString() ?? null,
+          project: {
+            id: relationship.project.id,
+            name: relationship.project.name,
+            slug: relationship.project.slug,
+            status: relationship.project.status,
+            city: relationship.project.city,
+            developmentLifecycleStatus: relationship.project.developmentLifecycleStatus,
+            unitsCount: relationship.project._count.units,
+            bookingsCount: relationship.project._count.bookings,
+            categoryCount: relationship.project.inventoryCategories.length,
+            ratePlanCount: relationship.project.ratePlans.filter((plan) => plan.status === 'active').length,
+          },
         }))}
         labels={labels}
       />

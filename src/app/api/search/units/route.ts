@@ -16,12 +16,11 @@ import { listAreas, collectDescendantIds } from '@/modules/projects';
 
 /**
  * GET /api/search/units
- * Canonical guest inventory search built on the current production-proven path.
+ * Search for available units with optional filters.
  *
- * InventoryCategory is authoritative for category identity and base commercial
- * data. categoryKey remains a compatibility slug. Date-specific pricing still
- * resolves through the existing production pricing engine, which is server-side
- * and unit-scoped.
+ * Canonical category filter: inventoryCategoryId (categoryId is accepted as a
+ * compatibility alias). categoryKey remains accepted while older links and
+ * saved searches migrate.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -33,41 +32,31 @@ export async function GET(req: NextRequest) {
     const startDateStr = searchParams.get('startDate');
     const endDateStr = searchParams.get('endDate');
     const adultsCount = searchParams.get('adultsCount')
-      ? parseInt(searchParams.get('adultsCount')!, 10)
+      ? parseInt(searchParams.get('adultsCount')!)
       : undefined;
     const childrenCount = searchParams.get('childrenCount')
-      ? parseInt(searchParams.get('childrenCount')!, 10)
+      ? parseInt(searchParams.get('childrenCount')!)
       : undefined;
     const minPrice = searchParams.get('minPrice')
-      ? bahtToSatang(parseInt(searchParams.get('minPrice')!, 10))
+      ? bahtToSatang(parseInt(searchParams.get('minPrice')!))
       : undefined;
     const maxPrice = searchParams.get('maxPrice')
-      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!, 10))
+      ? bahtToSatang(parseInt(searchParams.get('maxPrice')!))
       : undefined;
     const unitTypesStr = searchParams.get('unitTypes');
     const bedrooms = searchParams.get('bedrooms')
-      ? parseInt(searchParams.get('bedrooms')!, 10)
+      ? parseInt(searchParams.get('bedrooms')!)
       : undefined;
     const categoryKey = searchParams.get('categoryKey') || undefined;
     const groupBy = searchParams.get('groupBy') || undefined;
     const sort = parseUnitSort(searchParams.get('sort'));
-    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 100);
-    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     const startDate = startDateStr ? new Date(startDateStr) : undefined;
     const endDate = endDateStr ? new Date(endDateStr) : undefined;
 
-    if ((startDate && !endDate) || (!startDate && endDate)) {
-      return NextResponse.json(
-        { error: 'startDate and endDate must be supplied together' },
-        { status: 400 }
-      );
-    }
-    if (
-      (startDate && Number.isNaN(startDate.getTime())) ||
-      (endDate && Number.isNaN(endDate.getTime())) ||
-      (startDate && endDate && startDate >= endDate)
-    ) {
+    if (startDate && endDate && startDate >= endDate) {
       return NextResponse.json({ error: 'startDate must be before endDate' }, { status: 400 });
     }
 
@@ -87,37 +76,20 @@ export async function GET(req: NextRequest) {
       categoryKey: string;
       name: string;
       status: string;
-      baseNightlyThb: number;
     } | null = null;
-
     if (inventoryCategoryId) {
       canonicalCategory = await prisma.inventoryCategory.findUnique({
         where: { id: inventoryCategoryId },
-        select: {
-          id: true,
-          projectId: true,
-          categoryKey: true,
-          name: true,
-          status: true,
-          baseNightlyThb: true,
-        },
+        select: { id: true, projectId: true, categoryKey: true, name: true, status: true },
       });
-
-      // InventoryCategory.status is a text lifecycle with production value `live`.
       if (!canonicalCategory || canonicalCategory.status !== 'live') {
         return NextResponse.json({ units: [], total: 0, limit, offset, sort: sort.key }, { status: 200 });
       }
       if (projectId && projectId !== canonicalCategory.projectId) {
-        return NextResponse.json(
-          { error: 'inventoryCategoryId does not belong to projectId' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'inventoryCategoryId does not belong to projectId' }, { status: 400 });
       }
       if (categoryKey && categoryKey !== canonicalCategory.categoryKey) {
-        return NextResponse.json(
-          { error: 'categoryKey disagrees with inventoryCategoryId' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'categoryKey disagrees with inventoryCategoryId' }, { status: 400 });
       }
     }
 
@@ -137,7 +109,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const unitTypes = unitTypesStr ? unitTypesStr.split(',').filter(Boolean) : [];
+    const unitTypes = unitTypesStr ? unitTypesStr.split(',') : [];
     const effectiveProjectId = canonicalCategory?.projectId || projectId;
 
     const projectScope =
@@ -160,18 +132,24 @@ export async function GET(req: NextRequest) {
 
     const where: any = {
       status: 'live',
-      assetStatus: { not: 'suspended' },
       project: projectFilter,
       ...projectScope,
-      inventoryCategoryId: { not: null },
-      ...(totalGuests > 0 && { maxGuests: { gte: totalGuests } }),
+      ...(minPrice !== undefined || maxPrice !== undefined
+        ? {
+            baseNightlyThb: {
+              ...(minPrice !== undefined && { gte: minPrice }),
+              ...(maxPrice !== undefined && { lte: maxPrice }),
+            },
+          }
+        : {}),
+      ...(adultsCount !== undefined && { maxGuests: { gte: adultsCount } }),
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(inventoryCategoryId
         ? { inventoryCategoryId }
         : categoryKey
-          ? { inventoryCategory: { categoryKey, status: 'live' } }
-          : { inventoryCategory: { status: 'live' } }),
+          ? { categoryKey }
+          : {}),
     };
 
     if (startDate && endDate) {
@@ -200,81 +178,67 @@ export async function GET(req: NextRequest) {
       const unavailableUnitIds = new Set(
         conflictingUnits.map((b) => b.unitId).concat(blockedUnits.map((b) => b.unitId))
       );
+
       if (unavailableUnitIds.size > 0) {
         where.id = { notIn: Array.from(unavailableUnitIds) };
       }
     }
 
-    const candidates = await prisma.unit.findMany({
-      where,
-      include: {
-        project: { select: { id: true, name: true } },
-        inventoryCategory: {
-          select: {
-            id: true,
-            categoryKey: true,
-            name: true,
-            status: true,
-            baseNightlyThb: true,
-            minNights: true,
-          },
-        },
-        coverMedia: { select: { storageKey: true } },
-        media: {
-          orderBy: { sort: 'asc' as const },
-          take: 1,
-          select: { media: { select: { storageKey: true } } },
-        },
-      },
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      take: 500,
-    });
-
-    const priced = await Promise.all(
-      candidates.map(async (unit) => {
-        const canonicalBase = unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb;
-        const effectiveNightlyThb = startDate
-          ? await getApplicableNightlyPrice(prisma, startDate, unit.id)
-          : canonicalBase;
-        return { unit, effectiveNightlyThb };
-      })
-    );
-
-    let filtered = priced;
-    if (minPrice !== undefined) {
-      filtered = filtered.filter((entry) => entry.effectiveNightlyThb >= minPrice);
-    }
-    if (maxPrice !== undefined) {
-      filtered = filtered.filter((entry) => entry.effectiveNightlyThb <= maxPrice);
-    }
-
     if (groupBy === 'category') {
-      const grouped = new Map<
-        string,
-        {
-          id: string;
-          key: string;
-          name: string;
-          count: number;
-          fromNightlyThb: number;
-        }
-      >();
+      const categoryUnits = await prisma.unit.findMany({
+        where: {
+          ...where,
+          ...(inventoryCategoryId
+            ? { inventoryCategoryId }
+            : categoryKey
+              ? { categoryKey }
+              : {
+                  OR: [
+                    { inventoryCategoryId: { not: null } },
+                    { categoryKey: { not: null } },
+                  ],
+                }),
+        },
+        select: {
+          id: true,
+          categoryKey: true,
+          inventoryCategoryId: true,
+          inventoryCategory: {
+            select: { id: true, categoryKey: true, name: true, status: true },
+          },
+          baseNightlyThb: true,
+        },
+        orderBy: { baseNightlyThb: 'asc' },
+      });
 
-      for (const entry of filtered) {
-        const category = entry.unit.inventoryCategory;
-        if (!category) continue;
-        const existing = grouped.get(category.id);
-        if (!existing) {
-          grouped.set(category.id, {
-            id: category.id,
-            key: category.categoryKey,
-            name: category.name,
+      type GroupedCategory = {
+        id: string | null;
+        key: string;
+        name: string | null;
+        canonical: boolean;
+        count: number;
+        cheapestUnitId: string;
+        minBase: number;
+      };
+      const grouped = new Map<string, GroupedCategory>();
+      for (const unit of categoryUnits) {
+        const category = unit.inventoryCategory;
+        const key = category?.categoryKey || unit.categoryKey;
+        if (!key) continue;
+        const mapKey = category ? `id:${category.id}` : `legacy:${key}`;
+        const entry = grouped.get(mapKey);
+        if (!entry) {
+          grouped.set(mapKey, {
+            id: category?.id || null,
+            key,
+            name: category?.name || null,
+            canonical: Boolean(category),
             count: 1,
-            fromNightlyThb: entry.effectiveNightlyThb,
+            cheapestUnitId: unit.id,
+            minBase: unit.baseNightlyThb,
           });
         } else {
-          existing.count += 1;
-          existing.fromNightlyThb = Math.min(existing.fromNightlyThb, entry.effectiveNightlyThb);
+          entry.count += 1;
         }
       }
 
@@ -287,14 +251,15 @@ export async function GET(req: NextRequest) {
           const translated = await t(prisma, labelKey, undefined, locale).catch(() => entry.key);
           return {
             inventory_category_id: entry.id,
-            category_id: entry.id,
             category_key: entry.key,
-            canonical: true,
+            canonical: entry.canonical,
             label:
               entry.name ||
               (translated && translated !== labelKey && translated !== '—' ? translated : entry.key),
             available_count: entry.count,
-            from_nightly_thb: entry.fromNightlyThb,
+            from_nightly_thb: startDate
+              ? await getApplicableNightlyPrice(prisma, startDate, entry.cheapestUnitId)
+              : entry.minBase,
           };
         })
       );
@@ -312,49 +277,60 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ categories }, { status: 200 });
     }
 
-    const ratings = await getUnitRatings(prisma, filtered.map((entry) => entry.unit.id));
+    const listInclude = {
+      project: {
+        select: { id: true, name: true },
+      },
+      inventoryCategory: {
+        select: { id: true, categoryKey: true, name: true, status: true },
+      },
+      coverMedia: { select: { storageKey: true } },
+      media: {
+        orderBy: { sort: 'asc' as const },
+        take: 1,
+        select: { media: { select: { storageKey: true } } },
+      },
+    };
 
-    if (sort.key === 'price_asc' || sort.key === 'price_desc') {
-      const direction = sort.key === 'price_asc' ? 1 : -1;
-      filtered.sort(
-        (a, b) =>
-          direction * (a.effectiveNightlyThb - b.effectiveNightlyThb) ||
-          a.unit.id.localeCompare(b.unit.id)
-      );
-    } else if (sort.needsRating) {
-      const rankedIds = rankByRating(
-        filtered.map((entry) => ({
-          id: entry.unit.id,
-          createdAt: entry.unit.createdAt,
-          ...(ratings.get(entry.unit.id) ?? { averageRating: null, reviewCount: 0 }),
+    let rankedPageIds: string[] | null = null;
+    if (sort.needsRating) {
+      const candidates = await prisma.unit.findMany({
+        where,
+        select: { id: true, createdAt: true },
+      });
+      const candidateRatings = await getUnitRatings(prisma, candidates.map((u) => u.id));
+      rankedPageIds = rankByRating(
+        candidates.map((u) => ({
+          id: u.id,
+          createdAt: u.createdAt,
+          ...(candidateRatings.get(u.id) ?? { averageRating: null, reviewCount: 0 }),
         }))
-      ).map((row) => row.id);
-      const order = new Map(rankedIds.map((id, index) => [id, index]));
-      filtered.sort((a, b) => (order.get(a.unit.id) ?? 0) - (order.get(b.unit.id) ?? 0));
-    } else if (sort.key === 'bedrooms_desc') {
-      filtered.sort(
-        (a, b) =>
-          b.unit.bedrooms - a.unit.bedrooms ||
-          a.effectiveNightlyThb - b.effectiveNightlyThb ||
-          a.unit.id.localeCompare(b.unit.id)
-      );
-    } else if (sort.key === 'capacity_desc') {
-      filtered.sort(
-        (a, b) =>
-          b.unit.maxGuests - a.unit.maxGuests ||
-          a.effectiveNightlyThb - b.effectiveNightlyThb ||
-          a.unit.id.localeCompare(b.unit.id)
-      );
-    } else {
-      filtered.sort(
-        (a, b) =>
-          b.unit.createdAt.getTime() - a.unit.createdAt.getTime() ||
-          a.unit.id.localeCompare(b.unit.id)
-      );
+      )
+        .slice(offset, offset + limit)
+        .map((u) => u.id);
     }
 
-    const total = filtered.length;
-    const page = filtered.slice(offset, offset + limit);
+    const page = rankedPageIds
+      ? await prisma.unit.findMany({
+          where: { id: { in: rankedPageIds } },
+          include: listInclude,
+        })
+      : await prisma.unit.findMany({
+          where,
+          include: listInclude,
+          take: limit,
+          skip: offset,
+          orderBy: sort.orderBy,
+        });
+
+    const units = rankedPageIds
+      ? rankedPageIds
+          .map((id) => page.find((u) => u.id === id))
+          .filter((u): u is (typeof page)[number] => Boolean(u))
+      : page;
+
+    const total = await prisma.unit.count({ where });
+    const ratings = await getUnitRatings(prisma, units.map((u) => u.id));
 
     await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
       projectId: effectiveProjectId,
@@ -367,14 +343,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        units: page.map(({ unit, effectiveNightlyThb }) => {
-          const { coverMedia, media, inventoryCategory, ...rest } = unit;
+        units: units.map((unit) => {
+          const { coverMedia, media, ...rest } = unit;
           const rating = ratings.get(unit.id);
           return {
             ...rest,
-            baseNightlyThb: effectiveNightlyThb,
-            effectiveNightlyThb,
-            inventoryCategory,
             coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,

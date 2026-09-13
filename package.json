@@ -7,6 +7,7 @@
     "postinstall": "prisma generate",
     "build": "prisma generate && node scripts/check-content-review-gate.mjs && NODE_ENV=production next build",
     "db:repair": "node scripts/repair-failed-migrations.mjs",
+    "db:verify": "node scripts/db-verify.mjs",
     "check:content-gate": "node scripts/check-content-review-gate.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",

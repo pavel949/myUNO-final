@@ -34,7 +34,7 @@ async function markServiceOrderPaid(
 
   await track(db, 'service_order_paid', {
     serviceOrderId,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: payerIdentityId,
     totalThb: order.total_thb,

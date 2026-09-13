@@ -74,6 +74,13 @@ async function loadSubject(
       },
     });
     if (!order) throw new Error('Service order not found');
+    // `ticket.project_id` is NOT NULL, so a dispute needs the order's project.
+    // Standalone orders (no project) are representable in the schema since the
+    // canonical v3 commerce migration but cannot yet be created, so this is
+    // unreachable today — and is the tripwire for when they can be.
+    if (order.project_id === null) {
+      throw new Error(`Service order ${subjectId} has no project, which a dispute ticket requires`);
+    }
     return {
       projectId: order.project_id,
       unitId: order.unit_id,

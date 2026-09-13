@@ -121,6 +121,31 @@ async function issueServiceOrderRefunds(input: {
  * Create a new service order (placed status).
  * Validates service availability and computes take-rate snapshot.
  */
+
+/**
+ * A service order's project, required.
+ *
+ * `service_order.project_id` is nullable in the database: the canonical v3
+ * commerce migration made standalone orders — ones belonging to no project —
+ * representable (SERVICES_MARKETPLACE.md §7). The application cannot create
+ * one yet, because `createServiceOrder` still requires a project, so this is
+ * currently unreachable.
+ *
+ * It is asserted rather than defaulted because the two callers attribute money
+ * and ownership: a commission ledger entry needs a project to land against,
+ * and `ticket.project_id` is NOT NULL in the schema. Quietly substituting a
+ * placeholder would misattribute revenue. When standalone commerce is built,
+ * this is the tripwire that says what has to be decided first.
+ */
+function requireOrderProject(order: { id: string; project_id: string | null }): string {
+  if (order.project_id === null) {
+    throw new Error(
+      `Service order ${order.id} has no project, which the commission and ticket paths require`
+    );
+  }
+  return order.project_id;
+}
+
 export async function createServiceOrder(
   db: PrismaClient,
   input: CreateServiceOrderInput
@@ -280,7 +305,7 @@ export async function acceptServiceOrder(
   await track(db, 'service_order_accepted', {
     serviceOrderId: order.id,
     serviceId: order.service_id,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
@@ -348,7 +373,7 @@ export async function declineServiceOrder(
   await track(db, 'service_order_declined', {
     serviceOrderId: order.id,
     serviceId: order.service_id,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
@@ -408,14 +433,14 @@ export async function fulfillServiceOrder(
     db,
     order.id,
     order.unit_id,
-    order.project_id,
+    requireOrderProject(order),
     commissionThb,
     new Date()
   );
 
   await track(db, 'service_order_fulfilled', {
     serviceOrderId: order.id,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
@@ -457,7 +482,7 @@ export async function reportProviderNoShow(
 
   const refundPct =
     ((await getConfig(db, 'service.provider_no_show_refund_pct', {
-      projectId: order.project_id,
+      projectId: order.project_id ?? undefined,
     })) as number | undefined) ?? 100;
 
   const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
@@ -481,7 +506,7 @@ export async function reportProviderNoShow(
 
   const serviceTitle = order.service?.title || 'Service';
   const { id: ticketId } = await raiseTicket(db, {
-    projectId: order.project_id,
+    projectId: requireOrderProject(order),
     unitId: order.unit_id ?? undefined,
     raisedByIdentityId: reportedByIdentityId,
     raisedByRole: order.orderer_role,
@@ -516,7 +541,7 @@ export async function reportProviderNoShow(
 
   await track(db, 'service_order_no_show', {
     serviceOrderId: order.id,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: order.orderer_identity_id,
     totalThb: order.total_thb,
@@ -551,7 +576,7 @@ export async function cancelServiceOrder(
 
   // Get cancellation window from config
   const cancelWindowHours = ((await getConfig(db, 'service.cancel_window_hours', {
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
   })) as number | undefined) || 24;
 
   const now = new Date();
@@ -610,7 +635,7 @@ export async function cancelServiceOrder(
 
   await track(db, 'service_order_cancelled', {
     serviceOrderId: order.id,
-    projectId: order.project_id,
+    projectId: order.project_id ?? undefined,
     unitId: order.unit_id ?? undefined,
     identityId: cancelledByIdentityId,
     totalThb: order.total_thb,

@@ -3,12 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
-/**
- * GET /api/units/[unitId]
- * Public unit detail for the guest-facing unit page (S4).
- * Only live units are visible; returns the guest-safe subset of fields
- * (no owner identity, no engagement economics, no internal status detail).
- */
 export async function GET(
   _req: NextRequest,
   { params }: { params: { unitId: string } }
@@ -26,14 +20,30 @@ export async function GET(
         maxGuests: true,
         sizeSqm: true,
         amenityKeys: true,
-        baseNightlyThb: true,
-        minNights: true,
         instantBook: true,
-        cancellationPolicyKey: true,
         status: true,
-        project: {
-          select: { id: true, name: true, status: true },
+        inventoryCategory: {
+          select: {
+            id: true,
+            categoryKey: true,
+            name: true,
+            baseNightlyThb: true,
+            minNights: true,
+            cancellationPolicyKey: true,
+            status: true,
+            ratePlans: {
+              where: { status: 'active', code: 'BAR' },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                code: true,
+                minNights: true,
+                cancellationPolicyKey: true,
+              },
+            },
+          },
         },
+        project: { select: { id: true, name: true, status: true } },
         coverMedia: { select: { storageKey: true } },
         media: {
           orderBy: { sort: 'asc' },
@@ -42,14 +52,16 @@ export async function GET(
       },
     });
 
-    // A unit is public only when its project is public too. Checking the unit
-    // alone left the page live for a villa in an archived or draft project —
-    // the same disagreement search had, on the screen the guest books from.
-    if (!unit || unit.status !== 'live' || unit.project.status !== 'live') {
+    if (
+      !unit ||
+      unit.status !== 'live' ||
+      unit.project.status !== 'live' ||
+      !unit.inventoryCategory ||
+      unit.inventoryCategory.status !== 'live'
+    ) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
-    // Doc 13: page_unit_viewed feeds the listing_engagement buyer signal
     const viewer = await getCurrentUser().catch(() => null);
     await track(prisma, 'page_unit_viewed', {
       unitId: unit.id,
@@ -57,14 +69,35 @@ export async function GET(
       identityId: viewer?.identityId,
     });
 
-    const { status: _status, coverMedia, media, project, ...rest } = unit;
-    const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
-    const gallery = media.map((m) => m.media.storageKey);
-    const cover = coverMedia?.storageKey || gallery[0] || null;
+    const category = unit.inventoryCategory;
+    const bar = category.ratePlans[0] ?? null;
+    const gallery = unit.media.map((m) => m.media.storageKey);
+    const cover = unit.coverMedia?.storageKey || gallery[0] || null;
+
     return NextResponse.json({
-      ...publicUnit,
-      // Display boundary: baseNightlyThb is stored in satang (THB x 100).
-      baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
+      id: unit.id,
+      projectId: unit.projectId,
+      name: unit.name,
+      unitType: unit.unitType,
+      bedrooms: unit.bedrooms,
+      bathrooms: unit.bathrooms,
+      maxGuests: unit.maxGuests,
+      sizeSqm: unit.sizeSqm,
+      amenityKeys: unit.amenityKeys,
+      instantBook: unit.instantBook,
+      project: { id: unit.project.id, name: unit.project.name },
+      inventoryCategory: {
+        id: category.id,
+        categoryKey: category.categoryKey,
+        name: category.name,
+      },
+      categoryKey: category.categoryKey,
+      // Existing client contract is baht here; source is now canonical.
+      baseNightlyThb: Math.round(category.baseNightlyThb / 100),
+      minNights: bar?.minNights ?? category.minNights,
+      cancellationPolicyKey:
+        bar?.cancellationPolicyKey ?? category.cancellationPolicyKey ?? 'flexible',
+      ratePlanCode: bar?.code ?? 'BAR',
       images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
     });
   } catch (error) {

@@ -53,12 +53,19 @@ export default async function Project360Page({ params }: { params: { id: string 
           slug: data.project.slug,
           name: data.project.name,
           address: data.project.address,
+          status: data.project.status,
           projectType: data.project.projectType,
           developmentLifecycleStatus: data.project.developmentLifecycleStatus,
+          constructionStatus: data.project.constructionStatus,
+          city: data.project.city,
+          region: data.project.region,
+          country: data.project.country,
           totalUnits: data.project.totalUnits,
           totalBuildings: data.project.totalBuildings,
           floors: data.project.floors,
           landAreaSqm: data.project.landAreaSqm ? Number(data.project.landAreaSqm) : null,
+          completionYear: data.project.completionYear,
+          expectedCompletion: data.project.expectedCompletion?.toISOString() ?? null,
           facilities: data.project.facilities,
         }}
         developerOrg={
@@ -71,14 +78,49 @@ export default async function Project360Page({ params }: { params: { id: string 
               }
             : null
         }
-        orgRoles={data.orgRoles.map((r) => ({
-          id: r.id,
-          roleKey: r.roleKey,
+        orgRoles={data.orgRoles.map((role) => ({
+          id: role.id,
+          roleKey: role.roleKey,
+          isPrimary: role.isPrimary,
+          provenance: role.provenance,
           organization: {
-            id: r.organization.id,
-            name: r.organization.name,
+            id: role.organization.id,
+            name: role.organization.name,
+            orgType: role.organization.orgType,
           },
         }))}
+        canonicalInventory={{
+          categories: data.canonicalInventory.categories.map((category) => ({
+            id: category.id,
+            categoryKey: category.categoryKey,
+            name: category.name,
+            bedrooms: category.bedrooms,
+            bathrooms: category.bathrooms,
+            maxGuests: category.maxGuests,
+            // Monetary domain values are satang; the UI boundary displays THB.
+            baseNightlyThb: Math.round(category.baseNightlyThb / 100),
+            minNights: category.minNights,
+            status: category.status,
+            unitCount: category._count.units,
+          })),
+          ratePlans: data.canonicalInventory.ratePlans.map((plan) => ({
+            id: plan.id,
+            code: plan.code,
+            name: plan.name,
+            status: plan.status,
+            categoryId: plan.categoryId,
+            unitId: plan.unitId,
+            adjustmentType: plan.adjustmentType,
+            adjustmentValue: plan.adjustmentValue?.toString() ?? null,
+            minNights: plan.minNights,
+          })),
+          linkedUnits: data.canonicalInventory.linkedUnits,
+          legacyCategoryOnlyUnits: data.canonicalInventory.legacyCategoryOnlyUnits,
+          uncategorizedUnits: data.canonicalInventory.uncategorizedUnits,
+          bookingsCount: data.canonicalInventory.bookingsCount,
+          ledgerEntriesCount: data.canonicalInventory.ledgerEntriesCount,
+          openWorkItemsCount: data.canonicalInventory.openWorkItemsCount,
+        }}
         completenessScore={data.completenessScore}
         labels={labels}
       />

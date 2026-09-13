@@ -93,6 +93,11 @@ export default function Project360Client({
   const canonicalCoveragePct = canonicalCoverage > 0
     ? Math.round((canonicalInventory.linkedUnits / canonicalCoverage) * 100)
     : 100;
+  const replace = (template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce(
+      (result, [key, value]) => result.replace(`{${key}}`, String(value)),
+      template
+    );
 
   return (
     <div className="space-y-24">
@@ -126,12 +131,12 @@ export default function Project360Client({
           </h2>
           <dl className="space-y-8 text-small">
             <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.status']}</dt><dd className="font-medium">{text(project.developmentLifecycleStatus)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">Construction</dt><dd className="font-medium">{text(project.constructionStatus)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">Location</dt><dd className="font-medium">{text([project.city, project.region, project.country].filter(Boolean).join(', '))}</dd></div>
+            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.construction']}</dt><dd className="font-medium">{text(project.constructionStatus)}</dd></div>
+            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.location']}</dt><dd className="font-medium">{text([project.city, project.region, project.country].filter(Boolean).join(', '))}</dd></div>
             <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.total_units']}</dt><dd className="font-medium">{text(project.totalUnits)}</dd></div>
             <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.buildings']}</dt><dd className="font-medium">{text(project.totalBuildings)}</dd></div>
             <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.floors']}</dt><dd className="font-medium">{text(project.floors)}</dd></div>
-            <div><dt className="text-text-secondary">Completion</dt><dd className="font-medium">{text(project.completionYear || project.expectedCompletion)}</dd></div>
+            <div><dt className="text-text-secondary">{labels['admin.project360.completion']}</dt><dd className="font-medium">{text(project.completionYear || project.expectedCompletion)}</dd></div>
           </dl>
         </section>
 
@@ -146,7 +151,7 @@ export default function Project360Client({
             >
               <p className="font-medium text-text-ink">{developerOrg.tradingName || developerOrg.name}</p>
               {developerOrg.website ? <p className="text-micro text-text-secondary break-all">{developerOrg.website}</p> : null}
-              <p className="text-small text-brand-andaman mt-6">Open Developer 360 →</p>
+              <p className="text-small text-brand-andaman mt-6">{labels['admin.project360.open_developer']} →</p>
             </Link>
           ) : (
             <p className="text-small text-text-muted">{labels['admin.project360.no_developer']}</p>
@@ -163,7 +168,7 @@ export default function Project360Client({
                   {role.provenance ? <p className="text-micro text-text-secondary">{role.provenance}</p> : null}
                 </div>
                 <div className="flex gap-4 items-center">
-                  {role.isPrimary ? <span className="text-micro px-6 py-2 bg-brand-andaman text-on-dark-text rounded">primary</span> : null}
+                  {role.isPrimary ? <span className="text-micro px-6 py-2 bg-brand-andaman text-on-dark-text rounded">{labels['admin.project360.primary']}</span> : null}
                   <span className="text-micro px-8 py-2 bg-brand-sand text-text-ink rounded">
                     {role.roleKey.replace(/_/g, ' ')}
                   </span>
@@ -174,13 +179,13 @@ export default function Project360Client({
         </section>
 
         <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
-          <h2 className="font-semibold text-subtitle text-text-ink">Operational footprint</h2>
+          <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.operational_title']}</h2>
           <div className="grid grid-cols-2 gap-8">
             {[
-              ['Bookings', canonicalInventory.bookingsCount],
-              ['Ledger entries', canonicalInventory.ledgerEntriesCount],
-              ['Tickets', canonicalInventory.openWorkItemsCount],
-              ['Canonical coverage', `${canonicalCoveragePct}%`],
+              [labels['admin.project360.metric_bookings'], canonicalInventory.bookingsCount],
+              [labels['admin.project360.metric_ledger'], canonicalInventory.ledgerEntriesCount],
+              [labels['admin.project360.metric_tickets'], canonicalInventory.openWorkItemsCount],
+              [labels['admin.project360.metric_canonical_coverage'], `${canonicalCoveragePct}%`],
             ].map(([label, value]) => (
               <div key={String(label)} className="p-12 bg-surface-ivory border border-border-line rounded-md">
                 <p className="text-micro text-text-secondary">{label}</p>
@@ -190,8 +195,11 @@ export default function Project360Client({
           </div>
           {canonicalInventory.legacyCategoryOnlyUnits > 0 || canonicalInventory.uncategorizedUnits > 0 ? (
             <div className="p-12 rounded-md bg-state-warning-soft border border-state-warning text-small text-text-ink">
-              <p className="font-semibold">Inventory migration required</p>
-              <p>{canonicalInventory.legacyCategoryOnlyUnits} unit(s) still rely only on legacy category keys; {canonicalInventory.uncategorizedUnits} are uncategorized.</p>
+              <p className="font-semibold">{labels['admin.project360.migration_required']}</p>
+              <p>{replace(labels['admin.project360.migration_summary'], {
+                legacy: canonicalInventory.legacyCategoryOnlyUnits,
+                uncategorized: canonicalInventory.uncategorizedUnits,
+              })}</p>
             </div>
           ) : null}
         </section>
@@ -200,25 +208,30 @@ export default function Project360Client({
       <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           <div>
-            <h2 className="font-semibold text-subtitle text-text-ink">Canonical inventory categories</h2>
-            <p className="text-small text-text-secondary">Project → InventoryCategory → Unit. This is the sellable-class source of truth.</p>
+            <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.categories_title']}</h2>
+            <p className="text-small text-text-secondary">{labels['admin.project360.categories_hint']}</p>
           </div>
-          <span className="text-small text-text-secondary">{canonicalInventory.categories.length} categories · {canonicalInventory.linkedUnits} linked units</span>
+          <span className="text-small text-text-secondary">
+            {replace(labels['admin.project360.categories_count'], {
+              categories: canonicalInventory.categories.length,
+              units: canonicalInventory.linkedUnits,
+            })}
+          </span>
         </div>
 
         {canonicalInventory.categories.length === 0 ? (
-          <p className="text-small text-text-muted">No canonical inventory categories configured.</p>
+          <p className="text-small text-text-muted">{labels['admin.project360.categories_empty']}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-small">
               <thead>
                 <tr className="text-left text-text-secondary border-b border-border-line">
-                  <th className="py-8 pr-12">Category</th>
-                  <th className="py-8 pr-12">Units</th>
-                  <th className="py-8 pr-12">Beds/Baths</th>
-                  <th className="py-8 pr-12">Guests</th>
-                  <th className="py-8 pr-12">Base rate</th>
-                  <th className="py-8">Min stay</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_category']}</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_units']}</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_beds_baths']}</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_guests']}</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_base_rate']}</th>
+                  <th className="py-8">{labels['admin.project360.col_min_stay']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,7 +242,7 @@ export default function Project360Client({
                     <td className="py-10 pr-12">{category.bedrooms} / {category.bathrooms}</td>
                     <td className="py-10 pr-12">{category.maxGuests}</td>
                     <td className="py-10 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
-                    <td className="py-10">{category.minNights} night(s)</td>
+                    <td className="py-10">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -240,11 +253,11 @@ export default function Project360Client({
 
       <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
         <div>
-          <h2 className="font-semibold text-subtitle text-text-ink">Rate plans</h2>
-          <p className="text-small text-text-secondary">Canonical commercial transformations attached at project, category, or unit scope.</p>
+          <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.rate_plans_title']}</h2>
+          <p className="text-small text-text-secondary">{labels['admin.project360.rate_plans_hint']}</p>
         </div>
         {canonicalInventory.ratePlans.length === 0 ? (
-          <p className="text-small text-text-muted">No RatePlan records configured.</p>
+          <p className="text-small text-text-muted">{labels['admin.project360.rate_plans_empty']}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {canonicalInventory.ratePlans.map((plan) => (
@@ -252,9 +265,13 @@ export default function Project360Client({
                 <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-micro text-text-secondary">{plan.status}</span></div>
                 <p className="text-micro text-text-secondary mt-2">{plan.code}</p>
                 <p className="text-small mt-8 text-text-ink">
-                  {plan.unitId ? 'Unit scoped' : plan.categoryId ? 'Category scoped' : 'Project scoped'}
+                  {plan.unitId
+                    ? labels['admin.project360.scope_unit']
+                    : plan.categoryId
+                      ? labels['admin.project360.scope_category']
+                      : labels['admin.project360.scope_project']}
                   {plan.adjustmentType && plan.adjustmentValue ? ` · ${plan.adjustmentType} ${plan.adjustmentValue}` : ''}
-                  {plan.minNights ? ` · min ${plan.minNights} nights` : ''}
+                  {plan.minNights ? ` · ${replace(labels['admin.project360.min_nights_inline'], { count: plan.minNights })}` : ''}
                 </p>
               </div>
             ))}

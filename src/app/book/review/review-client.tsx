@@ -62,6 +62,7 @@ export default function BookingReviewClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const unitId = searchParams?.get('unitId');
+  const inventoryCategoryId = searchParams?.get('inventoryCategoryId');
   const categoryKey = searchParams?.get('categoryKey');
   const projectId = searchParams?.get('projectId') || resolvedProjectId;
   const startDate = searchParams?.get('startDate');
@@ -92,7 +93,30 @@ export default function BookingReviewClient({
         adults: String(adults),
         children: String(children),
         ...(projectId ? { projectId } : {}),
+        ...(inventoryCategoryId ? { inventoryCategoryId } : {}),
+        ...(!inventoryCategoryId && categoryKey ? { categoryKey } : {}),
       })}`;
+
+  useEffect(() => {
+    if (inventoryCategoryId && !unitId) {
+      const loadCategory = async () => {
+        const response = await fetch(
+          `/api/search/units?${new URLSearchParams({
+            projectId,
+            inventoryCategoryId,
+            adultsCount: String(Math.max(1, adults)),
+            childrenCount: String(Math.max(0, children)),
+            limit: '1',
+          })}`
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+        const categoryName = data.units?.[0]?.inventoryCategory?.name;
+        if (categoryName) setHeadline(categoryName);
+      };
+      loadCategory();
+    }
+  }, [inventoryCategoryId, unitId, projectId, adults, children]);
 
   useEffect(() => {
     if (!unitId || !startDate || !endDate) return;
@@ -101,9 +125,6 @@ export default function BookingReviewClient({
       if (unitRes.ok) {
         const unit = await unitRes.json();
         setHeadline(unit.name);
-        if (unit.projectId && !projectId) {
-          /* projectId stays in the query for POST */
-        }
       }
       const priceRes = await fetch('/api/pricing/breakdown', {
         method: 'POST',
@@ -120,11 +141,12 @@ export default function BookingReviewClient({
       }
     };
     load();
-  }, [unitId, startDate, endDate, adults, children, projectId]);
+  }, [unitId, startDate, endDate, adults, children]);
 
+  const categorySelected = Boolean(inventoryCategoryId || categoryKey);
   const canSubmit =
-    Boolean(startDate && endDate && projectId && (unitId || categoryKey) && consented) &&
-    (Boolean(categoryKey) || Boolean(breakdown));
+    Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
+    (categorySelected || Boolean(breakdown));
 
   const handleConfirm = async () => {
     if (!canSubmit) return;
@@ -137,7 +159,8 @@ export default function BookingReviewClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           unitId: unitId || undefined,
-          categoryKey: categoryKey || undefined,
+          inventoryCategoryId: inventoryCategoryId || undefined,
+          categoryKey: !inventoryCategoryId ? categoryKey || undefined : undefined,
           projectId,
           startDate,
           endDate,
@@ -212,7 +235,7 @@ export default function BookingReviewClient({
               <dd className="text-text-ink">{adults + children}</dd>
             </div>
           </dl>
-          {categoryKey && !unitId && (
+          {categorySelected && !unitId && (
             <p className="mt-16 text-small text-text-stone">{labels.categoryNote}</p>
           )}
         </section>
@@ -229,40 +252,16 @@ export default function BookingReviewClient({
                   satang: Math.round((breakdown.subtotal || 0) * 100),
                 },
                 ...(breakdown.lengthOfStayDiscount > 0
-                  ? [
-                      {
-                        id: 'los',
-                        label: labels.discountLongStay,
-                        satang: -Math.round(breakdown.lengthOfStayDiscount * 100),
-                      },
-                    ]
+                  ? [{ id: 'los', label: labels.discountLongStay, satang: -Math.round(breakdown.lengthOfStayDiscount * 100) }]
                   : []),
                 ...(breakdown.earlyBirdDiscount > 0
-                  ? [
-                      {
-                        id: 'early',
-                        label: labels.discountEarlyBird,
-                        satang: -Math.round(breakdown.earlyBirdDiscount * 100),
-                      },
-                    ]
+                  ? [{ id: 'early', label: labels.discountEarlyBird, satang: -Math.round(breakdown.earlyBirdDiscount * 100) }]
                   : []),
                 ...(breakdown.cleaningFee > 0
-                  ? [
-                      {
-                        id: 'clean',
-                        label: labels.cleaningFee,
-                        satang: Math.round(breakdown.cleaningFee * 100),
-                      },
-                    ]
+                  ? [{ id: 'clean', label: labels.cleaningFee, satang: Math.round(breakdown.cleaningFee * 100) }]
                   : []),
                 ...(breakdown.occupancyTax > 0
-                  ? [
-                      {
-                        id: 'tax',
-                        label: labels.occupancyTax,
-                        satang: Math.round(breakdown.occupancyTax * 100),
-                      },
-                    ]
+                  ? [{ id: 'tax', label: labels.occupancyTax, satang: Math.round(breakdown.occupancyTax * 100) }]
                   : []),
               ]}
             />

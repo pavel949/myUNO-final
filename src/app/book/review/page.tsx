@@ -13,14 +13,17 @@ export default async function BookingReviewPage({
   searchParams: {
     unitId?: string;
     inventoryCategoryId?: string;
+    categoryId?: string;
     categoryKey?: string;
     projectId?: string;
     startDate?: string;
     endDate?: string;
   };
 }) {
+  const inventoryCategoryId = searchParams.inventoryCategoryId || searchParams.categoryId;
+
   if (
-    (!searchParams.unitId && !searchParams.inventoryCategoryId && !searchParams.categoryKey) ||
+    (!searchParams.unitId && !inventoryCategoryId && !searchParams.categoryKey) ||
     !searchParams.startDate ||
     !searchParams.endDate
   ) {
@@ -29,12 +32,12 @@ export default async function BookingReviewPage({
 
   let projectId = searchParams.projectId;
 
-  if (searchParams.inventoryCategoryId) {
+  if (inventoryCategoryId) {
     const category = await prisma.inventoryCategory.findUnique({
-      where: { id: searchParams.inventoryCategoryId },
+      where: { id: inventoryCategoryId },
       select: { projectId: true, status: true },
     });
-    if (!category || category.status !== 'active') redirect('/search');
+    if (!category || category.status !== 'live') redirect('/search');
     if (projectId && projectId !== category.projectId) redirect('/search');
     projectId = category.projectId;
   }

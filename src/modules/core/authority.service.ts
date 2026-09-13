@@ -1,6 +1,6 @@
 import type { Identity, RoleAssignment, RoleType } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
-import { PERMISSIONS, type AccessLevel } from './permissions';
+import { PERMISSIONS, resolvePermissionAction, type AccessLevel } from './permissions';
 
 export type RequiredAccess = 'read' | 'allow';
 
@@ -45,9 +45,16 @@ export async function canWithAccess(
   if (input.identity.status === 'blocked') return false;
   if (input.identity.isAdmin) return true;
 
+  // Route-level action names predate the doc 03 matrix vocabulary and are
+  // aliased to canonical names. `can()` resolves them; this must too, or a
+  // caller passing a legacy name (`compliance:confirm_permitted_use`,
+  // `units:update`, `config:edit`) matches zero permission rows and is denied
+  // for everyone but admin — failing closed, but silently and confusingly.
+  const resolvedAction = resolvePermissionAction(input.action);
+
   const permissionRows = PERMISSIONS.filter(
     (permission) =>
-      permission.action === input.action && accessSatisfies(permission.access, input.requiredAccess)
+      permission.action === resolvedAction && accessSatisfies(permission.access, input.requiredAccess)
   );
   if (permissionRows.length === 0) return false;
 

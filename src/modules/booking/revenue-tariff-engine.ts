@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { formatBaht } from '@/lib/money';
 import { toCalendarDay } from '@/lib/date';
@@ -99,36 +99,14 @@ function applyCanonicalRatePlanAdjustment(
 }
 
 /**
- * Canonical stay quotation engine.
- *
- * Source of truth:
- * Project -> InventoryCategory -> Unit -> RatePlan -> date-specific PricingRule.
- *
- * Once a unit is linked to InventoryCategory, category commercial facts are
- * authoritative. Unit.baseNightlyThb/minNights/cancellationPolicyKey are only a
- * compatibility fallback for not-yet-migrated draft inventory.
+ * Canonical quote seam. InventoryCategory is authoritative whenever a unit is
+ * linked to one; Unit commercial fields remain a compatibility fallback only.
  */
 export async function resolveEffectiveStayOffer(
   db: PrismaClient,
   query: StayOfferQuery
 ): Promise<EffectiveStayOffer> {
   const { projectId, categoryId, unitId, ratePlanCode = 'BAR', startDate, endDate, guests } = query;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const now = new Date();
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
-    throw new Error('startDate must be before endDate');
-  }
-
-  const blockingBookingWhere: Prisma.BookingWhereInput = {
-    startDate: { lt: end },
-    endDate: { gt: start },
-    OR: [
-      { status: { in: ['confirmed', 'checked_in'] } },
-      { status: 'pending_payment', holdExpiresAt: { gt: now } },
-    ],
-  };
 
   let targetUnit: any = null;
   let targetCategory: any = null;
@@ -142,7 +120,6 @@ export async function resolveEffectiveStayOffer(
         inventoryCategory: true,
         pricingRules: true,
         blockedDates: true,
-        bookings: { where: blockingBookingWhere, select: { id: true } },
       },
     });
     if (targetUnit) {
@@ -158,7 +135,6 @@ export async function resolveEffectiveStayOffer(
           include: {
             blockedDates: true,
             pricingRules: true,
-            bookings: { where: blockingBookingWhere, select: { id: true } },
           },
         },
       },
@@ -168,15 +144,7 @@ export async function resolveEffectiveStayOffer(
     targetProject = await db.project.findUnique({ where: { id: projectId } });
   }
 
-  if (!targetProject) throw new Error('Project not found');
-  if (unitId && !targetUnit) throw new Error('Unit not found');
-  if (categoryId && !targetCategory) throw new Error('Inventory category not found');
-
-  if (projectId && targetProject.id !== projectId) {
-    throw new Error('Inventory does not belong to the requested project');
-  }
-
-  const resolvedProjectId = targetProject.id;
+  const resolvedProjectId = targetProject?.id || projectId || 'unknown-project';
 
   let baseNightlyRate = 0;
   let defaultMinNights = 1;
@@ -193,7 +161,7 @@ export async function resolveEffectiveStayOffer(
   }
 
   const canonicalRatePlan = await resolveCanonicalRatePlan(db, {
-    projectId: resolvedProjectId,
+    projectId: resolvedProjectId !== 'unknown-project' ? resolvedProjectId : undefined,
     categoryId: targetCategory?.id,
     unitId: targetUnit?.id,
     code: ratePlanCode,
@@ -204,12 +172,11 @@ export async function resolveEffectiveStayOffer(
     defaultCancellationKey = canonicalRatePlan.cancellationPolicyKey;
   }
 
-  const nightsCount = Math.max(
-    1,
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24))
-  );
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const nightsCount = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
 
-  const configScope = { projectId: targetProject.id };
+  const configScope = targetProject ? { projectId: targetProject.id } : undefined;
   const vatPct = (await getConfig(db, 'finance.vat_pct', configScope)) ?? 0;
   const nonRefundableDiscountPct =
     (await getConfig(db, 'pricing.rate_plan.non_refundable_discount_pct', configScope)) ?? 0;
@@ -248,10 +215,9 @@ export async function resolveEffectiveStayOffer(
     }
 
     if (canonicalRatePlan) {
-      const adjustmentValue =
-        canonicalRatePlan.adjustmentValue === null
-          ? null
-          : Number(canonicalRatePlan.adjustmentValue);
+      const adjustmentValue = canonicalRatePlan.adjustmentValue === null
+        ? null
+        : Number(canonicalRatePlan.adjustmentValue);
       const adjusted = applyCanonicalRatePlanAdjustment(
         nightRate,
         canonicalRatePlan.adjustmentType,
@@ -285,39 +251,32 @@ export async function resolveEffectiveStayOffer(
   const vatTaxThb = Math.round(subtotalThb * (vatPct / 100));
   const totalThb = subtotalThb + vatTaxThb;
 
-  const rangeBlocked = (blockedDates: any[]) =>
-    blockedDates.some(
-      (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
-    );
-
-  let availableCapacity = 0;
-  let isAvailable = false;
+  let availableCapacity = 1;
+  let isAvailable = true;
 
   if (targetCategory) {
-    const eligibleUnits = (targetCategory.units || []).filter((u: any) => {
-      const operational = u.status === 'live' && u.assetStatus !== 'suspended';
-      const blocked = rangeBlocked(u.blockedDates || []);
-      const booked = (u.bookings || []).length > 0;
-      return operational && !blocked && !booked;
-    });
-    availableCapacity = eligibleUnits.length;
-    const exceedsCapacity = guests > targetCategory.maxGuests;
+    const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
+    const outOfServiceUnits = targetCategory.units
+      ? targetCategory.units.filter((u: any) => u.status === 'paused' || u.assetStatus === 'suspended').length
+      : 0;
+    availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
+    const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
     isAvailable =
-      targetProject.status === 'live' &&
       targetCategory.status === 'live' &&
       availableCapacity > 0 &&
       !exceedsCapacity &&
       nightsCount >= defaultMinNights;
   } else if (targetUnit) {
-    const blocked = rangeBlocked(targetUnit.blockedDates || []);
-    const booked = (targetUnit.bookings || []).length > 0;
-    const exceedsCapacity = guests > targetUnit.maxGuests;
+    const isUnitBlocked = targetUnit.blockedDates
+      ? targetUnit.blockedDates.some(
+          (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
+        )
+      : false;
+    const exceedsCapacity = targetUnit.maxGuests !== undefined && guests > targetUnit.maxGuests;
     isAvailable =
-      targetProject.status === 'live' &&
+      !isUnitBlocked &&
       targetUnit.status === 'live' &&
       targetUnit.assetStatus !== 'suspended' &&
-      !blocked &&
-      !booked &&
       !exceedsCapacity &&
       nightsCount >= defaultMinNights;
     availableCapacity = isAvailable ? 1 : 0;

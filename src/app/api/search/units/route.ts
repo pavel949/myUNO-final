@@ -18,16 +18,17 @@ import { listAreas, collectDescendantIds } from '@/modules/projects';
  * GET /api/search/units
  * Search for available units with optional filters.
  *
- * Canonical category filter: inventoryCategoryId.
- * categoryKey remains accepted as a compatibility alias while older public
- * links and saved searches migrate.
+ * Canonical category filter: inventoryCategoryId (categoryId is accepted as a
+ * compatibility alias). categoryKey remains accepted while older links and
+ * saved searches migrate.
  */
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
 
     const projectId = searchParams.get('projectId') || undefined;
-    const inventoryCategoryId = searchParams.get('inventoryCategoryId') || undefined;
+    const inventoryCategoryId =
+      searchParams.get('inventoryCategoryId') || searchParams.get('categoryId') || undefined;
     const startDateStr = searchParams.get('startDate');
     const endDateStr = searchParams.get('endDate');
     const adultsCount = searchParams.get('adultsCount')
@@ -69,9 +70,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: parsedBounds.error }, { status: 400 });
     }
 
-    // A canonical category id is globally unique and therefore authoritative.
-    // Verify any redundant project/key selectors agree with it rather than
-    // returning a surprising empty result for a broken link.
     let canonicalCategory: {
       id: string;
       projectId: string;
@@ -84,7 +82,7 @@ export async function GET(req: NextRequest) {
         where: { id: inventoryCategoryId },
         select: { id: true, projectId: true, categoryKey: true, name: true, status: true },
       });
-      if (!canonicalCategory || canonicalCategory.status !== 'active') {
+      if (!canonicalCategory || canonicalCategory.status !== 'live') {
         return NextResponse.json({ units: [], total: 0, limit, offset, sort: sort.key }, { status: 200 });
       }
       if (projectId && projectId !== canonicalCategory.projectId) {

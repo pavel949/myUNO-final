@@ -11,9 +11,6 @@ import {
 } from '@/modules/projects';
 
 export async function fetchMCDashboard(projectId: string, organizationId: string) {
-  // `getMCDashboard` already refuses a project/organization this member has no
-  // role assignment for. That check is only worth anything once the member is
-  // the caller rather than whoever the caller named.
   const mcIdentityId = await requireSessionIdentityId();
   try {
     const dashboard = await getMCDashboard(prisma, mcIdentityId, projectId, organizationId);
@@ -28,14 +25,31 @@ export async function fetchMCDashboard(projectId: string, organizationId: string
       50
     );
 
-    // Cast to any to avoid type mismatches between Prisma and client types.
-    // baseNightlyThb / totalThb are satang like every other amount in the
-    // platform (CLAUDE.md); convert to baht here, once, at the boundary to
-    // the client component (Q47 — the MC dashboard previously showed every
-    // nightly rate and booking total 100x too large).
+    // Resolve the commercial base through the canonical InventoryCategory.
+    // Unit.baseNightlyThb remains only a compatibility fallback for an old or
+    // not-yet-migrated row; production live units are category-linked.
+    const unitIds = (unitsRaw as Array<{ id: string }>).map((unit) => unit.id);
+    const canonicalPrices = unitIds.length
+      ? await prisma.unit.findMany({
+          where: { id: { in: unitIds } },
+          select: {
+            id: true,
+            baseNightlyThb: true,
+            inventoryCategory: { select: { baseNightlyThb: true } },
+          },
+        })
+      : [];
+    const priceByUnitId = new Map(
+      canonicalPrices.map((unit) => [
+        unit.id,
+        unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
+      ])
+    );
+
+    // Money is stored in satang; convert exactly once at the server→client boundary.
     const units = (unitsRaw as any[]).map((unit) => ({
       ...unit,
-      baseNightlyThb: unit.baseNightlyThb / 100,
+      baseNightlyThb: (priceByUnitId.get(unit.id) ?? unit.baseNightlyThb) / 100,
     }));
     const bookings = (bookingsRaw as any[]).map((booking) => ({
       ...booking,

@@ -6,7 +6,6 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
@@ -192,7 +191,6 @@ export default async function RootLayout({
           }}
         />
         <div className="flex-1">{children}</div>
-        <AnalyticsBeacon />
         <Footer
           locale={locale}
           labels={{

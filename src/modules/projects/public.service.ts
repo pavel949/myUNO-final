@@ -7,25 +7,22 @@ import { getConfig } from '@/modules/config';
  * archived inventory stays invisible (doc 08 §4).
  */
 
-/** A sellable villa category on a project's landing (LY-5): counts and
- *  "from" prices come from the project's config catalog + rate grid. */
 export interface PublicProjectCategory {
   key: string;
   styleKey: string | null;
   bedrooms: number | null;
   unitCount: number;
-  /** Lowest seasonal nightly rate (satang), else lowest unit base price. */
+  /** Lowest seasonal nightly rate (satang), else canonical category base price. */
   fromNightlyThb: number | null;
   /** Lowest flat month price (satang) when the category sells long stays. */
   monthlyFromThb: number | null;
 }
 
-/** A published guest review of a stay in this project (LY-5). */
 export interface PublicProjectReview {
   rating: number;
   comment: string | null;
   authorFirstName: string;
-  createdAt: string; // ISO
+  createdAt: string;
   reply: string | null;
 }
 
@@ -55,6 +52,7 @@ export interface PublicProjectUnit {
   bathrooms: number;
   maxGuests: number;
   sizeSqm: number | null;
+  /** Canonical InventoryCategory base; Unit field only for legacy fallback. */
   baseNightlyThb: number;
   instantBook: boolean;
   coverUrl: string | null;
@@ -74,8 +72,6 @@ export interface PublicProjectDetail {
   coverUrl: string | null;
   galleryUrls: string[];
   units: PublicProjectUnit[];
-  /** Empty for projects without a unit-categories catalog — the landing
-   *  renders its category/styles sections only when entries exist. */
   categories: PublicProjectCategory[];
   reviews: PublicProjectReviews;
 }
@@ -89,7 +85,10 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
       coverMedia: { select: { storageKey: true } },
       units: {
         where: { status: 'live' },
-        select: { baseNightlyThb: true },
+        select: {
+          baseNightlyThb: true,
+          inventoryCategory: { select: { baseNightlyThb: true } },
+        },
       },
     },
   });
@@ -103,16 +102,13 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
     coverUrl: p.coverMedia?.storageKey ?? null,
     liveUnitCount: p.units.length,
     fromNightlyThb: p.units.length
-      ? Math.min(...p.units.map((u) => u.baseNightlyThb))
+      ? Math.min(
+          ...p.units.map((u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb)
+        )
       : null,
   }));
 }
 
-/**
- * One live project by slug with its gallery and live units.
- * Returns null for unknown slugs AND for non-live projects, so drafts
- * never leak through a guessed URL.
- */
 export async function getPublicProjectBySlug(
   slug: string
 ): Promise<PublicProjectDetail | null> {
@@ -127,7 +123,18 @@ export async function getPublicProjectBySlug(
       units: {
         where: { status: 'live' },
         orderBy: { baseNightlyThb: 'asc' },
-        include: { coverMedia: { select: { storageKey: true } } },
+        include: {
+          coverMedia: { select: { storageKey: true } },
+          inventoryCategory: {
+            select: {
+              id: true,
+              categoryKey: true,
+              baseNightlyThb: true,
+              minNights: true,
+              status: true,
+            },
+          },
+        },
       },
     },
   });
@@ -156,12 +163,12 @@ export async function getPublicProjectBySlug(
       id: u.id,
       name: u.name,
       unitType: u.unitType,
-      categoryKey: u.categoryKey,
+      categoryKey: u.inventoryCategory?.categoryKey ?? u.categoryKey,
       bedrooms: u.bedrooms,
       bathrooms: u.bathrooms,
       maxGuests: u.maxGuests,
       sizeSqm: u.sizeSqm,
-      baseNightlyThb: u.baseNightlyThb,
+      baseNightlyThb: u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb,
       instantBook: u.instantBook,
       coverUrl: u.coverMedia?.storageKey ?? null,
     })),
@@ -171,14 +178,21 @@ export async function getPublicProjectBySlug(
 }
 
 /**
- * Category cards for the landing: entries from the project's
- * catalog.unit_categories config, counts from live units, "from" prices from
- * the pricing.category_rates grid (lowest season), falling back to the
- * cheapest unit base price when no rates are configured.
+ * Category cards keep the existing configured seasonal/monthly presentation
+ * while their fallback base now comes from the relational InventoryCategory.
+ * The config grids can be retired separately after seasonal rates themselves
+ * are fully represented by canonical PricingRule/RatePlan data.
  */
 async function buildPublicCategories(
   projectId: string,
-  liveUnits: { categoryKey: string | null; baseNightlyThb: number }[]
+  liveUnits: {
+    categoryKey: string | null;
+    baseNightlyThb: number;
+    inventoryCategory: {
+      categoryKey: string;
+      baseNightlyThb: number;
+    } | null;
+  }[]
 ): Promise<PublicProjectCategory[]> {
   const catalog =
     (await getConfig(prisma, 'catalog.unit_categories', { projectId })) ?? [];
@@ -189,7 +203,9 @@ async function buildPublicCategories(
 
   return catalog
     .map((entry) => {
-      const units = liveUnits.filter((u) => u.categoryKey === entry.key);
+      const units = liveUnits.filter(
+        (u) => (u.inventoryCategory?.categoryKey ?? u.categoryKey) === entry.key
+      );
       const nightly = rates[entry.key]?.nightly;
       const monthly = rates[entry.key]?.monthly;
       const nightlyValues = nightly ? Object.values(nightly) : [];
@@ -202,7 +218,11 @@ async function buildPublicCategories(
         fromNightlyThb: nightlyValues.length
           ? Math.min(...nightlyValues)
           : units.length
-            ? Math.min(...units.map((u) => u.baseNightlyThb))
+            ? Math.min(
+                ...units.map(
+                  (u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb
+                )
+              )
             : null,
         monthlyFromThb: monthlyValues.length ? Math.min(...monthlyValues) : null,
       };
@@ -210,10 +230,6 @@ async function buildPublicCategories(
     .filter((c) => c.unitCount > 0);
 }
 
-/**
- * Published stay reviews for a project: Review(target_type='stay') joined to
- * the project's bookings. Only the author's first name is ever exposed.
- */
 async function buildPublicReviews(projectId: string): Promise<PublicProjectReviews> {
   const bookingIds = (
     await prisma.booking.findMany({
@@ -267,18 +283,19 @@ export interface PublicUnitDetail extends PublicProjectUnit {
   };
 }
 
-/**
- * One live unit, for the unit page's metadata and structured data (doc 08 §7).
- *
- * Returns null unless both the unit and its project are live — a draft or
- * paused entity has no public face at all, so the page 404s rather than
- * quietly rendering inventory that is not for sale.
- */
 export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
   const unit = await prisma.unit.findUnique({
     where: { id },
     include: {
       coverMedia: { select: { storageKey: true } },
+      inventoryCategory: {
+        select: {
+          categoryKey: true,
+          baseNightlyThb: true,
+          minNights: true,
+          status: true,
+        },
+      },
       project: {
         select: {
           slug: true,
@@ -298,16 +315,16 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     id: unit.id,
     name: unit.name,
     unitType: unit.unitType,
-    categoryKey: unit.categoryKey,
+    categoryKey: unit.inventoryCategory?.categoryKey ?? unit.categoryKey,
     bedrooms: unit.bedrooms,
     bathrooms: unit.bathrooms,
     maxGuests: unit.maxGuests,
     sizeSqm: unit.sizeSqm,
-    baseNightlyThb: unit.baseNightlyThb,
+    baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
     instantBook: unit.instantBook,
     coverUrl: unit.coverMedia?.storageKey ?? null,
     descriptionKey: unit.descriptionKey,
-    minNights: unit.minNights,
+    minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
     amenityKeys: unit.amenityKeys,
     project: {
       slug: unit.project.slug,

@@ -1,17 +1,18 @@
 import type { Identity, RoleAssignment, RoleType } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
-import { PERMISSIONS, resolvePermissionAction, type AccessLevel } from './permissions';
+import {
+  PERMISSIONS,
+  accessSatisfies,
+  resolvePermissionAction,
+  type RequiredAccess,
+} from './permissions';
 
-export type RequiredAccess = 'read' | 'allow';
+export { accessSatisfies } from './permissions';
+export type { RequiredAccess } from './permissions';
 
 export interface AuthorityResource {
   projectId?: string;
   unitId?: string;
-}
-
-export function accessSatisfies(granted: AccessLevel, required: RequiredAccess): boolean {
-  if (required === 'read') return granted === 'read' || granted === 'allow';
-  return granted === 'allow';
 }
 
 function assignmentMatchesResource(

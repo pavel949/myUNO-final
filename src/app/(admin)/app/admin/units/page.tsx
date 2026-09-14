@@ -9,6 +9,7 @@ export default async function AdminUnitsPage() {
   const units = await prisma.unit.findMany({
     include: {
       project: { select: { name: true } },
+      inventoryCategory: { select: { baseNightlyThb: true } },
       coverMedia: { select: { storageKey: true } },
       owner: { select: { firstName: true, lastName: true } },
     },
@@ -66,8 +67,11 @@ export default async function AdminUnitsPage() {
           projectName: unit.project?.name || '—',
           status: unit.status,
           assetStatus: unit.assetStatus,
-          // Display boundary: baseNightlyThb is satang (THB x 100).
-          baseNightlyThb: Math.round(unit.baseNightlyThb / 100),
+          // InventoryCategory owns the commercial base. Unit.baseNightlyThb is
+          // retained only for older/unmigrated draft units.
+          baseNightlyThb: Math.round(
+            (unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb) / 100
+          ),
           permittedUseConfirmed: Boolean(unit.permittedUseConfirmedAt),
           coverUrl: unit.coverMedia?.storageKey || null,
           ownerName: unit.owner ? `${unit.owner.firstName} ${unit.owner.lastName}` : '—',

@@ -21,6 +21,11 @@ import { listAreas, collectDescendantIds } from '@/modules/projects';
  * Canonical category filter: inventoryCategoryId (categoryId is accepted as a
  * compatibility alias). categoryKey remains accepted while older links and
  * saved searches migrate.
+ *
+ * Price filters and price sorts are intentionally resolved after the physical
+ * inventory query. Effective price depends on dates, InventoryCategory,
+ * RatePlan and PricingRule, so filtering/sorting Unit.baseNightlyThb in SQL
+ * would silently re-introduce the legacy pricing source of truth.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -96,13 +101,22 @@ export async function GET(req: NextRequest) {
         select: { id: true, projectId: true, categoryKey: true, name: true, status: true },
       });
       if (!canonicalCategory || canonicalCategory.status !== 'live') {
-        return NextResponse.json({ units: [], total: 0, limit, offset, sort: sort.key }, { status: 200 });
+        return NextResponse.json(
+          { units: [], total: 0, limit, offset, sort: sort.key },
+          { status: 200 }
+        );
       }
       if (projectId && projectId !== canonicalCategory.projectId) {
-        return NextResponse.json({ error: 'inventoryCategoryId does not belong to projectId' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'inventoryCategoryId does not belong to projectId' },
+          { status: 400 }
+        );
       }
       if (categoryKey && categoryKey !== canonicalCategory.categoryKey) {
-        return NextResponse.json({ error: 'categoryKey disagrees with inventoryCategoryId' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'categoryKey disagrees with inventoryCategoryId' },
+          { status: 400 }
+        );
       }
     }
 
@@ -148,24 +162,18 @@ export async function GET(req: NextRequest) {
       assetStatus: { not: 'suspended' },
       project: projectFilter,
       ...projectScope,
-      ...(minPrice !== undefined || maxPrice !== undefined
-        ? {
-            // Compatibility filter until date-aware effective-price filtering is
-            // moved out of SQL. The guest-visible grouped category price below
-            // already uses the canonical RatePlan engine.
-            baseNightlyThb: {
-              ...(minPrice !== undefined && { gte: minPrice }),
-              ...(maxPrice !== undefined && { lte: maxPrice }),
-            },
-          }
-        : {}),
       maxGuests: { gte: totalGuests },
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(inventoryCategoryId
         ? { inventoryCategoryId }
         : categoryKey
-          ? { categoryKey }
+          ? {
+              OR: [
+                { inventoryCategory: { categoryKey } },
+                { inventoryCategoryId: null, categoryKey },
+              ],
+            }
           : {}),
     };
 
@@ -208,7 +216,7 @@ export async function GET(req: NextRequest) {
           ...(inventoryCategoryId
             ? { inventoryCategoryId }
             : categoryKey
-              ? { categoryKey }
+              ? {}
               : {
                   OR: [
                     { inventoryCategoryId: { not: null } },
@@ -221,11 +229,16 @@ export async function GET(req: NextRequest) {
           categoryKey: true,
           inventoryCategoryId: true,
           inventoryCategory: {
-            select: { id: true, categoryKey: true, name: true, status: true },
+            select: {
+              id: true,
+              categoryKey: true,
+              name: true,
+              status: true,
+              baseNightlyThb: true,
+            },
           },
           baseNightlyThb: true,
         },
-        orderBy: { baseNightlyThb: 'asc' },
       });
 
       type GroupedCategory = {
@@ -242,6 +255,7 @@ export async function GET(req: NextRequest) {
         const key = category?.categoryKey || unit.categoryKey;
         if (!key) continue;
         const mapKey = category ? `id:${category.id}` : `legacy:${key}`;
+        const canonicalBase = category?.baseNightlyThb ?? unit.baseNightlyThb;
         const entry = grouped.get(mapKey);
         if (!entry) {
           grouped.set(mapKey, {
@@ -250,11 +264,11 @@ export async function GET(req: NextRequest) {
             name: category?.name || null,
             canonical: Boolean(category),
             count: 1,
-            minBase: unit.baseNightlyThb,
+            minBase: canonicalBase,
           });
         } else {
           entry.count += 1;
-          entry.minBase = Math.min(entry.minBase, unit.baseNightlyThb);
+          entry.minBase = Math.min(entry.minBase, canonicalBase);
         }
       }
 
@@ -303,18 +317,29 @@ export async function GET(req: NextRequest) {
           };
         })
       );
-      categories.sort((a, b) => a.from_nightly_thb - b.from_nightly_thb);
 
-      await track(prisma, categories.length > 0 ? 'search_performed' : 'search_no_results', {
-        projectId: effectiveProjectId,
-        inventoryCategoryId,
-        groupBy: 'category',
-        resultsCount: categories.length,
-        hasDates: Boolean(startDate && endDate),
-        guests: totalGuests,
-      });
+      const filteredCategories = categories
+        .filter(
+          (category) =>
+            (minPrice === undefined || category.from_nightly_thb >= minPrice) &&
+            (maxPrice === undefined || category.from_nightly_thb <= maxPrice)
+        )
+        .sort((a, b) => a.from_nightly_thb - b.from_nightly_thb);
 
-      return NextResponse.json({ categories }, { status: 200 });
+      await track(
+        prisma,
+        filteredCategories.length > 0 ? 'search_performed' : 'search_no_results',
+        {
+          projectId: effectiveProjectId,
+          inventoryCategoryId,
+          groupBy: 'category',
+          resultsCount: filteredCategories.length,
+          hasDates: Boolean(startDate && endDate),
+          guests: totalGuests,
+        }
+      );
+
+      return NextResponse.json({ categories: filteredCategories }, { status: 200 });
     }
 
     const listInclude = {
@@ -322,7 +347,14 @@ export async function GET(req: NextRequest) {
         select: { id: true, name: true },
       },
       inventoryCategory: {
-        select: { id: true, categoryKey: true, name: true, status: true },
+        select: {
+          id: true,
+          categoryKey: true,
+          name: true,
+          status: true,
+          baseNightlyThb: true,
+          minNights: true,
+        },
       },
       coverMedia: { select: { storageKey: true } },
       media: {
@@ -332,45 +364,137 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    let rankedPageIds: string[] | null = null;
-    if (sort.needsRating) {
-      const candidates = await prisma.unit.findMany({
-        where,
-        select: { id: true, createdAt: true },
-      });
-      const candidateRatings = await getUnitRatings(prisma, candidates.map((u) => u.id));
-      rankedPageIds = rankByRating(
-        candidates.map((u) => ({
-          id: u.id,
-          createdAt: u.createdAt,
-          ...(candidateRatings.get(u.id) ?? { averageRating: null, reviewCount: 0 }),
-        }))
-      )
-        .slice(offset, offset + limit)
-        .map((u) => u.id);
+    type UnitWithListRelations = Awaited<ReturnType<typeof prisma.unit.findFirst>> & any;
+    type PricedUnit = {
+      unit: UnitWithListRelations;
+      effectiveNightlyThb: number;
+      stayTotalThb: number | null;
+      ratePlanCode: string | null;
+      minNights: number | null;
+    };
+
+    const priceUnit = async (unit: UnitWithListRelations): Promise<PricedUnit> => {
+      if (startDate && endDate) {
+        const offer = await resolveEffectiveStayOffer(prisma, {
+          unitId: unit.id,
+          startDate,
+          endDate,
+          guests: totalGuests,
+          ratePlanCode: 'BAR',
+        });
+        return {
+          unit,
+          effectiveNightlyThb:
+            offer.nightsCount > 0
+              ? Math.round(offer.subtotalThb / offer.nightsCount)
+              : unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
+          stayTotalThb: offer.totalThb,
+          ratePlanCode: offer.ratePlanCode,
+          minNights: offer.minNights,
+        };
+      }
+
+      return {
+        unit,
+        effectiveNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
+        stayTotalThb: null,
+        ratePlanCode: null,
+        minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
+      };
+    };
+
+    const passesPriceBounds = (priced: PricedUnit) =>
+      (minPrice === undefined || priced.effectiveNightlyThb >= minPrice) &&
+      (maxPrice === undefined || priced.effectiveNightlyThb <= maxPrice);
+
+    const isPriceSort = sort.key === 'price_asc' || sort.key === 'price_desc';
+    const needsCanonicalPricingAcrossCandidates =
+      isPriceSort || minPrice !== undefined || maxPrice !== undefined;
+
+    let pricedUnits: PricedUnit[];
+    let total: number;
+
+    if (needsCanonicalPricingAcrossCandidates) {
+      const candidates = await prisma.unit.findMany({ where, include: listInclude });
+      let filtered = (await Promise.all(candidates.map(priceUnit))).filter(passesPriceBounds);
+      total = filtered.length;
+
+      if (sort.needsRating) {
+        const candidateRatings = await getUnitRatings(prisma, filtered.map((p) => p.unit.id));
+        const rankedIds = rankByRating(
+          filtered.map((p) => ({
+            id: p.unit.id,
+            createdAt: p.unit.createdAt,
+            ...(candidateRatings.get(p.unit.id) ?? { averageRating: null, reviewCount: 0 }),
+          }))
+        ).map((p) => p.id);
+        const byId = new Map(filtered.map((p) => [p.unit.id, p]));
+        filtered = rankedIds.map((id) => byId.get(id)).filter((p): p is PricedUnit => Boolean(p));
+      } else {
+        filtered.sort((a, b) => {
+          if (sort.key === 'price_asc' && a.effectiveNightlyThb !== b.effectiveNightlyThb) {
+            return a.effectiveNightlyThb - b.effectiveNightlyThb;
+          }
+          if (sort.key === 'price_desc' && a.effectiveNightlyThb !== b.effectiveNightlyThb) {
+            return b.effectiveNightlyThb - a.effectiveNightlyThb;
+          }
+          if (sort.key === 'bedrooms_desc' && a.unit.bedrooms !== b.unit.bedrooms) {
+            return b.unit.bedrooms - a.unit.bedrooms;
+          }
+          if (sort.key === 'capacity_desc' && a.unit.maxGuests !== b.unit.maxGuests) {
+            return b.unit.maxGuests - a.unit.maxGuests;
+          }
+          if (sort.key === 'recommended' && a.unit.createdAt.getTime() !== b.unit.createdAt.getTime()) {
+            return b.unit.createdAt.getTime() - a.unit.createdAt.getTime();
+          }
+          return a.unit.id < b.unit.id ? -1 : a.unit.id > b.unit.id ? 1 : 0;
+        });
+      }
+
+      pricedUnits = filtered.slice(offset, offset + limit);
+    } else {
+      let rankedPageIds: string[] | null = null;
+      if (sort.needsRating) {
+        const candidates = await prisma.unit.findMany({
+          where,
+          select: { id: true, createdAt: true },
+        });
+        const candidateRatings = await getUnitRatings(prisma, candidates.map((u) => u.id));
+        rankedPageIds = rankByRating(
+          candidates.map((u) => ({
+            id: u.id,
+            createdAt: u.createdAt,
+            ...(candidateRatings.get(u.id) ?? { averageRating: null, reviewCount: 0 }),
+          }))
+        )
+          .slice(offset, offset + limit)
+          .map((u) => u.id);
+      }
+
+      const page = rankedPageIds
+        ? await prisma.unit.findMany({
+            where: { id: { in: rankedPageIds } },
+            include: listInclude,
+          })
+        : await prisma.unit.findMany({
+            where,
+            include: listInclude,
+            take: limit,
+            skip: offset,
+            orderBy: sort.orderBy,
+          });
+
+      const orderedPage = rankedPageIds
+        ? rankedPageIds
+            .map((id) => page.find((u) => u.id === id))
+            .filter((u): u is (typeof page)[number] => Boolean(u))
+        : page;
+
+      pricedUnits = await Promise.all(orderedPage.map(priceUnit));
+      total = await prisma.unit.count({ where });
     }
 
-    const page = rankedPageIds
-      ? await prisma.unit.findMany({
-          where: { id: { in: rankedPageIds } },
-          include: listInclude,
-        })
-      : await prisma.unit.findMany({
-          where,
-          include: listInclude,
-          take: limit,
-          skip: offset,
-          orderBy: sort.orderBy,
-        });
-
-    const units = rankedPageIds
-      ? rankedPageIds
-          .map((id) => page.find((u) => u.id === id))
-          .filter((u): u is (typeof page)[number] => Boolean(u))
-      : page;
-
-    const total = await prisma.unit.count({ where });
-    const ratings = await getUnitRatings(prisma, units.map((u) => u.id));
+    const ratings = await getUnitRatings(prisma, pricedUnits.map((p) => p.unit.id));
 
     await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
       projectId: effectiveProjectId,
@@ -383,11 +507,21 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        units: units.map((unit) => {
-          const { coverMedia, media, ...rest } = unit;
-          const rating = ratings.get(unit.id);
+        units: pricedUnits.map((priced) => {
+          const { coverMedia, media, ...rest } = priced.unit;
+          const rating = ratings.get(priced.unit.id);
           return {
             ...rest,
+            // Compatibility field consumed by the current search cards. It now
+            // carries the canonical effective nightly amount for the requested
+            // stay rather than the legacy Unit base column.
+            baseNightlyThb: priced.effectiveNightlyThb,
+            pricing: {
+              effectiveNightlyThb: priced.effectiveNightlyThb,
+              stayTotalThb: priced.stayTotalThb,
+              ratePlanCode: priced.ratePlanCode,
+              minNights: priced.minNights,
+            },
             coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,

@@ -16,7 +16,7 @@ interface CreateUnitInput {
   sizeSqm?: number;
   floor?: string;
   addressSupplement: string;
-  descriptionKey?: string | null;
+  descriptionKey?: string;
   amenityKeys?: string[];
   baseNightlyThb: number;
   minNights?: number;
@@ -51,8 +51,8 @@ interface UpdateUnitInput {
 /**
  * `InventoryCategory` is the canonical sellable-class entity. `categoryKey`
  * remains on Unit while older search/booking callers are migrated, but every
- * write now links the canonical row whenever one exists. This makes the old
- * string a compatibility alias rather than a second independent truth.
+ * write links the canonical row whenever one exists. Commercial Unit columns
+ * mirror the category for compatibility rather than defining a second price.
  */
 async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?: string | null) {
   if (!categoryKey) return null;
@@ -63,7 +63,12 @@ async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?
         categoryKey,
       },
     },
-    select: { id: true },
+    select: {
+      id: true,
+      baseNightlyThb: true,
+      minNights: true,
+      cancellationPolicyKey: true,
+    },
   });
 }
 
@@ -138,10 +143,12 @@ export async function createUnit(input: CreateUnitInput) {
       addressSupplement,
       descriptionKey: descriptionKey || null,
       amenityKeys,
-      baseNightlyThb,
-      minNights: minNights || 1,
+      // Compatibility mirrors. A linked InventoryCategory owns these terms.
+      baseNightlyThb: canonicalCategory?.baseNightlyThb ?? baseNightlyThb,
+      minNights: canonicalCategory?.minNights ?? minNights ?? 1,
       instantBook,
-      cancellationPolicyKey: cancellationPolicyKey || null,
+      cancellationPolicyKey:
+        canonicalCategory?.cancellationPolicyKey ?? cancellationPolicyKey ?? null,
       status,
     },
   });
@@ -243,29 +250,27 @@ export async function updateUnit(input: UpdateUnitInput) {
     projectId: unit.projectId,
   });
 
-  // If categoryKey is changing, resolve that exact category. If this is an
-  // unrelated edit on an older unit, opportunistically repair a missing
-  // canonical link from the already-validated legacy key.
-  const categoryKeyToResolve =
-    categoryKey !== undefined ? categoryKey : unit.inventoryCategoryId ? null : unit.categoryKey;
+  // Resolve the resulting category on every update. That keeps the compatibility
+  // commercial columns synchronized even when an older caller tries to write a
+  // unit-level base/min value directly.
+  const effectiveCategoryKey = categoryKey !== undefined ? categoryKey : unit.categoryKey;
   const canonicalCategory = await resolveCanonicalInventoryCategory(
     unit.projectId,
-    categoryKeyToResolve
+    effectiveCategoryKey
   );
   const shouldWriteCanonicalCategory =
     categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
-
-  // Pricing now refuses live inventory without InventoryCategory. Enforce that
-  // invariant at the write boundary so an operator cannot publish an unpriceable
-  // unit and only discover it later in search or checkout.
   const effectiveInventoryCategoryId =
-    categoryKey !== undefined
-      ? categoryKey === null
-        ? null
-        : canonicalCategory?.id ?? null
-      : unit.inventoryCategoryId ?? canonicalCategory?.id ?? null;
-  if (status && status !== unit.status && status === 'live' && !effectiveInventoryCategoryId) {
-    throw new Error('Unit cannot move to live status without a canonical inventory category');
+    categoryKey === null
+      ? null
+      : canonicalCategory?.id ?? (categoryKey === undefined ? unit.inventoryCategoryId : null);
+
+  // A live unit must remain canonically priceable, not only pass this check at
+  // the moment it first transitions to live. Removing/changing its category is
+  // therefore blocked unless the resulting canonical category exists.
+  const resultingStatus = status ?? unit.status;
+  if (resultingStatus === 'live' && !effectiveInventoryCategoryId) {
+    throw new Error('A live unit must have a canonical inventory category');
   }
 
   const updated = await prisma.unit.update({
@@ -275,7 +280,7 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(unitType !== undefined && { unitType }),
       ...(categoryKey !== undefined && { categoryKey }),
       ...(shouldWriteCanonicalCategory && {
-        inventoryCategoryId: categoryKey === null ? null : canonicalCategory?.id ?? null,
+        inventoryCategoryId: effectiveInventoryCategoryId,
       }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(bathrooms !== undefined && { bathrooms }),
@@ -285,10 +290,20 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(addressSupplement !== undefined && { addressSupplement }),
       ...(descriptionKey !== undefined && { descriptionKey }),
       ...(amenityKeys !== undefined && { amenityKeys }),
-      ...(baseNightlyThb !== undefined && { baseNightlyThb }),
-      ...(minNights !== undefined && { minNights }),
+      // When a canonical category exists, Unit commercial fields are mirrors;
+      // explicit unit-level pricing belongs in RatePlan/PricingRule instead.
+      ...(canonicalCategory
+        ? {
+            baseNightlyThb: canonicalCategory.baseNightlyThb,
+            minNights: canonicalCategory.minNights,
+            cancellationPolicyKey: canonicalCategory.cancellationPolicyKey,
+          }
+        : {
+            ...(baseNightlyThb !== undefined && { baseNightlyThb }),
+            ...(minNights !== undefined && { minNights }),
+            ...(cancellationPolicyKey !== undefined && { cancellationPolicyKey }),
+          }),
       ...(instantBook !== undefined && { instantBook }),
-      ...(cancellationPolicyKey !== undefined && { cancellationPolicyKey }),
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
     } as any,

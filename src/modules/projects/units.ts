@@ -16,7 +16,7 @@ interface CreateUnitInput {
   sizeSqm?: number;
   floor?: string;
   addressSupplement: string;
-  descriptionKey?: string;
+  descriptionKey?: string | null;
   amenityKeys?: string[];
   baseNightlyThb: number;
   minNights?: number;
@@ -252,7 +252,21 @@ export async function updateUnit(input: UpdateUnitInput) {
     unit.projectId,
     categoryKeyToResolve
   );
-  const shouldWriteCanonicalCategory = categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
+  const shouldWriteCanonicalCategory =
+    categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
+
+  // Pricing now refuses live inventory without InventoryCategory. Enforce that
+  // invariant at the write boundary so an operator cannot publish an unpriceable
+  // unit and only discover it later in search or checkout.
+  const effectiveInventoryCategoryId =
+    categoryKey !== undefined
+      ? categoryKey === null
+        ? null
+        : canonicalCategory?.id ?? null
+      : unit.inventoryCategoryId ?? canonicalCategory?.id ?? null;
+  if (status && status !== unit.status && status === 'live' && !effectiveInventoryCategoryId) {
+    throw new Error('Unit cannot move to live status without a canonical inventory category');
+  }
 
   const updated = await prisma.unit.update({
     where: { id: unitId },

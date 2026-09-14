@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { resolveEffectiveStayOffer } from '@/modules/booking';
+import { computePriceBreakdown } from '@/modules/core';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
 import {
@@ -22,10 +22,10 @@ import { listAreas, collectDescendantIds } from '@/modules/projects';
  * compatibility alias). categoryKey remains accepted while older links and
  * saved searches migrate.
  *
- * Price filters and price sorts are intentionally resolved after the physical
- * inventory query. Effective price depends on dates, InventoryCategory,
- * RatePlan and PricingRule, so filtering/sorting Unit.baseNightlyThb in SQL
- * would silently re-introduce the legacy pricing source of truth.
+ * Price filters, price sorts and the guest-visible card rate are resolved from
+ * the same computePriceBreakdown seam that booking creation uses. This keeps
+ * search pricing date-aware and prevents Unit.baseNightlyThb from becoming a
+ * second commercial source of truth.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -209,6 +209,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const isMinimumStayError = (error: unknown) =>
+      error instanceof Error && error.message.includes('below minimum of');
+
     if (groupBy === 'category') {
       const categoryUnits = await prisma.unit.findMany({
         where: {
@@ -235,9 +238,11 @@ export async function GET(req: NextRequest) {
               name: true,
               status: true,
               baseNightlyThb: true,
+              minNights: true,
             },
           },
           baseNightlyThb: true,
+          minNights: true,
         },
       });
 
@@ -248,6 +253,8 @@ export async function GET(req: NextRequest) {
         canonical: boolean;
         count: number;
         minBase: number;
+        unitIds: string[];
+        minNights: number;
       };
       const grouped = new Map<string, GroupedCategory>();
       for (const unit of categoryUnits) {
@@ -256,6 +263,7 @@ export async function GET(req: NextRequest) {
         if (!key) continue;
         const mapKey = category ? `id:${category.id}` : `legacy:${key}`;
         const canonicalBase = category?.baseNightlyThb ?? unit.baseNightlyThb;
+        const canonicalMinNights = category?.minNights ?? unit.minNights;
         const entry = grouped.get(mapKey);
         if (!entry) {
           grouped.set(mapKey, {
@@ -265,10 +273,14 @@ export async function GET(req: NextRequest) {
             canonical: Boolean(category),
             count: 1,
             minBase: canonicalBase,
+            unitIds: [unit.id],
+            minNights: canonicalMinNights,
           });
         } else {
           entry.count += 1;
           entry.minBase = Math.min(entry.minBase, canonicalBase);
+          entry.minNights = Math.min(entry.minNights, canonicalMinNights);
+          entry.unitIds.push(unit.id);
         }
       }
 
@@ -282,24 +294,37 @@ export async function GET(req: NextRequest) {
 
           let fromNightlyThb = entry.minBase;
           let stayTotalThb: number | null = null;
-          let ratePlanCode: string | null = null;
-          let minNights: number | null = null;
+          let availableCount = entry.count;
 
-          if (entry.id && startDate && endDate) {
-            const offer = await resolveEffectiveStayOffer(prisma, {
-              categoryId: entry.id,
-              startDate,
-              endDate,
-              guests: totalGuests,
-              ratePlanCode: 'BAR',
-            });
-            fromNightlyThb =
-              offer.nightsCount > 0
-                ? Math.round(offer.subtotalThb / offer.nightsCount)
-                : entry.minBase;
-            stayTotalThb = offer.totalThb;
-            ratePlanCode = offer.ratePlanCode;
-            minNights = offer.minNights;
+          if (startDate && endDate) {
+            const breakdowns = await Promise.all(
+              entry.unitIds.map(async (unitId) => {
+                try {
+                  const breakdown = await computePriceBreakdown(
+                    prisma,
+                    unitId,
+                    startDate,
+                    endDate,
+                    totalGuests
+                  );
+                  const nightly = breakdown.lines.length
+                    ? Math.round(breakdown.subtotal_thb / breakdown.lines.length)
+                    : entry.minBase;
+                  return { nightly, total: breakdown.total_thb };
+                } catch (error) {
+                  if (isMinimumStayError(error)) return null;
+                  throw error;
+                }
+              })
+            );
+            const valid = breakdowns.filter(
+              (value): value is { nightly: number; total: number } => value !== null
+            );
+            availableCount = valid.length;
+            if (valid.length > 0) {
+              fromNightlyThb = Math.min(...valid.map((value) => value.nightly));
+              stayTotalThb = Math.min(...valid.map((value) => value.total));
+            }
           }
 
           return {
@@ -309,11 +334,11 @@ export async function GET(req: NextRequest) {
             label:
               entry.name ||
               (translated && translated !== labelKey && translated !== '—' ? translated : entry.key),
-            available_count: entry.count,
+            available_count: availableCount,
             from_nightly_thb: fromNightlyThb,
             stay_total_thb: stayTotalThb,
-            rate_plan_code: ratePlanCode,
-            min_nights: minNights,
+            rate_plan_code: 'BAR',
+            min_nights: entry.minNights,
           };
         })
       );
@@ -321,6 +346,7 @@ export async function GET(req: NextRequest) {
       const filteredCategories = categories
         .filter(
           (category) =>
+            category.available_count > 0 &&
             (minPrice === undefined || category.from_nightly_thb >= minPrice) &&
             (maxPrice === undefined || category.from_nightly_thb <= maxPrice)
         )
@@ -364,7 +390,7 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    type UnitWithListRelations = Awaited<ReturnType<typeof prisma.unit.findFirst>> & any;
+    type UnitWithListRelations = any;
     type PricedUnit = {
       unit: UnitWithListRelations;
       effectiveNightlyThb: number;
@@ -373,25 +399,31 @@ export async function GET(req: NextRequest) {
       minNights: number | null;
     };
 
-    const priceUnit = async (unit: UnitWithListRelations): Promise<PricedUnit> => {
+    const priceUnit = async (unit: UnitWithListRelations): Promise<PricedUnit | null> => {
       if (startDate && endDate) {
-        const offer = await resolveEffectiveStayOffer(prisma, {
-          unitId: unit.id,
-          startDate,
-          endDate,
-          guests: totalGuests,
-          ratePlanCode: 'BAR',
-        });
-        return {
-          unit,
-          effectiveNightlyThb:
-            offer.nightsCount > 0
-              ? Math.round(offer.subtotalThb / offer.nightsCount)
+        try {
+          const breakdown = await computePriceBreakdown(
+            prisma,
+            unit.id,
+            startDate,
+            endDate,
+            totalGuests
+          );
+          return {
+            unit,
+            effectiveNightlyThb: breakdown.lines.length
+              ? Math.round(breakdown.subtotal_thb / breakdown.lines.length)
               : unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
-          stayTotalThb: offer.totalThb,
-          ratePlanCode: offer.ratePlanCode,
-          minNights: offer.minNights,
-        };
+            stayTotalThb: breakdown.total_thb,
+            ratePlanCode: 'BAR',
+            minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
+          };
+        } catch (error) {
+          // A unit whose min-stay rule rejects this range is not a search result,
+          // not a server error. Other pricing failures remain visible as errors.
+          if (isMinimumStayError(error)) return null;
+          throw error;
+        }
       }
 
       return {
@@ -408,15 +440,20 @@ export async function GET(req: NextRequest) {
       (maxPrice === undefined || priced.effectiveNightlyThb <= maxPrice);
 
     const isPriceSort = sort.key === 'price_asc' || sort.key === 'price_desc';
+    // Any dated search is priced before pagination so min-stay rejections,
+    // effective-price filters and displayed prices all describe the same set.
     const needsCanonicalPricingAcrossCandidates =
-      isPriceSort || minPrice !== undefined || maxPrice !== undefined;
+      Boolean(startDate && endDate) || isPriceSort || minPrice !== undefined || maxPrice !== undefined;
 
     let pricedUnits: PricedUnit[];
     let total: number;
 
     if (needsCanonicalPricingAcrossCandidates) {
       const candidates = await prisma.unit.findMany({ where, include: listInclude });
-      let filtered = (await Promise.all(candidates.map(priceUnit))).filter(passesPriceBounds);
+      const priced = await Promise.all(candidates.map(priceUnit));
+      let filtered = priced
+        .filter((value): value is PricedUnit => value !== null)
+        .filter(passesPriceBounds);
       total = filtered.length;
 
       if (sort.needsRating) {
@@ -429,7 +466,9 @@ export async function GET(req: NextRequest) {
           }))
         ).map((p) => p.id);
         const byId = new Map(filtered.map((p) => [p.unit.id, p]));
-        filtered = rankedIds.map((id) => byId.get(id)).filter((p): p is PricedUnit => Boolean(p));
+        filtered = rankedIds
+          .map((id) => byId.get(id))
+          .filter((p): p is PricedUnit => Boolean(p));
       } else {
         filtered.sort((a, b) => {
           if (sort.key === 'price_asc' && a.effectiveNightlyThb !== b.effectiveNightlyThb) {
@@ -444,7 +483,10 @@ export async function GET(req: NextRequest) {
           if (sort.key === 'capacity_desc' && a.unit.maxGuests !== b.unit.maxGuests) {
             return b.unit.maxGuests - a.unit.maxGuests;
           }
-          if (sort.key === 'recommended' && a.unit.createdAt.getTime() !== b.unit.createdAt.getTime()) {
+          if (
+            sort.key === 'recommended' &&
+            a.unit.createdAt.getTime() !== b.unit.createdAt.getTime()
+          ) {
             return b.unit.createdAt.getTime() - a.unit.createdAt.getTime();
           }
           return a.unit.id < b.unit.id ? -1 : a.unit.id > b.unit.id ? 1 : 0;
@@ -490,7 +532,8 @@ export async function GET(req: NextRequest) {
             .filter((u): u is (typeof page)[number] => Boolean(u))
         : page;
 
-      pricedUnits = await Promise.all(orderedPage.map(priceUnit));
+      const priced = await Promise.all(orderedPage.map(priceUnit));
+      pricedUnits = priced.filter((value): value is PricedUnit => value !== null);
       total = await prisma.unit.count({ where });
     }
 
@@ -512,9 +555,9 @@ export async function GET(req: NextRequest) {
           const rating = ratings.get(priced.unit.id);
           return {
             ...rest,
-            // Compatibility field consumed by the current search cards. It now
-            // carries the canonical effective nightly amount for the requested
-            // stay rather than the legacy Unit base column.
+            // Compatibility field consumed by current search cards. For dated
+            // searches it now carries the canonical effective nightly amount
+            // from the same calculator used by booking creation.
             baseNightlyThb: priced.effectiveNightlyThb,
             pricing: {
               effectiveNightlyThb: priced.effectiveNightlyThb,

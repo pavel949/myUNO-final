@@ -36,7 +36,7 @@ export default async function AdminUnitsPage() {
   });
 
   // The create form speaks baht at the UI boundary. InventoryCategory keeps
-  // commercial money in satang like the rest of the domain.
+  // commercial money in satang like the rest of the domain and remains SSOT.
   const projects = projectsRaw.map((project) => ({
     id: project.id,
     name: project.name,

@@ -189,6 +189,10 @@ export async function findAvailableUnitsForCategory(
       projectId,
       categoryKey,
       status: 'live',
+      // A live unit inside an archived or draft project is not sellable. The
+      // unit status alone said it was, so archiving a project stopped its
+      // pages without stopping its sales.
+      project: { status: 'live' },
       bookings: {
         none: {
           ...overlaps,

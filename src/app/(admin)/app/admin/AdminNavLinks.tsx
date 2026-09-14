@@ -2,70 +2,64 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-export interface AdminNavItem {
+export interface NavItem {
   href: string;
   label: string;
 }
 
-export interface AdminNavGroup {
-  label: string;
-  items: AdminNavItem[];
+export interface NavSection {
+  title?: string;
+  items: NavItem[];
 }
 
-/**
- * The admin sidebar, in named sections (board 03).
- *
- * Thirty-one destinations in one flat list is not a menu, it is an index: a
- * person scans it top to bottom every time because nothing tells them where to
- * start looking. The sections are the whole point — the links themselves are
- * unchanged, and every href the flat list carried is still here, which is what
- * `admin-nav-is-reachable.test.ts` checks.
- *
- * The dashboard sits above the sections rather than inside one. It is the way
- * back to the top, not a peer of the destinations.
- */
-export function AdminNavLinks({
-  dashboard,
-  groups,
-}: {
-  dashboard: AdminNavItem;
-  groups: AdminNavGroup[];
-}) {
+export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname() ?? '';
 
-  const isActive = (href: string) =>
-    href === '/app/admin'
-      ? pathname === '/app/admin'
-      : pathname === href || pathname.startsWith(`${href}/`);
-
-  const link = (item: AdminNavItem) => (
-    <Link
-      key={item.href}
-      href={item.href}
-      aria-current={isActive(item.href) ? 'page' : undefined}
-      className={`block px-12 py-8 rounded-md text-small transition-colors duration-micro ${
-        isActive(item.href) ? 'bg-brand-andaman text-on-dark-text' : 'hover:bg-brand-andaman'
-      }`}
-    >
-      {item.label}
-    </Link>
-  );
+  // The href just clicked, highlighted straight away. Server navigation takes a
+  // moment, and until it lands the sidebar gave no sign the click had
+  // registered — which is most of why the app felt unresponsive. Cleared once
+  // the route actually changes.
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => {
+    setPending(null);
+  }, [pathname]);
 
   return (
-    <nav className="flex md:flex-col gap-8 flex-wrap">
-      {link(dashboard)}
-
-      {groups.map((group) => (
-        // A section is a group with an accessible name, so a screen reader
-        // announces "Money & record" before its thirteen links rather than
-        // reading them as one undifferentiated run.
-        <section key={group.label} aria-label={group.label} className="md:mt-16 w-full">
-          {/* The kicker step is set in sun (board 01 §2.2), which is also the
-              only accent that holds its contrast on the deep andaman ground. */}
-          <p className="text-kicker uppercase text-brand-sun px-12 mb-4">{group.label}</p>
-          <div className="flex md:flex-col gap-8 flex-wrap">{group.items.map(link)}</div>
-        </section>
+    <nav className="flex flex-col gap-16">
+      {sections.map((section, idx) => (
+        <div key={section.title || idx} className="flex flex-col gap-4">
+          {section.title && (
+            <p className="text-kicker uppercase font-semibold text-brand-sun tracking-wider mb-4 px-12">
+              {section.title}
+            </p>
+          )}
+          <div className="flex md:flex-col gap-4 flex-wrap">
+            {section.items.map((item) => {
+              const active =
+                item.href === '/app/admin'
+                  ? pathname === '/app/admin'
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const highlighted = active || pending === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setPending(item.href)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`block px-12 py-6 rounded-md text-small transition-colors duration-micro ${
+                    highlighted
+                      ? 'bg-brand-andaman text-on-dark-text font-semibold'
+                      : 'text-on-dark-text hover:bg-brand-andaman/60'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       ))}
     </nav>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
+import { canWithAccess, type RequiredAccess } from '@/modules/core/authority.service';
 import { prisma } from '@/lib/prisma';
 import type { Identity } from '@prisma/client';
 
@@ -32,15 +33,56 @@ async function loadIdentity(): Promise<GuardResult | { identity: Identity }> {
   return { identity };
 }
 
-/** Guard a route on a doc 03 matrix action. */
-export async function requireAction(action: string): Promise<GuardResult> {
+export interface RequireActionOptions {
+  requiredAccess?: RequiredAccess;
+  projectId?: string;
+  unitId?: string;
+}
+
+/**
+ * Guard a route on a doc 03 matrix action.
+ *
+ * Existing callers retain legacy `can()` semantics. Mutation routes that have
+ * read-only roles in the permission matrix must pass `requiredAccess: 'allow'`.
+ * Unit-scoped checks resolve the unit's project so project-level assignments
+ * are evaluated against the real resource instead of a platform placeholder.
+ */
+export async function requireAction(
+  action: string,
+  options: RequireActionOptions = {}
+): Promise<GuardResult> {
   const loaded = await loadIdentity();
   if ('ok' in loaded) return loaded;
 
-  const allowed = await can({
+  if (!options.requiredAccess) {
+    const allowed = await can({
+      identity: loaded.identity,
+      action,
+      resource: { resourceType: 'platform' },
+    });
+    if (!allowed) {
+      return { ok: false, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+    }
+    return { ok: true, identity: loaded.identity, actorIdentityId: loaded.identity.id };
+  }
+
+  let projectId = options.projectId;
+  if (options.unitId && !projectId) {
+    const unit = await prisma.unit.findUnique({
+      where: { id: options.unitId },
+      select: { projectId: true },
+    });
+    if (!unit) {
+      return { ok: false, error: NextResponse.json({ error: 'Unit not found' }, { status: 404 }) };
+    }
+    projectId = unit.projectId;
+  }
+
+  const allowed = await canWithAccess(prisma, {
     identity: loaded.identity,
     action,
-    resource: { resourceType: 'platform' },
+    requiredAccess: options.requiredAccess,
+    resource: { projectId, unitId: options.unitId },
   });
   if (!allowed) {
     return { ok: false, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };

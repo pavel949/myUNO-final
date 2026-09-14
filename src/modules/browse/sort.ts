@@ -25,8 +25,9 @@ export interface UnitSort {
   key: UnitSortKey;
   labelKey: string;
   /**
-   * The database ordering, when the database can express it. Absent for sorts
-   * that need a value no column holds.
+   * The database ordering, when the database can express it. Price sorts are
+   * intentionally absent because effective price is date/rate-plan dependent
+   * and is resolved by the search pricing engine before pagination.
    */
   orderBy?: Prisma.UnitOrderByWithRelationInput[];
   /**
@@ -37,10 +38,9 @@ export interface UnitSort {
 }
 
 /**
- * Every sort has a second key to break ties, so two villas at the same price
- * come back in the same order on every request. Without it, page two can repeat
- * a villa page one already showed — the database is free to order equal rows
- * however it likes.
+ * Every database-expressible sort has a deterministic tie-breaker so page two
+ * cannot repeat a villa page one already showed. Price ties are broken in the
+ * API after canonical effective prices are resolved.
  */
 export const UNIT_SORTS: readonly UnitSort[] = [
   {
@@ -51,22 +51,20 @@ export const UNIT_SORTS: readonly UnitSort[] = [
   {
     key: 'price_asc',
     labelKey: 'catalog.unit_sorts.price_asc.label',
-    orderBy: [{ baseNightlyThb: 'asc' }, { id: 'asc' }],
   },
   {
     key: 'price_desc',
     labelKey: 'catalog.unit_sorts.price_desc.label',
-    orderBy: [{ baseNightlyThb: 'desc' }, { id: 'asc' }],
   },
   {
     key: 'bedrooms_desc',
     labelKey: 'catalog.unit_sorts.bedrooms_desc.label',
-    orderBy: [{ bedrooms: 'desc' }, { baseNightlyThb: 'asc' }, { id: 'asc' }],
+    orderBy: [{ bedrooms: 'desc' }, { id: 'asc' }],
   },
   {
     key: 'capacity_desc',
     labelKey: 'catalog.unit_sorts.capacity_desc.label',
-    orderBy: [{ maxGuests: 'desc' }, { baseNightlyThb: 'asc' }, { id: 'asc' }],
+    orderBy: [{ maxGuests: 'desc' }, { id: 'asc' }],
   },
   {
     key: 'top_rated',

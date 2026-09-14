@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { tailwindColors } from './src/lib/design-tokens';
 
 const config: Config = {
   content: [
@@ -9,70 +10,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        // Brand colors (doc 06 §2.1)
-        brand: {
-          andaman: '#0E4F4B',
-          deep: '#0A3733',
-          // Alias of brand.deep — widely used in page gradients
-          'andaman-dark': '#0A3733',
-          // Alias of state.info-soft — andaman wash already used on chips
-          'andaman-soft': '#E3ECEA',
-          sun: '#D69A3A',
-          'sun-soft': '#E7C079',
-        },
-        // Surfaces (doc 06 §2.1: ivory = page background, paper = cards)
-        surface: {
-          ivory: '#F5EFE4',
-          paper: '#FBF8F1',
-          // Alias of surface.ivory — the page background
-          background: '#F5EFE4',
-        },
-        // Text
-        text: {
-          ink: '#16211F',
-          stone: '#7E8C88',
-          'stone-2': '#A7B2AE',
-          // Alias of text.stone — secondary copy
-          secondary: '#7E8C88',
-        },
-        // Borders
-        border: {
-          line: '#E6DFD1',
-          'line-2': '#DAD1BF',
-        },
-        // On dark surfaces
-        'on-dark': {
-          text: '#EAF2F0',
-          muted: '#7FA39D',
-        },
-        // Functional states
-        state: {
-          success: '#2F7A57',
-          'success-soft': '#E4EFE7',
-          warning: '#B97F1F',
-          'warning-soft': '#F6ECD8',
-          error: '#AE4E38',
-          'error-soft': '#F5E4DF',
-          info: '#0E4F4B',
-          'info-soft': '#E3ECEA',
-        },
-        // Data visualization (doc 06 §"Data visualization")
-        // Categorical series — validated palette; fixed order, never cycled;
-        // never used for text; status colors are never series colors.
-        chart: {
-          1: '#00937F', // teal (chart step of brand.andaman)
-          2: '#D69A3A', // brand.sun (relief rule: direct labels + table view)
-          3: '#C05840', // terracotta chart step
-          4: '#4477CC', // slate-blue (chart-only)
-          // Sequential ramp (magnitude): andaman light→dark
-          'seq-1': '#DCEEEB',
-          'seq-2': '#9CCFC8',
-          'seq-3': '#5BA79E',
-          'seq-4': '#2E7B74',
-          'seq-5': '#0E4F4B',
-        },
-      },
+      colors: tailwindColors,
       fontFamily: {
         display: [
           'var(--font-outfit)',

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createCheckout } from '@/modules/finance';
-import { requestExtension, changeBookingDates } from '@/modules/booking';
+import { changeBookingDates } from '@/modules/booking';
 import { track } from '@/modules/analytics';
 
 /**
@@ -60,9 +60,10 @@ export async function POST(
       );
     }
 
-    // A stay already under way takes the F-GUEST-7 in-stay branch: the only
-    // date move left is pushing the end later, so it goes through the booking
-    // module's extension rather than the general re-shape below.
+    // A checked-in stay may only move its departure. Use the same canonical
+    // repricing seam as every other date change so added nights respect
+    // InventoryCategory, RatePlan, PricingRule, LOS discounts and taxes. The
+    // price delta, not nights × Unit.baseNightlyThb, is what becomes due.
     if (booking.status === 'checked_in') {
       if (!newEndDateStr) {
         return NextResponse.json(
@@ -71,30 +72,56 @@ export async function POST(
         );
       }
 
-      const extension = await requestExtension(
-        prisma,
-        bookingId,
-        new Date(newEndDateStr),
-        user.identityId
-      );
+      const newEndDate = new Date(newEndDateStr);
+      if (Number.isNaN(newEndDate.getTime()) || newEndDate <= booking.endDate) {
+        return NextResponse.json(
+          { error: 'New end date must be after current end date' },
+          { status: 400 }
+        );
+      }
 
-      // The added nights are collected as a stay balance, never bundled back
-      // into the original stay payment (doc 10).
-      const checkout = await createCheckout(prisma, {
-        purpose: 'stay_balance',
+      const result = await changeBookingDates(prisma, {
         bookingId,
-        payerIdentityId: user.identityId,
-        amountThb: extension.addedThb,
+        startDate: booking.startDate,
+        endDate: newEndDate,
+        actorIdentityId: user.identityId,
       });
+
+      const additionalNights = Math.ceil(
+        (result.endDate.getTime() - result.previousEndDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const priceDeltaThb = result.totalThb - result.previousTotalThb;
+      const addedThb = Math.max(0, priceDeltaThb);
+
+      let checkoutUrl: string | null = null;
+      if (addedThb > 0) {
+        const checkout = await createCheckout(prisma, {
+          purpose: 'stay_balance',
+          bookingId,
+          payerIdentityId: user.identityId,
+          amountThb: addedThb,
+        });
+        checkoutUrl = checkout?.checkoutUrl || null;
+      }
+
+      const extension = {
+        bookingId,
+        currentEndDate: result.previousEndDate,
+        newEndDate: result.endDate,
+        additionalNights,
+        addedThb,
+        balanceDueThb: result.balanceDueThb,
+        newTotalThb: result.totalThb,
+      };
 
       return NextResponse.json(
         {
           extension,
           pricing: {
-            oldTotalThb: booking.totalThb,
-            newTotalThb: extension.newTotalThb,
-            balanceThb: extension.addedThb,
-            checkoutUrl: checkout?.checkoutUrl || null,
+            oldTotalThb: result.previousTotalThb,
+            newTotalThb: result.totalThb,
+            balanceThb: priceDeltaThb,
+            checkoutUrl,
           },
         },
         { status: 200 }

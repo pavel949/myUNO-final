@@ -102,6 +102,10 @@ Named policies are `schedule` parameters: an ordered list of `{days_before_check
 | `finance.statement.requires_admin_signoff` | boolean | global | `true` | Draft → published requires admin action (the v3 sign-off gate). |
 | `finance.statement.service_fee_pct` | percent | unit | `12` ⚠ (rate not confirmed by the founder) | The myUNO service fee charged on gross bookings of the period, written as the `service_fee` line of the owner statement and subtracted before adjusted NOI. Overridable per project and per unit so a negotiated mandate keeps its own rate. |
 | `finance.occupancy_tax_pct` | percent | project | `0` | Occupancy/local tax line if applicable (0 until counsel says otherwise; the breakdown supports it from day one). |
+| `finance.vat_pct` | percent | project | `7` | Thailand VAT applied to a quoted stay. 7% is the standard rate, but it is statutory, has been temporarily reduced before, and a project may sit outside the VAT net — so it is a parameter, never a constant. |
+| `pricing.rate_plan.non_refundable_discount_pct` | percent | unit | `10` | Discount on the nightly rate for the non-refundable rate plan — the price of giving up the cancellation right. |
+| `pricing.rate_plan.weekly_discount_pct` | percent | unit | `15` | Discount on the nightly rate for the weekly rate plan. |
+| `pricing.rate_plan.weekly_min_nights` | int | unit | `7` | Nights a stay must reach before the weekly rate plan applies. |
 | `finance.payout.default_thb_account` | string | global | `Bank of Ayudhya (Krungsri) 475-1-22131-3 · SWIFT AYUDTHBK` | The company account owner THB payouts are sent from (Q18); recorded on each `Payout`. International/non-THB payouts are a future decision (Q22). |
 | `compliance.tm30_sla_hours` | int | global | `24` | **The legal deadline.** Editable only to be *stricter*; the editor refuses values > 24. |
 | `compliance.tm30_escalation_hours_before` | int | global | `6` | How long before `due_at` an unfiled TM30 escalates to admin. |

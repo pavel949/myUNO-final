@@ -21,7 +21,7 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     redirect(`/login?next=/bookings/${params.bookingId}/home-space`);
   }
 
-  const data = await fetchInStayHomeSpace(params.bookingId, user.identityId);
+  const data = await fetchInStayHomeSpace(params.bookingId);
   const labels = await getLabels({
     'home.welcome': 'Welcome to',
     'home.welcome_back': 'Welcome back, {name}',

@@ -6,7 +6,6 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
@@ -104,7 +103,7 @@ export default async function RootLayout({
   // The surfaces this person's roles give them, from the same policy the `/app`
   // landing redirects on — so the menu can never offer a different set of hats
   // than the landing picks between.
-  const activeBookingId = user ? await getActiveStayId(user.identityId) : null;
+  const activeBookingId = user ? await getActiveStayId() : null;
   const roleLinks = user
     ? availableSurfaces({
         isAdmin: user.isAdmin,
@@ -192,7 +191,6 @@ export default async function RootLayout({
           }}
         />
         <div className="flex-1">{children}</div>
-        <AnalyticsBeacon />
         <Footer
           locale={locale}
           labels={{

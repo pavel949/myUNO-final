@@ -50,14 +50,17 @@ export {
 export {
   computeProviderRemittance,
   getProviderRemittancesView,
-  getReconciliationData,
-  reconcilePayout,
-  resolveFailedRefund,
   resolveProviderPayoutPeriod,
   type PayoutPeriodCadence,
   type ProviderRemittancePayoutRow,
   type ProviderRemittancesView,
   type RemittanceReport,
+} from './remittance.service';
+
+export {
+  getReconciliationData,
+  reconcilePayout,
+  resolveFailedRefund,
 } from './payout.service';
 
 export {

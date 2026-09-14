@@ -22,27 +22,28 @@ import { TrustMark } from '@/components/TrustMark';
 import DeltaChip from '@/components/viz/DeltaChip';
 import MonthHeatStrip from '@/components/viz/MonthHeatStrip';
 import Sparkline from '@/components/viz/Sparkline';
+import { COLOR } from '@/lib/design-tokens';
 
 const COLOR_TOKENS = [
-  { name: 'brand.andaman', color: '#0E4F4B' },
-  { name: 'brand.deep', color: '#0A3733' },
-  { name: 'brand.sun', color: '#D69A3A' },
-  { name: 'brand.sun-soft', color: '#E7C079' },
-  { name: 'surface.ivory', color: '#F5EFE4' },
-  { name: 'surface.paper', color: '#FBF8F1' },
-  { name: 'text.ink', color: '#16211F' },
-  { name: 'text.stone', color: '#7E8C88' },
-  { name: 'text.stone-2', color: '#A7B2AE' },
-  { name: 'border.line', color: '#E6DFD1' },
-  { name: 'border.line-2', color: '#DAD1BF' },
-  { name: 'on-dark.text', color: '#EAF2F0' },
+  { name: 'brand.andaman', color: COLOR.brand.andaman },
+  { name: 'brand.deep', color: COLOR.brand.deep },
+  { name: 'brand.sun', color: COLOR.brand.sun },
+  { name: 'brand.sun-soft', color: COLOR.brand.sunSoft },
+  { name: 'surface.ivory', color: COLOR.surface.ivory },
+  { name: 'surface.paper', color: COLOR.surface.paper },
+  { name: 'text.ink', color: COLOR.text.ink },
+  { name: 'text.stone', color: COLOR.text.stone },
+  { name: 'text.stone-2', color: COLOR.text.stone2 },
+  { name: 'border.line', color: COLOR.border.line },
+  { name: 'border.line-2', color: COLOR.border.line2 },
+  { name: 'on-dark.text', color: COLOR.onDark.text },
 ] as const;
 
 const STATE_TOKENS = [
-  { name: 'success', fg: '#2F7A57', bg: '#E4EFE7' },
-  { name: 'warning', fg: '#B97F1F', bg: '#F6ECD8' },
-  { name: 'error', fg: '#AE4E38', bg: '#F5E4DF' },
-  { name: 'info', fg: '#0E4F4B', bg: '#E3ECEA' },
+  { name: 'success', fg: COLOR.state.success, bg: COLOR.state.successSoft },
+  { name: 'warning', fg: COLOR.state.warning, bg: COLOR.state.warningSoft },
+  { name: 'error', fg: COLOR.state.error, bg: COLOR.state.errorSoft },
+  { name: 'info', fg: COLOR.state.info, bg: COLOR.state.infoSoft },
 ] as const;
 
 const TYPE_ROWS = [

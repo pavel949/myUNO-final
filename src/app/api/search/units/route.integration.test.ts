@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { resetDb, createProject, createUnit, createIdentity, createBooking } from '@/test/util';
+import { db, resetDb, createProject, createUnit, createIdentity, createBooking } from '@/test/util';
 import { vi } from 'vitest';
 
 vi.mock('@/lib/prisma', async () => {
@@ -114,5 +114,90 @@ describe('GET /api/search/units — category grouping & filters (LY-6)', () => {
     ).json();
     expect(byCategory.units).toHaveLength(1);
     expect(byCategory.units[0].name).toBe('A-01');
+  });
+});
+
+/**
+ * A unit is public only when its project is public too.
+ *
+ * `getPublicUnitById` has always required both, but search required only the
+ * unit — so archiving a project left its villas listed and bookable while their
+ * own pages returned 404. Two reads of one fact disagreeing, with the
+ * guest-facing one still selling.
+ */
+describe('GET /api/search/units — a unit is only as public as its project', () => {
+  async function projectWithLiveUnit(status: 'live' | 'draft' | 'archived', slug: string) {
+    const project = await createProject({ slug, status });
+    await createUnit({
+      projectId: project.id,
+      name: `${slug}-01`,
+      status: 'live',
+      maxGuests: 4,
+      baseNightlyThb: 500_000,
+    });
+    return project;
+  }
+
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('hides live units of an archived project', async () => {
+    const archived = await projectWithLiveUnit('archived', 'p-archived');
+
+    const scoped = await (
+      await GET(makeRequest({ projectId: archived.id, adultsCount: '2' }))
+    ).json();
+    expect(scoped.units).toHaveLength(0);
+
+    const unscoped = await (await GET(makeRequest({ adultsCount: '2' }))).json();
+    expect(unscoped.units).toHaveLength(0);
+  });
+
+  it('hides live units of a project still in draft', async () => {
+    const draft = await projectWithLiveUnit('draft', 'p-draft');
+
+    const body = await (
+      await GET(makeRequest({ projectId: draft.id, adultsCount: '2' }))
+    ).json();
+    expect(body.units).toHaveLength(0);
+  });
+
+  it('drops a project from results the moment it is archived', async () => {
+    const project = await projectWithLiveUnit('live', 'p-live');
+
+    const before = await (await GET(makeRequest({ adultsCount: '2' }))).json();
+    expect(before.units).toHaveLength(1);
+
+    await db.project.update({ where: { id: project.id }, data: { status: 'archived' } });
+
+    const after = await (await GET(makeRequest({ adultsCount: '2' }))).json();
+    expect(after.units).toHaveLength(0);
+  });
+
+  it('still applies the map viewport alongside the project-status rule', async () => {
+    // Both filters live on the same `project` clause; written as two keys in
+    // one object literal, whichever came first would be silently dropped.
+    await projectWithLiveUnit('live', 'p-in-view');
+
+    const inView = await (
+      await GET(
+        makeRequest({
+          adultsCount: '2',
+          swLat: '13.0', swLng: '100.0', neLat: '14.0', neLng: '101.0',
+        })
+      )
+    ).json();
+    expect(inView.units).toHaveLength(1);
+
+    const outOfView = await (
+      await GET(
+        makeRequest({
+          adultsCount: '2',
+          swLat: '7.0', swLng: '98.0', neLat: '8.0', neLng: '99.0',
+        })
+      )
+    ).json();
+    expect(outOfView.units).toHaveLength(0);
   });
 });

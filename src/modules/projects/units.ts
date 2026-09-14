@@ -49,6 +49,30 @@ interface UpdateUnitInput {
 }
 
 /**
+ * `InventoryCategory` is the canonical sellable-class entity. `categoryKey`
+ * remains on Unit while older search/booking callers are migrated, but every
+ * write links the canonical row whenever one exists. Commercial Unit columns
+ * mirror the category for compatibility rather than defining a second price.
+ */
+async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?: string | null) {
+  if (!categoryKey) return null;
+  return prisma.inventoryCategory.findUnique({
+    where: {
+      projectId_categoryKey: {
+        projectId,
+        categoryKey,
+      },
+    },
+    select: {
+      id: true,
+      baseNightlyThb: true,
+      minNights: true,
+      cancellationPolicyKey: true,
+    },
+  });
+}
+
+/**
  * Create a new unit.
  * Admin/staff-only action.
  */
@@ -75,7 +99,6 @@ export async function createUnit(input: CreateUnitInput) {
     actorIdentityId,
   } = input;
 
-  // Verify project exists
   const project = await prisma.project.findUnique({
     where: { id: projectId },
   });
@@ -84,7 +107,6 @@ export async function createUnit(input: CreateUnitInput) {
     throw new Error(`Project ${projectId} not found`);
   }
 
-  // Check name uniqueness within project
   const existing = await prisma.unit.findFirst({
     where: { projectId, name },
   });
@@ -93,27 +115,22 @@ export async function createUnit(input: CreateUnitInput) {
     throw new Error(`Unit with name "${name}" already exists in this project`);
   }
 
-  // A unit cannot be born live. Permitted-use confirmation is a legal gate
-  // (CLAUDE.md, legal non-negotiables) and it was enforced only on the update
-  // path — while POST /api/admin/units spreads the request body straight into
-  // this function, so `{"status":"live"}` created a bookable unit that had never
-  // been cleared. Going live is a transition, and it goes through updateUnit
-  // where the gate lives.
   if (status === 'live') {
     throw new Error(
       'A unit cannot be created live. Create it as draft, confirm permitted use, then set it live.'
     );
   }
 
-  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3).
-  // Unit categories are a project-scoped catalog, so pass the project scope.
   await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
   await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
   await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, { projectId });
 
+  const canonicalCategory = await resolveCanonicalInventoryCategory(projectId, categoryKey);
+
   const unit = await prisma.unit.create({
     data: {
       projectId,
+      inventoryCategoryId: canonicalCategory?.id ?? null,
       ownerIdentityId: ownerIdentityId || null,
       name,
       unitType,
@@ -126,20 +143,18 @@ export async function createUnit(input: CreateUnitInput) {
       addressSupplement,
       descriptionKey: descriptionKey || null,
       amenityKeys,
-      baseNightlyThb,
-      minNights: minNights || 1,
+      // Compatibility mirrors. A linked InventoryCategory owns these terms.
+      baseNightlyThb: canonicalCategory?.baseNightlyThb ?? baseNightlyThb,
+      minNights: canonicalCategory?.minNights ?? minNights ?? 1,
       instantBook,
-      cancellationPolicyKey: cancellationPolicyKey || null,
+      cancellationPolicyKey:
+        canonicalCategory?.cancellationPolicyKey ?? cancellationPolicyKey ?? null,
       status,
     },
   });
 
-  // Ownership is a dated fact, not just a column: open the first period so the
-  // unit has a chain of title from the day it exists. Idempotent, so a retry
-  // after a partial failure repairs rather than duplicates.
   await ensureOwnershipRecorded(prisma, unit.id);
 
-  // Audit log
   await logAudit({
     actorIdentityId,
     action: 'units:create',
@@ -149,29 +164,28 @@ export async function createUnit(input: CreateUnitInput) {
       projectId,
       name,
       status,
+      categoryKey: categoryKey || null,
+      inventoryCategoryId: canonicalCategory?.id ?? null,
     },
   });
 
   return unit;
 }
 
-/**
- * Get a unit by ID.
- */
 export async function getUnit(unitId: string) {
   return await prisma.unit.findUnique({
     where: { id: unitId },
   });
 }
 
-/**
- * List units in a project.
- */
 export async function listUnits(projectId: string, status?: UnitStatus) {
   return await prisma.unit.findMany({
     where: {
       projectId,
       ...(status && { status }),
+    },
+    include: {
+      inventoryCategory: true,
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -212,19 +226,10 @@ export async function updateUnit(input: UpdateUnitInput) {
     throw new Error(`Unit ${unitId} not found`);
   }
 
-  // Validate status transitions
-  if (status && status !== unit.status) {
-    if (status === 'live') {
-      // Cannot go to live without permitted_use_confirmed_at
-      if (!unit.permittedUseConfirmedAt) {
-        throw new Error(
-          'Unit cannot move to live status without permitted use confirmation'
-        );
-      }
-    }
+  if (status && status !== unit.status && status === 'live' && !unit.permittedUseConfirmedAt) {
+    throw new Error('Unit cannot move to live status without permitted use confirmation');
   }
 
-  // Check name uniqueness if changing
   if (name && name !== unit.name) {
     const existing = await prisma.unit.findFirst({
       where: {
@@ -235,19 +240,38 @@ export async function updateUnit(input: UpdateUnitInput) {
     });
 
     if (existing) {
-      throw new Error(
-        `Unit with name "${name}" already exists in this project`
-      );
+      throw new Error(`Unit with name "${name}" already exists in this project`);
     }
   }
 
-  // Taxonomy keys must exist in their doc 04 §8 catalogs (DM-3).
-  // Unit categories are a project-scoped catalog, so pass the project scope.
   await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
   await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
   await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, {
     projectId: unit.projectId,
   });
+
+  // Resolve the resulting category on every update. That keeps the compatibility
+  // commercial columns synchronized even when an older caller tries to write a
+  // unit-level base/min value directly.
+  const effectiveCategoryKey = categoryKey !== undefined ? categoryKey : unit.categoryKey;
+  const canonicalCategory = await resolveCanonicalInventoryCategory(
+    unit.projectId,
+    effectiveCategoryKey
+  );
+  const shouldWriteCanonicalCategory =
+    categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
+  const effectiveInventoryCategoryId =
+    categoryKey === null
+      ? null
+      : canonicalCategory?.id ?? (categoryKey === undefined ? unit.inventoryCategoryId : null);
+
+  // A live unit must remain canonically priceable, not only pass this check at
+  // the moment it first transitions to live. Removing/changing its category is
+  // therefore blocked unless the resulting canonical category exists.
+  const resultingStatus = status ?? unit.status;
+  if (resultingStatus === 'live' && !effectiveInventoryCategoryId) {
+    throw new Error('A live unit must have a canonical inventory category');
+  }
 
   const updated = await prisma.unit.update({
     where: { id: unitId },
@@ -255,6 +279,9 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(name !== undefined && { name }),
       ...(unitType !== undefined && { unitType }),
       ...(categoryKey !== undefined && { categoryKey }),
+      ...(shouldWriteCanonicalCategory && {
+        inventoryCategoryId: effectiveInventoryCategoryId,
+      }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(bathrooms !== undefined && { bathrooms }),
       ...(maxGuests !== undefined && { maxGuests }),
@@ -263,16 +290,25 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(addressSupplement !== undefined && { addressSupplement }),
       ...(descriptionKey !== undefined && { descriptionKey }),
       ...(amenityKeys !== undefined && { amenityKeys }),
-      ...(baseNightlyThb !== undefined && { baseNightlyThb }),
-      ...(minNights !== undefined && { minNights }),
+      // When a canonical category exists, Unit commercial fields are mirrors;
+      // explicit unit-level pricing belongs in RatePlan/PricingRule instead.
+      ...(canonicalCategory
+        ? {
+            baseNightlyThb: canonicalCategory.baseNightlyThb,
+            minNights: canonicalCategory.minNights,
+            cancellationPolicyKey: canonicalCategory.cancellationPolicyKey,
+          }
+        : {
+            ...(baseNightlyThb !== undefined && { baseNightlyThb }),
+            ...(minNights !== undefined && { minNights }),
+            ...(cancellationPolicyKey !== undefined && { cancellationPolicyKey }),
+          }),
       ...(instantBook !== undefined && { instantBook }),
-      ...(cancellationPolicyKey !== undefined && { cancellationPolicyKey }),
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
     } as any,
   });
 
-  // Audit log
   await logAudit({
     actorIdentityId,
     action: 'units:update',
@@ -288,9 +324,6 @@ export async function updateUnit(input: UpdateUnitInput) {
   return updated;
 }
 
-/**
- * Confirm permitted use for a unit (allows moving to live status).
- */
 export async function confirmPermittedUse(unitId: string, actorIdentityId?: string) {
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
@@ -307,7 +340,6 @@ export async function confirmPermittedUse(unitId: string, actorIdentityId?: stri
     },
   });
 
-  // Audit log
   await logAudit({
     actorIdentityId,
     action: 'units:confirm_permitted_use',
@@ -321,14 +353,12 @@ export async function confirmPermittedUse(unitId: string, actorIdentityId?: stri
   return updated;
 }
 
-/**
- * Get unit detail with related data.
- */
 export async function getUnitDetail(unitId: string) {
   return await prisma.unit.findUnique({
     where: { id: unitId },
     include: {
       project: true,
+      inventoryCategory: true,
       owner: true,
       engagements: {
         orderBy: { createdAt: 'desc' },

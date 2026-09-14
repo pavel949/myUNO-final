@@ -68,11 +68,33 @@ jobs:
       # migration files, never db-push, and pushing the schema meant CI never
       # exercised the migrations. A migration chain that could not apply from
       # scratch therefore stayed green here while every deployment failed.
+      # Production runs on Supabase, which owns the `anon`, `authenticated` and
+      # `service_role` roles. `20260912000000_secure_canonical_v3_operational_tables`
+      # REVOKEs the Data API grants from them, and that statement aborts on a
+      # database where those roles do not exist. Creating them here is what lets
+      # the chain apply — and, because this file also reproduces Supabase's
+      # default grants, it is what makes the REVOKE do real work that
+      # `db:verify` can then assert. See scripts/sql/supabase-compat-roles.sql.
+      - name: Create Supabase-compatible roles
+        env:
+          PGPASSWORD: test
+        run: psql -h localhost -U test -d myuno_test -v ON_ERROR_STOP=1 -f scripts/sql/supabase-compat-roles.sql
+
       - name: Apply migrations to test database
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
         run: npx prisma migrate deploy
         timeout-minutes: 5
+
+      # The guard on the failure mode that produced this workflow's own outage:
+      # migrations and schema.prisma describing different databases while every
+      # other check stayed green. Replays the whole chain onto a throwaway
+      # database, asserts the Data API stays closed, and fails on any drift.
+      - name: Verify database reproducibility and drift
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+        run: npm run db:verify
+        timeout-minutes: 10
 
       # next build must run as a production compile. Setting NODE_ENV=development
       # here mixed Next's prod and dev runtimes and failed prerender of /404,

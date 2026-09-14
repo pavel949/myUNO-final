@@ -24,7 +24,7 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
   }
 
   const data = await getOwnerUnitDashboard(prisma, user.identityId, params.unitId);
-  const activeStay = await getActiveStayBanner(user.identityId);
+  const activeStay = await getActiveStayBanner();
   if (!data) {
     notFound();
   }

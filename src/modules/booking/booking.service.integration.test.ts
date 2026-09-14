@@ -16,7 +16,9 @@ describe('booking.service — integration tests', () => {
     const RANGE = { start: new Date('2026-08-10'), end: new Date('2026-08-14') };
 
     it('assigns the first free live villa of the category, by stable name order', async () => {
-      const project = await createProject();
+      // Category resolution is a sale, and a project that is not live does not
+      // sell — so the fixture has to be a live project to be realistic.
+      const project = await createProject({ status: 'live' });
       const guest = await createIdentity();
       const unitB = await createUnit({
         projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
@@ -92,7 +94,7 @@ describe('booking.service — integration tests', () => {
     }
 
     it('reassigns a category request within the category when the villa got taken', async () => {
-      const project = await createProject();
+      const project = await createProject({ status: 'live' });
       const unitA = await createUnit({
         projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
       });

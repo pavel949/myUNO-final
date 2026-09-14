@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { COLOR } from '@/lib/design-tokens';
 
 /**
  * PWA manifest (LY-7): the guest home space is installable to the home
@@ -12,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Serviced living in Phuket — stays, services, and your home space.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#F5EFE4',
-    theme_color: '#0E4F4B',
+    background_color: COLOR.surface.ivory,
+    theme_color: COLOR.brand.andaman,
     icons: [
       {
         src: '/icon.svg',

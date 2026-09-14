@@ -11,17 +11,16 @@ export const dynamic = 'force-dynamic';
 
 /**
  * The onboarding workspace for one unit — doc 07 F-OWN-1, seven steps on one
- * screen.
- *
- * The services behind every step existed and were tested; none had a screen, so
- * mobilization could not be run at all. This is that screen: it shows where a
- * unit is in the sequence and offers exactly the action each step needs.
+ * screen. It also exposes the canonical commercial graph so operators can see
+ * whether this physical unit is actually linked to its sellable category and
+ * rate-plan hierarchy rather than silently relying on a legacy category key.
  */
 export default async function UnitOnboardingPage({ params }: { params: { id: string } }) {
   const unit = await prisma.unit.findUnique({
     where: { id: params.id },
     include: {
-      project: { select: { name: true } },
+      project: { select: { id: true, name: true } },
+      inventoryCategory: true,
       owner: { select: { id: true, firstName: true, lastName: true } },
       engagements: { orderBy: { createdAt: 'desc' } },
       complianceRecords: { orderBy: { createdAt: 'desc' } },
@@ -30,6 +29,18 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
   });
 
   if (!unit) notFound();
+
+  const ratePlans = await prisma.ratePlan.findMany({
+    where: {
+      status: 'active',
+      OR: [
+        { unitId: unit.id },
+        ...(unit.inventoryCategoryId ? [{ categoryId: unit.inventoryCategoryId }] : []),
+        { projectId: unit.projectId, unitId: null, categoryId: null },
+      ],
+    },
+    orderBy: [{ isMaster: 'desc' }, { code: 'asc' }],
+  });
 
   const labels = await getLabels({
     'admin.units.breadcrumb_home': 'Home',
@@ -68,6 +79,18 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       'Permitted use is confirmed, but no permitted-use record is attached.',
     'admin.onboarding.error_generic': 'Action failed. Please try again.',
     'admin.onboarding.saving': 'Saving…',
+    'admin.unit360.graph_title': 'Canonical property graph',
+    'admin.unit360.graph_hint': 'Project → Inventory category → Unit → Rate plan',
+    'admin.unit360.project': 'Project',
+    'admin.unit360.category': 'Inventory category',
+    'admin.unit360.category_linked': 'Canonical link active',
+    'admin.unit360.category_legacy': 'Legacy category key only',
+    'admin.unit360.category_none': 'No category assigned',
+    'admin.unit360.rate_plans': 'Applicable rate plans',
+    'admin.unit360.base_rate': 'Unit base rate',
+    'admin.unit360.min_stay': 'Unit minimum stay',
+    'admin.unit360.legacy_warning':
+      'This unit still has a legacy category key without an InventoryCategory link. Re-save the category after the canonical category exists.',
     'staff.calendar.title': 'Availability & pricing',
     'staff.calendar.intro':
       'Block this unit for maintenance or an owner stay, or set a one-off rate for a date range.',
@@ -104,6 +127,12 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     { label: labels['admin.units.breadcrumb_detail'], current: true },
   ];
 
+  const categoryState = unit.inventoryCategory
+    ? labels['admin.unit360.category_linked']
+    : unit.categoryKey
+      ? labels['admin.unit360.category_legacy']
+      : labels['admin.unit360.category_none'];
+
   return (
     <div>
       <Breadcrumb items={breadcrumbs} />
@@ -113,6 +142,58 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {unit.name} · {labels['admin.onboarding.title']}
       </h1>
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">
+          <div>
+            <h2 className="text-heading-3 font-semibold text-text-ink">
+              {labels['admin.unit360.graph_title']}
+            </h2>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.graph_hint']}</p>
+          </div>
+          <Link
+            href={`/app/admin/projects/${unit.project.id}`}
+            className="text-small text-brand-andaman hover:underline"
+          >
+            {unit.project.name} →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-12">
+          <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
+            <p className="text-micro text-text-secondary">{labels['admin.unit360.project']}</p>
+            <p className="font-semibold text-text-ink">{unit.project.name}</p>
+          </div>
+          <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
+            <p className="text-micro text-text-secondary">{labels['admin.unit360.category']}</p>
+            <p className="font-semibold text-text-ink">
+              {unit.inventoryCategory?.name || unit.categoryKey || '—'}
+            </p>
+            <p className="text-micro text-text-secondary">{categoryState}</p>
+          </div>
+          <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
+            <p className="text-micro text-text-secondary">{labels['admin.unit360.rate_plans']}</p>
+            <p className="font-semibold text-text-ink">{ratePlans.length}</p>
+            <p className="text-micro text-text-secondary">
+              {ratePlans.map((plan) => plan.code).join(', ') || '—'}
+            </p>
+          </div>
+          <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
+            <p className="text-micro text-text-secondary">{labels['admin.unit360.base_rate']}</p>
+            <p className="font-semibold text-text-ink">฿{Math.round(unit.baseNightlyThb / 100).toLocaleString()}</p>
+          </div>
+          <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
+            <p className="text-micro text-text-secondary">{labels['admin.unit360.min_stay']}</p>
+            <p className="font-semibold text-text-ink">{unit.minNights}</p>
+          </div>
+        </div>
+
+        {!unit.inventoryCategory && unit.categoryKey ? (
+          <div className="mt-12 p-12 bg-state-warning-soft border border-state-warning rounded-md text-small text-text-ink">
+            {labels['admin.unit360.legacy_warning']}
+          </div>
+        ) : null}
+      </section>
 
       <OnboardingClient
         unitId={unit.id}
@@ -136,9 +217,6 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           id: e.id,
           engagementType: e.engagementType,
           status: e.status,
-          // Display boundary: noiCapAnnualThb is satang (THB x 100) in the
-          // domain layer — the finance module compares it directly against
-          // satang NOI totals (src/modules/finance/statement.service.ts).
           noiCapAnnualThb: e.noiCapAnnualThb !== null ? Math.round(e.noiCapAnnualThb / 100) : null,
         }))}
         complianceRecords={unit.complianceRecords.map((r) => ({

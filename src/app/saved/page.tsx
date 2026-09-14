@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { listSavedUnits } from '@/modules/browse';
@@ -65,37 +65,41 @@ export default async function SavedPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
-            {savedEntries.map((entry) => (
-              <Link
-                key={entry.id}
-                href={`/units/${entry.unit.id}`}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow"
-              >
-                {entry.unit.coverMedia ? (
-                  <Image
-                    src={entry.unit.coverMedia.storageKey}
-                    alt={entry.unit.name}
-                    width={640}
-                    height={360}
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                )}
-                <div className="p-16">
-                  <h3 className="text-subtitle font-semibold text-text-ink mb-8">
-                    {entry.unit.name}
-                  </h3>
-                  <p className="text-title text-brand-andaman">
-                    <MoneyAmount satang={entry.unit.baseNightlyThb} className="font-semibold" />{' '}
-                    {labels['saved.per_night']}
-                  </p>
-                  {entry.note && (
-                    <p className="text-small text-text-secondary mt-8 italic">{entry.note}</p>
+            {savedEntries.map((entry) => {
+              const canonicalNightly =
+                entry.unit.inventoryCategory?.baseNightlyThb ?? entry.unit.baseNightlyThb;
+              return (
+                <Link
+                  key={entry.id}
+                  href={`/units/${entry.unit.id}`}
+                  className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow"
+                >
+                  {entry.unit.coverMedia ? (
+                    <Image
+                      src={entry.unit.coverMedia.storageKey}
+                      alt={entry.unit.name}
+                      width={640}
+                      height={360}
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
                   )}
-                </div>
-              </Link>
-            ))}
+                  <div className="p-16">
+                    <h3 className="text-subtitle font-semibold text-text-ink mb-8">
+                      {entry.unit.name}
+                    </h3>
+                    <p className="text-title text-brand-andaman">
+                      <MoneyAmount satang={canonicalNightly} className="font-semibold" />{' '}
+                      {labels['saved.per_night']}
+                    </p>
+                    {entry.note && (
+                      <p className="text-small text-text-secondary mt-8 italic">{entry.note}</p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

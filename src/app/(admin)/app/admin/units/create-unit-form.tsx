@@ -35,8 +35,6 @@ export default function CreateUnitForm({
   const [error, setError] = useState<string | null>(null);
 
   if (projects.length === 0) {
-    // Without a project there is nothing to create a unit inside, and an empty
-    // picker is a dead end rather than an explanation.
     return <p className="text-body text-text-secondary mb-16">{labels['admin.units.no_projects']}</p>;
   }
 
@@ -68,9 +66,6 @@ export default function CreateUnitForm({
               bathrooms: Number(form.get('bathrooms')),
               maxGuests: Number(form.get('maxGuests')),
               addressSupplement: String(form.get('addressSupplement') || '').trim(),
-              // The field is labelled "Base ฿/night", so this arrives in baht;
-              // the column is satang. Storing it unmultiplied priced every
-              // unit created through this form at 1/100 of its rate (T-071).
               baseNightlyThb: bahtToSatang(Number(form.get('baseNightlyThb'))),
               minNights: Number(form.get('minNights')) || 1,
             }),
@@ -80,8 +75,6 @@ export default function CreateUnitForm({
             throw new Error(data?.error || labels['admin.units.error_generic']);
           }
           const unit = await response.json();
-          // Straight into the onboarding workspace: a created unit is the
-          // beginning of mobilization, not the end of a form.
           router.push(`/app/admin/units/${unit.id}`);
         } catch (err) {
           setError(err instanceof Error ? err.message : labels['admin.units.error_generic']);
@@ -113,85 +106,39 @@ export default function CreateUnitForm({
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.name']}
-          <input
-            name="name"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="name" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.type']}
-          <select
-            name="unitType"
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          >
+          <select name="unitType" className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink">
             {UNIT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
+              <option key={type} value={type}>{type}</option>
             ))}
           </select>
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.bedrooms']}
-          <input
-            name="bedrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="bedrooms" type="number" min="0" defaultValue={1} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.bathrooms']}
-          <input
-            name="bathrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="bathrooms" type="number" min="0" defaultValue={1} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.max_guests']}
-          <input
-            name="maxGuests"
-            type="number"
-            min="1"
-            defaultValue={2}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="maxGuests" type="number" min="1" defaultValue={2} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary md:col-span-2">
           {labels['admin.units.address_supplement']}
-          <input
-            name="addressSupplement"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="addressSupplement" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.base_nightly']}
-          <input
-            name="baseNightlyThb"
-            type="number"
-            min="0"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="baseNightlyThb" type="number" min="0" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.min_nights']}
-          <input
-            name="minNights"
-            type="number"
-            min="1"
-            defaultValue={1}
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="minNights" type="number" min="1" defaultValue={1} className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
       </div>
 

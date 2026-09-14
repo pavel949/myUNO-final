@@ -1,5 +1,11 @@
 // module: compliance — public interface (see docs/14_tech_spec.md §3)
-// Owns: TM30Filing, PassportCapture, ComplianceRecord, Mobilization
-// Depends on: core, config
+// Owns: TM30Filing, PassportCapture, ComplianceRecord, RegulatoryCredential, CommercialEligibilityEngine
 
-export {};
+export {
+  evaluateCommercialEligibility,
+  canPublishShortTerm,
+  canPublishLongTerm,
+  canPublishSale,
+  type CommercialEligibilityQuery,
+  type CommercialEligibilityResult,
+} from './commercial-eligibility.engine';

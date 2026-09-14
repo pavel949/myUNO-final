@@ -82,10 +82,23 @@ export async function listSavedUnits(
           id: true,
           name: true,
           projectId: true,
+          inventoryCategoryId: true,
+          // Compatibility fallback only. Consumer surfaces prefer the linked
+          // InventoryCategory commercial defaults whenever one exists.
           baseNightlyThb: true,
           bedrooms: true,
           maxGuests: true,
           coverMediaId: true,
+          inventoryCategory: {
+            select: {
+              id: true,
+              categoryKey: true,
+              name: true,
+              baseNightlyThb: true,
+              minNights: true,
+              status: true,
+            },
+          },
           coverMedia: { select: { storageKey: true } },
         },
       },
@@ -156,8 +169,6 @@ export async function deleteSavedSearch(
   identityId: string,
   savedSearchId: string
 ): Promise<{ removed: number }> {
-  // Scoped in the delete rather than fetched-then-checked: a saved search is
-  // someone's, and deleting by id alone would let anyone remove anyone's.
   const { count } = await db.savedSearch.deleteMany({
     where: { id: savedSearchId, identityId },
   });
@@ -169,6 +180,7 @@ export interface MatchableUnit {
   categoryKey: string | null;
   bedrooms: number;
   maxGuests: number;
+  /** Canonical/effective comparison price supplied by the caller. */
   baseNightlyThb: number;
   amenityKeys: string[];
 }
@@ -178,8 +190,9 @@ export interface MatchableUnit {
  *
  * Pure, so it can be reasoned about and tested without a database, and so the
  * same rule serves both "alert me about this new villa" and "show me what
- * matched". An absent criterion is not a constraint — a search with no price
- * ceiling matches every price, rather than none.
+ * matched". The caller is responsible for supplying the canonical/effective
+ * comparison price in `baseNightlyThb`; this matcher deliberately owns no
+ * pricing source of truth itself.
  */
 export function matchesSavedSearch(criteria: SearchCriteria, unit: MatchableUnit): boolean {
   if (criteria.projectId && criteria.projectId !== unit.projectId) return false;
@@ -190,8 +203,6 @@ export function matchesSavedSearch(criteria: SearchCriteria, unit: MatchableUnit
     return false;
   }
   if (criteria.amenityKeys?.length) {
-    // Every requested amenity, not any — a guest who asked for a pool and a cot
-    // wants both, and "any" would send them a villa with neither of the two.
     const has = new Set(unit.amenityKeys);
     if (!criteria.amenityKeys.every((key) => has.has(key))) return false;
   }
@@ -200,10 +211,7 @@ export function matchesSavedSearch(criteria: SearchCriteria, unit: MatchableUnit
 
 /**
  * Saved searches a newly live unit matches, whose owner asked to hear about it.
- *
- * Returns them rather than notifying: what an alert does is Q38, and this
- * function having an opinion about it would be the invention that question
- * exists to prevent.
+ * Returns them rather than notifying: what an alert does is Q38.
  */
 export async function findSearchesMatching(
   db: PrismaClient,

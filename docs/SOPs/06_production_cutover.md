@@ -127,7 +127,38 @@ no longer parses as a URL at all. Both point at the same root cause: the new pas
 character that is not URI-safe — `@ : / ? # [ ] %` all terminate or re-interpret parts of a
 connection string — or the value was pasted with the quotes Supabase shows around it.
 
-**Fix:** reset the password again and either keep it to letters, digits, `-` and `_`, or
+**Narrowed 05:12 UTC — it is the Production variable only.** The preview
+deployment of the same commit answers `200 {"status":"ok","db":"ok"}`, while
+production answers `503`. So Preview and Development still hold a working
+connection string and only the Production value is wrong.
+
+Two things follow. First, the fix is a single variable, not a broken database —
+nothing else needs touching. Second, and more important: **if the old string
+still works in Preview, the credential T-046 exists to kill is still live.** A
+password reset invalidates it everywhere at once; a working Preview means either
+the reset has not happened yet, or Preview holds a different string that is also
+valid. Finish the reset, then set the new value in all three environments — the
+point of the rotation is that the leaked one stops working, not that production
+stops using it.
+
+**Resolved 2026-09-07 ~12:00 UTC — and the reset did happen.** Production now
+answers `200 {"status":"ok","db":"ok"}`. The picture has also inverted: at 05:12
+Preview was healthy and Production was not; at 12:09 Production is healthy and
+**Preview** answers `503 db:unreachable`.
+
+That inversion is the evidence worth keeping. It means the Supabase password was
+genuinely reset — Production was given the new string, and Preview is still
+holding the old one, which no longer authenticates. So the leaked credential
+T-046 exists to kill **is now dead**, which the earlier note could not yet
+confirm.
+
+**Still to do:** set the new connection string in the Preview and Development
+environments too (or give Preview its own database). Until then every preview
+deployment renders with no database, which makes reviewing a PR against a real
+screen impossible — and a preview that is broken for an unrelated reason is how
+a preview that is broken for a *related* reason gets waved through.
+
+**If it needs resetting again:** and either keep it to letters, digits, `-` and `_`, or
 percent-encode it in the URL (`@` → `%40`, `#` → `%23`, `/` → `%2F`). Paste the value with no
 surrounding quotes and no trailing newline. Then redeploy with cache off and re-run the health
 check above.
@@ -200,6 +231,53 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 
 **Revisit this before the ownership/title work lands.** Title deeds, lease terms and foreign-quota positions are the most legally sensitive data the platform will ever hold, and the artifact-based backup shares a failure domain with the code. That is adequate for a cash pilot on stays; it is thinner than it should be under title records.
 
+## 7b. GitHub Actions is not running anything — **found 2026-09-07 15:50 UTC**
+
+**Every GitHub Actions job in this repository now fails in about four seconds,
+across every workflow and every trigger.** Not a test failure: no logs are
+produced at all (the log endpoint returns 404), and the jobs die before checkout.
+
+| Workflow | Run | Started → ended | Result |
+|---|---|---|---|
+| CI | `98ba5db` (push, docs only) | 15:48:38 → 15:48:42 | failure, 4s |
+| CI | `323a034` (push, the #60 merge) | 15:37:57 → 15:38:01 | failure, 4s |
+| CI | PR #60 ×2 (incl. a re-run) | 15:27 / 15:31 | failure, 3s each |
+| Scheduler | scheduled | 15:46:26 → 15:46:30 | failure, 4s |
+
+Three different workflows and three different event types, all the same. The same
+CI workflow succeeded on `main` at 14:37 in about five minutes, and `ci.yml` has
+not changed since. So this is account- or runner-side, not repository content.
+
+**Two consequences that matter more than the red checks:**
+
+1. **The scheduler (T-047) has never once succeeded.** It has two runs in its
+   entire history — 10:01 and 15:46 — and both failed in about five seconds. It is
+   supposed to fire every 5 minutes for booking-hold expiry and every 15 for iCal
+   import. So holds are expiring only on the daily Vercel backstop, and OTA
+   calendars are up to 24 hours stale — precisely the condition T-047 was built to
+   remove. The backstop is working as designed; the improvement is not.
+
+2. **The nightly backup (T-048) has never run at all — zero runs, ever.** It is
+   scheduled for 20:00 UTC daily and has never fired. Production now holds
+   encrypted passports and the canonical property data, and there is no verified
+   offsite dump of any of it. The managed provider's own coverage is
+   tier-dependent and unverifiable from here, which is the whole reason T-048
+   exists. **This is the most serious open item in this document.**
+
+**What to check, in order:**
+1. https://github.com/pavel949/myUNO-final/actions — does any new run start?
+2. https://github.com/settings/billing — Actions minutes, spending limit.
+3. Repository → Settings → Actions → General — whether Actions is disabled or
+   restricted for this repository.
+4. If the backup workflow is enabled but silent, confirm `BACKUP_DATABASE_URL`
+   and `BACKUP_PASSPHRASE` exist as repository secrets; a scheduled workflow on a
+   fork or with no valid secrets can be skipped without a visible run.
+
+Until this is resolved, **no change to this repository is independently verified
+before it ships** — the only evidence behind recent merges is a local test run.
+
+---
+
 ## 8. The money data check — before the T-070/T-071 migrations run
 
 **No longer hypothetical — confirmed in the live database 2026-09-06. All five production units are priced at 1/100 of their rate.**
@@ -213,6 +291,35 @@ The founder ruled against a paid tier for now, and §6 above is the compensating
 | PH-202 Garden Suite | 6200 | ฿62 / night | ฿6,200 |
 
 All five are `status = live`. **A ฿5,600 villa is currently bookable at ฿56 a night.**
+
+### RESOLVED 2026-09-07 15:45 UTC — corrected on the founder's confirmation
+
+All five were multiplied by 100 and now read as intended (560000, 390000, 710000,
+980000, 620000 satang). Checked first, and the check is the reassuring part: every
+one of the five had **zero bookings and zero pricing rules**, so no guest was ever
+quoted a wrong price and no snapshotted total needs unwinding. A booking's total is
+frozen at the time it is taken, so had any existed this correction would not have
+touched them — they would have needed handling one by one.
+
+### Still outstanding: four service prices with the same defect
+
+The same 100× error sits in `service.base_price_thb`, and the split is clean:
+
+| Service | Stored | Reads as | Almost certainly meant |
+|---|---|---|---|
+| Fresh Flower Delivery | 300 | ฿3 | ฿300 |
+| Private Chef Service | 500 | ฿5 / hour | ฿500 / hour |
+| Airport Transfer | 800 | ฿8 | ฿800 |
+| Extra Cleaning | 1200 | ฿12 | ฿1,200 |
+
+The three `active` services are stored correctly (90000, 180000, 220000 satang —
+฿900, ฿1,800, ฿2,200), which is what makes the diagnosis safe: the four wrong ones
+are exactly the four that were entered through the affected form.
+
+**All four are `status = draft`, so nothing is orderable and nothing is exposed.**
+Not corrected here: the founder confirmed the *unit* rates, and these are different
+numbers. They want the same ×100 once confirmed — or correcting by hand when the
+real service catalogue is entered, which is due anyway (Q60).
 
 **⚠ Order matters, and getting it wrong is worse than doing nothing.** Before T-071, the display bug cancelled the data bug: search rendered raw satang with a ฿ sign, so `5600` read back as "฿5,600" and looked right. T-071 fixes the display. **Deploying that fix without correcting the data makes every villa show ฿56 — and it is bookable at ฿56, because the stored rate is what the booking engine charges.** Correct the data in the same window as the deploy, or before it.
 

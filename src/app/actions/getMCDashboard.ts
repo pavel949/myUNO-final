@@ -1,20 +1,17 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { requireSessionIdentityId } from './session-identity';
 import {
   getMCDashboard,
   getMCManagedUnits,
   getMCBookings,
   getMCTickets,
-  getMCFeeReport,
   getMCServiceOrders,
 } from '@/modules/projects';
 
-export async function fetchMCDashboard(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string
-) {
+export async function fetchMCDashboard(projectId: string, organizationId: string) {
+  const mcIdentityId = await requireSessionIdentityId();
   try {
     const dashboard = await getMCDashboard(prisma, mcIdentityId, projectId, organizationId);
     const unitsRaw = await getMCManagedUnits(prisma, mcIdentityId, projectId, organizationId);
@@ -28,14 +25,31 @@ export async function fetchMCDashboard(
       50
     );
 
-    // Cast to any to avoid type mismatches between Prisma and client types.
-    // baseNightlyThb / totalThb are satang like every other amount in the
-    // platform (CLAUDE.md); convert to baht here, once, at the boundary to
-    // the client component (Q47 — the MC dashboard previously showed every
-    // nightly rate and booking total 100x too large).
+    // Resolve the commercial base through the canonical InventoryCategory.
+    // Unit.baseNightlyThb remains only a compatibility fallback for an old or
+    // not-yet-migrated row; production live units are category-linked.
+    const unitIds = (unitsRaw as Array<{ id: string }>).map((unit) => unit.id);
+    const canonicalPrices = unitIds.length
+      ? await prisma.unit.findMany({
+          where: { id: { in: unitIds } },
+          select: {
+            id: true,
+            baseNightlyThb: true,
+            inventoryCategory: { select: { baseNightlyThb: true } },
+          },
+        })
+      : [];
+    const priceByUnitId = new Map(
+      canonicalPrices.map((unit) => [
+        unit.id,
+        unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
+      ])
+    );
+
+    // Money is stored in satang; convert exactly once at the server→client boundary.
     const units = (unitsRaw as any[]).map((unit) => ({
       ...unit,
-      baseNightlyThb: unit.baseNightlyThb / 100,
+      baseNightlyThb: (priceByUnitId.get(unit.id) ?? unit.baseNightlyThb) / 100,
     }));
     const bookings = (bookingsRaw as any[]).map((booking) => ({
       ...booking,
@@ -59,54 +73,5 @@ export async function fetchMCDashboard(
     };
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC dashboard');
-  }
-}
-
-export async function fetchMCBookings(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  limit: number = 50,
-  offset: number = 0
-) {
-  try {
-    return await getMCBookings(prisma, mcIdentityId, projectId, organizationId, limit, offset);
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC bookings');
-  }
-}
-
-export async function fetchMCTickets(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  limit: number = 50,
-  offset: number = 0
-) {
-  try {
-    return await getMCTickets(prisma, mcIdentityId, projectId, organizationId, limit, offset);
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC tickets');
-  }
-}
-
-export async function fetchMCFeeReport(
-  mcIdentityId: string,
-  projectId: string,
-  organizationId: string,
-  periodStart: Date,
-  periodEnd: Date
-) {
-  try {
-    return await getMCFeeReport(
-      prisma,
-      mcIdentityId,
-      projectId,
-      organizationId,
-      periodStart,
-      periodEnd
-    );
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch MC fee report');
   }
 }

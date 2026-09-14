@@ -606,6 +606,40 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Occupancy/local tax line if applicable',
       },
       {
+        key: 'finance.vat_pct',
+        valueType: 'percent',
+        defaultValue: 7,
+        scopeableTo: 'project',
+        groupKey: 'finance',
+        description:
+          'Thailand VAT applied to a quoted stay. 7% is the standard rate, but it is a statutory number that has been temporarily reduced before and is not ours to hard-code — and a project may be outside the VAT net entirely.',
+      },
+      {
+        key: 'pricing.rate_plan.non_refundable_discount_pct',
+        valueType: 'percent',
+        defaultValue: 10,
+        scopeableTo: 'unit',
+        groupKey: 'pricing',
+        description:
+          'Discount applied to the nightly rate on the non-refundable rate plan — the price of giving up the cancellation right',
+      },
+      {
+        key: 'pricing.rate_plan.weekly_discount_pct',
+        valueType: 'percent',
+        defaultValue: 15,
+        scopeableTo: 'unit',
+        groupKey: 'pricing',
+        description: 'Discount applied to the nightly rate on the weekly rate plan',
+      },
+      {
+        key: 'pricing.rate_plan.weekly_min_nights',
+        valueType: 'int',
+        defaultValue: 7,
+        scopeableTo: 'unit',
+        groupKey: 'pricing',
+        description: 'Nights a stay must reach before the weekly rate plan applies',
+      },
+      {
         key: 'finance.payout.default_thb_account',
         valueType: 'string',
         defaultValue: 'Bank of Ayudhya (Krungsri) 475-1-22131-3 · SWIFT AYUDTHBK',

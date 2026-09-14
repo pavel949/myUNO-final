@@ -75,11 +75,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     contexts.find((context) => context.key === `${matchingScope.projectId}:${matchingScope.organizationId}`) ||
     contexts[0];
 
-  const data = await fetchMCDashboard(
-    user.identityId,
-    activeContext.projectId,
-    activeContext.organizationId
-  );
+  const data = await fetchMCDashboard(activeContext.projectId, activeContext.organizationId);
 
   const icalConflicts = await getMcIcalConflictAlerts(
     prisma,

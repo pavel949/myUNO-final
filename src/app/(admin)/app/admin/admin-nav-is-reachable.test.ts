@@ -63,15 +63,15 @@ describe('the admin navigation', () => {
    * skipping that question fail rather than pass quietly.
    */
   it('puts every destination inside one of the four named sections', () => {
-    const start = layout.indexOf('const groups = [');
+    const start = layout.indexOf('const sections: NavSection[] = [');
     expect(start, 'the sidebar is a flat list again — it should be grouped').toBeGreaterThan(-1);
     const groupsBlock = layout.slice(start, layout.indexOf('\n  ];', start));
 
     for (const section of [
-      'admin.nav.group.grow',
-      'admin.nav.group.inventory',
-      'admin.nav.group.supply',
-      'admin.nav.group.money',
+      'admin.nav.section.grow',
+      'admin.nav.section.inventory',
+      'admin.nav.section.supply_content',
+      'admin.nav.section.money_record',
     ]) {
       expect(groupsBlock, `section ${section} is missing`).toContain(section);
     }

@@ -23,6 +23,10 @@ const HEX_ALLOWED = new Set([
   // The chart token file itself. SVG `fill`/`stroke` take a value, not a
   // class, so the series and ramp live here as the single source.
   'components/viz/palette.ts',
+  // The same reason, generalised: the token module every non-CSS consumer
+  // reads (SVG attributes, the OG image, canvas). Being the one place the
+  // literals live is the point of it.
+  'lib/design-tokens.ts',
   // The swatch catalogue — its job is to print the hex values on screen.
   'app/design/page.tsx',
   // Consumed outside CSS: the PWA manifest and the OG image renderer.

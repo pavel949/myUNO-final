@@ -133,7 +133,13 @@ export async function createProject(opts: ProjectFactoryOpts = {}) {
       longitude: new Decimal(opts.longitude ?? '100.5018'),
       address: '123 Test Street, Bangkok',
       timezone: 'Asia/Bangkok',
-      status: opts.status || 'draft',
+      /*
+       * Live by default. The canonical pricing service refuses to quote a unit
+       * whose project is not live, so a draft default meant the ordinary
+       * fixture — a project with a bookable villa — could not be booked. Every
+       * test that is actually about project status passes one explicitly.
+       */
+      status: opts.status || 'live',
       ...(opts.areaId ? { areaId: opts.areaId } : {}),
     },
   });
@@ -150,6 +156,48 @@ export interface UnitFactoryOpts {
   instantBook?: boolean;
   categoryKey?: string;
   bedrooms?: number;
+  /**
+   * Attach this unit to an InventoryCategory that already exists. Leave unset
+   * and the factory makes one when the guard below requires it.
+   */
+  inventoryCategoryId?: string;
+}
+
+export interface InventoryCategoryFactoryOpts {
+  projectId: string;
+  categoryKey?: string;
+  name?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  maxGuests?: number;
+  baseNightlyThb?: number;
+  minNights?: number;
+}
+
+/**
+ * An InventoryCategory — the canonical owner of a unit's commercial terms.
+ *
+ * `[projectId, categoryKey]` is unique, so this upserts: several units given
+ * the same key in one project deliberately share one category, which is what
+ * the category-level search and pricing tests are asserting about.
+ */
+export async function createInventoryCategory(opts: InventoryCategoryFactoryOpts) {
+  const categoryKey = opts.categoryKey || `cat-${uuid().slice(0, 8)}`;
+
+  return db.inventoryCategory.upsert({
+    where: { projectId_categoryKey: { projectId: opts.projectId, categoryKey } },
+    update: {},
+    create: {
+      projectId: opts.projectId,
+      categoryKey,
+      name: opts.name || `Category-${categoryKey}`,
+      bedrooms: opts.bedrooms ?? 2,
+      bathrooms: opts.bathrooms ?? 1,
+      maxGuests: opts.maxGuests ?? 4,
+      baseNightlyThb: opts.baseNightlyThb ?? 2000,
+      minNights: opts.minNights ?? 1,
+    },
+  });
 }
 
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
@@ -161,6 +209,45 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
     throw new Error('projectId is required');
   }
 
+  const status = opts.status || 'draft';
+  const bedrooms = opts.bedrooms ?? 2;
+  const maxGuests = opts.maxGuests ?? 4;
+  const baseNightlyThb = opts.baseNightlyThb ?? 2000;
+  const minNights = opts.minNights ?? 1;
+
+  /*
+   * The canonical guard (migration 20260913210000) refuses to insert a live
+   * unit with no InventoryCategory, so one is made here rather than in every
+   * test that wants a bookable villa.
+   *
+   * Two details the same trigger imposes, both easy to get wrong:
+   *
+   *   - It overwrites `category_key` from the category it points at. So the
+   *     category is created carrying the key the caller asked for; inventing
+   *     a different one would silently rewrite what the test asserts.
+   *   - The category, not the unit, now owns the commercial terms that search
+   *     and pricing read. The category therefore mirrors this unit's own
+   *     terms, so a test that prices three villas differently still gets
+   *     three different prices.
+   *
+   * Hence the default key is unique per unit: units only share a category
+   * when a test names the same `categoryKey` on purpose. A non-live unit is
+   * left without one, which the trigger permits and which keeps the previous
+   * behaviour for tests that assert a null `categoryKey`.
+   */
+  let inventoryCategoryId = opts.inventoryCategoryId ?? null;
+  if (!inventoryCategoryId && status === 'live') {
+    const category = await createInventoryCategory({
+      projectId: opts.projectId,
+      categoryKey: opts.categoryKey,
+      bedrooms,
+      maxGuests,
+      baseNightlyThb,
+      minNights,
+    });
+    inventoryCategoryId = category.id;
+  }
+
   return db.unit.create({
     data: {
       projectId: opts.projectId,
@@ -168,14 +255,15 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
       name: opts.name || `Unit-${uuid().slice(0, 8)}`,
       unitType: 'villa',
       categoryKey: opts.categoryKey ?? null,
-      bedrooms: opts.bedrooms ?? 2,
+      inventoryCategoryId,
+      bedrooms,
       bathrooms: 1,
-      maxGuests: opts.maxGuests ?? 4,
+      maxGuests,
       addressSupplement: '101',
-      baseNightlyThb: opts.baseNightlyThb ?? 2000,
-      minNights: opts.minNights ?? 1,
+      baseNightlyThb,
+      minNights,
       instantBook: opts.instantBook ?? true,
-      status: opts.status || 'draft',
+      status,
     },
   });
 }

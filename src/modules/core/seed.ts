@@ -286,6 +286,58 @@ export async function seedDemoData(db: PrismaClient) {
     });
   }
 
+  /*
+   * Every live unit needs an InventoryCategory: the guard in migration
+   * 20260913210000 refuses to insert one without it, and the category — not
+   * the unit — owns the commercial terms that search and pricing read. These
+   * three demo units are each their own kind, so each gets its own category
+   * carrying that unit's terms.
+   */
+  async function demoCategory(spec: {
+    categoryKey: string;
+    name: string;
+    bedrooms: number;
+    bathrooms: number;
+    maxGuests: number;
+    baseNightlyThb: number;
+    minNights: number;
+  }) {
+    const category = await db.inventoryCategory.upsert({
+      where: { projectId_categoryKey: { projectId: project.id, categoryKey: spec.categoryKey } },
+      create: { projectId: project.id, ...spec },
+      update: { baseNightlyThb: spec.baseNightlyThb, minNights: spec.minNights },
+    });
+    return category.id;
+  }
+
+  const villaCategoryId = await demoCategory({
+    categoryKey: 'demo_villa_3br',
+    name: 'Demo 3-Bedroom Villa',
+    bedrooms: 3,
+    bathrooms: 2,
+    maxGuests: 6,
+    baseNightlyThb: 500000,
+    minNights: 1,
+  });
+  const condoCategoryId = await demoCategory({
+    categoryKey: 'demo_condo_2br',
+    name: 'Demo 2-Bedroom Condo',
+    bedrooms: 2,
+    bathrooms: 1,
+    maxGuests: 4,
+    baseNightlyThb: 300000,
+    minNights: 2,
+  });
+  const townhouseCategoryId = await demoCategory({
+    categoryKey: 'demo_townhouse_2br',
+    name: 'Demo 2-Bedroom Townhouse',
+    bedrooms: 2,
+    bathrooms: 2,
+    maxGuests: 4,
+    baseNightlyThb: 350000,
+    minNights: 3,
+  });
+
   // 5. Create demo units across engagement types
   const unitDirect = await db.unit.upsert({
     where: { projectId_name: { projectId: project.id, name: 'Villa A' } },
@@ -299,6 +351,7 @@ export async function seedDemoData(db: PrismaClient) {
       maxGuests: 6,
       sizeSqm: 250,
       addressSupplement: 'Villa Wing A',
+      inventoryCategoryId: villaCategoryId,
       descriptionKey: 'unit.demo.villa',
       amenityKeys: ['wifi', 'pool', 'kitchen'],
       baseNightlyThb: 500000,
@@ -323,6 +376,7 @@ export async function seedDemoData(db: PrismaClient) {
       sizeSqm: 120,
       floor: '1',
       addressSupplement: 'Building B, Unit 101',
+      inventoryCategoryId: condoCategoryId,
       descriptionKey: 'unit.demo.condo',
       amenityKeys: ['wifi', 'gym'],
       baseNightlyThb: 300000,
@@ -346,6 +400,7 @@ export async function seedDemoData(db: PrismaClient) {
       maxGuests: 4,
       sizeSqm: 180,
       addressSupplement: 'Townhouse Row C',
+      inventoryCategoryId: townhouseCategoryId,
       descriptionKey: 'unit.demo.townhouse',
       amenityKeys: ['wifi', 'pool', 'parking'],
       baseNightlyThb: 350000,

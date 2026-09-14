@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
 
 interface RegisterFormLabels {
   firstName: string;
@@ -17,6 +18,8 @@ interface RegisterFormLabels {
   haveAccount: string;
   loginLink: string;
   claimAccountLink?: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 function calculatePasswordStrength(pass: string): number {
@@ -104,15 +107,16 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
         onChange={(e) => setEmail(e.target.value)}
       />
       <div>
-        <Input
+        <PasswordInput
           label={labels.password}
-          type="password"
           autoComplete="new-password"
           required
           helpText={labels.passwordHelp}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={error || undefined}
+          showLabel={labels.showPassword}
+          hideLabel={labels.hidePassword}
         />
         {/* 4-segment strength meter (Phase 3 requirement) */}
         {password.length > 0 && (

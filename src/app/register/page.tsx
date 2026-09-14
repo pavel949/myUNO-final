@@ -24,6 +24,8 @@ export default async function RegisterPage() {
     'auth.register.error_generic': 'Registration failed. Please try again.',
     'auth.register.have_account': 'Already have an account?',
     'auth.register.login_link': 'Log in',
+    'auth.password.show': 'Show password',
+    'auth.password.hide': 'Hide password',
   });
 
   return (
@@ -46,6 +48,8 @@ export default async function RegisterPage() {
             errorGeneric: labels['auth.register.error_generic'],
             haveAccount: labels['auth.register.have_account'],
             loginLink: labels['auth.register.login_link'],
+            showPassword: labels['auth.password.show'],
+            hidePassword: labels['auth.password.hide'],
           }}
         />
       </div>

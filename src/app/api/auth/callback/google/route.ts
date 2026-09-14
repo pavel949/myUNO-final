@@ -15,6 +15,13 @@ interface GoogleTokenResponse {
 interface GoogleUserInfo {
   id: string;
   email: string;
+  /**
+   * Whether Google has verified this address belongs to the account holder.
+   * The v2/userinfo endpoint returns it, and it is NOT always true — a
+   * Workspace administrator can set a primary address on their domain that
+   * Google never challenged. Treated as the gate below.
+   */
+  verified_email?: boolean;
   name: string;
   given_name: string;
   family_name: string;
@@ -112,6 +119,18 @@ export async function GET(request: NextRequest) {
       return loginRedirect('Google account has no email. Please use a different account.');
     }
 
+    // The verified address is the whole linking mechanism: below, an existing
+    // identity is matched on this email alone and the session inherits its
+    // bookings and roles. An unverified address would therefore let anyone who
+    // can get Google to emit a given address sign in as that person, so it is
+    // refused outright — for a new identity as well as a matched one.
+    if (googleUser.verified_email !== true) {
+      console.error('Google account email is not verified:', googleUser.email);
+      return loginRedirect(
+        'This Google account has an unverified email address. Verify it with Google, or sign in with your email and password.'
+      );
+    }
+
     // Step 3: Find or create identity
     let identity = await prisma.identity.findUnique({
       where: { email: googleUser.email },
@@ -127,7 +146,8 @@ export async function GET(request: NextRequest) {
             googleUser.family_name ||
             googleUser.name?.split(' ').slice(1).join(' ') ||
             '',
-          emailVerifiedAt: new Date(), // Google verifies emails before providing them
+          // Safe only because verified_email was checked above.
+          emailVerifiedAt: new Date(),
           status: 'active',
           preferredLocale: 'en', // Could derive from Google user locale if available
         },

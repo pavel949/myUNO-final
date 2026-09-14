@@ -245,7 +245,7 @@ export default function CreateUnitForm({
 
         {categories.length === 0 && (
           <>
-            <div className="md:col-span-3 rounded-sm border border-state-warning/40 bg-state-warning/10 p-12 text-small text-text-secondary">
+            <div className="md:col-span-3 rounded-sm border border-state-warning bg-state-warning-soft p-12 text-small text-text-secondary">
               {labels['admin.units.no_categories']}
             </div>
             <label className="text-small text-text-secondary">

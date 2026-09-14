@@ -8,6 +8,20 @@ on:
   # While GitHub's default was a `claude/**` branch, every PR skipped CI.
   pull_request:
 
+# One run per branch or PR at a time, and a superseded one is cancelled.
+#
+# Without this, pushing three times in a minute paid for three full runs and
+# only the last one's answer was ever read. That waste is not free: the
+# account's included Actions allowance is shared across every repository, and
+# once it is spent GitHub stops assigning runners at all — jobs are refused in
+# a few seconds with no logs, which is how this repository lost CI entirely.
+#
+# `main` is excluded from cancellation: every commit on the trunk should be
+# verified on its own, and cancelling those would leave gaps in the record.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   ci:
     runs-on: ubuntu-latest

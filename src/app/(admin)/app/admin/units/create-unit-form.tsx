@@ -1,32 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { bahtToSatang } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
-
-/**
- * Creating a unit.
- *
- * `POST /api/admin/units` existed but no screen called it, so every unit had to
- * be created by hand-writing a request — which is not an onboarding flow, it is
- * a workaround the founder cannot use.
- *
- * The form does not offer a status field. `createUnit` refuses to create a unit
- * live (permitted use is a legal gate), so a status picker here could only
- * offer draft — a control with one option is noise, and one with two would
- * invite the error the service exists to refuse.
- */
 
 const UNIT_TYPES = ['villa', 'condo', 'townhouse'];
 
 type Labels = Record<string, string>;
+type CategoryOption = {
+  id: string;
+  projectId: string;
+  projectName: string;
+  categoryKey: string;
+  name: string;
+};
 
 export default function CreateUnitForm({
-  projects,
+  categories,
   labels,
 }: {
-  projects: Array<{ id: string; name: string }>;
+  categories: CategoryOption[];
   labels: Labels;
 }) {
   const router = useRouter();
@@ -34,8 +27,12 @@ export default function CreateUnitForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (projects.length === 0) {
-    return <p className="text-body text-text-secondary mb-16">{labels['admin.units.no_projects']}</p>;
+  if (categories.length === 0) {
+    return (
+      <p className="text-body text-text-secondary mb-16">
+        {labels['admin.units.no_categories']}
+      </p>
+    );
   }
 
   if (!open) {
@@ -52,6 +49,14 @@ export default function CreateUnitForm({
       onSubmit={async (event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget as HTMLFormElement);
+        const inventoryCategoryId = String(form.get('inventoryCategoryId') || '');
+        const category = categories.find((item) => item.id === inventoryCategoryId);
+
+        if (!category) {
+          setError(labels['admin.units.category_required']);
+          return;
+        }
+
         setBusy(true);
         setError(null);
         try {
@@ -59,15 +64,14 @@ export default function CreateUnitForm({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              projectId: form.get('projectId'),
+              projectId: category.projectId,
+              categoryKey: category.categoryKey,
               name: String(form.get('name') || '').trim(),
               unitType: form.get('unitType'),
               bedrooms: Number(form.get('bedrooms')),
               bathrooms: Number(form.get('bathrooms')),
               maxGuests: Number(form.get('maxGuests')),
               addressSupplement: String(form.get('addressSupplement') || '').trim(),
-              baseNightlyThb: bahtToSatang(Number(form.get('baseNightlyThb'))),
-              minNights: Number(form.get('minNights')) || 1,
             }),
           });
           if (!response.ok) {
@@ -90,19 +94,22 @@ export default function CreateUnitForm({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.project']}
+        <label className="text-small text-text-secondary md:col-span-2">
+          {labels['admin.units.category']}
           <select
-            name="projectId"
+            name="inventoryCategoryId"
             required
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
           >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.projectName} — {category.name}
               </option>
             ))}
           </select>
+          <span className="mt-4 block text-small text-text-stone">
+            {labels['admin.units.category_hint']}
+          </span>
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.name']}
@@ -131,14 +138,6 @@ export default function CreateUnitForm({
         <label className="text-small text-text-secondary md:col-span-2">
           {labels['admin.units.address_supplement']}
           <input name="addressSupplement" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
-        </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.base_nightly']}
-          <input name="baseNightlyThb" type="number" min="0" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
-        </label>
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.min_nights']}
-          <input name="minNights" type="number" min="1" defaultValue={1} className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
       </div>
 

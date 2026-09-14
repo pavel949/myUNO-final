@@ -17,25 +17,47 @@ export default async function AdminUnitsPage() {
   });
 
   const projects = await prisma.project.findMany({
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      inventoryCategories: {
+        where: { status: 'live' },
+        select: {
+          id: true,
+          categoryKey: true,
+          name: true,
+        },
+        orderBy: { name: 'asc' },
+      },
+    },
     orderBy: { name: 'asc' },
   });
+
+  const categories = projects.flatMap((project) =>
+    project.inventoryCategories.map((category) => ({
+      id: category.id,
+      projectId: project.id,
+      projectName: project.name,
+      categoryKey: category.categoryKey,
+      name: category.name,
+    }))
+  );
 
   const labels = await getLabels({
     'admin.units.title': 'Projects & Units',
     'admin.units.create': 'Add a unit',
     'admin.units.cancel': 'Cancel',
     'admin.units.saving': 'Saving…',
-    'admin.units.project': 'Project',
+    'admin.units.category': 'Project / inventory category',
+    'admin.units.category_hint': 'Base rate, minimum stay and cancellation policy are inherited from the canonical inventory category.',
+    'admin.units.category_required': 'Select an inventory category.',
+    'admin.units.no_categories': 'Create a live inventory category before adding a unit.',
     'admin.units.name': 'Name',
     'admin.units.type': 'Type',
     'admin.units.bedrooms': 'Bedrooms',
     'admin.units.bathrooms': 'Bathrooms',
     'admin.units.max_guests': 'Sleeps',
     'admin.units.address_supplement': 'Address detail (unit number, building)',
-    'admin.units.base_nightly': 'Base ฿/night',
-    'admin.units.min_nights': 'Minimum nights',
-    'admin.units.no_projects': 'Create a project before adding units.',
     'admin.units.status': 'Status',
     'admin.units.owner': 'Owner',
     'admin.units.price': 'Base ฿/night',
@@ -59,7 +81,7 @@ export default async function AdminUnitsPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.units.title']}
       </h1>
-      <CreateUnitForm projects={projects} labels={labels} />
+      <CreateUnitForm categories={categories} labels={labels} />
       <UnitsAdminClient
         units={units.map((unit) => ({
           id: unit.id,

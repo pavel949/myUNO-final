@@ -16,38 +16,10 @@ export default async function AdminUnitsPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  const projectsRaw = await prisma.project.findMany({
-    select: {
-      id: true,
-      name: true,
-      inventoryCategories: {
-        where: { status: 'live' },
-        select: {
-          id: true,
-          categoryKey: true,
-          name: true,
-          baseNightlyThb: true,
-          minNights: true,
-        },
-        orderBy: { name: 'asc' },
-      },
-    },
+  const projects = await prisma.project.findMany({
+    select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
-
-  // The create form speaks baht at the UI boundary. InventoryCategory keeps
-  // commercial money in satang like the rest of the domain and remains SSOT.
-  const projects = projectsRaw.map((project) => ({
-    id: project.id,
-    name: project.name,
-    categories: project.inventoryCategories.map((category) => ({
-      id: category.id,
-      categoryKey: category.categoryKey,
-      name: category.name,
-      baseNightlyBaht: Math.round(category.baseNightlyThb / 100),
-      minNights: category.minNights,
-    })),
-  }));
 
   const labels = await getLabels({
     'admin.units.title': 'Projects & Units',
@@ -55,9 +27,6 @@ export default async function AdminUnitsPage() {
     'admin.units.cancel': 'Cancel',
     'admin.units.saving': 'Saving…',
     'admin.units.project': 'Project',
-    'admin.units.category': 'Inventory category',
-    'admin.units.category_hint': 'Pricing and minimum stay are inherited from this canonical category.',
-    'admin.units.no_categories': 'No canonical categories are configured for this project. You can save a draft, but it cannot go live until a category is assigned.',
     'admin.units.name': 'Name',
     'admin.units.type': 'Type',
     'admin.units.bedrooms': 'Bedrooms',
@@ -98,8 +67,6 @@ export default async function AdminUnitsPage() {
           projectName: unit.project?.name || '—',
           status: unit.status,
           assetStatus: unit.assetStatus,
-          // InventoryCategory owns the commercial base. Unit.baseNightlyThb is
-          // retained only for older/unmigrated draft units.
           baseNightlyThb: Math.round(
             (unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb) / 100
           ),

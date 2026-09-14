@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { bahtToSatang } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -8,57 +8,31 @@ import { Button } from '@/components/Button';
 /**
  * Creating a unit.
  *
- * A physical unit belongs to a sellable InventoryCategory. When a project has
- * canonical categories, the operator selects one and commercial defaults are
- * copied from that category only for the legacy Unit compatibility columns.
- * Draft creation is still allowed for a project whose categories have not yet
- * been configured, but the go-live guard will refuse publication until one is
- * assigned.
+ * `POST /api/admin/units` existed but no screen called it, so every unit had to
+ * be created by hand-writing a request — which is not an onboarding flow, it is
+ * a workaround the founder cannot use.
+ *
+ * The form does not offer a status field. `createUnit` refuses to create a unit
+ * live (permitted use is a legal gate), so a status picker here could only
+ * offer draft — a control with one option is noise, and one with two would
+ * invite the error the service exists to refuse.
  */
 
 const UNIT_TYPES = ['villa', 'condo', 'townhouse'];
 
 type Labels = Record<string, string>;
-type CategoryOption = {
-  id: string;
-  categoryKey: string;
-  name: string;
-  baseNightlyBaht: number;
-  minNights: number;
-};
-type ProjectOption = {
-  id: string;
-  name: string;
-  categories: CategoryOption[];
-};
 
 export default function CreateUnitForm({
   projects,
   labels,
 }: {
-  projects: ProjectOption[];
+  projects: Array<{ id: string; name: string }>;
   labels: Labels;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
-  const selectedProject = useMemo(
-    () => projects.find((project) => project.id === projectId) ?? projects[0],
-    [projectId, projects]
-  );
-  const [categoryKey, setCategoryKey] = useState(
-    projects[0]?.categories[0]?.categoryKey ?? ''
-  );
-
-  const categories = selectedProject?.categories ?? [];
-  const effectiveCategoryKey = categories.some((category) => category.categoryKey === categoryKey)
-    ? categoryKey
-    : categories[0]?.categoryKey ?? '';
-  const selectedCategory = categories.find(
-    (category) => category.categoryKey === effectiveCategoryKey
-  );
 
   if (projects.length === 0) {
     return <p className="text-body text-text-secondary mb-16">{labels['admin.units.no_projects']}</p>;
@@ -78,13 +52,6 @@ export default function CreateUnitForm({
       onSubmit={async (event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget as HTMLFormElement);
-        const formProjectId = String(form.get('projectId') || '');
-        const project = projects.find((item) => item.id === formProjectId);
-        const formCategoryKey = String(form.get('categoryKey') || '');
-        const category = project?.categories.find(
-          (item) => item.categoryKey === formCategoryKey
-        );
-
         setBusy(true);
         setError(null);
         try {
@@ -92,23 +59,15 @@ export default function CreateUnitForm({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              projectId: formProjectId,
-              ...(category && { categoryKey: category.categoryKey }),
+              projectId: form.get('projectId'),
               name: String(form.get('name') || '').trim(),
               unitType: form.get('unitType'),
               bedrooms: Number(form.get('bedrooms')),
               bathrooms: Number(form.get('bathrooms')),
               maxGuests: Number(form.get('maxGuests')),
               addressSupplement: String(form.get('addressSupplement') || '').trim(),
-              // Unit commercial columns remain compatibility storage while
-              // legacy fixtures/consumers migrate. For a canonical unit they
-              // mirror, rather than independently define, the category terms.
-              baseNightlyThb: category
-                ? bahtToSatang(category.baseNightlyBaht)
-                : bahtToSatang(Number(form.get('baseNightlyThb'))),
-              minNights: category
-                ? category.minNights
-                : Number(form.get('minNights')) || 1,
+              baseNightlyThb: bahtToSatang(Number(form.get('baseNightlyThb'))),
+              minNights: Number(form.get('minNights')) || 1,
             }),
           });
           if (!response.ok) {
@@ -136,13 +95,6 @@ export default function CreateUnitForm({
           <select
             name="projectId"
             required
-            value={projectId}
-            onChange={(event) => {
-              const nextProjectId = event.target.value;
-              setProjectId(nextProjectId);
-              const nextProject = projects.find((project) => project.id === nextProjectId);
-              setCategoryKey(nextProject?.categories[0]?.categoryKey ?? '');
-            }}
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
           >
             {projects.map((project) => (
@@ -152,124 +104,42 @@ export default function CreateUnitForm({
             ))}
           </select>
         </label>
-
-        <label className="text-small text-text-secondary">
-          {labels['admin.units.category']}
-          <select
-            name="categoryKey"
-            required={categories.length > 0}
-            disabled={categories.length === 0}
-            value={effectiveCategoryKey}
-            onChange={(event) => setCategoryKey(event.target.value)}
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink disabled:opacity-60"
-          >
-            {categories.length === 0 ? (
-              <option value="">—</option>
-            ) : (
-              categories.map((category) => (
-                <option key={category.id} value={category.categoryKey}>
-                  {category.name}
-                </option>
-              ))
-            )}
-          </select>
-          {selectedCategory && (
-            <span className="mt-4 block text-small text-text-stone">
-              {labels['admin.units.category_hint']} ฿{selectedCategory.baseNightlyBaht.toLocaleString()} · {selectedCategory.minNights} nights
-            </span>
-          )}
-        </label>
-
         <label className="text-small text-text-secondary">
           {labels['admin.units.name']}
-          <input
-            name="name"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="name" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.type']}
-          <select
-            name="unitType"
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          >
+          <select name="unitType" className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink">
             {UNIT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
+              <option key={type} value={type}>{type}</option>
             ))}
           </select>
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.bedrooms']}
-          <input
-            name="bedrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="bedrooms" type="number" min="0" defaultValue={1} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.bathrooms']}
-          <input
-            name="bathrooms"
-            type="number"
-            min="0"
-            defaultValue={1}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="bathrooms" type="number" min="0" defaultValue={1} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.max_guests']}
-          <input
-            name="maxGuests"
-            type="number"
-            min="1"
-            defaultValue={2}
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="maxGuests" type="number" min="1" defaultValue={2} required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary md:col-span-2">
           {labels['admin.units.address_supplement']}
-          <input
-            name="addressSupplement"
-            required
-            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-          />
+          <input name="addressSupplement" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
-
-        {categories.length === 0 && (
-          <>
-            <div className="md:col-span-3 rounded-sm border border-state-warning/40 bg-state-warning/10 p-12 text-small text-text-secondary">
-              {labels['admin.units.no_categories']}
-            </div>
-            <label className="text-small text-text-secondary">
-              {labels['admin.units.base_nightly']}
-              <input
-                name="baseNightlyThb"
-                type="number"
-                min="0"
-                required
-                className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-              />
-            </label>
-            <label className="text-small text-text-secondary">
-              {labels['admin.units.min_nights']}
-              <input
-                name="minNights"
-                type="number"
-                min="1"
-                defaultValue={1}
-                className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
-              />
-            </label>
-          </>
-        )}
+        <label className="text-small text-text-secondary">
+          {labels['admin.units.base_nightly']}
+          <input name="baseNightlyThb" type="number" min="0" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
+        </label>
+        <label className="text-small text-text-secondary">
+          {labels['admin.units.min_nights']}
+          <input name="minNights" type="number" min="1" defaultValue={1} className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
+        </label>
       </div>
 
       <div className="flex gap-12 mt-24">

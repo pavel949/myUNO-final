@@ -45,10 +45,11 @@ A dated `PricingRule` intentionally outranks the normal category/RatePlan path f
 
 ### 2.3 Governance
 
-- Admin/revenue authority can change canonical category base pricing.
+- Admin/revenue authority can create canonical inventory categories, assign villas to them, and change category base pricing.
 - Project operations can manage permitted unit/date blocks and dated pricing overrides under the existing permission model.
-- Master-price writes are audited.
-- Category price changes also update legacy unit mirror fields to prevent old readers from drifting from the canonical price.
+- Master inventory and price writes are audited.
+- Category price changes and unit-category assignments also update legacy unit mirror fields to prevent old readers from drifting from canonical truth.
+- Category keys are stable integration identifiers; display names may evolve later, but keys should not be casually renamed.
 
 ## 3. Calendar UX — Phase 1
 
@@ -105,9 +106,13 @@ A dated `PricingRule` intentionally outranks the normal category/RatePlan path f
 - same project/context scope as the operations calendar;
 - summary counts: categories, active units, uncategorized units, active RatePlans;
 - canonical category cards;
-- category physical facts and unit counts;
+- category creation for admins, with project catalog registration in the same transaction;
+- stable category keys plus category physical facts;
+- category unit counts;
 - base rate and minimum stay;
 - admin editing of canonical base rate and minimum stay;
+- direct villa-to-category assignment/reassignment for admins;
+- category assignment updates inherited price/minimum-stay mirrors;
 - RatePlan visibility with project/category/unit scope;
 - physical inventory table;
 - per-unit inherited category/base/minimum-stay visibility;
@@ -118,8 +123,8 @@ A dated `PricingRule` intentionally outranks the normal category/RatePlan path f
 
 ### Phase 2 inventory additions
 
-1. Create/edit/deactivate InventoryCategory from this workspace.
-2. Assign/reassign units to categories in bulk.
+1. Edit/deactivate InventoryCategory beyond current base-rate/minimum-stay controls.
+2. Bulk assign/reassign units to categories.
 3. Bulk physical-inventory import with validation preview.
 4. Category photo/amenity/occupancy inheritance.
 5. Dedicated RatePlan editor:
@@ -157,6 +162,7 @@ This should be driven by an `OperationalTask`/equivalent work model so checkout 
 
 - Resort-wide calendar.
 - Connected Inventory & Pricing workspace.
+- Canonical category creation and villa assignment.
 - Canonical category price edit with audit trail.
 - Preserve existing unit/date exception editor.
 
@@ -194,5 +200,12 @@ A hotel manager opening LayantaraOS must be able to answer without navigating mu
 - What category and base commercial terms does each villa inherit?
 - Which villas are uncategorized or commercially misconfigured?
 - Where do I change permanent pricing versus a one-off exception?
+
+An administrator must also be able to:
+
+- create a canonical inventory category;
+- assign or reassign a villa to a category;
+- set category base rate and minimum stay;
+- see active RatePlans and dated unit-level exceptions without confusing the two.
 
 The system must make permanent setup and operational exceptions visually distinct and must preserve one pricing authority for every scope/date.

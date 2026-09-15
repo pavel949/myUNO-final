@@ -190,7 +190,10 @@ export async function createInventoryCategory(opts: InventoryCategoryFactoryOpts
     create: {
       projectId: opts.projectId,
       categoryKey,
-      name: opts.name || `Category-${categoryKey}`,
+      // The key itself, not an invented label: a category with no seeded
+      // translation is meant to fall back to its key on screen, and a
+      // decorated name here would hide that.
+      name: opts.name || categoryKey,
       bedrooms: opts.bedrooms ?? 2,
       bathrooms: opts.bathrooms ?? 1,
       maxGuests: opts.maxGuests ?? 4,
@@ -231,12 +234,17 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
    *     three different prices.
    *
    * Hence the default key is unique per unit: units only share a category
-   * when a test names the same `categoryKey` on purpose. A non-live unit is
-   * left without one, which the trigger permits and which keeps the previous
-   * behaviour for tests that assert a null `categoryKey`.
+   * when a test names the same `categoryKey` on purpose.
+   *
+   * Every unit gets one, not only a live one. A draft unit legitimately has
+   * no category as far as the trigger is concerned, but the moment a test
+   * moves it to live — which is what the mobilization, compliance and
+   * onboarding flows exist to do — `updateUnit` refuses it for want of a
+   * category that nothing ever created. Attaching it up front makes the
+   * fixture survive the transition it was built to exercise.
    */
   let inventoryCategoryId = opts.inventoryCategoryId ?? null;
-  if (!inventoryCategoryId && status === 'live') {
+  if (!inventoryCategoryId) {
     const category = await createInventoryCategory({
       projectId: opts.projectId,
       categoryKey: opts.categoryKey,

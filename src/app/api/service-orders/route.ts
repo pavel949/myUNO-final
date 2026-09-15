@@ -7,6 +7,9 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
 
+/** Upper bound on a single order's quantity, so one request cannot book out a provider's day. */
+const MAX_ORDER_QUANTITY = 20;
+
 /** GET /api/service-orders — the caller's orders, newest first. */
 export async function GET() {
   try {
@@ -71,9 +74,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const qty = Math.max(1, Math.min(20, Number(quantity) || 1));
+    // Reject a quantity out of range rather than clamping it. Silently
+    // turning an order for 25 into an order for 20 charges for 20 and books
+    // for 20 while the person believes they asked for 25.
+    const qty = Number(quantity);
+    if (!Number.isInteger(qty) || qty < 1 || qty > MAX_ORDER_QUANTITY) {
+      throw createPublicError(
+        `invalid request: quantity must be a whole number between 1 and ${MAX_ORDER_QUANTITY}`,
+        400
+      );
+    }
+
+    // Duration scales with quantity only where quantity *is* time or repeats.
+    // For a per-person price it is the party size: four guests at a dinner do
+    // not make the chef stay four times as long, and blocking four hours of a
+    // provider's calendar for a one-hour job is a real double-booking.
     const durationMs = (service.durationMin || 60) * 60 * 1000;
-    const end = new Date(start.getTime() + durationMs * qty);
+    const durationScalesWithQuantity = service.priceModel !== 'per_person';
+    const end = new Date(
+      start.getTime() + durationMs * (durationScalesWithQuantity ? qty : 1)
+    );
 
     // Project/unit context must be deterministic — never an arbitrary row.
     // Priority: booking (validated as the caller's) → explicit projectId in
@@ -134,6 +154,24 @@ export async function POST(req: NextRequest) {
       throw createPublicError('not found', 404);
     }
 
+    /*
+     * The role this order is placed in, not whichever role happens to sit
+     * first in the list. An identity can be an owner, a resident and a guest
+     * at once; `roles[0]` recorded one of those arbitrarily, and the order
+     * carries that role into statements, notifications and the permission
+     * matrix.
+     *
+     * A validated booking means the person is that stay's guest — checked
+     * above against `guestIdentityId`. Otherwise the most specific scope wins:
+     * the unit, then the project.
+     */
+    const scopedRole = contextIsValidated
+      ? undefined
+      : (unitId ? user.roles.find((role) => role.unitId === unitId) : undefined) ??
+        user.roles.find((role) => role.projectId === projectId && !role.unitId) ??
+        user.roles.find((role) => role.projectId === projectId);
+    const ordererRole = (contextIsValidated ? 'guest' : scopedRole?.role ?? 'guest') as RoleType;
+
     const totalThb = service.basePriceThb * qty;
     const takeRatePct =
       ((await getConfig(prisma, 'services.take_rate_pct', { projectId })) as number) ?? 15;
@@ -144,7 +182,7 @@ export async function POST(req: NextRequest) {
       unitId,
       bookingId,
       ordererIdentityId: user.identityId,
-      ordererRole: (user.roles[0]?.role || 'guest') as RoleType,
+      ordererRole: ordererRole,
       scheduledStart: start,
       scheduledEnd: end,
       quantity: qty,

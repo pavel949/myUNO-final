@@ -1,3 +1,4 @@
+import { formatBaht } from '@/lib/money';
 /**
  * Format a service's base price for display on the service detail page
  * (F-SVC-1). `basePriceThb` is satang (THB × 100) straight from the DB via
@@ -9,6 +10,6 @@ export function formatServicePriceLabel(
   priceModel: string,
   basePriceThb: number
 ): string {
-  const baht = (basePriceThb / 100).toLocaleString();
+  const baht = formatBaht(basePriceThb).replace('฿', '');
   return priceModel === 'fixed' ? `฿${baht}` : `from ฿${baht}`;
 }

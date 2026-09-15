@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
 import { ServiceCategoryIcon } from '@/components/ServiceCategoryIcon';
+import { formatBaht } from '@/lib/money';
 
 interface MarketService {
   id: string;
@@ -55,10 +56,12 @@ function fill(template: string, params: Record<string, string | number>): string
 }
 
 // `basePriceThb` / `totalThb` arrive from /api/services and /api/service-orders
-// as satang (THB × 100) straight from the DB — convert to baht only here, at
-// final render (money rule, CLAUDE.md "Money rules").
+// as satang (THB × 100) straight from the DB. The conversion itself belongs to
+// `@/lib/money` and nowhere else: reimplementing `/100` per screen is what
+// produced Q47 and its two write-path mirrors. This only drops the ฿ sign,
+// because the call sites render it themselves.
 export function baht(satang: number): string {
-  return (satang / 100).toLocaleString();
+  return formatBaht(satang).replace('฿', '');
 }
 
 export default function ServicesClient({

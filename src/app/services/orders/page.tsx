@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { formatBaht } from '@/lib/money';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,8 +58,8 @@ export default async function ServiceOrdersPage() {
     'orders.status.cancelled': 'Cancelled',
   });
 
-  const baht = (satang: number) =>
-    `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  // One conversion, from @/lib/money — never a local `/100` (Q47).
+  const baht = (satang: number) => formatBaht(satang);
 
   const live = orders.filter((o) => LIVE_STATUSES.has(o.status));
   const past = orders.filter((o) => !LIVE_STATUSES.has(o.status));

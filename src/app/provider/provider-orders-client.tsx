@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { formatBaht } from '@/lib/money';
 
 interface ProviderOrder {
   id: string;
@@ -200,7 +201,7 @@ export default function ProviderOrdersClient({
                   </p>
                   <p className="text-small text-text-secondary">
                     {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
-                    {(order.totalThb / 100).toLocaleString()}
+                    {formatBaht(order.totalThb).replace('฿', '')}
                   </p>
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">

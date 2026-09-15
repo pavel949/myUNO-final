@@ -48,6 +48,18 @@ export async function PATCH(
       },
     });
 
+    // The canonical booking calculator resolves BAR minNights before the
+    // category fallback, so the category's master BAR must move with it.
+    await tx.ratePlan.updateMany({
+      where: {
+        categoryId: category.id,
+        code: 'BAR',
+        isMaster: true,
+        status: 'active',
+      },
+      data: { minNights },
+    });
+
     // Unit commercial columns are compatibility mirrors. Keep them aligned so
     // legacy readers cannot diverge from the canonical InventoryCategory.
     await tx.unit.updateMany({

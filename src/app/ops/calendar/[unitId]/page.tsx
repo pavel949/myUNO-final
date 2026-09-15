@@ -38,9 +38,11 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
 
   const [labels, locale, integrationAccounts, conflictAlerts] = await Promise.all([
     getLabels({
-      'staff.ops.calendar.back': '← Ops board',
-      'staff.ops.calendar.title': 'Unit calendar',
-      'staff.ops.calendar.subtitle': 'Block dates or set one-off rates for this unit.',
+      'staff.ops.calendar.back': '← Resort calendar',
+      'staff.ops.calendar.inventory': 'Inventory & pricing',
+      'staff.ops.calendar.title': 'Villa calendar',
+      'staff.ops.calendar.subtitle':
+        'Operational exceptions only: block dates or set a one-off rate. Master category pricing is managed in Inventory & pricing.',
       ...UNIT_CALENDAR_LABEL_KEYS,
     }),
     getRequestLocale(),
@@ -51,12 +53,20 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
   return (
     <main className="min-h-screen bg-surface-ivory">
       <section className="max-w-4xl mx-auto px-24 py-32">
-        <Link
-          href={opsHref('/ops/calendar', unit.projectId)}
-          className="text-small font-semibold text-brand-andaman hover:underline"
-        >
-          {labels['staff.ops.calendar.back']}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-12">
+          <Link
+            href={opsHref('/ops/calendar', unit.projectId)}
+            className="text-small font-semibold text-brand-andaman hover:underline"
+          >
+            {labels['staff.ops.calendar.back']}
+          </Link>
+          <Link
+            href={opsHref('/ops/inventory', unit.projectId)}
+            className="text-small font-semibold text-brand-andaman hover:underline"
+          >
+            {labels['staff.ops.calendar.inventory']} →
+          </Link>
+        </div>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mt-12">
           {unit.name} · {labels['staff.ops.calendar.title']}
         </h1>

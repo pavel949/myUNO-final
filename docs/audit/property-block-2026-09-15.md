@@ -6,6 +6,31 @@
 
 ---
 
+## 0a. Status — what this PR fixed
+
+This document began as a read-only audit. P0 has since been implemented on the same branch. Read the findings below as the diagnosis; this section is the current state.
+
+| Item | State |
+|---|---|
+| **P0-0 · Restore CI** | **Not fixable from a branch.** GitHub Actions billing — <https://github.com/settings/billing>. See §4.16. |
+| **P0-1 · Inventory CRUD (F-1)** | **Fixed.** `src/modules/projects/inventory.service.ts` + admin API + a form on the project page. A unit created today can reach live. |
+| **P0-2 · iCal frequency (F-11)** | **No code change needed** — the finding was wrong and is corrected in §4.12. The 5-minute scheduler exists; it is dead for the same billing reason as P0-0. |
+| **P0-3 · Retire the second pricing engine (F-6)** | **Fixed.** `GET /api/units/[unitId]` now quotes through `computePriceBreakdown` and answers availability from bookings as well as blocks. |
+| **F-5 (listing editor)** | Partly: categories are editable; unit listing fields are still not. P1. |
+
+**Measured effect on the test suite**, run locally against a Postgres built from the real migration chain:
+
+| | Failing files | Failing tests |
+|---|---|---|
+| `main` at `f0e416b` | **48** | **273** |
+| This branch | **12** | **43** |
+
+The 273 failures on `main` are the sharpest evidence for F-23 in this document: they are not new, nothing introduced them today, and nobody knew, because CI has not run since 7 September. Among them was the repository's own `units.integration.test.ts > allows going live after permitted use is confirmed` — the test that asserts the exact capability F-1 says is broken. It has been failing since the canonical bootstrap migration landed.
+
+The single largest repair was not application code but `src/test/util.ts`: its `createUnit` factory wrote units straight through Prisma, so every `createUnit({ status: 'live' })` in the suite hit the `unit_inventory_category_coherence` trigger. Thirty-six test files came back green once the factory created the category a live unit requires.
+
+---
+
 ## 0. Резюме для основателя
 
 Блок недвижимости — самая амбициозная и одновременно самая незаконченная часть системы. Три вывода:
@@ -16,7 +41,11 @@
 
 **3. Календаря нет.** Ни в одном виде: ни в карточке объекта для гостя, ни в админке, ни у операций, ни у УК. Везде — два поля `<input type="date">` и список текстовых строк. Дизайн-система (doc 06) описывает компонент `Calendar` с сеткой месяца и занятыми датами; план сборки (T-015) требует его в DoD. Он не построен. Для OTA это не косметика — это основной инструмент продаж и основной инструмент ревенью-менеджмента.
 
+**Побочный эффект того же биллинга, который я недооценил:** настоящий планировщик задач — это `.github/workflows/scheduler.yml`, он должен дёргать фоновые задачи **каждые 5 минут** (Vercel Hobby чаще раза в сутки не умеет, поэтому записи в `vercel.json` — только подстраховка). Он тоже на GitHub Actions, то есть тоже мёртв с 7 сентября. Значит больше недели на живой системе: календари OTA устаревали на сутки, просроченные брони держали юниты сутки, а **эскалация TM30 — суточный юридический SLA — работала с суточным тиком.** Чинится тем же действием с биллингом, кодом — нет.
+
 **И над всем этим:** CI не проходил **ни разу за последние 100 запусков** — с 10 сентября, на всех ветках, включая тривиальные merge-коммиты. 96 из 100 падают быстрее чем за 10 секунд, то есть до выполнения первого шага — раннер джобе просто не выдаётся. Это отказ на уровне аккаунта, а не ошибка в коде, и чинится он не коммитом: нужно добавить способ оплаты или поднять лимит расходов GitHub Actions на <https://github.com/settings/billing>. Значит правило «каждая задача заканчивается зелёными тестами, сборкой и линтом» из CLAUDE.md пять дней и около сотни мержей не проверялось ничем. Это надо чинить раньше всего остального.
+
+**P0 из этого аудита уже исправлен в этой же ветке** (см. §0a): категории инвентаря теперь создаются и редактируются из админки, так что юнит снова может выйти в продажу; второй ценовой движок убран. Побочный результат — тестов на `main` падало **273**, на этой ветке осталось 43, и ни одного нового я не сломал.
 
 Что сделано хорошо и трогать не надо: **движок бронирования**. Advisory lock на юнит + exclusion constraint в Postgres — двойное бронирование структурно невозможно. Отмены, изменения дат, возвраты, холды — всё продумано и покрыто тестами. Безопасность (RLS на всех таблицах с тестом-сторожем, подписанные iCal-токены, server-side проверки прав) — на уровне.
 
@@ -50,17 +79,17 @@ Every serious defect in this audit is one shape: *a table exists, a migration cr
 
 | # | Finding | Severity | Evidence |
 |---|---|---|---|
-| F-1 | No unit created today can ever go live — `InventoryCategory` has no write path | **Blocker** | §4.2 |
+| F-1 | No unit created today can ever go live — `InventoryCategory` has no write path | **Blocker** — *fixed, §0a* | §4.2 |
 | F-2 | 16 `Unit` + 25 `Project` columns unreachable from any service, API or screen | **Blocker** | §4.3 |
 | F-3 | No calendar anywhere — guest, admin, ops, MC | **Blocker** | §4.7 |
 | F-4 | 5 models fully dead: `SleepingSpace`, `Bed`, `CommercialOffering`, `ChannelMapping`, `RegulatoryCredential` | **Critical** | §4.4 |
 | F-5 | No listing editor — a unit cannot be edited after creation from any screen | **Critical** | §4.3 |
-| F-6 | `/api/units/[id]?startDate=` returns a quote with no seasons, no fees, no discounts, and availability that ignores bookings | **Critical** | §4.8 |
+| F-6 | `/api/units/[id]?startDate=` returns a quote with no seasons, no fees, no discounts, and availability that ignores bookings | **Critical** — *fixed, §0a* | §4.8 |
 | F-7 | Dated search prices every candidate unit with per-night DB round-trips, unpaginated | **Critical** | §4.9 |
 | F-8 | 3 unit types (`villa`/`condo`/`townhouse`) as a Prisma enum; `catalog.unit_types` config cannot extend it | **Critical** | §4.5 |
 | F-9 | Sale side does not exist — no price, title, tenure, quota, or listing | **Critical** (business) | §4.13 |
 | F-10 | 12 amenities, no beds, no views filterable; PDP shows neither beds, floor, views, rules, nor reviews | **High** | §4.5, §4.10 |
-| F-11 | OTA sync is iCal-only and the poller runs **once a day** | **High** | §4.12 |
+| F-11 | OTA sync is iCal-only (no rates, content or reservations); the 5-minute scheduler that drives it has been dead since 7 Sep | **High** | §4.12 |
 | F-12 | `Project.areaId` has no writer — area browse is unreachable for new projects | **High** | §4.1 |
 | F-13 | Commercial eligibility engine exists, is correct, and is called by nothing | **High** | §4.15 |
 | F-14 | Audit docs in `docs/audits/` assert delivered capability that does not exist | **High** (governance) | §4.16 |
@@ -269,7 +298,11 @@ Do not touch this except to extend it.
 Its limits are structural:
 
 - **iCal carries availability only.** Rates, restrictions, content, photos and reservations do not move. Every price change must be made twice; every listing edit must be made three times. That is where OTA operations actually bleed.
-- **The poller runs once a day.** `vercel.json` schedules `/api/cron/run-frequent` at `0 7 * * *`, and the route's own comment says why: "Vercel Hobby daily slot… Hobby cannot fire more than once per day." An Airbnb booking made at 08:00 is invisible to myUNO until 07:00 the next morning — a 23-hour window in which the direct site will happily sell the same night. For a villa business this is the highest-probability way to lose a guest and a review. Fixing it is a plan upgrade plus a cron entry, not a code change — which makes it the cheapest severe item on this list. **(F-11)**
+- **The poller is scheduled every 5 minutes, and has not run since 7 September.** An earlier draft of this audit said the poller runs once a day, reading `vercel.json` and stopping there. That was wrong, and the correction matters because it would have sent the founder to buy a Vercel plan that changes nothing. `.github/workflows/scheduler.yml` (T-047) is the real scheduler: it calls `/api/cron/run-frequent` on `*/5 * * * *` precisely because Vercel Hobby refuses sub-daily crons, and the two `vercel.json` entries are only a backstop for when Actions is unavailable.
+
+  What is actually wrong is worse. That workflow runs on GitHub Actions, so it died with the billing outage in §4.16: **every recent Scheduler run concluded `failure` in 4–5 seconds**, and GitHub has additionally throttled the cadence to hours apart (00:53, 22:35, 22:20, 19:17, 14:02 on 14–15 September) rather than five minutes. Since 7 September the only thing still firing is the daily Vercel backstop.
+
+  So for over a week, on the live system: OTA calendars have been up to 24 hours stale, expired payment holds have sat on inventory for up to 24 hours, retention and rollup jobs have run once a day at best — and **TM30 escalation, a 24-hour legal SLA with no slack to give, has been running on a 24-hour tick.** No code change fixes any of it; it is the same billing action as F-23. **(F-11, F-23)**
 - `ChannelMapping` — the model built for real channel management — is dead (§4.4).
 
 ### 4.13 The sale side — absent
@@ -323,7 +356,7 @@ Sequenced so each step unblocks the next. Nothing here changes the spine.
 
 0. **Restore CI.** Nothing below can be verified while a hundred consecutive runs fail before their first step (§4.16, F-23). The fix is the account's Actions billing — <https://github.com/settings/billing> — not a commit. This is a prerequisite, not a parallel task. Add `tsc --noEmit` to the workflow at the same time and fix the 93 test-file errors.
 1. **`InventoryCategory` + `RatePlan` CRUD.** Service in `src/modules/projects`, admin API, one screen under the project. A category create must also create its BAR plan. Without this the property block is read-only. **(F-1)**
-2. **iCal poll frequency.** Upgrade the Vercel plan, add a cron entry at 15–30 minutes, split the iCal job out of the daily dispatcher. Cheapest severe fix in the repository. **(F-11)**
+2. **~~iCal poll frequency~~ — no code change needed.** The 5-minute scheduler already exists (`.github/workflows/scheduler.yml`); it is dead because Actions billing is dead. Restoring CI in item 0 restores the scheduler with it, and with it OTA sync, hold expiry and the TM30 SLA. Do not buy a Vercel plan for this. **(F-11)**
 3. **Retire engine B.** Make `GET /api/units/[unitId]` call `computeCanonicalPriceBreakdown` and a real availability check, or stop returning `pricing` from it. One money implementation. **(F-6)**
 
 ### P1 — make the listing real (the OTA product)

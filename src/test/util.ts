@@ -152,6 +152,67 @@ export interface UnitFactoryOpts {
   bedrooms?: number;
 }
 
+/**
+ * A live unit must belong to an `InventoryCategory` — enforced by `updateUnit`,
+ * by the pricing engine, and by the `unit_inventory_category_coherence`
+ * trigger that `20260913210000_canonical_inventory_bootstrap` installs.
+ *
+ * This factory wrote units straight through Prisma, so from the moment that
+ * migration landed every `createUnit({ status: 'live' })` in the suite failed
+ * with `Live unit ... must have an InventoryCategory`. Dozens of tests across
+ * search, booking, iCal and the guest surfaces were red on `main` and nobody
+ * saw it, because CI has not run since 7 September.
+ *
+ * The category is created on demand and shared per project + profile, so a
+ * test that makes three live units in one project gets one category and the
+ * uniqueness constraint holds.
+ */
+async function ensureFactoryCategory(opts: {
+  projectId: string;
+  categoryKey?: string;
+  bedrooms: number;
+  maxGuests: number;
+  baseNightlyThb: number;
+  minNights: number;
+}) {
+  const categoryKey =
+    opts.categoryKey ?? `factory_${opts.bedrooms}br_${opts.maxGuests}g_${opts.baseNightlyThb}`;
+
+  const existing = await db.inventoryCategory.findUnique({
+    where: { projectId_categoryKey: { projectId: opts.projectId, categoryKey } },
+  });
+  if (existing) return existing;
+
+  const category = await db.inventoryCategory.create({
+    data: {
+      projectId: opts.projectId,
+      categoryKey,
+      name: `Factory ${opts.bedrooms}BR`,
+      bedrooms: opts.bedrooms,
+      bathrooms: 1,
+      maxGuests: opts.maxGuests,
+      baseNightlyThb: opts.baseNightlyThb,
+      minNights: opts.minNights,
+      status: 'live',
+    },
+  });
+
+  // Every canonical category carries an active BAR plan, the same invariant
+  // `createInventoryCategory` holds in production code.
+  await db.ratePlan.create({
+    data: {
+      categoryId: category.id,
+      code: 'BAR',
+      name: 'Best Available Rate',
+      isMaster: true,
+      minNights: opts.minNights,
+      status: 'active',
+    },
+  });
+
+  return category;
+}
+
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
   const opts = typeof projectIdOrOpts === 'string'
     ? { projectId: projectIdOrOpts }
@@ -161,21 +222,42 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
     throw new Error('projectId is required');
   }
 
+  const status = opts.status || 'draft';
+  const bedrooms = opts.bedrooms ?? 2;
+  const maxGuests = opts.maxGuests ?? 4;
+  const baseNightlyThb = opts.baseNightlyThb ?? 2000;
+  const minNights = opts.minNights ?? 1;
+
+  // Only a live unit needs one. A draft without a category is legal and is
+  // what several tests are specifically about.
+  const category =
+    status === 'live' || opts.categoryKey
+      ? await ensureFactoryCategory({
+          projectId: opts.projectId,
+          categoryKey: opts.categoryKey,
+          bedrooms,
+          maxGuests,
+          baseNightlyThb,
+          minNights,
+        })
+      : null;
+
   return db.unit.create({
     data: {
       projectId: opts.projectId,
       ownerIdentityId: opts.ownerIdentityId,
       name: opts.name || `Unit-${uuid().slice(0, 8)}`,
       unitType: 'villa',
-      categoryKey: opts.categoryKey ?? null,
-      bedrooms: opts.bedrooms ?? 2,
+      categoryKey: category?.categoryKey ?? opts.categoryKey ?? null,
+      inventoryCategoryId: category?.id ?? null,
+      bedrooms,
       bathrooms: 1,
-      maxGuests: opts.maxGuests ?? 4,
+      maxGuests,
       addressSupplement: '101',
-      baseNightlyThb: opts.baseNightlyThb ?? 2000,
-      minNights: opts.minNights ?? 1,
+      baseNightlyThb,
+      minNights,
       instantBook: opts.instantBook ?? true,
-      status: opts.status || 'draft',
+      status,
     },
   });
 }

@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import CreateInventoryCategoryForm from './CreateInventoryCategoryForm';
+
 import Link from 'next/link';
 import React from 'react';
 
@@ -73,6 +76,8 @@ export interface Project360ClientProps {
     openWorkItemsCount: number;
   };
   completenessScore: number;
+  /** Cancellation policy keys from `catalog.cancellation_policies` (doc 04 §8). */
+  policyKeys: string[];
   labels: Record<string, string>;
 }
 
@@ -86,8 +91,10 @@ export default function Project360Client({
   orgRoles,
   canonicalInventory,
   completenessScore,
+  policyKeys,
   labels,
 }: Project360ClientProps) {
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const canonicalCoverage =
     canonicalInventory.linkedUnits + canonicalInventory.legacyCategoryOnlyUnits + canonicalInventory.uncategorizedUnits;
   const canonicalCoveragePct = canonicalCoverage > 0
@@ -231,7 +238,8 @@ export default function Project360Client({
                   <th className="py-8 pr-12">{labels['admin.project360.col_beds_baths']}</th>
                   <th className="py-8 pr-12">{labels['admin.project360.col_guests']}</th>
                   <th className="py-8 pr-12">{labels['admin.project360.col_base_rate']}</th>
-                  <th className="py-8">{labels['admin.project360.col_min_stay']}</th>
+                  <th className="py-8 pr-12">{labels['admin.project360.col_min_stay']}</th>
+                  <th className="py-8 text-right">{labels['admin.project360.col_actions']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,12 +250,38 @@ export default function Project360Client({
                     <td className="py-10 pr-12">{category.bedrooms} / {category.bathrooms}</td>
                     <td className="py-10 pr-12">{category.maxGuests}</td>
                     <td className="py-10 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
-                    <td className="py-10">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
+                    <td className="py-10 pr-12">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
+                    <td className="py-10 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategoryId(category.id)}
+                        className="text-small font-semibold text-brand-andaman hover:underline"
+                      >
+                        {labels['admin.project360.category_edit']}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+
+        {editingCategoryId ? (
+          <CreateInventoryCategoryForm
+            key={editingCategoryId}
+            projectId={project.id}
+            policyKeys={policyKeys}
+            category={canonicalInventory.categories.find((c) => c.id === editingCategoryId)}
+            onDone={() => setEditingCategoryId(null)}
+            labels={labels}
+          />
+        ) : (
+          <CreateInventoryCategoryForm
+            projectId={project.id}
+            policyKeys={policyKeys}
+            labels={labels}
+          />
         )}
       </section>
 

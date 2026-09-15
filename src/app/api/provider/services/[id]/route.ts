@@ -52,8 +52,12 @@ export async function PATCH(
     try {
       await updateService(prisma, params.id, input);
     } catch (err) {
-      if (err instanceof Error && err.message.includes('Cannot edit')) {
-        throw createPublicError('invalid request: only draft services can be edited', 400);
+      // `updateService` allows a live service's copy to change but not its
+      // terms. Its message names the field and the way through, so it is
+      // passed on rather than replaced with a generic one the provider
+      // cannot act on.
+      if (err instanceof Error && err.message.startsWith('Pause the service before changing')) {
+        throw createPublicError(`invalid request: ${err.message}`, 400);
       }
       throw err;
     }

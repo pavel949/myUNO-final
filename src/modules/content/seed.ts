@@ -4401,6 +4401,29 @@ const CANONICAL_360_KEYS: KeyDef[] = [
 ];
 
 
+/**
+ * The admin services catalogue: status filter, inline editing, pause and
+ * put-live. The screen was a submissions queue that showed drafts only, so
+ * none of these existed.
+ */
+const ADMIN_SERVICES_CATALOGUE_KEYS: KeyDef[] = [
+  { key: 'admin.services.status_active', namespace: 'admin', description: 'Admin services: live status chip', en: 'Live', ru: 'В работе', th: 'ใช้งานอยู่', status: NR },
+  { key: 'admin.services.status_paused', namespace: 'admin', description: 'Admin services: paused status chip', en: 'Paused', ru: 'На паузе', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.edit', namespace: 'admin', description: 'Admin services: open the edit form', en: 'Edit', ru: 'Редактировать', th: 'แก้ไข', status: NR },
+  { key: 'admin.services.edit_cancel', namespace: 'admin', description: 'Admin services: close the edit form', en: 'Cancel', ru: 'Отмена', th: 'ยกเลิก', status: NR },
+  { key: 'admin.services.edit_save', namespace: 'admin', description: 'Admin services: save edits', en: 'Save changes', ru: 'Сохранить', th: 'บันทึกการแก้ไข', status: NR },
+  { key: 'admin.services.edit_saving', namespace: 'admin', description: 'Admin services: saving edits', en: 'Saving…', ru: 'Сохраняем…', th: 'กำลังบันทึก…', status: NR },
+  { key: 'admin.services.pause', namespace: 'admin', description: 'Admin services: take a live service off the marketplace', en: 'Pause', ru: 'Поставить на паузу', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.activate', namespace: 'admin', description: 'Admin services: put a paused service back on the marketplace', en: 'Put live', ru: 'Вернуть в работу', th: 'เปิดใช้งาน', status: NR },
+  { key: 'admin.services.filter_all', namespace: 'admin', description: 'Admin services: filter — every service', en: 'All', ru: 'Все', th: 'ทั้งหมด', status: NR },
+  { key: 'admin.services.filter_draft', namespace: 'admin', description: 'Admin services: filter — awaiting approval', en: 'Awaiting approval', ru: 'Ждут одобрения', th: 'รออนุมัติ', status: NR },
+  { key: 'admin.services.filter_active', namespace: 'admin', description: 'Admin services: filter — live', en: 'Live', ru: 'В работе', th: 'ใช้งานอยู่', status: NR },
+  { key: 'admin.services.filter_paused', namespace: 'admin', description: 'Admin services: filter — paused', en: 'Paused', ru: 'На паузе', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.locked_hint', namespace: 'admin', description: 'Admin services: why price fields are hidden on a live service', en: 'A live service keeps the price it was approved on. Pause it to change price, duration or notice.', ru: 'Услуга в работе сохраняет цену, на которой её одобрили. Чтобы изменить цену, длительность или срок предупреждения — поставьте её на паузу.', th: 'บริการที่ใช้งานอยู่จะคงราคาที่ได้รับอนุมัติไว้ หากต้องการเปลี่ยนราคา ระยะเวลา หรือการแจ้งล่วงหน้า ให้หยุดบริการชั่วคราวก่อน', status: NR },
+  { key: 'admin.services.count', namespace: 'admin', description: 'Admin services: how many rows the filter shows', en: '{count} services', ru: 'Услуг: {count}', th: '{count} บริการ', status: NR },
+];
+
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
@@ -4426,7 +4449,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_360_KEYS];
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_360_KEYS, ...ADMIN_SERVICES_CATALOGUE_KEYS];
 
   // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
   // one-row-per-await version (ensureContentKey + setTranslation's own

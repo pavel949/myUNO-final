@@ -171,7 +171,36 @@ export async function getService(db: PrismaClient, serviceId: string): Promise<a
 }
 
 /**
- * Update a service (draft only).
+ * The copy a person reads. Changing it does not change what was vetted, so it
+ * stays editable while the service is live — a typo in a live description was
+ * otherwise permanent, for the provider and the myUNO team alike.
+ */
+const EDITORIAL_FIELDS = [
+  'title',
+  'description',
+  'titleRu',
+  'titleEn',
+  'titleTh',
+  'descriptionRu',
+  'descriptionEn',
+  'descriptionTh',
+] as const satisfies readonly (keyof UpdateServiceInput)[];
+
+/**
+ * Update a service.
+ *
+ * What may change depends on where the service is, because approval means
+ * something: an admin vetted a particular offer at a particular price, and a
+ * live service that can be silently repriced makes that approval worthless.
+ *
+ *   - `draft` and `paused` — anything. Neither is orderable, so there is
+ *     nothing to change underneath a customer.
+ *   - `active` — the copy, and the status. Price, duration and notice are
+ *     refused: pause the service, change them, put it back. That is one extra
+ *     step and it keeps the vetted terms honest, rather than inventing a
+ *     re-approval workflow nobody has specified.
+ *
+ * `status` itself is always allowed — it is the lifecycle control, not content.
  */
 export async function updateService(
   db: PrismaClient,
@@ -186,9 +215,16 @@ export async function updateService(
     throw new Error(`Service ${serviceId} not found`);
   }
 
-  // Only draft services can be edited
-  if (service.status !== 'draft') {
-    throw new Error('Cannot edit active or paused services');
+  if (service.status === 'active') {
+    const allowed = new Set<string>([...EDITORIAL_FIELDS, 'status']);
+    const refused = Object.keys(input).filter(
+      (field) => input[field as keyof UpdateServiceInput] !== undefined && !allowed.has(field)
+    );
+    if (refused.length > 0) {
+      throw new Error(
+        `Pause the service before changing ${refused.join(', ')} — an active service keeps the terms it was approved on`
+      );
+    }
   }
 
   await db.service.update({

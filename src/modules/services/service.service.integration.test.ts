@@ -244,12 +244,27 @@ describe('service.service — integration tests', () => {
         basePriceThb: 3000,
       });
 
-      // Try to edit active service
+      // The copy of a live service stays editable: a typo in a description
+      // that customers are reading should not need the service taken down.
+      await serviceService.updateService(db, serviceResult.id, {
+        title: 'Active Service, respelled',
+        descriptionRu: 'Исправленное описание',
+      });
+      const edited = await db.service.findUniqueOrThrow({ where: { id: serviceResult.id } });
+      expect(edited.title).toBe('Active Service, respelled');
+      expect(edited.status).toBe('active');
+
+      // The terms it was approved on do not move underneath a customer.
       await expect(
-        serviceService.updateService(db, serviceResult.id, {
-          title: 'Cannot Update',
-        })
-      ).rejects.toThrow('Cannot edit active or paused services');
+        serviceService.updateService(db, serviceResult.id, { basePriceThb: 9_900_000 })
+      ).rejects.toThrow(/Pause the service before changing basePriceThb/);
+
+      // Pausing is the way through, and it is allowed while active.
+      await serviceService.updateService(db, serviceResult.id, { status: 'paused' });
+      await serviceService.updateService(db, serviceResult.id, { basePriceThb: 9_900_000 });
+      const repriced = await db.service.findUniqueOrThrow({ where: { id: serviceResult.id } });
+      expect(repriced.basePriceThb).toBe(9_900_000);
+      expect(repriced.status).toBe('paused');
     });
   });
 

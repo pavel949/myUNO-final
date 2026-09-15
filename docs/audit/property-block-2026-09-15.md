@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-15
 **Scope:** everything between "a physical home exists" and "a person can book it, or buy it"
-**Method:** static read of `prisma/schema.prisma`, `src/modules/{projects,browse,booking,core,media,integrations,compliance}`, every `/api/**` route touching a project or a unit, every admin/ops/MC/owner/public screen that renders one, plus the migration chain. `npm run lint` green; `tsc --noEmit` clean on production code (93 errors, all in test files — see §4.16). No database was available, so every claim below is traced to a file and line rather than to a running system.
+**Method:** static read of `prisma/schema.prisma`, `src/modules/{projects,browse,booking,core,media,integrations,compliance}`, every `/api/**` route touching a project or a unit, every admin/ops/MC/owner/public screen that renders one, plus the migration chain. `npm run lint` green; `tsc --noEmit` clean on production code (93 errors, all in test files — see §4.16). Repository CI is red and has been for 100 consecutive runs (§4.16). No database was available, so every claim below is traced to a file and line rather than to a running system.
 
 ---
 
@@ -15,6 +15,8 @@
 **2. Схема базы данных сильно опережает приложение.** В таблице `unit` лежит 16 полей (площади, виды, особенности, доступность, безопасность, меблировка, правила для животных), в таблице `project` — 25 полей (тип объекта: отель/резорт/кондо, застройщик, этажность, инфраструктура, фазы, дата сдачи). **Ни одно из них** нельзя заполнить через приложение. Форма создания юнита даёт 9 полей. Форма проекта — 6. Пять моделей (`SleepingSpace`, `Bed`, `CommercialOffering`, `ChannelMapping`, `RegulatoryCredential`) не читаются и не пишутся нигде в коде. Система «умеет» отели и резорты на бумаге и не умеет их на практике.
 
 **3. Календаря нет.** Ни в одном виде: ни в карточке объекта для гостя, ни в админке, ни у операций, ни у УК. Везде — два поля `<input type="date">` и список текстовых строк. Дизайн-система (doc 06) описывает компонент `Calendar` с сеткой месяца и занятыми датами; план сборки (T-015) требует его в DoD. Он не построен. Для OTA это не косметика — это основной инструмент продаж и основной инструмент ревенью-менеджмента.
+
+**И над всем этим:** CI не проходил **ни разу за последние 100 запусков** — с 10 сентября, на всех ветках, включая тривиальные merge-коммиты. 96 из 100 падают быстрее чем за 10 секунд, то есть до выполнения первого шага: это отказ на уровне аккаунта/раннера (квота или биллинг GitHub Actions), а не ошибка в коде. Значит правило «каждая задача заканчивается зелёными тестами, сборкой и линтом» из CLAUDE.md пять дней и около сотни мержей не проверялось ничем. Это надо чинить раньше всего остального.
 
 Что сделано хорошо и трогать не надо: **движок бронирования**. Advisory lock на юнит + exclusion constraint в Postgres — двойное бронирование структурно невозможно. Отмены, изменения дат, возвраты, холды — всё продумано и покрыто тестами. Безопасность (RLS на всех таблицах с тестом-сторожем, подписанные iCal-токены, server-side проверки прав) — на уровне.
 
@@ -68,6 +70,7 @@ Every serious defect in this audit is one shape: *a table exists, a migration cr
 | F-18 | `getUnitRatings` loads every booking of every result unit on every search | **Medium** | §4.9 |
 | F-19 | No long-term tenancy model — "live" in *stay · live · own* has no contract, deposit, rent roll or utilities | **Medium** (business) | §4.14 |
 | F-20 | 93 TypeScript errors in test files; CI never runs `tsc` | **Medium** | §4.16 |
+| F-23 | **CI has failed on 100 consecutive runs since 2026-09-10**, on every branch, before executing a single step — no DoD has been enforced for five days | **Blocker** (process) | §4.16 |
 | F-21 | No building/tower tier between project and unit | **Medium** | §4.1, Q40 |
 | F-22 | Admin write routes spread unvalidated JSON bodies into services; no schema validation | **Low** | §4.3 |
 
@@ -108,6 +111,8 @@ $ grep -rn "ratePlan.create|update|upsert" src prisma scripts
 Consequence, precisely: `createUnit` refuses `live` by design; the operator must create a draft and promote it. Promotion runs `updateUnit`, which requires a category; `resolveCanonicalInventoryCategory` looks one up by `categoryKey` and finds nothing; the update throws. **Every unit created from today onward is permanently a draft.** The config editor can add a key to `catalog.unit_categories`, which satisfies `assertCatalogKeys` — and still no `InventoryCategory` row exists, so the gate still refuses.
 
 This also means the hotel model is theoretically present and practically absent: `InventoryCategory` *is* the room type (`Superior 2BR`, `Pool Villa`), `Unit` is the physical room, `RatePlan` is BAR with derived plans. The design is right. Nobody can use it.
+
+**Someone has already tried.** PR #103 ("Canonical unit onboarding: select InventoryCategory on create (v2)", merged 2026-09-14) added a category *selector* to the create form — it lets an operator pick an existing category, which is the symptom, not the cause; nothing in it creates a category. PR #104 ("Restore green admin units baseline", merged the same day) reverted both files back to the pre-#103 version, so at `HEAD` even the selector is gone. Both merges ran CI; both CI runs failed, like the ninety-eight around them (§4.16). The fix must create the row, not choose among rows that only a migration can produce.
 
 **F-1. Nothing else in this audit matters until this is fixed.**
 
@@ -298,7 +303,11 @@ Meanwhile the real gate is `Unit.permittedUseConfirmedAt` — a bare timestamp t
 
 These documents are not lies — they are design intent in the voice of delivery, and a founder reading them would reasonably conclude that sale listings with tenure work. In a repository whose constitution says *no invention, stop and ask*, the documentation layer needs the same discipline the code has. Compare `docs/open_questions.md`, which is exemplary: it records what is dead, why it was not built, and what it would cost to be wrong. That is the standard. **(F-14)**
 
-**Related:** `npx tsc --noEmit` produces **93 errors, every one of them in a test file** — stale factory options (`engagementType`), changed service signatures (`confirmBooking` now requires `paymentReceivedAt`), unused bindings. Production code is clean. CI runs lint, migrations, `db:verify`, build and tests, but never `tsc`, so the test suite has drifted from the API it tests without anything noticing. Vitest transpiles via esbuild and does not typecheck, which is why the suite still runs. **(F-20)**
+**Related:** `npx tsc --noEmit` produces **93 errors, every one of them in a test file** — stale factory options (`engagementType`), changed service signatures (`confirmBooking` now requires `paymentReceivedAt`), unused bindings. Production code is clean. The `ci.yml` workflow runs lint, migrations, `db:verify`, build and tests, but never `tsc`. Vitest transpiles via esbuild and does not typecheck, which is why the suite still runs.
+
+**And the reason nothing noticed is worse than a missing `tsc` step: CI has not passed once in the last 100 runs.** Every run of `ci.yml` from 2026-09-10 to 2026-09-15 — across `main`, `develop` and every PR branch, including trivial merge commits — concluded `failure`. 96 of the 100 died in **under ten seconds** and none ran longer than 34; `npm ci` alone takes about a minute, and the failed jobs record no executed steps and serve no downloadable logs. The workflow file itself is well-formed. That signature is an account- or runner-level refusal (Actions quota/billing, or the Postgres service container not being granted), not a code failure.
+
+The consequence is the governance one. `CLAUDE.md` says every task ends with green tests, build and lints, and `docs/16_build_plan.md` gives each task a DoD in tests. **For at least five days and roughly a hundred merges, none of that has been enforced by anything.** The 93 type errors, the reverted unit-create form (§4.2), and the eligibility-engine test that asserts a dictionary (§4.16 above) are all downstream of the same missing gate. Restoring CI is not property-block work, and it outranks every P1 item in this document. **(F-20, F-23)**
 
 ---
 
@@ -308,6 +317,7 @@ Sequenced so each step unblocks the next. Nothing here changes the spine.
 
 ### P0 — restore the ability to add inventory (days, not weeks)
 
+0. **Restore CI.** Nothing below can be verified while a hundred consecutive runs fail before their first step (§4.16, F-23). Check the account's Actions quota/billing first — that is the signature. This is a prerequisite, not a parallel task. Add `tsc --noEmit` to the workflow at the same time and fix the 93 test-file errors.
 1. **`InventoryCategory` + `RatePlan` CRUD.** Service in `src/modules/projects`, admin API, one screen under the project. A category create must also create its BAR plan. Without this the property block is read-only. **(F-1)**
 2. **iCal poll frequency.** Upgrade the Vercel plan, add a cron entry at 15–30 minutes, split the iCal job out of the daily dispatcher. Cheapest severe fix in the repository. **(F-11)**
 3. **Retire engine B.** Make `GET /api/units/[unitId]` call `computeCanonicalPriceBreakdown` and a real availability check, or stop returning `pricing` from it. One money implementation. **(F-6)**

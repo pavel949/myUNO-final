@@ -9,7 +9,9 @@ import {
   validatedActiveProjectId,
 } from '@/app/libs/opsProjectContext';
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
+import CreateInventoryCategoryForm from '@/components/ops/CreateInventoryCategoryForm';
 import InventoryCategoryPricingEditor from '@/components/ops/InventoryCategoryPricingEditor';
+import UnitInventoryCategorySelect from '@/components/ops/UnitInventoryCategorySelect';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 
@@ -137,22 +139,34 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
     'staff.inventory.categories_hint':
       'Category base rate and minimum stay are the default commercial truth inherited by linked villas.',
     'staff.inventory.category_units': 'units',
+    'staff.inventory.category_create': 'Create category',
+    'staff.inventory.category_name': 'Category name',
+    'staff.inventory.category_key': 'Category key',
+    'staff.inventory.category_key_hint':
+      'Use a stable lowercase key such as superior_2br. The key is an integration identifier and should not be renamed later.',
+    'staff.inventory.project': 'Project',
+    'staff.inventory.bedrooms': 'Bedrooms',
+    'staff.inventory.bathrooms': 'Bathrooms',
+    'staff.inventory.max_guests': 'Sleeps',
+    'staff.inventory.cancel': 'Cancel',
     'staff.inventory.base_rate': 'Base rate / night',
     'staff.inventory.min_nights': 'Minimum stay',
     'staff.inventory.save': 'Save',
     'staff.inventory.saving': 'Saving…',
     'staff.inventory.saved': 'Saved',
-    'staff.inventory.error': 'Could not update pricing.',
-    'staff.inventory.admin_only': 'Master tariff edits require admin access.',
+    'staff.inventory.error': 'Could not update inventory.',
+    'staff.inventory.admin_only': 'Master inventory and tariff edits require admin access.',
     'staff.inventory.rateplans_title': 'Rate plans',
     'staff.inventory.rateplans_hint':
       'BAR and derived commercial rules. Dated unit overrides are edited from the calendar.',
     'staff.inventory.rateplans_empty': 'No active rate plans in this scope.',
     'staff.inventory.units_title': 'Physical inventory',
     'staff.inventory.units_hint':
-      'Every villa should belong to one canonical category. Open a villa to manage blocks and one-off rates.',
+      'Every villa should belong to one canonical category. Category assignment changes the inherited base rate and minimum stay; date exceptions stay in the calendar.',
     'staff.inventory.unit': 'Villa / unit',
     'staff.inventory.category': 'Category',
+    'staff.inventory.choose_category': 'Choose category',
+    'staff.inventory.uncategorized': 'Uncategorized',
     'staff.inventory.status': 'Status',
     'staff.inventory.overrides': 'Dated overrides',
     'staff.inventory.blocks': 'Blocks',
@@ -243,13 +257,22 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
         ) : null}
 
         <section className={`${cardClass} mb-24`}>
-          <div className="mb-16">
-            <h2 className="font-display text-title font-semibold text-text-ink">
-              {labels['staff.inventory.categories_title']}
-            </h2>
-            <p className="text-small text-text-secondary mt-4">
-              {labels['staff.inventory.categories_hint']}
-            </p>
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between mb-16">
+            <div>
+              <h2 className="font-display text-title font-semibold text-text-ink">
+                {labels['staff.inventory.categories_title']}
+              </h2>
+              <p className="text-small text-text-secondary mt-4">
+                {labels['staff.inventory.categories_hint']}
+              </p>
+            </div>
+            {opsContext.isAdmin && projects.length > 0 ? (
+              <CreateInventoryCategoryForm
+                projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+                defaultProjectId={validActiveProjectId}
+                labels={labels}
+              />
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
@@ -346,7 +369,7 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-small">
+            <table className="w-full min-w-[980px] text-small">
               <thead>
                 <tr className="border-b border-border-line text-left text-text-secondary">
                   <th className="py-8 pr-12">{labels['staff.inventory.unit']}</th>
@@ -363,6 +386,13 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
                 {units.map((unit) => {
                   const baseRate = unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb;
                   const minStay = unit.inventoryCategory?.minNights ?? unit.minNights;
+                  const categoryOptions = categories
+                    .filter((category) => category.projectId === unit.projectId && category.status === 'live')
+                    .map((category) => ({
+                      id: category.id,
+                      name: category.name,
+                      categoryKey: category.categoryKey,
+                    }));
                   return (
                     <tr key={unit.id} className="border-b border-border-line last:border-0">
                       <td className="py-10 pr-12">
@@ -370,11 +400,13 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
                         <p className="text-micro text-text-secondary">{unit.project.name}</p>
                       </td>
                       <td className="py-10 pr-12">
-                        {unit.inventoryCategory ? (
-                          <><p className="text-text-ink">{unit.inventoryCategory.name}</p><p className="text-micro text-text-secondary">{unit.inventoryCategory.categoryKey}</p></>
-                        ) : (
-                          <span className="text-state-warning">Uncategorized</span>
-                        )}
+                        <UnitInventoryCategorySelect
+                          unitId={unit.id}
+                          currentCategoryId={unit.inventoryCategory?.id ?? null}
+                          categories={categoryOptions}
+                          canEdit={opsContext.isAdmin}
+                          labels={labels}
+                        />
                       </td>
                       <td className="py-10 pr-12 tabular-nums">฿{Math.round(baseRate / 100).toLocaleString()}</td>
                       <td className="py-10 pr-12">{minStay}</td>

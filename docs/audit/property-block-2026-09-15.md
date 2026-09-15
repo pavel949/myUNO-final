@@ -12,18 +12,20 @@ This document began as a read-only audit. P0 has since been implemented on the s
 
 | Item | State |
 |---|---|
-| **P0-0 · Restore CI** | **Not fixable from a branch.** GitHub Actions billing — <https://github.com/settings/billing>. See §4.16. |
+| **P0-0 · Restore CI** | **Resolved on the account side, 15 Sep 02:57 UTC.** Runners are being assigned again; CI has run end to end and its numbers match the local suite. Not fixed by anything in this repository. |
 | **P0-1 · Inventory CRUD (F-1)** | **Fixed.** `src/modules/projects/inventory.service.ts` + admin API + a form on the project page. A unit created today can reach live. |
 | **P0-2 · iCal frequency (F-11)** | **No code change needed** — the finding was wrong and is corrected in §4.12. The 5-minute scheduler exists; it is dead for the same billing reason as P0-0. |
 | **P0-3 · Retire the second pricing engine (F-6)** | **Fixed.** `GET /api/units/[unitId]` now quotes through `computePriceBreakdown` and answers availability from bookings as well as blocks. |
 | **F-5 (listing editor)** | Partly: categories are editable; unit listing fields are still not. P1. |
 
-**Measured effect on the test suite**, run locally against a Postgres built from the real migration chain:
+**Measured effect on the test suite** — run locally against a Postgres built from the real migration chain, then confirmed by CI itself once Actions came back (its numbers matched the local run exactly, both times):
 
 | | Failing files | Failing tests |
 |---|---|---|
 | `main` at `f0e416b` | **48** | **273** |
-| This branch | **12** | **43** |
+| This branch | **10** | **29** |
+
+A set comparison of failing files between the two returns **zero new entries**: every remaining failure is one `main` already had.
 
 The 273 failures on `main` are the sharpest evidence for F-23 in this document: they are not new, nothing introduced them today, and nobody knew, because CI has not run since 7 September. Among them was the repository's own `units.integration.test.ts > allows going live after permitted use is confirmed` — the test that asserts the exact capability F-1 says is broken. It has been failing since the canonical bootstrap migration landed.
 
@@ -45,7 +47,7 @@ The single largest repair was not application code but `src/test/util.ts`: its `
 
 **И над всем этим:** CI не проходил **ни разу за последние 100 запусков** — с 10 сентября, на всех ветках, включая тривиальные merge-коммиты. 96 из 100 падают быстрее чем за 10 секунд, то есть до выполнения первого шага — раннер джобе просто не выдаётся. Это отказ на уровне аккаунта, а не ошибка в коде, и чинится он не коммитом: нужно добавить способ оплаты или поднять лимит расходов GitHub Actions на <https://github.com/settings/billing>. Значит правило «каждая задача заканчивается зелёными тестами, сборкой и линтом» из CLAUDE.md пять дней и около сотни мержей не проверялось ничем. Это надо чинить раньше всего остального.
 
-**P0 из этого аудита уже исправлен в этой же ветке** (см. §0a): категории инвентаря теперь создаются и редактируются из админки, так что юнит снова может выйти в продажу; второй ценовой движок убран. Побочный результат — тестов на `main` падало **273**, на этой ветке осталось 43, и ни одного нового я не сломал.
+**P0 из этого аудита уже исправлен в этой же ветке** (см. §0a): категории инвентаря теперь создаются и редактируются из админки, так что юнит снова может выйти в продажу; второй ценовой движок убран. Побочный результат — тестов на `main` падало **273**, на этой ветке осталось **29** (подтверждено самим CI), и ни одного нового я не сломал.
 
 Что сделано хорошо и трогать не надо: **движок бронирования**. Advisory lock на юнит + exclusion constraint в Postgres — двойное бронирование структурно невозможно. Отмены, изменения дат, возвраты, холды — всё продумано и покрыто тестами. Безопасность (RLS на всех таблицах с тестом-сторожем, подписанные iCal-токены, server-side проверки прав) — на уровне.
 

@@ -46,12 +46,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'minNights must be at least 1' }, { status: 400 });
   }
 
-  const [project, duplicate] = await Promise.all([
+  const [project, duplicate, configuredCatalog, configuredDefaultCancellation] = await Promise.all([
     prisma.project.findUnique({ where: { id: projectId }, select: { id: true, name: true } }),
     prisma.inventoryCategory.findUnique({
       where: { projectId_categoryKey: { projectId, categoryKey } },
       select: { id: true },
     }),
+    getConfig(prisma, 'catalog.unit_categories', { projectId }),
+    getConfig(prisma, 'cancellation.default_policy', { projectId }),
   ]);
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'A category with this key already exists in the project' }, { status: 409 });
   }
 
-  const currentCatalog = ((await getConfig(prisma, 'catalog.unit_categories', { projectId })) ?? []) as UnitCategoryEntry[];
+  const currentCatalog = (configuredCatalog ?? []) as UnitCategoryEntry[];
   if (currentCatalog.some((entry) => entry.key === categoryKey)) {
     return NextResponse.json({ error: 'This category key already exists in the project catalog' }, { status: 409 });
   }
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
     ...currentCatalog,
     { key: categoryKey, bedrooms },
   ];
+  const cancellationPolicyKey = configuredDefaultCancellation || 'flexible';
 
   try {
     const category = await prisma.$transaction(async (tx) => {
@@ -81,7 +84,24 @@ export async function POST(req: NextRequest) {
           maxGuests,
           baseNightlyThb,
           minNights,
+          cancellationPolicyKey,
           status: 'live',
+        },
+      });
+
+      // Every canonical category must have a master BAR; the canonical pricing
+      // calculator resolves this before falling back to category terms.
+      await tx.ratePlan.create({
+        data: {
+          projectId: null,
+          categoryId: created.id,
+          unitId: null,
+          code: 'BAR',
+          name: 'Best Available Rate',
+          isMaster: true,
+          cancellationPolicyKey,
+          minNights,
+          status: 'active',
         },
       });
 
@@ -136,7 +156,7 @@ export async function POST(req: NextRequest) {
       action: 'inventory_category:create',
       entityType: 'InventoryCategory',
       entityId: category.id,
-      data: { projectId, categoryKey, name },
+      data: { projectId, categoryKey, name, ratePlan: 'BAR' },
     });
 
     return NextResponse.json({ category }, { status: 201 });

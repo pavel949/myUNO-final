@@ -44,6 +44,7 @@ export default async function AdminServicesPage() {
             name: true,
           },
         },
+        coverMedia: { select: { storageKey: true } },
       },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
       take: 200,
@@ -109,6 +110,12 @@ export default async function AdminServicesPage() {
     'admin.services.locked_hint':
       'A live service keeps the price it was approved on. Pause it to change price, duration or notice.',
     'admin.services.count': '{count} services',
+    'admin.services.photo': 'Photo',
+    'admin.services.photo_upload': 'Upload a photo',
+    'admin.services.photo_uploading': 'Uploading…',
+    'admin.services.photo_remove': 'Remove photo',
+    'admin.services.photo_none': 'No photo yet — a service without one is far less likely to be ordered.',
+    'admin.services.photo_too_large': 'That image is over 8 MB. Use a smaller one.',
     ...categoryLabelDrafts,
   });
 
@@ -144,6 +151,7 @@ export default async function AdminServicesPage() {
           descriptionEn: s.descriptionEn,
           descriptionRu: s.descriptionRu,
           descriptionTh: s.descriptionTh,
+          coverUrl: s.coverMedia?.storageKey ?? null,
           createdAt: s.createdAt.toISOString(),
         }))}
         labels={labels}

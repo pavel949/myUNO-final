@@ -99,6 +99,27 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         input.advanceNoticeHours = Math.max(0, Math.round(Number(body.advanceNoticeHours)));
       }
 
+      /*
+       * The cover photograph. The id comes from POST /api/media/upload, which
+       * has already checked the type and size — this only confirms the asset
+       * is real, so a mistyped id cannot point a card at nothing. An explicit
+       * null clears the picture.
+       */
+      if (body.coverMediaId !== undefined) {
+        if (body.coverMediaId === null) {
+          input.coverMediaId = null;
+        } else if (typeof body.coverMediaId === 'string' && body.coverMediaId) {
+          const asset = await prisma.mediaAsset.findUnique({
+            where: { id: body.coverMediaId },
+            select: { id: true },
+          });
+          if (!asset) {
+            return NextResponse.json({ error: 'Unknown image' }, { status: 400 });
+          }
+          input.coverMediaId = asset.id;
+        }
+      }
+
       if (Object.keys(input).length === 0) {
         return NextResponse.json({ error: 'Nothing to change' }, { status: 400 });
       }

@@ -69,6 +69,8 @@ export interface UpdateServiceInput {
   durationMin?: number;
   advanceNoticeHours?: number;
   status?: ServiceStatus;
+  /** The photograph a person sees on the card. Null clears it. */
+  coverMediaId?: string | null;
 }
 
 /**
@@ -184,6 +186,9 @@ const EDITORIAL_FIELDS = [
   'descriptionRu',
   'descriptionEn',
   'descriptionTh',
+  // The photograph is copy too: replacing a bad picture on a live service is
+  // not a change to the terms it was approved on.
+  'coverMediaId',
 ] as const satisfies readonly (keyof UpdateServiceInput)[];
 
 /**

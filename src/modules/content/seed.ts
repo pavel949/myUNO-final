@@ -4421,6 +4421,30 @@ const ADMIN_SERVICES_CATALOGUE_KEYS: KeyDef[] = [
   { key: 'admin.services.filter_paused', namespace: 'admin', description: 'Admin services: filter — paused', en: 'Paused', ru: 'На паузе', th: 'หยุดชั่วคราว', status: NR },
   { key: 'admin.services.locked_hint', namespace: 'admin', description: 'Admin services: why price fields are hidden on a live service', en: 'A live service keeps the price it was approved on. Pause it to change price, duration or notice.', ru: 'Услуга в работе сохраняет цену, на которой её одобрили. Чтобы изменить цену, длительность или срок предупреждения — поставьте её на паузу.', th: 'บริการที่ใช้งานอยู่จะคงราคาที่ได้รับอนุมัติไว้ หากต้องการเปลี่ยนราคา ระยะเวลา หรือการแจ้งล่วงหน้า ให้หยุดบริการชั่วคราวก่อน', status: NR },
   { key: 'admin.services.count', namespace: 'admin', description: 'Admin services: how many rows the filter shows', en: '{count} services', ru: 'Услуг: {count}', th: '{count} บริการ', status: NR },
+  { key: 'admin.services.photo', namespace: 'admin', description: 'Admin services: photo row label', en: 'Photo', ru: 'Фото', th: 'รูปภาพ', status: NR },
+  { key: 'admin.services.photo_upload', namespace: 'admin', description: 'Admin services: pick a photo to upload', en: 'Upload a photo', ru: 'Загрузить фото', th: 'อัปโหลดรูปภาพ', status: NR },
+  { key: 'admin.services.photo_uploading', namespace: 'admin', description: 'Admin services: photo upload in progress', en: 'Uploading…', ru: 'Загружаем…', th: 'กำลังอัปโหลด…', status: NR },
+  { key: 'admin.services.photo_remove', namespace: 'admin', description: 'Admin services: clear the photo', en: 'Remove photo', ru: 'Удалить фото', th: 'ลบรูปภาพ', status: NR },
+  { key: 'admin.services.photo_none', namespace: 'admin', description: 'Admin services: why a photo matters', en: 'No photo yet — a service without one is far less likely to be ordered.', ru: 'Фото нет — услугу без фотографии заказывают заметно реже.', th: 'ยังไม่มีรูปภาพ — บริการที่ไม่มีรูปมักถูกสั่งน้อยกว่ามาก', status: NR },
+  { key: 'admin.services.photo_too_large', namespace: 'admin', description: 'Admin services: image over the size cap', en: 'That image is over 8 MB. Use a smaller one.', ru: 'Изображение больше 8 МБ. Выберите файл поменьше.', th: 'รูปภาพเกิน 8 MB กรุณาใช้ไฟล์ที่เล็กกว่า', status: NR },
+];
+
+
+/**
+ * Finding a service: the storefront search box, the sort control and the
+ * rating on a card. None existed while the catalogue was a fixed list of
+ * tiles.
+ */
+const SERVICES_DISCOVERY_KEYS: KeyDef[] = [
+  { key: 'services.browse.search_label', namespace: 'services', description: 'Services storefront: search field label', en: 'Search', ru: 'Поиск', th: 'ค้นหา', status: NR },
+  { key: 'services.browse.search_placeholder', namespace: 'services', description: 'Services storefront: search field placeholder', en: 'Cleaning, transfer, chef…', ru: 'Уборка, трансфер, повар…', th: 'ทำความสะอาด รับส่ง เชฟ…', status: NR },
+  { key: 'services.browse.sort_label', namespace: 'services', description: 'Services storefront: sort control label', en: 'Sort by', ru: 'Сортировка', th: 'เรียงตาม', status: NR },
+  { key: 'services.browse.sort_recent', namespace: 'services', description: 'Services storefront: newest first', en: 'Newest', ru: 'Сначала новые', th: 'ใหม่ล่าสุด', status: NR },
+  { key: 'services.browse.sort_price_asc', namespace: 'services', description: 'Services storefront: cheapest first', en: 'Price: low to high', ru: 'Сначала дешевле', th: 'ราคา: ต่ำไปสูง', status: NR },
+  { key: 'services.browse.sort_price_desc', namespace: 'services', description: 'Services storefront: most expensive first', en: 'Price: high to low', ru: 'Сначала дороже', th: 'ราคา: สูงไปต่ำ', status: NR },
+  { key: 'services.browse.sort_rating', namespace: 'services', description: 'Services storefront: best reviewed first', en: 'Best reviewed', ru: 'С лучшими отзывами', th: 'รีวิวดีที่สุด', status: NR },
+  { key: 'services.browse.result_count', namespace: 'services', description: 'Services storefront: how many services match', en: '{count} services', ru: 'Найдено услуг: {count}', th: 'พบ {count} บริการ', status: NR },
+  { key: 'services.browse.reviews', namespace: 'services', description: 'Services storefront: review count beside the rating', en: '{count} reviews', ru: 'отзывов: {count}', th: '{count} รีวิว', status: NR },
 ];
 
 
@@ -4449,7 +4473,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_360_KEYS, ...ADMIN_SERVICES_CATALOGUE_KEYS];
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_360_KEYS, ...ADMIN_SERVICES_CATALOGUE_KEYS, ...SERVICES_DISCOVERY_KEYS];
 
   // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
   // one-row-per-await version (ensureContentKey + setTranslation's own

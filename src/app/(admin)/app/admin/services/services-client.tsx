@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import Image from 'next/image';
 import { satangToBaht } from '@/lib/money';
 
 interface AdminService {
@@ -21,6 +22,7 @@ interface AdminService {
   descriptionEn: string | null;
   descriptionRu: string | null;
   descriptionTh: string | null;
+  coverUrl: string | null;
   createdAt: string;
 }
 
@@ -80,6 +82,32 @@ export default function ServicesAdminClient({
   const [filter, setFilter] = useState<Filter>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [edit, setEdit] = useState<EditDraft | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  /**
+   * Upload a photograph and attach it in one step. The team should not have to
+   * find an id anywhere: pick a file, and the card has a picture.
+   */
+  const uploadPhoto = async (serviceId: string, file: File) => {
+    setUploadingId(serviceId);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('kind', 'photo');
+      const uploaded = await fetch('/api/media/upload', { method: 'POST', body: form });
+      if (!uploaded.ok) {
+        const data = await uploaded.json().catch(() => null);
+        throw new Error(data?.error || labels['admin.services.error_generic']);
+      }
+      const { mediaAssetId } = await uploaded.json();
+      await act(serviceId, { action: 'edit', coverMediaId: mediaAssetId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['admin.services.error_generic']);
+    } finally {
+      setUploadingId(null);
+    }
+  };
 
   const act = async (serviceId: string, body: Record<string, unknown>) => {
     setBusyId(serviceId);
@@ -341,6 +369,55 @@ export default function ServicesAdminClient({
                     )}
                   </div>
                 )}
+
+                <div className="flex flex-wrap items-center gap-12">
+                  <span className="text-small text-text-secondary">
+                    {labels['admin.services.photo']}
+                  </span>
+                  {service.coverUrl ? (
+                    <Image
+                      src={service.coverUrl}
+                      alt=""
+                      width={72}
+                      height={48}
+                      className="rounded-md object-cover w-thumb h-48"
+                    />
+                  ) : (
+                    <span className="text-small text-text-secondary">
+                      {labels['admin.services.photo_none']}
+                    </span>
+                  )}
+                  <label className="text-small text-brand-andaman underline cursor-pointer">
+                    {uploadingId === service.id
+                      ? labels['admin.services.photo_uploading']
+                      : labels['admin.services.photo_upload']}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        // Reset first, so picking the same file twice still fires.
+                        e.target.value = '';
+                        if (!file) return;
+                        if (file.size > 8 * 1024 * 1024) {
+                          setError(labels['admin.services.photo_too_large']);
+                          return;
+                        }
+                        void uploadPhoto(service.id, file);
+                      }}
+                    />
+                  </label>
+                  {service.coverUrl && (
+                    <button
+                      type="button"
+                      className="text-small text-state-error underline"
+                      onClick={() => act(service.id, { action: 'edit', coverMediaId: null })}
+                    >
+                      {labels['admin.services.photo_remove']}
+                    </button>
+                  )}
+                </div>
 
                 <div>
                   <Button

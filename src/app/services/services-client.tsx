@@ -21,6 +21,8 @@ interface MarketService {
   providerName: string | null;
   providerVetted: boolean;
   coverUrl: string | null;
+  averageRating: number | null;
+  reviewCount: number;
 }
 
 interface MyOrder {
@@ -93,15 +95,34 @@ export default function ServicesClient({
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  // What the server was last asked for. Typing changes `query` on every
+  // keystroke; this only follows once the person pauses, so the catalogue is
+  // not re-queried per letter.
+  const [appliedQuery, setAppliedQuery] = useState('');
+  const [sort, setSort] = useState('recent');
+  const [total, setTotal] = useState(0);
 
   const load = useCallback(async () => {
+    /*
+     * Searching, filtering and ordering happen in the database, not in this
+     * component. The page used to fetch every service and filter the array:
+     * fine at a dozen services, wrong at a few hundred, and it could not
+     * search or sort at all.
+     */
+    const params = new URLSearchParams();
+    if (appliedQuery) params.set('q', appliedQuery);
+    if (selectedCategory) params.set('categoryKey', selectedCategory);
+    if (sort !== 'recent') params.set('sort', sort);
+
     const [servicesRes, ordersRes] = await Promise.all([
-      fetch('/api/services'),
+      fetch(`/api/services?${params.toString()}`),
       fetch('/api/service-orders'),
     ]);
     if (servicesRes.ok) {
       const data = await servicesRes.json();
       setServices(data.services || []);
+      setTotal(data.total ?? (data.services || []).length);
     }
     if (ordersRes.status === 401) {
       setLoggedIn(false);
@@ -109,11 +130,17 @@ export default function ServicesClient({
       const data = await ordersRes.json();
       setOrders(data.orders || []);
     }
-  }, []);
+  }, [appliedQuery, selectedCategory, sort]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Wait for the typing to stop before asking the server.
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedQuery(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   // Stay context (SA-1): entered from the home space → show which stay the
   // order attaches to. Best-effort — a failed fetch just hides the banner.
@@ -171,9 +198,8 @@ export default function ServicesClient({
     router.replace(`/services${params.size ? `?${params}` : ''}`, { scroll: false });
   };
 
-  const visibleServices = selectedCategory
-    ? services.filter((s) => s.categoryKey === selectedCategory)
-    : services;
+  // Already filtered, searched and ordered by the server.
+  const visibleServices = services;
 
   const payOrder = async (order: MyOrder) => {
     setBusy(true);
@@ -313,6 +339,51 @@ export default function ServicesClient({
           </div>
         )}
 
+        {/* Finding a service: search the catalogue and order the results. The
+            page previously offered neither — a category tile was the only way
+            through, which stops working the moment the catalogue grows. */}
+        <section className="mb-24 flex flex-col sm:flex-row sm:items-end gap-12">
+          <div className="flex-1 flex flex-col gap-4">
+            <label htmlFor="services-search" className="text-small text-text-stone">
+              {labels['services.browse.search_label']}
+            </label>
+            <input
+              id="services-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={labels['services.browse.search_placeholder']}
+              className="h-48 px-16 rounded-sm bg-surface-paper border border-border-line text-body text-text-ink placeholder:text-text-stone-2 focus:border-brand-andaman focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col gap-4">
+            <label htmlFor="services-sort" className="text-small text-text-stone">
+              {labels['services.browse.sort_label']}
+            </label>
+            <select
+              id="services-sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-body text-text-ink focus:border-brand-andaman focus:outline-none"
+            >
+              {['recent', 'price_asc', 'price_desc', 'rating'].map((option) => (
+                <option key={option} value={option}>
+                  {labels[`services.browse.sort_${option}`] || option}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {(appliedQuery || selectedCategory) && (
+          <p className="text-small text-text-secondary mb-16">
+            {(labels['services.browse.result_count'] || '{count}').replace(
+              '{count}',
+              String(total)
+            )}
+          </p>
+        )}
+
         {/* Super-app facade (SA-1): category tiles from the catalog */}
         {categories.length > 0 && (
           <section className="mb-32">
@@ -406,6 +477,17 @@ export default function ServicesClient({
                   )}
                   {service.description && (
                     <p className="text-small text-text-secondary mb-8">{service.description}</p>
+                  )}
+                  {service.averageRating !== null && (
+                    <p className="text-small text-text-secondary mb-4">
+                      <span aria-hidden>★</span>{' '}
+                      <span className="font-semibold text-text-ink">{service.averageRating}</span>
+                      {' · '}
+                      {(labels['services.browse.reviews'] || '{count}').replace(
+                        '{count}',
+                        String(service.reviewCount)
+                      )}
+                    </p>
                   )}
                   {service.basePriceThb !== null && (
                     <p className="text-body font-bold text-brand-andaman mb-12">

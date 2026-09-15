@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db as prisma, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, db as prisma, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { createUnit as createUnitFn, updateUnit, confirmPermittedUse } from './units';
+import { createInventoryCategory } from './inventory.service';
 import { UnitStatus } from '@prisma/client';
 
 describe('Units module', () => {
@@ -157,7 +158,31 @@ describe('Units module', () => {
     it('allows going live after permitted use is confirmed', async () => {
       const admin = await createIdentity({ isAdmin: true });
       const project = await createProject();
+
+      // A live unit must also belong to a canonical InventoryCategory — the
+      // rule `updateUnit`, the pricing engine and the
+      // `unit_inventory_category_coherence` trigger all enforce. This test
+      // used to create a bare unit and had been failing on `main` since the
+      // canonical bootstrap migration landed, because nothing in the product
+      // could create a category to attach (audit F-1). It now walks the real
+      // operator path.
+      await createInventoryCategory(db, {
+        projectId: project.id,
+        categoryKey: 'go_live_category',
+        name: 'Go-live Category',
+        bedrooms: 2,
+        bathrooms: 1,
+        maxGuests: 4,
+        baseNightlyThb: 500_000,
+        actorIdentityId: admin.id,
+      });
+
       const unit = await createUnit({ projectId: project.id, status: 'draft' });
+      await updateUnit({
+        unitId: unit.id,
+        categoryKey: 'go_live_category',
+        actorIdentityId: admin.id,
+      });
 
       // First confirm permitted use
       await confirmPermittedUse(unit.id, admin.id);
@@ -171,6 +196,7 @@ describe('Units module', () => {
 
       expect(updated.status).toBe('live');
       expect(updated.permittedUseConfirmedAt).not.toBeNull();
+      expect(updated.inventoryCategoryId).not.toBeNull();
     });
 
     it('checks name uniqueness only if name is changing', async () => {

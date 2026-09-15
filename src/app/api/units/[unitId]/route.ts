@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { resolveEffectiveStayOffer } from '@/modules/booking';
+import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 /**
@@ -10,8 +10,18 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
  * Only live units are visible; returns the guest-safe subset of fields
  * (no owner identity, no engagement economics, no internal status detail).
  *
- * When startDate + endDate are supplied, `pricing` is resolved through the
- * canonical InventoryCategory → RatePlan → PricingRule quotation engine.
+ * When startDate + endDate are supplied, `pricing` is resolved through
+ * `computePriceBreakdown` — the same calculator booking creation,
+ * `/api/pricing/breakdown` and search all use.
+ *
+ * It used to run `resolveEffectiveStayOffer` instead, which was a second money
+ * implementation that disagreed with the first (audit F-6): no seasonal rates,
+ * no length-of-stay or early-bird discounts, no cleaning or service fee, and
+ * `finance.vat_pct` where every other surface reads
+ * `finance.occupancy_tax_pct`. Its `isAvailable` consulted blocked dates only
+ * and never looked at bookings, so a fully booked villa answered "available"
+ * to anyone asking this endpoint. Two engines cannot both be the price.
+ *
  * Legacy baseNightlyThb/minNights remain in the response temporarily for old
  * clients, but new guest surfaces should prefer `pricing`.
  */
@@ -97,36 +107,60 @@ export async function GET(
       nights: number;
       averageNightly: number;
       subtotal: number;
-      vatTax: number;
+      cleaningFee: number;
+      serviceFee: number;
+      discounts: number;
+      occupancyTax: number;
       total: number;
       minNights: number;
-      cancellationPolicyKey: string;
+      cancellationPolicyKey: string | null;
       isAvailable: boolean;
-      availableCapacity: number;
     } | null = null;
+    /** Set when the stay itself is refused (below min stay, over capacity). */
+    let unquotable: string | null = null;
 
     if (startDate && endDate) {
-      const offer = await resolveEffectiveStayOffer(prisma, {
-        unitId: unit.id,
-        startDate,
-        endDate,
-        guests,
-        ratePlanCode: 'BAR',
-      });
-      const toBaht = (satang: number) => Math.round(satang / 100);
-      pricing = {
-        ratePlanCode: offer.ratePlanCode,
-        nights: offer.nightsCount,
-        averageNightly:
-          offer.nightsCount > 0 ? toBaht(Math.round(offer.subtotalThb / offer.nightsCount)) : 0,
-        subtotal: toBaht(offer.subtotalThb),
-        vatTax: toBaht(offer.vatTaxThb),
-        total: toBaht(offer.totalThb),
-        minNights: offer.minNights,
-        cancellationPolicyKey: offer.cancellationPolicyKey,
-        isAvailable: offer.isAvailable,
-        availableCapacity: offer.availableCapacity,
-      };
+      // Availability is asked of the same rows the booking transaction
+      // refuses against — blocked dates AND live bookings, including
+      // unexpired payment holds.
+      const isAvailable = await checkAvailability(prisma, unit.id, startDate, endDate);
+
+      try {
+        const breakdown = await computePriceBreakdown(
+          prisma,
+          unit.id,
+          startDate,
+          endDate,
+          guests
+        );
+        const toBaht = (satang: number) => Math.round(satang / 100);
+        const nights = breakdown.lines.length;
+        pricing = {
+          ratePlanCode: 'BAR',
+          nights,
+          averageNightly: nights > 0 ? toBaht(Math.round(breakdown.subtotal_thb / nights)) : 0,
+          subtotal: toBaht(breakdown.subtotal_thb),
+          cleaningFee: toBaht(breakdown.cleaning_fee_thb),
+          serviceFee: toBaht(breakdown.service_fee_thb),
+          discounts: toBaht(breakdown.los_discount_thb + breakdown.early_bird_discount_thb),
+          occupancyTax: toBaht(breakdown.occupancy_tax_thb),
+          total: toBaht(breakdown.total_thb),
+          // A linked category's terms are mirrored onto the unit on every
+          // write, so the unit column is the resolved value, not a rival one.
+          minNights: unit.minNights,
+          cancellationPolicyKey: unit.cancellationPolicyKey,
+          isAvailable,
+        };
+      } catch (error) {
+        // A stay the rules refuse is not a server error and not a price: the
+        // caller is told why, and gets no number to render.
+        const message = error instanceof Error ? error.message : 'Cannot quote these dates';
+        if (/below minimum|exceeds|does not accept pets|accepts up to/.test(message)) {
+          unquotable = message;
+        } else {
+          throw error;
+        }
+      }
     }
 
     // Doc 13: page_unit_viewed feeds the listing_engagement buyer signal.
@@ -153,6 +187,7 @@ export async function GET(
       // Compatibility field for old clients. New date-aware surfaces use pricing.averageNightly.
       baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
       pricing,
+      ...(unquotable ? { unquotable } : {}),
       images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
     });
   } catch (error) {

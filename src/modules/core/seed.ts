@@ -1,3 +1,4 @@
+import { ensureInventoryCategory } from '@/modules/projects';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
@@ -286,13 +287,55 @@ export async function seedDemoData(db: PrismaClient) {
     });
   }
 
-  // 5. Create demo units across engagement types
+  // 5. Create demo units across engagement types.
+  //
+  // Each demo unit is live, so each needs a canonical InventoryCategory — the
+  // rule `updateUnit`, the pricing engine and the
+  // `unit_inventory_category_coherence` trigger all enforce. Without these
+  // three rows the base seed could not create a single unit once the canonical
+  // bootstrap migration landed (audit F-1), which is why `npm run db:seed` and
+  // every test that depends on it were failing.
+  const [categoryVilla, categoryCondo, categoryTownhouse] = await Promise.all([
+    ensureInventoryCategory(db, {
+      projectId: project.id,
+      categoryKey: 'demo_villa_3br',
+      name: 'Demo 3BR Villa',
+      bedrooms: 3,
+      bathrooms: 2,
+      maxGuests: 6,
+      baseNightlyThb: 500000,
+      minNights: 1,
+    }),
+    ensureInventoryCategory(db, {
+      projectId: project.id,
+      categoryKey: 'demo_condo_2br',
+      name: 'Demo 2BR Condo',
+      bedrooms: 2,
+      bathrooms: 1,
+      maxGuests: 4,
+      baseNightlyThb: 300000,
+      minNights: 2,
+    }),
+    ensureInventoryCategory(db, {
+      projectId: project.id,
+      categoryKey: 'demo_townhouse_2br',
+      name: 'Demo 2BR Townhouse',
+      bedrooms: 2,
+      bathrooms: 2,
+      maxGuests: 4,
+      baseNightlyThb: 350000,
+      minNights: 3,
+    }),
+  ]);
+
   const unitDirect = await db.unit.upsert({
     where: { projectId_name: { projectId: project.id, name: 'Villa A' } },
     create: {
       projectId: project.id,
       ownerIdentityId: ownerIdentity.id,
       name: 'Villa A',
+      inventoryCategoryId: categoryVilla.id,
+      categoryKey: categoryVilla.categoryKey,
       unitType: 'villa',
       bedrooms: 3,
       bathrooms: 2,
@@ -307,7 +350,11 @@ export async function seedDemoData(db: PrismaClient) {
       status: 'live',
       permittedUseConfirmedAt: new Date(),
     },
-    update: { ownerIdentityId: ownerIdentity.id },
+    update: {
+      ownerIdentityId: ownerIdentity.id,
+      inventoryCategoryId: categoryVilla.id,
+      categoryKey: categoryVilla.categoryKey,
+    },
   });
 
   const unitMC = await db.unit.upsert({
@@ -316,6 +363,8 @@ export async function seedDemoData(db: PrismaClient) {
       projectId: project.id,
       ownerIdentityId: ownerIdentity.id,
       name: 'Condo B-101',
+      inventoryCategoryId: categoryCondo.id,
+      categoryKey: categoryCondo.categoryKey,
       unitType: 'condo',
       bedrooms: 2,
       bathrooms: 1,
@@ -331,7 +380,11 @@ export async function seedDemoData(db: PrismaClient) {
       status: 'live',
       permittedUseConfirmedAt: new Date(),
     },
-    update: { ownerIdentityId: ownerIdentity.id },
+    update: {
+      ownerIdentityId: ownerIdentity.id,
+      inventoryCategoryId: categoryCondo.id,
+      categoryKey: categoryCondo.categoryKey,
+    },
   });
 
   const unitOwnerDirect = await db.unit.upsert({
@@ -340,6 +393,8 @@ export async function seedDemoData(db: PrismaClient) {
       projectId: project.id,
       ownerIdentityId: ownerIdentity.id,
       name: 'Townhouse C',
+      inventoryCategoryId: categoryTownhouse.id,
+      categoryKey: categoryTownhouse.categoryKey,
       unitType: 'townhouse',
       bedrooms: 2,
       bathrooms: 2,
@@ -354,7 +409,11 @@ export async function seedDemoData(db: PrismaClient) {
       status: 'live',
       permittedUseConfirmedAt: new Date(),
     },
-    update: { ownerIdentityId: ownerIdentity.id },
+    update: {
+      ownerIdentityId: ownerIdentity.id,
+      inventoryCategoryId: categoryTownhouse.id,
+      categoryKey: categoryTownhouse.categoryKey,
+    },
   });
 
   // 5b. Demo unit photos (cover + gallery rows)

@@ -129,6 +129,7 @@ export {
 
 export {
   createInventoryCategory,
+  ensureInventoryCategory,
   updateInventoryCategory,
   listInventoryCategories,
   ensureBarRatePlans,

@@ -385,3 +385,73 @@ export async function ensureBarRatePlans(
 
   return missing.length;
 }
+
+/**
+ * Idempotent create-or-update, for seeds.
+ *
+ * `createInventoryCategory` refuses a duplicate key, which is right for an
+ * operator clicking a button and wrong for a seed that must be re-runnable.
+ * This holds the same BAR-plan invariant and returns the row either way. It
+ * deliberately does not touch `catalog.unit_categories` or content keys —
+ * seeds write both themselves, with their own copy.
+ */
+export async function ensureInventoryCategory(
+  db: PrismaClient,
+  input: {
+    projectId: string;
+    categoryKey: string;
+    name: string;
+    bedrooms: number;
+    bathrooms: number;
+    maxGuests: number;
+    baseNightlyThb: number;
+    minNights?: number;
+    cancellationPolicyKey?: string | null;
+  }
+) {
+  const minNights = input.minNights ?? 1;
+  const category = await db.inventoryCategory.upsert({
+    where: {
+      projectId_categoryKey: { projectId: input.projectId, categoryKey: input.categoryKey },
+    },
+    create: {
+      projectId: input.projectId,
+      categoryKey: input.categoryKey,
+      name: input.name,
+      bedrooms: input.bedrooms,
+      bathrooms: input.bathrooms,
+      maxGuests: input.maxGuests,
+      baseNightlyThb: input.baseNightlyThb,
+      minNights,
+      cancellationPolicyKey: input.cancellationPolicyKey ?? null,
+      status: 'live',
+    },
+    update: {
+      name: input.name,
+      bedrooms: input.bedrooms,
+      bathrooms: input.bathrooms,
+      maxGuests: input.maxGuests,
+      baseNightlyThb: input.baseNightlyThb,
+      minNights,
+    },
+  });
+
+  const bar = await db.ratePlan.findFirst({
+    where: { categoryId: category.id, code: 'BAR', status: 'active' },
+  });
+  if (!bar) {
+    await db.ratePlan.create({
+      data: {
+        categoryId: category.id,
+        code: 'BAR',
+        name: 'Best Available Rate',
+        isMaster: true,
+        cancellationPolicyKey: category.cancellationPolicyKey,
+        minNights: category.minNights,
+        status: 'active',
+      },
+    });
+  }
+
+  return category;
+}

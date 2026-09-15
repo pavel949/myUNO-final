@@ -294,3 +294,108 @@ describe('POST /api/admin/services', () => {
     expect(res.status).toBe(201);
   });
 });
+
+/**
+ * Keeping a service after it is live.
+ *
+ * The admin screen listed drafts only, and the route offered approve and
+ * reject and nothing else — so a service the team added and approved could
+ * never be corrected, paused, or repriced by anyone. These are the three
+ * things running a marketplace actually needs between approvals.
+ */
+describe('PATCH /api/admin/services/[id] — keeping a service', () => {
+  beforeEach(async () => {
+    await resetDb();
+    mockGetCurrentUser.mockReset();
+  });
+
+  async function liveService() {
+    const admin = await createIdentity({ isAdmin: true });
+    mockGetCurrentUser.mockResolvedValue(adminUser(admin));
+    const provider = await createProvider({ status: 'active' });
+    await db.provider.update({ where: { id: provider.id }, data: { vetted_at: new Date() } });
+    const service = await createService({
+      providerId: provider.id,
+      status: 'active',
+      basePriceThb: 100_000,
+    });
+    return { service };
+  }
+
+  const url = (id: string) => `http://localhost/api/admin/services/${id}`;
+
+  it('corrects the copy of a live service without taking it down', async () => {
+    const { service } = await liveService();
+
+    const res = await PATCH(
+      patch(url(service.id), {
+        action: 'edit',
+        titleRu: 'Уборка после выезда',
+        descriptionRu: 'Исправленное описание',
+      }),
+      { params: { id: service.id } }
+    );
+    expect(res.status).toBe(200);
+
+    const saved = await db.service.findUniqueOrThrow({ where: { id: service.id } });
+    expect(saved.titleRu).toBe('Уборка после выезда');
+    expect(saved.status).toBe('active');
+  });
+
+  it('refuses to reprice a live service, and says how to', async () => {
+    const { service } = await liveService();
+
+    const res = await PATCH(
+      patch(url(service.id), { action: 'edit', basePriceThb: 999_000 }),
+      { params: { id: service.id } }
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Pause the service/);
+
+    const unchanged = await db.service.findUniqueOrThrow({ where: { id: service.id } });
+    expect(unchanged.basePriceThb).toBe(100_000);
+  });
+
+  it('pauses, reprices, and puts the service back', async () => {
+    const { service } = await liveService();
+
+    expect(
+      (await PATCH(patch(url(service.id), { action: 'pause' }), { params: { id: service.id } }))
+        .status
+    ).toBe(200);
+
+    expect(
+      (
+        await PATCH(patch(url(service.id), { action: 'edit', basePriceThb: 999_000 }), {
+          params: { id: service.id },
+        })
+      ).status
+    ).toBe(200);
+
+    expect(
+      (await PATCH(patch(url(service.id), { action: 'activate' }), { params: { id: service.id } }))
+        .status
+    ).toBe(200);
+
+    const saved = await db.service.findUniqueOrThrow({ where: { id: service.id } });
+    expect(saved.basePriceThb).toBe(999_000);
+    expect(saved.status).toBe('active');
+  });
+
+  it('ignores a body key that is not an editable field', async () => {
+    // A stray key must not reach the row: the route whitelists what an admin
+    // may send, rather than forwarding the body.
+    const { service } = await liveService();
+    const before = await db.service.findUniqueOrThrow({ where: { id: service.id } });
+
+    const res = await PATCH(
+      patch(url(service.id), { action: 'edit', titleEn: 'Renamed', categoryKey: 'hijacked' }),
+      { params: { id: service.id } }
+    );
+    expect(res.status).toBe(200);
+
+    const saved = await db.service.findUniqueOrThrow({ where: { id: service.id } });
+    expect(saved.titleEn).toBe('Renamed');
+    expect(saved.categoryKey).toBe(before.categoryKey);
+  });
+});

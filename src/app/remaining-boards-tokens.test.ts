@@ -9,7 +9,7 @@ const checkout = readFileSync(
   'utf8'
 );
 const reconciliation = readFileSync(
-  join(process.cwd(), 'src/app/admin/finance/reconciliation/reconciliation-client.tsx'),
+  join(process.cwd(), 'src/app/(admin)/app/admin/reconciliation/reconciliation-client.tsx'),
   'utf8'
 );
 const announcements = readFileSync(join(process.cwd(), 'src/app/announcements/page.tsx'), 'utf8');

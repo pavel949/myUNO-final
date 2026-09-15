@@ -20,9 +20,9 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-40 px-16 text-small rounded-md font-sans',
-  md: 'h-48 px-24 text-body rounded-md font-sans',
-  lg: 'h-56 px-32 text-subtitle rounded-lg font-display',
+  sm: 'h-40 px-16 min-w-btn-sm text-small rounded-md font-sans',
+  md: 'h-48 px-24 min-w-btn-md text-body rounded-md font-sans',
+  lg: 'h-56 px-32 min-w-btn-lg text-subtitle rounded-lg font-display',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -39,7 +39,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium transition-colors duration-micro disabled:opacity-50 disabled:cursor-not-allowed';
+    // `max-w-full` keeps a long label (RU runs ~86% longer than EN) inside
+    // its container instead of overflowing it; the min-w-* floor above is a
+    // floor only, so the button grows with its content.
+    const baseClasses = 'inline-flex items-center justify-center max-w-full font-medium transition-colors duration-micro disabled:opacity-50 disabled:cursor-not-allowed';
     const variantClass = variantClasses[variant];
     const sizeClass = sizeClasses[size];
     const widthClass = fullWidth ? 'w-full' : '';

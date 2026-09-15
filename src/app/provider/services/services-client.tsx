@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { formatBaht, satangToBaht } from '@/lib/money';
 
 interface ProviderService {
   id: string;
@@ -114,7 +115,7 @@ export default function ProviderServicesClient({
       title: service.title,
       // Pre-fill in baht, matching the field's own label and the create form
       // above — service.basePriceThb is satang (Q49; CLAUDE.md money rules).
-      price: service.basePriceThb != null ? String(service.basePriceThb / 100) : '',
+      price: service.basePriceThb != null ? String(satangToBaht(service.basePriceThb)) : '',
       duration: service.durationMin != null ? String(service.durationMin) : '',
       notice: String(service.advanceNoticeHours),
     });
@@ -209,7 +210,7 @@ export default function ProviderServicesClient({
                         form above does the same conversion, both ways
                         (Q49). */}
                     {service.basePriceThb != null &&
-                      ` · ฿${(service.basePriceThb / 100).toLocaleString()}`}
+                      ` · ${formatBaht(service.basePriceThb)}`}
                   </p>
                 </div>
               )}

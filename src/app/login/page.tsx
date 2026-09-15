@@ -26,6 +26,8 @@ export default async function LoginPage() {
     'auth.login.forgot_password': 'Forgot your password?',
     'auth.login.google_button': 'Continue with Google',
     'auth.login.divider': 'Or continue with email',
+    'auth.password.show': 'Show password',
+    'auth.password.hide': 'Hide password',
   });
 
   return (
@@ -49,6 +51,8 @@ export default async function LoginPage() {
               forgotPassword: labels['auth.login.forgot_password'],
               googleButton: labels['auth.login.google_button'],
               divider: labels['auth.login.divider'],
+              showPassword: labels['auth.password.show'],
+              hidePassword: labels['auth.password.hide'],
             }}
           />
         </Suspense>

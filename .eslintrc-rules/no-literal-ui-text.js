@@ -95,6 +95,10 @@ module.exports = {
           // "no stepping" — a validation instruction to the browser, not a word
           // anyone reads or translates. Same class as `type` and `pattern`.
           'step', 'min', 'max', 'pattern', 'inputMode',
+          // `accept="image/jpeg,image/png"` is a MIME list the browser reads to
+          // filter a file picker — the same class as `type` and `pattern`, and
+          // not language anyone translates.
+          'accept',
           'variant', 'size',
           // HTML table accessibility — `scope="col"` is a screen-reader hint,
           // not a word a reader translates (same class as `role`).

@@ -353,7 +353,7 @@ describe('provider portal routes (S2)', () => {
       expect(denied.status).toBe(404);
     });
 
-    it('rejects editing a non-draft service (400)', async () => {
+    it('rejects repricing a live service (400), since its terms were approved', async () => {
       const active = await createService({
         providerId,
         status: 'active',

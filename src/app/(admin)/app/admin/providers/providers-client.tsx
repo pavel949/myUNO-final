@@ -126,8 +126,7 @@ export default function ProvidersAdminClient({
                     setRejectionReasons((prev) => ({ ...prev, [provider.id]: e.target.value }))
                   }
                   placeholder={labels['admin.providers.reason_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-                  style={{ width: '200px' }}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink w-field-lg"
                 />
               </>
             )}

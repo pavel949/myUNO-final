@@ -439,7 +439,7 @@ export async function GET(req: NextRequest) {
       (minPrice === undefined || priced.effectiveNightlyThb >= minPrice) &&
       (maxPrice === undefined || priced.effectiveNightlyThb <= maxPrice);
 
-    const isPriceSort = sort.key === 'price_asc' || sort.key === 'price_desc';
+    const isPriceSort = Boolean(sort.needsEffectivePrice);
     // Any dated search is priced before pagination so min-stay rejections,
     // effective-price filters and displayed prices all describe the same set.
     const needsCanonicalPricingAcrossCandidates =

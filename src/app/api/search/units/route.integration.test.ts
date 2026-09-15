@@ -37,8 +37,15 @@ describe('GET /api/search/units — category grouping & filters (LY-6)', () => {
       projectId, name: 'G-01', categoryKey: 'grand_deluxe_3br', status: 'live',
       baseNightlyThb: 939300, bedrooms: 3, maxGuests: 6,
     });
-    // A unit without a category never appears in the rollup
-    await createUnit({ projectId, name: 'X-01', status: 'live', baseNightlyThb: 100 });
+    // Something that must stay out of the rollup. It used to be a live unit
+    // with no category, but the canonical guard (migration 20260913210000)
+    // now refuses to store one at all — live implies a category — so the case
+    // this line was written to cover cannot occur. A unit that is not live is
+    // the remaining reason to be excluded, and that is what it checks now.
+    await createUnit({
+      projectId, name: 'X-01', status: 'paused',
+      categoryKey: 'paused_only_1br', baseNightlyThb: 100,
+    });
 
     const res = await GET(
       makeRequest({

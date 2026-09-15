@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { formatBaht } from '@/lib/money';
 
 interface ProviderOrder {
   id: string;
@@ -200,7 +201,7 @@ export default function ProviderOrdersClient({
                   </p>
                   <p className="text-small text-text-secondary">
                     {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
-                    {(order.totalThb / 100).toLocaleString()}
+                    {formatBaht(order.totalThb).replace('฿', '')}
                   </p>
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">
@@ -247,8 +248,7 @@ export default function ProviderOrdersClient({
                         setReasons((prev) => ({ ...prev, [order.id]: e.target.value }))
                       }
                       placeholder={labels['provider.orders.decline_reason']}
-                      className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                      style={{ width: '200px' }}
+                      className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-lg"
                     />
                   )}
                   {order.status === 'accepted' && (

@@ -16,8 +16,19 @@ export default async function AdminUnitsPage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  // A unit cannot go live without an InventoryCategory, so the create form
+  // offers each project's categories rather than leaving the operator to
+  // discover the requirement at go-live (audit F-1).
   const projects = await prisma.project.findMany({
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      inventoryCategories: {
+        where: { status: 'live' },
+        select: { categoryKey: true, name: true, baseNightlyThb: true, minNights: true },
+        orderBy: { name: 'asc' },
+      },
+    },
     orderBy: { name: 'asc' },
   });
 
@@ -36,6 +47,12 @@ export default async function AdminUnitsPage() {
     'admin.units.base_nightly': 'Base ฿/night',
     'admin.units.min_nights': 'Minimum nights',
     'admin.units.no_projects': 'Create a project before adding units.',
+    'admin.units.category': 'Category',
+    'admin.units.category_none': 'No category yet',
+    'admin.units.category_hint':
+      'A unit can only go live once it belongs to a category. Categories are defined on the project page.',
+    'admin.units.category_missing':
+      'This project has no categories yet. Create one on the project page first — a unit without one cannot go live.',
     'admin.units.status': 'Status',
     'admin.units.owner': 'Owner',
     'admin.units.price': 'Base ฿/night',
@@ -59,7 +76,19 @@ export default async function AdminUnitsPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.units.title']}
       </h1>
-      <CreateUnitForm projects={projects} labels={labels} />
+      <CreateUnitForm
+        projects={projects.map((project) => ({
+          id: project.id,
+          name: project.name,
+          categories: project.inventoryCategories.map((category) => ({
+            categoryKey: category.categoryKey,
+            name: category.name,
+            baseNightlyBaht: Math.round(category.baseNightlyThb / 100),
+            minNights: category.minNights,
+          })),
+        }))}
+        labels={labels}
+      />
       <UnitsAdminClient
         units={units.map((unit) => ({
           id: unit.id,

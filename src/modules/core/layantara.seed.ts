@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ensureContentKey, setTranslation } from '@/modules/content';
+import { ensureInventoryCategory } from '@/modules/projects';
 
 /**
  * Seed Layantara Resort — the first real project on the platform (LY-4).
@@ -223,17 +224,44 @@ export async function seedLayantara(db: PrismaClient) {
   // Founder's WhatsApp line (Q16 contact) until a dedicated concierge number exists
   await upsertProjectOverride(db, project.id, 'comms.whatsapp_number', '+66922407355', admin.id);
 
+  // 3a. The canonical InventoryCategory per sellable class.
+  //
+  // `catalog.unit_categories` above is the config-layer taxonomy; this is the
+  // relational row a live unit must point at — required by `updateUnit`, by
+  // the pricing engine, and by the `unit_inventory_category_coherence`
+  // trigger. Without it this seed could not create a single live villa: since
+  // the canonical bootstrap migration landed, running it raised
+  // `Live unit ... must have an InventoryCategory` on the first villa (audit
+  // F-1). `ensureInventoryCategory` is idempotent and brings the category's
+  // BAR rate plan with it, so re-running the seed stays safe.
+  const categoryIdByKey = new Map<string, string>();
+  for (const spec of LAYANTARA_CATEGORIES) {
+    const category = await ensureInventoryCategory(db, {
+      projectId: project.id,
+      categoryKey: spec.key,
+      name: spec.labelEn,
+      bedrooms: spec.bedrooms,
+      bathrooms: spec.bathrooms,
+      maxGuests: spec.maxGuests,
+      baseNightlyThb: spec.nightly.low,
+      minNights: 2,
+    });
+    categoryIdByKey.set(spec.key, category.id);
+  }
+
   // 4. 39 villas. instantBook=false → every booking is a request the manager
   // confirms (the brief's payment story). Base nightly = the category's low
   // rate — a safe fallback if a rate entry is ever removed.
   for (const villa of villaRoster()) {
     const spec = LAYANTARA_CATEGORIES.find((c) => c.key === villa.categoryKey)!;
+    const inventoryCategoryId = categoryIdByKey.get(spec.key)!;
     await db.unit.upsert({
       where: { projectId_name: { projectId: project.id, name: villa.name } },
       create: {
         projectId: project.id,
         name: villa.name,
         unitType: 'villa',
+        inventoryCategoryId,
         categoryKey: spec.key,
         bedrooms: spec.bedrooms,
         bathrooms: spec.bathrooms,
@@ -247,6 +275,7 @@ export async function seedLayantara(db: PrismaClient) {
         permittedUseConfirmedAt: new Date(),
       },
       update: {
+        inventoryCategoryId,
         categoryKey: spec.key,
         bedrooms: spec.bedrooms,
         bathrooms: spec.bathrooms,

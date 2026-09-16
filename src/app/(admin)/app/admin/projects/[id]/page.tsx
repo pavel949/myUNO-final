@@ -4,6 +4,7 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getProjectFacts360 } from '@/modules/projects';
+import { getCatalogKeys } from '@/modules/config';
 import Project360Client from './Project360Client';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,12 @@ export const dynamic = 'force-dynamic';
 export default async function Project360Page({ params }: { params: { id: string } }) {
   const data = await getProjectFacts360(prisma, params.id);
   if (!data) notFound();
+
+  // The cancellation policies the category form may offer come from the
+  // catalog, not from a list in this file (doc 04 §8).
+  const policyKeys = await getCatalogKeys(prisma, 'catalog.cancellation_policies', {
+    projectId: params.id,
+  });
 
   const labels = await getLabels({
     'admin.project360.home': 'Home',
@@ -60,6 +67,30 @@ export default async function Project360Page({ params }: { params: { id: string 
     'admin.project360.scope_category': 'Category scoped',
     'admin.project360.scope_project': 'Project scoped',
     'admin.project360.min_nights_inline': 'min {count} nights',
+    'admin.project360.category_add': 'Add a category',
+    'admin.project360.category_cancel': 'Cancel',
+    'admin.project360.category_saving': 'Saving…',
+    'admin.project360.category_name': 'Name shown to guests',
+    'admin.project360.category_key': 'Key',
+    'admin.project360.category_key_hint': 'Lowercase, digits and underscores. Cannot be changed later.',
+    'admin.project360.category_base_rate': 'Base ฿/night',
+    'admin.project360.category_policy': 'Cancellation policy',
+    'admin.project360.category_policy_none': 'Project default',
+    'admin.project360.category_error': 'That did not save. Please try again.',
+    'admin.project360.category_edit': 'Edit',
+    'admin.project360.category_save': 'Save changes',
+    'admin.project360.category_key_locked':
+      'The key cannot change — units, the project catalog and the content key all point at it.',
+    'admin.project360.category_edit_hint':
+      'Changing the base rate or minimum stay here changes what this class sells for. Existing bookings keep the price they were quoted.',
+    'admin.project360.col_actions': 'Actions',
+    'admin.project360.category_form_hint':
+      'A category is what this project sells — a room type or a villa class. A unit cannot go live until it belongs to one.',
+    'admin.units.bedrooms': 'Bedrooms',
+    'admin.units.bathrooms': 'Bathrooms',
+    'catalog.cancellation_policies.flexible.label': 'Flexible',
+    'catalog.cancellation_policies.moderate.label': 'Moderate',
+    'catalog.cancellation_policies.strict.label': 'Strict',
     'admin.project360.facilities_title': 'Project Facilities',
     'admin.project360.no_facilities': 'No project facilities configured.',
   });
@@ -154,6 +185,7 @@ export default async function Project360Page({ params }: { params: { id: string 
           openWorkItemsCount: data.canonicalInventory.openWorkItemsCount,
         }}
         completenessScore={data.completenessScore}
+        policyKeys={policyKeys}
         labels={labels}
       />
     </div>

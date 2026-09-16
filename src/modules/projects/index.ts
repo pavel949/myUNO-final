@@ -133,3 +133,13 @@ export {
   BLOCKING_REASONS,
   getLabel,
 } from './taxonomies';
+
+export {
+  createInventoryCategory,
+  ensureInventoryCategory,
+  updateInventoryCategory,
+  listInventoryCategories,
+  ensureBarRatePlans,
+  type CreateInventoryCategoryInput,
+  type UpdateInventoryCategoryInput,
+} from './inventory.service';

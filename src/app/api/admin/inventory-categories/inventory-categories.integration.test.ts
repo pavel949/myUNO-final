@@ -14,7 +14,7 @@ vi.mock('@/lib/prisma', async () => {
 
 import { POST as createCategory } from './route';
 import { PATCH as updateCategory } from './[categoryId]/route';
-import { PATCH as assignUnitCategory } from '../units/[id]/inventory-category/route';
+import { PATCH as assignUnitCategory } from '@/app/api/admin/units/[id]/inventory-category/route';
 
 function adminUser(identity: { id: string; email: string | null }) {
   return {
@@ -175,7 +175,6 @@ describe('canonical inventory category admin writes', () => {
   it('rejects master inventory writes from non-admin users', async () => {
     const identity = await createIdentity();
     const project = await createProject();
-    mockGetCurrentUser.mockResolvedValue(adminUser(identity));
     mockGetCurrentUser.mockResolvedValue({
       ...adminUser(identity),
       isAdmin: false,

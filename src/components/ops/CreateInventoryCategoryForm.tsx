@@ -89,7 +89,7 @@ export default function CreateInventoryCategoryForm({ projects, defaultProjectId
             name="categoryKey"
             required
             pattern="[a-z0-9]+(?:_[a-z0-9]+)*"
-            placeholder="superior_2br"
+            placeholder={labels['staff.inventory.category_key_placeholder']}
             className="block h-40 w-full mt-4 rounded-sm border border-border-line bg-surface-paper px-10 text-small text-text-ink"
           />
         </label>

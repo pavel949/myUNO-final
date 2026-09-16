@@ -60,6 +60,14 @@ function dayLabel(date: Date): string {
   }).format(date);
 }
 
+function fill(template: string, params: Record<string, string | number>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  }
+  return result;
+}
+
 function calendarHref(start: Date, days: number, projectId: string | null) {
   const params = new URLSearchParams({ start: isoDate(start), days: String(days) });
   if (projectId) params.set('projectId', projectId);
@@ -224,6 +232,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     'staff.calendar.portfolio.back': '← Today',
     'staff.calendar.portfolio.inventory': 'Inventory & pricing',
     'staff.calendar.portfolio.today': 'Today',
+    'staff.calendar.portfolio.today_badge': 'TODAY',
     'staff.calendar.portfolio.previous': 'Previous',
     'staff.calendar.portfolio.next': 'Next',
     'staff.calendar.portfolio.days': 'days',
@@ -240,6 +249,9 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     'staff.calendar.portfolio.no_units': 'No units in this project scope.',
     'staff.calendar.portfolio.open': 'Open villa calendar',
     'staff.calendar.portfolio.uncategorized': 'Uncategorized',
+    'staff.calendar.portfolio.unit_category': 'Villa / category',
+    'staff.calendar.portfolio.base_min': '฿{rate} · min {nights} nights',
+    'staff.calendar.portfolio.conflict': 'Conflict: {reason}',
     'staff.calendar.portfolio.in': 'IN',
     'staff.calendar.portfolio.out': 'OUT',
     'staff.ops.context.switcher': 'Project context',
@@ -247,8 +259,12 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     'staff.ops.context.active': 'Showing',
   });
 
-  const arrivals = bookings.filter((booking) => booking.startDate >= startDate && booking.startDate < endDate).length;
-  const departures = bookings.filter((booking) => booking.endDate > startDate && booking.endDate <= endDate).length;
+  const arrivals = bookings.filter(
+    (booking) => booking.startDate >= startDate && booking.startDate < endDate
+  ).length;
+  const departures = bookings.filter(
+    (booking) => booking.endDate > startDate && booking.endDate <= endDate
+  ).length;
   const cardClass = 'rounded-lg border border-border-line bg-surface-paper p-12';
 
   return (
@@ -293,11 +309,26 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
         />
 
         <section className="grid grid-cols-2 lg:grid-cols-5 gap-8 my-16">
-          <div className={cardClass}><p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.bookings']}</p><p className="font-display text-title font-semibold text-text-ink mt-2">{bookings.length}</p></div>
-          <div className={cardClass}><p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.arrivals']}</p><p className="font-display text-title font-semibold text-text-ink mt-2">{arrivals}</p></div>
-          <div className={cardClass}><p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.departures']}</p><p className="font-display text-title font-semibold text-text-ink mt-2">{departures}</p></div>
-          <div className={cardClass}><p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.blocks']}</p><p className="font-display text-title font-semibold text-text-ink mt-2">{blocks.length}</p></div>
-          <div className={cardClass}><p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.overrides']}</p><p className="font-display text-title font-semibold text-text-ink mt-2">{pricingRules.length}</p></div>
+          <div className={cardClass}>
+            <p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.bookings']}</p>
+            <p className="font-display text-title font-semibold text-text-ink mt-2">{bookings.length}</p>
+          </div>
+          <div className={cardClass}>
+            <p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.arrivals']}</p>
+            <p className="font-display text-title font-semibold text-text-ink mt-2">{arrivals}</p>
+          </div>
+          <div className={cardClass}>
+            <p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.departures']}</p>
+            <p className="font-display text-title font-semibold text-text-ink mt-2">{departures}</p>
+          </div>
+          <div className={cardClass}>
+            <p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.blocks']}</p>
+            <p className="font-display text-title font-semibold text-text-ink mt-2">{blocks.length}</p>
+          </div>
+          <div className={cardClass}>
+            <p className="text-micro text-text-secondary">{labels['staff.calendar.portfolio.overrides']}</p>
+            <p className="font-display text-title font-semibold text-text-ink mt-2">{pricingRules.length}</p>
+          </div>
         </section>
 
         <section className="mb-12 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
@@ -351,7 +382,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
               <thead>
                 <tr>
                   <th className="sticky left-0 top-0 z-30 min-w-[220px] border-b border-r border-border-line bg-surface-paper p-10 text-left text-text-secondary">
-                    Villa / category
+                    {labels['staff.calendar.portfolio.unit_category']}
                   </th>
                   {dates.map((date) => {
                     const dayIso = isoDate(date);
@@ -364,7 +395,11 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
                         }`}
                       >
                         <p className="font-semibold">{dayLabel(date)}</p>
-                        {isToday ? <p className="text-micro text-brand-andaman">TODAY</p> : null}
+                        {isToday ? (
+                          <p className="text-micro text-brand-andaman">
+                            {labels['staff.calendar.portfolio.today_badge']}
+                          </p>
+                        ) : null}
                       </th>
                     );
                   })}
@@ -391,7 +426,10 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
                           {unit.inventoryCategory?.name || labels['staff.calendar.portfolio.uncategorized']}
                         </p>
                         <p className="text-micro text-text-muted mt-2 tabular-nums">
-                          ฿{Math.round(baseRate / 100).toLocaleString()} · min {minStay}n
+                          {fill(labels['staff.calendar.portfolio.base_min'], {
+                            rate: Math.round(baseRate / 100).toLocaleString(),
+                            nights: minStay,
+                          })}
                         </p>
                         <Link
                           href={opsHref(`/ops/calendar/${unit.id}`, validActiveProjectId ?? unit.projectId)}
@@ -442,7 +480,11 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
                                   <p className="text-micro text-text-muted mt-2">{labels['staff.calendar.portfolio.out']} · {departing.guestIdentity.lastName}</p>
                                 ) : null}
                                 {block ? (
-                                  <p className="text-micro font-semibold text-state-error mt-2">Conflict: {String(block.reason).replace(/_/g, ' ')}</p>
+                                  <p className="text-micro font-semibold text-state-error mt-2">
+                                    {fill(labels['staff.calendar.portfolio.conflict'], {
+                                      reason: String(block.reason).replace(/_/g, ' '),
+                                    })}
+                                  </p>
                                 ) : null}
                               </div>
                             ) : block ? (

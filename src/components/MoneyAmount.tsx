@@ -37,8 +37,11 @@ export const MoneyAmount: React.FC<MoneyAmountProps> = ({ satang, className }) =
   const formatted = formatBaht(satang);
   const negative = satangToBaht(satang) < 0;
 
+  // Board 21: in every label-and-amount pair the label wraps and the figure
+  // does not. Carried by the primitive rather than by each call site, so a
+  // longer RU/TH label can never push a price onto two lines.
   const classes = [
-    'font-display font-medium tabular-nums',
+    'font-display font-medium tabular-nums shrink-0 whitespace-nowrap',
     negative ? 'text-state-error' : '',
     className || '',
   ]

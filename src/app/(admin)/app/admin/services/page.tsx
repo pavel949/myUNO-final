@@ -29,8 +29,14 @@ export default async function AdminServicesPage() {
   }
 
   const [services, providers, catalog] = await Promise.all([
+    /*
+     * Every service, not only the ones awaiting a decision. The screen used to
+     * ask for `status: 'draft'`, so a service vanished from the admin the
+     * moment it was approved: the team could add one and approve it, and then
+     * had nowhere to see it, let alone correct a description. Drafts still
+     * come first — they are the ones waiting on a person.
+     */
     prisma.service.findMany({
-      where: { status: 'draft' },
       include: {
         provider: {
           select: {
@@ -38,9 +44,10 @@ export default async function AdminServicesPage() {
             name: true,
           },
         },
+        coverMedia: { select: { storageKey: true } },
       },
-      orderBy: { createdAt: 'asc' },
-      take: 50,
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      take: 200,
     }),
     prisma.provider.findMany({
       where: { status: 'active' },
@@ -88,6 +95,27 @@ export default async function AdminServicesPage() {
     'admin.services.create_submit': 'Add service',
     'admin.services.create_working': 'Adding…',
     'admin.services.create_success': 'Service added and live on the marketplace.',
+    'admin.services.status_active': 'Live',
+    'admin.services.status_paused': 'Paused',
+    'admin.services.edit': 'Edit',
+    'admin.services.edit_cancel': 'Cancel',
+    'admin.services.edit_save': 'Save changes',
+    'admin.services.edit_saving': 'Saving…',
+    'admin.services.pause': 'Pause',
+    'admin.services.activate': 'Put live',
+    'admin.services.filter_all': 'All',
+    'admin.services.filter_draft': 'Awaiting approval',
+    'admin.services.filter_active': 'Live',
+    'admin.services.filter_paused': 'Paused',
+    'admin.services.locked_hint':
+      'A live service keeps the price it was approved on. Pause it to change price, duration or notice.',
+    'admin.services.count': '{count} services',
+    'admin.services.photo': 'Photo',
+    'admin.services.photo_upload': 'Upload a photo',
+    'admin.services.photo_uploading': 'Uploading…',
+    'admin.services.photo_remove': 'Remove photo',
+    'admin.services.photo_none': 'No photo yet — a service without one is far less likely to be ordered.',
+    'admin.services.photo_too_large': 'That image is over 8 MB. Use a smaller one.',
     ...categoryLabelDrafts,
   });
 
@@ -110,6 +138,20 @@ export default async function AdminServicesPage() {
           title: s.title,
           providerName: s.provider?.name || '—',
           status: s.status,
+          categoryKey: s.categoryKey,
+          priceModel: s.priceModel,
+          // Satang, as stored. The form converts for the field and back on
+          // save — the one conversion pair, at the edge (CLAUDE.md money).
+          basePriceThb: s.basePriceThb,
+          durationMin: s.durationMin,
+          advanceNoticeHours: s.advanceNoticeHours,
+          titleEn: s.titleEn,
+          titleRu: s.titleRu,
+          titleTh: s.titleTh,
+          descriptionEn: s.descriptionEn,
+          descriptionRu: s.descriptionRu,
+          descriptionTh: s.descriptionTh,
+          coverUrl: s.coverMedia?.storageKey ?? null,
           createdAt: s.createdAt.toISOString(),
         }))}
         labels={labels}

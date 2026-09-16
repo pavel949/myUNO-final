@@ -1710,6 +1710,11 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'owner.contract.title', namespace: 'owner', description: 'Owner contract panel title', en: 'Management contract', ru: 'Договор управления', th: 'สัญญาบริหารจัดการ', status: NR },
   { key: 'admin.nav.prospecting', namespace: 'admin', description: 'Admin nav: prospecting pipeline', en: 'Prospecting', ru: 'Проспектинг', th: 'การหาลูกค้า', status: NR },
   { key: 'admin.nav.kpis', namespace: 'admin', description: 'Admin nav: operational KPIs', en: 'Operational KPIs', ru: 'Операционные KPI', th: 'KPI การดำเนินงาน', status: NR },
+  // The four named sections of the admin sidebar (design system board 03).
+  { key: 'admin.nav.group.grow', namespace: 'admin', description: 'Admin nav section: grow', en: 'Grow', ru: 'Рост', th: 'เติบโต', status: NR },
+  { key: 'admin.nav.group.inventory', namespace: 'admin', description: 'Admin nav section: inventory', en: 'Inventory', ru: 'Портфель', th: 'สินทรัพย์', status: NR },
+  { key: 'admin.nav.group.supply', namespace: 'admin', description: 'Admin nav section: supply and content', en: 'Supply & content', ru: 'Поставщики и контент', th: 'ซัพพลายและเนื้อหา', status: NR },
+  { key: 'admin.nav.group.money', namespace: 'admin', description: 'Admin nav section: money and record', en: 'Money & record', ru: 'Финансы и учёт', th: 'การเงินและบันทึก', status: NR },
   { key: 'admin.prospecting.title', namespace: 'admin', description: 'Admin prospecting: page title', en: 'Prospecting accounts', ru: 'Проспектинговые аккаунты', th: 'บัญชีการหาลูกค้า', status: NR },
   { key: 'admin.prospecting.subtitle', namespace: 'admin', description: 'Admin prospecting: intro', en: 'Owner-side outreach pipeline — track new contacts through first conversation to close.', ru: 'Воронка outreach — от первого контакта до закрытия.', th: 'ไปป์ไลน์การติดต่อ —ติดตามจากแรกพบจนปิดดีล', status: NR },
   { key: 'admin.kpis.title', namespace: 'admin', description: 'Admin KPIs: page title', en: 'Operational KPIs', ru: 'Операционные KPI', th: 'KPI การดำเนินงาน', status: NR },
@@ -2447,6 +2452,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'home.order.you_rated', namespace: 'home', description: 'In-stay home space: the rating this guest already left', en: 'You rated:', ru: 'Ваша оценка:', th: 'คุณให้คะแนน:', status: NR },
   { key: 'auth.login.google_button', namespace: 'auth', description: 'Login: continue with Google', en: 'Continue with Google', ru: 'Войти через Google', th: 'ดำเนินการต่อด้วย Google', status: NR },
   { key: 'auth.login.divider', namespace: 'auth', description: 'Login: divider above the email form', en: 'Or continue with email', ru: 'Или по электронной почте', th: 'หรือดำเนินการต่อด้วยอีเมล', status: NR },
+  // The reveal toggle on every password field (design board 18).
+  { key: 'auth.password.show', namespace: 'auth', description: 'Password field: reveal toggle, hidden state', en: 'Show password', ru: 'Показать пароль', th: 'แสดงรหัสผ่าน', status: NR },
+  { key: 'auth.password.hide', namespace: 'auth', description: 'Password field: reveal toggle, revealed state', en: 'Hide password', ru: 'Скрыть пароль', th: 'ซ่อนรหัสผ่าน', status: NR },
   { key: 'about.title', namespace: 'about', description: 'About page: title', en: 'About Ignatev Estate and myUNO', ru: 'Об Ignatev Estate и myUNO', th: 'เกี่ยวกับ Ignatev Estate และ myUNO', status: NR },
   { key: 'about.intro', namespace: 'about', description: 'About page: introduction', en: 'Ignatev Estate operates myUNO — a platform designed for 20-year wealth building through serviced living in Phuket.', ru: 'Ignatev Estate управляет платформой myUNO, созданной для построения капитала на горизонте 20 лет через сервисное проживание на Пхукете.', th: 'Ignatev Estate ดำเนินการ myUNO — แพลตฟอร์มที่ออกแบบเพื่อการสร้างความมั่งคั่งระยะ 20 ปี ผ่านที่พักพร้อมบริการในภูเก็ต', status: NR },
   { key: 'mc.costs.context', namespace: 'mc', description: 'Management-company cost form: portfolio context label', en: 'Portfolio context', ru: 'Контекст портфеля', th: 'บริบทพอร์ตโฟลิโอ', status: NR },
@@ -4317,6 +4325,129 @@ const SCHEDULER_KEYS: KeyDef[] = [
 ];
 
 
+/**
+ * The canonical 360 admin workspaces (Developer 360, Project 360, Unit 360).
+ *
+ * Added with those screens but never seeded, so every one of them would have
+ * rendered its English draft in Russian and Thai — silently, because a missing
+ * key falls back rather than failing. RU/TH here are drafts: they carry
+ * needs_review so they reach the founder's content queue rather than shipping
+ * on an agent's wording.
+ */
+const CANONICAL_360_KEYS: KeyDef[] = [
+  { key: 'admin.dev360.active_credentials', namespace: 'admin', description: 'Developer 360: active credentials count', en: 'Active credentials', ru: 'Действующие аккредитации', th: 'ใบรับรองที่ใช้งานอยู่', status: NR },
+  { key: 'admin.dev360.contact_title', namespace: 'admin', description: 'Developer 360: contact and verification section', en: 'Contact & verification', ru: 'Контакты и проверка', th: 'ข้อมูลติดต่อและการยืนยัน', status: NR },
+  { key: 'admin.dev360.credentials_verified', namespace: 'admin', description: 'Developer 360: verified credential ratio', en: '{verified}/{total} credentials verified', ru: 'Проверено аккредитаций: {verified}/{total}', th: 'ยืนยันใบรับรองแล้ว {verified}/{total}', status: NR },
+  { key: 'admin.dev360.email', namespace: 'admin', description: 'Developer 360: email field', en: 'Email', ru: 'Эл. почта', th: 'อีเมล', status: NR },
+  { key: 'admin.dev360.established', namespace: 'admin', description: 'Developer 360: year established', en: 'Established', ru: 'Основана', th: 'ก่อตั้งเมื่อ', status: NR },
+  { key: 'admin.dev360.metric_bookings', namespace: 'admin', description: 'Developer 360: bookings metric', en: 'Bookings', ru: 'Бронирования', th: 'การจอง', status: NR },
+  { key: 'admin.dev360.metric_categories', namespace: 'admin', description: 'Developer 360: categories metric', en: 'Categories', ru: 'Категории', th: 'หมวดหมู่', status: NR },
+  { key: 'admin.dev360.metric_rate_plans', namespace: 'admin', description: 'Developer 360: rate plans metric', en: 'Rate plans', ru: 'Тарифные планы', th: 'แผนราคา', status: NR },
+  { key: 'admin.dev360.metric_units', namespace: 'admin', description: 'Developer 360: units metric', en: 'Units', ru: 'Юниты', th: 'ยูนิต', status: NR },
+  { key: 'admin.dev360.phone', namespace: 'admin', description: 'Developer 360: phone field', en: 'Phone', ru: 'Телефон', th: 'โทรศัพท์', status: NR },
+  { key: 'admin.dev360.primary', namespace: 'admin', description: 'Developer 360: primary contact marker', en: 'Primary', ru: 'Основной', th: 'หลัก', status: NR },
+  { key: 'admin.dev360.track_active', namespace: 'admin', description: 'Developer 360: active projects in track record', en: 'Active', ru: 'В работе', th: 'กำลังดำเนินการ', status: NR },
+  { key: 'admin.dev360.track_completed', namespace: 'admin', description: 'Developer 360: completed projects in track record', en: 'Completed', ru: 'Завершено', th: 'เสร็จสิ้น', status: NR },
+  { key: 'admin.dev360.track_planned', namespace: 'admin', description: 'Developer 360: planned projects in track record', en: 'Planned', ru: 'Запланировано', th: 'วางแผนไว้', status: NR },
+  { key: 'admin.dev360.track_record_title', namespace: 'admin', description: 'Developer 360: track record section', en: 'Track record', ru: 'Портфель проектов', th: 'ผลงานที่ผ่านมา', status: NR },
+  { key: 'admin.dev360.track_units_delivered', namespace: 'admin', description: 'Developer 360: units delivered in track record', en: 'Units delivered', ru: 'Сдано юнитов', th: 'ยูนิตที่ส่งมอบ', status: NR },
+  { key: 'admin.dev360.verification_unverified', namespace: 'admin', description: 'Developer 360: unverified state', en: 'unverified', ru: 'не подтверждено', th: 'ยังไม่ยืนยัน', status: NR },
+  { key: 'admin.dev360.website', namespace: 'admin', description: 'Developer 360: website field', en: 'Website', ru: 'Сайт', th: 'เว็บไซต์', status: NR },
+  { key: 'admin.organizations.developer360_hint', namespace: 'admin', description: 'Organizations: Developer 360 card explainer', en: 'Verified developer identity, portfolio, project roles and canonical inventory coverage.', ru: 'Подтверждённая личность застройщика, портфель, роли в проектах и охват канонического инвентаря.', th: 'ตัวตนผู้พัฒนาที่ยืนยันแล้ว พอร์ตโฟลิโอ บทบาทในโครงการ และความครอบคลุมของคลังมาตรฐาน', status: NR },
+  { key: 'admin.organizations.developer360_open', namespace: 'admin', description: 'Organizations: open the Developer 360 profile', en: 'Open profile', ru: 'Открыть профиль', th: 'เปิดโปรไฟล์', status: NR },
+  { key: 'admin.organizations.developer360_projects', namespace: 'admin', description: 'Organizations: project count suffix', en: 'projects', ru: 'проектов', th: 'โครงการ', status: NR },
+  { key: 'admin.organizations.developer360_title', namespace: 'admin', description: 'Organizations: Developer 360 card title', en: 'Developer 360', ru: 'Developer 360', th: 'Developer 360', status: NR },
+  { key: 'admin.project360.categories_count', namespace: 'admin', description: 'Project 360: category and linked-unit counts', en: '{categories} categories · {units} linked units', ru: '{categories} категорий · {units} связанных юнитов', th: '{categories} หมวดหมู่ · {units} ยูนิตที่เชื่อมโยง', status: NR },
+  { key: 'admin.project360.categories_empty', namespace: 'admin', description: 'Project 360: no canonical categories', en: 'No canonical inventory categories configured.', ru: 'Канонические категории инвентаря не настроены.', th: 'ยังไม่ได้ตั้งค่าหมวดหมู่คลังมาตรฐาน', status: NR },
+  { key: 'admin.project360.categories_hint', namespace: 'admin', description: 'Project 360: category chain explainer', en: 'Project → InventoryCategory → Unit. This is the sellable-class source of truth.', ru: 'Project → InventoryCategory → Unit. Это источник истины о продаваемом классе.', th: 'Project → InventoryCategory → Unit คือแหล่งอ้างอิงหลักของคลาสที่ขายได้', status: NR },
+  { key: 'admin.project360.categories_title', namespace: 'admin', description: 'Project 360: canonical categories section', en: 'Canonical inventory categories', ru: 'Канонические категории инвентаря', th: 'หมวดหมู่คลังมาตรฐาน', status: NR },
+  { key: 'admin.project360.col_base_rate', namespace: 'admin', description: 'Project 360: base rate column', en: 'Base rate', ru: 'Базовый тариф', th: 'อัตราพื้นฐาน', status: NR },
+  { key: 'admin.project360.col_beds_baths', namespace: 'admin', description: 'Project 360: beds and baths column', en: 'Beds/Baths', ru: 'Спальни/Ванные', th: 'ห้องนอน/ห้องน้ำ', status: NR },
+  { key: 'admin.project360.col_category', namespace: 'admin', description: 'Project 360: category column', en: 'Category', ru: 'Категория', th: 'หมวดหมู่', status: NR },
+  { key: 'admin.project360.col_guests', namespace: 'admin', description: 'Project 360: guests column', en: 'Guests', ru: 'Гостей', th: 'ผู้เข้าพัก', status: NR },
+  { key: 'admin.project360.col_min_stay', namespace: 'admin', description: 'Project 360: minimum stay column', en: 'Min stay', ru: 'Мин. срок', th: 'พักขั้นต่ำ', status: NR },
+  { key: 'admin.project360.col_units', namespace: 'admin', description: 'Project 360: units column', en: 'Units', ru: 'Юниты', th: 'ยูนิต', status: NR },
+  { key: 'admin.project360.completion', namespace: 'admin', description: 'Project 360: completion date', en: 'Completion', ru: 'Срок сдачи', th: 'กำหนดแล้วเสร็จ', status: NR },
+  { key: 'admin.project360.construction', namespace: 'admin', description: 'Project 360: construction status', en: 'Construction', ru: 'Строительство', th: 'การก่อสร้าง', status: NR },
+  { key: 'admin.project360.location', namespace: 'admin', description: 'Project 360: location field', en: 'Location', ru: 'Расположение', th: 'ทำเลที่ตั้ง', status: NR },
+  { key: 'admin.project360.metric_bookings', namespace: 'admin', description: 'Project 360: bookings metric', en: 'Bookings', ru: 'Бронирования', th: 'การจอง', status: NR },
+  { key: 'admin.project360.metric_canonical_coverage', namespace: 'admin', description: 'Project 360: canonical coverage metric', en: 'Canonical coverage', ru: 'Охват каноническими данными', th: 'ความครอบคลุมข้อมูลมาตรฐาน', status: NR },
+  { key: 'admin.project360.metric_ledger', namespace: 'admin', description: 'Project 360: ledger entries metric', en: 'Ledger entries', ru: 'Записи в реестре', th: 'รายการในบัญชีแยกประเภท', status: NR },
+  { key: 'admin.project360.metric_tickets', namespace: 'admin', description: 'Project 360: tickets metric', en: 'Tickets', ru: 'Обращения', th: 'ทิกเก็ต', status: NR },
+  { key: 'admin.project360.migration_required', namespace: 'admin', description: 'Project 360: inventory migration warning title', en: 'Inventory migration required', ru: 'Требуется миграция инвентаря', th: 'ต้องย้ายข้อมูลคลัง', status: NR },
+  { key: 'admin.project360.migration_summary', namespace: 'admin', description: 'Project 360: inventory migration detail', en: '{legacy} unit(s) still rely only on legacy category keys; {uncategorized} are uncategorized.', ru: '{legacy} юнит(ов) всё ещё опираются только на устаревшие ключи категорий; {uncategorized} без категории.', th: '{legacy} ยูนิตยังใช้คีย์หมวดหมู่แบบเดิมเท่านั้น และ {uncategorized} ยังไม่มีหมวดหมู่', status: NR },
+  { key: 'admin.project360.min_nights_inline', namespace: 'admin', description: 'Project 360: inline minimum nights', en: 'min {count} nights', ru: 'мин. {count} ноч.', th: 'ขั้นต่ำ {count} คืน', status: NR },
+  { key: 'admin.project360.nights', namespace: 'admin', description: 'Project 360: night count', en: '{count} night(s)', ru: '{count} ноч.', th: '{count} คืน', status: NR },
+  { key: 'admin.project360.open_developer', namespace: 'admin', description: 'Project 360: link to Developer 360', en: 'Open Developer 360', ru: 'Открыть Developer 360', th: 'เปิด Developer 360', status: NR },
+  { key: 'admin.project360.operational_title', namespace: 'admin', description: 'Project 360: operational footprint section', en: 'Operational footprint', ru: 'Операционный контур', th: 'ขอบเขตการดำเนินงาน', status: NR },
+  { key: 'admin.project360.primary', namespace: 'admin', description: 'Project 360: primary marker', en: 'Primary', ru: 'Основной', th: 'หลัก', status: NR },
+  { key: 'admin.project360.rate_plans_empty', namespace: 'admin', description: 'Project 360: no rate plans', en: 'No RatePlan records configured.', ru: 'Записи RatePlan не настроены.', th: 'ยังไม่ได้ตั้งค่าเรกคอร์ด RatePlan', status: NR },
+  { key: 'admin.project360.rate_plans_hint', namespace: 'admin', description: 'Project 360: rate plan scope explainer', en: 'Canonical commercial transformations attached at project, category, or unit scope.', ru: 'Канонические коммерческие преобразования на уровне проекта, категории или юнита.', th: 'การแปลงเชิงพาณิชย์มาตรฐานที่ผูกกับระดับโครงการ หมวดหมู่ หรือยูนิต', status: NR },
+  { key: 'admin.project360.rate_plans_title', namespace: 'admin', description: 'Project 360: rate plans section', en: 'Rate plans', ru: 'Тарифные планы', th: 'แผนราคา', status: NR },
+  { key: 'admin.project360.scope_category', namespace: 'admin', description: 'Project 360: category-scoped rate plan', en: 'Category scoped', ru: 'На уровне категории', th: 'ระดับหมวดหมู่', status: NR },
+  { key: 'admin.project360.scope_project', namespace: 'admin', description: 'Project 360: project-scoped rate plan', en: 'Project scoped', ru: 'На уровне проекта', th: 'ระดับโครงการ', status: NR },
+  { key: 'admin.project360.scope_unit', namespace: 'admin', description: 'Project 360: unit-scoped rate plan', en: 'Unit scoped', ru: 'На уровне юнита', th: 'ระดับยูนิต', status: NR },
+  { key: 'admin.unit360.base_rate', namespace: 'admin', description: 'Unit 360: unit base rate', en: 'Unit base rate', ru: 'Базовый тариф юнита', th: 'อัตราพื้นฐานของยูนิต', status: NR },
+  { key: 'admin.unit360.category', namespace: 'admin', description: 'Unit 360: inventory category field', en: 'Inventory category', ru: 'Категория инвентаря', th: 'หมวดหมู่คลัง', status: NR },
+  { key: 'admin.unit360.category_legacy', namespace: 'admin', description: 'Unit 360: legacy category key only', en: 'Legacy category key only', ru: 'Только устаревший ключ категории', th: 'มีเฉพาะคีย์หมวดหมู่แบบเดิม', status: NR },
+  { key: 'admin.unit360.category_linked', namespace: 'admin', description: 'Unit 360: canonical category link active', en: 'Canonical link active', ru: 'Каноническая связь активна', th: 'การเชื่อมโยงมาตรฐานทำงานอยู่', status: NR },
+  { key: 'admin.unit360.category_none', namespace: 'admin', description: 'Unit 360: no category assigned', en: 'No category assigned', ru: 'Категория не назначена', th: 'ยังไม่ได้กำหนดหมวดหมู่', status: NR },
+  { key: 'admin.unit360.graph_hint', namespace: 'admin', description: 'Unit 360: canonical graph chain', en: 'Project → Inventory category → Unit → Rate plan', ru: 'Проект → Категория инвентаря → Юнит → Тарифный план', th: 'โครงการ → หมวดหมู่คลัง → ยูนิต → แผนราคา', status: NR },
+  { key: 'admin.unit360.graph_title', namespace: 'admin', description: 'Unit 360: canonical property graph section', en: 'Canonical property graph', ru: 'Канонический граф объекта', th: 'กราฟอสังหาริมทรัพย์มาตรฐาน', status: NR },
+  { key: 'admin.unit360.legacy_warning', namespace: 'admin', description: 'Unit 360: legacy category warning', en: 'This unit still has a legacy category key without an InventoryCategory link. Re-save the category after the canonical category exists.', ru: 'У этого юнита остался устаревший ключ категории без связи с InventoryCategory. Сохраните категорию заново после создания канонической категории.', th: 'ยูนิตนี้ยังมีคีย์หมวดหมู่แบบเดิมโดยไม่มีการเชื่อมกับ InventoryCategory กรุณาบันทึกหมวดหมู่อีกครั้งหลังจากมีหมวดหมู่มาตรฐานแล้ว', status: NR },
+  { key: 'admin.unit360.min_stay', namespace: 'admin', description: 'Unit 360: unit minimum stay', en: 'Unit minimum stay', ru: 'Минимальный срок для юнита', th: 'การเข้าพักขั้นต่ำของยูนิต', status: NR },
+  { key: 'admin.unit360.project', namespace: 'admin', description: 'Unit 360: project field', en: 'Project', ru: 'Проект', th: 'โครงการ', status: NR },
+  { key: 'admin.unit360.rate_plans', namespace: 'admin', description: 'Unit 360: applicable rate plans', en: 'Applicable rate plans', ru: 'Применимые тарифные планы', th: 'แผนราคาที่ใช้ได้', status: NR },
+];
+
+
+/**
+ * The admin services catalogue: status filter, inline editing, pause and
+ * put-live. The screen was a submissions queue that showed drafts only, so
+ * none of these existed.
+ */
+const ADMIN_SERVICES_CATALOGUE_KEYS: KeyDef[] = [
+  { key: 'admin.services.status_active', namespace: 'admin', description: 'Admin services: live status chip', en: 'Live', ru: 'В работе', th: 'ใช้งานอยู่', status: NR },
+  { key: 'admin.services.status_paused', namespace: 'admin', description: 'Admin services: paused status chip', en: 'Paused', ru: 'На паузе', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.edit', namespace: 'admin', description: 'Admin services: open the edit form', en: 'Edit', ru: 'Редактировать', th: 'แก้ไข', status: NR },
+  { key: 'admin.services.edit_cancel', namespace: 'admin', description: 'Admin services: close the edit form', en: 'Cancel', ru: 'Отмена', th: 'ยกเลิก', status: NR },
+  { key: 'admin.services.edit_save', namespace: 'admin', description: 'Admin services: save edits', en: 'Save changes', ru: 'Сохранить', th: 'บันทึกการแก้ไข', status: NR },
+  { key: 'admin.services.edit_saving', namespace: 'admin', description: 'Admin services: saving edits', en: 'Saving…', ru: 'Сохраняем…', th: 'กำลังบันทึก…', status: NR },
+  { key: 'admin.services.pause', namespace: 'admin', description: 'Admin services: take a live service off the marketplace', en: 'Pause', ru: 'Поставить на паузу', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.activate', namespace: 'admin', description: 'Admin services: put a paused service back on the marketplace', en: 'Put live', ru: 'Вернуть в работу', th: 'เปิดใช้งาน', status: NR },
+  { key: 'admin.services.filter_all', namespace: 'admin', description: 'Admin services: filter — every service', en: 'All', ru: 'Все', th: 'ทั้งหมด', status: NR },
+  { key: 'admin.services.filter_draft', namespace: 'admin', description: 'Admin services: filter — awaiting approval', en: 'Awaiting approval', ru: 'Ждут одобрения', th: 'รออนุมัติ', status: NR },
+  { key: 'admin.services.filter_active', namespace: 'admin', description: 'Admin services: filter — live', en: 'Live', ru: 'В работе', th: 'ใช้งานอยู่', status: NR },
+  { key: 'admin.services.filter_paused', namespace: 'admin', description: 'Admin services: filter — paused', en: 'Paused', ru: 'На паузе', th: 'หยุดชั่วคราว', status: NR },
+  { key: 'admin.services.locked_hint', namespace: 'admin', description: 'Admin services: why price fields are hidden on a live service', en: 'A live service keeps the price it was approved on. Pause it to change price, duration or notice.', ru: 'Услуга в работе сохраняет цену, на которой её одобрили. Чтобы изменить цену, длительность или срок предупреждения — поставьте её на паузу.', th: 'บริการที่ใช้งานอยู่จะคงราคาที่ได้รับอนุมัติไว้ หากต้องการเปลี่ยนราคา ระยะเวลา หรือการแจ้งล่วงหน้า ให้หยุดบริการชั่วคราวก่อน', status: NR },
+  { key: 'admin.services.count', namespace: 'admin', description: 'Admin services: how many rows the filter shows', en: '{count} services', ru: 'Услуг: {count}', th: '{count} บริการ', status: NR },
+  { key: 'admin.services.photo', namespace: 'admin', description: 'Admin services: photo row label', en: 'Photo', ru: 'Фото', th: 'รูปภาพ', status: NR },
+  { key: 'admin.services.photo_upload', namespace: 'admin', description: 'Admin services: pick a photo to upload', en: 'Upload a photo', ru: 'Загрузить фото', th: 'อัปโหลดรูปภาพ', status: NR },
+  { key: 'admin.services.photo_uploading', namespace: 'admin', description: 'Admin services: photo upload in progress', en: 'Uploading…', ru: 'Загружаем…', th: 'กำลังอัปโหลด…', status: NR },
+  { key: 'admin.services.photo_remove', namespace: 'admin', description: 'Admin services: clear the photo', en: 'Remove photo', ru: 'Удалить фото', th: 'ลบรูปภาพ', status: NR },
+  { key: 'admin.services.photo_none', namespace: 'admin', description: 'Admin services: why a photo matters', en: 'No photo yet — a service without one is far less likely to be ordered.', ru: 'Фото нет — услугу без фотографии заказывают заметно реже.', th: 'ยังไม่มีรูปภาพ — บริการที่ไม่มีรูปมักถูกสั่งน้อยกว่ามาก', status: NR },
+  { key: 'admin.services.photo_too_large', namespace: 'admin', description: 'Admin services: image over the size cap', en: 'That image is over 8 MB. Use a smaller one.', ru: 'Изображение больше 8 МБ. Выберите файл поменьше.', th: 'รูปภาพเกิน 8 MB กรุณาใช้ไฟล์ที่เล็กกว่า', status: NR },
+];
+
+
+/**
+ * Finding a service: the storefront search box, the sort control and the
+ * rating on a card. None existed while the catalogue was a fixed list of
+ * tiles.
+ */
+const SERVICES_DISCOVERY_KEYS: KeyDef[] = [
+  { key: 'services.browse.search_label', namespace: 'services', description: 'Services storefront: search field label', en: 'Search', ru: 'Поиск', th: 'ค้นหา', status: NR },
+  { key: 'services.browse.search_placeholder', namespace: 'services', description: 'Services storefront: search field placeholder', en: 'Cleaning, transfer, chef…', ru: 'Уборка, трансфер, повар…', th: 'ทำความสะอาด รับส่ง เชฟ…', status: NR },
+  { key: 'services.browse.sort_label', namespace: 'services', description: 'Services storefront: sort control label', en: 'Sort by', ru: 'Сортировка', th: 'เรียงตาม', status: NR },
+  { key: 'services.browse.sort_recent', namespace: 'services', description: 'Services storefront: newest first', en: 'Newest', ru: 'Сначала новые', th: 'ใหม่ล่าสุด', status: NR },
+  { key: 'services.browse.sort_price_asc', namespace: 'services', description: 'Services storefront: cheapest first', en: 'Price: low to high', ru: 'Сначала дешевле', th: 'ราคา: ต่ำไปสูง', status: NR },
+  { key: 'services.browse.sort_price_desc', namespace: 'services', description: 'Services storefront: most expensive first', en: 'Price: high to low', ru: 'Сначала дороже', th: 'ราคา: สูงไปต่ำ', status: NR },
+  { key: 'services.browse.sort_rating', namespace: 'services', description: 'Services storefront: best reviewed first', en: 'Best reviewed', ru: 'С лучшими отзывами', th: 'รีวิวดีที่สุด', status: NR },
+  { key: 'services.browse.result_count', namespace: 'services', description: 'Services storefront: how many services match', en: '{count} services', ru: 'Найдено услуг: {count}', th: 'พบ {count} บริการ', status: NR },
+  { key: 'services.browse.reviews', namespace: 'services', description: 'Services storefront: review count beside the rating', en: '{count} reviews', ru: 'отзывов: {count}', th: '{count} รีวิว', status: NR },
+];
+
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
@@ -4342,7 +4473,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS];
+  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_360_KEYS, ...ADMIN_SERVICES_CATALOGUE_KEYS, ...SERVICES_DISCOVERY_KEYS];
 
   // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
   // one-row-per-await version (ensureContentKey + setTranslation's own

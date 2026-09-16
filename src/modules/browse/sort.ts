@@ -35,6 +35,17 @@ export interface UnitSort {
    * `review` → `booking` → `unit` rather than in a column.
    */
   needsRating?: true;
+  /**
+   * True when ordering needs the canonical effective price, which depends on
+   * the dates and rate plan and so cannot be a column ordering. The API
+   * resolves prices across all candidates and orders them before paginating.
+   *
+   * Declared here rather than inferred from the key in the API: this catalog
+   * exists so the API, the picker and the tests cannot disagree about what a
+   * sort is, and a sort that simply has no ordering by oversight should not
+   * look identical to one that deliberately defers it.
+   */
+  needsEffectivePrice?: true;
 }
 
 /**
@@ -51,10 +62,12 @@ export const UNIT_SORTS: readonly UnitSort[] = [
   {
     key: 'price_asc',
     labelKey: 'catalog.unit_sorts.price_asc.label',
+    needsEffectivePrice: true,
   },
   {
     key: 'price_desc',
     labelKey: 'catalog.unit_sorts.price_desc.label',
+    needsEffectivePrice: true,
   },
   {
     key: 'bedrooms_desc',

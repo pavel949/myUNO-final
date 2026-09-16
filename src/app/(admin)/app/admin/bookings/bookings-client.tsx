@@ -298,8 +298,7 @@ export default function BookingsAdminClient({
                     setReceipts((prev) => ({ ...prev, [booking.id]: e.target.value }))
                   }
                   placeholder={labels['admin.bookings.receipt_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-                  style={{ width: '150px' }}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink w-field-md"
                 />
                 <Button
                   size="sm"
@@ -321,8 +320,7 @@ export default function BookingsAdminClient({
                     setBankRefs((prev) => ({ ...prev, [booking.id]: e.target.value }))
                   }
                   placeholder={labels['admin.bookings.bank_ref_placeholder']}
-                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink"
-                  style={{ width: '150px' }}
+                  className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink w-field-md"
                 />
                 <Button
                   size="sm"

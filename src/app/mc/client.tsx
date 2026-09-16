@@ -509,8 +509,7 @@ export function MCDashboardClient({
               }))
             }
             placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-            style={{ width: '140px' }}
+            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-sm"
           />
           <Button
             size="sm"
@@ -999,8 +998,7 @@ export function MCDashboardClient({
                               }))
                             }
                             placeholder={labels['mc.service_orders.receipt_placeholder']}
-                            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-                            style={{ width: '150px' }}
+                            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none w-field-md"
                           />
                           <Button
                             size="sm"

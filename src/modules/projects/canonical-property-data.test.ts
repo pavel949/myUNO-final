@@ -23,6 +23,13 @@ describe('Canonical Property Data Architecture Unit Tests', () => {
       website: 'https://paradisegroup.com',
       contactEmail: 'dev@paradisegroup.com',
       registrationNumber: '0105550001112',
+      // Scoring counts a head office: without one this record reached only
+      // five of the seven things a complete developer profile carries, and
+      // scored 71. Verification is deliberately left unset — an unverified
+      // developer whose paperwork is otherwise complete should still score
+      // well, which is what the threshold below is asserting.
+      hqCountry: 'TH',
+      officeAddress: '99 Sukhumvit Road, Bangkok 10110',
       developerTrackRecord: {
         completedProjects: 5,
         activeProjects: 3,

@@ -50,4 +50,13 @@ describe('MoneyAmount', () => {
     expect(el.className).toContain('font-display');
     expect(el.className).toContain('tabular-nums');
   });
+
+  // Board 21: in a label-and-amount pair the label wraps and the figure does
+  // not. Carried by the primitive so no call site can forget it.
+  it('never lets the figure wrap or shrink', () => {
+    render(<MoneyAmount satang={123456789} />);
+    const el = screen.getByText('฿1,234,568');
+    expect(el.className).toContain('shrink-0');
+    expect(el.className).toContain('whitespace-nowrap');
+  });
 });

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PasswordInput } from '@/components/PasswordInput';
 
 interface ResetPasswordLabels {
   title: string;
@@ -19,6 +20,8 @@ interface ResetPasswordLabels {
   success: string;
   errorGeneric: string;
   backToLogin: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
@@ -83,15 +86,16 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
         <p className="text-body text-text-ink mb-24">{message}</p>
       ) : token ? (
         <form onSubmit={handleConfirm} className="flex flex-col gap-24">
-          <Input
+          <PasswordInput
             label={labels.newPassword}
-            type="password"
             autoComplete="new-password"
             required
             helpText={labels.passwordHelp}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             error={error || undefined}
+            showLabel={labels.showPassword}
+            hideLabel={labels.hidePassword}
           />
           <Button type="submit" fullWidth isLoading={loading}>
             {labels.confirmSubmit}

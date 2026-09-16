@@ -1,3 +1,4 @@
+import { satangToBaht } from '@/lib/money';
 /**
  * Client-side order total PREVIEW (SA-2). Display only — the charged total
  * is always recomputed server-side in POST /api/service-orders (doc 10:
@@ -29,5 +30,5 @@ export function computeOrderPreviewBaht(
   quantity: number
 ): number | null {
   const satang = computeOrderPreviewThb(priceModel, basePriceThb, quantity);
-  return satang === null ? null : satang / 100;
+  return satang === null ? null : satangToBaht(satang);
 }

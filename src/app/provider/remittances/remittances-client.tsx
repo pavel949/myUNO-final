@@ -48,7 +48,17 @@ const STATUS_TONE: Record<string, string> = {
 
 const NET_TONE = 'text-brand-andaman';
 
-function formatBaht(satang: number) {
+/**
+ * Remittance amounts keep satang precision, which is why this does not use
+ * `formatBaht` from `@/lib/money` — that one rounds to whole baht for display,
+ * and a payout line of ฿1,234.56 shown as ฿1,235 is a figure a provider cannot
+ * reconcile against what lands in their account. Named distinctly so it no
+ * longer shadows the canonical helper with different behaviour.
+ *
+ * TODO(finance): confirm whether provider-facing payout lines should show
+ * satang precision or whole baht. If whole baht, this becomes `formatBaht`.
+ */
+function formatRemittanceBaht(satang: number) {
   return (satang / 100).toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -146,19 +156,19 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
 
         <FigureRow
           label={labels['provider.remittances.gross']}
-          value={formatBaht(remittance.fulfilledOrdersTotal)}
+          value={formatRemittanceBaht(remittance.fulfilledOrdersTotal)}
         />
         <FigureRow
           label={labels['provider.remittances.take_rate']}
-          value={formatBaht(remittance.takeRateThb)}
+          value={formatRemittanceBaht(remittance.takeRateThb)}
         />
         <FigureRow
           label={labels['provider.remittances.refunds']}
-          value={formatBaht(remittance.refundsClawedBack)}
+          value={formatRemittanceBaht(remittance.refundsClawedBack)}
         />
         <FigureRow
           label={labels['provider.remittances.net']}
-          value={formatBaht(remittance.netThb)}
+          value={formatRemittanceBaht(remittance.netThb)}
           tone={NET_TONE}
         />
 
@@ -216,7 +226,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
                         : '—'}
                     </td>
                     <td className="text-body font-semibold tabular-nums py-12 pr-16">
-                      {formatBaht(payout.amountThb)}
+                      {formatRemittanceBaht(payout.amountThb)}
                     </td>
                     <td className="text-body py-12 pr-16 whitespace-nowrap">
                       {new Date(payout.executedOn).toLocaleDateString()}

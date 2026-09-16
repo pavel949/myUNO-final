@@ -17,8 +17,12 @@ describe('unit sort catalog', () => {
   });
 
   it('gives every option either a database ordering or a reason it cannot have one', () => {
+    // Exactly one of the three, never none and never two. A sort with no
+    // ordering at all is the bug this catches: it would silently return the
+    // default order while the picker claims the guest got what they asked for.
     for (const sort of UNIT_SORTS) {
-      expect(Boolean(sort.orderBy) !== Boolean(sort.needsRating)).toBe(true);
+      const ways = [sort.orderBy, sort.needsRating, sort.needsEffectivePrice].filter(Boolean);
+      expect(ways).toHaveLength(1);
     }
   });
 
@@ -48,7 +52,11 @@ describe('reading a sort out of a query string', () => {
   });
 
   it('returns what was asked for', () => {
-    expect(parseUnitSort('price_asc').orderBy?.[0]).toEqual({ baseNightlyThb: 'asc' });
+    // Price has no column ordering: effective price depends on the dates and
+    // rate plan, so the API resolves it across all candidates and orders them
+    // before paginating.
+    expect(parseUnitSort('price_asc').needsEffectivePrice).toBe(true);
+    expect(parseUnitSort('price_asc').orderBy).toBeUndefined();
     expect(parseUnitSort('top_rated').needsRating).toBe(true);
   });
 });

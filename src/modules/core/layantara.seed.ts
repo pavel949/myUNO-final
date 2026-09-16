@@ -226,8 +226,41 @@ export async function seedLayantara(db: PrismaClient) {
   // 4. 39 villas. instantBook=false → every booking is a request the manager
   // confirms (the brief's payment story). Base nightly = the category's low
   // rate — a safe fallback if a rate entry is ever removed.
+  /*
+   * The canonical InventoryCategory is what a live unit hangs off: the guard
+   * in migration 20260913210000 refuses to insert a live unit without one,
+   * and the category — not the unit — owns the commercial terms search and
+   * pricing read. The roster's CategorySpec is already that shape, so each
+   * spec becomes one category and every villa of that kind points at it.
+   */
+  const categoryIdByKey = new Map<string, string>();
+  for (const spec of LAYANTARA_CATEGORIES) {
+    const category = await db.inventoryCategory.upsert({
+      where: { projectId_categoryKey: { projectId: project.id, categoryKey: spec.key } },
+      create: {
+        projectId: project.id,
+        categoryKey: spec.key,
+        name: spec.labelEn,
+        bedrooms: spec.bedrooms,
+        bathrooms: spec.bathrooms,
+        maxGuests: spec.maxGuests,
+        baseNightlyThb: spec.nightly.low,
+        minNights: 2,
+      },
+      update: {
+        name: spec.labelEn,
+        bedrooms: spec.bedrooms,
+        bathrooms: spec.bathrooms,
+        maxGuests: spec.maxGuests,
+        baseNightlyThb: spec.nightly.low,
+      },
+    });
+    categoryIdByKey.set(spec.key, category.id);
+  }
+
   for (const villa of villaRoster()) {
     const spec = LAYANTARA_CATEGORIES.find((c) => c.key === villa.categoryKey)!;
+    const inventoryCategoryId = categoryIdByKey.get(spec.key)!;
     await db.unit.upsert({
       where: { projectId_name: { projectId: project.id, name: villa.name } },
       create: {
@@ -235,6 +268,7 @@ export async function seedLayantara(db: PrismaClient) {
         name: villa.name,
         unitType: 'villa',
         categoryKey: spec.key,
+        inventoryCategoryId,
         bedrooms: spec.bedrooms,
         bathrooms: spec.bathrooms,
         maxGuests: spec.maxGuests,
@@ -248,6 +282,7 @@ export async function seedLayantara(db: PrismaClient) {
       },
       update: {
         categoryKey: spec.key,
+        inventoryCategoryId,
         bedrooms: spec.bedrooms,
         bathrooms: spec.bathrooms,
         maxGuests: spec.maxGuests,

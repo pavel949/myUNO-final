@@ -21,6 +21,8 @@ export default async function ResetPasswordPage() {
     'auth.reset.success': 'Password updated. You can now log in.',
     'auth.reset.error_generic': 'Something went wrong. Please try again.',
     'auth.reset.back_to_login': 'Back to log in',
+    'auth.password.show': 'Show password',
+    'auth.password.hide': 'Hide password',
   });
 
   return (
@@ -41,6 +43,8 @@ export default async function ResetPasswordPage() {
               success: labels['auth.reset.success'],
               errorGeneric: labels['auth.reset.error_generic'],
               backToLogin: labels['auth.reset.back_to_login'],
+              showPassword: labels['auth.password.show'],
+              hidePassword: labels['auth.password.hide'],
             }}
           />
         </Suspense>

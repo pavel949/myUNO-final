@@ -42,7 +42,10 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
           minNights: 2,
           cancellationPolicyKey: 'flexible',
           status: 'live',
-          project: { id: 'proj-legendary', name: 'The Title Legendary' },
+          // The engine will not quote a unit whose project is not live, so the
+          // mock has to say so. Without a status it read as not-live and the
+          // offer came back unavailable.
+          project: { id: 'proj-legendary', name: 'The Title Legendary', status: 'live' },
           pricingRules: [],
           blockedDates: [],
         }),

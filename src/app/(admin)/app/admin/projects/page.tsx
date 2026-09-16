@@ -23,6 +23,9 @@ export default async function AdminProjectsPage() {
     'admin.projects.longitude': 'Longitude',
     'admin.projects.error_generic': 'Action failed. Please try again.',
     'admin.projects.config_link': 'Pricing & config →',
+    'admin.projects.add_property': 'Add property',
+    'admin.projects.manage_areas': 'Manage areas',
+    'admin.projects.onboarding': 'Onboarding & readiness →',
   });
 
   return (

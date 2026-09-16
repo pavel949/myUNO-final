@@ -30,6 +30,14 @@ function formatAdjustment(type: string | null, value: string | null) {
   return `${type} ${value}`;
 }
 
+function fill(template: string, params: Record<string, string | number>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  }
+  return result;
+}
+
 export default async function OpsInventoryPage({ searchParams }: OpsInventoryPageProps) {
   const user = await getCurrentUser();
   if (!user) {
@@ -139,9 +147,11 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
     'staff.inventory.categories_hint':
       'Category base rate and minimum stay are the default commercial truth inherited by linked villas.',
     'staff.inventory.category_units': 'units',
+    'staff.inventory.category_facts': '{bedrooms}BR · {bathrooms}BA · sleeps {guests} · {units} units',
     'staff.inventory.category_create': 'Create category',
     'staff.inventory.category_name': 'Category name',
     'staff.inventory.category_key': 'Category key',
+    'staff.inventory.category_key_placeholder': 'superior_2br',
     'staff.inventory.category_key_hint':
       'Use a stable lowercase key such as superior_2br. The key is an integration identifier and should not be renamed later.',
     'staff.inventory.project': 'Project',
@@ -287,8 +297,12 @@ export default async function OpsInventoryPage({ searchParams }: OpsInventoryPag
                     <h3 className="text-body font-semibold text-text-ink mt-2">{category.name}</h3>
                     <p className="text-micro text-text-muted mt-2">{category.categoryKey}</p>
                     <p className="text-small text-text-secondary mt-8">
-                      {category.bedrooms}BR · {category.bathrooms}BA · sleeps {category.maxGuests} ·{' '}
-                      {category._count.units} {labels['staff.inventory.category_units']}
+                      {fill(labels['staff.inventory.category_facts'], {
+                        bedrooms: category.bedrooms,
+                        bathrooms: category.bathrooms,
+                        guests: category.maxGuests,
+                        units: category._count.units,
+                      })}
                     </p>
                   </div>
                   <span className="rounded-full border border-border-line bg-surface-paper px-8 py-3 text-micro text-text-secondary">

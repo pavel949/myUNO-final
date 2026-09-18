@@ -187,7 +187,7 @@ async function ensureFactoryCategory(opts: {
     data: {
       projectId: opts.projectId,
       categoryKey,
-      name: `Factory ${opts.bedrooms}BR`,
+      name: opts.categoryKey ?? `Factory ${opts.bedrooms}BR`,
       bedrooms: opts.bedrooms,
       bathrooms: 1,
       maxGuests: opts.maxGuests,

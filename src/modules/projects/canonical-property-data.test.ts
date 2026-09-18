@@ -23,6 +23,8 @@ describe('Canonical Property Data Architecture Unit Tests', () => {
       website: 'https://paradisegroup.com',
       contactEmail: 'dev@paradisegroup.com',
       registrationNumber: '0105550001112',
+      hqCountry: 'TH',
+      developerVerification: 'verified',
       developerTrackRecord: {
         completedProjects: 5,
         activeProjects: 3,

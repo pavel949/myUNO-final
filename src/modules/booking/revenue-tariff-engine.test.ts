@@ -42,7 +42,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
           minNights: 2,
           cancellationPolicyKey: 'flexible',
           status: 'live',
-          project: { id: 'proj-legendary', name: 'The Title Legendary' },
+          project: { id: 'proj-legendary', name: 'The Title Legendary', status: 'live' },
           pricingRules: [],
           blockedDates: [],
         }),
@@ -135,7 +135,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
           name: 'Villa 9 Premium',
           baseNightlyThb: 30000,
           status: 'live',
-          project: { id: 'proj-resort' },
+          project: { id: 'proj-resort', status: 'live' },
           pricingRules: [
             {
               startDate: new Date('2026-12-20'),
@@ -168,7 +168,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
           id: 'unit-1',
           baseNightlyThb: 10000,
           status: 'live',
-          project: { id: 'p1' },
+          project: { id: 'p1', status: 'live' },
           pricingRules: [],
           blockedDates: [],
         }),
@@ -207,7 +207,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
           name: 'The Penthouse',
           baseNightlyThb: 50000,
           status: 'live',
-          project: { id: 'mixed-proj' },
+          project: { id: 'mixed-proj', status: 'live' },
           pricingRules: [],
           blockedDates: [],
         }),
@@ -247,7 +247,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
       minNights: 2,
       cancellationPolicyKey: 'flexible',
       status: 'live',
-      project: { id: 'proj-legendary', name: 'The Title Legendary' },
+      project: { id: 'proj-legendary', name: 'The Title Legendary', status: 'live' },
       pricingRules: [],
       blockedDates: [],
     };
@@ -281,7 +281,7 @@ describe('Revenue, Tariff, Stay Rules & Quotation Engine E2E Unit Tests (Scenari
       minNights: 1,
       cancellationPolicyKey: 'flexible',
       status: 'live',
-      project: { id: 'proj-legendary', name: 'The Title Legendary' },
+      project: { id: 'proj-legendary', name: 'The Title Legendary', status: 'live' },
       pricingRules: [],
       blockedDates: [],
     };

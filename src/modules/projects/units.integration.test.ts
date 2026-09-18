@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { db as prisma, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { createUnit as createUnitFn, updateUnit, confirmPermittedUse } from './units';
 import { UnitStatus } from '@prisma/client';
+import { ensureSeedInventoryCategory } from './inventory.seed';
 
 describe('Units module', () => {
   beforeEach(async () => {
@@ -157,12 +158,25 @@ describe('Units module', () => {
     it('allows going live after permitted use is confirmed', async () => {
       const admin = await createIdentity({ isAdmin: true });
       const project = await createProject();
+      const category = await ensureSeedInventoryCategory(prisma, {
+        projectId: project.id,
+        categoryKey: 'go_live_category',
+        name: 'Go-live Category',
+        bedrooms: 2,
+        bathrooms: 1,
+        maxGuests: 4,
+        baseNightlyThb: 500_000,
+      });
       const unit = await createUnit({ projectId: project.id, status: 'draft' });
 
-      // First confirm permitted use
+      // A live unit needs both legal clearance and canonical inventory.
+      await updateUnit({
+        unitId: unit.id,
+        inventoryCategoryId: category.id,
+        actorIdentityId: admin.id,
+      });
       await confirmPermittedUse(unit.id, admin.id);
 
-      // Now can update to live
       const updated = await updateUnit({
         unitId: unit.id,
         status: 'live' as UnitStatus,
@@ -171,6 +185,7 @@ describe('Units module', () => {
 
       expect(updated.status).toBe('live');
       expect(updated.permittedUseConfirmedAt).not.toBeNull();
+      expect(updated.inventoryCategoryId).toBe(category.id);
     });
 
     it('checks name uniqueness only if name is changing', async () => {

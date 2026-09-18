@@ -217,7 +217,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           id: e.id,
           engagementType: e.engagementType,
           status: e.status,
-          noiCapAnnualThb: e.noiCapAnnualThb !== null ? Math.round(e.noiCapAnnualThb / 100) : null,
+          noiCapAnnualBaht: e.noiCapAnnualThb !== null ? Math.round(e.noiCapAnnualThb / 100) : null,
         }))}
         complianceRecords={unit.complianceRecords.map((r) => ({
           id: r.id,

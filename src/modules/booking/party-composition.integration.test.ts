@@ -24,7 +24,7 @@ describe('booking party composition', () => {
     await resetDb();
     await seedConfig(db);
 
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     const guest = await createIdentity();
     projectId = project.id;
     guestId = guest.id;

@@ -25,7 +25,7 @@ interface Engagement {
   id: string;
   engagementType: string;
   status: string;
-  noiCapAnnualThb: number | null;
+  noiCapAnnualBaht: number | null;
 }
 
 interface ComplianceRow {
@@ -165,10 +165,10 @@ export default function OnboardingClient({
             {engagements.map((e) => (
               <li key={e.id} className="text-body text-text-ink">
                 {e.engagementType} · {e.status}
-                {/* The server component has already converted this DTO field
-                    from satang to baht. Do not divide a second time here. */}
-                {e.noiCapAnnualThb !== null &&
-                  ` · ฿${e.noiCapAnnualThb.toLocaleString()}`}
+                {/* The server component converts stored satang to this explicit baht DTO
+                    field. Do not divide a second time here. */}
+                {e.noiCapAnnualBaht !== null &&
+                  ` · ฿${e.noiCapAnnualBaht.toLocaleString()}`}
               </li>
             ))}
           </ul>

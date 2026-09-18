@@ -18,7 +18,7 @@ describe('unit sort catalog', () => {
 
   it('gives every option either a database ordering or a reason it cannot have one', () => {
     for (const sort of UNIT_SORTS) {
-      expect(Boolean(sort.orderBy) !== Boolean(sort.needsRating)).toBe(true);
+      expect([sort.orderBy, sort.needsRating, sort.needsEffectivePrice].filter(Boolean)).toHaveLength(1);
     }
   });
 
@@ -48,7 +48,7 @@ describe('reading a sort out of a query string', () => {
   });
 
   it('returns what was asked for', () => {
-    expect(parseUnitSort('price_asc').orderBy?.[0]).toEqual({ baseNightlyThb: 'asc' });
+    expect(parseUnitSort('price_asc').needsEffectivePrice).toBe(true);
     expect(parseUnitSort('top_rated').needsRating).toBe(true);
   });
 });

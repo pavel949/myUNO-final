@@ -23,7 +23,7 @@ describe('changing a booking-s dates', () => {
     await resetDb();
     await seedConfig(db);
 
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     const unit = await createUnit({
       projectId: project.id,
       status: 'live',
@@ -305,7 +305,7 @@ describe('changing the party (T-060)', () => {
     await resetDb();
     await seedConfig(db);
 
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     const unit = await createUnit({
       projectId: project.id,
       status: 'live',

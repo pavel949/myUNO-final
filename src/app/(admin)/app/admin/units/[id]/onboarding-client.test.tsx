@@ -12,9 +12,9 @@ import OnboardingClient from './onboarding-client';
 
 /**
  * Q50 regression guard: the "annual NOI cap" field asks the admin for baht,
- * but was submitting the typed number straight into the satang column
- * (`noiCapAnnualThb`), and the read-only engagement list showed the raw
- * satang figure back as if it were baht. CLAUDE.md is explicit that a
+ * The server boundary now converts stored satang to an explicit baht DTO
+ * (`noiCapAnnualBaht`) for display, while submits still convert typed baht
+ * back to the stored `noiCapAnnualThb` satang field. CLAUDE.md is explicit that a
  * direct-managed unit without its NOI cap refuses statement generation, and
  * the cap is compared directly against satang NOI totals elsewhere
  * (`statement.service.ts`) — an unconverted cap is not just a display bug,
@@ -63,7 +63,7 @@ describe('OnboardingClient NOI cap round-trip (Q50)', () => {
         steps={[]}
         owner={null}
         engagements={[
-          { id: 'eng-1', engagementType: 'direct_managed', status: 'active', noiCapAnnualThb: 500000000 }, // ฿5,000,000
+          { id: 'eng-1', engagementType: 'direct_managed', status: 'active', noiCapAnnualBaht: 5_000_000 },
         ]}
         complianceRecords={[]}
         permittedUseConfirmed={false}

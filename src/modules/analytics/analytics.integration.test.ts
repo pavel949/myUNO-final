@@ -343,10 +343,9 @@ describe('Analytics Module', () => {
 
   describe('getMetricsSeries', () => {
     it('aggregates day rows into month buckets with weighted occupancy', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
+      const project = await createProject({ status: 'live' });
+      const unit = await createUnit({ projectId: project.id, status: 'live' });
       const guest = await createIdentity();
-      await prisma.unit.update({ where: { id: unit.id }, data: { status: 'live' } });
 
       // 2 occupied nights (Jan 10–12) at 3000 THB/night
       await prisma.booking.create({

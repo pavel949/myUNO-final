@@ -127,7 +127,7 @@ export default async function OpsMobilizationUnitPage({
             id: engagement.id,
             engagementType: engagement.engagementType,
             status: engagement.status,
-            noiCapAnnualThb:
+            noiCapAnnualBaht:
               engagement.noiCapAnnualThb !== null
                 ? Math.round(engagement.noiCapAnnualThb / 100)
                 : null,

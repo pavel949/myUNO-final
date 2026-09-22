@@ -152,7 +152,7 @@ describe('Compliance & Mobilization', () => {
 
     it('blocks go-live until permitted_use is confirmed', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id);
+      const unit = await createUnit({ projectId: project.id, categoryKey: 'compliance_go_live' });
       const staff = await createIdentity();
 
       await initializeMobilizationChecklist(db, unit.id);

@@ -53,7 +53,7 @@ describe('property onboarding routes', () => {
   beforeEach(async () => {
     await resetDb();
     const project = await createProject({ status: 'live' });
-    const unit = await createUnit({ projectId: project.id, status: 'draft' });
+    const unit = await createUnit({ projectId: project.id, status: 'draft', categoryKey: 'onboarding_test' });
     const admin = await createIdentity({ isAdmin: true });
     const owner = await createIdentity();
 

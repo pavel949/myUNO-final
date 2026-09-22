@@ -26,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.prospecting': 'Prospecting',
     'admin.nav.section.inventory': 'Inventory',
     'admin.nav.projects': 'Projects',
+    'admin.projects.manage_areas': 'Manage areas',
     'admin.nav.units': 'Units',
     'admin.nav.people': 'People & Roles',
     'admin.nav.organizations': 'Organizations',
@@ -73,6 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       title: labels['admin.nav.section.inventory'],
       items: [
         { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
+        { href: '/app/admin/areas', label: labels['admin.projects.manage_areas'] },
         { href: '/app/admin/units', label: labels['admin.nav.units'] },
         { href: '/app/admin/people', label: labels['admin.nav.people'] },
         { href: '/app/admin/organizations', label: labels['admin.nav.organizations'] },

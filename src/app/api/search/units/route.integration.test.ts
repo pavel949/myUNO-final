@@ -37,8 +37,8 @@ describe('GET /api/search/units — category grouping & filters (LY-6)', () => {
       projectId, name: 'G-01', categoryKey: 'grand_deluxe_3br', status: 'live',
       baseNightlyThb: 939300, bedrooms: 3, maxGuests: 6,
     });
-    // A unit without a category never appears in the rollup
-    await createUnit({ projectId, name: 'X-01', status: 'live', baseNightlyThb: 100 });
+    // A draft uncategorized unit is not sellable and never appears in the rollup.
+    await createUnit({ projectId, name: 'X-01', status: 'draft', baseNightlyThb: 100 });
 
     const res = await GET(
       makeRequest({

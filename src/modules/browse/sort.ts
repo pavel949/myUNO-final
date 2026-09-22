@@ -35,6 +35,11 @@ export interface UnitSort {
    * `review` → `booking` → `unit` rather than in a column.
    */
   needsRating?: true;
+  /**
+   * True when ordering happens after canonical effective prices are resolved
+   * for the requested dates rather than against a legacy Unit column.
+   */
+  needsEffectivePrice?: true;
 }
 
 /**
@@ -51,10 +56,12 @@ export const UNIT_SORTS: readonly UnitSort[] = [
   {
     key: 'price_asc',
     labelKey: 'catalog.unit_sorts.price_asc.label',
+    needsEffectivePrice: true,
   },
   {
     key: 'price_desc',
     labelKey: 'catalog.unit_sorts.price_desc.label',
+    needsEffectivePrice: true,
   },
   {
     key: 'bedrooms_desc',

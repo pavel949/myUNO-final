@@ -77,6 +77,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
 
   const labels = await getLabels({
     'staff.ops.calendar_index.title': 'Stay calendar',
+    'staff.ops.calendar_index.kicker': 'Stay · Availability',
     'staff.ops.calendar_index.back': '← Ops board',
     'staff.ops.calendar_index.hint':
       'One inventory calendar. Switch from the full property to a category or a single home without changing the source of truth.',
@@ -106,7 +107,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
           {labels['staff.ops.calendar_index.back']}
         </Link>
         <div className="mt-12 mb-24">
-          <p className="text-kicker uppercase text-brand-andaman font-semibold">Stay · Availability</p>
+          <p className="text-kicker uppercase text-brand-andaman font-semibold">{labels['staff.ops.calendar_index.kicker']}</p>
           <h1 className="font-display text-display-xl font-semibold text-text-ink mt-4">
             {labels['staff.ops.calendar_index.title']}
           </h1>

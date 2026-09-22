@@ -1458,6 +1458,20 @@ const NR = 'needs_review' as const;
 
 const UI_SHELL_KEYS: KeyDef[] = [
   // Landing additions
+  // Canonical Stay / cinematic landing additions
+  { key: 'landing.collection.kicker', namespace: 'landing', description: 'Stay collection eyebrow', en: 'The myUNO collection', ru: 'Коллекция myUNO', th: 'คอลเลกชัน myUNO', status: NR },
+  { key: 'landing.collection.title', namespace: 'landing', description: 'Stay collection title', en: 'Homes worth arriving for', ru: 'Дома, куда хочется возвращаться', th: 'บ้านที่น่าเดินทางมาพัก', status: NR },
+  { key: 'landing.collection.body', namespace: 'landing', description: 'Stay collection canonical inventory explanation', en: 'Every live home comes from the same inventory, pricing and availability system used by our operations team.', ru: 'Каждый опубликованный дом использует ту же систему инвентаря, цен и доступности, с которой работает операционная команда.', th: 'บ้านที่เผยแพร่ทุกหลังใช้ระบบสต็อก ราคา และสถานะว่างเดียวกับทีมปฏิบัติการ', status: NR },
+  { key: 'landing.collection.cta', namespace: 'landing', description: 'Stay collection CTA', en: 'View all residences', ru: 'Смотреть все резиденции', th: 'ดูที่พักทั้งหมด', status: NR },
+  { key: 'landing.collection.homes', namespace: 'landing', description: 'Live home count', en: '{count} homes', ru: '{count} объектов', th: '{count} บ้าน', status: NR },
+  { key: 'landing.collection.empty', namespace: 'landing', description: 'Empty Stay collection', en: 'Residences are being prepared for launch.', ru: 'Резиденции готовятся к публикации.', th: 'ที่พักกำลังเตรียมเปิดให้จอง', status: NR },
+  { key: 'admin.units.eyebrow', namespace: 'admin', description: 'Canonical Stay inventory eyebrow', en: 'Stay inventory', ru: 'Инвентарь Stay', th: 'สต็อก Stay', status: NR },
+  { key: 'admin.units.intro', namespace: 'admin', description: 'Canonical Stay inventory hierarchy', en: 'One physical inventory: Project → Category → Home. Commercial offerings, pricing, availability and bookings configure these homes; they do not create duplicate property records.', ru: 'Единый физический инвентарь: Проект → Категория → Объект. Офферы, цены, доступность и бронирования настраивают эти объекты, не создавая дубликатов недвижимости.', th: 'สต็อกจริงหนึ่งชุด: โครงการ → หมวดหมู่ → บ้าน โดยข้อเสนอ ราคา สถานะว่าง และการจองเป็นการตั้งค่าบ้าน ไม่สร้างข้อมูลอสังหาฯ ซ้ำ', status: NR },
+  { key: 'staff.ops.calendar_index.kicker', namespace: 'staff', description: 'Stay calendar eyebrow', en: 'Stay · Availability', ru: 'Stay · Доступность', th: 'Stay · สถานะว่าง', status: NR },
+  { key: 'staff.ops.calendar_index.full', namespace: 'staff', description: 'Calendar full property scope', en: 'Full property', ru: 'Весь объект', th: 'ทั้งโครงการ', status: NR },
+  { key: 'staff.ops.calendar_index.categories', namespace: 'staff', description: 'Calendar category scope label', en: 'Categories', ru: 'Категории', th: 'หมวดหมู่', status: NR },
+  { key: 'staff.ops.calendar_index.units', namespace: 'staff', description: 'Calendar homes label', en: 'Homes', ru: 'Объекты', th: 'บ้าน', status: NR },
+  { key: 'staff.ops.calendar_index.uncategorized', namespace: 'staff', description: 'Calendar uncategorized home label', en: 'Uncategorized', ru: 'Без категории', th: 'ยังไม่จัดหมวดหมู่', status: NR },
   { key: 'landing.doors.title', namespace: 'landing', description: 'Audience doors section title', en: 'Who are you?', ru: 'Кто вы?', th: 'คุณคือใคร?', status: NR },
   { key: 'landing.trust.verified_body', namespace: 'landing', description: 'Trust point body: guests verified', en: 'Passports, backgrounds, proof of funds.', ru: 'Паспорта, проверка, подтверждение средств.', th: 'หนังสือเดินทาง ประวัติ และหลักฐานการเงิน', status: NR },
   { key: 'landing.trust.handled_body', namespace: 'landing', description: 'Trust point body: compliance handled', en: 'TM30, taxes, PDPA — we file it all.', ru: 'TM30, налоги, PDPA — мы подаём всё.', th: 'TM30 ภาษี PDPA — เราดำเนินการให้ครบ', status: NR },

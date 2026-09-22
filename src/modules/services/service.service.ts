@@ -290,6 +290,68 @@ export async function listPublicServices(
   }));
 }
 
+export interface PublicMarketplaceService {
+  id: string;
+  title: string;
+  description: string | null;
+  categoryKey: string;
+  priceModel: string;
+  basePriceThb: number | null;
+  durationMin: number | null;
+  providerName: string | null;
+  providerVetted: boolean;
+  coverUrl: string | null;
+}
+
+/**
+ * Public marketplace cards for discovery surfaces such as the homepage.
+ * Reads the same Service/Provider/MediaAsset graph as /services; project
+ * scoping is optional so the homepage can show the platform-wide catalogue.
+ */
+export async function listPublicMarketplaceServices(
+  db: PrismaClient,
+  locale: Locale,
+  options: { projectId?: string; categoryKey?: string; limit?: number } = {}
+): Promise<PublicMarketplaceService[]> {
+  const services = await db.service.findMany({
+    where: {
+      status: 'active',
+      provider: { status: 'active', vetted_at: { not: null } },
+      ...(options.projectId
+        ? {
+            OR: [
+              { availableProjects: { none: {} } },
+              { availableProjects: { some: { project_id: options.projectId } } },
+            ],
+          }
+        : {}),
+      ...(options.categoryKey ? { categoryKey: options.categoryKey } : {}),
+    },
+    include: {
+      provider: { select: { name: true, vetted_at: true } },
+      coverMedia: { select: { storageKey: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: options.limit ?? 100,
+  });
+
+  return services.map((service) => {
+    const copy = pickLocalizedServiceCopy(service, locale);
+    return {
+      id: service.id,
+      title: copy.title,
+      description: copy.description,
+      categoryKey: service.categoryKey,
+      priceModel: service.priceModel,
+      basePriceThb: service.basePriceThb,
+      durationMin: service.durationMin,
+      providerName: service.provider?.name ?? null,
+      providerVetted: Boolean(service.provider?.vetted_at),
+      coverUrl: service.coverMedia?.storageKey ?? null,
+    };
+  });
+}
+
 /**
  * Approve a service (draft → active).
  * Called by admin after spot-check.

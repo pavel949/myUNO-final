@@ -10,6 +10,7 @@ import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { listPublicProjects } from '@/modules/projects';
 import { listPublicMarketplaceServices } from '@/modules/services';
+import { projectPresentationImage } from '@/lib/presentation-media';
 
 export const metadata: Metadata = {
   title: 'myUNO | Exceptional stays, one trusted platform',
@@ -36,7 +37,7 @@ export default async function LandingPage() {
       'landing.collection.cta': 'View all residences',
       'landing.collection.homes': '{count} homes',
       'landing.collection.from_price': 'From ฿{price} / night',
-      'landing.collection.no_photo': 'Photo coming soon',
+      'landing.collection.no_photo': 'Illustrative image',
       'landing.collection.empty': 'Residences are being prepared for launch.',
       'landing.services.kicker': 'Everything around your stay',
       'landing.services.title': 'One stay. One place for the details.',
@@ -44,7 +45,7 @@ export default async function LandingPage() {
       'landing.services.cta': 'Explore all services',
       'landing.services.vetted': 'Vetted',
       'landing.services.from': 'From',
-      'landing.services.no_photo': 'Photo coming soon',
+      'landing.services.no_photo': 'Illustrative image',
       'landing.services.empty': 'Services are being prepared for launch.',
       'landing.promise.stay': 'Stay',
       'landing.promise.stay_body': 'Search real availability, see the price and reserve the same inventory our team operates.',
@@ -75,7 +76,8 @@ export default async function LandingPage() {
     listPublicMarketplaceServices(prisma, locale, { limit: 3 }).catch(() => []),
   ]);
 
-  const heroProject = projects.find((project) => project.coverUrl) ?? null;
+  const heroProject = projects[0] ?? null;
+  const heroImage = heroProject ? projectPresentationImage(heroProject.id, heroProject.coverUrl) : projectPresentationImage('homepage', null);
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -96,11 +98,7 @@ export default async function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }} />
 
       <section className="relative min-h-[76vh] overflow-hidden bg-brand-deep text-surface-ivory">
-        {heroProject?.coverUrl ? (
-          <Image src={heroProject.coverUrl} alt="" fill priority className="object-cover opacity-70 scale-[1.01]" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark" />
-        )}
+        <Image src={heroImage.src} alt={heroImage.illustrative ? '' : heroProject?.name ?? ''} fill priority className="object-cover opacity-70 scale-[1.01]" />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/30 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-24 min-h-[76vh] flex flex-col justify-end pb-48 md:pb-64">
           <div className="max-w-4xl">

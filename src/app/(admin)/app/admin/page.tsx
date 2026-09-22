@@ -21,7 +21,16 @@ export default async function AdminDashboardPage() {
   // revenue by channel, rental vs ancillary — read-time aggregates.
   const reportEnd = new Date();
   const reportStart = new Date(reportEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const projectCount = await prisma.project.count();
+  const [projectCount, mobilizingUnits, overdueTickets] = await Promise.all([
+    prisma.project.count(),
+    prisma.unit.count({ where: { status: { in: ['draft', 'mobilizing'] } } }),
+    prisma.ticket.count({
+      where: {
+        status: { in: ['open', 'acknowledged', 'in_progress'] },
+        slaDueAt: { lt: new Date() },
+      },
+    }),
+  ]);
   const liveProjects = (await listProjects('live')).slice(0, 5);
   const projectReports = await Promise.all(
     liveProjects.map(async (project) => ({
@@ -34,7 +43,9 @@ export default async function AdminDashboardPage() {
   );
 
   const labels = await getLabels({
-    'admin.dashboard.title': 'Dashboard',
+    'admin.dashboard.title': 'Needs Attention',
+    'admin.dashboard.attention_intro':
+      'Start with exceptions that can block revenue, guests or operations. Open an item to resolve it at the source.',
     'admin.dashboard.setup_title': 'Add to the portfolio',
     'admin.dashboard.setup_intro':
       'A project is the development; a unit is a home inside it. Create the project first, then add its units.',
@@ -46,10 +57,10 @@ export default async function AdminDashboardPage() {
     'admin.dashboard.setup_people_hint': 'Invite owners, staff and management-company members.',
     'admin.dashboard.setup_empty':
       'Nothing in the portfolio yet. Start by creating a project.',
-    'admin.dashboard.units': 'Units (live / total)',
-    'admin.dashboard.bookings': 'Bookings (awaiting payment / total)',
-    'admin.dashboard.tickets': 'Open tickets',
-    'admin.dashboard.people': 'People',
+    'admin.dashboard.units': 'Units in onboarding',
+    'admin.dashboard.bookings': 'Bookings awaiting payment',
+    'admin.dashboard.tickets': 'Overdue work',
+    'admin.dashboard.people': 'Open tickets',
     'admin.dashboard.last30_title': 'Last 30 days',
     'admin.dashboard.kpi_title': 'Key metrics (last 30 days)',
     'admin.dashboard.occupancy': 'Occupancy %',
@@ -80,15 +91,15 @@ export default async function AdminDashboardPage() {
     {
       href: '/app/admin/units',
       label: labels['admin.dashboard.units'],
-      value: `${liveUnits} / ${units}`,
+      value: String(mobilizingUnits),
     },
     {
       href: '/app/admin/bookings',
       label: labels['admin.dashboard.bookings'],
-      value: `${pendingPayment} / ${bookings}`,
+      value: String(pendingPayment),
     },
-    { href: '/ops', label: labels['admin.dashboard.tickets'], value: String(openTickets) },
-    { href: '/app/admin/people', label: labels['admin.dashboard.people'], value: String(identities) },
+    { href: '/ops', label: labels['admin.dashboard.tickets'], value: String(overdueTickets) },
+    { href: '/ops', label: labels['admin.dashboard.people'], value: String(openTickets) },
   ];
 
   const kpiTiles = [
@@ -102,9 +113,19 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
+      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
         {labels['admin.dashboard.title']}
       </h1>
+      <p className="text-body text-text-secondary mb-24">
+        {labels['admin.dashboard.attention_intro']}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-32">
+        {tiles.map((tile) => (
+          <Link key={tile.label} href={tile.href} className="hover:shadow-card transition-shadow">
+            <StatTile label={tile.label} value={tile.value} />
+          </Link>
+        ))}
+      </div>
       {/* Where things are entered. The admin surface opened straight onto
           analytics, so on a fresh portfolio it was a wall of zeroes with no
           visible way in — the create screens existed but nothing pointed at
@@ -153,18 +174,6 @@ export default async function AdminDashboardPage() {
           ))}
         </div>
       </section>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
-        {tiles.map((tile) => (
-          <Link
-            key={tile.label}
-            href={tile.href}
-            className="hover:shadow-card transition-shadow"
-          >
-            <StatTile label={tile.label} value={tile.value} />
-          </Link>
-        ))}
-      </div>
 
       {/* KPI row */}
       <h2 className="font-display text-title font-semibold text-text-ink mt-32 mb-16">

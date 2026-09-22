@@ -1,13 +1,13 @@
 /**
  * POST /api/ledger/record-cost
  * Record a manual cost entry in the unit ledger (F-OPS-3, F-MC-2).
- * Staff, on-site host, or MC member with unit scope via core.can().
+ * Staff or MC member with write authority on the unit via the canonical access seam.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
+import { canWithAccess } from '@/modules/core/authority.service';
 import { recordCost } from '@/modules/finance';
 import { LedgerEntryType } from '@prisma/client';
 
@@ -55,9 +55,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (
-      !(await can({
+      !(await canWithAccess(prisma, {
         identity,
         action: 'money:record_costs_on_units',
+        requiredAccess: 'allow',
         resource: { projectId: unit.projectId, unitId },
       }))
     ) {

@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicProjectCard as PublicProject } from '@/modules/projects/public.service';
+import { projectPresentationImage } from '@/lib/presentation-media';
 
 export interface ProjectCardLabels {
   homes: string;
@@ -17,27 +18,25 @@ export function ProjectCard({
   labels: ProjectCardLabels;
   featured?: boolean;
 }) {
+  const image = projectPresentationImage(project.id, project.coverUrl);
+
   return (
     <Link
       href={`/projects/${project.slug}`}
       className={`group relative overflow-hidden rounded-2xl bg-brand-deep ${featured ? 'md:col-span-2 md:row-span-2 min-h-[520px]' : 'min-h-[250px]'}`}
     >
-      {project.coverUrl ? (
-        <Image
-          src={project.coverUrl}
-          alt={project.name}
-          fill
-          className="object-cover transition duration-700 group-hover:scale-[1.03]"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark">
-          <span className="absolute right-20 top-20 rounded-full border border-white/20 px-12 py-8 text-small text-white/60">
-            {labels.noPhoto}
-          </span>
-        </div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 p-24 text-white">
+      <Image
+        src={image.src}
+        alt={image.illustrative ? '' : project.name}
+        fill
+        className="object-cover transition duration-700 group-hover:scale-[1.03]"
+      />
+      {image.illustrative ? (
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/35 px-10 py-6 text-small text-white/80 backdrop-blur">
+          {labels.noPhoto}
+        </span>
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-t
         <p className="text-small text-white/70">
           {labels.homes.replace('{count}', String(project.liveUnitCount))}
         </p>

@@ -48,6 +48,7 @@ export async function getPropertyReadiness(
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
           commercialOfferings: { include: { channelMappings: true } },
+          inventoryCategory: true,
         },
       },
     },
@@ -106,7 +107,18 @@ export async function getPropertyReadiness(
     }
     const completed = new Set(unit.mobilizationChecklist.filter((item) => item.status === 'done' || item.status === 'skipped').map((item) => item.step));
     if (completed.size < 7) add('blocker', 'unit.mobilization', 'Complete all seven mobilization steps.', options);
-    if (unit.baseNightlyThb <= 0 || unit.minNights < 1) add('blocker', 'unit.pricing', 'Set a valid base rate and minimum stay.', options);
+    if (
+      !unit.inventoryCategory ||
+      unit.inventoryCategory.baseNightlyThb <= 0 ||
+      unit.inventoryCategory.minNights < 1
+    ) {
+      add(
+        'blocker',
+        'unit.pricing',
+        'Set a valid base rate and minimum stay on the canonical inventory category.',
+        options
+      );
+    }
     if (unit.roleAssignments.length === 0) add('warning', 'unit.team', 'No unit-scoped operating team member is assigned.', options);
 
     const mappings = unit.commercialOfferings.flatMap((offering) => offering.channelMappings);
@@ -117,9 +129,6 @@ export async function getPropertyReadiness(
     }
   }
 
-  if (project.ratePlans.length > 0) {
-    add('warning', 'project.rate_plans_deferred', 'Canonical rate plans are stored for migration but guest quotes still use the proven unit/category pricing engine.');
-  }
 
   const checks = blockers.length + warnings.length;
   const score = Math.max(0, Math.round(100 - blockers.length * 8 - warnings.length * 2));

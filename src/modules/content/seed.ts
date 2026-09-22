@@ -1025,6 +1025,24 @@ const COMMON_KEYS: KeyDef[] = [
     th: 'สถานที่เดียวของคุณ',
   },
   {
+    key: 'landing.collection.kicker', namespace: 'landing', description: 'Landing collection kicker', ru: 'Коллекция myUNO', en: 'The myUNO collection', th: 'คอลเลกชัน myUNO',
+  },
+  {
+    key: 'landing.collection.title', namespace: 'landing', description: 'Landing collection title', ru: 'Дома, в которые хочется приехать', en: 'Homes worth arriving for', th: 'บ้านที่น่าเดินทางมาถึง',
+  },
+  {
+    key: 'landing.collection.body', namespace: 'landing', description: 'Landing collection description', ru: 'Каждый опубликованный дом использует единую систему инвентаря, цен и доступности.', en: 'Every live home comes from the same inventory, pricing and availability system used by our operations team.', th: 'บ้านทุกหลังที่เผยแพร่ใช้ระบบสินค้าคงคลัง ราคา และห้องว่างเดียวกับทีมปฏิบัติการของเรา',
+  },
+  {
+    key: 'landing.collection.cta', namespace: 'landing', description: 'Landing collection CTA', ru: 'Все резиденции', en: 'View all residences', th: 'ดูที่พักทั้งหมด',
+  },
+  {
+    key: 'landing.collection.homes', namespace: 'landing', description: 'Landing collection home count', ru: '{count} домов', en: '{count} homes', th: '{count} บ้าน',
+  },
+  {
+    key: 'landing.collection.empty', namespace: 'landing', description: 'Landing collection empty state', ru: 'Резиденции готовятся к запуску.', en: 'Residences are being prepared for launch.', th: 'ที่พักกำลังเตรียมเปิดตัว',
+  },
+  {
     key: 'landing.promise.stay',
     namespace: 'landing',
     description: 'Promise pillar: stay title',

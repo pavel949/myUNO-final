@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { TrustMark } from '@/components/TrustMark';
 
 export interface ServiceCardData {
   id: string;
@@ -38,7 +39,6 @@ export function ServiceCard({
             alt={service.title}
             fill
             className="object-cover transition duration-500 group-hover:scale-[1.03]"
-            sizes="(min-width: 768px) 33vw"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark">
@@ -52,7 +52,7 @@ export function ServiceCard({
         <div className="flex items-start justify-between gap-12">
           <h3 className="font-display text-title text-text-ink">{service.title}</h3>
           {service.providerVetted ? (
-            <span className="shrink-0 text-small font-semibold text-state-success">✓ {labels.vetted}</span>
+            <span className="shrink-0 inline-flex items-center gap-4 text-small font-semibold text-state-success"><TrustMark size={14} filled />{labels.vetted}</span>
           ) : null}
         </div>
         {service.providerName ? <p className="mt-4 text-small text-text-secondary">{service.providerName}</p> : null}

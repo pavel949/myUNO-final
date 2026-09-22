@@ -14,7 +14,7 @@ import { StatTile } from '@/components/StatTile';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const { units, liveUnits, bookings, pendingPayment, openTickets, identities, revenue30, nights30, last30, kpis } =
+  const { pendingPayment, openTickets, revenue30, nights30, last30, kpis } =
     await getAdminDashboardStats(prisma);
 
   // Per-project reports (LY-10, last 30 days): occupancy by category,

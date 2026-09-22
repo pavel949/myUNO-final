@@ -298,6 +298,7 @@ export interface PublicMarketplaceService {
   priceModel: string;
   basePriceThb: number | null;
   durationMin: number | null;
+  advanceNoticeHours: number;
   providerName: string | null;
   providerVetted: boolean;
   coverUrl: string | null;
@@ -345,6 +346,7 @@ export async function listPublicMarketplaceServices(
       priceModel: service.priceModel,
       basePriceThb: service.basePriceThb,
       durationMin: service.durationMin,
+      advanceNoticeHours: service.advanceNoticeHours,
       providerName: service.provider?.name ?? null,
       providerVetted: Boolean(service.provider?.vetted_at),
       coverUrl: service.coverMedia?.storageKey ?? null,

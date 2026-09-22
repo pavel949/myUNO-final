@@ -28,7 +28,6 @@ export function ProjectCard({
           alt={project.name}
           fill
           className="object-cover transition duration-700 group-hover:scale-[1.03]"
-          sizes={featured ? '(min-width: 768px) 66vw' : '(min-width: 768px) 33vw'}
         />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark">

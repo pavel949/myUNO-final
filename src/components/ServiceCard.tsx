@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { TrustMark } from '@/components/TrustMark';
+import { servicePresentationImage } from '@/lib/presentation-media';
 
 export interface ServiceCardData {
   id: string;
@@ -30,23 +31,21 @@ export function ServiceCard({
   href?: string;
   children?: ReactNode;
 }) {
+  const image = servicePresentationImage(service.id, service.coverUrl);
   const content = (
     <>
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-deep">
-        {service.coverUrl ? (
-          <Image
-            src={service.coverUrl}
-            alt={service.title}
-            fill
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark">
-            <span className="absolute right-16 top-16 rounded-full border border-white/20 px-12 py-8 text-small text-white/60">
-              {labels.noPhoto}
-            </span>
-          </div>
-        )}
+        <Image
+          src={image.src}
+          alt={image.illustrative ? '' : service.title}
+          fill
+          className="object-cover transition duration-500 group-hover:scale-[1.03]"
+        />
+        {image.illustrative ? (
+          <span className="absolute right-12 top-12 z-10 rounded-full bg-black/35 px-10 py-6 text-small text-white/80 backdrop-blur">
+            {labels.noPhoto}
+          </span>
+        ) : null}
       </div>
       <div className="p-20">
         <div className="flex items-start justify-between gap-12">

@@ -129,9 +129,6 @@ export async function getPropertyReadiness(
     }
   }
 
-  if (project.ratePlans.length > 0) {
-    add('warning', 'project.rate_plans_deferred', 'Canonical rate plans are stored for migration but guest quotes still use the proven unit/category pricing engine.');
-  }
 
   const checks = blockers.length + warnings.length;
   const score = Math.max(0, Math.round(100 - blockers.length * 8 - warnings.length * 2));

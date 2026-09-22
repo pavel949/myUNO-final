@@ -218,12 +218,12 @@ export default async function LandingPage() {
             <p className="text-body text-surface-ivory/75 mt-12">{labels['landing.audience.body']}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-20 mt-40">
-            <Link href="/owners" className="group rounded-2xl border border-white/20 bg-white/5 p-28 transition hover:bg-white/10">
+            <Link href="/owners" className="group rounded-2xl border border-white/20 bg-surface-paper/5 p-28 transition hover:bg-surface-paper/10">
               <h3 className="font-display text-display font-semibold">{labels['landing.audience.owners']}</h3>
               <p className="text-body text-surface-ivory/70 mt-12">{labels['landing.audience.owners_body']}</p>
               <p className="mt-24 font-semibold text-brand-sun-soft">{labels['landing.audience.owner_cta']} →</p>
             </Link>
-            <Link href="/developers" className="group rounded-2xl border border-white/20 bg-white/5 p-28 transition hover:bg-white/10">
+            <Link href="/developers" className="group rounded-2xl border border-white/20 bg-surface-paper/5 p-28 transition hover:bg-surface-paper/10">
               <h3 className="font-display text-display font-semibold">{labels['landing.audience.developers']}</h3>
               <p className="text-body text-surface-ivory/70 mt-12">{labels['landing.audience.developers_body']}</p>
               <p className="mt-24 font-semibold text-brand-sun-soft">{labels['landing.audience.developer_cta']} →</p>

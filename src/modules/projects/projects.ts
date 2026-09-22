@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
 import { ProjectStatus } from '@prisma/client';
+import { assertProjectReadyForActivation } from './property-readiness';
 
 interface CreateProjectInput {
   slug: string;
@@ -16,6 +17,21 @@ interface CreateProjectInput {
   handbookKey?: string;
   status?: ProjectStatus;
   actorIdentityId?: string;
+  areaId?: string | null;
+  projectType?: string;
+  developmentLifecycleStatus?: string;
+  operationalStatus?: string;
+  brand?: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  district?: string;
+  subdistrict?: string;
+  postcode?: string;
+  totalUnits?: number;
+  totalBuildings?: number;
+  floors?: number;
+  facilities?: string[];
 }
 
 interface UpdateProjectInput {
@@ -32,6 +48,21 @@ interface UpdateProjectInput {
   status?: ProjectStatus;
   coverMediaId?: string | null;
   actorIdentityId?: string;
+  areaId?: string | null;
+  projectType?: string | null;
+  developmentLifecycleStatus?: string | null;
+  operationalStatus?: string | null;
+  brand?: string | null;
+  country?: string;
+  region?: string | null;
+  city?: string | null;
+  district?: string | null;
+  subdistrict?: string | null;
+  postcode?: string | null;
+  totalUnits?: number | null;
+  totalBuildings?: number | null;
+  floors?: number | null;
+  facilities?: string[];
 }
 
 /**
@@ -52,6 +83,21 @@ export async function createProject(input: CreateProjectInput) {
     handbookKey,
     status = 'draft',
     actorIdentityId,
+    areaId,
+    projectType,
+    developmentLifecycleStatus,
+    operationalStatus,
+    brand,
+    country = 'TH',
+    region,
+    city,
+    district,
+    subdistrict,
+    postcode,
+    totalUnits,
+    totalBuildings,
+    floors,
+    facilities = [],
   } = input;
 
   // Check slug uniqueness
@@ -79,6 +125,21 @@ export async function createProject(input: CreateProjectInput) {
       // content itself can stay an unfilled draft).
       handbookKey: handbookKey || 'project.handbook.default',
       status,
+      areaId: areaId || null,
+      projectType: projectType || null,
+      developmentLifecycleStatus: developmentLifecycleStatus || null,
+      operationalStatus: operationalStatus || null,
+      brand: brand || null,
+      country,
+      region: region || null,
+      city: city || null,
+      district: district || null,
+      subdistrict: subdistrict || null,
+      postcode: postcode || null,
+      totalUnits: totalUnits ?? null,
+      totalBuildings: totalBuildings ?? null,
+      floors: floors ?? null,
+      facilities,
     },
   });
 
@@ -145,6 +206,21 @@ export async function updateProject(input: UpdateProjectInput) {
     status,
     coverMediaId,
     actorIdentityId,
+    areaId,
+    projectType,
+    developmentLifecycleStatus,
+    operationalStatus,
+    brand,
+    country,
+    region,
+    city,
+    district,
+    subdistrict,
+    postcode,
+    totalUnits,
+    totalBuildings,
+    floors,
+    facilities,
   } = input;
 
   const project = await prisma.project.findUnique({
@@ -158,7 +234,7 @@ export async function updateProject(input: UpdateProjectInput) {
   // Validate status transitions
   if (status && status !== project.status) {
     if (status === 'live' && project.status === 'draft') {
-      // Allow draft → live
+      await assertProjectReadyForActivation(prisma, projectId);
     } else if (status === 'archived' && (project.status === 'live' || project.status === 'draft')) {
       // Allow live/draft → archived
     } else if (status === project.status) {
@@ -187,6 +263,21 @@ export async function updateProject(input: UpdateProjectInput) {
       ...(handbookKey !== undefined && { handbookKey: (handbookKey || null) as any }),
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
+      ...(areaId !== undefined && { areaId }),
+      ...(projectType !== undefined && { projectType }),
+      ...(developmentLifecycleStatus !== undefined && { developmentLifecycleStatus }),
+      ...(operationalStatus !== undefined && { operationalStatus }),
+      ...(brand !== undefined && { brand }),
+      ...(country !== undefined && { country }),
+      ...(region !== undefined && { region }),
+      ...(city !== undefined && { city }),
+      ...(district !== undefined && { district }),
+      ...(subdistrict !== undefined && { subdistrict }),
+      ...(postcode !== undefined && { postcode }),
+      ...(totalUnits !== undefined && { totalUnits }),
+      ...(totalBuildings !== undefined && { totalBuildings }),
+      ...(floors !== undefined && { floors }),
+      ...(facilities !== undefined && { facilities }),
     } as any,
   });
 

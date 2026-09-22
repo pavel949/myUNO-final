@@ -115,6 +115,13 @@ export {
   calculatePropertyFactsCompleteness,
   calculateDeveloperCompleteness,
 } from './property-facts.service';
+export {
+  getPropertyReadiness,
+  assertUnitReadyForActivation,
+  assertProjectReadyForActivation,
+  type PropertyReadinessReport,
+  type PropertyReadinessItem,
+} from './property-readiness';
 
 export {
   PROJECT_TYPES,

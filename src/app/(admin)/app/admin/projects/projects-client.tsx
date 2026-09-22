@@ -100,6 +100,10 @@ export default function ProjectsAdminClient({
 
   return (
     <div className="flex flex-col gap-16">
+      <div className="flex flex-wrap gap-8">
+        <Link href="/app/admin/properties/new" className="h-48 px-24 rounded-md bg-brand-andaman text-surface-ivory inline-flex items-center font-medium">{labels['admin.projects.add_property']}</Link>
+        <Link href="/app/admin/areas" className="h-48 px-24 rounded-md border border-border-line inline-flex items-center font-medium">{labels['admin.projects.manage_areas']}</Link>
+      </div>
       {error ? (
         <div className="bg-state-error/10 border border-state-error rounded-lg p-16">
           <p className="text-body text-state-error">{error}</p>
@@ -130,6 +134,12 @@ export default function ProjectsAdminClient({
                 <span className="px-12 py-4 rounded-full text-small font-semibold bg-surface-ivory text-text-ink">
                   {project.status}
                 </span>
+                <Link
+                  href={`/app/admin/properties/${project.id}/onboarding`}
+                  className="text-small text-brand-andaman font-semibold"
+                >
+                  {labels['admin.projects.onboarding']}
+                </Link>
                 <Link
                   href={`/app/admin/config?projectId=${project.id}`}
                   className="text-small text-brand-andaman font-semibold"
@@ -297,9 +307,9 @@ export default function ProjectsAdminClient({
               !draft.address ||
               (!draft.plusCode.trim() &&
                 (!Number.isFinite(Number(draft.latitude)) ||
-                  !Number.isFinite(Number(draft.longitude)))) ||
-              draft.latitude === '' ||
-              draft.longitude === ''
+                  !Number.isFinite(Number(draft.longitude)) ||
+                  draft.latitude === '' ||
+                  draft.longitude === ''))
             }
           >
             {labels['admin.projects.create']}

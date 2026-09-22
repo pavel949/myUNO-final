@@ -165,12 +165,10 @@ export default function OnboardingClient({
             {engagements.map((e) => (
               <li key={e.id} className="text-body text-text-ink">
                 {e.engagementType} · {e.status}
-                {/* noiCapAnnualThb is satang (THB × 100), like every amount in
-                    the platform (CLAUDE.md money rules) — convert to baht at
-                    this display boundary; the form below takes and sends
-                    baht too (Q50). */}
+                {/* The server component has already converted this DTO field
+                    from satang to baht. Do not divide a second time here. */}
                 {e.noiCapAnnualThb !== null &&
-                  ` · ฿${(e.noiCapAnnualThb / 100).toLocaleString()}`}
+                  ` · ฿${e.noiCapAnnualThb.toLocaleString()}`}
               </li>
             ))}
           </ul>

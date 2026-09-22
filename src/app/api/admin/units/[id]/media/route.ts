@@ -47,3 +47,51 @@ export async function POST(
     return handleError(error);
   }
 }
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.error;
+  const unit = await prisma.unit.findUnique({
+    where: { id: params.id },
+    select: {
+      coverMediaId: true,
+      media: { include: { media: true }, orderBy: { sort: 'asc' } },
+    },
+  });
+  return unit ? NextResponse.json(unit) : NextResponse.json({ error: 'not found' }, { status: 404 });
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
+    const body = await req.json();
+    const orderedIds = Array.isArray(body.orderedMediaIds) ? body.orderedMediaIds : [];
+    await prisma.$transaction([
+      ...orderedIds.map((mediaId: string, sort: number) =>
+        prisma.unitMedia.update({ where: { unitId_mediaId: { unitId: params.id, mediaId } }, data: { sort } })
+      ),
+      ...(body.coverMediaId ? [prisma.unit.update({ where: { id: params.id }, data: { coverMediaId: body.coverMediaId } })] : []),
+    ]);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
+    const mediaId = req.nextUrl.searchParams.get('mediaId');
+    if (!mediaId) throw createPublicError('invalid request: mediaId is required', 400);
+    await prisma.$transaction(async (tx) => {
+      await tx.unitMedia.delete({ where: { unitId_mediaId: { unitId: params.id, mediaId } } });
+      const unit = await tx.unit.findUnique({ where: { id: params.id }, select: { coverMediaId: true } });
+      if (unit?.coverMediaId === mediaId) await tx.unit.update({ where: { id: params.id }, data: { coverMediaId: null } });
+    });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleError(error);
+  }
+}

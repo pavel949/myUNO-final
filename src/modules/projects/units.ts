@@ -3,6 +3,7 @@ import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
 import { UnitStatus, UnitType } from '@prisma/client';
 import { ensureOwnershipRecorded } from './ownership.service';
+import { assertUnitReadyForActivation } from './property-readiness';
 
 interface CreateUnitInput {
   projectId: string;
@@ -24,6 +25,7 @@ interface CreateUnitInput {
   cancellationPolicyKey?: string;
   status?: UnitStatus;
   actorIdentityId?: string;
+  inventoryCategoryId?: string;
 }
 
 interface UpdateUnitInput {
@@ -46,6 +48,7 @@ interface UpdateUnitInput {
   status?: UnitStatus;
   coverMediaId?: string | null;
   actorIdentityId?: string;
+  inventoryCategoryId?: string | null;
 }
 
 /**
@@ -65,6 +68,7 @@ async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?
     },
     select: {
       id: true,
+      categoryKey: true,
       baseNightlyThb: true,
       minNights: true,
       cancellationPolicyKey: true,
@@ -97,6 +101,7 @@ export async function createUnit(input: CreateUnitInput) {
     cancellationPolicyKey,
     status = 'draft',
     actorIdentityId,
+    inventoryCategoryId,
   } = input;
 
   const project = await prisma.project.findUnique({
@@ -125,7 +130,21 @@ export async function createUnit(input: CreateUnitInput) {
   await assertCatalogKeys(prisma, 'catalog.cancellation_policies', input.cancellationPolicyKey);
   await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, { projectId });
 
-  const canonicalCategory = await resolveCanonicalInventoryCategory(projectId, categoryKey);
+  const canonicalCategory = inventoryCategoryId
+    ? await prisma.inventoryCategory.findFirst({
+        where: { id: inventoryCategoryId, projectId },
+        select: {
+          id: true,
+          categoryKey: true,
+          baseNightlyThb: true,
+          minNights: true,
+          cancellationPolicyKey: true,
+        },
+      })
+    : await resolveCanonicalInventoryCategory(projectId, categoryKey);
+  if (inventoryCategoryId && !canonicalCategory) {
+    throw new Error('Inventory category does not belong to this project');
+  }
 
   const unit = await prisma.unit.create({
     data: {
@@ -134,7 +153,7 @@ export async function createUnit(input: CreateUnitInput) {
       ownerIdentityId: ownerIdentityId || null,
       name,
       unitType,
-      categoryKey: categoryKey || null,
+      categoryKey: canonicalCategory?.categoryKey ?? categoryKey ?? null,
       bedrooms,
       bathrooms,
       maxGuests,
@@ -216,6 +235,7 @@ export async function updateUnit(input: UpdateUnitInput) {
     status,
     coverMediaId,
     actorIdentityId,
+    inventoryCategoryId,
   } = input;
 
   const unit = await prisma.unit.findUnique({
@@ -226,8 +246,15 @@ export async function updateUnit(input: UpdateUnitInput) {
     throw new Error(`Unit ${unitId} not found`);
   }
 
-  if (status && status !== unit.status && status === 'live' && !unit.permittedUseConfirmedAt) {
-    throw new Error('Unit cannot move to live status without permitted use confirmation');
+  if (status && status !== unit.status) {
+    if (status === 'live') {
+      if (!unit.permittedUseConfirmedAt) {
+        throw new Error(
+          'Unit cannot move to live status without permitted use confirmation'
+        );
+      }
+      await assertUnitReadyForActivation(prisma, unitId);
+    }
   }
 
   if (name && name !== unit.name) {
@@ -254,16 +281,21 @@ export async function updateUnit(input: UpdateUnitInput) {
   // commercial columns synchronized even when an older caller tries to write a
   // unit-level base/min value directly.
   const effectiveCategoryKey = categoryKey !== undefined ? categoryKey : unit.categoryKey;
-  const canonicalCategory = await resolveCanonicalInventoryCategory(
-    unit.projectId,
-    effectiveCategoryKey
-  );
+  const canonicalCategory = inventoryCategoryId
+    ? await prisma.inventoryCategory.findFirst({
+        where: { id: inventoryCategoryId, projectId: unit.projectId },
+        select: { id: true, categoryKey: true, baseNightlyThb: true, minNights: true, cancellationPolicyKey: true },
+      })
+    : await resolveCanonicalInventoryCategory(unit.projectId, effectiveCategoryKey);
+  if (inventoryCategoryId && !canonicalCategory) {
+    throw new Error('Inventory category does not belong to this project');
+  }
   const shouldWriteCanonicalCategory =
-    categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
+    inventoryCategoryId !== undefined || categoryKey !== undefined || (!unit.inventoryCategoryId && Boolean(unit.categoryKey));
   const effectiveInventoryCategoryId =
-    categoryKey === null
+    inventoryCategoryId === null || categoryKey === null
       ? null
-      : canonicalCategory?.id ?? (categoryKey === undefined ? unit.inventoryCategoryId : null);
+      : canonicalCategory?.id ?? (categoryKey === undefined && inventoryCategoryId === undefined ? unit.inventoryCategoryId : null);
 
   // A live unit must remain canonically priceable, not only pass this check at
   // the moment it first transitions to live. Removing/changing its category is
@@ -279,6 +311,7 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(name !== undefined && { name }),
       ...(unitType !== undefined && { unitType }),
       ...(categoryKey !== undefined && { categoryKey }),
+      ...(inventoryCategoryId !== undefined && canonicalCategory && { categoryKey: canonicalCategory.categoryKey }),
       ...(shouldWriteCanonicalCategory && {
         inventoryCategoryId: effectiveInventoryCategoryId,
       }),

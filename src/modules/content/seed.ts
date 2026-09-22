@@ -21,6 +21,16 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  {
+    key: 'admin.dashboard.attention_intro',
+    namespace: 'admin.dashboard',
+    description: 'Founder/admin Needs Attention control-plane introduction',
+    ru: 'Начните с исключений, которые могут заблокировать выручку, гостей или операции. Откройте элемент, чтобы устранить причину.',
+    en: 'Start with exceptions that can block revenue, guests or operations. Open an item to resolve it at the source.',
+    th: 'เริ่มจากข้อยกเว้นที่อาจกระทบรายได้ ผู้เข้าพัก หรือการดำเนินงาน เปิดรายการเพื่อแก้ไขที่ต้นเหตุ',
+    status: 'needs_review',
+  },
+
   // Actions
   {
     key: 'common.action.save',

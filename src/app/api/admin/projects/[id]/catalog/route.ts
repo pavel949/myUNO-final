@@ -21,30 +21,51 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   try {
     const body = await req.json();
     if (body.action === 'category') {
-      const category = await prisma.inventoryCategory.upsert({
-        where: { projectId_categoryKey: { projectId: params.id, categoryKey: body.categoryKey } },
-        create: {
-          projectId: params.id,
-          categoryKey: body.categoryKey,
-          name: body.name,
-          bedrooms: Number(body.bedrooms),
-          bathrooms: Number(body.bathrooms),
-          maxGuests: Number(body.maxGuests),
-          baseNightlyThb: bahtToSatang(Number(body.baseNightlyThb)),
-          minNights: Number(body.minNights) || 1,
-          cancellationPolicyKey: body.cancellationPolicyKey || null,
-          status: body.status || 'live',
-        },
-        update: {
-          name: body.name,
-          bedrooms: Number(body.bedrooms),
-          bathrooms: Number(body.bathrooms),
-          maxGuests: Number(body.maxGuests),
-          baseNightlyThb: bahtToSatang(Number(body.baseNightlyThb)),
-          minNights: Number(body.minNights) || 1,
-          cancellationPolicyKey: body.cancellationPolicyKey || null,
-          status: body.status || 'live',
-        },
+      const baseNightlyThb = bahtToSatang(Number(body.baseNightlyThb));
+      const minNights = Number(body.minNights) || 1;
+      const cancellationPolicyKey = body.cancellationPolicyKey || null;
+
+      // InventoryCategory is the commercial owner for linked units. Keep the
+      // legacy Unit columns as read-compatibility mirrors only, and update both
+      // sides atomically so no caller can observe two prices for one category.
+      const category = await prisma.$transaction(async (tx) => {
+        const saved = await tx.inventoryCategory.upsert({
+          where: { projectId_categoryKey: { projectId: params.id, categoryKey: body.categoryKey } },
+          create: {
+            projectId: params.id,
+            categoryKey: body.categoryKey,
+            name: body.name,
+            bedrooms: Number(body.bedrooms),
+            bathrooms: Number(body.bathrooms),
+            maxGuests: Number(body.maxGuests),
+            baseNightlyThb,
+            minNights,
+            cancellationPolicyKey,
+            status: body.status || 'live',
+          },
+          update: {
+            name: body.name,
+            bedrooms: Number(body.bedrooms),
+            bathrooms: Number(body.bathrooms),
+            maxGuests: Number(body.maxGuests),
+            baseNightlyThb,
+            minNights,
+            cancellationPolicyKey,
+            status: body.status || 'live',
+          },
+        });
+
+        await tx.unit.updateMany({
+          where: { projectId: params.id, inventoryCategoryId: saved.id },
+          data: {
+            categoryKey: saved.categoryKey,
+            baseNightlyThb: saved.baseNightlyThb,
+            minNights: saved.minNights,
+            cancellationPolicyKey: saved.cancellationPolicyKey,
+          },
+        });
+
+        return saved;
       });
       return NextResponse.json(category, { status: 201 });
     }

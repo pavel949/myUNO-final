@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
+import { canWithAccess } from '@/modules/core/authority.service';
 import { createUnit } from '@/modules/projects';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,19 +13,26 @@ export async function POST(req: NextRequest) {
   });
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
-  // Check admin permission
-  if (
-    !(await can({
-      identity,
-      action: 'units:create',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   try {
     const body = await req.json();
+    if (!body.projectId) {
+      return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
+    }
+
+    // Unit creation is project-scoped. Authorizing against a synthetic
+    // platform resource made legitimate project-scoped staff/MC grants fail
+    // while also bypassing the canonical read-vs-write access seam.
+    if (
+      !(await canWithAccess(prisma, {
+        identity,
+        action: 'units:create',
+        requiredAccess: 'allow',
+        resource: { projectId: body.projectId },
+      }))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const unit = await createUnit({
       ...body,
       actorIdentityId: user.identityId,
@@ -48,17 +55,6 @@ export async function GET(req: NextRequest) {
   });
   if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
-  // Check admin permission
-  if (
-    !(await can({
-      identity,
-      action: 'units:list',
-      resource: { resourceType: 'platform' },
-    }))
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   try {
     const projectId = req.nextUrl.searchParams.get('projectId');
     const status = req.nextUrl.searchParams.get('status');
@@ -70,6 +66,17 @@ export async function GET(req: NextRequest) {
         { error: 'projectId query parameter is required' },
         { status: 400 }
       );
+    }
+
+    if (
+      !(await canWithAccess(prisma, {
+        identity,
+        action: 'units:list',
+        requiredAccess: 'read',
+        resource: { projectId },
+      }))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const units = await prisma.unit.findMany({

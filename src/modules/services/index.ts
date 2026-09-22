@@ -37,10 +37,12 @@ export {
   updateService,
   getServicesByProvider,
   listPublicServices,
+  listPublicMarketplaceServices,
   approveService,
   rejectService,
   getServiceAverageRating,
   pickLocalizedServiceCopy,
   type CreateServiceInput,
   type UpdateServiceInput,
+  type PublicMarketplaceService,
 } from './service.service';

@@ -28,6 +28,8 @@ export default async function LandingPage() {
       'landing.collection.title': 'Homes worth arriving for',
       'landing.collection.body': 'Every live home comes from the same inventory, pricing and availability system used by our operations team.',
       'landing.collection.cta': 'View all residences',
+      'landing.collection.homes': '{count} homes',
+      'landing.collection.empty': 'Residences are being prepared for launch.',
       'landing.promise.stay': 'Stay',
       'landing.promise.stay_body': 'Search real availability, see the price and reserve the same inventory our team operates.',
       'landing.promise.live': 'Live',
@@ -50,7 +52,7 @@ export default async function LandingPage() {
 
       <section className="relative min-h-[76vh] overflow-hidden bg-brand-deep text-surface-ivory">
         {heroProject?.coverUrl ? (
-          <Image src={heroProject.coverUrl} alt="" fill priority className="object-cover opacity-70 scale-[1.01]" sizes="100vw" />
+          <Image src={heroProject.coverUrl} alt="" fill priority className="object-cover opacity-70 scale-[1.01]" />
         ) : (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(77,183,176,0.34),transparent_32%),radial-gradient(circle_at_18%_82%,rgba(240,190,92,0.16),transparent_30%),linear-gradient(135deg,#082f36_0%,#0b4a51_45%,#102b35_100%)]" />
         )}
@@ -85,13 +87,13 @@ export default async function LandingPage() {
                 {project.coverUrl ? <Image src={project.coverUrl} alt={project.name} fill className="object-cover transition duration-700 group-hover:scale-[1.03]" sizes={index===0?'(min-width: 768px) 66vw':'(min-width: 768px) 33vw'} /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(77,183,176,0.45),transparent_30%),linear-gradient(145deg,#0b4a51,#102b35)]" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-24 text-white">
-                  <p className="text-small text-white/70">{project.liveUnitCount} homes</p>
+                  <p className="text-small text-white/70">{labels['landing.collection.homes'].replace('{count}', String(project.liveUnitCount))}</p>
                   <h3 className="font-display text-heading-2 font-semibold mt-4">{project.name}</h3>
                 </div>
               </Link>
             ))}
           </div>
-        ) : <div className="rounded-2xl border border-border-line bg-surface-paper p-32 text-text-secondary">Residences are being prepared for launch.</div>}
+        ) : <div className="rounded-2xl border border-border-line bg-surface-paper p-32 text-text-secondary">{labels['landing.collection.empty']}</div>}
       </section>
 
       <section className="bg-brand-deep text-surface-ivory">

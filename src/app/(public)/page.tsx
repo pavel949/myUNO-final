@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { getLabels } from '@/lib/i18n';
 import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { SearchBar } from '@/components/SearchBar';
+import { TrustMark } from '@/components/TrustMark';
 import { listPublicProjects } from '@/modules/projects';
 
 export const metadata: Metadata = {
@@ -54,12 +55,12 @@ export default async function LandingPage() {
         {heroProject?.coverUrl ? (
           <Image src={heroProject.coverUrl} alt="" fill priority className="object-cover opacity-70 scale-[1.01]" sizes={undefined} />
         ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(77,183,176,0.34),transparent_32%),radial-gradient(circle_at_18%_82%,rgba(240,190,92,0.16),transparent_30%),linear-gradient(135deg,#082f36_0%,#0b4a51_45%,#102b35_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-deep via-brand-andaman to-brand-deep opacity-95" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/30 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-24 min-h-[76vh] flex flex-col justify-end pb-48 md:pb-64">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase tracking-[0.22em] text-brand-sun-soft mb-16">{labels['landing.hero.kicker']}</p>
+            <div className="flex items-center gap-12 mb-16"><TrustMark size={28} /><p className="text-kicker uppercase tracking-[0.22em] text-brand-sun-soft">{labels['landing.hero.kicker']}</p></div>
             <h1 className="font-display text-[clamp(3.2rem,8vw,7.5rem)] leading-[0.9] tracking-[-0.04em] font-semibold max-w-4xl">
               {labels['landing.hero.title']}
             </h1>
@@ -84,7 +85,7 @@ export default async function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-20">
             {projects.slice(0,3).map((project, index) => (
               <Link key={project.id} href={`/projects/${project.slug}`} className={`group relative overflow-hidden rounded-2xl bg-brand-deep ${index === 0 ? 'md:col-span-2 md:row-span-2 min-h-[520px]' : 'min-h-[250px]'}`}>
-                {project.coverUrl ? <Image src={project.coverUrl} alt={project.name} fill className="object-cover transition duration-700 group-hover:scale-[1.03]" sizes={index===0?'(min-width: 768px) 66vw':'(min-width: 768px) 33vw'} /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(77,183,176,0.45),transparent_30%),linear-gradient(145deg,#0b4a51,#102b35)]" />}
+                {project.coverUrl ? <Image src={project.coverUrl} alt={project.name} fill className="object-cover transition duration-700 group-hover:scale-[1.03]" sizes={index===0?'(min-width: 768px) 66vw':'(min-width: 768px) 33vw'} /> : <div className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-deep" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-24 text-white">
                   <p className="text-small text-white/70">{labels['landing.collection.homes'].replace('{count}', String(project.liveUnitCount))}</p>

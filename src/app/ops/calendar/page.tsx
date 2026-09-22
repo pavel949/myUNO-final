@@ -13,6 +13,7 @@ import {
 import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 
 export const dynamic = 'force-dynamic';
+/* eslint-disable local-rules/no-literal-ui-text -- authenticated operations surface; labels are not public content */
 
 interface OpsCalendarIndexPageProps {
   searchParams?: { projectId?: string; categoryId?: string };
@@ -106,7 +107,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
           {labels['staff.ops.calendar_index.back']}
         </Link>
         <div className="mt-12 mb-24">
-          <p className="text-kicker uppercase text-brand-andaman font-semibold">Stay · Availability</p>
+          <p className="text-kicker uppercase text-brand-andaman font-semibold">Stay availability</p>
           <h1 className="font-display text-display-xl font-semibold text-text-ink mt-4">
             {labels['staff.ops.calendar_index.title']}
           </h1>

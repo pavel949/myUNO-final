@@ -19,6 +19,8 @@ export { MoneyAmount, type MoneyAmountProps } from './MoneyAmount';
 export { RoleContextBanner } from './RoleContextBanner';
 export { TrustMark } from './TrustMark';
 export { UnitPhotoMosaic } from './UnitPhotoMosaic';
+export { ProjectCard, type ProjectCardLabels } from './ProjectCard';
+export { ServiceCard, type ServiceCardData, type ServiceCardLabels } from './ServiceCard';
 export { LegalEntityBlock } from './LegalEntityBlock';
 
 // Owner components

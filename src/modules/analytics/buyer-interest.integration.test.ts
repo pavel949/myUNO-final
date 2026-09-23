@@ -22,6 +22,9 @@ describe('someone saying they are thinking about buying', () => {
     const project = await createProject();
     const unit = await createUnit({ projectId: project.id, name: 'B-707' });
     unitId = unit.id;
+    await db.commercialOffering.create({
+      data: { projectId: project.id, unitId: unit.id, offeringType: 'sale', status: 'active', pricingTerms: { askingPriceThb: 12500000 }, ownershipTenure: { type: 'freehold', verification: 'pending_due_diligence' } },
+    });
   });
 
   it('raises a signal so the interest lands in the funnel, not just an inbox', async () => {
@@ -34,6 +37,22 @@ describe('someone saying they are thinking about buying', () => {
     expect(signals).toHaveLength(1);
     expect(signals[0].signalKey).toBe('direct_inquiry');
     expect(signals[0].status).toBe('open');
+  });
+
+  it('creates a purchase opportunity and snapshots sale terms without rental pricing', async () => {
+    const result = await registerPurchaseInterest(db, { identityId: buyerId, unitId, message: 'Please send the purchase terms.' });
+    const opportunity = await db.crmOpportunity.findUnique({ where: { id: result.opportunityId } });
+    expect(opportunity?.type).toBe('purchase');
+    expect(opportunity?.unitId).toBe(unitId);
+    expect(opportunity?.requirements).toMatchObject({
+      salePricingTermsSnapshot: { askingPriceThb: 12500000 },
+      ownershipTenureSnapshot: { type: 'freehold' },
+    });
+  });
+
+  it('does not accept a unit-specific purchase enquiry without an active sale offering', async () => {
+    await db.commercialOffering.updateMany({ where: { unitId, offeringType: 'sale' }, data: { status: 'paused' } });
+    await expect(registerPurchaseInterest(db, { identityId: buyerId, unitId, message: 'Can I buy this?' })).rejects.toThrow(/not currently offered for sale/i);
   });
 
   it('opens a thread the buyer and the admins are both in', async () => {

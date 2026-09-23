@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { createDirectInquiry } from './signals';
@@ -85,8 +85,8 @@ export async function registerPurchaseInterest(
         ...(saleOffering
           ? {
               saleOfferingId: saleOffering.id,
-              salePricingTermsSnapshot: saleOffering.pricingTerms,
-              ownershipTenureSnapshot: saleOffering.ownershipTenure,
+              salePricingTermsSnapshot: saleOffering.pricingTerms as Prisma.InputJsonValue,
+              ownershipTenureSnapshot: saleOffering.ownershipTenure as Prisma.InputJsonValue,
             }
           : {}),
       },

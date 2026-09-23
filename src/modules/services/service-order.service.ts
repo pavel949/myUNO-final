@@ -161,7 +161,6 @@ export async function createServiceOrder(
     scheduledStart,
     scheduledEnd,
     quantity,
-    tookRatePctSnapshot: requestedTakeRatePct,
     noteToProvider,
     addressNote,
   } = input;
@@ -220,8 +219,11 @@ export async function createServiceOrder(
     }
   }
 
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    throw new Error('Order quantity must be a positive integer');
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+    throw new Error('Order quantity must be an integer between 1 and 20');
+  }
+  if (!Number.isFinite(scheduledStart.getTime()) || !Number.isFinite(scheduledEnd.getTime()) || scheduledEnd <= scheduledStart) {
+    throw new Error('Service schedule is invalid');
   }
   if (service.priceModel === 'quote' || !service.basePriceThb || service.basePriceThb <= 0) {
     throw new Error('Service requires a quote and cannot be ordered at a fixed price');
@@ -231,10 +233,13 @@ export async function createServiceOrder(
   // authoritative total: every API/worker gets the same price calculation.
   const totalThb = service.basePriceThb * quantity;
   const tookRatePctSnapshot =
-    requestedTakeRatePct ??
-    (((await getConfig(db, 'services.take_rate_pct', { projectId })) as number | undefined) ?? 15);
+    ((await getConfig(db, 'services.take_rate_pct', { projectId })) as number | undefined) ?? 15;
+  if (!Number.isFinite(tookRatePctSnapshot) || tookRatePctSnapshot < 0 || tookRatePctSnapshot > 100) {
+    throw new Error('Configured service take rate is invalid');
+  }
   const priceBreakdown = {
-    base_thb: service.basePriceThb,
+    price_model: service.priceModel,
+    unit_price_thb: service.basePriceThb,
     quantity,
     total_thb: totalThb,
   };

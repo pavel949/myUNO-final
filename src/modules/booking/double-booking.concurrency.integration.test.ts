@@ -18,7 +18,7 @@ describe('double-booking prevention (P0-1)', () => {
   });
 
   async function fixture() {
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     const unit = await createUnit({ projectId: project.id, status: 'live' });
     return { project, unit };
   }

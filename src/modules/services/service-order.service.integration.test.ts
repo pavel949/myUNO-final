@@ -199,6 +199,8 @@ describe('service-order.service — integration tests', () => {
       });
       await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
+
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 
       const order = await db.serviceOrder.findUnique({
@@ -386,6 +388,8 @@ describe('service-order.service — integration tests', () => {
         totalThb: 1000,
         tookRatePctSnapshot: 15,
       });
+
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
       await serviceOrderService.fulfillServiceOrder(db, orderResult.id, provider.id);
@@ -919,6 +923,7 @@ describe('service-order.service — integration tests', () => {
       await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       // Step 2: Provider accepts
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
       order = await db.serviceOrder.findUnique({
         where: { id: orderResult.id },
@@ -1098,6 +1103,8 @@ describe('service-order.service — integration tests', () => {
         totalThb: 500,
         tookRatePctSnapshot: 15,
       });
+
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 

@@ -15,9 +15,10 @@ export interface CreateServiceOrderInput {
   scheduledStart: Date;
   scheduledEnd: Date;
   quantity: number;
-  priceBreakdown: Record<string, any>;
-  totalThb: number;
-  tookRatePctSnapshot: number;
+  /** Computed inside the domain service from the canonical Service price. */
+  priceBreakdown?: Record<string, any>;
+  totalThb?: number;
+  tookRatePctSnapshot?: number;
   noteToProvider?: string;
   addressNote?: string;
 }
@@ -160,9 +161,7 @@ export async function createServiceOrder(
     scheduledStart,
     scheduledEnd,
     quantity,
-    priceBreakdown,
-    totalThb,
-    tookRatePctSnapshot,
+    tookRatePctSnapshot: requestedTakeRatePct,
     noteToProvider,
     addressNote,
   } = input;
@@ -221,9 +220,24 @@ export async function createServiceOrder(
     }
   }
 
-  if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(totalThb) || totalThb <= 0) {
-    throw new Error('Order quantity and total must be positive integers');
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    throw new Error('Order quantity must be a positive integer');
   }
+  if (service.priceModel === 'quote' || !service.basePriceThb || service.basePriceThb <= 0) {
+    throw new Error('Service requires a quote and cannot be ordered at a fixed price');
+  }
+
+  // The domain owns the commercial snapshot. Callers cannot supply an
+  // authoritative total: every API/worker gets the same price calculation.
+  const totalThb = service.basePriceThb * quantity;
+  const tookRatePctSnapshot =
+    requestedTakeRatePct ??
+    (((await getConfig(db, 'services.take_rate_pct', { projectId })) as number | undefined) ?? 15);
+  const priceBreakdown = {
+    base_thb: service.basePriceThb,
+    quantity,
+    total_thb: totalThb,
+  };
 
   // Create order in placed status
   const order = await db.serviceOrder.create({
@@ -292,8 +306,8 @@ export async function acceptServiceOrder(
     throw new Error('Only the service provider can accept an order');
   }
 
-  if (order.status !== 'placed' && order.status !== 'paid') {
-    throw new Error(`Cannot accept order in ${order.status} status`);
+  if (order.status !== 'paid') {
+    throw new Error(`Cannot accept order in ${order.status} status; payment is required first`);
   }
 
   await db.serviceOrder.update({
@@ -417,6 +431,13 @@ export async function fulfillServiceOrder(
 
   if (order.status !== 'accepted') {
     throw new Error(`Cannot fulfill order in ${order.status} status`);
+  }
+  const paidTotal = await db.payment.aggregate({
+    where: { serviceOrderId, status: 'succeeded' },
+    _sum: { amountThb: true },
+  });
+  if ((paidTotal._sum.amountThb ?? 0) < order.total_thb) {
+    throw new Error('Cannot fulfill an unpaid or underpaid service order');
   }
 
   const fulfilledAt = new Date();

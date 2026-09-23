@@ -73,6 +73,24 @@ export interface CheckoutSession {
   paymentId: string;
 }
 
+async function assertStayPaymentAmount(
+  db: PrismaClient,
+  purpose: PaymentPurpose,
+  bookingId: string | undefined,
+  amountThb: number
+): Promise<void> {
+  if (purpose !== 'stay') return;
+  if (!bookingId) throw new Error('Stay payment requires bookingId');
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { totalThb: true },
+  });
+  if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  if (amountThb !== booking.totalThb) {
+    throw new Error('Payment amount does not match booking total');
+  }
+}
+
 /**
  * Record a cash payment directly (no provider redirect).
  * Captures who received the money, when, and the receipt reference.
@@ -96,6 +114,8 @@ export async function recordCashPayment(
     receivedByIdentityId,
     receiptRef,
   } = input;
+
+  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
 
   const now = new Date();
 
@@ -236,6 +256,8 @@ export async function createCheckout(
     payerIdentityId,
     amountThb,
   } = input;
+
+  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
 
   const { provider: providerName } = getProviderConfig();
 

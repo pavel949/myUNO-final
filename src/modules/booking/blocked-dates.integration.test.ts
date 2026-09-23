@@ -22,7 +22,7 @@ describe('blocked dates block a booking (P0-4)', () => {
   });
 
   async function fixture() {
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     const unit = await createUnit({ projectId: project.id, status: 'live' });
     const guest = await createIdentity();
     return { project, unit, guest };

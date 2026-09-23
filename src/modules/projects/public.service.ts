@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { getConfig } from '@/modules/config';
 
 /**
  * Public (unauthenticated) read seam for project discovery pages.

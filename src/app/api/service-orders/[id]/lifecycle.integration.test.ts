@@ -211,7 +211,9 @@ describe('service-order lifecycle routes (S1)', () => {
   });
 
   describe('provider actions', () => {
-    it('provider member accepts a placed order', async () => {
+    it('provider member accepts a paid order', async () => {
+      asStaff();
+      await recordCash(post({ receiptRef: 'accept-paid' }), { params: { id: orderId } });
       asProviderMember();
       const res = await accept(post(), { params: { id: orderId } });
       expect(res.status).toBe(200);
@@ -256,6 +258,8 @@ describe('service-order lifecycle routes (S1)', () => {
     });
 
     it('fulfil moves accepted → fulfilled', async () => {
+      asStaff();
+      await recordCash(post({ receiptRef: 'fulfil-paid' }), { params: { id: orderId } });
       asProviderMember();
       await accept(post(), { params: { id: orderId } });
       const res = await fulfil(post(), { params: { id: orderId } });

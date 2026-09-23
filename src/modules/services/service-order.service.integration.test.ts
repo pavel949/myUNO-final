@@ -58,7 +58,7 @@ describe('service-order.service — integration tests', () => {
       expect(order?.service_id).toBe(service.id);
       expect(order?.orderer_identity_id).toBe(orderer.id);
       expect(order?.quantity).toBe(2);
-      expect(order?.total_thb).toBe(2300);
+      expect(order?.total_thb).toBe(service.basePriceThb * 2);
       expect(order?.note_to_provider).toBe('Please bring supplies');
     });
 
@@ -154,7 +154,7 @@ describe('service-order.service — integration tests', () => {
   });
 
   describe('acceptServiceOrder', () => {
-    it('transitions placed order to accepted', async () => {
+    it('transitions paid order to accepted', async () => {
       const orderer = await createIdentity();
       const admin = await createIdentity();
       const provider = await createProvider();
@@ -184,6 +184,20 @@ describe('service-order.service — integration tests', () => {
         totalThb: 1000,
         tookRatePctSnapshot: 15,
       });
+
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: service.basePriceThb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 
@@ -888,6 +902,21 @@ describe('service-order.service — integration tests', () => {
         where: { id: orderResult.id },
       });
       expect(order?.status).toBe('placed');
+
+      // Step 2: payment succeeds before provider acceptance
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: service.basePriceThb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       // Step 2: Provider accepts
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);

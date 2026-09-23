@@ -62,26 +62,19 @@ describe('finance.service — integration tests', () => {
       expect(ledger?.bookingId).toBe(booking.id);
     });
 
-    it('records cash payment without a booking', async () => {
+    it('rejects a stay cash payment without a booking', async () => {
       const guest = await createIdentity();
       const receiver = await createIdentity();
 
-      const payment = await financeService.recordCashPayment(db, {
-        purpose: 'stay',
-        payerIdentityId: guest.id,
-        amountThb: 5000,
-        receivedByIdentityId: receiver.id,
-        receiptRef: 'CHK-002',
-      });
-
-      expect(payment.status).toBe('succeeded');
-      expect(payment.bookingId).toBeNull();
-
-      // No ledger entry created without booking
-      const ledgers = await db.ledgerEntry.findMany({
-        where: { paymentId: payment.id },
-      });
-      expect(ledgers).toHaveLength(0);
+      await expect(
+        financeService.recordCashPayment(db, {
+          purpose: 'stay',
+          payerIdentityId: guest.id,
+          amountThb: 5000,
+          receivedByIdentityId: receiver.id,
+          receiptRef: 'CHK-002',
+        })
+      ).rejects.toThrow('Stay payment requires bookingId');
     });
   });
 
@@ -365,12 +358,19 @@ describe('finance.service — integration tests', () => {
       const receiver = await createIdentity();
       const actor = await createIdentity();
 
-      const payment = await financeService.recordCashPayment(db, {
-        purpose: 'stay',
-        payerIdentityId: guest.id,
-        amountThb: 8000,
-        receivedByIdentityId: receiver.id,
-        receiptRef: 'CHK-001',
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          payerIdentityId: guest.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: 8000,
+          receivedByIdentityId: receiver.id,
+          receivedAt: new Date(),
+          receiptRef: 'CHK-001',
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
       });
 
       await expect(

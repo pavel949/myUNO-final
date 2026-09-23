@@ -457,6 +457,24 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
+
+  // Reassignment can change unit-level dated overrides. Re-price before the
+  // request becomes a payable hold so the stored snapshot always describes
+  // the physical unit that will actually host the guest.
+  let repriced:
+    | Awaited<ReturnType<typeof computePriceBreakdown>>
+    | null = null;
+  if (unitId !== booking.unitId && booking.bookingType === 'guest_stay') {
+    repriced = await computePriceBreakdown(
+      db,
+      unitId,
+      booking.startDate,
+      booking.endDate,
+      booking.adults + booking.children,
+      now,
+      booking.pets
+    );
+  }
   // `requested` sits outside the exclusion constraint, so this update is the
   // moment the dates are actually claimed — and the moment a race can be lost.
   return db.booking
@@ -464,6 +482,12 @@ export async function approveBookingRequest(
       where: { id: bookingId },
       data: {
         unitId,
+        ...(repriced
+          ? {
+              totalThb: repriced.total_thb,
+              priceBreakdown: repriced as any,
+            }
+          : {}),
         status: 'pending_payment',
         holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
         requestExpiresAt: null,

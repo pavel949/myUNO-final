@@ -84,6 +84,16 @@ export async function processOpnEvent(
       return { handled: true, action: 'refund_failed' };
     }
 
+    // A non-voided provider refund update is the authoritative completion
+    // signal for refunds we created in processing state. Keep this idempotent.
+    if (!opnRefund.voided && refund.status === 'processing') {
+      await db.refund.update({
+        where: { id: refund.id },
+        data: { status: 'succeeded' },
+      });
+      return { handled: true, action: 'refund_succeeded' };
+    }
+
     return { handled: true, action: 'refund_acknowledged' };
   }
 

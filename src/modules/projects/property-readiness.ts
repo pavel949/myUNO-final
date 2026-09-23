@@ -84,6 +84,9 @@ export async function getPropertyReadiness(
   if (project.inventoryCategories.length === 0) {
     add('blocker', 'project.categories', 'Create at least one inventory category.');
   }
+  if (project.amenityKeys.length === 0 && project.facilities.length === 0) {
+    add('warning', 'project.amenities', 'Add shared project amenities or facilities so guests know what is available on site.');
+  }
   if (project.orgRoles.length === 0) {
     add('warning', 'project.organizations', 'No developer, operator or management company is linked.');
   }
@@ -95,6 +98,9 @@ export async function getPropertyReadiness(
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);
     if (!unit.descriptionKey) add('blocker', 'unit.description', 'Add a unit description key.', options);
+    if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
+      add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);
+    }
     if (!unit.coverMediaId || unit.media.length < 3) {
       add('blocker', 'unit.media', 'Upload at least three photos and choose a cover.', options);
     }

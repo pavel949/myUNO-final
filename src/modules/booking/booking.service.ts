@@ -246,8 +246,8 @@ export async function createBooking(
     children,
     infants = 0,
     pets = 0,
-    totalThb,
-    priceBreakdown,
+    totalThb: suppliedTotalThb,
+    priceBreakdown: suppliedPriceBreakdown,
     cancellationPolicySnapshot,
     instantBook,
     holdMinutes = 30,
@@ -257,6 +257,32 @@ export async function createBooking(
 
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
+
+  // Guest-stay money is authoritative only when computed here. API routes may
+  // pre-quote for UX, but no caller can persist a different total/snapshot.
+  // Owner stays keep their explicit zero/manual commercial semantics.
+  let totalThb = suppliedTotalThb;
+  let priceBreakdown = suppliedPriceBreakdown;
+  if (bookingType === 'guest_stay') {
+    const authoritative = await computePriceBreakdown(
+      db,
+      unitId,
+      startDate,
+      endDate,
+      adults + children,
+      now,
+      pets
+    );
+    totalThb = authoritative.total_thb;
+    priceBreakdown = {
+      ...authoritative,
+      ...(suppliedPriceBreakdown &&
+      typeof suppliedPriceBreakdown === 'object' &&
+      'inventory_category_id' in suppliedPriceBreakdown
+        ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id }
+        : {}),
+    };
+  }
 
   // Availability is decided inside one transaction, and the last word belongs to
   // the `booking_no_overlap` exclusion constraint rather than to the read below.

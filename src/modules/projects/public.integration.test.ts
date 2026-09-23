@@ -90,56 +90,42 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(detail!.reviews).toEqual({ average: null, count: 0, items: [] });
     });
 
-    it('builds category cards with counts and from-prices from the rate grid', async () => {
+    it('builds category cards from canonical inventory categories', async () => {
       const project = await createProject({ slug: 'resort-p', status: 'live' });
+      const category = await prisma.inventoryCategory.create({
+        data: {
+          projectId: project.id,
+          categoryKey: 'superior_2br',
+          name: 'Superior 2BR',
+          bedrooms: 2,
+          bathrooms: 2,
+          maxGuests: 4,
+          baseNightlyThb: 626100,
+          minNights: 1,
+          status: 'active',
+        },
+      });
       await createUnit({
         projectId: project.id,
         status: 'live',
         categoryKey: 'superior_2br',
+        inventoryCategoryId: category.id,
         baseNightlyThb: 999,
       });
       await createUnit({
         projectId: project.id,
         status: 'live',
         categoryKey: 'superior_2br',
+        inventoryCategoryId: category.id,
         baseNightlyThb: 999,
-      });
-      await prisma.configOverride.create({
-        data: {
-          parameterKey: 'catalog.unit_categories',
-          scopeType: 'project',
-          scopeId: project.id,
-          value: [
-            { key: 'superior_2br', style_key: 'phase_2_minimal', bedrooms: 2 },
-            { key: 'grand_deluxe_3br', style_key: 'garden_continental', bedrooms: 3 },
-          ] as any,
-          updatedByIdentityId: 'test-admin',
-        },
-      });
-      await prisma.configOverride.create({
-        data: {
-          parameterKey: 'pricing.category_rates',
-          scopeType: 'project',
-          scopeId: project.id,
-          value: {
-            superior_2br: {
-              nightly: { low: 626100, peak: 1127200 },
-              monthly: { low: 7200000 },
-            },
-          } as any,
-          updatedByIdentityId: 'test-admin',
-        },
       });
 
       const detail = await getPublicProjectBySlug('resort-p');
-      // grand_deluxe has no live units → dropped from the cards
       expect(detail!.categories).toHaveLength(1);
       expect(detail!.categories[0]).toMatchObject({
         key: 'superior_2br',
-        styleKey: 'phase_2_minimal',
         unitCount: 2,
-        fromNightlyThb: 626100, // lowest season rate, not the unit base price
-        monthlyFromThb: 7200000,
+        fromNightlyThb: 626100,
       });
     });
 

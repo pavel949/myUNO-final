@@ -242,6 +242,34 @@ describe('finance.service — integration tests', () => {
       expect(ledger?.amountThb).toBe(8000);
     });
 
+    it('settles stay_balance into revenue and clears booking balance', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        totalThb: 9000,
+        status: 'confirmed',
+      });
+      await db.booking.update({ where: { id: booking.id }, data: { balanceDueThb: 1000 } });
+
+      const session = await financeService.createCheckout(db, {
+        purpose: 'stay_balance',
+        bookingId: booking.id,
+        payerIdentityId: guest.id,
+        amountThb: 1000,
+      });
+      await financeService.verifyAndConfirm(db, session.sessionId);
+
+      const updated = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+      expect(updated.balanceDueThb).toBe(0);
+      const ledger = await db.ledgerEntry.findFirst({ where: { paymentId: session.paymentId } });
+      expect(ledger?.entryType).toBe('rental_revenue');
+      expect(ledger?.amountThb).toBe(1000);
+    });
+
     it('is idempotent on already confirmed payment', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);
@@ -345,12 +373,32 @@ describe('finance.service — integration tests', () => {
       expect(refund.method).toBe('card_provider');
       expect(refund.amountThb).toBe(4000);
 
-      // Ledger entry created
+      // A processing refund reserves capacity but is not money out yet.
       const ledger = await db.ledgerEntry.findFirst({
         where: { refundId: refund.id },
       });
-      expect(ledger?.entryType).toBe('refund_out');
-      expect(ledger?.amountThb).toBe(-4000);
+      expect(ledger).toBeNull();
+    });
+
+    it('rejects refunds above the unrefunded succeeded payment amount', async () => {
+      const guest = await createIdentity();
+      const actor = await createIdentity();
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay',
+          payerIdentityId: guest.id,
+          method: 'card_provider',
+          provider: 'mock',
+          amountThb: 8000,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+
+      await financeService.refund(db, payment.id, 5000, 'cancellation', actor.id);
+      await expect(
+        financeService.refund(db, payment.id, 4000, 'cancellation', actor.id)
+      ).rejects.toThrow('Refund exceeds refundable payment amount');
     });
 
     it('rejects refund of cash payment', async () => {
@@ -413,13 +461,21 @@ describe('finance.service — integration tests', () => {
         actor.id
       );
 
-      // Ledger entry with booking link
-      const ledger = await db.ledgerEntry.findFirst({
-        where: { refundId: refund.id },
+      // No refund-out entry until the provider confirms money actually left.
+      expect(await db.ledgerEntry.findFirst({ where: { refundId: refund.id } })).toBeNull();
+
+      await db.booking.update({
+        where: { id: booking.id },
+        data: { refundAccruedThb: 4000 },
       });
+      await financeService.markRefundSucceeded(db, refund.id);
+
+      const ledger = await db.ledgerEntry.findFirst({ where: { refundId: refund.id } });
       expect(ledger?.bookingId).toBe(booking.id);
       expect(ledger?.paymentId).toBe(session.paymentId);
       expect(ledger?.amountThb).toBe(-4000);
+      const settled = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+      expect(settled.refundAccruedThb).toBe(0);
     });
   });
 

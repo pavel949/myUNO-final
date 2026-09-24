@@ -359,13 +359,12 @@ export async function resolveFailedRefund(
       });
     }
 
-    // Written off, not truly succeeded — but cleared from the reconciliation
-    // board (`getReconciliationData` only surfaces `status: 'failed'`), which
-    // is the same "cleared" semantics the reconciliation board's own test
-    // suite already exercises.
+    // A write-off clears this item from the provider-retry queue but must
+    // never masquerade as money returned to the guest. The booking refund
+    // liability therefore remains outstanding for finance to resolve.
     return db.refund.update({
       where: { id: refundId },
-      data: { status: 'succeeded' },
+      data: { status: 'written_off' },
     });
   }
 

@@ -201,6 +201,7 @@ enum RefundStatus {
   processing
   succeeded
   failed
+  written_off
 }
 
 enum LedgerEntryType {

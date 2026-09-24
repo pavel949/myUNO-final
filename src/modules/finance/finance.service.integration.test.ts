@@ -685,7 +685,7 @@ describe('finance.service — integration tests', () => {
       });
 
       const refund = await financeService.refund(db, payment.id, 500_000, 'cancellation', actor.id);
-      await db.refund.update({ where: { id: refund.id }, data: { status: 'succeeded' } });
+      await financeService.markRefundSucceeded(db, refund.id);
 
       const state = await financeService.getBookingRefundDisplayState(db, booking.id);
       expect(state).toBe('completed');

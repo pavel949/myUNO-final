@@ -268,10 +268,18 @@ export async function recordCashRefund(
       },
     });
     const now = new Date();
+    const booking = payment.bookingId
+      ? await tx.booking.findUnique({
+          where: { id: payment.bookingId },
+          select: { unitId: true, projectId: true },
+        })
+      : null;
     await tx.ledgerEntry.create({
       data: {
         entryType: 'refund_out',
         amountThb: -amountThb,
+        unitId: booking?.unitId,
+        projectId: booking?.projectId,
         bookingId: payment.bookingId,
         paymentId,
         refundId: refund.id,
@@ -558,10 +566,18 @@ export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
     const succeeded = await tx.refund.update({ where: { id: refundId }, data: { status: 'succeeded' } });
     const existingLedger = await tx.ledgerEntry.findFirst({ where: { refundId, entryType: 'refund_out' } });
     if (!existingLedger) {
+      const booking = refund.payment.bookingId
+        ? await tx.booking.findUnique({
+            where: { id: refund.payment.bookingId },
+            select: { unitId: true, projectId: true },
+          })
+        : null;
       await tx.ledgerEntry.create({
         data: {
           entryType: 'refund_out',
           amountThb: -refund.amountThb,
+          unitId: booking?.unitId,
+          projectId: booking?.projectId,
           bookingId: refund.payment.bookingId,
           paymentId: refund.paymentId,
           refundId,

@@ -5,6 +5,31 @@ import { cancelBooking, computeRefundAmount, type CancellationPolicy } from '@/m
 import { refund as requestCardProviderRefund } from '@/modules/finance';
 import { notifyBookingCancelled } from '@/app/libs/bookingCancelled';
 
+async function getBookingRefundCapacity(bookingId: string) {
+  const payments = await prisma.payment.findMany({
+    where: {
+      bookingId,
+      status: 'succeeded',
+      purpose: { in: ['stay', 'stay_balance'] },
+    },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+  });
+  return payments.reduce(
+    (sum, payment) =>
+      sum +
+      Math.max(
+        0,
+        payment.amountThb - payment.refunds.reduce((refundSum, refund) => refundSum + refund.amountThb, 0)
+      ),
+    0
+  );
+}
+
 async function issueCancellationRefunds(input: {
   bookingId: string;
   initiatedByIdentityId: string;
@@ -144,12 +169,16 @@ export async function POST(
     if (paidStatuses.includes(booking.status) && booking.cancellationPolicySnapshot) {
       const policy = booking.cancellationPolicySnapshot as any as CancellationPolicy;
       const now = new Date();
-      refundAmountThb = computeRefundAmount(
+      const policyRefundThb = computeRefundAmount(
         booking.totalThb,
         policy.steps || [],
         booking.startDate,
         now
       );
+      // Policy defines the entitlement, but money returned can never exceed
+      // succeeded stay payments that have not already been reserved/refunded.
+      const refundablePaidThb = await getBookingRefundCapacity(bookingId);
+      refundAmountThb = Math.min(policyRefundThb, refundablePaidThb);
     }
 
     // Cancel the booking

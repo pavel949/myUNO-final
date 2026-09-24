@@ -1057,10 +1057,48 @@ export async function changeBookingDates(
     const totalThb = breakdown.total_thb;
     const difference = totalThb - previousTotalThb;
 
-    const balanceDueThb =
-      difference > 0 ? booking.balanceDueThb + difference : booking.balanceDueThb;
-    const refundAccruedThb =
-      difference < 0 ? booking.refundAccruedThb + Math.abs(difference) : booking.refundAccruedThb;
+    // Keep one net financial position. A later decrease first cancels an
+    // unpaid balance; a later increase first cancels an outstanding refund
+    // credit. Never leave the booking owing money in both directions.
+    let balanceDueThb = booking.balanceDueThb;
+    let refundAccruedThb = booking.refundAccruedThb;
+    if (difference > 0) {
+      const offset = Math.min(difference, refundAccruedThb);
+      refundAccruedThb -= offset;
+      balanceDueThb += difference - offset;
+    } else if (difference < 0) {
+      let credit = Math.abs(difference);
+      const offset = Math.min(credit, balanceDueThb);
+      balanceDueThb -= offset;
+      credit -= offset;
+
+      if (credit > 0) {
+        // A refund liability cannot exceed money actually received for this
+        // booking after refunds already reserved or completed.
+        const payments = await tx.payment.findMany({
+          where: {
+            bookingId,
+            purpose: { in: ['stay', 'stay_balance'] },
+            status: 'succeeded',
+          },
+          include: {
+            refunds: {
+              where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+              select: { amountThb: true },
+            },
+          },
+        });
+        const netPaidAvailable = payments.reduce(
+          (sum, payment) =>
+            sum +
+            payment.amountThb -
+            payment.refunds.reduce((refundSum, refund) => refundSum + refund.amountThb, 0),
+          0
+        );
+        const roomForRefund = Math.max(0, netPaidAvailable - refundAccruedThb);
+        refundAccruedThb += Math.min(credit, roomForRefund);
+      }
+    }
 
     const updated = await tx.booking.update({
       where: { id: bookingId },

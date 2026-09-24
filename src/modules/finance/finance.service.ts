@@ -591,28 +591,25 @@ export async function getBookingRefundDisplayState(
     where: { id: bookingId },
     select: { status: true, refundAccruedThb: true },
   });
-
-  if (!booking || booking.status !== 'cancelled' || (booking.refundAccruedThb ?? 0) <= 0) {
-    return 'none';
-  }
+  if (!booking || booking.status !== 'cancelled') return 'none';
 
   const refunds = await db.refund.findMany({
     where: { payment: { bookingId } },
     select: { status: true, amountThb: true },
   });
-
   if (refunds.length === 0) {
-    return 'processing';
+    return (booking.refundAccruedThb ?? 0) > 0 ? 'processing' : 'none';
   }
 
-  const succeededTotal = refunds
-    .filter((r) => r.status === 'succeeded')
-    .reduce((sum, r) => sum + r.amountThb, 0);
-
-  if (succeededTotal >= (booking.refundAccruedThb ?? 0)) {
+  // refundAccruedThb is the outstanding liability. It is reduced only when
+  // money actually leaves successfully. Failed/in-flight records therefore
+  // remain visible as processing; all-succeeded + zero liability is completed.
+  if (
+    (booking.refundAccruedThb ?? 0) === 0 &&
+    refunds.every((refund) => refund.status === 'succeeded')
+  ) {
     return 'completed';
   }
-
   return 'processing';
 }
 

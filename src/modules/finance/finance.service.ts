@@ -91,6 +91,54 @@ async function assertStayPaymentAmount(
   }
 }
 
+async function assertRefundableAmount(
+  db: PrismaClient,
+  paymentId: string,
+  amountThb: number
+) {
+  if (!Number.isInteger(amountThb) || amountThb <= 0) {
+    throw new Error('Refund amount must be a positive whole number of satang');
+  }
+
+  const payment = await db.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+  });
+  if (!payment) throw new Error(`Payment ${paymentId} not found`);
+  if (payment.status !== 'succeeded') {
+    throw new Error('Only a succeeded payment can be refunded');
+  }
+
+  const reservedOrRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
+  const refundable = Math.max(0, payment.amountThb - reservedOrRefunded);
+  if (amountThb > refundable) {
+    throw new Error(`Refund exceeds refundable payment amount (${refundable})`);
+  }
+  return payment;
+}
+
+async function applySucceededRefundToBooking(
+  db: PrismaClient,
+  bookingId: string | null,
+  amountThb: number
+) {
+  if (!bookingId) return;
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { refundAccruedThb: true },
+  });
+  if (!booking) return;
+  await db.booking.update({
+    where: { id: bookingId },
+    data: { refundAccruedThb: Math.max(0, booking.refundAccruedThb - amountThb) },
+  });
+}
+
 /**
  * Record a cash payment directly (no provider redirect).
  * Captures who received the money, when, and the receipt reference.
@@ -194,50 +242,41 @@ export async function recordCashRefund(
   db: PrismaClient,
   input: RecordCashRefundInput
 ) {
-  const {
-    paymentId,
-    amountThb,
-    reason,
-    paidBackByIdentityId,
-    initiatedByIdentityId,
-  } = input;
+  const { paymentId, amountThb, reason, paidBackByIdentityId, initiatedByIdentityId } = input;
 
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
-  if (!payment) {
-    throw new Error(`Payment ${paymentId} not found`);
-  }
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    const payment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
+    if (payment.method !== 'cash') {
+      throw new Error('Can only refund cash payments via recordCashRefund');
+    }
 
-  if (payment.method !== 'cash') {
-    throw new Error('Can only refund cash payments via recordCashRefund');
-  }
-
-  const refund = await db.refund.create({
-    data: {
-      paymentId,
-      method: 'cash',
-      amountThb,
-      reason,
-      status: 'succeeded',
-      paidBackByIdentityId,
-      initiatedByIdentityId,
-    },
+    const refund = await tx.refund.create({
+      data: {
+        paymentId,
+        method: 'cash',
+        amountThb,
+        reason,
+        status: 'succeeded',
+        paidBackByIdentityId,
+        initiatedByIdentityId,
+      },
+    });
+    const now = new Date();
+    await tx.ledgerEntry.create({
+      data: {
+        entryType: 'refund_out',
+        amountThb: -amountThb,
+        bookingId: payment.bookingId,
+        paymentId,
+        refundId: refund.id,
+        occurredOn: now,
+        description: `Cash refund: ${reason}`,
+      },
+    });
+    await applySucceededRefundToBooking(tx as PrismaClient, payment.bookingId, amountThb);
+    return refund;
   });
-
-  // Write ledger entry for refund
-  const now = new Date();
-  await db.ledgerEntry.create({
-    data: {
-      entryType: 'refund_out',
-      amountThb: -amountThb,
-      bookingId: payment.bookingId,
-      paymentId,
-      refundId: refund.id,
-      occurredOn: now,
-      description: `Cash refund: ${reason}`,
-    },
-  });
-
-  return refund;
 }
 
 /**
@@ -476,78 +515,80 @@ export async function refund(
   reason: RefundReason,
   initiatedByIdentityId: string
 ) {
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
-  if (!payment) {
-    throw new Error(`Payment ${paymentId} not found`);
-  }
-
-  if (payment.method === 'cash') {
-    throw new Error('Use recordCashRefund for cash payments');
-  }
-
-  const refund = await db.refund.create({
-    data: {
-      paymentId,
-      method: 'card_provider',
-      amountThb,
-      reason,
-      status: 'processing',
-      initiatedByIdentityId,
-    },
+  const payment = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    const refundablePayment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
+    if (refundablePayment.method === 'cash') {
+      throw new Error('Use recordCashRefund for cash payments');
+    }
+    await tx.refund.create({
+      data: {
+        paymentId,
+        method: 'card_provider',
+        amountThb,
+        reason,
+        status: 'processing',
+        initiatedByIdentityId,
+      },
+    });
+    return refundablePayment;
   });
 
-  // Write ledger entry (will be marked as refund_out when it succeeds)
-  const now = new Date();
-  await db.ledgerEntry.create({
-    data: {
-      entryType: 'refund_out',
-      amountThb: -amountThb,
-      bookingId: payment.bookingId,
-      paymentId,
-      refundId: refund.id,
-      occurredOn: now,
-      description: `Refund requested: ${reason}`,
-    },
+  const refund = await db.refund.findFirstOrThrow({
+    where: { paymentId, amountThb, reason, status: 'processing', initiatedByIdentityId },
+    orderBy: { createdAt: 'desc' },
   });
 
-  if (
-    payment.provider === 'opn' &&
-    payment.providerSessionId &&
-    process.env.PAYMENT_PROVIDER === 'opn'
-  ) {
+  if (payment.provider === 'opn' && payment.providerSessionId && process.env.PAYMENT_PROVIDER === 'opn') {
     try {
       const provider = getPaymentProvider();
-      const result = await provider.refund({
-        chargeId: payment.providerSessionId,
-        amount: amountThb,
-        reason,
-      });
-
-      const updated = await db.refund.update({
+      const result = await provider.refund({ chargeId: payment.providerSessionId, amount: amountThb, reason });
+      await db.refund.update({
         where: { id: refund.id },
-        data: {
-          providerRefundId: result.refundId,
-          ...(result.status === 'failed' ? { status: 'failed' } : {}),
-        },
+        data: { providerRefundId: result.refundId },
       });
-
       if (result.status === 'failed') {
-        await markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
-        return updated;
+        return markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
       }
-
-      return updated;
     } catch (error) {
-      await markRefundFailed(
-        db,
-        refund.id,
-        error instanceof Error ? error.message : 'provider_error'
-      ).catch(() => null);
+      await markRefundFailed(db, refund.id, error instanceof Error ? error.message : 'provider_error').catch(() => null);
       throw error;
     }
   }
 
-  return refund;
+  return db.refund.findUniqueOrThrow({ where: { id: refund.id } });
+}
+
+export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
+  return db.$transaction(async (tx) => {
+    const refund = await tx.refund.findUnique({
+      where: { id: refundId },
+      include: { payment: true },
+    });
+    if (!refund) throw new Error(`Refund ${refundId} not found`);
+    if (refund.status === 'succeeded') return refund;
+    if (refund.status !== 'processing' && refund.status !== 'requested') {
+      throw new Error(`Cannot succeed refund with status ${refund.status}`);
+    }
+
+    const succeeded = await tx.refund.update({ where: { id: refundId }, data: { status: 'succeeded' } });
+    const existingLedger = await tx.ledgerEntry.findFirst({ where: { refundId, entryType: 'refund_out' } });
+    if (!existingLedger) {
+      await tx.ledgerEntry.create({
+        data: {
+          entryType: 'refund_out',
+          amountThb: -refund.amountThb,
+          bookingId: refund.payment.bookingId,
+          paymentId: refund.paymentId,
+          refundId,
+          occurredOn: new Date(),
+          description: `Refund succeeded: ${refund.reason}`,
+        },
+      });
+    }
+    await applySucceededRefundToBooking(tx as PrismaClient, refund.payment.bookingId, refund.amountThb);
+    return succeeded;
+  });
 }
 
 /** Guest-facing refund state on a cancelled booking (doc 07 F-GUEST-8). */

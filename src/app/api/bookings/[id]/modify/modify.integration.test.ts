@@ -91,6 +91,19 @@ describe('POST /api/bookings/[id]/modify', () => {
       totalThb: 3000,
     });
 
+    await db.payment.create({
+      data: {
+        purpose: 'stay',
+        bookingId: booking.id,
+        payerIdentityId: guest.id,
+        method: 'cash',
+        provider: 'cash',
+        amountThb: 3000,
+        status: 'succeeded',
+        succeededAt: new Date(),
+      },
+    });
+
     const res = await POST(makeRequest({ endDate: '2026-08-22' }), {
       params: { id: booking.id },
     });
@@ -100,6 +113,29 @@ describe('POST /api/bookings/[id]/modify', () => {
     expect(body.booking.totalThb).toBe(2000);
     expect(body.pricing.balanceThb).toBe(-1000);
     expect(body.booking.refundAccruedThb).toBe(1000);
+  });
+
+  it('nets a price decrease against unpaid balance before accruing a refund', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(guest.id));
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date('2026-08-20'),
+      endDate: new Date('2026-08-23'),
+      totalThb: 3000,
+    });
+    await db.booking.update({ where: { id: booking.id }, data: { balanceDueThb: 1000 } });
+
+    const res = await POST(makeRequest({ endDate: '2026-08-22' }), {
+      params: { id: booking.id },
+    });
+    expect(res.status).toBe(200);
+
+    const updated = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+    expect(updated.balanceDueThb).toBe(0);
+    expect(updated.refundAccruedThb).toBe(0);
   });
 
   it('changes party size', async () => {

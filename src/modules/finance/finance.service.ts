@@ -79,15 +79,19 @@ async function assertStayPaymentAmount(
   bookingId: string | undefined,
   amountThb: number
 ): Promise<void> {
-  if (purpose !== 'stay') return;
+  if (purpose !== 'stay' && purpose !== 'stay_balance') return;
   if (!bookingId) throw new Error('Stay payment requires bookingId');
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
-    select: { totalThb: true },
+    select: { totalThb: true, balanceDueThb: true },
   });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
-  if (amountThb !== booking.totalThb) {
-    throw new Error('Payment amount does not match booking total');
+  const expected = purpose === 'stay' ? booking.totalThb : booking.balanceDueThb;
+  if (expected <= 0) throw new Error('Booking has no balance due');
+  if (amountThb !== expected) {
+    throw new Error(purpose === 'stay'
+      ? 'Payment amount does not match booking total'
+      : 'Balance payment amount does not match booking balance due');
   }
 }
 
@@ -185,15 +189,15 @@ export async function recordCashPayment(
     },
   });
 
-  // Write ledger entry and transition booking for stay bookings
-  if (bookingId && purpose === 'stay') {
+  // Every succeeded stay payment is a real money-in event. Initial stay
+  // payments confirm the booking; stay_balance payments settle only the debt
+  // created by a later booking change.
+  if (bookingId && (purpose === 'stay' || purpose === 'stay_balance')) {
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
-      select: { unitId: true, projectId: true, guestIdentityId: true },
+      select: { unitId: true, projectId: true, guestIdentityId: true, status: true, balanceDueThb: true },
     });
-
     if (booking) {
-      // Create rental_revenue ledger entry (doc 10 §2)
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -203,26 +207,27 @@ export async function recordCashPayment(
           bookingId,
           paymentId: payment.id,
           occurredOn: now,
-          description: `Cash payment for booking ${bookingId} (receipt: ${receiptRef})`,
+          description: `Cash ${purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${bookingId} (receipt: ${receiptRef})`,
         },
       });
 
-      // **CRITICAL: Transition booking from pending_payment → confirmed**
-      // This unblocks notifications, locks unit dates, and makes guest eligible for reviews.
-      await db.booking.update({
-        where: { id: bookingId },
-        data: { status: 'confirmed' },
-      });
+      if (purpose === 'stay' && booking.status === 'pending_payment') {
+        await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed' } });
+        await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
+      } else if (purpose === 'stay_balance') {
+        await db.booking.update({
+          where: { id: bookingId },
+          data: { balanceDueThb: Math.max(0, booking.balanceDueThb - amountThb) },
+        });
+      }
 
-      await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
-
-      // Track analytics event (doc 13)
       await track(db, 'stay_payment_succeeded', {
         bookingId,
         unitId: booking.unitId,
         projectId: booking.projectId,
         identityId: booking.guestIdentityId,
         amountThb,
+        purpose,
       });
     }
   }
@@ -424,20 +429,14 @@ export async function verifyAndConfirm(
     },
   });
 
-  // Write ledger entry and transition booking status
-  if (confirmed.bookingId) {
+  // A succeeded stay charge always reaches the ledger. Initial payment may
+  // confirm the booking; a balance payment settles balanceDueThb instead.
+  if (confirmed.bookingId && (confirmed.purpose === 'stay' || confirmed.purpose === 'stay_balance')) {
     const booking = await db.booking.findUnique({
       where: { id: confirmed.bookingId },
-      select: { unitId: true, projectId: true, status: true },
+      select: { unitId: true, projectId: true, status: true, balanceDueThb: true },
     });
-
-    if (booking && booking.status === 'pending_payment') {
-      // **CRITICAL: Transition booking from pending_payment → confirmed**
-      // This must happen immediately after payment succeeds, before any
-      // other operations. The booking status controls availability, invoicing,
-      // and guest eligibility for reviews.
-
-      // Write rental_revenue ledger entry (doc 10 §2)
+    if (booking) {
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -447,50 +446,35 @@ export async function verifyAndConfirm(
           bookingId: confirmed.bookingId,
           paymentId: confirmed.id,
           occurredOn: now,
-          description: `Card payment for booking ${confirmed.bookingId}`,
+          description: `Card ${confirmed.purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${confirmed.bookingId}`,
         },
       });
 
-      // Flip booking to confirmed — this unblocks:
-      // - Owner receives booking confirmation notification
-      // - Guest sees "confirmed" status in their trips
-      // - Unit dates become locked from further bookings
-      // - Guest becomes eligible to review after stay
-      await db.booking.update({
-        where: { id: confirmed.bookingId },
-        data: { status: 'confirmed' },
-      });
-
-      await ensureDepositPreauthOnStayConfirmed(
-        db,
-        confirmed.bookingId,
-        booking.unitId
-      ).catch(() => null);
-
-      // Create communication thread for booking context (best-effort)
-      try {
-        const fullBooking = await db.booking.findUnique({
-          where: { id: confirmed.bookingId },
-          select: { guestIdentityId: true },
-        });
-
-        if (fullBooking) {
-          const thread = await findOrCreateThread(db, {
-            contextType: 'booking',
-            contextId: confirmed.bookingId,
-            projectId: booking.projectId,
-            participantIdentityIds: [fullBooking.guestIdentityId],
+      if (confirmed.purpose === 'stay' && booking.status === 'pending_payment') {
+        await db.booking.update({ where: { id: confirmed.bookingId }, data: { status: 'confirmed' } });
+        await ensureDepositPreauthOnStayConfirmed(db, confirmed.bookingId, booking.unitId).catch(() => null);
+        try {
+          const fullBooking = await db.booking.findUnique({
+            where: { id: confirmed.bookingId },
+            select: { guestIdentityId: true },
           });
-
-          // Post system message for booking confirmation
-          await addSystemMessage(
-            db,
-            thread.id,
-            `Booking confirmed. Payment received.`
-          );
+          if (fullBooking) {
+            const thread = await findOrCreateThread(db, {
+              contextType: 'booking',
+              contextId: confirmed.bookingId,
+              projectId: booking.projectId,
+              participantIdentityIds: [fullBooking.guestIdentityId],
+            });
+            await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
+          }
+        } catch (err) {
+          console.error('Failed to create booking thread:', err);
         }
-      } catch (err) {
-        console.error('Failed to create booking thread:', err);
+      } else if (confirmed.purpose === 'stay_balance') {
+        await db.booking.update({
+          where: { id: confirmed.bookingId },
+          data: { balanceDueThb: Math.max(0, booking.balanceDueThb - confirmed.amountThb) },
+        });
       }
     }
   }

@@ -9,6 +9,7 @@ export {
   verifyAndConfirm,
   refund,
   markRefundFailed,
+  markRefundSucceeded,
   getBookingRefundDisplayState,
   markPaymentFailed,
   type BookingRefundDisplayState,

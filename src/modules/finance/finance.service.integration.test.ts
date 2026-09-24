@@ -130,6 +130,8 @@ describe('finance.service — integration tests', () => {
       expect(ledger).toBeDefined();
       expect(ledger?.entryType).toBe('refund_out');
       expect(ledger?.amountThb).toBe(-4000);
+      expect(ledger?.unitId).toBe(unit.id);
+      expect(ledger?.projectId).toBe(project.id);
     });
 
     it('rejects refund on card payment', async () => {
@@ -474,6 +476,8 @@ describe('finance.service — integration tests', () => {
       expect(ledger?.bookingId).toBe(booking.id);
       expect(ledger?.paymentId).toBe(session.paymentId);
       expect(ledger?.amountThb).toBe(-4000);
+      expect(ledger?.unitId).toBe(unit.id);
+      expect(ledger?.projectId).toBe(project.id);
       const settled = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
       expect(settled.refundAccruedThb).toBe(0);
     });

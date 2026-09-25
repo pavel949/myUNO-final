@@ -389,7 +389,7 @@ describe('service-order.service — integration tests', () => {
         tookRatePctSnapshot: 15,
       });
 
-      const order = await db.serviceOrder.findUniqueOrThrow({ where: { id: orderResult.id } });
+      const payableOrder = await db.serviceOrder.findUniqueOrThrow({ where: { id: orderResult.id } });
       await db.payment.create({
         data: {
           purpose: 'service_order',
@@ -397,7 +397,7 @@ describe('service-order.service — integration tests', () => {
           payerIdentityId: orderer.id,
           method: 'cash',
           provider: 'cash',
-          amountThb: order.total_thb,
+          amountThb: payableOrder.total_thb,
           status: 'succeeded',
           succeededAt: new Date(),
           receivedByIdentityId: admin.id,

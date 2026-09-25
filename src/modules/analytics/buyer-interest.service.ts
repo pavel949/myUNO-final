@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { createDirectInquiry } from './signals';
@@ -31,12 +31,13 @@ export interface PurchaseInterestInput {
 export async function registerPurchaseInterest(
   db: PrismaClient,
   input: PurchaseInterestInput
-): Promise<{ threadId: string; signalId: string }> {
+): Promise<{ threadId: string; signalId: string; opportunityId: string }> {
   const message = input.message?.trim() ?? '';
   if (!message) throw new Error('A message is required');
   if (message.length > MAX_MESSAGE) throw new Error('That message is too long');
 
   let unit: { id: string; name: string; projectId: string } | null = null;
+  let saleOffering: { id: string; pricingTerms: unknown; ownershipTenure: unknown } | null = null;
   if (input.unitId) {
     unit = await db.unit.findUnique({
       where: { id: input.unitId },
@@ -45,6 +46,13 @@ export async function registerPurchaseInterest(
     // A stale or hand-edited unit id should not lose the enquiry — the person
     // still wants to talk to somebody. It becomes a general enquiry instead.
     if (!unit) unit = null;
+    if (unit) {
+      saleOffering = await db.commercialOffering.findFirst({
+        where: { unitId: unit.id, offeringType: 'sale', status: 'active' },
+        select: { id: true, pricingTerms: true, ownershipTenure: true },
+      });
+      if (!saleOffering) throw new Error('This home is not currently offered for sale');
+    }
   }
 
   const admins = await db.identity.findMany({
@@ -59,6 +67,43 @@ export async function registerPurchaseInterest(
     undefined,
     unit ? `Asked about unit ${unit.name}` : 'Asked about buying'
   );
+
+  // A direct purchase enquiry is also a canonical CRM opportunity. Sale
+  // commercial terms are snapshotted into requirements; rental RatePlans and
+  // Booking prices are deliberately not consulted here.
+  const opportunity = await db.crmOpportunity.create({
+    data: {
+      identityId: input.identityId,
+      projectId: unit?.projectId ?? null,
+      unitId: unit?.id ?? null,
+      type: 'purchase',
+      stage: 'new',
+      title: unit ? `Purchase enquiry: ${unit.name}` : 'Purchase enquiry',
+      source: 'buying_interest',
+      requirements: {
+        message,
+        ...(saleOffering
+          ? {
+              saleOfferingId: saleOffering.id,
+              salePricingTermsSnapshot: saleOffering.pricingTerms as Prisma.InputJsonValue,
+              ownershipTenureSnapshot: saleOffering.ownershipTenure as Prisma.InputJsonValue,
+            }
+          : {}),
+      },
+    },
+  });
+  await db.crmActivity.create({
+    data: {
+      identityId: input.identityId,
+      opportunityId: opportunity.id,
+      type: 'system',
+      status: 'completed',
+      subject: 'Purchase enquiry received',
+      body: message,
+      completedAt: new Date(),
+      metadata: { buyerSignalId: signal.id, saleOfferingId: saleOffering?.id ?? null },
+    },
+  });
 
   // Each enquiry is its own thread. `findOrCreateThread` is idempotent on
   // contextType + contextId, so a unique id per enquiry is what keeps a second
@@ -99,5 +144,5 @@ export async function registerPurchaseInterest(
 
   await track(db, 'lead_submitted', { audienceType: 'buyers' }).catch(() => null);
 
-  return { threadId: thread.id, signalId: signal.id };
+  return { threadId: thread.id, signalId: signal.id, opportunityId: opportunity.id };
 }

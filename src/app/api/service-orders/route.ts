@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createServiceOrder } from '@/modules/services';
-import { getConfig } from '@/modules/config';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
@@ -134,10 +133,6 @@ export async function POST(req: NextRequest) {
       throw createPublicError('not found', 404);
     }
 
-    const totalThb = service.basePriceThb * qty;
-    const takeRatePct =
-      ((await getConfig(prisma, 'services.take_rate_pct', { projectId })) as number) ?? 15;
-
     const order = await createServiceOrder(prisma, {
       serviceId,
       projectId,
@@ -148,9 +143,6 @@ export async function POST(req: NextRequest) {
       scheduledStart: start,
       scheduledEnd: end,
       quantity: qty,
-      priceBreakdown: { base_thb: service.basePriceThb, quantity: qty, total_thb: totalThb },
-      totalThb,
-      tookRatePctSnapshot: takeRatePct,
       noteToProvider: noteToProvider ? String(noteToProvider) : undefined,
     });
 

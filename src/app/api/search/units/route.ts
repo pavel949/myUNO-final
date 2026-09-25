@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
         where: { id: inventoryCategoryId },
         select: { id: true, projectId: true, categoryKey: true, name: true, status: true },
       });
-      if (!canonicalCategory || canonicalCategory.status !== 'live') {
+      if (!canonicalCategory || canonicalCategory.status !== 'active') {
         return NextResponse.json(
           { units: [], total: 0, limit, offset, sort: sort.key },
           { status: 200 }

@@ -114,7 +114,7 @@ describe('booking.service — integration tests', () => {
     });
 
     it('refuses approval when the whole category is exhausted', async () => {
-      const project = await createProject();
+      const project = await createProject({ status: 'live' });
       const unitA = await createUnit({
         projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
       });
@@ -130,7 +130,7 @@ describe('booking.service — integration tests', () => {
     });
 
     it('refuses approval for an uncategorized unit whose dates got taken', async () => {
-      const project = await createProject();
+      const project = await createProject({ status: 'live' });
       const unit = await createUnit({
         projectId: project.id, name: 'C-01', status: 'live', instantBook: false,
       });

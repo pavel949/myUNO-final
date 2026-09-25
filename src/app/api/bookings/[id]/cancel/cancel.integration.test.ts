@@ -74,6 +74,19 @@ describe('POST /api/bookings/[id]/cancel', () => {
       cancellationPolicySnapshot: flexibleSnapshot,
     });
 
+    await db.payment.create({
+      data: {
+        purpose: 'stay',
+        bookingId: booking.id,
+        payerIdentityId: guest.id,
+        method: 'cash',
+        provider: 'cash',
+        amountThb: 8000,
+        status: 'succeeded',
+        succeededAt: new Date(),
+      },
+    });
+
     const res = await POST(makeRequest({ reason: 'guest_requested' }), {
       params: { id: booking.id },
     });
@@ -221,11 +234,49 @@ describe('POST /api/bookings/[id]/cancel', () => {
     expect(refunds[0].method).toBe('card_provider');
     expect(refunds[0].status).toBe('processing');
 
+    // Processing is a reserved refund, not money out. The ledger is written
+    // only when the provider confirms the refund succeeded.
     const ledger = await db.ledgerEntry.findFirst({
       where: { paymentId: payment.id, refundId: refunds[0].id, entryType: 'refund_out' },
     });
-    expect(ledger).not.toBeNull();
-    expect(ledger?.amountThb).toBe(-9000);
+    expect(ledger).toBeNull();
+  });
+
+  it('caps policy refund at net succeeded payments', async () => {
+    mockGetCurrentUser.mockResolvedValue(asUser(owner.id));
+    const day = 24 * 60 * 60 * 1000;
+    const booking = await createBooking({
+      unitId,
+      projectId,
+      guestIdentityId: guest.id,
+      status: 'confirmed',
+      startDate: new Date(Date.now() + 3 * day),
+      endDate: new Date(Date.now() + 5 * day),
+      totalThb: 9000,
+      cancellationPolicySnapshot: flexibleSnapshot,
+    });
+    await db.payment.create({
+      data: {
+        purpose: 'stay',
+        bookingId: booking.id,
+        payerIdentityId: guest.id,
+        method: 'cash',
+        provider: 'cash',
+        amountThb: 4000,
+        status: 'succeeded',
+        succeededAt: new Date(),
+      },
+    });
+
+    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+      params: { id: booking.id },
+    });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.refund.amountThb).toBe(4000);
+    const updated = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+    expect(updated.refundAccruedThb).toBe(4000);
   });
 
   it('lets a guest withdraw a pending request (no refund owed)', async () => {

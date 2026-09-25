@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { verifyAndConfirm, markRefundFailed } from './finance.service';
+import { verifyAndConfirm, markRefundFailed, markRefundSucceeded } from './finance.service';
 
 export interface OpnWebhookEvent {
   id: string;
@@ -82,6 +82,13 @@ export async function processOpnEvent(
     if (opnRefund.voided && refund.status !== 'failed') {
       await markRefundFailed(db, refund.id, 'provider_voided');
       return { handled: true, action: 'refund_failed' };
+    }
+
+    // A non-voided provider refund update is the authoritative completion
+    // signal for refunds we created in processing state. Keep this idempotent.
+    if (!opnRefund.voided && refund.status === 'processing') {
+      await markRefundSucceeded(db, refund.id);
+      return { handled: true, action: 'refund_succeeded' };
     }
 
     return { handled: true, action: 'refund_acknowledged' };

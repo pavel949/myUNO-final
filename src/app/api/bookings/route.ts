@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!category || category.status !== 'live') {
+      if (!category || category.status !== 'active') {
         throw createPublicError('inventory category not found', 404);
       }
       if (projectId && projectId !== category.projectId) {

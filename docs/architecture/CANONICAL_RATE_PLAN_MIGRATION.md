@@ -1,17 +1,32 @@
-# Canonical rate-plan migration decision
+# Canonical rate-plan migration status
 
-Status: deferred for guest quoting; enabled for onboarding configuration.
+Status: active for guest quoting and booking, with legacy seasonal configuration retained only as an explicit compatibility layer.
 
-The canonical `InventoryCategory` and `RatePlan` records are the future inventory and pricing model. They can now be maintained in the unified Add Property workspace. They are deliberately **not** consulted by search, availability, checkout, or booking confirmation yet.
+## Current source-of-truth order
 
-Until one end-to-end migration owns seasonal selection, occupancy rules, discounts, taxes, quote persistence, and price revalidation, guest pricing remains on the existing `Unit.baseNightlyThb` / project pricing configuration path. The admin UI labels canonical plans as configuration-only, and the readiness report emits a warning when plans exist.
+1. `InventoryCategory` owns the category base nightly rate and default minimum stay.
+2. The applicable active `BAR` `RatePlan` (unit → category → project) owns plan-level minimum stay and adjustment.
+3. A dated unit `PricingRule` is the highest-priority explicit nightly-price/min-stay override.
+4. Legacy `pricing.season.calendar` and `pricing.category_rates` may still supply seasonal/monthly amounts while those concepts do not yet have first-class canonical tables.
+5. Project/unit pricing configuration supplies fees, taxes and LOS/early-bird rules.
+6. `computePriceBreakdown` is the shared calculation seam for dated search, guest quote and booking creation.
+7. `Booking.priceBreakdown` and `Booking.totalThb` persist the accepted server-side calculation; client-sent totals are never authoritative.
 
-Migration acceptance criteria:
+The legacy seasonal/monthly layer must not be removed until an equivalent canonical seasonal-rate model exists and its data is migrated. It is a compatibility input to the one calculator, not a second guest pricing engine.
 
-1. Search and booking resolve the same eligible rate plan for identical inputs.
-2. The selected plan and pricing inputs are persisted with the quote/booking.
-3. Checkout revalidates plan availability and price atomically.
-4. Existing unit/category pricing has a reversible data migration.
-5. Integration tests cover seasonal boundaries, occupancy, discounts, cancellation terms, and retries.
+## Required invariants
+
+1. Search, quote and booking call the same calculator for identical unit/dates/party inputs.
+2. A live unit has a canonical `InventoryCategory`.
+3. Base rate and minimum stay come from the category unless a higher-priority BAR plan or dated rule overrides them.
+4. Availability is determined by bookings, active payment holds and `BlockedDate`; pricing never makes unavailable nights bookable.
+5. Booking creation recomputes price server-side immediately before claiming dates.
+6. Money is stored in satang and converted to baht only at display/input boundaries.
+7. Admin UI must show inheritance and overrides instead of requiring duplicate values.
+8. Owners are read-only for commercial pricing unless an explicit delegated pricing permission is introduced.
+
+## Remaining migration
+
+Introduce first-class seasonal rate periods/derived rate-plan rules before deleting `pricing.season.calendar` and `pricing.category_rates`. The migration must preserve monthly rates, overlapping-season precedence, LOS/early-bird behavior, taxes/fees and historical booking snapshots.
 
 OTA policy: iCal/manual synchronization is availability-import only and carries oversell risk. Operators must close external inventory manually after direct bookings until a channel mapping reports an implemented and verified `ari_push` capability.

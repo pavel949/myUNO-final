@@ -58,7 +58,7 @@ describe('service-order.service — integration tests', () => {
       expect(order?.service_id).toBe(service.id);
       expect(order?.orderer_identity_id).toBe(orderer.id);
       expect(order?.quantity).toBe(2);
-      expect(order?.total_thb).toBe(2300);
+      expect(order?.total_thb).toBe(service.basePriceThb * 2);
       expect(order?.note_to_provider).toBe('Please bring supplies');
     });
 
@@ -154,7 +154,7 @@ describe('service-order.service — integration tests', () => {
   });
 
   describe('acceptServiceOrder', () => {
-    it('transitions placed order to accepted', async () => {
+    it('transitions paid order to accepted', async () => {
       const orderer = await createIdentity();
       const admin = await createIdentity();
       const provider = await createProvider();
@@ -184,6 +184,22 @@ describe('service-order.service — integration tests', () => {
         totalThb: 1000,
         tookRatePctSnapshot: 15,
       });
+
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: service.basePriceThb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
+
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 
@@ -372,6 +388,23 @@ describe('service-order.service — integration tests', () => {
         totalThb: 1000,
         tookRatePctSnapshot: 15,
       });
+
+      const payableOrder = await db.serviceOrder.findUniqueOrThrow({ where: { id: orderResult.id } });
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: payableOrder.total_thb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+          receivedByIdentityId: admin.id,
+          receivedAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
       await serviceOrderService.fulfillServiceOrder(db, orderResult.id, provider.id);
@@ -582,6 +615,7 @@ describe('service-order.service — integration tests', () => {
         providerId: provider.id,
         categoryKey: 'cleaning',
         status: 'active',
+        basePriceThb: 1200,
       });
 
       const now = new Date();
@@ -628,7 +662,7 @@ describe('service-order.service — integration tests', () => {
           entryType: 'refund_out',
         },
       });
-      expect(ledger).not.toBeNull();
+      expect(ledger).toBeNull();
     });
   });
 
@@ -889,7 +923,23 @@ describe('service-order.service — integration tests', () => {
       });
       expect(order?.status).toBe('placed');
 
+      // Step 2: payment succeeds before provider acceptance
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: service.basePriceThb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
+
       // Step 2: Provider accepts
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
       order = await db.serviceOrder.findUnique({
         where: { id: orderResult.id },
@@ -1053,6 +1103,7 @@ describe('service-order.service — integration tests', () => {
         providerId: provider.id,
         categoryKey: 'cleaning',
         status: 'active',
+        basePriceThb: 500,
       });
 
       // Create and accept an order
@@ -1069,6 +1120,23 @@ describe('service-order.service — integration tests', () => {
         totalThb: 500,
         tookRatePctSnapshot: 15,
       });
+
+      const canonicalOrder = await db.serviceOrder.findUniqueOrThrow({ where: { id: orderResult.id } });
+      await db.payment.create({
+        data: {
+          purpose: 'service_order',
+          serviceOrderId: orderResult.id,
+          payerIdentityId: orderer.id,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: canonicalOrder.total_thb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+          receivedByIdentityId: admin.id,
+          receivedAt: new Date(),
+        },
+      });
+      await db.serviceOrder.update({ where: { id: orderResult.id }, data: { status: 'paid' } });
 
       await serviceOrderService.acceptServiceOrder(db, orderResult.id, provider.id);
 

@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { getConfig } from '@/modules/config';
 
 /**
  * Public (unauthenticated) read seam for project discovery pages.
@@ -194,40 +193,35 @@ async function buildPublicCategories(
     } | null;
   }[]
 ): Promise<PublicProjectCategory[]> {
-  const catalog =
-    (await getConfig(prisma, 'catalog.unit_categories', { projectId })) ?? [];
-  if (!Array.isArray(catalog) || catalog.length === 0) return [];
+  // InventoryCategory is the canonical public category source. Do not rebuild
+  // the catalogue from legacy config: admin onboarding, search and booking all
+  // point at these same rows.
+  const categories = await prisma.inventoryCategory.findMany({
+    where: { projectId, status: 'active' },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      categoryKey: true,
+      name: true,
+      bedrooms: true,
+      baseNightlyThb: true,
+    },
+  });
 
-  const rates =
-    (await getConfig(prisma, 'pricing.category_rates', { projectId })) ?? {};
-
-  return catalog
-    .map((entry) => {
+  return categories
+    .map((category) => {
       const units = liveUnits.filter(
-        (u) => (u.inventoryCategory?.categoryKey ?? u.categoryKey) === entry.key
+        (unit) => (unit.inventoryCategory?.categoryKey ?? unit.categoryKey) === category.categoryKey
       );
-      const nightly = rates[entry.key]?.nightly;
-      const monthly = rates[entry.key]?.monthly;
-      const nightlyValues = nightly ? Object.values(nightly) : [];
-      const monthlyValues = monthly ? Object.values(monthly) : [];
       return {
-        key: entry.key,
-        styleKey: entry.style_key ?? null,
-        bedrooms: entry.bedrooms ?? null,
+        key: category.categoryKey,
+        styleKey: null,
+        bedrooms: category.bedrooms,
         unitCount: units.length,
-        fromNightlyThb: nightlyValues.length
-          ? Math.min(...nightlyValues)
-          : units.length
-            ? Math.min(
-                ...units.map(
-                  (u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb
-                )
-              )
-            : null,
-        monthlyFromThb: monthlyValues.length ? Math.min(...monthlyValues) : null,
+        fromNightlyThb: category.baseNightlyThb,
+        monthlyFromThb: null,
       };
     })
-    .filter((c) => c.unitCount > 0);
+    .filter((category) => category.unitCount > 0);
 }
 
 async function buildPublicReviews(projectId: string): Promise<PublicProjectReviews> {

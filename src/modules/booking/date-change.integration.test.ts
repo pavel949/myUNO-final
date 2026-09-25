@@ -88,6 +88,19 @@ describe('changing a booking-s dates', () => {
     });
 
     it('accrues a refund when the stay shrinks, rather than paying it here', async () => {
+      const booking = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+      await db.payment.create({
+        data: {
+          purpose: 'stay',
+          bookingId,
+          payerIdentityId: booking.guestIdentityId,
+          method: 'cash',
+          provider: 'cash',
+          amountThb: booking.totalThb,
+          status: 'succeeded',
+          succeededAt: new Date(),
+        },
+      });
       const result = await changeBookingDates(db, {
         bookingId,
         startDate: START,

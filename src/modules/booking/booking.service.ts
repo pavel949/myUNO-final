@@ -246,8 +246,8 @@ export async function createBooking(
     children,
     infants = 0,
     pets = 0,
-    totalThb,
-    priceBreakdown,
+    totalThb: suppliedTotalThb,
+    priceBreakdown: suppliedPriceBreakdown,
     cancellationPolicySnapshot,
     instantBook,
     holdMinutes = 30,
@@ -257,6 +257,32 @@ export async function createBooking(
 
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
+
+  // Guest-stay money is authoritative only when computed here. API routes may
+  // pre-quote for UX, but no caller can persist a different total/snapshot.
+  // Owner stays keep their explicit zero/manual commercial semantics.
+  let totalThb = suppliedTotalThb;
+  let priceBreakdown = suppliedPriceBreakdown;
+  if (bookingType === 'guest_stay') {
+    const authoritative = await computePriceBreakdown(
+      db,
+      unitId,
+      startDate,
+      endDate,
+      adults + children,
+      now,
+      pets
+    );
+    totalThb = authoritative.total_thb;
+    priceBreakdown = {
+      ...authoritative,
+      ...(suppliedPriceBreakdown &&
+      typeof suppliedPriceBreakdown === 'object' &&
+      'inventory_category_id' in suppliedPriceBreakdown
+        ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id }
+        : {}),
+    };
+  }
 
   // Availability is decided inside one transaction, and the last word belongs to
   // the `booking_no_overlap` exclusion constraint rather than to the read below.
@@ -431,6 +457,24 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
+
+  // Reassignment can change unit-level dated overrides. Re-price before the
+  // request becomes a payable hold so the stored snapshot always describes
+  // the physical unit that will actually host the guest.
+  let repriced:
+    | Awaited<ReturnType<typeof computePriceBreakdown>>
+    | null = null;
+  if (unitId !== booking.unitId && booking.bookingType === 'guest_stay') {
+    repriced = await computePriceBreakdown(
+      db,
+      unitId,
+      booking.startDate,
+      booking.endDate,
+      booking.adults + booking.children,
+      now,
+      booking.pets
+    );
+  }
   // `requested` sits outside the exclusion constraint, so this update is the
   // moment the dates are actually claimed — and the moment a race can be lost.
   return db.booking
@@ -438,6 +482,12 @@ export async function approveBookingRequest(
       where: { id: bookingId },
       data: {
         unitId,
+        ...(repriced
+          ? {
+              totalThb: repriced.total_thb,
+              priceBreakdown: repriced as any,
+            }
+          : {}),
         status: 'pending_payment',
         holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
         requestExpiresAt: null,
@@ -1007,10 +1057,48 @@ export async function changeBookingDates(
     const totalThb = breakdown.total_thb;
     const difference = totalThb - previousTotalThb;
 
-    const balanceDueThb =
-      difference > 0 ? booking.balanceDueThb + difference : booking.balanceDueThb;
-    const refundAccruedThb =
-      difference < 0 ? booking.refundAccruedThb + Math.abs(difference) : booking.refundAccruedThb;
+    // Keep one net financial position. A later decrease first cancels an
+    // unpaid balance; a later increase first cancels an outstanding refund
+    // credit. Never leave the booking owing money in both directions.
+    let balanceDueThb = booking.balanceDueThb;
+    let refundAccruedThb = booking.refundAccruedThb;
+    if (difference > 0) {
+      const offset = Math.min(difference, refundAccruedThb);
+      refundAccruedThb -= offset;
+      balanceDueThb += difference - offset;
+    } else if (difference < 0) {
+      let credit = Math.abs(difference);
+      const offset = Math.min(credit, balanceDueThb);
+      balanceDueThb -= offset;
+      credit -= offset;
+
+      if (credit > 0) {
+        // A refund liability cannot exceed money actually received for this
+        // booking after refunds already reserved or completed.
+        const payments = await tx.payment.findMany({
+          where: {
+            bookingId,
+            purpose: { in: ['stay', 'stay_balance'] },
+            status: 'succeeded',
+          },
+          include: {
+            refunds: {
+              where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+              select: { amountThb: true },
+            },
+          },
+        });
+        const netPaidAvailable = payments.reduce(
+          (sum, payment) =>
+            sum +
+            payment.amountThb -
+            payment.refunds.reduce((refundSum, refund) => refundSum + refund.amountThb, 0),
+          0
+        );
+        const roomForRefund = Math.max(0, netPaidAvailable - refundAccruedThb);
+        refundAccruedThb += Math.min(credit, roomForRefund);
+      }
+    }
 
     const updated = await tx.booking.update({
       where: { id: bookingId },

@@ -73,6 +73,76 @@ export interface CheckoutSession {
   paymentId: string;
 }
 
+async function assertStayPaymentAmount(
+  db: PrismaClient,
+  purpose: PaymentPurpose,
+  bookingId: string | undefined,
+  amountThb: number
+): Promise<void> {
+  if (purpose !== 'stay' && purpose !== 'stay_balance') return;
+  if (!bookingId) throw new Error('Stay payment requires bookingId');
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { totalThb: true, balanceDueThb: true },
+  });
+  if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  const expected = purpose === 'stay' ? booking.totalThb : booking.balanceDueThb;
+  if (expected <= 0) throw new Error('Booking has no balance due');
+  if (amountThb !== expected) {
+    throw new Error(purpose === 'stay'
+      ? 'Payment amount does not match booking total'
+      : 'Balance payment amount does not match booking balance due');
+  }
+}
+
+async function assertRefundableAmount(
+  db: PrismaClient,
+  paymentId: string,
+  amountThb: number
+) {
+  if (!Number.isInteger(amountThb) || amountThb <= 0) {
+    throw new Error('Refund amount must be a positive whole number of satang');
+  }
+
+  const payment = await db.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      refunds: {
+        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
+        select: { amountThb: true },
+      },
+    },
+  });
+  if (!payment) throw new Error(`Payment ${paymentId} not found`);
+  if (payment.status !== 'succeeded') {
+    throw new Error('Only a succeeded payment can be refunded');
+  }
+
+  const reservedOrRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
+  const refundable = Math.max(0, payment.amountThb - reservedOrRefunded);
+  if (amountThb > refundable) {
+    throw new Error(`Refund exceeds refundable payment amount (${refundable})`);
+  }
+  return payment;
+}
+
+async function applySucceededRefundToBooking(
+  db: PrismaClient,
+  bookingId: string | null,
+  amountThb: number
+) {
+  if (!bookingId) return;
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: { refundAccruedThb: true },
+  });
+  if (!booking) return;
+  await db.booking.update({
+    where: { id: bookingId },
+    data: { refundAccruedThb: Math.max(0, booking.refundAccruedThb - amountThb) },
+  });
+}
+
 /**
  * Record a cash payment directly (no provider redirect).
  * Captures who received the money, when, and the receipt reference.
@@ -97,6 +167,8 @@ export async function recordCashPayment(
     receiptRef,
   } = input;
 
+  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
+
   const now = new Date();
 
   // Create payment record with status='succeeded' immediately (cash is physical)
@@ -117,15 +189,15 @@ export async function recordCashPayment(
     },
   });
 
-  // Write ledger entry and transition booking for stay bookings
-  if (bookingId && purpose === 'stay') {
+  // Every succeeded stay payment is a real money-in event. Initial stay
+  // payments confirm the booking; stay_balance payments settle only the debt
+  // created by a later booking change.
+  if (bookingId && (purpose === 'stay' || purpose === 'stay_balance')) {
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
-      select: { unitId: true, projectId: true, guestIdentityId: true },
+      select: { unitId: true, projectId: true, guestIdentityId: true, status: true, balanceDueThb: true },
     });
-
     if (booking) {
-      // Create rental_revenue ledger entry (doc 10 §2)
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -135,26 +207,27 @@ export async function recordCashPayment(
           bookingId,
           paymentId: payment.id,
           occurredOn: now,
-          description: `Cash payment for booking ${bookingId} (receipt: ${receiptRef})`,
+          description: `Cash ${purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${bookingId} (receipt: ${receiptRef})`,
         },
       });
 
-      // **CRITICAL: Transition booking from pending_payment → confirmed**
-      // This unblocks notifications, locks unit dates, and makes guest eligible for reviews.
-      await db.booking.update({
-        where: { id: bookingId },
-        data: { status: 'confirmed' },
-      });
+      if (purpose === 'stay' && booking.status === 'pending_payment') {
+        await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed' } });
+        await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
+      } else if (purpose === 'stay_balance') {
+        await db.booking.update({
+          where: { id: bookingId },
+          data: { balanceDueThb: Math.max(0, booking.balanceDueThb - amountThb) },
+        });
+      }
 
-      await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
-
-      // Track analytics event (doc 13)
       await track(db, 'stay_payment_succeeded', {
         bookingId,
         unitId: booking.unitId,
         projectId: booking.projectId,
         identityId: booking.guestIdentityId,
         amountThb,
+        purpose,
       });
     }
   }
@@ -174,50 +247,49 @@ export async function recordCashRefund(
   db: PrismaClient,
   input: RecordCashRefundInput
 ) {
-  const {
-    paymentId,
-    amountThb,
-    reason,
-    paidBackByIdentityId,
-    initiatedByIdentityId,
-  } = input;
+  const { paymentId, amountThb, reason, paidBackByIdentityId, initiatedByIdentityId } = input;
 
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
-  if (!payment) {
-    throw new Error(`Payment ${paymentId} not found`);
-  }
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    const payment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
+    if (payment.method !== 'cash') {
+      throw new Error('Can only refund cash payments via recordCashRefund');
+    }
 
-  if (payment.method !== 'cash') {
-    throw new Error('Can only refund cash payments via recordCashRefund');
-  }
-
-  const refund = await db.refund.create({
-    data: {
-      paymentId,
-      method: 'cash',
-      amountThb,
-      reason,
-      status: 'succeeded',
-      paidBackByIdentityId,
-      initiatedByIdentityId,
-    },
+    const refund = await tx.refund.create({
+      data: {
+        paymentId,
+        method: 'cash',
+        amountThb,
+        reason,
+        status: 'succeeded',
+        paidBackByIdentityId,
+        initiatedByIdentityId,
+      },
+    });
+    const now = new Date();
+    const booking = payment.bookingId
+      ? await tx.booking.findUnique({
+          where: { id: payment.bookingId },
+          select: { unitId: true, projectId: true },
+        })
+      : null;
+    await tx.ledgerEntry.create({
+      data: {
+        entryType: 'refund_out',
+        amountThb: -amountThb,
+        unitId: booking?.unitId,
+        projectId: booking?.projectId,
+        bookingId: payment.bookingId,
+        paymentId,
+        refundId: refund.id,
+        occurredOn: now,
+        description: `Cash refund: ${reason}`,
+      },
+    });
+    await applySucceededRefundToBooking(tx as PrismaClient, payment.bookingId, amountThb);
+    return refund;
   });
-
-  // Write ledger entry for refund
-  const now = new Date();
-  await db.ledgerEntry.create({
-    data: {
-      entryType: 'refund_out',
-      amountThb: -amountThb,
-      bookingId: payment.bookingId,
-      paymentId,
-      refundId: refund.id,
-      occurredOn: now,
-      description: `Cash refund: ${reason}`,
-    },
-  });
-
-  return refund;
 }
 
 /**
@@ -236,6 +308,8 @@ export async function createCheckout(
     payerIdentityId,
     amountThb,
   } = input;
+
+  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
 
   const { provider: providerName } = getProviderConfig();
 
@@ -363,20 +437,14 @@ export async function verifyAndConfirm(
     },
   });
 
-  // Write ledger entry and transition booking status
-  if (confirmed.bookingId) {
+  // A succeeded stay charge always reaches the ledger. Initial payment may
+  // confirm the booking; a balance payment settles balanceDueThb instead.
+  if (confirmed.bookingId && (confirmed.purpose === 'stay' || confirmed.purpose === 'stay_balance')) {
     const booking = await db.booking.findUnique({
       where: { id: confirmed.bookingId },
-      select: { unitId: true, projectId: true, status: true },
+      select: { unitId: true, projectId: true, status: true, balanceDueThb: true },
     });
-
-    if (booking && booking.status === 'pending_payment') {
-      // **CRITICAL: Transition booking from pending_payment → confirmed**
-      // This must happen immediately after payment succeeds, before any
-      // other operations. The booking status controls availability, invoicing,
-      // and guest eligibility for reviews.
-
-      // Write rental_revenue ledger entry (doc 10 §2)
+    if (booking) {
       await db.ledgerEntry.create({
         data: {
           entryType: 'rental_revenue',
@@ -386,50 +454,35 @@ export async function verifyAndConfirm(
           bookingId: confirmed.bookingId,
           paymentId: confirmed.id,
           occurredOn: now,
-          description: `Card payment for booking ${confirmed.bookingId}`,
+          description: `Card ${confirmed.purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${confirmed.bookingId}`,
         },
       });
 
-      // Flip booking to confirmed — this unblocks:
-      // - Owner receives booking confirmation notification
-      // - Guest sees "confirmed" status in their trips
-      // - Unit dates become locked from further bookings
-      // - Guest becomes eligible to review after stay
-      await db.booking.update({
-        where: { id: confirmed.bookingId },
-        data: { status: 'confirmed' },
-      });
-
-      await ensureDepositPreauthOnStayConfirmed(
-        db,
-        confirmed.bookingId,
-        booking.unitId
-      ).catch(() => null);
-
-      // Create communication thread for booking context (best-effort)
-      try {
-        const fullBooking = await db.booking.findUnique({
-          where: { id: confirmed.bookingId },
-          select: { guestIdentityId: true },
-        });
-
-        if (fullBooking) {
-          const thread = await findOrCreateThread(db, {
-            contextType: 'booking',
-            contextId: confirmed.bookingId,
-            projectId: booking.projectId,
-            participantIdentityIds: [fullBooking.guestIdentityId],
+      if (confirmed.purpose === 'stay' && booking.status === 'pending_payment') {
+        await db.booking.update({ where: { id: confirmed.bookingId }, data: { status: 'confirmed' } });
+        await ensureDepositPreauthOnStayConfirmed(db, confirmed.bookingId, booking.unitId).catch(() => null);
+        try {
+          const fullBooking = await db.booking.findUnique({
+            where: { id: confirmed.bookingId },
+            select: { guestIdentityId: true },
           });
-
-          // Post system message for booking confirmation
-          await addSystemMessage(
-            db,
-            thread.id,
-            `Booking confirmed. Payment received.`
-          );
+          if (fullBooking) {
+            const thread = await findOrCreateThread(db, {
+              contextType: 'booking',
+              contextId: confirmed.bookingId,
+              projectId: booking.projectId,
+              participantIdentityIds: [fullBooking.guestIdentityId],
+            });
+            await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
+          }
+        } catch (err) {
+          console.error('Failed to create booking thread:', err);
         }
-      } catch (err) {
-        console.error('Failed to create booking thread:', err);
+      } else if (confirmed.purpose === 'stay_balance') {
+        await db.booking.update({
+          where: { id: confirmed.bookingId },
+          data: { balanceDueThb: Math.max(0, booking.balanceDueThb - confirmed.amountThb) },
+        });
       }
     }
   }
@@ -454,78 +507,88 @@ export async function refund(
   reason: RefundReason,
   initiatedByIdentityId: string
 ) {
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
-  if (!payment) {
-    throw new Error(`Payment ${paymentId} not found`);
-  }
-
-  if (payment.method === 'cash') {
-    throw new Error('Use recordCashRefund for cash payments');
-  }
-
-  const refund = await db.refund.create({
-    data: {
-      paymentId,
-      method: 'card_provider',
-      amountThb,
-      reason,
-      status: 'processing',
-      initiatedByIdentityId,
-    },
+  const payment = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    const refundablePayment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
+    if (refundablePayment.method === 'cash') {
+      throw new Error('Use recordCashRefund for cash payments');
+    }
+    await tx.refund.create({
+      data: {
+        paymentId,
+        method: 'card_provider',
+        amountThb,
+        reason,
+        status: 'processing',
+        initiatedByIdentityId,
+      },
+    });
+    return refundablePayment;
   });
 
-  // Write ledger entry (will be marked as refund_out when it succeeds)
-  const now = new Date();
-  await db.ledgerEntry.create({
-    data: {
-      entryType: 'refund_out',
-      amountThb: -amountThb,
-      bookingId: payment.bookingId,
-      paymentId,
-      refundId: refund.id,
-      occurredOn: now,
-      description: `Refund requested: ${reason}`,
-    },
+  const refund = await db.refund.findFirstOrThrow({
+    where: { paymentId, amountThb, reason, status: 'processing', initiatedByIdentityId },
+    orderBy: { createdAt: 'desc' },
   });
 
-  if (
-    payment.provider === 'opn' &&
-    payment.providerSessionId &&
-    process.env.PAYMENT_PROVIDER === 'opn'
-  ) {
+  if (payment.provider === 'opn' && payment.providerSessionId && process.env.PAYMENT_PROVIDER === 'opn') {
     try {
       const provider = getPaymentProvider();
-      const result = await provider.refund({
-        chargeId: payment.providerSessionId,
-        amount: amountThb,
-        reason,
-      });
-
-      const updated = await db.refund.update({
+      const result = await provider.refund({ chargeId: payment.providerSessionId, amount: amountThb, reason });
+      await db.refund.update({
         where: { id: refund.id },
-        data: {
-          providerRefundId: result.refundId,
-          ...(result.status === 'failed' ? { status: 'failed' } : {}),
-        },
+        data: { providerRefundId: result.refundId },
       });
-
       if (result.status === 'failed') {
-        await markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
-        return updated;
+        return markRefundFailed(db, refund.id, result.reason ?? 'provider_declined');
       }
-
-      return updated;
     } catch (error) {
-      await markRefundFailed(
-        db,
-        refund.id,
-        error instanceof Error ? error.message : 'provider_error'
-      ).catch(() => null);
+      await markRefundFailed(db, refund.id, error instanceof Error ? error.message : 'provider_error').catch(() => null);
       throw error;
     }
   }
 
-  return refund;
+  return db.refund.findUniqueOrThrow({ where: { id: refund.id } });
+}
+
+export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
+  return db.$transaction(async (tx) => {
+    const refund = await tx.refund.findUnique({
+      where: { id: refundId },
+      include: { payment: true },
+    });
+    if (!refund) throw new Error(`Refund ${refundId} not found`);
+    if (refund.status === 'succeeded') return refund;
+    if (refund.status !== 'processing' && refund.status !== 'requested') {
+      throw new Error(`Cannot succeed refund with status ${refund.status}`);
+    }
+
+    const succeeded = await tx.refund.update({ where: { id: refundId }, data: { status: 'succeeded' } });
+    const existingLedger = await tx.ledgerEntry.findFirst({ where: { refundId, entryType: 'refund_out' } });
+    if (!existingLedger) {
+      const booking = refund.payment.bookingId
+        ? await tx.booking.findUnique({
+            where: { id: refund.payment.bookingId },
+            select: { unitId: true, projectId: true },
+          })
+        : null;
+      await tx.ledgerEntry.create({
+        data: {
+          entryType: 'refund_out',
+          amountThb: -refund.amountThb,
+          unitId: booking?.unitId,
+          projectId: booking?.projectId,
+          bookingId: refund.payment.bookingId,
+          paymentId: refund.paymentId,
+          refundId,
+          occurredOn: new Date(),
+          description: `Refund succeeded: ${refund.reason}`,
+        },
+      });
+    }
+    await applySucceededRefundToBooking(tx as PrismaClient, refund.payment.bookingId, refund.amountThb);
+    return succeeded;
+  });
 }
 
 /** Guest-facing refund state on a cancelled booking (doc 07 F-GUEST-8). */
@@ -544,28 +607,25 @@ export async function getBookingRefundDisplayState(
     where: { id: bookingId },
     select: { status: true, refundAccruedThb: true },
   });
-
-  if (!booking || booking.status !== 'cancelled' || (booking.refundAccruedThb ?? 0) <= 0) {
-    return 'none';
-  }
+  if (!booking || booking.status !== 'cancelled') return 'none';
 
   const refunds = await db.refund.findMany({
     where: { payment: { bookingId } },
     select: { status: true, amountThb: true },
   });
-
   if (refunds.length === 0) {
-    return 'processing';
+    return (booking.refundAccruedThb ?? 0) > 0 ? 'processing' : 'none';
   }
 
-  const succeededTotal = refunds
-    .filter((r) => r.status === 'succeeded')
-    .reduce((sum, r) => sum + r.amountThb, 0);
-
-  if (succeededTotal >= (booking.refundAccruedThb ?? 0)) {
+  // refundAccruedThb is the outstanding liability. It is reduced only when
+  // money actually leaves successfully. Failed/in-flight records therefore
+  // remain visible as processing; all-succeeded + zero liability is completed.
+  if (
+    (booking.refundAccruedThb ?? 0) === 0 &&
+    refunds.every((refund) => refund.status === 'succeeded')
+  ) {
     return 'completed';
   }
-
   return 'processing';
 }
 

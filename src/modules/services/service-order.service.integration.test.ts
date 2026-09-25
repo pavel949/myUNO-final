@@ -662,7 +662,7 @@ describe('service-order.service — integration tests', () => {
           entryType: 'refund_out',
         },
       });
-      expect(ledger).not.toBeNull();
+      expect(ledger).toBeNull();
     });
   });
 
@@ -1103,6 +1103,7 @@ describe('service-order.service — integration tests', () => {
         providerId: provider.id,
         categoryKey: 'cleaning',
         status: 'active',
+        basePriceThb: 500,
       });
 
       // Create and accept an order

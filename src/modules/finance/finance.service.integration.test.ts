@@ -27,10 +27,10 @@ describe('finance.service — integration tests', () => {
         adults: 2,
         children: 0,
         totalThb: 8000,
-        status: 'requested',
+        status: 'pending_payment',
       });
 
-      expect(booking.status).toBe('requested');
+      expect(booking.status).toBe('pending_payment');
 
       const payment = await financeService.recordCashPayment(db, {
         purpose: 'stay',

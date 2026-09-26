@@ -49,6 +49,72 @@ interface UpdateUnitInput {
   coverMediaId?: string | null;
   actorIdentityId?: string;
   inventoryCategoryId?: string | null;
+
+  // Physical facts (audit F-2/F-5).
+  //
+  // These columns have existed since 20260907000000_canonical_property_data_system
+  // and no service, route or screen has ever written one: `getUnitFacts360` and
+  // the completeness scorer read them, nothing fills them. They are what an OTA
+  // listing is made of — privacy type, areas, views, features, accessibility,
+  // safety, furnishing, pets — so until they are writable the platform cannot
+  // describe a home to a guest beyond bedroom and bathroom counts.
+  //
+  // Nullable throughout on purpose: "not answered" and "no" are different
+  // claims about a property, and the pricing engine already relies on that
+  // distinction for pets.
+  privacyType?: string | null;
+  accommodationType?: string | null;
+  usableAreaSqm?: number | null;
+  grossAreaSqm?: number | null;
+  outdoorAreaSqm?: number | null;
+  plotAreaSqm?: number | null;
+  balconyAreaSqm?: number | null;
+  unitFeatures?: string[];
+  accessibilityFacts?: string[];
+  safetyFacts?: string[];
+  furnishingStatus?: string | null;
+  views?: string[];
+  petsAllowed?: boolean | null;
+  maxPets?: number | null;
+  petFeeThb?: number | null;
+  petRules?: string | null;
+}
+
+/** Areas are square metres; a negative or absurd one is a typo, not a home. */
+const MAX_AREA_SQM = 100_000;
+
+function assertPhysicalFacts(input: UpdateUnitInput): void {
+  const areas: Array<[string, number | null | undefined]> = [
+    ['usableAreaSqm', input.usableAreaSqm],
+    ['grossAreaSqm', input.grossAreaSqm],
+    ['outdoorAreaSqm', input.outdoorAreaSqm],
+    ['plotAreaSqm', input.plotAreaSqm],
+    ['balconyAreaSqm', input.balconyAreaSqm],
+  ];
+  for (const [field, value] of areas) {
+    if (value === undefined || value === null) continue;
+    if (!Number.isFinite(value) || value <= 0 || value > MAX_AREA_SQM) {
+      throw new Error(`${field} must be a positive number of square metres`);
+    }
+  }
+
+  if (input.maxPets !== undefined && input.maxPets !== null) {
+    if (!Number.isInteger(input.maxPets) || input.maxPets < 0) {
+      throw new Error('maxPets must be a non-negative integer');
+    }
+  }
+  if (input.petFeeThb !== undefined && input.petFeeThb !== null) {
+    if (!Number.isInteger(input.petFeeThb) || input.petFeeThb < 0) {
+      throw new Error('petFeeThb must be a non-negative integer in satang');
+    }
+  }
+  // A pet fee or a pet cap only means something once pets are actually
+  // allowed; storing either against a unit that refuses pets reads as a
+  // policy it does not have.
+  if (input.petsAllowed === false) {
+    if (input.maxPets) throw new Error('maxPets cannot be set on a unit that does not accept pets');
+    if (input.petFeeThb) throw new Error('petFeeThb cannot be set on a unit that does not accept pets');
+  }
 }
 
 /**
@@ -236,7 +302,25 @@ export async function updateUnit(input: UpdateUnitInput) {
     coverMediaId,
     actorIdentityId,
     inventoryCategoryId,
+    privacyType,
+    accommodationType,
+    usableAreaSqm,
+    grossAreaSqm,
+    outdoorAreaSqm,
+    plotAreaSqm,
+    balconyAreaSqm,
+    unitFeatures,
+    accessibilityFacts,
+    safetyFacts,
+    furnishingStatus,
+    views,
+    petsAllowed,
+    maxPets,
+    petFeeThb,
+    petRules,
   } = input;
+
+  assertPhysicalFacts(input);
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
@@ -337,6 +421,28 @@ export async function updateUnit(input: UpdateUnitInput) {
             ...(cancellationPolicyKey !== undefined && { cancellationPolicyKey }),
           }),
       ...(instantBook !== undefined && { instantBook }),
+      ...(privacyType !== undefined && { privacyType }),
+      ...(accommodationType !== undefined && { accommodationType }),
+      ...(usableAreaSqm !== undefined && { usableAreaSqm }),
+      ...(grossAreaSqm !== undefined && { grossAreaSqm }),
+      ...(outdoorAreaSqm !== undefined && { outdoorAreaSqm }),
+      ...(plotAreaSqm !== undefined && { plotAreaSqm }),
+      ...(balconyAreaSqm !== undefined && { balconyAreaSqm }),
+      ...(unitFeatures !== undefined && { unitFeatures }),
+      ...(accessibilityFacts !== undefined && { accessibilityFacts }),
+      ...(safetyFacts !== undefined && { safetyFacts }),
+      ...(furnishingStatus !== undefined && { furnishingStatus }),
+      ...(views !== undefined && { views }),
+      ...(petsAllowed !== undefined && { petsAllowed }),
+      // Clearing the pet policy clears what hung off it, so a unit cannot
+      // keep a fee for something it no longer accepts.
+      ...(petsAllowed === false
+        ? { maxPets: null, petFeeThb: null }
+        : {
+            ...(maxPets !== undefined && { maxPets }),
+            ...(petFeeThb !== undefined && { petFeeThb }),
+          }),
+      ...(petRules !== undefined && { petRules }),
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
     } as any,

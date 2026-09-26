@@ -99,6 +99,13 @@ function applyCanonicalRatePlanAdjustment(
 /**
  * Flexible Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine.
  *
+ * Pricing here stays on the `Unit.baseNightlyThb` / project-configuration path
+ * by decision: `docs/architecture/CANONICAL_RATE_PLAN_MIGRATION.md` defers the
+ * canonical InventoryCategory + RatePlan model for guest quoting until one
+ * end-to-end cutover owns seasons, occupancy, discounts, taxes, persistence
+ * and revalidation together. Do not route this through the canonical
+ * calculator piecemeal.
+ *
  * Commercial base/restrictions resolve from InventoryCategory for a linked
  * physical unit. Unit-level commercial fields are compatibility fallback only;
  * an explicit unit-scoped RatePlan and date-specific PricingRule remain valid
@@ -270,6 +277,41 @@ export async function resolveEffectiveStayOffer(
   let availableCapacity = 1;
   let isAvailable = true;
 
+  // A stay that is already sold is not available, whatever the tariff says.
+  //
+  // This used to consult `blocked_date` and the unit's own status only, so a
+  // villa with a confirmed booking across the requested nights answered
+  // `isAvailable: true` — on a public endpoint, to anyone asking. Blocks and
+  // bookings are two different tables and only one of them was being read.
+  //
+  // The rules mirror the booking transaction's own (`findBlockingConflict`):
+  // confirmed and checked-in stays block, and a `pending_payment` hold blocks
+  // only while it is live. A lapsed hold must not keep inventory off sale.
+  const bookedUnitIds = new Set<string>();
+  const candidateUnitIds: string[] = targetUnit
+    ? [targetUnit.id]
+    : targetCategory?.units
+      ? targetCategory.units.map((u: any) => u.id)
+      : [];
+
+  if (candidateUnitIds.length > 0) {
+    const now = new Date();
+    const conflicts = await db.booking.findMany({
+      where: {
+        unitId: { in: candidateUnitIds },
+        startDate: { lt: end },
+        endDate: { gt: start },
+        OR: [
+          { status: { in: ['confirmed', 'checked_in'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: now } },
+        ],
+      },
+      select: { unitId: true },
+      distinct: ['unitId'],
+    });
+    for (const conflict of conflicts) bookedUnitIds.add(conflict.unitId);
+  }
+
   if (targetUnit) {
     const isUnitBlocked = targetUnit.blockedDates
       ? targetUnit.blockedDates.some(
@@ -279,19 +321,26 @@ export async function resolveEffectiveStayOffer(
     const exceedsCapacity = targetUnit.maxGuests !== undefined && guests > targetUnit.maxGuests;
     isAvailable =
       !isUnitBlocked &&
+      !bookedUnitIds.has(targetUnit.id) &&
       targetUnit.status === 'live' &&
       targetUnit.assetStatus !== 'suspended' &&
       targetUnit.project?.status === 'live' &&
       !exceedsCapacity;
     availableCapacity = isAvailable ? 1 : 0;
   } else if (targetCategory) {
-    const totalPhysicalUnits = targetCategory.units ? targetCategory.units.length : 0;
-    const outOfServiceUnits = targetCategory.units
-      ? targetCategory.units.filter(
-          (u: any) => u.status === 'paused' || u.assetStatus === 'suspended'
-        ).length
-      : 0;
-    availableCapacity = Math.max(0, totalPhysicalUnits - outOfServiceUnits);
+    // Capacity is how many of this class can actually be sold for these
+    // nights: physical units, less those out of service, less those already
+    // blocked or booked. Counting only out-of-service units oversold a
+    // category the moment one of its rooms was taken.
+    const sellableUnits = (targetCategory.units ?? []).filter((u: any) => {
+      if (u.status === 'paused' || u.assetStatus === 'suspended') return false;
+      if (bookedUnitIds.has(u.id)) return false;
+      const blocked = (u.blockedDates ?? []).some(
+        (b: any) => new Date(b.startDate) < end && new Date(b.endDate) > start
+      );
+      return !blocked;
+    });
+    availableCapacity = sellableUnits.length;
     const exceedsCapacity = targetCategory.maxGuests !== undefined && guests > targetCategory.maxGuests;
     isAvailable = availableCapacity > 0 && !exceedsCapacity;
   }

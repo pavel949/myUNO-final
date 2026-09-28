@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import type { PropertyReadinessReport } from '@/modules/projects';
 
 type Category = { id: string; name: string; categoryKey: string; baseNightlyThb: number; minNights: number; status: string; ratePlans: Array<{ id: string; code: string; name: string; minNights: number | null }> };
-type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ channelMappings: Array<{ channel: string; syncState: string }> }> };
+type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ offeringType: string; status: string; channelMappings: Array<{ channel: string; syncState: string }> }> };
 type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; units: Unit[] };
 
 const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance', 'Stay offering', 'Pricing', 'Content & photos', 'Availability & channels', 'Team', 'Review & publish'];
@@ -85,7 +85,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
 
     <Section id="step-3" title="3. Owner, invitation and contract"><OwnerInvite units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Open owner and contract workspace"/></Section>
     <Section id="step-4" title="4. Compliance, mobilization and sleeping arrangements"><p>Permitted-use evidence, all seven mobilization steps and a bed-level sleeping layout are activation blockers.</p><SleepingForm units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
-    <Section id="step-5" title="5. Stay offering"><p className="mb-12">CommercialOffering is the canonical commercial layer. A physical home is not bookable merely because it exists. Configure the stay offering in the home workspace; property facts remain on Project / Category / Home and are never copied into the offering.</p><UnitLinks units={initialProject.units} label="Configure stay offering"/></Section>
+    <Section id="step-5" title="5. Stay offering"><p className="mb-12">Enable a short-stay commercial offering for each home. The physical home is not the commercial offering; keep its facts on Project / Category / Unit.</p><StayOfferingForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-6" title="6. Pricing and rate plans">
       <p className="rounded-md bg-surface-muted p-12 mb-16">The category base nightly rate is the master amount. BAR is the canonical rate plan; a unit-level dated rule is an explicit exception.</p>
       <form className="flex flex-wrap items-end gap-8" onSubmit={form(async d => {
@@ -115,6 +115,21 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) { return <section id={id} className="scroll-mt-24 mb-20 rounded-lg border border-border-line bg-surface-paper p-20"><h2 className="font-display text-heading-lg font-semibold mb-12">{title}</h2>{children}</section>; }
 function UnitLinks({ units, label }: { units: Unit[]; label: string }) { return <ul className="mt-12 space-y-8">{units.map(u => <li key={u.id}><Link className="text-brand-andaman underline" href={`/app/admin/units/${u.id}`}>{label}: {u.name}</Link></li>)}</ul>; }
 function OwnerInvite({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); const invite = await submit('/api/admin/people/invite', { email: d.get('email'), firstName: d.get('firstName'), lastName: d.get('lastName'), preferredLocale: 'en' }); if (invite) await submit(`/api/admin/units/${d.get('unit')}/owner`, { ownerIdentityId: invite.identity.id }, 'PUT'); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="firstName" placeholder="First name" required/><input className={input} name="lastName" placeholder="Last name" required/><input className={input} name="email" type="email" placeholder="Owner email" required/><Button>Invite and assign owner</Button></form>; }
+function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) {
+  return <div className="space-y-12">
+    {units.map(unit => {
+      const offering = unit.commercialOfferings.find(row => row.offeringType === 'short_stay');
+      return <div key={unit.id} className="flex flex-wrap items-center gap-12 rounded-md border border-border-line p-12">
+        <span className="flex-1 text-body font-semibold">{unit.name}</span>
+        <span className="text-small">{offering?.status === 'active' ? 'Short stay active' : 'Short stay not active'}</span>
+        <Button type="button" disabled={Boolean(offering?.status === 'active')} onClick={() =>
+          submit(unitPropertyDetailsPath(unit.id), { action: 'stay_offering', status: 'active' })
+        }>Enable short stay</Button>
+      </div>;
+    })}
+    {units.length === 0 && <p className="text-small text-text-secondary">Create a home first.</p>}
+  </div>;
+}
 function ChannelForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'channel_mapping', channel: d.get('channel'), externalListingId: d.get('listing'), syncState: d.get('sync') }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="channel" placeholder="Channel" required/><input className={input} name="listing" placeholder="Listing ID"/><select className={input} name="sync"><option value="ical_only">iCal only</option><option value="manual">Manual</option></select><Button>Save mapping</Button></form>; }
 function SleepingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'sleeping_space', spaceType: d.get('spaceType'), name: d.get('name'), beds: [{ bedType: d.get('bedType'), count: Number(d.get('count')) }] }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><select className={input} name="spaceType"><option value="bedroom">Bedroom</option><option value="living_room">Living room</option></select><input className={input} name="name" placeholder="Room name"/><select className={input} name="bedType"><option value="king">King bed</option><option value="queen">Queen bed</option><option value="single">Single bed</option><option value="sofa_bed">Sofa bed</option></select><input className={input} name="count" type="number" min="1" defaultValue="1"/><Button>Save sleeping space</Button></form>; }
 function GalleryUpload({ projectId, units }: { projectId: string; units: Unit[] }) {

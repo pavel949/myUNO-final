@@ -108,6 +108,12 @@ export async function getPropertyReadiness(
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);
     }
     if (unit.engagements.length === 0) add('blocker', 'unit.engagement', 'Record an active management engagement.', options);
+    if (project.projectType && !unit.commercialOfferings.some((offering) =>
+      offering.offeringType === 'short_stay' && offering.status === 'active'
+    )) {
+      add('blocker', 'unit.stay_offering', 'Activate a short-stay commercial offering before publication.', options);
+    }
+
     if (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed')) {
       add('blocker', 'unit.permitted_use', 'Confirm a permitted-use compliance record.', options);
     }

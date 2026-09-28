@@ -4,7 +4,7 @@
  * Never connects to production or writes database records.
  */
 import { readFileSync } from 'node:fs';
-import { auditLegacyOccupancies } from '../src/modules/integrations/layantara/adapter';
+import { auditLegacyOccupancies } from '@/modules/integrations/layantara/adapter';
 import type { LegacyOccupancy } from '../src/modules/integrations/layantara/adapter';
 
 type Mapping = { sourceInventoryId: string; canonicalUnitId: string; identityVerified: boolean };

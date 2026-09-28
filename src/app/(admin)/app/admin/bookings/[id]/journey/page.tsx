@@ -62,7 +62,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
   const outstandingRefunds = booking.payments.flatMap(p => p.refunds)
     .filter(r => r.status === 'requested' || r.status === 'processing');
   const isCancelled = ['cancelled', 'declined', 'expired'].includes(booking.status);
-  const cashReconciled = received === revenueLedger && missingLedger.length === 0;
+  const cashReconciled = received === revenueLedger && missingLedger.length === 0 && (booking.totalThb === 0 || received > 0);
   const stayClosed = booking.status === 'completed';
   const ownerRecorded = statements.length > 0;
   const ownerDistributed = statements.some(s => s.status === 'distributed');

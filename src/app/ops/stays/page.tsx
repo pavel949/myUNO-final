@@ -54,7 +54,7 @@ export default async function StayOperationsPage({
   const queue=(department?work.filter(item=>item.department===department):work)
     .sort((a,b)=>(a.severity==='attention'?-1:1)-(b.severity==='attention'?-1:1)||
       a.dueDate.localeCompare(b.dueDate));
-  const labels=await getLabels({
+  const labels: Record<string, string> = await getLabels({
     'staff.stay_queue.title':'Stay operations',
     'staff.stay_queue.kicker':'ONE BOOKING · ALL DEPARTMENTS',
     'staff.stay_queue.description':'Actions are derived from the canonical reservation; no duplicate stay record.',

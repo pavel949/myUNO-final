@@ -210,7 +210,7 @@ export async function findAvailableUnitsForCategory(
   });
   const excluded = await excludedSourceControlledUnits(db,candidates.map(unit=>unit.id));
   return candidates.filter(unit=>!excluded.includes(unit.id));
-}}
+}
 
 /**
  * The first free unit of a category, or null. Kept as the single-answer form of

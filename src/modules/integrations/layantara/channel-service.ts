@@ -163,6 +163,10 @@ export async function applyChannelEvent(
         }else if(current.status!=='confirmed'){
           await tx.booking.update({where:{id:bookingId},data:{status:'confirmed'}});
         }
+        // A historical source block may predate a previously reconciled
+        // booking. Remove it only when the source identity and exact interval
+        // match; availability is never exposed between transactions.
+        if(blocks.length)await tx.blockedDate.delete({where:{id:blocks[0].id}});
       }else{
         const guestMap=await mapping(tx,system.id,'guest',e.guestExternalId);
         let guestId=guestMap?.internal_id;

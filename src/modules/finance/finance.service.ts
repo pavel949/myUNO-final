@@ -167,69 +167,81 @@ export async function recordCashPayment(
     receiptRef,
   } = input;
 
-  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
-
+  if (!Number.isInteger(amountThb) || amountThb <= 0) {
+    throw new Error('Cash payment must be a positive whole number of satang');
+  }
+  if (!receiptRef.trim()) throw new Error('Cash payment requires a receipt reference');
   const now = new Date();
 
-  // Create payment record with status='succeeded' immediately (cash is physical)
-  const payment = await db.payment.create({
-    data: {
-      purpose,
-      bookingId,
-      serviceOrderId,
-      payerIdentityId,
-      method: 'cash',
-      provider: 'cash',
-      amountThb,
-      receivedByIdentityId,
-      receivedAt: now,
-      receiptRef,
-      status: 'succeeded',
-      succeededAt: now,
-    },
-  });
+  const result = await db.$transaction(async (tx) => {
+    let booking: {
+      unitId: string; projectId: string; guestIdentityId: string;
+      status: string; totalThb: number; balanceDueThb: number;
+    } | null = null;
 
-  // Every succeeded stay payment is a real money-in event. Initial stay
-  // payments confirm the booking; stay_balance payments settle only the debt
-  // created by a later booking change.
-  if (bookingId && (purpose === 'stay' || purpose === 'stay_balance')) {
-    const booking = await db.booking.findUnique({
-      where: { id: bookingId },
-      select: { unitId: true, projectId: true, guestIdentityId: true, status: true, balanceDueThb: true },
+    if (purpose === 'stay' || purpose === 'stay_balance') {
+      if (!bookingId) throw new Error('Stay payment requires bookingId');
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${bookingId}))`;
+      booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        select: { unitId: true, projectId: true, guestIdentityId: true, status: true, totalThb: true, balanceDueThb: true },
+      });
+      if (!booking) throw new Error(`Booking ${bookingId} not found`);
+      if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
+      if (purpose === 'stay') {
+        if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
+        if (await tx.payment.count({ where: { bookingId, purpose: 'stay', status: 'succeeded' } })) {
+          throw new Error('Initial stay payment is already recorded');
+        }
+        if (amountThb !== booking.totalThb) throw new Error('Payment amount does not match booking total');
+      } else {
+        if (!['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) throw new Error('Booking is not eligible for balance payment');
+        if (booking.balanceDueThb <= 0 || amountThb !== booking.balanceDueThb) throw new Error('Balance payment amount does not match booking balance due');
+      }
+    }
+
+    const payment = await tx.payment.create({
+      data: {
+        purpose, bookingId, serviceOrderId, payerIdentityId,
+        method: 'cash', provider: 'cash', amountThb, receivedByIdentityId,
+        receivedAt: now, receiptRef: receiptRef.trim(),
+        status: 'succeeded', succeededAt: now,
+      },
     });
-    if (booking) {
-      await db.ledgerEntry.create({
+
+    if (booking && bookingId) {
+      await tx.ledgerEntry.create({
         data: {
-          entryType: 'rental_revenue',
-          amountThb,
-          unitId: booking.unitId,
-          projectId: booking.projectId,
-          bookingId,
-          paymentId: payment.id,
+          entryType: 'rental_revenue', amountThb, unitId: booking.unitId,
+          projectId: booking.projectId, bookingId, paymentId: payment.id,
           occurredOn: now,
-          description: `Cash ${purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${bookingId} (receipt: ${receiptRef})`,
+          description: `Cash ${purpose === 'stay_balance' ? 'balance ' : ''}payment for booking ${bookingId} (receipt: ${receiptRef.trim()})`,
         },
       });
-
-      if (purpose === 'stay' && booking.status === 'pending_payment') {
-        await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed' } });
-        await ensureDepositPreauthOnStayConfirmed(db, bookingId, booking.unitId).catch(() => null);
-      } else if (purpose === 'stay_balance') {
-        await db.booking.update({
+      if (purpose === 'stay') {
+        await tx.booking.update({
           where: { id: bookingId },
-          data: { balanceDueThb: Math.max(0, booking.balanceDueThb - amountThb) },
+          data: { status: 'confirmed', holdExpiresAt: null },
+        });
+      } else {
+        await tx.booking.update({
+          where: { id: bookingId },
+          data: { balanceDueThb: { decrement: amountThb } },
         });
       }
-
-      await track(db, 'stay_payment_succeeded', {
-        bookingId,
-        unitId: booking.unitId,
-        projectId: booking.projectId,
-        identityId: booking.guestIdentityId,
-        amountThb,
-        purpose,
-      });
     }
+    return { payment, booking };
+  });
+
+  const payment = result.payment;
+  if (result.booking && bookingId) {
+    if (purpose === 'stay') {
+      await ensureDepositPreauthOnStayConfirmed(db, bookingId, result.booking.unitId).catch(() => null);
+    }
+    await track(db, 'stay_payment_succeeded', {
+      bookingId, unitId: result.booking.unitId, projectId: result.booking.projectId,
+      identityId: result.booking.guestIdentityId, amountThb, purpose,
+    }).catch(() => null);
   }
 
   // Cash taken for a service order: placed → paid (doc 09 §6)

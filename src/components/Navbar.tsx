@@ -220,4 +220,5 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         </div>
       )}
     </header>
+  );
 }

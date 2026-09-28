@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.organizations': 'Organizations',
     'admin.nav.bookings': 'Bookings',
     'admin.nav.stay_calendar': 'Live stay calendar',
-    'admin.nav.layantara': 'Layantara integration',
+    'admin.nav.layantara': 'Layan Tara Villas',
     'admin.nav.config': 'Pricing & Config',
     'admin.nav.kpis': 'Operational KPIs',
     'admin.nav.compliance': 'Compliance',

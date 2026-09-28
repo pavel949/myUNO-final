@@ -81,12 +81,13 @@ describe('Projects public read seam (discovery pages)', () => {
   });
 
   describe('categories & reviews on the landing payload (LY-5)', () => {
-    it('a project without a unit-categories catalog gets empty categories and reviews', async () => {
+    it('a live unit created by the canonical factory exposes its category and has no reviews', async () => {
       const project = await createProject({ slug: 'plain-p', status: 'live' });
       await createUnit({ projectId: project.id, status: 'live' });
 
       const detail = await getPublicProjectBySlug('plain-p');
-      expect(detail!.categories).toEqual([]);
+      expect(detail!.categories).toHaveLength(1);
+      expect(detail!.categories[0].unitCount).toBe(1);
       expect(detail!.reviews).toEqual({ average: null, count: 0, items: [] });
     });
 

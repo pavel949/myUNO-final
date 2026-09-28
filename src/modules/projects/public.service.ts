@@ -78,7 +78,7 @@ export interface PublicProjectDetail {
 /** All live projects, for the /projects hub and the sitemap. */
 export async function listPublicProjects(): Promise<PublicProjectCard[]> {
   const projects = await prisma.project.findMany({
-    where: { status: 'live', inventoryCategory: { status: 'live' } },
+    where: { status: 'live' },
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },

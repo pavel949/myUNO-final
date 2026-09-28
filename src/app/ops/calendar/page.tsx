@@ -88,7 +88,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
   const days = Array.from({ length: 7 }, (_, i) => new Date(rangeStart.getTime() + i * dayMs));
   const rangeEnd = new Date(rangeStart.getTime() + 7 * dayMs);
   const scopedUnitIds = visibleUnits.map(unit => unit.id);
-  const [calendarBookings, calendarBlocks] = scopedUnitIds.length ? await Promise.all([
+  const [calendarBookings, calendarBlocks] = await Promise.all([
     prisma.booking.findMany({
       where: {
         unitId: { in: scopedUnitIds }, startDate: { lt: rangeEnd }, endDate: { gt: rangeStart },
@@ -103,7 +103,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
       where: { unitId: { in: scopedUnitIds }, startDate: { lt: rangeEnd }, endDate: { gt: rangeStart } },
       select: { id: true, unitId: true, startDate: true, endDate: true, reason: true },
     }),
-  ]) : [[], []];
+  ]);
   const dateHref = (offsetDays: number) => {
     const query = new URLSearchParams();
     if (validActiveProjectId) query.set('projectId', validActiveProjectId);

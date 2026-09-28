@@ -79,4 +79,5 @@ export const UNIFIED_STAY_KEYS = [
   { key: "staff.stay_360.actions", namespace: 'staff', description: 'Canonical Stay operations workspace', en: "Next action", ru: "Следующее действие", th: "ขั้นตอนถัดไป", status: 'needs_review' as const },
   { key: "staff.stay_360.warning", namespace: 'staff', description: 'Canonical Stay operations workspace', en: "Payment or refund changes require a verified financial transaction.", ru: "Изменение платежей и возвратов требует подтверждённой финансовой операции.", th: "การเปลี่ยนแปลงการชำระเงินและคืนเงินต้องมีหลักฐานธุรกรรมจริง", status: 'needs_review' as const },
   { key: "staff.stay_360.guest_note", namespace: 'staff', description: 'Canonical Stay operations workspace', en: "Guest note", ru: "Комментарий гостя", th: "หมายเหตุจากแขก", status: 'needs_review' as const },
+  { key: 'staff.unified_calendar.work_queue', namespace: 'staff', description: 'Navigation to Stay 360 work', en: 'Stay operations →', ru: 'Операции по проживанию →', th: 'งานดูแลการเข้าพัก →', status: 'needs_review' as const },
 ];

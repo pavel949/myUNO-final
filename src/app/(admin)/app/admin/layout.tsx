@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const labels = await getLabels({
     'admin.nav.title': 'myUNO Admin',
     'admin.nav.dashboard': 'Dashboard',
+    'admin.nav.processes': 'Operations map',
     'admin.nav.section.grow': 'Grow',
     'admin.nav.crm': 'CRM & Pipeline',
     'admin.nav.signals': 'Signals',
@@ -59,7 +60,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const sections: NavSection[] = [
     {
-      items: [{ href: '/app/admin', label: labels['admin.nav.dashboard'] }],
+      items: [
+        { href: '/app/admin', label: labels['admin.nav.dashboard'] },
+        { href: '/app/admin/processes', label: labels['admin.nav.processes'] },
+      ],
     },
     {
       title: labels['admin.nav.section.grow'],

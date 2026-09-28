@@ -2954,6 +2954,37 @@ const UI_SHELL_KEYS: KeyDef[] = [
 ];
 
 const HOME_KEYS: KeyDef[] = [
+  // Connected public homepage — localized EN/RU/TH source entries
+  { key: 'home.discovery.stay', namespace: 'home', description: 'Homepage: home.discovery.stay', en: 'Stay', ru: 'Проживание', th: 'เข้าพัก', status: NR },
+  { key: 'home.discovery.monthly', namespace: 'home', description: 'Homepage: home.discovery.monthly', en: 'Monthly', ru: 'На месяц', th: 'รายเดือน', status: NR },
+  { key: 'home.discovery.buy', namespace: 'home', description: 'Homepage: home.discovery.buy', en: 'Buy', ru: 'Купить', th: 'ซื้อ', status: NR },
+  { key: 'home.discovery.invest', namespace: 'home', description: 'Homepage: home.discovery.invest', en: 'Invest', ru: 'Инвестиции', th: 'ลงทุน', status: NR },
+  { key: 'home.discovery.properties', namespace: 'home', description: 'Homepage: home.discovery.properties', en: 'Explore projects', ru: 'Смотреть проекты', th: 'สำรวจโครงการ', status: NR },
+  { key: 'home.discovery.hint', namespace: 'home', description: 'Homepage: home.discovery.hint', en: 'Discover our projects, then explore available homes and their offers.', ru: 'Изучите проекты, доступные объекты и предложения.', th: 'สำรวจโครงการ ที่พักที่เปิดให้บริการ และข้อเสนอ', status: NR },
+  { key: 'home.discovery.error', namespace: 'home', description: 'Homepage: home.discovery.error', en: 'Choose valid arrival and departure dates.', ru: 'Укажите корректные даты заезда и выезда.', th: 'เลือกวันที่เช็คอินและเช็คเอาท์ให้ถูกต้อง', status: NR },
+  { key: 'home.pathways.kicker', namespace: 'home', description: 'Homepage: home.pathways.kicker', en: 'Discover your UNO', ru: 'Откройте свой UNO', th: 'ค้นพบ UNO ของคุณ', status: NR },
+  { key: 'home.destinations.kicker', namespace: 'home', description: 'Homepage: home.destinations.kicker', en: 'The island', ru: 'Остров', th: 'เกาะภูเก็ต', status: NR },
+  { key: 'home.destinations.note', namespace: 'home', description: 'Homepage: home.destinations.note', en: 'Explore the collection to see current project locations and availability.', ru: 'Откройте каталог, чтобы проверить локации проектов и доступность объектов.', th: 'สำรวจรายการเพื่อดูทำเลโครงการและสถานะว่างปัจจุบัน', status: NR },
+  { key: 'home.guided.kicker', namespace: 'home', description: 'Homepage: home.guided.kicker', en: 'Guided discovery', ru: 'Поможем с выбором', th: 'ค้นหาพร้อมคำแนะนำ', status: NR },
+  { key: 'home.guided.prompt', namespace: 'home', description: 'Homepage: home.guided.prompt', en: 'Start with a simple question', ru: 'Начните с простого вопроса', th: 'เริ่มด้วยคำถามง่าย ๆ', status: NR },
+  { key: 'home.guided.stay', namespace: 'home', description: 'Homepage: home.guided.stay', en: 'Find a home for my trip', ru: 'Найти жильё для поездки', th: 'ค้นหาที่พักสำหรับการเดินทาง', status: NR },
+  { key: 'home.guided.projects', namespace: 'home', description: 'Homepage: home.guided.projects', en: 'Explore residences in Phuket', ru: 'Посмотреть резиденции Пхукета', th: 'สำรวจที่พักอาศัยในภูเก็ต', status: NR },
+  { key: 'home.guided.owner', namespace: 'home', description: 'Homepage: home.guided.owner', en: 'I own a property', ru: 'Я собственник недвижимости', th: 'ฉันเป็นเจ้าของอสังหาริมทรัพย์', status: NR },
+  { key: 'home.ecosystem.kicker', namespace: 'home', description: 'Homepage: home.ecosystem.kicker', en: 'One connected ecosystem', ru: 'Единая экосистема', th: 'ระบบนิเวศที่เชื่อมถึงกัน', status: NR },
+  { key: 'home.common.explore', namespace: 'home', description: 'Homepage: home.common.explore', en: 'Explore', ru: 'Подробнее', th: 'สำรวจ', status: NR },
+  { key: 'home.pathways.title', namespace: 'home', description: 'Homepage: home.pathways.title', en: 'One island. Many ways to live it.', ru: 'Один остров. Множество возможностей.', th: 'เกาะเดียว หลากหลายรูปแบบการใช้ชีวิต', status: NR },
+  { key: 'home.destinations.title', namespace: 'home', description: 'Homepage: home.destinations.title', en: 'Discover Phuket.', ru: 'Откройте Пхукет.', th: 'ค้นพบภูเก็ต', status: NR },
+  { key: 'home.destinations.subtitle', namespace: 'home', description: 'Homepage: home.destinations.subtitle', en: 'Begin with the neighbourhood that fits your way of life.', ru: 'Начните с района, который подходит вашему образу жизни.', th: 'เริ่มจากย่านที่เหมาะกับไลฟ์สไตล์ของคุณ', status: NR },
+  { key: 'home.guided.title', namespace: 'home', description: 'Homepage: home.guided.title', en: 'Not sure where to begin?', ru: 'Не знаете, с чего начать?', th: 'ไม่แน่ใจว่าจะเริ่มตรงไหน?', status: NR },
+  { key: 'home.guided.body', namespace: 'home', description: 'Homepage: home.guided.body', en: 'Find your place by dates, discover a project, or ask our guest team for help with a tailored request.', ru: 'Найдите жильё по датам, изучите проекты или обратитесь к нашей команде за индивидуальным подбором.', th: 'ค้นหาที่พักตามวัน สำรวจโครงการ หรือขอคำแนะนำจากทีมงานของเรา', status: NR },
+  { key: 'home.guided.cta', namespace: 'home', description: 'Homepage: home.guided.cta', en: 'Talk to our team', ru: 'Связаться с командой', th: 'ติดต่อทีมงาน', status: NR },
+  { key: 'home.ecosystem.title', namespace: 'home', description: 'Homepage: home.ecosystem.title', en: 'Everything connects.', ru: 'Всё взаимосвязано.', th: 'ทุกอย่างเชื่อมถึงกัน', status: NR },
+  { key: 'home.ecosystem.body', namespace: 'home', description: 'Homepage: home.ecosystem.body', en: 'Discover a home. Book a stay. Use local services. Manage your property. One myUNO account connects your experience.', ru: 'Выбирайте жильё, бронируйте, заказывайте услуги и управляйте недвижимостью — в одном аккаунте myUNO.', th: 'ค้นหาที่พัก จองบริการ และจัดการอสังหาริมทรัพย์ผ่านบัญชี myUNO เดียว', status: NR },
+  { key: 'home.ecosystem.cta', namespace: 'home', description: 'Homepage: home.ecosystem.cta', en: 'Discover myUNO', ru: 'Узнать о myUNO', th: 'รู้จัก myUNO', status: NR },
+  { key: 'home.audience.cta', namespace: 'home', description: 'Homepage: home.audience.cta', en: 'Discover the property ecosystem', ru: 'Изучить экосистему недвижимости', th: 'สำรวจระบบนิเวศอสังหาริมทรัพย์', status: NR },
+  { key: 'home.final.title', namespace: 'home', description: 'Homepage: home.final.title', en: 'Your place in Phuket starts here.', ru: 'Ваш Пхукет начинается здесь.', th: 'การใช้ชีวิตในภูเก็ตของคุณเริ่มที่นี่', status: NR },
+  { key: 'home.final.cta', namespace: 'home', description: 'Homepage: home.final.cta', en: 'Explore the collection', ru: 'Смотреть объекты', th: 'สำรวจรายการ', status: NR },
+
   // Home-space (in-stay guest portal)
   { key: 'home.welcome', namespace: 'home', description: 'Welcome to property heading', en: 'Welcome to', ru: 'Добро пожаловать в', th: 'ยินดีต้อนรับสู่', status: NR },
   { key: 'home.welcome_back', namespace: 'home', description: 'In-stay header when the guest first name is known', en: 'Welcome back, {name}', ru: 'С возвращением, {name}', th: 'ยินดีต้อนรับกลับ, {name}', status: NR },

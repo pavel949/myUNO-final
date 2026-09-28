@@ -102,7 +102,7 @@ describe('Projects public read seam (discovery pages)', () => {
           maxGuests: 4,
           baseNightlyThb: 626100,
           minNights: 1,
-          status: 'active',
+          status: 'live',
         },
       });
       await createUnit({

@@ -10,7 +10,7 @@ WITH source_rate AS (
  WHERE u.project_id='layantara-project-328e43e8-942d-432a-a2a1-6ded9cbfb7de'
 ), per_unit AS (
  SELECT unit_id,project_id,
- CASE WHEN rate_mode='daily' THEN 'short_stay' ELSE 'long_stay' END offering_type,
+ CASE WHEN rate_mode='daily' THEN 'short_term_stay' ELSE 'long_term_rental' END offering_type,
  jsonb_agg(jsonb_build_object(
   'sourceRateId',source_rate_id,'seasonCode',season_code,'seasonName',season_name,
   'sourceSeasonId',source_season_id,'dateWindows',recurring_windows,
@@ -20,7 +20,7 @@ WITH source_rate AS (
   'agentCommissionNote',commission_note,'sourceDocument',source_document,
   'sourceSellable',source_sellable
  ) ORDER BY rate_mode,season_code,source_rate_id) rates
- FROM source_rate GROUP BY unit_id,project_id,CASE WHEN rate_mode='daily' THEN 'short_stay' ELSE 'long_stay' END
+ FROM source_rate GROUP BY unit_id,project_id,CASE WHEN rate_mode='daily' THEN 'short_term_stay' ELSE 'long_term_rental' END
 )
 INSERT INTO public.commercial_offering(id,created_at,updated_at,project_id,unit_id,offering_type,status,pricing_terms,rules_and_policies,ownership_tenure)
 SELECT 'layantara-offer-'||offering_type||'-'||unit_id,now(),now(),project_id,unit_id,offering_type,'draft',

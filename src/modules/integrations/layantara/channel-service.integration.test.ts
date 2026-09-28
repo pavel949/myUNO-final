@@ -66,6 +66,33 @@ describe('Layantara event ingestion: real transactional database', () => {
     })).rejects.toMatchObject({code:'DOUBLE_BOOK'});
   });
 
+  it('prevents all local new booking writes and category allocation while source owns inventory',async()=>{
+    const {unit,project,system}=await setup('source');
+    const guest=await db.identity.create({data:{firstName:'Test',lastName:'Guest'}});
+    const {createBooking,findAvailableUnitsForCategory}=await import('@/modules/booking');
+    expect(await findAvailableUnitsForCategory(db,project.id,unit.categoryKey!,
+      new Date('2026-11-20'),new Date('2026-11-22'))).toEqual([]);
+    await expect(createBooking(db,{
+      unitId:unit.id,projectId:project.id,guestIdentityId:guest.id,
+      bookingType:'guest_stay',channel:'direct',startDate:new Date('2026-11-20'),
+      endDate:new Date('2026-11-22'),adults:2,children:0,totalThb:100000,
+      instantBook:true,
+    })).rejects.toMatchObject({code:'DOUBLE_BOOK',blockReason:'source_authority'});
+    await expect(db.booking.create({data:{
+      unitId:unit.id,projectId:project.id,guestIdentityId:guest.id,bookingType:'guest_stay',
+      channel:'direct',status:'confirmed',startDate:new Date('2026-11-20'),
+      endDate:new Date('2026-11-22'),adults:2,children:0,totalThb:100000,
+    }})).rejects.toThrow(/source-owned/i);
+    await db.externalSystem.update({where:{id:system.id},
+      data:{config:{protectionEnabled:true,bookingAuthority:'myuno',cutoverVerified:false}}});
+    await expect(createBooking(db,{
+      unitId:unit.id,projectId:project.id,guestIdentityId:guest.id,
+      bookingType:'guest_stay',channel:'direct',startDate:new Date('2026-11-20'),
+      endDate:new Date('2026-11-22'),adults:2,children:0,totalThb:100000,
+      instantBook:true,
+    })).rejects.toMatchObject({code:'DOUBLE_BOOK'});
+  });
+
   it('releases matching source-only protection but not unrelated blocks',async()=>{
     const {unit}=await setup();
     await deliver(base);

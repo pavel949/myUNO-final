@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { shiftCalendarDay } from '@/modules/booking/calendar-projection';
@@ -48,6 +48,7 @@ export default function UnifiedStayCalendar(props: Props) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
   const [refreshRequestedAt, setRefreshRequestedAt] = useState<string|null>(null);
+  const lastCursor = useRef<string|null|undefined>(undefined);
   const q = (patch: Record<string,string|null>) => {
     const params = new URLSearchParams();
     for (const [key,value] of Object.entries({
@@ -66,10 +67,23 @@ export default function UnifiedStayCalendar(props: Props) {
       if (document.visibilityState === 'visible') router.refresh();
     }, 15000);
     const onFocus = () => router.refresh();
+    // The outbox cursor is a lightweight fallback to database notifications in
+    // serverless deployments. Only actual changes trigger an extra full refresh.
+    const watch = window.setInterval(async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const response = await fetch('/api/ops/calendar/changes',{cache:'no-store'});
+        if (!response.ok) return;
+        const data = await response.json() as {cursor:string|null};
+        if (lastCursor.current!==undefined && lastCursor.current!==data.cursor) router.refresh();
+        lastCursor.current=data.cursor;
+      } catch { /* the 15-second canonical refresh remains the fallback */ }
+    }, 4000);
     window.addEventListener('focus',onFocus);
     window.addEventListener('myuno:calendar-changed',onFocus);
     return () => {
       window.clearInterval(interval);
+      window.clearInterval(watch);
       window.removeEventListener('focus',onFocus);
       window.removeEventListener('myuno:calendar-changed',onFocus);
     };

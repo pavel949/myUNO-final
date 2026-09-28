@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { createTm30Filing, createConditionReport } from '@/modules/ops';
 import {
   CHECK_IN_CHECKLIST_ITEMS,
@@ -48,7 +49,8 @@ export async function POST(
       unitId: booking.unitId,
       ownerIdentityId: booking.unit.ownerIdentityId,
     });
-    if (!canRecordStayTransition(access)) {
+    if (!canRecordStayTransition(access) || (access.isStaff && !user.isAdmin && !access.isGuest &&
+      !(await hasProjectDepartmentAccess(user,booking.projectId,'front_desk')))) {
       return NextResponse.json(
         { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }

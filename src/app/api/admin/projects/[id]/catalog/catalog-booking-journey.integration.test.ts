@@ -209,6 +209,16 @@ describe('canonical onboarding → pricing → search → booking route journey'
       `http://localhost/api/search/units?projectId=${projectId}&adultsCount=2`
     ));
     expect((await unfiltered.json()).units).toHaveLength(0);
+    const hiddenUnit = await db.unit.findFirst({ where: { inventoryCategoryId: c.id } });
+    expect(hiddenUnit).not.toBeNull();
+    const hiddenQuote = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: hiddenUnit!.id,
+      startDate: '2026-11-10',
+      endDate: '2026-11-14',
+      guestCount: 2,
+    }));
+    expect(hiddenQuote.status).toBe(404);
+
 
     session.identityId = guestId;
     const attempted = await catalogPost(

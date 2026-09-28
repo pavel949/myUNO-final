@@ -127,7 +127,7 @@ export default async function StayOperationsPage({
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-text-ink">{item.unitName} · {item.guestName}</p>
             <p className="mt-4 text-small text-text-secondary">
-              {labels['staff.stay_queue.'+item.department]} · {item.actionKey.replaceAll('_',' ')}
+              {labels['staff.stay_queue.'+item.department]} · {item.actionKey.replace(/_/g,' ')}
               {' · '}{labels['staff.stay_queue.due']} {item.dueDate}
             </p>
           </div>

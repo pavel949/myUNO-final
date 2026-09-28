@@ -104,6 +104,7 @@ export async function applyChannelEvent(
          !Number.isSafeInteger(e.totalSatang)||e.currency!=='THB')
         return quarantine('invalid_booking_contract');
       if(unit.status!=='live')return quarantine('unit_not_sellable');
+      if(e.eventType==='booking.changed'&&!bookingId)return quarantine('booking_mapping_missing');
       const start=day(e.startDate),end=day(e.endDate);
       if(await hasBookingConflict(tx,unit.id,start,end,bookingId??undefined))
         return quarantine('inventory_conflict');
@@ -116,21 +117,52 @@ export async function applyChannelEvent(
         return quarantine('unreconciled_inventory_block');
       if(bookingId){
         const current=await tx.booking.findUnique({where:{id:bookingId},include:{
-          payments:{where:{status:'succeeded'},select:{id:true}},
+          payments:{where:{status:'succeeded'},select:{amountThb:true,refunds:{
+            where:{status:{in:['requested','processing','succeeded']}},select:{amountThb:true},
+          }}},
         }});
-        if(!current||current.unitId!==unit.id||current.projectId!==unit.projectId)
-          return quarantine('booking_identity_mismatch');
+        if(!current||current.unitId!==unit.id||current.projectId!==unit.projectId||
+           current.channel!==e.channel)return quarantine('booking_identity_mismatch');
         if(!['confirmed','requested','pending_payment'].includes(current.status))
           return quarantine('invalid_booking_transition');
-        if(current.payments.length && (current.totalThb!==e.totalSatang||
-           current.startDate.getTime()!==start.getTime()||current.endDate.getTime()!==end.getTime()))
-          return quarantine('paid_booking_requires_reconciliation');
-        await tx.booking.update({where:{id:bookingId},data:{
-          startDate:start,endDate:end,totalThb:e.totalSatang,
-          status:'confirmed',balanceDueThb:current.payments.length?current.balanceDueThb:e.totalSatang,
-          priceBreakdown:{source:'layantara',externalBookingId:e.externalBookingId,
-            currency:'THB',totalSatang:e.totalSatang,sourceVersion:e.eventVersion},
-        }});
+        const datesChanged=current.startDate.getTime()!==start.getTime()||
+          current.endDate.getTime()!==end.getTime();
+        const amountChanged=current.totalThb!==e.totalSatang;
+        const partyChanged=current.adults!==e.adults||current.children!==e.children;
+        if(e.eventType==='booking.confirmed' && (datesChanged||amountChanged||partyChanged))
+          return quarantine('existing_booking_requires_change_event');
+        if(datesChanged||amountChanged||partyChanged){
+          let balance=current.balanceDueThb, refund=current.refundAccruedThb;
+          const difference=e.totalSatang-current.totalThb;
+          if(difference>0){
+            const offset=Math.min(difference,refund);
+            refund-=offset;balance+=difference-offset;
+          }else if(difference<0){
+            let credit=-difference,offset=Math.min(credit,balance);
+            balance-=offset;credit-=offset;
+            const netPaid=current.payments.reduce((sum,p)=>
+              sum+p.amountThb-p.refunds.reduce((r,x)=>r+x.amountThb,0),0);
+            refund+=Math.min(credit,Math.max(0,netPaid-refund));
+          }
+          await tx.booking.update({where:{id:bookingId},data:{
+            startDate:start,endDate:end,totalThb:e.totalSatang,
+            adults:e.adults,children:e.children,status:'confirmed',
+            balanceDueThb:balance,refundAccruedThb:refund,
+          }});
+          // The original price breakdown is immutable. Record the changed
+          // external terms on a BookingChange, including their provenance.
+          await tx.bookingChange.create({data:{
+            bookingId,changeType:datesChanged?'dates':partyChanged?'party':'price',
+            oldValue:{startDate:current.startDate.toISOString(),endDate:current.endDate.toISOString(),
+              totalThb:current.totalThb,adults:current.adults,children:current.children},
+            newValue:{startDate:start.toISOString(),endDate:end.toISOString(),
+              totalThb:e.totalSatang,adults:e.adults,children:e.children,
+              source:'layantara',eventId:e.eventId,sourceVersion:e.eventVersion},
+            priceDeltaThb:difference,actorIdentityId:current.guestIdentityId,
+          }});
+        }else if(current.status!=='confirmed'){
+          await tx.booking.update({where:{id:bookingId},data:{status:'confirmed'}});
+        }
       }else{
         const guestMap=await mapping(tx,system.id,'guest',e.guestExternalId);
         let guestId=guestMap?.internal_id;
@@ -181,7 +213,10 @@ export async function applyChannelEvent(
       }});
       if(!booked||booked.unitId!==unit.id)return quarantine('booking_identity_mismatch');
       const previous=await mapping(tx,system.id,'payment',e.externalPaymentId);
-      if(!previous){
+      if(previous){
+        const original=await tx.payment.findUnique({where:{id:previous.internal_id},select:{bookingId:true}});
+        if(original?.bookingId!==bookingId)return quarantine('payment_identity_mismatch');
+      }else{
         const payments=await tx.payment.findMany({where:{bookingId,status:'succeeded'},
           select:{amountThb:true}});
         const received=payments.reduce((sum,x)=>sum+x.amountThb,0);

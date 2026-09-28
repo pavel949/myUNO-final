@@ -178,10 +178,10 @@ export default async function LandingPage() {
       <section className="bg-brand-deep py-56 text-surface-ivory md:py-80" aria-labelledby="guided-heading">
         <div className="mx-auto grid max-w-7xl gap-32 px-20 md:grid-cols-2 md:items-center md:px-32">
           <div><p className="text-kicker tracking-[0.18em] text-brand-sun-soft">{labels['home.guided.kicker']}</p><h2 id="guided-heading" className="mt-8 font-display text-display-xl font-semibold">{labels['home.guided.title']}</h2><p className="mt-16 max-w-xl text-body text-surface-ivory/75">{labels['home.guided.body']}</p><Link href="/guests" className="mt-24 inline-flex rounded-lg bg-surface-paper px-24 py-14 font-semibold text-brand-deep hover:opacity-90">{labels['home.guided.cta']} →</Link></div>
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-24 backdrop-blur-sm"><p className="text-small text-brand-sun-soft">{labels['home.guided.prompt']}</p><div className="mt-20 space-y-12">
-            <Link href="/search" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.stay']} ↗</Link>
-            <Link href="/projects" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.projects']} ↗</Link>
-            <Link href="/owners" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.owner']} ↗</Link>
+          <div className="rounded-2xl border border-white/20 bg-surface-paper/10 p-24 backdrop-blur-sm"><p className="text-small text-brand-sun-soft">{labels['home.guided.prompt']}</p><div className="mt-20 space-y-12">
+            <Link href="/search" className="block rounded-xl bg-surface-paper/10 p-16 hover:bg-surface-paper/20">{labels['home.guided.stay']} ↗</Link>
+            <Link href="/projects" className="block rounded-xl bg-surface-paper/10 p-16 hover:bg-surface-paper/20">{labels['home.guided.projects']} ↗</Link>
+            <Link href="/owners" className="block rounded-xl bg-surface-paper/10 p-16 hover:bg-surface-paper/20">{labels['home.guided.owner']} ↗</Link>
           </div></div>
         </div>
       </section>

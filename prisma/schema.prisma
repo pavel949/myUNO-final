@@ -753,6 +753,8 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  teamPermissions ProjectStaffPermission[]
+  unitAccessUpdates UnitAccessInstruction[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -925,6 +927,7 @@ model Area {
 }
 
 model Project {
+  teamPermissions ProjectStaffPermission[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1011,6 +1014,7 @@ model Project {
 }
 
 model Unit {
+  accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -3398,10 +3402,12 @@ model ProjectStaffPermission {
   identityId   String   @map("identity_id")
   departments  String[] @default([])
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  project Project @relation(fields:[projectId], references:[id], onDelete:Cascade)
+  identity Identity @relation(fields:[identityId], references:[id], onDelete:Cascade)
 
   @@id([projectId, identityId])
-  @@index([identityId])
+  @@index([identityId], map:"project_staff_permission_identity_idx")
   @@map("project_staff_permission")
 }
 
@@ -3411,6 +3417,8 @@ model UnitAccessInstruction {
   unitId       String   @id @map("unit_id")
   ciphertext   String
   updatedById  String   @map("updated_by_identity_id")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade)
+  updatedBy Identity @relation(fields:[updatedById], references:[id])
   @@map("unit_access_instruction")
 }

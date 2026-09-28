@@ -9,7 +9,8 @@ export const dynamic='force-dynamic';
 /** Dedicated server-to-server channel ingress. No browser, query token, cookie or
  * static public API key can grant write authority. Disabled without cutover flags. */
 export async function POST(request:NextRequest) {
-  if(process.env.UNIFIED_BOOKING_INTAKE_ENABLED!=='true') {
+  if(process.env.UNIFIED_BOOKING_INTAKE_ENABLED!=='true' &&
+     process.env.LAYANTARA_PROTECTION_INTAKE_ENABLED!=='true') {
     return NextResponse.json({error:'channel_intake_disabled'},{status:503,
       headers:{'Cache-Control':'no-store'}});
   }
@@ -29,6 +30,12 @@ export async function POST(request:NextRequest) {
   let event;
   try { event=parseChannelEvent(JSON.parse(raw) as unknown); }
   catch {return NextResponse.json({error:'invalid_channel_event'},{status:400});}
+  const protection=event.eventType==='occupancy.protect'||event.eventType==='occupancy.release';
+  if((protection && process.env.LAYANTARA_PROTECTION_INTAKE_ENABLED!=='true') ||
+     (!protection && process.env.UNIFIED_BOOKING_INTAKE_ENABLED!=='true')) {
+    return NextResponse.json({error:'channel_action_disabled'},{status:503,
+      headers:{'Cache-Control':'no-store'}});
+  }
   const environment=process.env.UNIFIED_CHANNEL_ENVIRONMENT;
   if(environment!=='staging'&&environment!=='production') {
     return NextResponse.json({error:'environment_not_configured'},{status:503});

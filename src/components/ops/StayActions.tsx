@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function StayActions({
-  id,status,balanceSatang,canRecordMoney,labels,
+  id,status,balanceSatang,canRecordMoney,canManageReservations,canManageFrontDesk,labels,
 }:{
-  id:string;status:string;balanceSatang:number;canRecordMoney:boolean;
+  id:string;status:string;balanceSatang:number;canRecordMoney:boolean;canManageReservations:boolean;canManageFrontDesk:boolean;
   labels:Record<string,string>;
 }){
   const router=useRouter();
@@ -31,10 +31,10 @@ export default function StayActions({
       setMessage(error instanceof Error?error.message:labels['staff.stay_360.error']);
     }finally{setBusy(false);}
   };
-  const canApprove=status==='requested';
+  const canApprove=status==='requested'&&canManageReservations;
   const canCash=status==='pending_payment'&&canRecordMoney;
-  const canCheckIn=status==='confirmed';
-  const canCheckOut=status==='checked_in';
+  const canCheckIn=status==='confirmed'&&canManageFrontDesk;
+  const canCheckOut=status==='checked_in'&&canManageFrontDesk;
   return <section className="rounded-lg border border-border-line bg-surface-paper p-20" aria-label={labels['staff.stay_360.actions']}>
     <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.actions']}</h2>
     <p className="my-12 text-small text-text-secondary">{labels['staff.stay_360.warning']}</p>

@@ -229,7 +229,7 @@ export default function CheckoutClient({
               {labels['payments.checkout.back_to_trip']}
             </Link>
           </div>
-        )
+        )}
       </div>
     </div>
   );

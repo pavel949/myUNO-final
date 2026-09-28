@@ -3391,8 +3391,8 @@ model UnifiedDomainEvent {
 }
 
 
-/** Explicit per-property department scopes for myUNO staff.
- * The active project-scoped RoleAssignment is still mandatory for access. */
+/// Explicit per-property department scopes for myUNO staff.
+/// An active project-scoped RoleAssignment is mandatory.
 model ProjectStaffPermission {
   projectId    String   @map("project_id")
   identityId   String   @map("identity_id")

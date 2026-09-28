@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic';
 const PROJECT_ID = 'layantara-project-328e43e8-942d-432a-a2a1-6ded9cbfb7de';
 
 type SourceAudit = { source_table:string; source_count:number; copied_count:number; verified:boolean };
-type CountRow = { n:bigint };
 type SourceState = { state:string; occupancy_kind:string; n:bigint };
 type Verification = { specification:string; n:bigint };
 

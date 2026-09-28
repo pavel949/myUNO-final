@@ -32,6 +32,8 @@ interface CreateProjectInput {
   totalBuildings?: number;
   floors?: number;
   facilities?: string[];
+  landAreaSqm?: number | null;
+  commonAreaSqm?: number | null;
 }
 
 interface UpdateProjectInput {
@@ -63,6 +65,8 @@ interface UpdateProjectInput {
   totalBuildings?: number | null;
   floors?: number | null;
   facilities?: string[];
+  landAreaSqm?: number | null;
+  commonAreaSqm?: number | null;
 }
 
 function assertValidLocation(latitude: number, longitude: number, address: string): void {
@@ -107,6 +111,8 @@ export async function createProject(input: CreateProjectInput) {
     totalBuildings,
     floors,
     facilities = [],
+    landAreaSqm,
+    commonAreaSqm,
   } = input;
 
   assertValidLocation(latitude, longitude, address);
@@ -150,6 +156,8 @@ export async function createProject(input: CreateProjectInput) {
       totalBuildings: totalBuildings ?? null,
       floors: floors ?? null,
       facilities,
+      landAreaSqm: landAreaSqm ?? null,
+      commonAreaSqm: commonAreaSqm ?? null,
     },
   });
 
@@ -231,6 +239,8 @@ export async function updateProject(input: UpdateProjectInput) {
     totalBuildings,
     floors,
     facilities,
+    landAreaSqm,
+    commonAreaSqm,
   } = input;
 
   const project = await prisma.project.findUnique({
@@ -290,6 +300,8 @@ export async function updateProject(input: UpdateProjectInput) {
       ...(totalBuildings !== undefined && { totalBuildings }),
       ...(floors !== undefined && { floors }),
       ...(facilities !== undefined && { facilities }),
+      ...(landAreaSqm !== undefined && { landAreaSqm }),
+      ...(commonAreaSqm !== undefined && { commonAreaSqm }),
     } as any,
   });
 

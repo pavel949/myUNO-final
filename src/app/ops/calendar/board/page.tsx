@@ -42,8 +42,8 @@ export default async function UnifiedStayCalendarPage({
   const units = await prisma.unit.findMany({
     where: unitWhere,
     select: {
-      id: true, name: true, projectId: true, inventoryCategoryId: true,
-      project: { select: { name: true } },
+      id: true, name: true, projectId: true, inventoryCategoryId: true, status: true,
+      project: { select: { name: true, status: true } },
       inventoryCategory: { select: { name: true } },
     },
     orderBy: [{ project: { name: 'asc' } }, { inventoryCategory: { name: 'asc' } }, { name: 'asc' }],
@@ -109,6 +109,7 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.days_suffix': ' days',
       'staff.unified_calendar.project_home': 'Property / Home',
       'staff.unified_calendar.available': 'Available',
+      'staff.unified_calendar.not_sellable': 'Not on sale',
       'staff.unified_calendar.booked': 'Booked',
       'staff.unified_calendar.holds': 'Active holds',
       'staff.unified_calendar.arrivals': 'Arrivals',
@@ -158,7 +159,7 @@ export default async function UnifiedStayCalendarPage({
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({
       id: unit.id, name: unit.name, projectId: unit.projectId,
-      projectName: unit.project.name, categoryId: unit.inventoryCategoryId,
+      projectName: unit.project.name, sellable: unit.status === 'live' && unit.project.status === 'live', categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
     }))}
     allUnits={categoryUnits.map((unit) => ({ id: unit.id, name: unit.name }))}

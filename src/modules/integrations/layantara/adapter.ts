@@ -13,6 +13,7 @@ export interface LegacyOccupancy {
   check_out: string;
   currency: string | null;
   booking_total_amount: number | string | null;
+  expires_at?: string | null;
 }
 export type ReconciliationDecision =
   | { action: 'quarantine'; id: string; reason: string }
@@ -36,6 +37,15 @@ export function classifyLegacyOccupancy(
     imported_reservation: 'ota_import', owner_stay: 'owner_hold', provisional_hold: 'other',
   };
   const blockReason = reasons[source.occupancy_kind];
+  // A hold must have a valid, live expiry before it can reduce available inventory.
+  if (source.occupancy_kind === 'provisional_hold') {
+    if (!source.expires_at || !Number.isFinite(Date.parse(source.expires_at))) {
+      return { action: 'quarantine', id: source.id, reason: 'hold_expiry_unverified' };
+    }
+    if (Date.parse(source.expires_at) <= Date.now()) {
+      return { action: 'archive', id: source.id, reason: 'expired_source_hold' };
+    }
+  }
   // A canonical active reservation is not converted to a block: reconcile its
   // guest/booking identity first, then import via a dedicated booking transition.
   if (!blockReason) return { action: 'quarantine', id: source.id, reason: 'requires_booking_identity_reconciliation' };
@@ -50,13 +60,24 @@ export function auditLegacyOccupancies(
   sources: LegacyOccupancy[], mapping: ReadonlyMap<string, string>,
 ) {
   const decisions = sources.map((row) => classifyLegacyOccupancy(row, mapping));
-  const unique = new Set<string>();
   const conflicts = new Set<string>();
   const protectedRows = decisions.filter((row): row is Extract<ReconciliationDecision, {action:'protect'}> => row.action === 'protect');
+  const byUnit = new Map<string, typeof protectedRows>();
   for (const row of protectedRows) {
-    const key = row.unitId + ':' + row.startDate + ':' + row.endDate;
-    if (unique.has(key)) conflicts.add(key);
-    unique.add(key);
+    const list = byUnit.get(row.unitId) ?? [];
+    list.push(row);
+    byUnit.set(row.unitId, list);
+  }
+  for (const [unitId, list] of byUnit) {
+    list.sort((a,b) => a.startDate.localeCompare(b.startDate) || a.endDate.localeCompare(b.endDate));
+    for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++) {
+      if (list[j].startDate >= list[i].endDate) break;
+      if (list[i].startDate < list[j].endDate) {
+        const a=list[i], b=list[j];
+        if (a.startDate===b.startDate && a.endDate===b.endDate) conflicts.add(unitId+':'+a.startDate+':'+a.endDate);
+        else conflicts.add(unitId+':'+a.id+'<>'+b.id);
+      }
+    }
   }
   return {
     decisions, conflicts: [...conflicts],

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { recordCashPayment } from '@/modules/finance';
+import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canOperateBookingAsStaff, resolveBookingAccess } from '@/app/libs/bookingAccess';
@@ -72,7 +73,8 @@ export async function POST(
       projectId: booking.projectId,
       unitId: booking.unitId,
     });
-    if (!canOperateBookingAsStaff(access)) {
+    if (!canOperateBookingAsStaff(access) || (access.isStaff && !user.isAdmin &&
+      !(await hasProjectDepartmentAccess(user,booking.projectId,'finance')))) {
       throw createPublicError('Access denied.', 403);
     }
 

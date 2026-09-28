@@ -101,19 +101,19 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           canRecordMoney={canSeeFinance}
           labels={labels}/>
       </div>
-      <section className="rounded-lg border border-border-line bg-surface-paper p-20">
+      {canSeeFinance && <section className="rounded-lg border border-border-line bg-surface-paper p-20">
         <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.payment_history']}</h2>
         {booking.payments.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_payments']}</p>:
           <ul className="mt-12 space-y-8">{booking.payments.map(p=><li key={p.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
             <span>{p.method} · {p.status} {p.receiptRef??''}</span><span>{amount(p.amountThb)}</span>
           </li>)}</ul>}
-      </section>
+      </section>}
       <section className="rounded-lg border border-border-line bg-surface-paper p-20">
         <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.change_history']}</h2>
         {booking.changes.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_changes']}</p>:
           <ul className="mt-12 space-y-8">{booking.changes.map(c=><li key={c.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
             <span>{c.createdAt.toISOString().slice(0,16)} · {c.changeType}</span>
-            <span>{amount(c.priceDeltaThb)}</span>
+            {canSeeFinance && <span>{amount(c.priceDeltaThb)}</span>}
           </li>)}</ul>}
       </section>
     </div>

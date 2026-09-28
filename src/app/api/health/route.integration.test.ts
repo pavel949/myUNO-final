@@ -5,7 +5,7 @@ import { productionConfigurationReady } from '@/lib/productionReadiness';
 
 describe('Integration: health endpoint', () => {
   it('checks the database without requiring optional deployment configuration', async () => {
-    const response = await GET();
+    const response = await GET(new NextRequest('https://example.vercel.app/api/health'));
     const data = await response.json();
     expect(data.status).toBe('ok');
     expect(response.headers.get('cache-control')).toContain('no-store');

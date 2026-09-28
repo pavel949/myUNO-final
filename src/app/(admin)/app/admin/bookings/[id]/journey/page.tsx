@@ -93,7 +93,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
         <h2 className="font-display text-title font-semibold text-text-ink mb-16">One booking · one lifecycle</h2>
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
           {stages.map((stage, i) => {
-            const reached = stage.statuses.includes(booking.status);
+            const reached = stage.label === 'Payment confirmed' ? received > 0 : stage.statuses.includes(booking.status);
             return <li key={stage.label} className="rounded-lg border border-border-line p-16">
               <span className="text-kicker text-brand-andaman">{String(i + 1).padStart(2, '0')}</span>
               <p className="font-semibold text-text-ink mt-4">{stage.label}</p>

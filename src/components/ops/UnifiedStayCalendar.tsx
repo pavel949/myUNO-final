@@ -123,6 +123,9 @@ export default function UnifiedStayCalendar(props: Props) {
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-12 py-6 text-small font-semibold text-emerald-900">
             {props.labels['staff.unified_calendar.source']}
           </span>
+          <Link href="/ops/stays" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+            {props.labels['staff.unified_calendar.work_queue']}
+          </Link>
           <button type="button" onClick={refresh} className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:bg-surface-ivory">
             ↻ {props.labels['staff.unified_calendar.refresh']}
           </button>

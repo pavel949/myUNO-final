@@ -121,7 +121,6 @@ export default function BookingsAdminClient({
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
       await fetchBookings(0);
-      await fetchBookings(0);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);

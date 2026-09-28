@@ -15,7 +15,7 @@ import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 export const dynamic = 'force-dynamic';
 
 interface OpsCalendarIndexPageProps {
-  searchParams?: { projectId?: string; categoryId?: string };
+  searchParams?: { projectId?: string; categoryId?: string; date?: string };
 }
 
 /**
@@ -75,6 +75,43 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     ? units.filter((unit) => unit.inventoryCategoryId === selectedCategoryId)
     : units;
 
+  // A read-only seven-night resort grid. Booking and BlockedDate remain the
+  // only inventory truth; this view never stores or mutates availability.
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Bangkok' }).format(new Date());
+  const requestedDate = typeof searchParams?.date === 'string' ? searchParams.date : '';
+  const rangeStartDay = /^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate) &&
+    !Number.isNaN(Date.parse(requestedDate)) &&
+    new Date(requestedDate).toISOString().slice(0, 10) === requestedDate
+    ? requestedDate : today;
+  const rangeStart = new Date(`${rangeStartDay}T00:00:00.000Z`);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const days = Array.from({ length: 7 }, (_, i) => new Date(rangeStart.getTime() + i * dayMs));
+  const rangeEnd = new Date(rangeStart.getTime() + 7 * dayMs);
+  const scopedUnitIds = visibleUnits.map(unit => unit.id);
+  const [calendarBookings, calendarBlocks] = scopedUnitIds.length ? await Promise.all([
+    prisma.booking.findMany({
+      where: {
+        unitId: { in: scopedUnitIds }, startDate: { lt: rangeEnd }, endDate: { gt: rangeStart },
+        OR: [
+          { status: { in: ['confirmed', 'checked_in', 'checked_out', 'completed'] } },
+          { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
+        ],
+      },
+      select: { id: true, unitId: true, startDate: true, endDate: true, status: true },
+    }),
+    prisma.blockedDate.findMany({
+      where: { unitId: { in: scopedUnitIds }, startDate: { lt: rangeEnd }, endDate: { gt: rangeStart } },
+      select: { id: true, unitId: true, startDate: true, endDate: true, reason: true },
+    }),
+  ]) : [[], []];
+  const dateHref = (offsetDays: number) => {
+    const query = new URLSearchParams();
+    if (validActiveProjectId) query.set('projectId', validActiveProjectId);
+    if (selectedCategoryId) query.set('categoryId', selectedCategoryId);
+    query.set('date', new Date(rangeStart.getTime() + offsetDays * dayMs).toISOString().slice(0, 10));
+    return `/ops/calendar?${query.toString()}`;
+  };
+
   const labels = await getLabels({
     'staff.ops.calendar_index.title': 'Stay calendar',
     'staff.ops.calendar_index.kicker': 'Stay · Availability',
@@ -87,6 +124,13 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     'staff.ops.calendar_index.categories': 'Categories',
     'staff.ops.calendar_index.units': 'Homes',
     'staff.ops.calendar_index.uncategorized': 'Uncategorized',
+    'staff.ops.calendar_index.previous_week': 'Previous week',
+    'staff.ops.calendar_index.next_week': 'Next week',
+    'staff.ops.calendar_index.available': 'Available',
+    'staff.ops.calendar_index.booked': 'Booked',
+    'staff.ops.calendar_index.held': 'Held',
+    'staff.ops.calendar_index.blocked': 'Blocked',
+    'staff.ops.calendar_index.grid_title': 'Seven-day inventory grid',
     'staff.ops.context.switcher': 'Project context',
     'staff.ops.context.all_projects': 'All projects',
     'staff.ops.context.active': 'Showing',
@@ -96,6 +140,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     const query = new URLSearchParams();
     if (validActiveProjectId) query.set('projectId', validActiveProjectId);
     if (categoryId) query.set('categoryId', categoryId);
+    query.set('date', rangeStartDay);
     const suffix = query.toString();
     return suffix ? `/ops/calendar?${suffix}` : '/ops/calendar';
   };
@@ -128,6 +173,44 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
             </Link>
           ))}
         </nav>
+
+        <section className="mt-24 bg-surface-paper border border-border-line rounded-lg p-16 md:p-20" aria-label={labels['staff.ops.calendar_index.grid_title']}>
+          <div className="flex flex-wrap items-center justify-between gap-12 mb-16">
+            <h2 className="font-display text-heading-3 font-semibold text-text-ink">{labels['staff.ops.calendar_index.grid_title']}</h2>
+            <nav className="flex gap-12 text-small font-semibold" aria-label="Calendar date range">
+              <Link href={dateHref(-7)} className="text-brand-andaman underline">{labels['staff.ops.calendar_index.previous_week']}</Link>
+              <Link href={dateHref(7)} className="text-brand-andaman underline">{labels['staff.ops.calendar_index.next_week']}</Link>
+            </nav>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-small">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-10 bg-surface-paper text-left p-8 border-b border-border-line">{labels['staff.ops.calendar_index.units']}</th>
+                  {days.map(day => <th key={day.toISOString()} className="p-8 border-b border-border-line text-center tabular-nums">{day.toISOString().slice(5, 10)}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleUnits.map(unit => (
+                  <tr key={unit.id}>
+                    <th className="sticky left-0 bg-surface-paper text-left p-8 border-b border-border-line font-medium">
+                      <Link href={opsHref(`/ops/calendar/${unit.id}`, validActiveProjectId ?? unit.project.id)} className="text-brand-andaman underline">{unit.name}</Link>
+                    </th>
+                    {days.map(day => {
+                      const booked = calendarBookings.find(b => b.unitId === unit.id && b.startDate <= day && b.endDate > day);
+                      const blocked = calendarBlocks.find(b => b.unitId === unit.id && b.startDate <= day && b.endDate > day);
+                      const state = blocked ? labels['staff.ops.calendar_index.blocked'] : booked?.status === 'pending_payment' ? labels['staff.ops.calendar_index.held'] : booked ? labels['staff.ops.calendar_index.booked'] : labels['staff.ops.calendar_index.available'];
+                      return <td key={day.toISOString()} className="border-b border-border-line p-4 text-center">
+                        <span className={`block rounded-sm px-4 py-8 text-micro ${blocked ? 'bg-state-error-soft text-state-error' : booked ? 'bg-state-warning-soft text-state-warning' : 'bg-state-success-soft text-state-success'}`} title={blocked ? String(blocked.reason) : booked ? booked.status : state}>{state}</span>
+                      </td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {visibleUnits.length === 0 && <p className="p-12 text-text-secondary">{labels['staff.ops.calendar_index.empty']}</p>}
+          </div>
+        </section>
 
         <div className="mt-24 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-20">
           <aside className="bg-surface-paper border border-border-line rounded-lg p-20 h-fit">

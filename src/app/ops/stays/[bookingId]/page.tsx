@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import StayActions from '@/components/ops/StayActions';
@@ -23,7 +23,10 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
         orderBy:{createdAt:'desc'},take:10},
     },
   });
-  if(!booking||!hasProjectStaffAccess(user,booking.projectId))notFound();
+  if(!booking)notFound();
+  const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
+  if(!access.some(Boolean))notFound();
+  const canSeeFinance=access[4];
   const labels=await getLabels({
     'staff.stay_360.title':'Stay 360',
     'staff.stay_360.back':'Stay operations',
@@ -68,7 +71,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
         </p>
       </header>
-      <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
+      {canSeeFinance && <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
         {[
           [labels['staff.stay_360.total'],amount(booking.totalThb)],
           [labels['staff.stay_360.collected'],amount(paid)],
@@ -78,7 +81,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-8 font-display text-heading-3 font-semibold text-text-ink">{value}</p>
         </div>)}
-      </div>
+      </div>}
       <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
         <section className="rounded-lg border border-border-line bg-surface-paper p-20">
           <dl className="grid grid-cols-2 gap-12">
@@ -95,7 +98,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           </p>}
         </section>
         <StayActions id={booking.id} status={booking.status} balanceSatang={booking.balanceDueThb}
-          canRecordMoney={user.isAdmin||user.roles.some(r=>r.role==='staff_ops')}
+          canRecordMoney={canSeeFinance}
           labels={labels}/>
       </div>
       <section className="rounded-lg border border-border-line bg-surface-paper p-20">

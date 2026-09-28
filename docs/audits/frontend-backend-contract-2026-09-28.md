@@ -30,6 +30,9 @@ Scope: PR #137, process-centred admin and canonical property → stay → financ
 8. A positive-value booking with zero receipts and zero ledger entries could be shown as reconciled (0 = 0). This is now blocked.
 9. Cash, transfer and card confirmation validate state and avoid duplicate initial or balance charges.
 10. Owner statement rental receipts exclude deposit-purpose payments.
+11. Mock checkout was not consistently denied in production when the provider adapter was bypassed. Provider availability is now checked before creating payment rows; mock confirmations are denied in production and Opn sessions require Opn verification.
+12. Checkout display now returns the actual provider and exact baht decimals; the real-provider view hides mock pay/decline controls.
+13. Simulated declines validate payer, provider and pending status before a conditional state transition, preventing a completed payment from being overwritten as failed.
 
 ## Required gates before merge
 - Latest commit lint, migration replay/drift, build, and integration suite all pass.

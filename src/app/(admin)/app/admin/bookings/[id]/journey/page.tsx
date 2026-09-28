@@ -38,7 +38,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
       statementLines: {
         select: {
           id: true, category: true, amountTh: true,
-          statement: { select: { id: true, status: true, periodStart: true, periodEnd: true } },
+          statement: { select: { id: true, status: true, periodStart: true, periodEnd: true, payouts: { where: { payeeType: 'owner' }, select: { id: true, status: true, amountThb: true } } } },
         },
       },
       depositPreauth: { select: { status: true, amountThb: true } },
@@ -66,13 +66,16 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
   const stayClosed = booking.status === 'completed';
   const ownerRecorded = statements.length > 0;
   const ownerDistributed = statements.some(s => s.status === 'distributed');
+  const ownerPayoutRecorded = statements.some(s => s.payouts.length > 0);
+  const ownerPayoutReconciled = statements.some(s => s.payouts.some(p => p.status === 'reconciled'));
   const checks = [
     { name: 'Payment / ledger reconciliation', good: cashReconciled, description: cashReconciled ? 'Successful rental receipts match the rental ledger.' : 'Payment and ledger need reconciliation.' },
     { name: 'Outstanding guest balance', good: booking.balanceDueThb === 0, description: `฿${money(booking.balanceDueThb)} outstanding` },
     { name: 'Refund obligations', good: booking.refundAccruedThb === 0 && outstandingRefunds.length === 0, description: `฿${money(booking.refundAccruedThb)} liability · ${outstandingRefunds.length} in flight` },
     { name: 'Stay operationally closed', good: stayClosed, description: `Booking status: ${booking.status.replace(/_/g, ' ')}` },
     { name: 'Owner statement', good: ownerRecorded, description: ownerRecorded ? `${statements.length} statement(s) linked` : 'No statement line linked yet.' },
-    { name: 'Owner distribution', good: ownerDistributed, description: ownerDistributed ? 'A linked statement is distributed.' : 'Not distributed.' },
+    { name: 'Owner distribution', good: ownerDistributed && ownerPayoutRecorded, description: ownerPayoutRecorded ? 'Owner payout recorded against a linked statement.' : 'No owner payout recorded.' },
+    { name: 'Owner payout bank reconciliation', good: ownerPayoutReconciled, description: ownerPayoutReconciled ? 'Linked owner payout reconciled.' : 'Bank reconciliation pending.' },
   ];
   return (
     <main className="max-w-6xl space-y-24 pb-40">

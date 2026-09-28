@@ -97,8 +97,8 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
             {labels['staff.stay_360.guest_note']}: {booking.guestNote}
           </p>}
         </section>
-        <StayActions id={booking.id} status={booking.status} balanceSatang={booking.balanceDueThb}
-          canRecordMoney={canSeeFinance}
+        <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
+          canRecordMoney={canSeeFinance} canManageReservations={access[0]} canManageFrontDesk={access[1]}
           labels={labels}/>
       </div>
       {canSeeFinance && <section className="rounded-lg border border-border-line bg-surface-paper p-20">

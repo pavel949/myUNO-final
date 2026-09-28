@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { bahtToSatang } from '@/lib/money';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const guard = await requireAdmin();
@@ -22,6 +23,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!guard.ok) return guard.error;
   try {
     const body = await req.json();
+    if (body.action === 'commercial_offering') {
+      const type=String(body.offeringType||'');
+      const cadence=type==='short_stay'?'night':type==='long_stay'?'month':type==='sale'?'once':null;
+      if(!cadence) throw new Error('Offering must be short_stay, long_stay or sale');
+      const status=body.status||'draft';
+      if(!['draft','active','paused'].includes(status)) throw new Error('Invalid offering status');
+      const amount=Number(body.priceBaht);
+      if(!Number.isFinite(amount)||amount<=0)throw new Error('Enter a positive offer price in THB');
+      const unit=await prisma.unit.findUnique({where:{id:params.id},
+        select:{id:true,projectId:true,name:true,status:true,project:{select:{status:true}}}});
+      if(!unit)throw new Error('Home not found');
+      if(status==='active'&&(unit.status!=='live'||unit.project.status!=='live'))throw new Error('Complete the property and home readiness checks before publishing an offer');
+      const priceSatang=bahtToSatang(amount);
+      const minimum=Number(body.minimumStay||1);
+      if(type!=='sale'&&(!Number.isInteger(minimum)||minimum<1||minimum>3650))throw new Error('Minimum stay must be 1–3650');
+      const pricingTerms={currency:'THB',amountSatang:priceSatang,cadence,
+        ...(type!=='sale'?{minimumStay:minimum}:{}),
+        ...(body.depositBaht!==undefined&&body.depositBaht!==''?{depositSatang:bahtToSatang(Number(body.depositBaht))}:{}),
+        ...(type==='long_stay'?{utilitiesIncluded:body.utilitiesIncluded===true}:{}),
+        ...(type==='sale'&&body.tenure?{tenure:String(body.tenure)}:{})};
+      const existing=await prisma.commercialOffering.findFirst({where:{unitId:unit.id,offeringType:type},select:{id:true}});
+      const offering=existing?await prisma.commercialOffering.update({where:{id:existing.id},
+        data:{status,pricingTerms,rulesAndPolicies:{notes:String(body.notes||'')},ownershipTenure:type==='sale'?{tenure:String(body.tenure||'unspecified')}:{}}
+      }):await prisma.commercialOffering.create({data:{projectId:unit.projectId,unitId:unit.id,offeringType:type,status,
+        pricingTerms,rulesAndPolicies:{notes:String(body.notes||'')},ownershipTenure:type==='sale'?{tenure:String(body.tenure||'unspecified')}:{}}});
+      return NextResponse.json(offering,{status:existing?200:201});
+    }
     if (body.action === 'sleeping_space') {
       const space = await prisma.sleepingSpace.create({
         data: {

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getStaffProjectIds } from '@/app/libs/projectScope';
+import { getDepartmentProjectIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
@@ -14,7 +14,7 @@ export default async function StayOperationsPage({
 }:{searchParams?:{projectId?:string;department?:string}}){
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays');
-  const staffIds=getStaffProjectIds(user);
+  const staffIds=await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','guest_care','finance']);
   if(!user.isAdmin&&!staffIds.length)redirect('/');
   const projects=await prisma.project.findMany({
     where:user.isAdmin?{}:{id:{in:staffIds}},
@@ -22,9 +22,13 @@ export default async function StayOperationsPage({
   });
   const allowed=new Set(projects.map(p=>p.id));
   const projectId=searchParams?.projectId&&allowed.has(searchParams.projectId)?searchParams.projectId:'';
-  const allowedDepartments:StayWorkDepartment[]=user.isAdmin||
-    user.roles.some(r=>r.role==='staff_ops')
-    ?stayWorkDepartments:['front_desk','housekeeping','guest_care'];
+  const departmentGrants=user.isAdmin?[]:await prisma.projectStaffPermission.findMany({
+    where:{identityId:user.identityId,projectId:{in:projectId?[projectId]:staffIds}},
+    select:{projectId:true,departments:true},
+  });
+  const projectDepartments=new Map(departmentGrants.map(grant=>[grant.projectId,grant.departments]));
+  const allowedDepartments:StayWorkDepartment[]=user.isAdmin?stayWorkDepartments:
+    stayWorkDepartments.filter(dept=>departmentGrants.some(grant=>grant.departments.includes(dept)));
   const department=allowedDepartments.includes(searchParams?.department as StayWorkDepartment)
     ?searchParams?.department as StayWorkDepartment:null;
   const today=bangkokCalendarDay();
@@ -52,7 +56,7 @@ export default async function StayOperationsPage({
     endDate:b.endDate.toISOString().slice(0,10),totalSatang:b.totalThb,
     paidSatang:b.payments.reduce((sum,p)=>sum+p.amountThb,0),
     refundAccruedSatang:b.refundAccruedThb,
-  },today)).filter(item=>allowedDepartments.includes(item.department));
+  },today)).filter(item=>allowedDepartments.includes(item.department) && (user.isAdmin || projectDepartments.get(item.projectId)?.includes(item.department)));
   const queue=(department?work.filter(item=>item.department===department):work)
     .sort((a,b)=>(a.severity==='attention'?-1:1)-(b.severity==='attention'?-1:1)||
       a.dueDate.localeCompare(b.dueDate));

@@ -13,6 +13,7 @@ interface AdminBooking {
   startDate: string;
   endDate: string;
   totalThb: number;
+  balanceDueSatang: number;
   unitName: string | null;
   guestName: string;
   paid: boolean;
@@ -100,14 +101,6 @@ export default function BookingsAdminClient({
     );
   }
 
-  if (bookings.length === 0) {
-    return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
-        <p className="text-body text-text-secondary">{labels['admin.bookings.empty']}</p>
-      </div>
-    );
-  }
-
   const channels = [...new Set(bookings.map((b) => b.channel))].sort();
   const visible = channelFilter
     ? bookings.filter((b) => b.channel === channelFilter)
@@ -126,6 +119,8 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
+      await fetchBookings(0);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
@@ -256,7 +251,7 @@ export default function BookingsAdminClient({
             <p className="text-small text-text-secondary">
               {new Date(booking.startDate).toLocaleDateString()} —{' '}
               {new Date(booking.endDate).toLocaleDateString()} · ฿
-              {booking.totalThb.toLocaleString()}
+              {booking.totalThb.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               {booking.paid && (
                 <span className="text-state-success font-semibold">
                   {' '}
@@ -329,7 +324,7 @@ export default function BookingsAdminClient({
                   variant="secondary"
                   onClick={() =>
                     act(booking.id, 'record-transfer', {
-                      amountThb: Math.round(booking.totalThb * 100),
+                      amountThb: booking.balanceDueSatang,
                       bankReference: (bankRefs[booking.id] || '').trim(),
                     })
                   }

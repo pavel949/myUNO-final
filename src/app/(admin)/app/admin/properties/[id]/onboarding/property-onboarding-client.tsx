@@ -64,5 +64,45 @@ function UnitLinks({ units, label }: { units: Unit[]; label: string }) { return 
 function OwnerInvite({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); const invite = await submit('/api/admin/people/invite', { email: d.get('email'), firstName: d.get('firstName'), lastName: d.get('lastName'), preferredLocale: 'en' }); if (invite) await submit(`/api/admin/units/${d.get('unit')}/owner`, { ownerIdentityId: invite.identity.id }, 'PUT'); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="firstName" placeholder="First name" required/><input className={input} name="lastName" placeholder="Last name" required/><input className={input} name="email" type="email" placeholder="Owner email" required/><Button>Invite and assign owner</Button></form>; }
 function ChannelForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'channel_mapping', channel: d.get('channel'), externalListingId: d.get('listing'), syncState: d.get('sync') }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="channel" placeholder="Channel" required/><input className={input} name="listing" placeholder="Listing ID"/><select className={input} name="sync"><option value="ical_only">iCal only</option><option value="manual">Manual</option></select><Button>Save mapping</Button></form>; }
 function SleepingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'sleeping_space', spaceType: d.get('spaceType'), name: d.get('name'), beds: [{ bedType: d.get('bedType'), count: Number(d.get('count')) }] }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><select className={input} name="spaceType"><option value="bedroom">Bedroom</option><option value="living_room">Living room</option></select><input className={input} name="name" placeholder="Room name"/><select className={input} name="bedType"><option value="king">King bed</option><option value="queen">Queen bed</option><option value="single">Single bed</option><option value="sofa_bed">Sofa bed</option></select><input className={input} name="count" type="number" min="1" defaultValue="1"/><Button>Save sleeping space</Button></form>; }
-function GalleryUpload({ projectId, units }: { projectId: string; units: Unit[] }) { const router = useRouter(); const [target, setTarget] = useState('project'); const [uploading, setUploading] = useState(false); return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => { e.preventDefault(); const data = new FormData(e.currentTarget); setUploading(true); const uploaded = await fetch('/api/media/upload', { method: 'POST', body: data }); const asset = await uploaded.json(); if (uploaded.ok) await fetch(target === 'project' ? `/api/admin/projects/${projectId}/media` : `/api/admin/units/${target}/media`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mediaAssetId: asset.mediaAssetId, cover: true }) }); setUploading(false); router.refresh(); }}><select className={input} value={target} onChange={e => setTarget(e.target.value)}><option value="project">Project gallery</option>{units.map(u => <option key={u.id} value={u.id}>{u.name} gallery</option>)}</select><input className={input} name="file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" required/><Button disabled={uploading}>{uploading ? 'Uploading…' : 'Upload and set cover'}</Button></form>; }
+function GalleryUpload({ projectId, units }: { projectId: string; units: Unit[] }) {
+  const router = useRouter();
+  const [target, setTarget] = useState('project');
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return <div className="my-12">
+    {error && <p role="alert" className="text-state-error text-small mb-8">{error}</p>}
+    <form className="flex flex-wrap gap-8" onSubmit={async e => {
+      e.preventDefault();
+      setError(null);
+      setUploading(true);
+      try {
+        const data = new FormData(e.currentTarget);
+        const uploaded = await fetch('/api/media/upload', { method: 'POST', body: data });
+        const asset = await uploaded.json().catch(() => ({}));
+        if (!uploaded.ok || !asset.mediaAssetId) throw new Error(asset.error || 'Media upload failed.');
+        const attached = await fetch(target === 'project' ? `/api/admin/projects/${projectId}/media` : `/api/admin/units/${target}/media`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mediaAssetId: asset.mediaAssetId, cover: true }),
+        });
+        if (!attached.ok) {
+          const result = await attached.json().catch(() => ({}));
+          throw new Error(result.error || 'Media uploaded but could not be attached to the property.');
+        }
+        router.refresh();
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : 'Media upload failed.');
+      } finally {
+        setUploading(false);
+      }
+    }}>
+      <select className={input} value={target} onChange={e => setTarget(e.target.value)}>
+        <option value="project">Project gallery</option>
+        {units.map(u => <option key={u.id} value={u.id}>{u.name} gallery</option>)}
+      </select>
+      <input className={input} name="file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" required/>
+      <Button disabled={uploading}>{uploading ? 'Uploading…' : 'Upload and set cover'}</Button>
+    </form>
+  </div>;
+}
 function Readiness({ report }: { report: PropertyReadinessReport }) { return <div className="mb-16"><p className="mb-8"><strong>{report.blockers.length}</strong> blockers · <strong>{report.warnings.length}</strong> warnings</p><ul className="space-y-6">{[...report.blockers, ...report.warnings].map(item => <li key={`${item.key}-${item.unitId || ''}`} className={item.severity === 'blocker' ? 'text-state-error' : 'text-state-warning'}>{item.severity === 'blocker' ? 'Blocker' : 'Warning'}: {item.unitName ? `${item.unitName} — ` : ''}{item.message}</li>)}</ul></div>; }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import * as financeService from './finance.service';
 
@@ -8,7 +8,47 @@ describe('finance.service — integration tests', () => {
   });
 
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await resetDb();
+  });
+
+  describe('provider boundary', () => {
+    it('refuses to create a mock checkout in production before writing Payment', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+        totalThb: 8000, status: 'pending_payment',
+      });
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('PAYMENT_PROVIDER', 'mock');
+      await expect(financeService.createCheckout(db, {
+        purpose: 'stay', bookingId: booking.id, payerIdentityId: guest.id, amountThb: 8000,
+      })).rejects.toThrow(/mock payment provider must never run in production/i);
+      expect(await db.payment.count({ where: { bookingId: booking.id } })).toBe(0);
+    });
+
+    it('refuses production confirmation of an existing mock session', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+        totalThb: 8000, status: 'pending_payment',
+      });
+      const payment = await db.payment.create({
+        data: {
+          purpose: 'stay', bookingId: booking.id, payerIdentityId: guest.id,
+          method: 'card_provider', provider: 'mock', amountThb: 8000, status: 'pending',
+        },
+      });
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('PAYMENT_PROVIDER', 'mock');
+      await expect(financeService.verifyAndConfirm(db, payment.id)).rejects.toThrow(/forbidden in production/i);
+      expect((await db.payment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe('pending');
+      expect(await db.ledgerEntry.count({ where: { paymentId: payment.id } })).toBe(0);
+    });
   });
 
   describe('recordCashPayment', () => {

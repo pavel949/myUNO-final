@@ -762,12 +762,14 @@ export async function markPaymentFailed(
     throw new Error(`Cannot fail payment with status ${payment.status}`);
   }
 
-  const failed = await db.payment.update({
-    where: { id: paymentId },
-    data: {
-      status: 'failed',
-    },
+  const transitioned = await db.payment.updateMany({
+    where: { id: paymentId, status: 'pending' },
+    data: { status: 'failed' },
   });
+  if (transitioned.count !== 1) {
+    throw new Error('Payment is no longer pending');
+  }
+  const failed = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
 
   // Track analytics event for booking payment failures
   if (failed.bookingId) {

@@ -1,0 +1,17 @@
+/** Process-hub content keys; translations require editorial review. */
+export const PROCESS_HUB_KEYS = [
+  { key: 'admin.nav.processes', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Operations map", ru: "Карта процессов", status: 'needs_review' as const },
+  { key: 'admin.dashboard.process_title', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Work by process", ru: "Работа по процессам", status: 'needs_review' as const },
+  { key: 'admin.dashboard.process_hint', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Start with a task, then follow its connected workflow across myUNO.", ru: "Начните с задачи и переходите по связанным этапам myUNO.", status: 'needs_review' as const },
+  { key: 'admin.dashboard.process_action', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Open operations map →", ru: "Открыть карту процессов →", status: 'needs_review' as const },
+  { key: 'admin.bookings.journey', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Open booking journey & financial closure →", ru: "Открыть жизненный цикл и финансовое закрытие →", status: 'needs_review' as const },
+  { key: 'admin.processes.title', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Operations map", ru: "Карта процессов", status: 'needs_review' as const },
+  { key: 'admin.processes.kicker', namespace: 'admin', description: 'Process hub interface; translation review required', en: "myUNO · Operations", ru: "myUNO · Операции", status: 'needs_review' as const },
+  { key: 'admin.processes.add', namespace: 'admin', description: 'Process hub interface; translation review required', en: "+ Add property", ru: "+ Добавить объект", status: 'needs_review' as const },
+  { key: 'admin.processes.bookings', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Manage bookings", ru: "Управлять бронированиями", status: 'needs_review' as const },
+  { key: 'admin.processes.finance', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Financial overview", ru: "Финансовый обзор", status: 'needs_review' as const },
+  { key: 'admin.processes.model', namespace: 'admin', description: 'Process hub interface; translation review required', en: "One connected operating model", ru: "Единая операционная модель", status: 'needs_review' as const },
+  { key: 'admin.processes.model_hint', namespace: 'admin', description: 'Process hub interface; translation review required', en: "This map links existing workflows. It does not change booking, pricing or payment records.", ru: "Карта объединяет существующие процессы без изменения записей бронирований, тарифов и платежей.", status: 'needs_review' as const },
+  { key: 'admin.processes.attention', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Needs attention:", ru: "Требует внимания:", status: 'needs_review' as const },
+  { key: 'admin.processes.subtitle', namespace: 'admin', description: 'Process hub interface; translation review required', en: "Live workflow states from your operational records. Start with an exception or continue a process.", ru: "Актуальные состояния процессов из операционных данных. Начните с исключения или продолжите процесс.", status: 'needs_review' as const },
+];

@@ -11,7 +11,7 @@ type SourceAudit = { source_table:string; source_count:number; copied_count:numb
 type SourceState = { state:string; occupancy_kind:string; n:bigint };
 type Verification = { specification:string; n:bigint };
 
-export default async function LayantaraMigrationPage() {
+export default async function LayantaraOperationsPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/app/admin/layantara');
   if (!user.isAdmin) redirect('/');
@@ -23,26 +23,26 @@ export default async function LayantaraMigrationPage() {
       prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`,
       prisma.$queryRaw<SourceState[]>`SELECT payload->>'state' AS state, payload->>'occupancy_kind' AS occupancy_kind, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'operational_occupancies' GROUP BY 1,2 ORDER BY 1,2`,
       prisma.$queryRaw<Verification[]>`SELECT payload->>'specification_verification_status' AS specification, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'villa_master_crosswalk' GROUP BY 1 ORDER BY 1`,
-      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:'layantara_os'}}}),
+      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:'layantara'}}}),
       prisma.blockedDate.count({where:{unit:{projectId:PROJECT_ID},externalRef:{startsWith:'layantara:occupancy:'}}}),
       prisma.unit.count({where:{projectId:PROJECT_ID}}),
       prisma.inventoryCategory.count({where:{projectId:PROJECT_ID}}),
       prisma.booking.count({where:{projectId:PROJECT_ID}}),
       prisma.project.findUnique({where:{id:PROJECT_ID},select:{name:true,status:true}}),
       getLabels({
-        'admin.layantara.title':'Layantara · myUNO migration',
-        'admin.layantara.subtitle':'Source preserved. One canonical project, category and villa hierarchy; protected availability until reconciliation.',
+        'admin.layantara.title':'Layan Tara Villas · operations',
+        'admin.layantara.subtitle':'Portfolio overview · categories, villas, calendar and stay operations.',
         'admin.layantara.project':'Project',
         'admin.layantara.categories':'Categories',
         'admin.layantara.units':'Physical villas',
         'admin.layantara.mappings':'Verified identity mappings',
         'admin.layantara.protection':'Protective occupancy blocks',
         'admin.layantara.canonical':'Canonical bookings',
-        'admin.layantara.snapshots':'Copied source datasets',
-        'admin.layantara.verified':'Verified snapshots',
-        'admin.layantara.source_occupancy':'Source occupancy by state',
+        'admin.layantara.snapshots':'Source reconciliation',
+        'admin.layantara.verified':'Verified records',
+        'admin.layantara.source_occupancy':'Occupancy sources',
         'admin.layantara.specs':'Physical specification checks',
-        'admin.layantara.gate':'Publication gate',
+        'admin.layantara.gate':'Booking channel readiness',
         'admin.layantara.gate_text':'Keep project, categories and villas in draft until source deltas, booking/payment identities, rate plans, media and 31 pending specifications are reconciled. Protective blocks must remain in place until replaced atomically by confirmed bookings.',
         'admin.layantara.calendar':'Unified calendar',
         'admin.layantara.inventory':'Manage villas',
@@ -53,7 +53,7 @@ export default async function LayantaraMigrationPage() {
         'admin.layantara.count':'Records',
         'admin.layantara.passed':'Verified',
         'admin.layantara.failed':'Requires review',
-        'admin.layantara.draft':'Not available for new sales',
+        'admin.layantara.draft':'Sales paused · source calendar authoritative',
       }),
     ]);
   const approved = audit.filter(row => row.verified && row.source_count === row.copied_count).length;

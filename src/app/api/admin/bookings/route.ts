@@ -11,6 +11,7 @@ export interface AdminBooking {
   startDate: string;
   endDate: string;
   totalThb: number;
+  balanceDueSatang: number;
   unitName: string | null;
   guestName: string;
   paid: boolean;
@@ -78,7 +79,8 @@ export async function GET(req: NextRequest) {
       startDate: b.startDate.toISOString(),
       endDate: b.endDate.toISOString(),
       // Display boundary: totalThb is satang (THB x 100).
-      totalThb: Math.round(b.totalThb / 100),
+      totalThb: b.totalThb / 100,
+      balanceDueSatang: b.balanceDueThb > 0 ? b.balanceDueThb : b.totalThb,
       unitName: b.unit?.name || null,
       guestName: b.guestIdentity
         ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`

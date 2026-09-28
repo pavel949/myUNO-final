@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { createNotification } from '@/modules/comms';
 import { checkOutBooking } from '@/modules/booking';
 import { createConditionReport } from '@/modules/ops';
@@ -42,7 +43,8 @@ export async function POST(
       unitId: booking.unitId,
       ownerIdentityId: booking.unit?.ownerIdentityId,
     });
-    if (!canRecordStayTransition(access)) {
+    if (!canRecordStayTransition(access) || (access.isStaff && !user.isAdmin && !access.isGuest &&
+      !(await hasProjectDepartmentAccess(user,booking.projectId,'front_desk')))) {
       throw createPublicError('Access denied.', 403);
     }
 

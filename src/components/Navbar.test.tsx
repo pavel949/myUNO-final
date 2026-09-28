@@ -27,6 +27,7 @@ describe('Navbar', () => {
           register: 'Sign up',
           logout: 'Log out',
           myTrips: 'My trips',
+          saved: 'Saved',
           messages: 'Messages',
           tickets: 'My requests',
           orders: 'My orders',

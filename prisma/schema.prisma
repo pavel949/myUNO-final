@@ -3028,7 +3028,7 @@ model CommercialOffering {
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
 
-  @@unique([unitId, offeringType])
+  @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
   @@index([projectId, offeringType])
   @@map("commercial_offering")
 }

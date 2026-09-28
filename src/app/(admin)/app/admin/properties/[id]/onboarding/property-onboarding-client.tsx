@@ -8,10 +8,10 @@ import { Button } from '@/components/Button';
 import type { PropertyReadinessReport } from '@/modules/projects';
 
 type Category = { id: string; name: string; categoryKey: string };
-type Unit = { id: string; name: string; ownerIdentityId: string | null; commercialOfferings: Array<{ id:string;offeringType:string;status:string;pricingTerms:unknown;channelMappings: Array<{ channel:string;syncState:string }> }>; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ channelMappings: Array<{ channel: string; syncState: string }> }> };
+type Unit = { id: string; name: string; ownerIdentityId: string | null; commercialOfferings: Array<{ id:string;offeringType:string;status:string;pricingTerms:unknown;channelMappings: Array<{ channel:string;syncState:string }> }>; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }> };
 type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; units: Unit[] };
 
-const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance', 'Stay offering', 'Pricing', 'Content & photos', 'Availability & channels', 'Team', 'Review & publish'];
+const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Physical facts & compliance', 'Offers', 'Pricing', 'Content & photos', 'Availability & channels', 'Team', 'Review & publish'];
 const input = 'h-40 rounded-sm border border-border-line bg-surface-paper px-12';
 function unitPropertyDetailsPath(unitId: string) { return `/api/admin/units/${unitId}/property-details`; }
 

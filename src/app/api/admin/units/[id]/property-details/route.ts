@@ -23,6 +23,34 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!guard.ok) return guard.error;
   try {
     const body = await req.json();
+    if (body.action === 'physical_facts') {
+      const current=await prisma.unit.findUnique({where:{id:params.id},select:{id:true}});
+      if(!current)throw new Error('Home not found');
+      const areaKeys=['usableAreaSqm','grossAreaSqm','outdoorAreaSqm','plotAreaSqm','balconyAreaSqm'] as const;
+      const areas:Record<string,number|null>={};
+      for(const key of areaKeys){
+        const value=body[key];
+        if(value===undefined)continue;
+        if(value===null||value===''){areas[key]=null;continue;}
+        const parsed=Number(value);
+        if(!Number.isFinite(parsed)||parsed<0||parsed>1000000)throw new Error('Invalid '+key);
+        areas[key]=parsed;
+      }
+      const accepted=['fully_furnished','part_furnished','unfurnished'];
+      if(body.furnishingStatus && !accepted.includes(body.furnishingStatus))throw new Error('Invalid furnishing');
+      if(body.privacyType && !['entire_place','private_room'].includes(body.privacyType))throw new Error('Invalid privacy');
+      const cleanList=(items:unknown)=>Array.isArray(items)?items.filter((x):x is string=>typeof x==='string').map(x=>x.trim().slice(0,80)).filter(Boolean).slice(0,40):[];
+      const unit=await prisma.unit.update({where:{id:params.id},data:{
+        ...areas,
+        ...(body.floor!==undefined?{floor:String(body.floor||'').trim().slice(0,60)||null}:{}),
+        ...(body.furnishingStatus!==undefined?{furnishingStatus:body.furnishingStatus||null}:{}),
+        ...(body.privacyType!==undefined?{privacyType:body.privacyType||null}:{}),
+        ...(body.accommodationType!==undefined?{accommodationType:String(body.accommodationType||'').trim().slice(0,80)||null}:{}),
+        ...(body.unitFeatures!==undefined?{unitFeatures:cleanList(body.unitFeatures)}:{}),
+        ...(body.views!==undefined?{views:cleanList(body.views)}:{}),
+      }});
+      return NextResponse.json(unit);
+    }
     if (body.action === 'commercial_offering') {
       const type=String(body.offeringType||'');
       const cadence=type==='short_stay'?'night':type==='long_stay'?'month':type==='sale'?'once':null;

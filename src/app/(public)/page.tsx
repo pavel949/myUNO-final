@@ -78,6 +78,16 @@ export default async function LandingPage() {
       'home.discovery.properties': 'Explore projects',
       'home.discovery.hint': 'Discover our projects, then explore available homes and their offers.',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
+      'home.pathways.kicker': 'Discover your UNO',
+      'home.destinations.kicker': 'The island',
+      'home.destinations.note': 'Explore the collection to see current project locations and availability.',
+      'home.guided.kicker': 'Guided discovery',
+      'home.guided.prompt': 'Start with a simple question',
+      'home.guided.stay': 'Find a home for my trip',
+      'home.guided.projects': 'Explore residences in Phuket',
+      'home.guided.owner': 'I own a property',
+      'home.ecosystem.kicker': 'One connected ecosystem',
+      'home.common.explore': 'Explore',
       'home.pathways.title': 'One island. Many ways to live it.',
       'home.destinations.title': 'Discover Phuket.',
       'home.destinations.subtitle': 'Begin with the neighbourhood that fits your way of life.',
@@ -107,7 +117,7 @@ export default async function LandingPage() {
     <main className="min-h-screen bg-surface-ivory">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }} />
       <section className="relative min-h-[82vh] overflow-hidden bg-brand-deep text-surface-ivory" aria-labelledby="home-title">
-        <Image src={heroImage.src} alt={heroImage.illustrative ? '' : heroProject?.name ?? ''} fill priority sizes="100vw" className="object-cover opacity-75" />
+        <Image src={heroImage.src} alt={heroImage.illustrative ? '' : heroProject?.name ?? ''} fill priority className="object-cover opacity-75" />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/45 to-brand-deep/10" />
         <div className="relative mx-auto flex min-h-[82vh] max-w-7xl flex-col justify-end px-20 pb-32 pt-56 md:px-32 md:pb-64">
           <div className="max-w-4xl">
@@ -129,7 +139,7 @@ export default async function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80" aria-labelledby="pathways-heading">
-        <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">DISCOVER YOUR UNO</p>
+        <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['home.pathways.kicker']}</p>
         <h2 id="pathways-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.pathways.title']}</h2>
         <div className="mt-32 grid gap-12 md:grid-cols-3">
           {pathways.map(item => <Link key={item.href} href={item.href} className="group rounded-2xl border border-border-line bg-surface-paper p-24 transition hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-brand-andaman">
@@ -153,7 +163,7 @@ export default async function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80" aria-labelledby="destination-heading">
-        <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">THE ISLAND</p><h2 id="destination-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.destinations.title']}</h2>
+        <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['home.destinations.kicker']}</p><h2 id="destination-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.destinations.title']}</h2>
         <p className="mt-12 text-body text-text-secondary">{labels['home.destinations.subtitle']}</p>
         <div className="mt-28 grid grid-cols-2 gap-12 md:grid-cols-4">
           {destinations.map((area, index) => <Link key={area.name} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
@@ -162,24 +172,24 @@ export default async function LandingPage() {
             <div className="relative"><h3 className="font-display text-heading-2 font-semibold">{area.name}</h3><p className="mt-4 text-small text-white/80">{area.subtitle}</p></div>
           </Link>)}
         </div>
-        <p className="mt-12 text-small text-text-secondary">Explore the collection to see current project locations and availability.</p>
+        <p className="mt-12 text-small text-text-secondary">{labels['home.destinations.note']}</p>
       </section>
 
       <section className="bg-brand-deep py-56 text-surface-ivory md:py-80" aria-labelledby="guided-heading">
         <div className="mx-auto grid max-w-7xl gap-32 px-20 md:grid-cols-2 md:items-center md:px-32">
-          <div><p className="text-kicker tracking-[0.18em] text-brand-sun-soft">GUIDED DISCOVERY</p><h2 id="guided-heading" className="mt-8 font-display text-display-xl font-semibold">{labels['home.guided.title']}</h2><p className="mt-16 max-w-xl text-body text-surface-ivory/75">{labels['home.guided.body']}</p><Link href="/guests" className="mt-24 inline-flex rounded-lg bg-surface-paper px-24 py-14 font-semibold text-brand-deep hover:opacity-90">{labels['home.guided.cta']} →</Link></div>
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-24 backdrop-blur-sm"><p className="text-small text-brand-sun-soft">START WITH A SIMPLE QUESTION</p><div className="mt-20 space-y-12">
-            <Link href="/search" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">Find a home for my trip ↗</Link>
-            <Link href="/projects" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">Explore residences in Phuket ↗</Link>
-            <Link href="/owners" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">I own a property ↗</Link>
+          <div><p className="text-kicker tracking-[0.18em] text-brand-sun-soft">{labels['home.guided.kicker']}</p><h2 id="guided-heading" className="mt-8 font-display text-display-xl font-semibold">{labels['home.guided.title']}</h2><p className="mt-16 max-w-xl text-body text-surface-ivory/75">{labels['home.guided.body']}</p><Link href="/guests" className="mt-24 inline-flex rounded-lg bg-surface-paper px-24 py-14 font-semibold text-brand-deep hover:opacity-90">{labels['home.guided.cta']} →</Link></div>
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-24 backdrop-blur-sm"><p className="text-small text-brand-sun-soft">{labels['home.guided.prompt']}</p><div className="mt-20 space-y-12">
+            <Link href="/search" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.stay']} ↗</Link>
+            <Link href="/projects" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.projects']} ↗</Link>
+            <Link href="/owners" className="block rounded-xl bg-white/10 p-16 hover:bg-white/20">{labels['home.guided.owner']} ↗</Link>
           </div></div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80" aria-labelledby="ecosystem-heading">
-        <p className="text-kicker tracking-[0.18em] text-brand-andaman">ONE CONNECTED ECOSYSTEM</p><h2 id="ecosystem-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.ecosystem.title']}</h2><p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['home.ecosystem.body']}</p>
+        <p className="text-kicker tracking-[0.18em] text-brand-andaman">{labels['home.ecosystem.kicker']}</p><h2 id="ecosystem-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.ecosystem.title']}</h2><p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['home.ecosystem.body']}</p>
         <div className="mt-32 grid gap-12 md:grid-cols-4">
-          {([{href:'/search', title:'Stay', body:'Discover and reserve.'},{href:'/services',title:'Experience',body:'Services around your stay.'},{href:'/owners',title:'Own',body:'Your property and visibility.'},{href:'/developers',title:'Connect',body:'Projects and partners.'}] as const).map(item=><Link key={item.title} href={item.href} className="rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card"><TrustMark size={20} filled className="text-brand-andaman"/><h3 className="mt-24 font-display text-heading-2 font-semibold text-text-ink">{item.title}</h3><p className="mt-8 text-small text-text-secondary">{item.body}</p><span className="mt-20 inline-block font-semibold text-brand-andaman">Explore →</span></Link>)}
+          {([{href:'/search', title:'Stay', body:'Discover and reserve.'},{href:'/services',title:'Experience',body:'Services around your stay.'},{href:'/owners',title:'Own',body:'Your property and visibility.'},{href:'/developers',title:'Connect',body:'Projects and partners.'}] as const).map(item=><Link key={item.title} href={item.href} className="rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card"><TrustMark size={20} filled className="text-brand-andaman"/><h3 className="mt-24 font-display text-heading-2 font-semibold text-text-ink">{item.title}</h3><p className="mt-8 text-small text-text-secondary">{item.body}</p><span className="mt-20 inline-block font-semibold text-brand-andaman">{labels['home.common.explore']} →</span></Link>)}
         </div>
         <Link href="/about" className="mt-24 inline-block font-semibold text-brand-andaman hover:underline">{labels['home.ecosystem.cta']} →</Link>
       </section>

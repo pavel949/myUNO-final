@@ -40,7 +40,8 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
     getLabels({
       'staff.ops.calendar.back': '← Ops board',
       'staff.ops.calendar.title': 'Unit calendar',
-      'staff.ops.calendar.subtitle': 'Block dates or set one-off rates for this unit.',
+      'staff.ops.calendar.subtitle': 'Use the portfolio calendar for occupancy. Manage unit blocks, prices and integrations below.',
+      'staff.ops.calendar.occupancy': 'View in unified calendar →',
       ...UNIT_CALENDAR_LABEL_KEYS,
     }),
     getRequestLocale(),
@@ -63,6 +64,11 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
         <p className="text-body text-text-stone mt-8">
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
+        <div className="mt-16">
+          <Link href={'/ops/calendar/board?projectId='+unit.projectId+'&unitId='+unit.id} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+            {labels['staff.ops.calendar.occupancy']}
+          </Link>
+        </div>
         <div className="mt-24">
           <UnitIcalConflictBanner
             conflicts={conflictAlerts}

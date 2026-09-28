@@ -116,6 +116,10 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
           </p>
         </div>
 
+        <Link href="/ops/calendar/board" className="mb-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white hover:opacity-90">
+          Open unified occupancy board →
+        </Link>
+
         <OpsProjectSwitcher projects={projects} activeProjectId={validActiveProjectId} basePath="/ops/calendar" labels={labels} />
 
         <nav className="mt-24 flex flex-wrap gap-8" aria-label="Calendar scope">

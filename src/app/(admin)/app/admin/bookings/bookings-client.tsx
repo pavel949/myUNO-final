@@ -126,7 +126,9 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
       router.refresh();
+      window.dispatchEvent(new Event('myuno:calendar-changed'));
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
     } finally {
@@ -171,7 +173,9 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
       router.refresh();
+      window.dispatchEvent(new Event('myuno:calendar-changed'));
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
     } finally {

@@ -34,22 +34,29 @@ export default async function ProcessesPage() {
   // instead of duplicating routes in dashboard cards and separate process pages.
   const [labels, state] = await Promise.all([getLabels({
     'admin.processes.title': 'Operations map',
+    'admin.processes.kicker': 'myUNO · Operations',
+    'admin.processes.add': '+ Add property',
+    'admin.processes.bookings': 'Manage bookings',
+    'admin.processes.finance': 'Financial overview',
+    'admin.processes.model': 'One connected operating model',
+    'admin.processes.model_hint': 'This map links existing workflows. It does not change booking, pricing or payment records.',
+    'admin.processes.attention': 'Needs attention:',
     'admin.processes.subtitle': 'Live workflow states from your operational records. Start with an exception or continue a process.',
   }), getProcessState(prisma)]);
   return (
     <main className="mx-auto max-w-7xl space-y-24 pb-40">
       <header className="rounded-xl border border-border-line bg-surface-paper p-24 md:p-32">
-        <p className="text-kicker uppercase tracking-wider text-brand-andaman font-semibold mb-8">myUNO · Operations</p>
+        <p className="text-kicker uppercase tracking-wider text-brand-andaman font-semibold mb-8">{labels['admin.processes.kicker']}</p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.processes.title']}</h1>
         <p className="text-body text-text-secondary max-w-3xl">{labels['admin.processes.subtitle']}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-24">
-          <Link href="/app/admin/properties/new" className="rounded-lg bg-brand-andaman p-16 text-on-dark-text font-semibold hover:opacity-90 transition-opacity">+ Add property <span aria-hidden="true">→</span></Link>
-          <Link href="/app/admin/bookings" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">Manage bookings <span aria-hidden="true">→</span></Link>
-          <Link href="/app/admin/ledger" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">Financial overview <span aria-hidden="true">→</span></Link>
+          <Link href="/app/admin/properties/new" className="rounded-lg bg-brand-andaman p-16 text-on-dark-text font-semibold hover:opacity-90 transition-opacity">{labels['admin.processes.add']} <span aria-hidden="true">→</span></Link>
+          <Link href="/app/admin/bookings" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">{labels['admin.processes.bookings']} <span aria-hidden="true">→</span></Link>
+          <Link href="/app/admin/ledger" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">{labels['admin.processes.finance']} <span aria-hidden="true">→</span></Link>
         </div>
       </header>
       <section aria-label="One source of truth" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
-        <h2 className="font-display text-title font-semibold text-text-ink mb-12">One connected operating model</h2>
+        <h2 className="font-display text-title font-semibold text-text-ink mb-12">{labels['admin.processes.model']}</h2>
         <div className="flex flex-wrap items-center gap-8 text-small">
           {['One property record', 'Commercial offers', 'Availability & rates', 'One booking record', 'Operations & ledger'].map((step, i) => (
             <span key={step} className="inline-flex items-center gap-8">
@@ -58,7 +65,7 @@ export default async function ProcessesPage() {
             </span>
           ))}
         </div>
-        <p className="mt-12 text-small text-text-secondary">This map links existing workflows. It does not change booking, pricing or payment records.</p>
+        <p className="mt-12 text-small text-text-secondary">{labels['admin.processes.model_hint']}</p>
       </section>
       {lanes.map((lane) => (
         <section key={lane.title} aria-label={lane.title} className="space-y-16">
@@ -78,7 +85,7 @@ export default async function ProcessesPage() {
                 </div>
                 <div className="mt-16 rounded-md bg-surface-ivory border border-border-line p-12" aria-live="polite">
                   <p className="text-small font-semibold text-text-ink">{state[process.number as keyof typeof state].summary}</p>
-                  {state[process.number as keyof typeof state].attention && <p className="text-small text-state-warning mt-4">Needs attention: {state[process.number as keyof typeof state].attention}</p>}
+                  {state[process.number as keyof typeof state].attention && <p className="text-small text-state-warning mt-4">{labels['admin.processes.attention']} {state[process.number as keyof typeof state].attention}</p>}
                 </div>
                 <ol className="flex flex-wrap items-center gap-8 my-20 text-small text-text-secondary" aria-label={process.title + ' stages'}>
                   {process.steps.map((step, i) => <li key={step} className="flex items-center gap-8">{i > 0 && <span aria-hidden="true">→</span>}<span className="rounded-md bg-surface-ivory px-8 py-4">{step}</span></li>)}

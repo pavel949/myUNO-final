@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET, productionConfigurationReady } from './route';
+import { GET } from './route';
+import { productionConfigurationReady } from '@/lib/productionReadiness';
 
 describe('Integration: health endpoint', () => {
   it('checks the database without requiring optional deployment configuration', async () => {

@@ -125,6 +125,15 @@ describe('Owner Statement Generation', () => {
       },
     })
 
+    // A deposit payment attached to the same reservation is not rental cash.
+    await db.payment.create({
+      data: {
+        purpose: 'deposit_preauth', bookingId: testBooking.id,
+        payerIdentityId: owner.id, method: 'cash', provider: 'cash',
+        amountThb: 2_000, status: 'succeeded', succeededAt: new Date(),
+      },
+    })
+
     mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
   })
 

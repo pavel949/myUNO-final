@@ -114,6 +114,7 @@ export default function CreateUnitForm({
         <label className="text-small text-text-secondary">
           {labels['admin.units.category']}
           <select name="inventoryCategoryId" key={projectId} disabled={!projectId}
+            required={categories.some((category) => category.projectId === projectId)}
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink">
             <option value="">{labels['admin.units.no_category']}</option>
             {categories.filter((category) => category.projectId === projectId).map((category) => (

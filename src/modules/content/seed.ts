@@ -1569,6 +1569,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'nav.register', namespace: 'nav', description: 'Navbar button: sign up', en: 'Sign up', ru: 'Регистрация', th: 'สมัครสมาชิก', status: NR },
   { key: 'nav.logout', namespace: 'nav', description: 'Navbar button: log out', en: 'Log out', ru: 'Выйти', th: 'ออกจากระบบ', status: NR },
   { key: 'nav.my_trips', namespace: 'nav', description: 'Navbar link: my trips', en: 'My trips', ru: 'Мои поездки', th: 'การเดินทางของฉัน', status: NR },
+  { key: 'nav.saved', namespace: 'nav', description: 'Navbar link: saved homes', en: 'Saved', ru: 'Избранное', th: 'บันทึกไว้', zh: '已收藏', status: NR },
   { key: 'nav.owner_dashboard', namespace: 'nav', description: 'Navbar link: owner dashboard', en: 'Owner dashboard', ru: 'Кабинет владельца', th: 'แดชบอร์ดเจ้าของ', status: NR },
   { key: 'nav.mc_portal', namespace: 'nav', description: 'Navbar link: MC portal', en: 'MC portal', ru: 'Портал УК', th: 'พอร์ทัล MC', status: NR },
   { key: 'nav.admin', namespace: 'nav', description: 'Navbar link: admin panel', en: 'Admin', ru: 'Администрирование', th: 'ผู้ดูแลระบบ', status: NR },

@@ -34,7 +34,7 @@ export async function applyChannelEvent(
   const config=system.config as Record<string,unknown>;
   const protection=e.eventType==='occupancy.protect'||e.eventType==='occupancy.release';
   if((protection && config.protectionEnabled!==true) ||
-     (!protection && config.bookingAuthority!=='myuno')) {
+     (!protection && (config.bookingAuthority!=='myuno'||config.cutoverVerified!==true))) {
     return{status:'quarantined',bookingId:null,code:'authority_not_enabled'};
   }
 

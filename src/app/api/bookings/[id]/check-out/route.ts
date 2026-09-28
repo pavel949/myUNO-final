@@ -94,7 +94,7 @@ export async function POST(
         titleKey: 'notify.stay_checked_out.title',
         bodyKey: 'notify.stay_checked_out.body',
         params: { unit_name: booking.unit.name },
-      });
+      }).catch((error) => console.error('Check-out committed but owner notification failed:', error));
     }
 
     return NextResponse.json({ booking: updated });

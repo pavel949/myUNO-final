@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { shiftCalendarDay } from '@/modules/booking/calendar-projection';
 import type { CalendarCell, CalendarState } from '@/modules/booking/calendar-projection';
 
-interface UnitRow { id: string; name: string; projectId: string; projectName: string; categoryId: string | null; categoryName: string }
+interface UnitRow { id: string; name: string; projectId: string; projectName: string; categoryId: string | null; categoryName: string; sellable: boolean }
 interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
 type Props = {
   labels: Record<string, string>;
@@ -94,12 +94,13 @@ export default function UnifiedStayCalendar(props: Props) {
   ),[props.units,search]);
   let booked=0, available=0, holds=0, conflicts=0;
   for (const unit of rows) for (const cell of props.cells[unit.id] || []) {
-    if (cell.state==='free') available++;
-    if (cell.state==='confirmed'||cell.state==='in_house'||cell.state==='past'||cell.state==='external') booked++;
+    if (cell.state==='free' && unit.sellable) available++;
+    if (cell.state==='confirmed'||cell.state==='in_house'||cell.state==='external') booked++;
     if (cell.state==='hold') holds++;
     if (cell.state==='conflict') conflicts++;
   }
   const stats=[['Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
+    [props.labels['staff.unified_calendar.not_sellable'],String(rows.filter(unit=>!unit.sellable).length)],
     [props.labels['staff.unified_calendar.booked'],String(booked)], [props.labels['staff.unified_calendar.holds'],String(holds)],
     [props.labels['staff.unified_calendar.arrivals'],String(props.arrivals)],
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
@@ -217,14 +218,15 @@ export default function UnifiedStayCalendar(props: Props) {
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
                     <span className="block font-semibold text-text-ink">{unit.name}</span>
                     <span className="block text-[11px] font-normal text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
+                    {!unit.sellable && <span className="block text-[10px] font-semibold text-amber-900">{props.labels['staff.unified_calendar.not_sellable']}</span>}
                   </th>
                   {(props.cells[unit.id]||[]).map((cell,index)=><td key={props.days[index]} className="border-b border-l border-border-line p-[2px]">
                     <button type="button"
-                      aria-label={unit.name+' · '+props.days[index]+' · '+stateLabel[cell.state]}
-                      title={unit.name+' · '+props.days[index]+' · '+stateLabel[cell.state]}
+                      aria-label={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
+                      title={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
                       onClick={()=>setSelected({unitId:unit.id,date:props.days[index],cell})}
-                      className={'h-36 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+stateClass[cell.state]}>
-                      {shortLabel[cell.state]}
+                      className={'h-36 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                      {!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}
                     </button>
                   </td>)}
                 </tr>)}

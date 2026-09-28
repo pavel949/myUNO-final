@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   db,
   resetDb,
@@ -13,6 +13,11 @@ import * as financeService from './finance.service';
 describe('processOpnEvent (Opn webhook)', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it('confirms a pending payment on charge.complete', async () => {
@@ -40,6 +45,22 @@ describe('processOpnEvent (Opn webhook)', () => {
         status: 'pending',
       },
     });
+
+    // The event is verified by the route, but the payment service independently
+    // re-fetches the charge and checks its amount. Stub the provider transport
+    // rather than bypassing the real-provider verification gate.
+    vi.stubEnv('PAYMENT_PROVIDER', 'opn');
+    vi.stubEnv('OMISE_SECRET_KEY', 'skey_test_webhook_integration');
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      expect(String(url)).toContain('/charges/chrg_test_confirm');
+      return {
+        status: 200,
+        json: async () => ({
+          id: 'chrg_test_confirm', object: 'charge', amount: 400_000,
+          currency: 'thb', status: 'successful', paid: true, authorized: true,
+        }),
+      };
+    }));
 
     const result = await processOpnEvent(db, {
       id: 'evnt_1',

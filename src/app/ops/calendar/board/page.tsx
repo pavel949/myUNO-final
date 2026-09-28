@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getStaffProjectIds } from '@/app/libs/projectScope';
+import { getDepartmentProjectIds } from '@/app/libs/projectScope';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import {
@@ -24,7 +24,7 @@ export default async function UnifiedStayCalendarPage({
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/calendar/board');
 
-  const staffProjectIds = getStaffProjectIds(user);
+  const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
   if (!user.isAdmin && !staffProjectIds.length) redirect('/');
 
   const projectWhere = user.isAdmin ? {} : { id: { in: staffProjectIds } };

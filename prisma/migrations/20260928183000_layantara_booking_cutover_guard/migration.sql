@@ -14,8 +14,8 @@ BEGIN
     JOIN public.external_system s ON s.id = m.external_system_id
     WHERE m.entity_type = 'unit'
       AND m.internal_id = NEW.unit_id
-      AND s.system_key = 'layantara'
-      AND s.status = 'active'
+      AND s.system_key = 'layantara_os'
+      AND s.status IN ('active', 'staging')
       AND NOT (
         s.config->>'bookingAuthority' = 'myuno'
         AND s.config->'cutoverVerified' = 'true'::jsonb

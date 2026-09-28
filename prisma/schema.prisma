@@ -3368,3 +3368,24 @@ model ProjectOnboardingDraft {
 
   @@map("project_onboarding_draft")
 }
+
+
+/// Durable transactionally emitted read model/outbox, not an independent booking.
+model UnifiedDomainEvent {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  project_id    String?
+  unit_id       String?
+  booking_id    String?
+  entity_type   String
+  entity_id     String
+  event_type    String
+  payload       Json      @default("{}") @db.JsonB
+  delivered_at  DateTime? @db.Timestamptz(6)
+  attempt_count Int       @default(0)
+
+  @@index([project_id, created_at, id], map: "unified_domain_event_project_cursor_idx")
+  @@index([booking_id, created_at], map: "unified_domain_event_booking_cursor_idx")
+  @@index([delivered_at, created_at], map: "unified_domain_event_pending_idx")
+  @@map("unified_domain_event")
+}

@@ -97,7 +97,7 @@ jobs:
         timeout-minutes: 10
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npx tsc --noEmit -p tsconfig.production.json
 
       - name: Focused unified-engine tests
         env:

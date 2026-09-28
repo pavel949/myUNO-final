@@ -132,7 +132,7 @@ describe('finance.service — integration tests', () => {
         adults: 2,
         children: 0,
         totalThb: 8000,
-        status: 'requested',
+        status: 'pending_payment',
       });
 
       // Record initial payment

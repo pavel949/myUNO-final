@@ -200,6 +200,26 @@ export async function recordCashPayment(
       }
     }
 
+    let serviceOrderToPay: { id: string; projectId: string | null; unitId: string | null } | null = null;
+    if (purpose === 'service_order') {
+      if (!serviceOrderId) throw new Error('Service order payment requires serviceOrderId');
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
+      const order = await tx.serviceOrder.findUnique({
+        where: { id: serviceOrderId },
+        select: {
+          id: true, status: true, orderer_identity_id: true, total_thb: true,
+          project_id: true, unit_id: true,
+        },
+      });
+      if (!order || order.status !== 'placed') throw new Error('Service order is not awaiting payment');
+      if (order.orderer_identity_id !== payerIdentityId) throw new Error('Payer does not match service order');
+      if (order.total_thb !== amountThb) throw new Error('Payment amount does not match service order total');
+      if (await tx.payment.count({ where: { serviceOrderId, purpose: 'service_order', status: 'succeeded' } })) {
+        throw new Error('Service order payment already recorded');
+      }
+      serviceOrderToPay = { id: order.id, projectId: order.project_id, unitId: order.unit_id };
+    }
+
     const payment = await tx.payment.create({
       data: {
         purpose, bookingId, serviceOrderId, payerIdentityId,
@@ -230,7 +250,13 @@ export async function recordCashPayment(
         });
       }
     }
-    return { payment, booking };
+    if (serviceOrderToPay) {
+      await tx.serviceOrder.update({
+        where: { id: serviceOrderToPay.id },
+        data: { status: 'paid' },
+      });
+    }
+    return { payment, booking, serviceOrderToPay };
   });
 
   const payment = result.payment;
@@ -244,9 +270,16 @@ export async function recordCashPayment(
     }).catch(() => null);
   }
 
-  // Cash taken for a service order: placed → paid (doc 09 §6)
-  if (serviceOrderId && purpose === 'service_order') {
-    await markServiceOrderPaid(db, serviceOrderId, payerIdentityId);
+  // Payment and order status committed together. Analytics is a best-effort
+  // post-commit side effect and cannot turn received cash into a false 500.
+  if (result.serviceOrderToPay) {
+    await track(db, 'service_order_paid', {
+      serviceOrderId: result.serviceOrderToPay.id,
+      projectId: result.serviceOrderToPay.projectId ?? undefined,
+      unitId: result.serviceOrderToPay.unitId ?? undefined,
+      identityId: payerIdentityId,
+      totalThb: amountThb,
+    }).catch(() => null);
   }
 
   return payment;

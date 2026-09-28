@@ -104,7 +104,7 @@ function OfferingForm({units,submit}:{units:Unit[];submit:(url:string,body:objec
       tenure:d.get('tenure'),notes:d.get('notes'),status:'draft'});
   }}>
     <label className="text-small">Home<select className={'block w-full '+input} name="unit" required><option value="">Select home</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
-    <label className="text-small">Offer<select className={'block w-full '+input} name="type" required><option value="short_stay">Short stay · nightly</option><option value="long_stay">Long stay · monthly</option><option value="sale">Sale · total price</option></select></label>
+    <label className="text-small">Offer<select className={'block w-full '+input} name="type" required><option value="short_term_stay">Short stay · nightly</option><option value="long_term_rental">Long stay · monthly</option><option value="sale">Sale · total price</option></select></label>
     <label className="text-small">Price (THB)<input className={'block w-full '+input} name="priceBaht" type="number" min="0.01" step="0.01" required/></label>
     <label className="text-small">Minimum nights / months<input className={'block w-full '+input} name="minimumStay" type="number" min="1" defaultValue="1"/></label>
     <label className="text-small">Refundable deposit (THB)<input className={'block w-full '+input} name="depositBaht" type="number" min="0" step="0.01"/></label>

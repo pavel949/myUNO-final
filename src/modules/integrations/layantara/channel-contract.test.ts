@@ -20,6 +20,14 @@ describe('signed channel-event contract',()=>{
     expect(()=>parseChannelEvent({...event,channel:'manual'})).toThrow('invalid_booking_contract');
     expect(()=>parseChannelEvent({...event,eventVersion:0})).toThrow('invalid_event_version');
   });
+  it('requires an occupancy identifier for protection and release',()=>{
+    expect(parseChannelEvent({...event,eventType:'occupancy.release',occupancyId:'occupancy-1'}))
+      .toMatchObject({eventType:'occupancy.release',occupancyId:'occupancy-1'});
+    expect(()=>parseChannelEvent({...event,eventType:'occupancy.release'}))
+      .toThrow('invalid_occupancy_id');
+    expect(()=>parseChannelEvent({...event,eventType:'occupancy.protect',occupancyId:'occupancy-1',
+      blockReason:'arbitrary'})).toThrow('invalid_block_reason');
+  });
   it('does not manufacture a payment from an OTA booking',()=>{
     expect(()=>parseChannelEvent({
       ...event,eventType:'payment.received',externalPaymentId:'p1',paymentSatang:1000,

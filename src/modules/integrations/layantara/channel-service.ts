@@ -141,6 +141,12 @@ export async function applyChannelEvent(
         if(e.eventType==='booking.confirmed' && (datesChanged||amountChanged||partyChanged))
           return quarantine('existing_booking_requires_change_event');
         if(datesChanged||amountChanged||partyChanged){
+          // Attribute an OTA/source change to a dedicated integration identity,
+          // never misrepresent the guest as the person who edited the stay.
+          const actorId=config.integrationActorIdentityId;
+          if(typeof actorId!=='string'||!actorId)return quarantine('integration_actor_missing');
+          const actor=await tx.identity.findUnique({where:{id:actorId},select:{id:true}});
+          if(!actor)return quarantine('integration_actor_missing');
           let balance=current.balanceDueThb, refund=current.refundAccruedThb;
           const difference=e.totalSatang-current.totalThb;
           if(difference>0){
@@ -167,7 +173,7 @@ export async function applyChannelEvent(
             newValue:{startDate:start.toISOString(),endDate:end.toISOString(),
               totalThb:e.totalSatang,adults:e.adults,children:e.children,
               source:'layantara',eventId:e.eventId,sourceVersion:e.eventVersion},
-            priceDeltaThb:difference,actorIdentityId:current.guestIdentityId,
+            priceDeltaThb:difference,actorIdentityId:actor.id,
           }});
         }else if(current.status!=='confirmed'){
           await tx.booking.update({where:{id:bookingId},data:{status:'confirmed'}});
@@ -227,8 +233,11 @@ export async function applyChannelEvent(
       if(!booked||booked.unitId!==unit.id)return quarantine('booking_identity_mismatch');
       const previous=await mapping(tx,system.id,'payment',e.externalPaymentId);
       if(previous){
-        const original=await tx.payment.findUnique({where:{id:previous.internal_id},select:{bookingId:true}});
-        if(original?.bookingId!==bookingId)return quarantine('payment_identity_mismatch');
+        const original=await tx.payment.findUnique({where:{id:previous.internal_id},
+          select:{bookingId:true,amountThb:true,receiptRef:true,status:true}});
+        if(original?.bookingId!==bookingId || original.amountThb!==e.paymentSatang ||
+           original.receiptRef!==e.receiptRef || original.status!=='succeeded')
+          return quarantine('payment_identity_or_amount_mismatch');
       }else{
         const payments=await tx.payment.findMany({where:{bookingId,status:'succeeded'},
           select:{amountThb:true}});

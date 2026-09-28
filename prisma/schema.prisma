@@ -3389,3 +3389,18 @@ model UnifiedDomainEvent {
   @@index([delivered_at, created_at], map: "unified_domain_event_pending_idx")
   @@map("unified_domain_event")
 }
+
+
+/** Explicit per-property department scopes for myUNO staff.
+ * The active project-scoped RoleAssignment is still mandatory for access. */
+model ProjectStaffPermission {
+  projectId    String   @map("project_id")
+  identityId   String   @map("identity_id")
+  departments  String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@id([projectId, identityId])
+  @@index([identityId])
+  @@map("project_staff_permission")
+}

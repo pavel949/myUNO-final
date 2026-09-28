@@ -124,7 +124,7 @@ export async function POST(
         unit_name: booking.unit.name,
         checkin_time: checkedInAt.toISOString(),
       },
-    });
+    }).catch((error) => console.error('Check-in committed but guest notification failed:', error));
 
     // Notify unit owner that the guest has arrived (not N-03 — that fires on confirmation).
     if (booking.unit.ownerIdentityId) {
@@ -137,7 +137,7 @@ export async function POST(
           guest_name: booking.guestIdentity.firstName + ' ' + booking.guestIdentity.lastName,
           unit_name: booking.unit.name,
         },
-      });
+      }).catch((error) => console.error('Check-in committed but owner notification failed:', error));
     }
 
     return NextResponse.json(

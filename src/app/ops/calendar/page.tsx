@@ -51,6 +51,8 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     select: {
       id: true,
       name: true,
+      status: true,
+      assetStatus: true,
       projectId: true,
       inventoryCategoryId: true,
       project: { select: { id: true, name: true } },
@@ -127,6 +129,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
     'staff.ops.calendar_index.previous_week': 'Previous week',
     'staff.ops.calendar_index.next_week': 'Next week',
     'staff.ops.calendar_index.available': 'Available',
+    'staff.ops.calendar_index.unavailable': 'Unavailable',
     'staff.ops.calendar_index.booked': 'Booked',
     'staff.ops.calendar_index.held': 'Held',
     'staff.ops.calendar_index.blocked': 'Blocked',
@@ -199,9 +202,10 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
                     {days.map(day => {
                       const booked = calendarBookings.find(b => b.unitId === unit.id && b.startDate <= day && b.endDate > day);
                       const blocked = calendarBlocks.find(b => b.unitId === unit.id && b.startDate <= day && b.endDate > day);
-                      const state = blocked ? labels['staff.ops.calendar_index.blocked'] : booked?.status === 'pending_payment' ? labels['staff.ops.calendar_index.held'] : booked ? labels['staff.ops.calendar_index.booked'] : labels['staff.ops.calendar_index.available'];
+                      const inactive = unit.status !== 'live' || unit.assetStatus === 'suspended';
+                      const state = inactive ? labels['staff.ops.calendar_index.unavailable'] : blocked ? labels['staff.ops.calendar_index.blocked'] : booked?.status === 'pending_payment' ? labels['staff.ops.calendar_index.held'] : booked ? labels['staff.ops.calendar_index.booked'] : labels['staff.ops.calendar_index.available'];
                       return <td key={day.toISOString()} className="border-b border-border-line p-4 text-center">
-                        <span className={`block rounded-sm px-4 py-8 text-micro ${blocked ? 'bg-state-error-soft text-state-error' : booked ? 'bg-state-warning-soft text-state-warning' : 'bg-state-success-soft text-state-success'}`} title={blocked ? String(blocked.reason) : booked ? booked.status : state}>{state}</span>
+                        <span className={`block rounded-sm px-4 py-8 text-micro ${inactive ? 'bg-surface-muted text-text-secondary' : blocked ? 'bg-state-error-soft text-state-error' : booked ? 'bg-state-warning-soft text-state-warning' : 'bg-state-success-soft text-state-success'}`} title={inactive ? unit.status : blocked ? String(blocked.reason) : booked ? booked.status : state}>{state}</span>
                       </td>;
                     })}
                   </tr>

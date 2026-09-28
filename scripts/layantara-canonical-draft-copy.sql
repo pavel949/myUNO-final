@@ -59,7 +59,7 @@ INSERT INTO public.inventory_category(
  base_nightly_thb,min_nights,status,updated_at
 )
 SELECT 'layantara-category-'||c.source_id,
- 'layantara-project-'||c.payload->>'project_id',c.payload->>'code',
+ 'layantara-project-'||(c.payload->>'project_id'),c.payload->>'code',
  c.payload->>'name',COALESCE((c.payload->>'bedrooms')::int,0),0,
  COALESCE((c.payload->>'max_guests')::int,(c.payload->>'bedrooms')::int*2,0),
  0,1,'draft',now()
@@ -77,7 +77,7 @@ INSERT INTO public.unit(
  category_key,inventory_category_id,privacy_type,accommodation_type,
  usable_area_sqm,gross_area_sqm,outdoor_area_sqm,plot_area_sqm,updated_at
 )
-SELECT 'layantara-unit-'||i.source_id,'layantara-project-'||i.payload->>'project_id',
+SELECT 'layantara-unit-'||i.source_id,'layantara-project-'||(i.payload->>'project_id'),
  'Villa '||(i.payload->>'unit_code'),'villa'::"UnitType",
  COALESCE((i.payload->>'bedrooms')::int,(c.payload->>'bedrooms')::int,0),
  COALESCE(floor((i.payload->>'bathrooms')::numeric)::int,0),

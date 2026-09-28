@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     if (body.action === 'commercial_offering') {
       const type=String(body.offeringType||'');
-      const cadence=type==='short_stay'?'night':type==='long_stay'?'month':type==='sale'?'once':null;
+      const cadence=type==='short_term_stay'?'night':type==='long_term_rental'?'month':type==='sale'?'once':null;
       if(!cadence) throw new Error('Offering must be short_stay, long_stay or sale');
       const status=body.status||'draft';
       if(!['draft','active','paused'].includes(status)) throw new Error('Invalid offering status');
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const pricingTerms={currency:'THB',amountSatang:priceSatang,cadence,
         ...(type!=='sale'?{minimumStay:minimum}:{}),
         ...(body.depositBaht!==undefined&&body.depositBaht!==''?{depositSatang:bahtToSatang(Number(body.depositBaht))}:{}),
-        ...(type==='long_stay'?{utilitiesIncluded:body.utilitiesIncluded===true}:{}),
+        ...(type==='long_term_rental'?{utilitiesIncluded:body.utilitiesIncluded===true}:{}),
         ...(type==='sale'&&body.tenure?{tenure:String(body.tenure)}:{})};
       const existing=await prisma.commercialOffering.findFirst({where:{unitId:unit.id,offeringType:type},select:{id:true}});
       const offering=existing?await prisma.commercialOffering.update({where:{id:existing.id},
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if(!unitForOffer)throw new Error('Home not found');
       const offering = await prisma.commercialOffering.upsert({
         where: { id: existingOffering?.id || '__new__' },
-        create: { projectId:unitForOffer.projectId,unitId: params.id, offeringType: body.offeringType || 'short_stay', status: 'draft' },
+        create: { projectId:unitForOffer.projectId,unitId: params.id, offeringType: body.offeringType || 'short_term_stay', status: 'draft' },
         update: {},
       });
       const mapping = await prisma.channelMapping.upsert({

@@ -67,6 +67,9 @@ export default function ProjectsAdminClient({
     setBusyId('new');
     setError(null);
     try {
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(draft.slug)) throw new Error('Use lowercase letters, numbers and hyphens for the project URL.');
+      if (!draft.name.trim() || !draft.address.trim()) throw new Error('Project name and address are required.');
+      if (!draft.plusCode.trim() && (!draft.latitude.trim() || !draft.longitude.trim() || !Number.isFinite(Number(draft.latitude)) || !Number.isFinite(Number(draft.longitude)) || Math.abs(Number(draft.latitude)) > 90 || Math.abs(Number(draft.longitude)) > 180)) throw new Error('Enter a valid location or a full Plus Code.');
       const response = await fetch('/api/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,8 +80,7 @@ export default function ProjectsAdminClient({
           // Sent raw: the server decodes it against the configured reference,
           // so every entry point resolves a code identically.
           ...(draft.plusCode.trim() ? { plusCode: draft.plusCode.trim() } : {}),
-          latitude: Number(draft.latitude),
-          longitude: Number(draft.longitude),
+          ...(!draft.plusCode.trim() ? { latitude: Number(draft.latitude), longitude: Number(draft.longitude) } : {}),
           // Content keys follow the project.{slug}.* convention (doc 05 §4)
           areaLabelKey: `project.${draft.slug}.area`,
           descriptionKey: `project.${draft.slug}.description`,

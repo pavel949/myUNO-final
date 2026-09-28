@@ -9,15 +9,16 @@ describe('Layantara event ingestion: real transactional database', () => {
   async function setup(bookingAuthority:'source'|'myuno'='source') {
     const project=await createProject({status:'live'});
     const unit=await createUnit({projectId:project.id,status:'live'});
+    const integrationActor=await db.identity.create({data:{firstName:'Source',lastName:'Integration'}});
     const system=await db.externalSystem.create({data:{
       system_key:'layantara',environment:'staging',display_name:'Layantara test',
-      status:'active',config:{protectionEnabled:true,bookingAuthority,cutoverVerified:bookingAuthority==='myuno'},
+      status:'active',config:{protectionEnabled:true,bookingAuthority,cutoverVerified:bookingAuthority==='myuno',integrationActorIdentityId:integrationActor.id},
     }});
     await db.externalMapping.create({data:{
       external_system_id:system.id,entity_type:'unit',external_id:'villa-G6',
       internal_id:unit.id,metadata:{verified:true,sourceCategory:'3BR_GRAND_DELUXE_G6_G7'},
     }});
-    return {project,unit,system};
+    return {project,unit,system,integrationActor};
   }
   async function deliver(payload:Record<string,unknown>){
     const rawBody=JSON.stringify(payload);
@@ -135,7 +136,7 @@ describe('Layantara event ingestion: real transactional database', () => {
   });
 
   it('does not silently overwrite immutable sold terms on later channel revisions',async()=>{
-    await setup('myuno');await deliver(base);
+    const {integrationActor}=await setup('myuno');await deliver(base);
     const confirmed={...base,eventType:'booking.confirmed',eventId:'booking-2',eventVersion:2,
       channel:'airbnb',guestExternalId:'guest-1',guestName:'Test Guest',
       adults:2,children:0,totalSatang:450000,currency:'THB'};
@@ -147,7 +148,8 @@ describe('Layantara event ingestion: real transactional database', () => {
     const booking=await db.booking.findUniqueOrThrow({where:{id:first.bookingId!}});
     expect(booking.totalThb).toBe(600000);
     expect(booking.priceBreakdown).toMatchObject({totalSatang:450000});
-    expect(await db.bookingChange.count({where:{bookingId:first.bookingId!}})).toBe(1);
+    const change=await db.bookingChange.findFirstOrThrow({where:{bookingId:first.bookingId!}});
+    expect(change.actorIdentityId).toBe(integrationActor.id);
     expect(await db.ledgerEntry.count({where:{bookingId:first.bookingId!}})).toBe(0);
   });
 });

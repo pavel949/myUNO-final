@@ -99,9 +99,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
         : null;
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
+      const unitForOffer=await prisma.unit.findUnique({where:{id:params.id},select:{projectId:true}});
+      if(!unitForOffer)throw new Error('Home not found');
       const offering = await prisma.commercialOffering.upsert({
         where: { id: existingOffering?.id || '__new__' },
-        create: { unitId: params.id, offeringType: body.offeringType || 'short_stay', status: 'active' },
+        create: { projectId:unitForOffer.projectId,unitId: params.id, offeringType: body.offeringType || 'short_stay', status: 'draft' },
         update: {},
       });
       const mapping = await prisma.channelMapping.upsert({

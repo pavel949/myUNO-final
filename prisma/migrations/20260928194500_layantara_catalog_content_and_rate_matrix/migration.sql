@@ -35,12 +35,6 @@ FROM layantara_copy.source_row WHERE source_table='rate_plans'
 ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,min_nights=EXCLUDED.min_nights,
  cancellation_policy_key=EXCLUDED.cancellation_policy_key,updated_at=now();
 
-INSERT INTO public.content_key(id,created_at,updated_at,key,namespace,description,supports_rich)
-SELECT 'layantara-description-'||source_id,now(),now(),
- 'layantara.category.'||payload->>'category_id'||'.description','stay',
- 'Verified Layantara category content imported from source',false
-FROM layantara_copy.source_row WHERE source_table='villa_category_content'
-ON CONFLICT(id) DO NOTHING;
 -- Each category shares one canonical content key for all three locale translations.
 INSERT INTO public.content_key(id,created_at,updated_at,key,namespace,description,supports_rich)
 SELECT 'layantara-category-description-'||source_id,now(),now(),

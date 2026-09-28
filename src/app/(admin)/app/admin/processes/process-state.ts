@@ -10,7 +10,7 @@ export async function getProcessState(db: PrismaClient) {
     activeOffers, ratePlans, requested, pendingPayment, confirmed,
     checkedIn, checkedOut, completed, openTickets, leads,
     statementsPending, outstandingPayments, payoutCount, serviceOrders,
-    ledgerEntries, unlinkedSucceededPayments, activeProviders, agentBookings,
+    ledgerEntries, unlinkedSucceededPayments, activeProviders, agentBookings, paidOrdersNotAdvanced,
   ] = await Promise.all([
     db.identity.count({ where: { status: 'active' } }),
     db.project.count(),
@@ -36,6 +36,7 @@ export async function getProcessState(db: PrismaClient) {
     db.payment.count({ where: { status: 'succeeded', purpose: { in: ['stay', 'stay_balance'] }, bookingId: { not: null }, ledgerEntries: { none: { entryType: 'rental_revenue' } } } }),
     db.provider.count({ where: { status: 'active' } }),
     db.booking.count({ where: { channel: 'agent' } }),
+    db.serviceOrder.count({ where: { status: 'placed', payments: { some: { status: 'succeeded', purpose: 'service_order' } } } }),
   ]);
   return {
     '01': { summary: `${people} active identities`, attention: null },
@@ -48,7 +49,7 @@ export async function getProcessState(db: PrismaClient) {
     '08': { summary: `${leads} open CRM opportunities`, attention: null },
     '09': { summary: `${statementsPending} statements not distributed`, attention: statementsPending > 0 ? `${statementsPending} in statement workflow` : null },
     '10': { summary: `${activeProviders} active providers · ${agentBookings} agent-channel bookings`, attention: null },
-    '11': { summary: `${serviceOrders} active service orders`, attention: null },
+    '11': { summary: `${serviceOrders} active service orders`, attention: paidOrdersNotAdvanced > 0 ? `${paidOrdersNotAdvanced} paid orders still marked placed; reconcile` : null },
     '12': { summary: `${ledgerEntries} ledger entries · ${payoutCount} payouts`, attention: unlinkedSucceededPayments > 0 ? `${unlinkedSucceededPayments} successful booking payments without ledger entries` : outstandingPayments > 0 ? `${outstandingPayments} pending booking payments` : null },
   } satisfies Record<string, { summary: string; attention: string | null }>;
 }

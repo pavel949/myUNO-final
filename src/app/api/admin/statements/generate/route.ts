@@ -166,6 +166,7 @@ export async function POST(req: NextRequest) {
           where: {
             bookingId: { in: bookingIds },
             status: 'succeeded',
+            purpose: { in: ['stay', 'stay_balance'] },
           },
           _sum: { amountThb: true },
         })

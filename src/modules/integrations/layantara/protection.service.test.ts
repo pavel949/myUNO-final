@@ -29,7 +29,7 @@ describe('staged protection service', () => {
       }),create:vi.fn()},
       booking:{findFirst:vi.fn()},
     };
-    const db={$transaction:vi.fn(async (fn: (tx:typeof tx)=>Promise<unknown>)=>fn(tx))} as unknown as PrismaClient;
+    const db={$transaction:vi.fn(async (fn: (client:unknown)=>Promise<unknown>)=>fn(tx))} as unknown as PrismaClient;
     expect(await stageProtection(db,{decision,mappingVerified:true,allowWrite:true})).toEqual({status:'existing',blockId:'block-1'});
     expect(tx.blockedDate.create).not.toHaveBeenCalled();
   });

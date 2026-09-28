@@ -758,6 +758,9 @@ export async function markPaymentFailed(
   if (!payment) {
     throw new Error(`Payment ${paymentId} not found`);
   }
+  if (payment.status !== 'pending') {
+    throw new Error(`Cannot fail payment with status ${payment.status}`);
+  }
 
   const failed = await db.payment.update({
     where: { id: paymentId },

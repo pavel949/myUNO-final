@@ -77,6 +77,13 @@ export async function getPropertyReadiness(
   };
 
   if (!project.areaId) add('blocker', 'project.area', 'Select a canonical area.');
+  if (!Number.isFinite(Number(project.latitude)) || !Number.isFinite(Number(project.longitude)) ||
+      (Number(project.latitude) === 0 && Number(project.longitude) === 0)) {
+    add('blocker','project.location','Verify the exact project map pin; 0,0 is not a property location.');
+  }
+  if (project.projectType && (!project.totalUnits || project.totalUnits < 1)) {
+    add('blocker','project.total_units','Enter the development total number of apartments, villas or homes.');
+  }
   if (!project.descriptionKey) add('blocker', 'project.description', 'Add the project description key.');
   if (!project.coverMediaId && project.galleryMedia.length === 0) {
     add('blocker', 'project.media', 'Upload at least one project photo and choose a cover.');
@@ -97,6 +104,15 @@ export async function getPropertyReadiness(
     const options = { scope: 'unit' as const, unitId: unit.id, unitName: unit.name, href };
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);
+    if (project.projectType && (!unit.usableAreaSqm || Number(unit.usableAreaSqm) <= 0)) {
+      add('blocker','unit.size','Record the measured usable area in square metres.',options);
+    }
+    if (project.projectType === 'condominium' && !unit.floor) {
+      add('blocker','unit.floor','Record the apartment floor.',options);
+    }
+    if (project.projectType && unit.commercialOfferings.length === 0) {
+      add('blocker','unit.offer','Add at least one explicit short-stay, long-stay or sale offer.',options);
+    }
     if (!unit.descriptionKey) add('blocker', 'unit.description', 'Add a unit description key.', options);
     if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
       add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);

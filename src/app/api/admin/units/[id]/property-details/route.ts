@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import { bahtToSatang } from '@/lib/money';
+import { evaluateCommercialEligibility } from '@/modules/compliance/commercial-eligibility.engine';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const guard = await requireAdmin();
@@ -63,6 +64,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         select:{id:true,projectId:true,name:true,status:true,project:{select:{status:true}}}});
       if(!unit)throw new Error('Home not found');
       if(status==='active'&&(unit.status!=='live'||unit.project.status!=='live'))throw new Error('Complete the property and home readiness checks before publishing an offer');
+      if(status==='active'){
+        const eligibility=await evaluateCommercialEligibility(prisma,{unitId:unit.id,offeringType:type as 'short_term_stay'|'long_term_rental'|'sale'});
+        if(!eligibility.eligible)throw new Error('Cannot publish this offer: '+eligibility.blockingReasons.join(', '));
+      }
       const priceSatang=bahtToSatang(amount);
       const minimum=Number(body.minimumStay||1);
       if(type!=='sale'&&(!Number.isInteger(minimum)||minimum<1||minimum>3650))throw new Error('Minimum stay must be 1–3650');

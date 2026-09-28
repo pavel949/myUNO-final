@@ -113,4 +113,5 @@ export const UNIFIED_STAY_KEYS = [
   { key: "staff.ops.stays_link", namespace: "staff", description: 'Operations onboarding and integration', en: "Stay operations →", ru: "Stay operations →", th: "Stay operations →", status: 'needs_review' as const },
   { key: "staff.ops.calendar.occupancy", namespace: "staff", description: 'Operations onboarding and integration', en: "View in unified calendar →", ru: "View in unified calendar →", th: "View in unified calendar →", status: 'needs_review' as const },
   { key: "admin.nav.layantara", namespace: "admin", description: 'Operations onboarding and integration', en: "Layantara integration", ru: "Layantara integration", th: "Layantara integration", status: 'needs_review' as const },
+  { key: 'staff.unified_calendar.not_sellable', namespace: 'staff', description: 'Calendar unsellable inventory', en: 'Not on sale', ru: 'Не выставлено на продажу', th: 'ยังไม่เปิดขาย', status: 'needs_review' as const },
 ];

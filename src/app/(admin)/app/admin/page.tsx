@@ -105,6 +105,13 @@ export default async function AdminDashboardPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.dashboard.title']}
       </h1>
+      <section className="mb-24 rounded-lg border border-brand-andaman bg-surface-paper p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-16">
+        <div>
+          <h2 className="font-display text-title font-semibold text-text-ink mb-4">Work by process</h2>
+          <p className="text-small text-text-secondary">Start with a task, then follow its connected workflow across myUNO.</p>
+        </div>
+        <Link href="/app/admin/processes" className="shrink-0 rounded-md bg-brand-andaman text-on-dark-text px-16 py-12 text-small font-semibold hover:opacity-90 transition-opacity">Open operations map →</Link>
+      </section>
       {/* Where things are entered. The admin surface opened straight onto
           analytics, so on a fresh portfolio it was a wall of zeroes with no
           visible way in — the create screens existed but nothing pointed at

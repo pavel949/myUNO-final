@@ -160,6 +160,7 @@ export async function GET(req: NextRequest) {
     const where: any = {
       status: 'live',
       assetStatus: { not: 'suspended' },
+      inventoryCategory: { status: 'live' },
       project: projectFilter,
       ...projectScope,
       maxGuests: { gte: totalGuests },

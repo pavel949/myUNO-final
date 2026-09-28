@@ -163,9 +163,10 @@ export async function POST(req: NextRequest) {
           status: true,
           projectId: true,
           inventoryCategoryId: true,
+          inventoryCategory: { select: { status: true } },
         },
       });
-      if (!unit || unit.status !== 'live') {
+      if (!unit || unit.status !== 'live' || unit.inventoryCategory?.status !== 'live') {
         throw createPublicError('not found', 404);
       }
 

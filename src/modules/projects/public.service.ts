@@ -78,12 +78,12 @@ export interface PublicProjectDetail {
 /** All live projects, for the /projects hub and the sitemap. */
 export async function listPublicProjects(): Promise<PublicProjectCard[]> {
   const projects = await prisma.project.findMany({
-    where: { status: 'live' },
+    where: { status: 'live', inventoryCategory: { status: 'live' } },
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },
       units: {
-        where: { status: 'live' },
+        where: { status: 'live', inventoryCategory: { status: 'live' } },
         select: {
           baseNightlyThb: true,
           inventoryCategory: { select: { baseNightlyThb: true } },
@@ -120,7 +120,7 @@ export async function getPublicProjectBySlug(
         include: { media: { select: { storageKey: true } } },
       },
       units: {
-        where: { status: 'live' },
+        where: { status: 'live', inventoryCategory: { status: 'live' } },
         orderBy: { baseNightlyThb: 'asc' },
         include: {
           coverMedia: { select: { storageKey: true } },
@@ -303,7 +303,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     },
   });
 
-  if (!unit || unit.status !== 'live' || unit.project.status !== 'live') return null;
+  if (!unit || unit.status !== 'live' || unit.project.status !== 'live' || unit.inventoryCategory?.status !== 'live') return null;
 
   return {
     id: unit.id,
@@ -333,7 +333,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
 /** Live units (id only) for the sitemap. */
 export async function listPublicUnitIds(): Promise<string[]> {
   const units = await prisma.unit.findMany({
-    where: { status: 'live', project: { status: 'live' } },
+    where: { status: 'live', project: { status: 'live' }, inventoryCategory: { status: 'live' } },
     select: { id: true },
   });
   return units.map((u) => u.id);

@@ -205,6 +205,10 @@ describe('canonical onboarding → pricing → search → booking route journey'
       `http://localhost/api/search/units?inventoryCategoryId=${c.id}&adultsCount=2`
     ));
     expect((await search.json()).units).toHaveLength(0);
+    const unfiltered = await searchGet(new NextRequest(
+      `http://localhost/api/search/units?projectId=${projectId}&adultsCount=2`
+    ));
+    expect((await unfiltered.json()).units).toHaveLength(0);
 
     session.identityId = guestId;
     const attempted = await catalogPost(

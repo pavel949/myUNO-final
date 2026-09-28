@@ -157,7 +157,8 @@ export async function hasProjectDepartmentAccess(
     where: { projectId_identityId: { projectId, identityId: user.identityId } },
     select: { departments: true },
   });
-  return Boolean(grant?.departments.includes(department));
+  // Legacy project roles remain valid until a department policy is explicitly configured.
+  return grant ? grant.departments.includes(department) : true;
 }
 
 /** Include only properties where the staff member has an active role AND at least
@@ -173,8 +174,9 @@ export async function getDepartmentProjectIds(
   const roleIds=getStaffProjectIds(user);
   if (!roleIds.length) return [];
   const grants=await prisma.projectStaffPermission.findMany({
-    where:{projectId:{in:roleIds},identityId:user.identityId,departments:{hasSome:[...departments]}},
-    select:{projectId:true},
+    where:{projectId:{in:roleIds},identityId:user.identityId},
+    select:{projectId:true,departments:true},
   });
-  return grants.map(grant=>grant.projectId);
+  const configured=new Map(grants.map(grant=>[grant.projectId,grant.departments]));
+  return roleIds.filter(projectId=>!configured.has(projectId)||departments.some(dept=>configured.get(projectId)?.includes(dept)));
 }

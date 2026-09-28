@@ -146,6 +146,21 @@ async function main() {
       leaked === '' ? `${OPERATIONAL_TABLES.length} tables unreachable by anon/authenticated` : `still granted: ${leaked}`,
     );
 
+    // This is a server-side Prisma application: *no* public application table
+    // should grant direct Data API access, not only the nine v3 tables.
+    const anyDataApiGrants = psql(
+      target,
+      `SELECT coalesce(string_agg(DISTINCT table_name || ':' || grantee, ', '), '')
+         FROM information_schema.role_table_grants
+        WHERE table_schema = 'public'
+          AND grantee IN ('anon','authenticated')`,
+    );
+    gate(
+      'all public tables closed to Data API',
+      anyDataApiGrants === '',
+      anyDataApiGrants === '' ? 'no anon/authenticated table privileges' : `still granted: ${anyDataApiGrants}`,
+    );
+
     const rlsOff = psql(
       target,
       `SELECT coalesce(string_agg(relname, ', '), '')

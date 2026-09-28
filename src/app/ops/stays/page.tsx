@@ -41,7 +41,9 @@ export default async function StayOperationsPage({
       payments:{where:{status:'succeeded',purpose:{in:['stay','stay_balance']}},
         select:{amountThb:true}},
     },
-    orderBy:{startDate:'asc'},take:300,
+    // The work queue must never silently omit pending stays because older
+    // cancelled reservations consumed an arbitrary first-page limit.
+    orderBy:{startDate:'asc'},
   });
   const work=bookings.flatMap(b=>deriveStayWorkItems({
     id:b.id,projectId:b.projectId,unitId:b.unitId,unitName:b.unit.name,

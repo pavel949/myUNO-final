@@ -3404,3 +3404,13 @@ model ProjectStaffPermission {
   @@index([identityId])
   @@map("project_staff_permission")
 }
+
+
+/// Encrypted operational instructions. Never join into public listing DTOs.
+model UnitAccessInstruction {
+  unitId       String   @id @map("unit_id")
+  ciphertext   String
+  updatedById  String   @map("updated_by_identity_id")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  @@map("unit_access_instruction")
+}

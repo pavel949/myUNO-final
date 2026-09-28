@@ -28,6 +28,11 @@ describe('non-destructive Layantara occupancy classification', () => {
       action:'archive', reason:'expired_source_hold',
     });
   });
+  it('does not create a permanent block for a live expiring hold', () => {
+    expect(classifyLegacyOccupancy({ ...row, occupancy_kind:'provisional_hold', expires_at:'2099-01-01T00:00:00Z' }, map)).toMatchObject({
+      action:'quarantine', reason:'expiring_hold_requires_canonical_hold',
+    });
+  });
   it('detects intersecting ranges, not only duplicate date ranges', () => {
     expect(auditLegacyOccupancies([row,{ ...row,id:'occ-3',check_in:'2026-10-03',check_out:'2026-10-05' }],map).conflicts)
       .toEqual(['canonical-1:occ-1<>occ-3']);

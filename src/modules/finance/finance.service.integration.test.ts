@@ -62,6 +62,42 @@ describe('finance.service — integration tests', () => {
       expect(ledger?.bookingId).toBe(booking.id);
     });
 
+    it('does not double-record cash or ledger on a repeated confirmation', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const receiver = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+        totalThb: 8000, status: 'pending_payment',
+      });
+      const input = {
+        purpose: 'stay' as const, bookingId: booking.id,
+        payerIdentityId: guest.id, amountThb: 8000,
+        receivedByIdentityId: receiver.id, receiptRef: 'CASH-ONCE',
+      };
+      await financeService.recordCashPayment(db, input);
+      await expect(financeService.recordCashPayment(db, input)).rejects.toThrow(/not awaiting initial payment/i);
+      expect(await db.payment.count({ where: { bookingId: booking.id, status: 'succeeded' } })).toBe(1);
+      expect(await db.ledgerEntry.count({ where: { bookingId: booking.id, entryType: 'rental_revenue' } })).toBe(1);
+    });
+
+    it('does not create an orphan cash payment when the amount is incorrect', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const receiver = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+        totalThb: 8000, status: 'pending_payment',
+      });
+      await expect(financeService.recordCashPayment(db, {
+        purpose: 'stay', bookingId: booking.id, payerIdentityId: guest.id,
+        amountThb: 7999, receivedByIdentityId: receiver.id, receiptRef: 'WRONG',
+      })).rejects.toThrow(/does not match booking total/i);
+      expect(await db.payment.count({ where: { bookingId: booking.id } })).toBe(0);
+    });
+
     it('rejects a stay cash payment without a booking', async () => {
       const guest = await createIdentity();
       const receiver = await createIdentity();

@@ -323,6 +323,9 @@ export async function createCheckout(
 
   await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
 
+  // Enforce provider availability before creating any pending payment row.
+  // The mock provider is forbidden in production, even if no adapter method is called.
+  const activeProvider = getPaymentProvider();
   const { provider: providerName } = getProviderConfig();
 
   const payer = await db.identity.findUnique({
@@ -352,8 +355,7 @@ export async function createCheckout(
       : `${baseUrl}/trips`;
 
   if (providerName === 'opn' && process.env.PAYMENT_PROVIDER === 'opn') {
-    const provider = getPaymentProvider();
-    const session = await provider.createCheckout({
+    const session = await activeProvider.createCheckout({
       bookingId: bookingId ?? serviceOrderId ?? payment.id,
       amount: amountThb,
       guestEmail: payer?.email ?? '',
@@ -423,11 +425,20 @@ export async function verifyAndConfirm(
     );
   }
 
-  if (
-    payment.provider === 'opn' &&
-    payment.providerSessionId &&
-    process.env.PAYMENT_PROVIDER === 'opn'
-  ) {
+  // Payment rows are authoritative for provider choice. A changed environment
+  // cannot turn an existing Opn session into an unverified mock confirmation.
+  if (payment.provider === 'mock') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Mock payment confirmation is forbidden in production');
+    }
+    if (getProviderConfig().provider !== 'mock') {
+      throw new Error('Mock session cannot be confirmed under a real provider');
+    }
+  } else if (payment.provider === 'opn') {
+    if (!payment.providerSessionId) throw new Error('Provider payment session is missing');
+    if (getProviderConfig().provider !== 'opn') {
+      throw new Error('Payment provider configuration differs from stored session');
+    }
     const provider = getPaymentProvider();
     const confirmation = await provider.confirmPayment(payment.providerSessionId);
     if (confirmation.status !== 'confirmed') {
@@ -436,6 +447,8 @@ export async function verifyAndConfirm(
     if (confirmation.amount !== payment.amountThb) {
       throw new Error('Payment amount does not match the provider charge');
     }
+  } else {
+    throw new Error('This payment provider does not support checkout confirmation');
   }
 
   // Re-read under a lock: success URL and webhook can arrive concurrently.

@@ -197,7 +197,7 @@ async function buildPublicCategories(
   // the catalogue from legacy config: admin onboarding, search and booking all
   // point at these same rows.
   const categories = await prisma.inventoryCategory.findMany({
-    where: { projectId, status: 'active' },
+    where: { projectId, status: 'live' },
     orderBy: { createdAt: 'asc' },
     select: {
       categoryKey: true,

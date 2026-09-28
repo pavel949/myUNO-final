@@ -27,7 +27,7 @@ export function DiscoverySearch({ labels }: { labels: {
     setError('');
     if (mode === 'buy') { router.push('/projects'); return; }
     if (mode === 'invest') { router.push('/buyers'); return; }
-    if (!startDate || !endDate || endDate <= startDate) { setError(labels.error); return; }
+    if (!startDate || !endDate || endDate <= startDate || (mode === 'monthly' && (Date.parse(endDate) - Date.parse(startDate)) / 86400000 < 28)) { setError(labels.error); return; }
     const params = new URLSearchParams({ startDate, endDate, adults: String(adults), children: String(children) });
     router.push('/search?' + params.toString());
   }

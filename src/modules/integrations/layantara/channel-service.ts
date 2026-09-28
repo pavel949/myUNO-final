@@ -32,7 +32,7 @@ export async function applyChannelEvent(
   });
   if(!system)return{status:'quarantined',bookingId:null,code:'system_not_enabled'};
   const config=system.config as Record<string,unknown>;
-  const protection=e.eventType==='occupancy.protect';
+  const protection=e.eventType==='occupancy.protect'||e.eventType==='occupancy.release';
   if((protection && config.protectionEnabled!==true) ||
      (!protection && config.bookingAuthority!=='myuno')) {
     return{status:'quarantined',bookingId:null,code:'authority_not_enabled'};
@@ -80,7 +80,7 @@ export async function applyChannelEvent(
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unit.id}))`;
     const bookingMapping=await mapping(tx,system.id,'booking',e.externalBookingId);
     let bookingId=bookingMapping?.internal_id??null;
-    if(protection){
+    if(e.eventType==='occupancy.protect'){
       if(!e.occupancyId||!e.startDate||!e.endDate)return quarantine('invalid_source_interval');
       const ref='layantara:occupancy:'+e.occupancyId;
       const start=day(e.startDate),end=day(e.endDate);
@@ -94,10 +94,19 @@ export async function applyChannelEvent(
         }});
         if(conflictBlock||await hasBookingConflict(tx,unit.id,start,end))return quarantine('inventory_conflict');
         await tx.blockedDate.create({data:{
-          unitId:unit.id,startDate:start,endDate:end,reason:'ota_import',externalRef:ref,
+          unitId:unit.id,startDate:start,endDate:end,reason:e.blockReason??'ota_import',externalRef:ref,
           note:'Layantara source protection; guest and finance reconciliation pending.',
         }});
       }
+    }else if(e.eventType==='occupancy.release'){
+      if(!e.occupancyId)return quarantine('missing_occupancy_identity');
+      // Never let an imported cancellation unlock a verified canonical booking.
+      if(bookingId)return quarantine('release_requires_booking_reconciliation');
+      const ref='layantara:occupancy:'+e.occupancyId;
+      const protectedRow=await tx.blockedDate.findFirst({
+        where:{unitId:unit.id,externalRef:ref,reason:{in:['ota_import','owner_hold','maintenance','other']}},
+      });
+      if(protectedRow)await tx.blockedDate.delete({where:{id:protectedRow.id}});
     }else if(e.eventType==='booking.confirmed'||e.eventType==='booking.changed'){
       if(!e.startDate||!e.endDate||!e.channel||!e.guestExternalId||!e.guestName||
          e.adults===undefined||e.children===undefined||e.totalSatang===undefined||

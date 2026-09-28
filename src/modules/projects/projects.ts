@@ -70,6 +70,7 @@ function assertValidLocation(latitude: number, longitude: number, address: strin
       !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
     throw new Error('Project coordinates are outside the valid geographic range');
   }
+  if (latitude === 0 && longitude === 0) throw new Error('Project coordinates must be verified; 0,0 is not a usable property location');
   if (!address || !address.trim()) throw new Error('Project address is required');
 }
 

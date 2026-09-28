@@ -33,7 +33,7 @@ export async function getProcessState(db: PrismaClient) {
     db.payout.count(),
     db.serviceOrder.count({ where: { status: { in: ['placed', 'paid', 'accepted'] } } }),
     db.ledgerEntry.count(),
-    db.payment.count({ where: { status: 'succeeded', bookingId: { not: null }, ledgerEntries: { none: {} } } }),
+    db.payment.count({ where: { status: 'succeeded', purpose: { in: ['stay', 'stay_balance'] }, bookingId: { not: null }, ledgerEntries: { none: { entryType: 'rental_revenue' } } } }),
   ]);
   return {
     '01': { summary: `${people} active identities`, attention: null },

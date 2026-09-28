@@ -36,14 +36,14 @@ ON CONFLICT(id) DO NOTHING;
 INSERT INTO public.project(
  id,slug,name,area_label_key,description_key,latitude,longitude,address,timezone,
  handbook_key,status,project_type,hospitality_classification,operational_status,
- country,region,city,total_units
+ country,region,city,total_units,updated_at
 )
 SELECT 'layantara-project-'||p.source_id,'layantara-villas',p.payload->>'name',
  'layantara.area.layan','layantara.project.description',0,0,
  COALESCE(pr.payload->>'address',p.payload->>'location'),
  COALESCE(p.payload->>'timezone','Asia/Bangkok'),
  'layantara.project.handbook','draft'::"ProjectStatus",
- 'villa_resort','serviced_villas','migration_staging','TH','Phuket','Phuket',39
+ 'villa_resort','serviced_villas','migration_staging','TH','Phuket','Phuket',39,now()
 FROM layantara_copy.source_row p
 LEFT JOIN layantara_copy.source_row pr ON pr.source_table='project_public_profile'
  AND pr.payload->>'project_id'=p.source_id

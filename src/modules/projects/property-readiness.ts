@@ -115,6 +115,7 @@ export async function getPropertyReadiness(
     if (completed.size < 7) add('blocker', 'unit.mobilization', 'Complete all seven mobilization steps.', options);
     if (
       !unit.inventoryCategory ||
+      unit.inventoryCategory.status !== 'live' ||
       unit.inventoryCategory.baseNightlyThb <= 0 ||
       unit.inventoryCategory.minNights < 1
     ) {

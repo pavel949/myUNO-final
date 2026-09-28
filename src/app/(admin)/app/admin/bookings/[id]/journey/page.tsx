@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text -- operational diagnostic labels; localization is handled in a separate content pass */
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';

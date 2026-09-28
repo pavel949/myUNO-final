@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { auditLegacyOccupancies } from '@/modules/integrations/layantara/adapter';
-import type { LegacyOccupancy } from '../src/modules/integrations/layantara/adapter';
+import type { LegacyOccupancy } from '@/modules/integrations/layantara/adapter';
 
 type Mapping = { sourceInventoryId: string; canonicalUnitId: string; identityVerified: boolean };
 function parseFile(path: string): unknown { return JSON.parse(readFileSync(path, 'utf8')) as unknown; }

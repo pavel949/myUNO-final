@@ -117,6 +117,7 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.inspect': 'Night details',
       'staff.unified_calendar.open_unit': 'Open home calendar',
       'staff.unified_calendar.back': 'Back to operations',
+      'staff.unified_calendar.work_queue': 'Stay operations →',
       'staff.unified_calendar.read_only': 'Calendar is read-only. All changes use the existing canonical booking and availability actions.',
       'staff.unified_calendar.source': 'Live myUNO database',
       'staff.unified_calendar.no_entries': 'No reservation or closure for this date.',

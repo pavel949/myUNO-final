@@ -107,7 +107,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           >
             myUNO
           </Link>
-          <div className="hidden md:flex flex-wrap items-center gap-x-24 gap-y-8">
+          <div className="hidden lg:flex items-center gap-x-24">
             <Link href="/search" className={navLinkClass(pathname, '/search')}>
               {labels.findStay}
             </Link>
@@ -120,12 +120,15 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
               {labels.owners}
             </Link>
-            <Link href="/about" className={navLinkClass(pathname, '/about')}>
-              {labels.about}
-            </Link>
-            <Link href="/trust" className={navLinkClass(pathname, '/trust')}>
-              {labels.trust}
-            </Link>
+            <details className="relative group">
+              <summary className="cursor-pointer list-none text-body text-text-ink hover:text-brand-andaman">{labels.about} +</summary>
+              <div className="absolute left-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
+                <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
+                <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
+                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
+                <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
+              </div>
+            </details>
           </div>
         </div>
 
@@ -134,18 +137,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
           {user ? (
             <>
-              {userLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={navLinkClass(pathname, link.href)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <details className="relative">
+                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-10 font-semibold text-brand-andaman">{user.firstName} · My UNO ▾</summary>
+                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[240px] flex-col gap-10 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
+                  {userLinks.map(link => <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>{link.label}</Link>)}
+                </div>
+              </details>
               <NotificationBell labels={bellLabels} />
-              <span className="text-small text-text-secondary">{user.firstName}</span>
-              <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>
                 {labels.logout}
               </Button>
             </>
@@ -166,14 +165,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         </div>
 
         {/* Mobile bell + hamburger */}
-        <div className="md:hidden flex items-center">
+        <div className="lg:hidden flex items-center">
           {user && <NotificationBell labels={bellLabels} />}
         </div>
         <button
           type="button"
           aria-label={labels.menu}
           aria-expanded={menuOpen}
-          className="md:hidden flex items-center justify-center w-44 h-44 text-text-ink"
+          className="lg:hidden flex items-center justify-center w-44 h-44 text-text-ink"
           onClick={() => setMenuOpen((open) => !open)}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -198,7 +197,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border-line bg-surface-paper px-24 py-16 flex flex-col gap-16">
+        <div className="lg:hidden border-t border-border-line bg-surface-paper px-24 py-16 flex flex-col gap-16">
           <Link href="/search" className={navLinkClass(pathname, '/search', 'py-8')} onClick={closeMenu}>
             {labels.findStay}
           </Link>

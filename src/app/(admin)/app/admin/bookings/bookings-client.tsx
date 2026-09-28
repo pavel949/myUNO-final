@@ -166,6 +166,7 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
@@ -335,6 +336,17 @@ export default function BookingsAdminClient({
                   {labels['admin.bookings.record_transfer']}
                 </Button>
               </>
+            )}
+            {booking.status === 'checked_out' && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => act(booking.id, 'complete')}
+                isLoading={busyId === booking.id}
+                disabled={busyId === booking.id}
+              >
+                {labels['admin.bookings.complete_stay']}
+              </Button>
             )}
             {['requested', 'pending_payment', 'confirmed'].includes(booking.status) && (
               <Button

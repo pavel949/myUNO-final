@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const payment = await prisma.payment.findUnique({
       where: { id: sessionId },
-      select: { payerIdentityId: true, bookingId: true, amountThb: true, method: true, provider: true },
+      select: { payerIdentityId: true, bookingId: true, amountThb: true, method: true, provider: true, status: true },
     });
 
     if (!payment) {
@@ -67,6 +67,9 @@ export async function POST(req: NextRequest) {
     // stays pending_payment and the guest retries from My trips.
     if (body.simulateDecline === true && payment.provider !== 'mock') {
       throw createPublicError('Simulated decline is only supported for test payments', 400);
+    }
+    if (body.simulateDecline === true && payment.status !== 'pending') {
+      throw createPublicError('Only pending test payments can be declined', 400);
     }
     if (body.simulateDecline === true && payment.provider === 'mock') {
       await markPaymentFailed(prisma, sessionId, 'card_declined');

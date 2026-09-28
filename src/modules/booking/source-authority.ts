@@ -16,7 +16,7 @@ export async function assertLayantaraBookingAuthority(
 ):Promise<void>{
   const mapped=await db.externalMapping.findFirst({where:{
     entity_type:'unit',internal_id:unitId,
-    externalSystem:{system_key:'layantara',status:'active'},
+    externalSystem:{system_key:'layantara_os'},
   },select:{externalSystem:{select:{config:true}}}});
   if(mapped&&!sellable(mapped.externalSystem.config)){
     const error=new Error('This property is not available for new bookings until source-calendar cutover is verified');
@@ -33,7 +33,7 @@ export async function excludedSourceControlledUnits(
   if(!unitIds.length)return[];
   const mapped=await db.externalMapping.findMany({where:{
     entity_type:'unit',internal_id:{in:unitIds},
-    externalSystem:{system_key:'layantara',status:'active'},
+    externalSystem:{system_key:'layantara_os'},
   },select:{internal_id:true,externalSystem:{select:{config:true}}}});
   return mapped.filter(row=>!sellable(row.externalSystem.config)).map(row=>row.internal_id);
 }

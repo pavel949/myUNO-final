@@ -33,6 +33,11 @@ Scope: PR #137, process-centred admin and canonical property → stay → financ
 11. Mock checkout was not consistently denied in production when the provider adapter was bypassed. Provider availability is now checked before creating payment rows; mock confirmations are denied in production and Opn sessions require Opn verification.
 12. Checkout display now returns the actual provider and exact baht decimals; the real-provider view hides mock pay/decline controls.
 13. Simulated declines validate payer, provider and pending status before a conditional state transition, preventing a completed payment from being overwritten as failed.
+14. Real provider checkout creation failures mark the pending Payment failed rather than leaving a misleading session.
+15. Verified Opn webhooks can only resolve an Opn payment with the same provider session ID, never a mock payment by metadata collision.
+16. Owner statement report includes the full final calendar day and fails closed on cross-period bookings until an allocation policy is established.
+17. Owner payout diagnostics distinguish a distributed statement, an actual payout, and bank-reconciled payout.
+18. The operational calendar shows a seven-day scoped projection over canonical Booking and BlockedDate records.
 
 ## Required gates before merge
 - Latest commit lint, migration replay/drift, build, and integration suite all pass.

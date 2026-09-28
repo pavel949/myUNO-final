@@ -79,6 +79,30 @@ describe('processOpnEvent (Opn webhook)', () => {
     expect(updatedPayment?.status).toBe('succeeded');
   });
 
+  it('does not let an Opn event confirm a mock session by matching metadata only', async () => {
+    const guest = await createIdentity();
+    const project = await createProject();
+    const unit = await createUnit(project.id);
+    const booking = await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+      status: 'pending_payment', totalThb: 400_000,
+    });
+    const mockPayment = await db.payment.create({
+      data: {
+        purpose: 'stay', bookingId: booking.id, payerIdentityId: guest.id,
+        method: 'card_provider', provider: 'mock', amountThb: 400_000,
+        status: 'pending', providerSessionId: 'chrg_spoof',
+      },
+    });
+    const result = await processOpnEvent(db, {
+      id: 'evnt_spoof', object: 'event', key: 'charge.complete',
+      data: { id: 'chrg_spoof', paid: true, metadata: { paymentId: mockPayment.id } },
+    });
+    expect(result.action).toBe('payment_not_found');
+    expect((await db.payment.findUniqueOrThrow({ where: { id: mockPayment.id } })).status).toBe('pending');
+    expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('pending_payment');
+  });
+
   it('marks refund failed when provider voids refund (N-10)', async () => {
     const admin = await createIdentity({ isAdmin: true });
     const guest = await createIdentity();

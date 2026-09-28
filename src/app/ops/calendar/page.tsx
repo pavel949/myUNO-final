@@ -83,6 +83,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
       'One inventory calendar. Switch from the full property to a category or a single home without changing the source of truth.',
     'staff.ops.calendar_index.empty': 'No units in this scope.',
     'staff.ops.calendar_index.open': 'Open unit →',
+    'staff.ops.calendar_index.board': 'Open unified occupancy board →',
     'staff.ops.calendar_index.full': 'Full property',
     'staff.ops.calendar_index.categories': 'Categories',
     'staff.ops.calendar_index.units': 'Homes',
@@ -117,7 +118,7 @@ export default async function OpsCalendarIndexPage({ searchParams }: OpsCalendar
         </div>
 
         <Link href="/ops/calendar/board" className="mb-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white hover:opacity-90">
-          Open unified occupancy board →
+          {labels['staff.ops.calendar_index.board']}
         </Link>
 
         <OpsProjectSwitcher projects={projects} activeProjectId={validActiveProjectId} basePath="/ops/calendar" labels={labels} />

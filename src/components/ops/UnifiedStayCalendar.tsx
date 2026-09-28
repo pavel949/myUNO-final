@@ -112,7 +112,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <button type="button" onClick={refresh} className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:bg-surface-ivory">
             ↻ {props.labels['staff.unified_calendar.refresh']}
           </button>
-          {refreshRequestedAt && <span className="text-small text-text-secondary">Refresh requested {refreshRequestedAt}</span>}
+          {refreshRequestedAt && <span className="text-small text-text-secondary">{props.labels['staff.unified_calendar.refresh_requested']} {refreshRequestedAt}</span>}
         </div>
       </header>
 
@@ -123,7 +123,7 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>)}
       </section>
       {conflicts>0 && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-16 text-red-900">
-        {conflicts} conflicting villa-nights. Review imported and canonical records before opening sales.
+        {conflicts} {props.labels['staff.unified_calendar.conflict_warning']}
       </div>}
       <section aria-label="Calendar filters" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
@@ -177,7 +177,7 @@ export default function UnifiedStayCalendar(props: Props) {
               className={props.daysCount===length
                 ? 'rounded-md bg-brand-deep px-12 py-8 text-small font-bold text-white'
                 : 'rounded-md border border-border-line px-12 py-8 text-small font-semibold text-text-ink'}>
-              {length}d
+              {length}{props.labels['staff.unified_calendar.days_suffix']}
             </Link>)}
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function UnifiedStayCalendar(props: Props) {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-small" style={{minWidth:Math.max(780,220+props.days.length*52)}}>
             <thead><tr>
-              <th scope="col" className="sticky left-0 z-20 w-[220px] border-b border-r border-border-line bg-surface-paper p-12 text-left text-text-ink">Property / Home</th>
+              <th scope="col" className="sticky left-0 z-20 w-[220px] border-b border-r border-border-line bg-surface-paper p-12 text-left text-text-ink">{props.labels['staff.unified_calendar.project_home']}</th>
               {props.days.map((day)=><th key={day} scope="col"
                 className={day===props.today?'border-b border-l border-emerald-300 bg-emerald-100 p-8 text-center text-emerald-900':'border-b border-l border-border-line bg-surface-ivory p-8 text-center text-text-secondary'}>
                 <span className="block font-semibold">{day.slice(8)}</span>

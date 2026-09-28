@@ -5,42 +5,6 @@ import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
 
-/**
- * Shared post-payment transition for service orders: placed → paid.
- * Commission is recognized at fulfilment (recordServiceCommission), so no
- * gross-revenue ledger entry is written here — the Payment row itself is the
- * money-in record (doc 10; ledger presentation of gross service cash is an
- * open founder question).
- */
-async function markServiceOrderPaid(
-  db: PrismaClient,
-  serviceOrderId: string,
-  payerIdentityId: string
-): Promise<void> {
-  // Note: the ServiceOrder model region uses snake_case client fields.
-  const order = await db.serviceOrder.findUnique({
-    where: { id: serviceOrderId },
-    select: { status: true, project_id: true, unit_id: true, total_thb: true },
-  });
-
-  if (!order || order.status !== 'placed') {
-    return; // idempotent: already paid/advanced, or order gone
-  }
-
-  await db.serviceOrder.update({
-    where: { id: serviceOrderId },
-    data: { status: 'paid' },
-  });
-
-  await track(db, 'service_order_paid', {
-    serviceOrderId,
-    projectId: order.project_id ?? undefined,
-    unitId: order.unit_id ?? undefined,
-    identityId: payerIdentityId,
-    totalThb: order.total_thb,
-  });
-}
-
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
   bookingId?: string;
@@ -502,7 +466,7 @@ export async function verifyAndConfirm(
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${sessionId}))`;
     const current = await tx.payment.findUniqueOrThrow({ where: { id: sessionId } });
     if (current.status === 'succeeded') {
-      return { payment: current, changed: false, stayBooking: null as null | { id: string; unitId: string; projectId: string; guestIdentityId: string } };
+      return { payment: current, changed: false, stayBooking: null as null | { id: string; unitId: string; projectId: string; guestIdentityId: string }, serviceOrderToPay: null as null | { id: string; projectId: string | null; unitId: string | null } };
     }
     if (current.status !== 'pending') throw new Error(`Cannot confirm payment with status ${current.status}`);
 
@@ -533,6 +497,24 @@ export async function verifyAndConfirm(
       stayBooking = booking;
     }
 
+    let serviceOrderToPay: null | { id: string; projectId: string | null; unitId: string | null } = null;
+    if (current.purpose === 'service_order') {
+      if (!current.serviceOrderId) throw new Error('Service order payment is missing order id');
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${current.serviceOrderId}))`;
+      const order = await tx.serviceOrder.findUnique({
+        where: { id: current.serviceOrderId },
+        select: { id: true, status: true, total_thb: true, orderer_identity_id: true, project_id: true, unit_id: true },
+      });
+      if (!order || order.status !== 'placed') throw new Error('Service order is no longer awaiting payment');
+      if (order.total_thb !== current.amountThb || order.orderer_identity_id !== current.payerIdentityId) {
+        throw new Error('Service order payment amount or payer does not match');
+      }
+      if (await tx.payment.count({
+        where: { serviceOrderId: current.serviceOrderId, purpose: 'service_order', status: 'succeeded', id: { not: sessionId } },
+      })) throw new Error('Another payment already succeeded for this service order');
+      serviceOrderToPay = { id: order.id, projectId: order.project_id, unitId: order.unit_id };
+    }
+
     const succeeded = await tx.payment.update({
       where: { id: sessionId },
       data: { status: 'succeeded', succeededAt: now },
@@ -559,7 +541,10 @@ export async function verifyAndConfirm(
         });
       }
     }
-    return { payment: succeeded, changed: true, stayBooking };
+    if (serviceOrderToPay) {
+      await tx.serviceOrder.update({ where: { id: serviceOrderToPay.id }, data: { status: 'paid' } });
+    }
+    return { payment: succeeded, changed: true, stayBooking, serviceOrderToPay };
   });
 
   if (!result.changed) return { payment: result.payment, confirmed: false };
@@ -578,8 +563,14 @@ export async function verifyAndConfirm(
     }
   }
 
-  if (confirmed.serviceOrderId && confirmed.purpose === 'service_order') {
-    await markServiceOrderPaid(db, confirmed.serviceOrderId, confirmed.payerIdentityId);
+  if (result.serviceOrderToPay) {
+    await track(db, 'service_order_paid', {
+      serviceOrderId: result.serviceOrderToPay.id,
+      projectId: result.serviceOrderToPay.projectId ?? undefined,
+      unitId: result.serviceOrderToPay.unitId ?? undefined,
+      identityId: confirmed.payerIdentityId,
+      totalThb: confirmed.amountThb,
+    }).catch(() => null);
   }
 
   return { payment: confirmed, confirmed: true };

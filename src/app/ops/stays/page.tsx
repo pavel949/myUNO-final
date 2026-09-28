@@ -49,6 +49,7 @@ export default async function StayOperationsPage({
     // cancelled reservations consumed an arbitrary first-page limit.
     orderBy:{startDate:'asc'},
   });
+  const bookingProjects=new Map(bookings.map(booking=>[booking.id,booking.projectId]));
   const work=bookings.flatMap(b=>deriveStayWorkItems({
     id:b.id,projectId:b.projectId,unitId:b.unitId,unitName:b.unit.name,
     guestName:[b.guestIdentity.firstName,b.guestIdentity.lastName].filter(Boolean).join(' '),
@@ -56,7 +57,7 @@ export default async function StayOperationsPage({
     endDate:b.endDate.toISOString().slice(0,10),totalSatang:b.totalThb,
     paidSatang:b.payments.reduce((sum,p)=>sum+p.amountThb,0),
     refundAccruedSatang:b.refundAccruedThb,
-  },today)).filter(item=>allowedDepartments.includes(item.department) && (user.isAdmin || !projectDepartments.has(item.projectId) || projectDepartments.get(item.projectId)?.includes(item.department)));
+  },today)).filter(item=>allowedDepartments.includes(item.department) && (user.isAdmin || !projectDepartments.has(bookingProjects.get(item.bookingId)||'') || projectDepartments.get(bookingProjects.get(item.bookingId)||'')?.includes(item.department)));
   const queue=(department?work.filter(item=>item.department===department):work)
     .sort((a,b)=>(a.severity==='attention'?-1:1)-(b.severity==='attention'?-1:1)||
       a.dueDate.localeCompare(b.dueDate));

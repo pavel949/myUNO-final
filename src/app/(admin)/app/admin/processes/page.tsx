@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
+import { prisma } from '@/lib/prisma';
+import { getProcessState } from './process-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,10 +32,10 @@ const lanes = [
 export default async function ProcessesPage() {
   // Localized heading fallbacks; process definitions are intentionally centralized here
   // instead of duplicating routes in dashboard cards and separate process pages.
-  const labels = await getLabels({
+  const [labels, state] = await Promise.all([getLabels({
     'admin.processes.title': 'Operations map',
-    'admin.processes.subtitle': 'Choose what you need to accomplish. Each card opens an existing operational screen.',
-  });
+    'admin.processes.subtitle': 'Live workflow states from your operational records. Start with an exception or continue a process.',
+  }), getProcessState(prisma)]);
   return (
     <main className="mx-auto max-w-7xl space-y-24 pb-40">
       <header className="rounded-xl border border-border-line bg-surface-paper p-24 md:p-32">
@@ -73,6 +75,10 @@ export default async function ProcessesPage() {
                     <h3 className="font-display text-subtitle font-semibold text-text-ink">{process.title}</h3>
                     <p className="text-small text-text-secondary mt-4">{process.description}</p>
                   </div>
+                </div>
+                <div className="mt-16 rounded-md bg-surface-ivory border border-border-line p-12" aria-live="polite">
+                  <p className="text-small font-semibold text-text-ink">{state[process.number as keyof typeof state].summary}</p>
+                  {state[process.number as keyof typeof state].attention && <p className="text-small text-state-warning mt-4">Needs attention: {state[process.number as keyof typeof state].attention}</p>}
                 </div>
                 <ol className="flex flex-wrap items-center gap-8 my-20 text-small text-text-secondary" aria-label={process.title + ' stages'}>
                   {process.steps.map((step, i) => <li key={step} className="flex items-center gap-8">{i > 0 && <span aria-hidden="true">→</span>}<span className="rounded-md bg-surface-ivory px-8 py-4">{step}</span></li>)}

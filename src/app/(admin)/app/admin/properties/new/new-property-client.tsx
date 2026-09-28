@@ -24,6 +24,12 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
         const response = await fetch('/api/admin/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
           slug: data.get('slug'), name: data.get('name'), brand: data.get('brand') || undefined, address: data.get('address'), areaId: data.get('areaId'),
           projectType: data.get('projectType'), country: data.get('country') || 'TH', city: data.get('city') || undefined, district: data.get('district') || undefined,
+          totalUnits: data.get('totalUnits') ? Number(data.get('totalUnits')) : undefined,
+          totalBuildings: data.get('totalBuildings') ? Number(data.get('totalBuildings')) : undefined,
+          floors: data.get('floors') ? Number(data.get('floors')) : undefined,
+          landAreaSqm: data.get('landAreaSqm') ? Number(data.get('landAreaSqm')) : undefined,
+          commonAreaSqm: data.get('commonAreaSqm') ? Number(data.get('commonAreaSqm')) : undefined,
+          facilities: String(data.get('facilities')||'').split(',').map(x=>x.trim()).filter(Boolean),
           plusCode: plusCode || undefined, ...(!plusCode ? { latitude: Number(data.get('latitude')), longitude: Number(data.get('longitude')) } : {}),
           areaLabelKey: `project.${data.get('slug')}.area`, descriptionKey: `project.${data.get('slug')}.description`, handbookKey: `project.${data.get('slug')}.handbook`, status: 'draft',
         }) });
@@ -40,6 +46,12 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
       <TextField label="Country" name="country" field={field} defaultValue="TH" required />
       <TextField label="City" name="city" field={field} />
       <TextField label="District" name="district" field={field} />
+      <TextField label="Total units in development" name="totalUnits" field={field} type="number" min="1" step="1" />
+      <TextField label="Buildings" name="totalBuildings" field={field} type="number" min="0" step="1" />
+      <TextField label="Floors" name="floors" field={field} type="number" min="0" step="1" />
+      <TextField label="Land area (m²)" name="landAreaSqm" field={field} type="number" min="0" step="0.01" />
+      <TextField label="Common area (m²)" name="commonAreaSqm" field={field} type="number" min="0" step="0.01" />
+      <TextField label="Common facilities, separated by commas" name="facilities" field={field} placeholder="pool, gym, coworking, parking" />
       <TextField label="Plus Code" name="plusCode" field={field} placeholder="Preferred" />
       <TextField label="Latitude (without Plus Code)" name="latitude" field={field} type="number" step="any" />
       <TextField label="Longitude (without Plus Code)" name="longitude" field={field} type="number" step="any" />

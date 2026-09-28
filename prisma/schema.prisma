@@ -3404,8 +3404,8 @@ model ProjectStaffPermission {
   departments  String[] @default([])
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
-  project Project @relation(fields:[projectId], references:[id], onDelete:Cascade)
-  identity Identity @relation(fields:[identityId], references:[id], onDelete:Cascade)
+  project Project @relation(fields:[projectId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  identity Identity @relation(fields:[identityId], references:[id], onDelete:Cascade, onUpdate:NoAction)
 
   @@id([projectId, identityId])
   @@index([identityId], map:"project_staff_permission_identity_idx")
@@ -3419,7 +3419,7 @@ model UnitAccessInstruction {
   ciphertext   String
   updatedById  String   @map("updated_by_identity_id")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
-  unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade)
-  updatedBy Identity @relation(fields:[updatedById], references:[id])
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  updatedBy Identity @relation(fields:[updatedById], references:[id], onUpdate:NoAction)
   @@map("unit_access_instruction")
 }

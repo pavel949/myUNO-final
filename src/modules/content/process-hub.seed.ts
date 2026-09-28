@@ -22,4 +22,5 @@ export const PROCESS_HUB_KEYS = [
   { key: 'staff.ops.calendar_index.held', namespace: 'staff', description: 'Canonical resort calendar; translation review required', en: "Held", ru: "Резерв", status: 'needs_review' as const },
   { key: 'staff.ops.calendar_index.blocked', namespace: 'staff', description: 'Canonical resort calendar; translation review required', en: "Blocked", ru: "Блокировка", status: 'needs_review' as const },
   { key: 'staff.ops.calendar_index.grid_title', namespace: 'staff', description: 'Canonical resort calendar; translation review required', en: "Seven-day inventory grid", ru: "Календарь фонда на семь дней", status: 'needs_review' as const },
+  { key: 'staff.ops.calendar_index.unavailable', namespace: 'staff', description: 'Inactive inventory in canonical calendar', en: 'Unavailable', ru: 'Недоступно', status: 'needs_review' as const },
 ];

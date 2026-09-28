@@ -65,6 +65,14 @@ interface UpdateProjectInput {
   facilities?: string[];
 }
 
+function assertValidLocation(latitude: number, longitude: number, address: string): void {
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+      !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new Error('Project coordinates are outside the valid geographic range');
+  }
+  if (!address || !address.trim()) throw new Error('Project address is required');
+}
+
 /**
  * Create a new project.
  * Admin-only action.
@@ -100,6 +108,7 @@ export async function createProject(input: CreateProjectInput) {
     facilities = [],
   } = input;
 
+  assertValidLocation(latitude, longitude, address);
   // Check slug uniqueness
   const existing = await prisma.project.findUnique({ where: { slug } });
   if (existing) {
@@ -230,6 +239,8 @@ export async function updateProject(input: UpdateProjectInput) {
   if (!project) {
     throw new Error(`Project ${projectId} not found`);
   }
+
+  assertValidLocation(latitude ?? Number(project.latitude), longitude ?? Number(project.longitude), address ?? project.address);
 
   // Validate status transitions
   if (status && status !== project.status) {

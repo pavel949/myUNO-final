@@ -7,7 +7,7 @@ import { validCalendarDay } from '@/modules/booking/calendar-projection';
  * and agent checkout continue to use their canonical authenticated routes.
  */
 export type ChannelEventKind =
-  | 'occupancy.protect' | 'booking.confirmed' | 'booking.changed'
+  | 'occupancy.protect' | 'occupancy.release' | 'booking.confirmed' | 'booking.changed'
   | 'booking.cancelled' | 'payment.received';
 
 export interface ChannelEvent {
@@ -19,6 +19,7 @@ export interface ChannelEvent {
   externalUnitId: string;
   occurredAt: string;
   occupancyId?: string;
+  blockReason?: 'ota_import' | 'owner_hold' | 'maintenance' | 'other';
   startDate?: string;
   endDate?: string;
   channel?: 'airbnb' | 'booking_com' | 'agoda';
@@ -39,7 +40,7 @@ export interface ChannelEvent {
 
 const identifiers = /^[a-zA-Z0-9_:\-./]{1,180}$/;
 const supported = new Set<ChannelEventKind>([
-  'occupancy.protect','booking.confirmed','booking.changed',
+  'occupancy.protect','occupancy.release','booking.confirmed','booking.changed',
   'booking.cancelled','payment.received',
 ]);
 const channels = new Set(['airbnb','booking_com','agoda']);
@@ -57,6 +58,11 @@ export function parseChannelEvent(payload: unknown): ChannelEvent {
   if (typeof e.occurredAt!=='string' || !Number.isFinite(Date.parse(e.occurredAt)) ||
       !/^\d{4}-\d{2}-\d{2}T/.test(e.occurredAt)) throw new Error('invalid_event_date');
   if (e.occupancyId!==undefined && !hasId(e.occupancyId)) throw new Error('invalid_occupancy_id');
+  if ((e.eventType==='occupancy.protect' || e.eventType==='occupancy.release') &&
+      !hasId(e.occupancyId)) throw new Error('invalid_occupancy_id');
+  if (e.eventType==='occupancy.protect' && e.blockReason!==undefined &&
+      !['ota_import','owner_hold','maintenance','other'].includes(e.blockReason as string))
+    throw new Error('invalid_block_reason');
   const needsDates = e.eventType==='occupancy.protect' || e.eventType==='booking.confirmed' || e.eventType==='booking.changed';
   if (needsDates && (!(typeof e.startDate==='string' && validCalendarDay(e.startDate)) ||
        !(typeof e.endDate==='string' && validCalendarDay(e.endDate)) ||

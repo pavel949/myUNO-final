@@ -9,6 +9,7 @@ export default async function AdminBookingsPage() {
     getLabels({
     'admin.bookings.title': 'Bookings',
     'admin.bookings.journey': 'Open booking journey & financial closure →',
+    'admin.bookings.complete_stay': 'Complete stay',
     'admin.bookings.empty': 'No bookings yet.',
     'admin.bookings.paid': 'Paid',
     'admin.bookings.record_cash': 'Record cash',

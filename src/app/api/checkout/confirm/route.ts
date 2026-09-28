@@ -65,6 +65,9 @@ export async function POST(req: NextRequest) {
 
     // Mock-provider unhappy path (doc 07 F-GUEST-3): card declined, booking
     // stays pending_payment and the guest retries from My trips.
+    if (body.simulateDecline === true && payment.provider !== 'mock') {
+      throw createPublicError('Simulated decline is only supported for test payments', 400);
+    }
     if (body.simulateDecline === true && payment.provider === 'mock') {
       await markPaymentFailed(prisma, sessionId, 'card_declined');
       throw createPublicError(

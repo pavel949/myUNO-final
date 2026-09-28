@@ -14,6 +14,8 @@ vi.mock('@/app/actions/getCurrentUser', () => ({
 
 import { POST as catalogPost } from '@/app/api/admin/projects/[id]/catalog/route';
 import { POST as adminUnitPost } from '@/app/api/admin/units/route';
+import { POST as propertyDetailsPost } from '@/app/api/admin/units/[id]/property-details/route';
+import { getPropertyReadiness } from '@/modules/projects/property-readiness';
 import { POST as pricingPost } from '@/app/api/pricing/breakdown/route';
 import { POST as bookingPost } from '@/app/api/bookings/route';
 import { GET as searchGet } from '@/app/api/search/units/route';
@@ -215,5 +217,44 @@ describe('canonical onboarding → pricing → search → booking route journey'
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
     }));
     expect(booking.status).toBe(404);
+  });
+
+  it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {
+    const c = await category('garden_2br');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
+    });
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
+
+    const before = await getPropertyReadiness(db, projectId);
+    expect(before?.blockers.some(b => b.key === 'unit.stay_offering' && b.unitId === unit.id)).toBe(true);
+
+    const offer = () => propertyDetailsPost(
+      request('/api/admin/units/x/property-details', { action: 'stay_offering', status: 'active' }),
+      { params: { id: unit.id } }
+    );
+    const first = await offer();
+    const second = await offer();
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(await db.commercialOffering.count({ where: { unitId: unit.id, offeringType: 'short_stay' } })).toBe(1);
+
+    for (const channel of ['airbnb', 'booking_com']) {
+      const result = await propertyDetailsPost(
+        request('/api/admin/units/x/property-details', {
+          action: 'channel_mapping', channel, syncState: 'ical_only',
+        }),
+        { params: { id: unit.id } }
+      );
+      expect(result.status).toBe(201);
+    }
+    const [offering] = await db.commercialOffering.findMany({
+      where: { unitId: unit.id, offeringType: 'short_stay' },
+      include: { channelMappings: true },
+    });
+    expect(offering.channelMappings).toHaveLength(2);
+
+    const after = await getPropertyReadiness(db, projectId);
+    expect(after?.blockers.some(b => b.key === 'unit.stay_offering' && b.unitId === unit.id)).toBe(false);
   });
 });

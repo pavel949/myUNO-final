@@ -11,7 +11,7 @@ describe('Layantara event ingestion: real transactional database', () => {
     const unit=await createUnit({projectId:project.id,status:'live'});
     const integrationActor=await db.identity.create({data:{firstName:'Source',lastName:'Integration'}});
     const system=await db.externalSystem.create({data:{
-      system_key:'layantara',environment:'staging',display_name:'Layantara test',
+      system_key:'layantara_os',environment:'staging',display_name:'Layantara test',
       status:'active',config:{protectionEnabled:true,bookingAuthority,cutoverVerified:bookingAuthority==='myuno',integrationActorIdentityId:integrationActor.id},
     }});
     await db.externalMapping.create({data:{

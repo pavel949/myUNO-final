@@ -166,7 +166,7 @@ export default async function LandingPage() {
         <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['home.destinations.kicker']}</p><h2 id="destination-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.destinations.title']}</h2>
         <p className="mt-12 text-body text-text-secondary">{labels['home.destinations.subtitle']}</p>
         <div className="mt-28 grid grid-cols-2 gap-12 md:grid-cols-4">
-          {destinations.map((area, index) => <Link key={area.name} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
+          {destinations.map((area) => <Link key={area.name} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
             <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark transition duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
             <div className="relative"><h3 className="font-display text-heading-2 font-semibold">{area.name}</h3><p className="mt-4 text-small text-white/80">{area.subtitle}</p></div>

@@ -10,7 +10,7 @@ export async function getProcessState(db: PrismaClient) {
     activeOffers, ratePlans, requested, pendingPayment, confirmed,
     checkedIn, checkedOut, completed, openTickets, leads,
     statementsPending, outstandingPayments, payoutCount, serviceOrders,
-    ledgerEntries, unlinkedSucceededPayments,
+    ledgerEntries, unlinkedSucceededPayments, activeProviders, agentBookings,
   ] = await Promise.all([
     db.identity.count({ where: { status: 'active' } }),
     db.project.count(),
@@ -27,13 +27,15 @@ export async function getProcessState(db: PrismaClient) {
     db.booking.count({ where: { status: 'checked_out' } }),
     db.booking.count({ where: { status: 'completed' } }),
     db.ticket.count({ where: { status: { in: ['open', 'acknowledged', 'in_progress'] } } }),
-    db.identity.count({ where: { roleAssignments: { some: { role: 'buyer', status: 'active' } } } }),
-    db.ownerStatement.count({ where: { status: { in: ['draft', 'pending_owner_review', 'signed_off'] } } }),
+    db.crmOpportunity.count({ where: { stage: { notIn: ['won', 'lost'] } } }),
+    db.ownerStatement.count({ where: { status: { notIn: ['distributed', 'superseded'] } } }),
     db.payment.count({ where: { status: { in: ['created', 'pending'] }, bookingId: { not: null } } }),
     db.payout.count(),
     db.serviceOrder.count({ where: { status: { in: ['placed', 'paid', 'accepted'] } } }),
     db.ledgerEntry.count(),
     db.payment.count({ where: { status: 'succeeded', purpose: { in: ['stay', 'stay_balance'] }, bookingId: { not: null }, ledgerEntries: { none: { entryType: 'rental_revenue' } } } }),
+    db.provider.count({ where: { status: 'active' } }),
+    db.booking.count({ where: { channel: 'agent' } }),
   ]);
   return {
     '01': { summary: `${people} active identities`, attention: null },
@@ -43,9 +45,9 @@ export async function getProcessState(db: PrismaClient) {
     '05': { summary: `${requested} requests · ${confirmed} confirmed`, attention: pendingPayment > 0 ? `${pendingPayment} awaiting payment` : null },
     '06': { summary: `${confirmed} pre-arrival · ${checkedIn} in-house · ${checkedOut} checked out · ${completed} completed`, attention: checkedOut > 0 ? `${checkedOut} awaiting completion review` : null },
     '07': { summary: `${openTickets} open operational tickets`, attention: openTickets > 0 ? `${openTickets} require action` : null },
-    '08': { summary: `${leads} identities with buyer role`, attention: null },
+    '08': { summary: `${leads} open CRM opportunities`, attention: null },
     '09': { summary: `${statementsPending} statements not distributed`, attention: statementsPending > 0 ? `${statementsPending} in statement workflow` : null },
-    '10': { summary: 'Partner attribution and providers', attention: null },
+    '10': { summary: `${activeProviders} active providers · ${agentBookings} agent-channel bookings`, attention: null },
     '11': { summary: `${serviceOrders} active service orders`, attention: null },
     '12': { summary: `${ledgerEntries} ledger entries · ${payoutCount} payouts`, attention: unlinkedSucceededPayments > 0 ? `${unlinkedSucceededPayments} successful booking payments without ledger entries` : outstandingPayments > 0 ? `${outstandingPayments} pending booking payments` : null },
   } satisfies Record<string, { summary: string; attention: string | null }>;

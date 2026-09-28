@@ -28,7 +28,7 @@ export async function applyChannelEvent(
 ):Promise<Outcome> {
   const {event:e,rawBody,environment}=input,hash=channelPayloadHash(rawBody);
   const system=await db.externalSystem.findFirst({
-    where:{system_key:'layantara',environment,status:'active'},
+    where:{system_key:'layantara_os',environment,status:'active'},
   });
   if(!system)return{status:'quarantined',bookingId:null,code:'system_not_enabled'};
   const config=system.config as Record<string,unknown>;

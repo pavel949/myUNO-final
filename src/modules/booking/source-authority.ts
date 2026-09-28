@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 type MappingReader = Pick<PrismaClient,'externalMapping'>;
 const sellable=(config:unknown):boolean=>

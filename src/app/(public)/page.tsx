@@ -157,7 +157,7 @@ export default async function LandingPage() {
         <p className="mt-12 text-body text-text-secondary">{labels['home.destinations.subtitle']}</p>
         <div className="mt-28 grid grid-cols-2 gap-12 md:grid-cols-4">
           {destinations.map((area, index) => <Link key={area.name} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
-            <Image src={projectPresentationImage(area.name, null).src} alt="" fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover opacity-40 transition duration-700 group-hover:scale-105" />
+            <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark transition duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
             <div className="relative"><h3 className="font-display text-heading-2 font-semibold">{area.name}</h3><p className="mt-4 text-small text-white/80">{area.subtitle}</p></div>
           </Link>)}

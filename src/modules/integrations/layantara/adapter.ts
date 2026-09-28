@@ -34,7 +34,7 @@ export function classifyLegacyOccupancy(
   const unitId = mapping.get(source.inventory_id);
   if (!unitId) return { action: 'quarantine', id: source.id, reason: 'unmapped_physical_unit' };
   const reasons: Record<string, 'ota_import' | 'owner_hold' | 'other'> = {
-    imported_reservation: 'ota_import', owner_stay: 'owner_hold', provisional_hold: 'other',
+    imported_reservation: 'ota_import', owner_stay: 'owner_hold', 
   };
   const blockReason = reasons[source.occupancy_kind];
   // A hold must have a valid, live expiry before it can reduce available inventory.
@@ -45,6 +45,9 @@ export function classifyLegacyOccupancy(
     if (Date.parse(source.expires_at) <= Date.now()) {
       return { action: 'archive', id: source.id, reason: 'expired_source_hold' };
     }
+  }
+  if (source.occupancy_kind === 'provisional_hold') {
+    return { action: 'quarantine', id: source.id, reason: 'expiring_hold_requires_canonical_hold' };
   }
   // A canonical active reservation is not converted to a block: reconcile its
   // guest/booking identity first, then import via a dedicated booking transition.

@@ -222,7 +222,7 @@ export default function BookingsAdminClient({
                 {booking.channel.replace(/_/g, ' ')}
               </span>
             </p>
-            <Link href={`/app/admin/bookings/${booking.id}/journey`} className="inline-block mt-4 text-small text-brand-andaman underline underline-offset-4">Open booking journey & financial closure →</Link>
+            <Link href={`/app/admin/bookings/${booking.id}/journey`} className="inline-block mt-4 text-small text-brand-andaman underline underline-offset-4">{labels['admin.bookings.journey']}</Link>
             {booking.guestNote ? (
               <p className="text-small text-text-secondary italic">
                 {labels['admin.bookings.guest_note']}: {booking.guestNote}

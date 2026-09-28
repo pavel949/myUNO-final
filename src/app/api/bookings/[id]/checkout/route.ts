@@ -29,7 +29,7 @@ export async function POST(
         guestIdentityId: true,
         payments: {
           where: { purpose: 'stay' },
-          select: { id: true, status: true, method: true },
+          select: { id: true, status: true, method: true, provider: true },
         },
       },
     });
@@ -51,6 +51,11 @@ export async function POST(
       (p) => p.status === 'pending' && p.method === 'card_provider'
     );
     if (pending) {
+      if (pending.provider !== 'mock') {
+        // A stored provider session ID is not a reusable checkout URL. Never send
+        // a real-payment customer to the local mock checkout page.
+        return NextResponse.json({ error: 'External payment session is pending. Complete or reconcile it before starting another checkout.' }, { status: 409 });
+      }
       return NextResponse.json({
         checkoutUrl: `/checkout/${pending.id}`,
         sessionId: pending.id,

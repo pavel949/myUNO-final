@@ -42,7 +42,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
     </Section>
 
     <Section id="step-3" title="3. Owner, invitation and contract"><OwnerInvite units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Open owner and contract workspace"/></Section>
-    <Section id="step-4" title="4. Full physical facts, sleeping arrangements and compliance"><p>Record floor, all measured areas, furnishing, views, amenities and a bed-level layout. Access codes are private and handled separately from public listing data.</p><PhysicalFactsForm units={initialProject.units} submit={submit}/><SleepingForm units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
+    <Section id="step-4" title="4. Full physical facts, sleeping arrangements and compliance"><p>Record floor, all measured areas, furnishing, views, amenities and a bed-level layout. Access codes are private and handled separately from public listing data.</p><PhysicalFactsForm units={initialProject.units} submit={submit}/><AccessInstructionsForm units={initialProject.units}/><SleepingForm units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
     <Section id="step-5" title="5. One home · three commercial offers">
       <p className="mb-12">The physical home is entered once. Add a separate nightly, monthly or sale offer using the same unit and project. New offers are saved as drafts until readiness checks pass.</p>
       <OfferingForm units={initialProject.units} submit={submit}/>
@@ -57,6 +57,43 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
 }
 
 
+
+function AccessInstructionsForm({units}:{units:Unit[]}) {
+  const [unitId,setUnitId]=useState('');
+  const [entryCode,setEntryCode]=useState('');
+  const [handoverNotes,setHandoverNotes]=useState('');
+  const [message,setMessage]=useState('');
+  const load=async()=>{
+    if(!unitId)return;
+    setMessage('');
+    const res=await fetch('/api/ops/units/'+encodeURIComponent(unitId)+'/access',{cache:'no-store'});
+    const data=await res.json().catch(()=>null);
+    if(!res.ok){setMessage(data?.error||'Could not load access instructions.');return;}
+    setEntryCode(data?.instructions?.entryCode||'');
+    setHandoverNotes(data?.instructions?.handoverNotes||'');
+    setMessage('Private access instructions loaded.');
+  };
+  const save=async(event:FormEvent<HTMLFormElement>)=>{
+    event.preventDefault();
+    if(!unitId)return;
+    const res=await fetch('/api/ops/units/'+encodeURIComponent(unitId)+'/access',{
+      method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entryCode,handoverNotes})});
+    setMessage(res.ok?'Access details saved securely.':'Could not save access details.');
+  };
+  return <form onSubmit={save} className="my-16 grid gap-8 rounded-md border border-border-line bg-surface-ivory p-12 md:grid-cols-3">
+    <p className="md:col-span-3 font-semibold text-text-ink">Private access and check-in instructions · staff only</p>
+    <select className={input} value={unitId} onChange={e=>{setUnitId(e.target.value);setEntryCode('');setHandoverNotes('');setMessage('');}} required>
+      <option value="">Select home</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+    </select>
+    <button type="button" onClick={load} disabled={!unitId} className="rounded-md border border-border-line p-8 text-small">Load private instructions</button>
+    <input className={input} type="password" autoComplete="off" value={entryCode} onChange={e=>setEntryCode(e.target.value)}
+      placeholder="Entrance / keybox code" maxLength={100}/>
+    <textarea className="md:col-span-3 rounded-sm border border-border-line p-8" value={handoverNotes} onChange={e=>setHandoverNotes(e.target.value)}
+      placeholder="Handover, reception and access instructions (not public)" maxLength={2000} rows={3}/>
+    <button type="submit" disabled={!unitId} className="rounded-md bg-brand-deep px-16 py-8 text-small text-white">Save private access details</button>
+    {message&&<p role="status" className="md:col-span-3 text-small">{message}</p>}
+  </form>;
+}
 function OfferingForm({units,submit}:{units:Unit[];submit:(url:string,body:object,method?:string)=>Promise<any>}) {
   return <form className="grid gap-8 md:grid-cols-3" onSubmit={async e=>{
     e.preventDefault();const d=new FormData(e.currentTarget);const unit=String(d.get('unit')||'');

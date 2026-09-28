@@ -355,15 +355,26 @@ export async function createCheckout(
       : `${baseUrl}/trips`;
 
   if (providerName === 'opn' && process.env.PAYMENT_PROVIDER === 'opn') {
-    const session = await activeProvider.createCheckout({
-      bookingId: bookingId ?? serviceOrderId ?? payment.id,
-      amount: amountThb,
-      guestEmail: payer?.email ?? '',
-      guestName: payer ? `${payer.firstName} ${payer.lastName}`.trim() : 'Guest',
-      returnUrl,
-      cancelUrl,
-      paymentId: payment.id,
-    });
+    let session: Awaited<ReturnType<typeof activeProvider.createCheckout>>;
+    try {
+      session = await activeProvider.createCheckout({
+        bookingId: bookingId ?? serviceOrderId ?? payment.id,
+        amount: amountThb,
+        guestEmail: payer?.email ?? '',
+        guestName: payer ? `${payer.firstName} ${payer.lastName}`.trim() : 'Guest',
+        returnUrl,
+        cancelUrl,
+        paymentId: payment.id,
+      });
+    } catch (error) {
+      // A failed external checkout cannot leave an apparently usable pending
+      // session that the booking API will subsequently return as a local URL.
+      await db.payment.updateMany({
+        where: { id: payment.id, status: 'pending' },
+        data: { status: 'failed' },
+      });
+      throw error;
+    }
 
     await db.payment.update({
       where: { id: payment.id },

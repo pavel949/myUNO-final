@@ -8,6 +8,7 @@ export default async function AdminBookingsPage() {
   const [labels, declineReasons] = await Promise.all([
     getLabels({
     'admin.bookings.title': 'Bookings',
+    'admin.bookings.journey': 'Open booking journey & financial closure →',
     'admin.bookings.empty': 'No bookings yet.',
     'admin.bookings.paid': 'Paid',
     'admin.bookings.record_cash': 'Record cash',

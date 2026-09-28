@@ -96,7 +96,9 @@ export async function POST(
       receiptRef,
     });
 
-    await notifyBookingConfirmed(prisma, booking.id);
+    await notifyBookingConfirmed(prisma, booking.id).catch((error) => {
+      console.error('Cash payment committed but notification failed:', error);
+    });
 
     return NextResponse.json({ payment, confirmed: true }, { status: 200 });
   } catch (error) {

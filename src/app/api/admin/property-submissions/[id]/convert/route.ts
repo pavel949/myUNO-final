@@ -48,9 +48,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       let projectId = chosenProjectId;
 
       if (isNew) {
-        const address = String(data.projectAddress || '').trim();
-        const areaId = typeof data.areaId === 'string' ? data.areaId : '';
-        const lat = Number(data.latitude), lng = Number(data.longitude);
+        const address = String(review.projectAddress || data.projectAddress || '').trim();
+        const areaId = typeof review.areaId === 'string' && review.areaId ? review.areaId : typeof data.areaId === 'string' ? data.areaId : '';
+        const latitudeInput = review.latitude ?? data.latitude;
+        const longitudeInput = review.longitude ?? data.longitude;
+        const lat = latitudeInput == null || latitudeInput === '' ? NaN : Number(latitudeInput);
+        const lng = longitudeInput == null || longitudeInput === '' ? NaN : Number(longitudeInput);
         if (!name || !address || !areaId || !Number.isFinite(lat) || !Number.isFinite(lng) ||
             Math.abs(lat) > 90 || Math.abs(lng) > 180) {
           throw new Error('New complexes require name, address, canonical area and valid map coordinates.');

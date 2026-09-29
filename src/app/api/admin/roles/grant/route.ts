@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
       grantedByIdentityId: user.identityId,
     });
 
+    if (scopeType === 'project' && projectId && ['staff_ops', 'onsite_host'].includes(role)) {
+      await prisma.projectStaffPermission.upsert({
+        where: { projectId_identityId: { projectId, identityId } },
+        create: { projectId, identityId, departments: [] },
+        update: {},
+      });
+    }
     return NextResponse.json({ success: true, roleAssignment });
   } catch (error: any) {
     return NextResponse.json(

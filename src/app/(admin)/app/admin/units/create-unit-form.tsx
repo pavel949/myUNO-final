@@ -24,13 +24,16 @@ type Labels = Record<string, string>;
 
 export default function CreateUnitForm({
   projects,
+  categories,
   labels,
 }: {
   projects: Array<{ id: string; name: string }>;
+  categories: Array<{ id: string; projectId: string; name: string }>;
   labels: Labels;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [projectId, setProjectId] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +63,7 @@ export default function CreateUnitForm({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               projectId: form.get('projectId'),
+              ...(form.get('inventoryCategoryId') ? { inventoryCategoryId: form.get('inventoryCategoryId') } : {}),
               name: String(form.get('name') || '').trim(),
               unitType: form.get('unitType'),
               bedrooms: Number(form.get('bedrooms')),
@@ -94,13 +98,27 @@ export default function CreateUnitForm({
           {labels['admin.units.project']}
           <select
             name="projectId"
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
             required
             className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
           >
+            <option value="">{labels['admin.units.choose_project']}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
               </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-small text-text-secondary">
+          {labels['admin.units.category']}
+          <select name="inventoryCategoryId" key={projectId} disabled={!projectId}
+            required={categories.some((category) => category.projectId === projectId)}
+            className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink">
+            <option value="">{labels['admin.units.no_category']}</option>
+            {categories.filter((category) => category.projectId === projectId).map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
         </label>
@@ -134,7 +152,7 @@ export default function CreateUnitForm({
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.base_nightly']}
-          <input name="baseNightlyThb" type="number" min="0" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
+          <input name="baseNightlyThb" type="number" min="0" step="0.01" required className="block h-40 w-full mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink" />
         </label>
         <label className="text-small text-text-secondary">
           {labels['admin.units.min_nights']}

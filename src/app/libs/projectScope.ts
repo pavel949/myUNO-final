@@ -143,3 +143,40 @@ export async function canAccessMcMobilizationUnit(
 
   return Boolean(engagement);
 }
+
+/** Project-scoped operational permission. Both the active role and department grant are required.
+ * Platform admins alone bypass project scope. */
+export async function hasProjectDepartmentAccess(
+  user: CurrentUser,
+  projectId: string | null,
+  department: string,
+): Promise<boolean> {
+  if (user.isAdmin) return true;
+  if (!projectId || !hasProjectStaffAccess(user, projectId)) return false;
+  const grant = await prisma.projectStaffPermission.findUnique({
+    where: { projectId_identityId: { projectId, identityId: user.identityId } },
+    select: { departments: true },
+  });
+  // Legacy project roles remain valid until a department policy is explicitly configured.
+  return grant ? grant.departments.includes(department) : true;
+}
+
+/** Include only properties where the staff member has an active role AND at least
+ * one of the requested departmental capabilities. */
+export async function getDepartmentProjectIds(
+  user: CurrentUser,
+  departments: readonly string[],
+): Promise<string[]> {
+  if (user.isAdmin) {
+    const projects=await prisma.project.findMany({select:{id:true}});
+    return projects.map(project=>project.id);
+  }
+  const roleIds=getStaffProjectIds(user);
+  if (!roleIds.length) return [];
+  const grants=await prisma.projectStaffPermission.findMany({
+    where:{projectId:{in:roleIds},identityId:user.identityId},
+    select:{projectId:true,departments:true},
+  });
+  const configured=new Map(grants.map(grant=>[grant.projectId,grant.departments]));
+  return roleIds.filter(projectId=>!configured.has(projectId)||departments.some(dept=>configured.get(projectId)?.includes(dept)));
+}

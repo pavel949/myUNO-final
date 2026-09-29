@@ -53,3 +53,5 @@ export {
   MessengerChannel,
   type MessengerConfig,
 } from './messenger';
+
+export { auditLegacyOccupancies, classifyLegacyOccupancy, type LegacyOccupancy, type ReconciliationDecision } from './layantara/adapter';

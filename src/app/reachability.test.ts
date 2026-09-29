@@ -191,6 +191,9 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/run-frequent',
   '/api/cron/sync-ical-imports',
   '/api/webhooks/opn',
+  // Invoked by the separate LayantaraOS server's HMAC-signed service-role
+  // occupancy relay (pavel949/layan-tara-os PR #115), not by a browser.
+  '/api/integrations/layantara/events',
   '/api/health',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin

@@ -21,6 +21,12 @@ export default async function AdminUnitsPage() {
     orderBy: { name: 'asc' },
   });
 
+  const categories = await prisma.inventoryCategory.findMany({
+    where: { status: { not: 'archived' } },
+    select: { id: true, projectId: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+
   const labels = await getLabels({
     'admin.units.title': 'Stay inventory',
     'admin.units.eyebrow': 'Project → Category → Home',
@@ -29,6 +35,9 @@ export default async function AdminUnitsPage() {
     'admin.units.cancel': 'Cancel',
     'admin.units.saving': 'Saving…',
     'admin.units.project': 'Project',
+    'admin.units.category': 'Accommodation category',
+    'admin.units.no_category': 'No category — standalone home',
+    'admin.units.choose_project': 'Choose a project',
     'admin.units.name': 'Home name / number',
     'admin.units.type': 'Home type',
     'admin.units.bedrooms': 'Bedrooms',
@@ -63,7 +72,7 @@ export default async function AdminUnitsPage() {
         <h1 className="font-display text-display-xl font-semibold text-text-ink mt-4">{labels['admin.units.title']}</h1>
         <p className="text-body text-text-secondary mt-8 max-w-3xl">{labels['admin.units.intro']}</p>
       </div>
-      <CreateUnitForm projects={projects} labels={labels} />
+      <CreateUnitForm projects={projects} categories={categories} labels={labels} />
       <UnitsAdminClient
         units={units.map((unit) => ({
           id: unit.id,

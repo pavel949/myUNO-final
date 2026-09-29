@@ -96,6 +96,27 @@ jobs:
         run: npm run db:verify
         timeout-minutes: 10
 
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.production.json
+
+      - name: Focused unified-engine tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+        run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: |
+          set -o pipefail
+          npx vitest run 2>&1 | tee test-output.log
+        timeout-minutes: 10
+
       # next build must run as a production compile. Setting NODE_ENV=development
       # here mixed Next's prod and dev runtimes and failed prerender of /404,
       # /500, /_not-found, /legal and /design with
@@ -112,14 +133,3 @@ jobs:
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
         run: npm run build
 
-      - name: Run tests
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
-          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          NEXTAUTH_SECRET: test-secret
-          NEXTAUTH_URL: http://localhost:3000
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        run: |
-          set -o pipefail
-          npx vitest run 2>&1 | tee test-output.log
-        timeout-minutes: 10

@@ -753,6 +753,8 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  teamPermissions ProjectStaffPermission[]
+  unitAccessUpdates UnitAccessInstruction[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -925,6 +927,7 @@ model Area {
 }
 
 model Project {
+  teamPermissions ProjectStaffPermission[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1011,6 +1014,7 @@ model Project {
 }
 
 model Unit {
+  accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -3028,6 +3032,7 @@ model CommercialOffering {
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
 
+  @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
   @@index([unitId, offeringType])
   @@index([projectId, offeringType])
   @@map("commercial_offering")
@@ -3367,4 +3372,54 @@ model ProjectOnboardingDraft {
   updatedBy Identity?                   @relation(name: "projectOnboardingDraftUpdatedBy", fields: [updated_by_identity_id], references: [id], onUpdate: NoAction)
 
   @@map("project_onboarding_draft")
+}
+
+
+/// Durable transactionally emitted read model/outbox, not an independent booking.
+model UnifiedDomainEvent {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  project_id    String?
+  unit_id       String?
+  booking_id    String?
+  entity_type   String
+  entity_id     String
+  event_type    String
+  payload       Json      @default("{}") @db.JsonB
+  delivered_at  DateTime? @db.Timestamptz(6)
+  attempt_count Int       @default(0)
+
+  @@index([project_id, created_at, id], map: "unified_domain_event_project_cursor_idx")
+  @@index([booking_id, created_at], map: "unified_domain_event_booking_cursor_idx")
+  @@index([delivered_at, created_at], map: "unified_domain_event_pending_idx")
+  @@map("unified_domain_event")
+}
+
+
+/// Explicit per-property department scopes for myUNO staff.
+/// An active project-scoped RoleAssignment is mandatory.
+model ProjectStaffPermission {
+  projectId    String   @map("project_id")
+  identityId   String   @map("identity_id")
+  departments  String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  project Project @relation(fields:[projectId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  identity Identity @relation(fields:[identityId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+
+  @@id([projectId, identityId])
+  @@index([identityId], map:"project_staff_permission_identity_idx")
+  @@map("project_staff_permission")
+}
+
+
+/// Encrypted operational instructions. Never join into public listing DTOs.
+model UnitAccessInstruction {
+  unitId       String   @id @map("unit_id")
+  ciphertext   String
+  updatedById  String   @map("updated_by_identity_id")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  updatedBy Identity @relation(fields:[updatedById], references:[id], onDelete:NoAction, onUpdate:NoAction)
+  @@map("unit_access_instruction")
 }

@@ -1,0 +1,1 @@
+UPDATE public.commercial_offering SET offering_type=CASE offering_type WHEN 'short_stay' THEN 'short_term_stay' WHEN 'long_stay' THEN 'long_term_rental' ELSE offering_type END,updated_at=now() WHERE project_id='layantara-project-328e43e8-942d-432a-a2a1-6ded9cbfb7de' AND status='draft' AND offering_type IN ('short_stay','long_stay');

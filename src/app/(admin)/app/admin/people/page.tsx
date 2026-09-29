@@ -21,6 +21,10 @@ export default async function AdminPeoplePage() {
 
   const labels = await getLabels({
     'admin.people.title': 'People & roles',
+    'admin.people.project_teams': 'Operational teams by project',
+    'admin.people.project_teams_hint': 'First grant a staff role for the property, then select exactly which departments that person can work in. Other projects are separate.',
+    'admin.people.load_team': 'Load team',
+    'admin.people.no_project_team': 'No project-scoped operating staff yet.',
     'admin.people.search': 'Search by name, email or phone',
     'admin.people.searching': 'Searching…',
     'admin.people.none': 'Nobody matches that search.',

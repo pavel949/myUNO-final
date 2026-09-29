@@ -10,7 +10,7 @@ export default async function NewManagedUnitPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/new-unit');
   const roles = await prisma.roleAssignment.findMany({
-    where: { identityId: user.identityId, status: 'active', role: 'staff_ops', projectId: { not: null } },
+    where: { identityId: user.identityId, status: 'active', role: 'staff_ops', scopeType: 'project', projectId: { not: null } },
     select: { projectId: true },
   });
   const projectIds = [...new Set(roles.map((r) => r.projectId).filter((id): id is string => !!id))];

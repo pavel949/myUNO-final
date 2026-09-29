@@ -39,7 +39,9 @@ export default function PropertyDealClient(props:Props){
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
-  const endpoint='/api/admin/crm/opportunities/'+encodeURIComponent(props.opportunityId)+'/deal';
+  const endpoint=`/api/admin/crm/opportunities/${props.opportunityId}/deal`;
+  const evidenceEndpoint=`/api/admin/crm/opportunities/${props.opportunityId}/deal/evidence`;
+  const transitionEndpoint=`/api/admin/crm/opportunities/${props.opportunityId}/deal/transition`;
 
   async function request(url:string,method:string,body:unknown):Promise<any>{
     const response=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -75,7 +77,7 @@ export default function PropertyDealClient(props:Props){
   }
   async function upload(file:File):Promise<string>{
     const form=new FormData();form.set('file',file);
-    const result=await fetch(endpoint+'/evidence',{method:'POST',body:form});
+    const result=await fetch(evidenceEndpoint,{method:'POST',body:form});
     const body=await result.json();
     if(!result.ok)throw new Error(body.error||'Secure evidence upload failed');
     return body.mediaAssetId as string;
@@ -91,7 +93,7 @@ export default function PropertyDealClient(props:Props){
         if(!completion)throw new Error('Select settlement/handover evidence before closing.');
         completionMediaId=await upload(completion);
       }
-      const data=await request(endpoint+'/transition','POST',{
+      const data=await request(transitionEndpoint,'POST',{
         nextStatus:status,contractMediaId,completionMediaId,
         ...(status==='closed'?{settlementReference:reference,handoverAt:handover}:{}),
       });

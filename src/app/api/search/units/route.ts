@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
         where: { id: inventoryCategoryId },
         select: { id: true, projectId: true, categoryKey: true, name: true, status: true },
       });
-      if (!canonicalCategory || canonicalCategory.status !== 'active') {
+      if (!canonicalCategory || canonicalCategory.status !== 'live') {
         return NextResponse.json(
           { units: [], total: 0, limit, offset, sort: sort.key },
           { status: 200 }
@@ -160,6 +160,7 @@ export async function GET(req: NextRequest) {
     const where: any = {
       status: 'live',
       assetStatus: { not: 'suspended' },
+      inventoryCategory: { status: 'live' },
       project: projectFilter,
       ...projectScope,
       maxGuests: { gte: totalGuests },

@@ -37,16 +37,36 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
       return NextResponse.json(space, { status: 201 });
     }
+    if (body.action === 'stay_offering') {
+      const unit = await prisma.unit.findUnique({ where: { id: params.id }, select: { id: true } });
+      if (!unit) throw new Error('Unit not found');
+      const status = body.status ?? 'active';
+      if (status !== 'active' && status !== 'paused') throw new Error('Invalid stay offering status');
+      // Stay offering is distinct from the physical home; saving twice must
+      // update its one existing record rather than creating duplicates.
+      const existing = await prisma.commercialOffering.findFirst({
+        where: { unitId: params.id, offeringType: 'short_stay' },
+        orderBy: { createdAt: 'asc' },
+      });
+      const offering = existing
+        ? await prisma.commercialOffering.update({ where: { id: existing.id }, data: { status } })
+        : await prisma.commercialOffering.create({
+            data: { unitId: params.id, offeringType: 'short_stay', status },
+          });
+      return NextResponse.json(offering, { status: existing ? 200 : 201 });
+    }
     if (body.action === 'channel_mapping') {
       if (body.syncState === 'ari_push') throw new Error('ARI push cannot be marked manually; connect a verified ARI provider first');
+      const offeringType = body.offeringType || 'short_stay';
       const existingOffering = body.offeringId
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
-        : null;
+        : await prisma.commercialOffering.findFirst({
+            where: { unitId: params.id, offeringType },
+            orderBy: { createdAt: 'asc' },
+          });
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
-      const offering = await prisma.commercialOffering.upsert({
-        where: { id: existingOffering?.id || '__new__' },
-        create: { unitId: params.id, offeringType: body.offeringType || 'short_stay', status: 'active' },
-        update: {},
+      const offering = existingOffering || await prisma.commercialOffering.create({
+        data: { unitId: params.id, offeringType, status: 'active' },
       });
       const mapping = await prisma.channelMapping.upsert({
         where: { offeringId_channel: { offeringId: offering.id, channel: body.channel } },

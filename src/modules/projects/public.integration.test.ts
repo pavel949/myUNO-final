@@ -81,12 +81,17 @@ describe('Projects public read seam (discovery pages)', () => {
   });
 
   describe('categories & reviews on the landing payload (LY-5)', () => {
-    it('a project without a unit-categories catalog gets empty categories and reviews', async () => {
+    it('a live unit receives a canonical category even without a hand-built catalog', async () => {
       const project = await createProject({ slug: 'plain-p', status: 'live' });
-      await createUnit({ projectId: project.id, status: 'live' });
+      const unit = await createUnit({ projectId: project.id, status: 'live' });
 
       const detail = await getPublicProjectBySlug('plain-p');
-      expect(detail!.categories).toEqual([]);
+      expect(detail!.categories).toHaveLength(1);
+      expect(detail!.categories[0]).toMatchObject({
+        key: unit.categoryKey,
+        unitCount: 1,
+        fromNightlyThb: unit.baseNightlyThb,
+      });
       expect(detail!.reviews).toEqual({ average: null, count: 0, items: [] });
     });
 
@@ -102,7 +107,7 @@ describe('Projects public read seam (discovery pages)', () => {
           maxGuests: 4,
           baseNightlyThb: 626100,
           minNights: 1,
-          status: 'active',
+          status: 'live',
         },
       });
       await createUnit({

@@ -10,7 +10,7 @@ export default async function PropertyOnboardingPage({ params }: { params: { id:
     prisma.project.findUnique({
       where: { id: params.id },
       include: {
-        inventoryCategories: { orderBy: { name: 'asc' } },
+        inventoryCategories: { include: { ratePlans: true }, orderBy: { name: 'asc' } },
         ratePlans: { orderBy: { name: 'asc' } },
         galleryMedia: { include: { media: true }, orderBy: { sort: 'asc' } },
         units: { include: { inventoryCategory: true, media: true, sleepingSpaces: { include: { beds: true } }, commercialOfferings: { include: { channelMappings: true } } }, orderBy: { name: 'asc' } },

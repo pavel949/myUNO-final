@@ -94,6 +94,9 @@ export async function computeCanonicalPriceBreakdown(
   if (unit.status === 'live' && !unit.inventoryCategory) {
     throw new Error(`Live unit ${unitId} has no canonical InventoryCategory`);
   }
+  if (unit.status === 'live' && unit.inventoryCategory?.status !== 'live') {
+    throw new Error('This unit inventory category is not live');
+  }
   if (unit.project.status !== 'live' && unit.status === 'live') {
     throw new Error('Unit project is not live');
   }

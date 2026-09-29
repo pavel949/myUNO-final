@@ -85,8 +85,10 @@ export default function AvailabilityPricingPanel({
         throw new Error(data?.error || labels['staff.calendar.error_generic']);
       }
       await load();
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : labels['staff.calendar.error_generic']);
+      return false;
     } finally {
       setBusy(null);
     }
@@ -181,8 +183,8 @@ export default function AvailabilityPricingPanel({
                 reason,
                 note: note || undefined,
               })
-            ).then(() => {
-              (event.currentTarget as HTMLFormElement).reset();
+            ).then((saved) => {
+              if (saved) (event.currentTarget as HTMLFormElement).reset();
             });
           }}
         >

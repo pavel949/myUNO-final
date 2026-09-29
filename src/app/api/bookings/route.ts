@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!category || category.status !== 'active') {
+      if (!category || category.status !== 'live') {
         throw createPublicError('inventory category not found', 404);
       }
       if (projectId && projectId !== category.projectId) {
@@ -163,9 +163,10 @@ export async function POST(req: NextRequest) {
           status: true,
           projectId: true,
           inventoryCategoryId: true,
+          inventoryCategory: { select: { status: true } },
         },
       });
-      if (!unit || unit.status !== 'live') {
+      if (!unit || unit.status !== 'live' || unit.inventoryCategory?.status !== 'live') {
         throw createPublicError('not found', 404);
       }
 

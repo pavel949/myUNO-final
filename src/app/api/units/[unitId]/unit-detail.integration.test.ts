@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { resetDb, createProject, createUnit } from '@/test/util';
+import { resetDb, createProject, createUnit, createIdentity, createBooking, db } from '@/test/util';
 
 vi.mock('@/app/actions/getCurrentUser', () => ({
   getCurrentUser: async () => null,
@@ -80,5 +80,98 @@ describe('GET /api/units/[unitId] — a unit is only as public as its project', 
 
     expect(data.project).toEqual({ id: expect.any(String), name: expect.any(String) });
     expect(data.status).toBeUndefined();
+  });
+});
+
+
+import { POST as postCanonicalQuote } from '@/app/api/pricing/breakdown/route';
+
+function datedRequest(unitId: string, start = '2026-12-15', end = '2026-12-18') {
+  return new NextRequest(
+    'http://localhost/api/units/' + unitId +
+      '?startDate=' + start + '&endDate=' + end + '&guests=2'
+  );
+}
+
+describe('public unit detail uses the canonical booking price and inventory authority', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('returns exactly the guest quote subtotal/tax/total for the same stay', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({
+      projectId: project.id, status: 'live', baseNightlyThb: 500000,
+    });
+    const quoteRequest = new NextRequest('http://localhost/api/pricing/breakdown', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        unitId: unit.id, startDate: '2026-12-15',
+        endDate: '2026-12-18', guestCount: 2,
+      }),
+    });
+
+    const [detail, quote] = await Promise.all([
+      GET(datedRequest(unit.id), { params: { unitId: unit.id } }),
+      postCanonicalQuote(quoteRequest),
+    ]);
+    expect(detail.status).toBe(200);
+    expect(quote.status).toBe(200);
+    const detailData = await detail.json();
+    const quoteData = await quote.json();
+    expect(detailData.pricing.subtotal).toBe(quoteData.subtotal);
+    expect(detailData.pricing.vatTax).toBe(quoteData.occupancyTax);
+    expect(detailData.pricing.total).toBe(quoteData.total);
+    expect(detailData.pricing.nights).toBe(quoteData.nights);
+    expect(detailData.pricing.isAvailable).toBe(true);
+    expect(detailData.pricing.availableCapacity).toBe(1);
+  });
+
+  it('marks a confirmed booking unavailable, without hiding the unit detail', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    const guest = await createIdentity();
+    await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+      startDate: new Date('2026-12-16'), endDate: new Date('2026-12-18'),
+      status: 'confirmed',
+    });
+    const response = await GET(datedRequest(unit.id), { params: { unitId: unit.id } });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.pricing.isAvailable).toBe(false);
+    expect(data.pricing.availableCapacity).toBe(0);
+  });
+
+  it('honors an owner block and treats the checkout boundary as exclusive', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    await db.blockedDate.create({
+      data: {
+        unitId: unit.id,
+        startDate: new Date('2026-12-16'),
+        endDate: new Date('2026-12-18'),
+        reason: 'owner_hold',
+      },
+    });
+    const blocked = await GET(datedRequest(unit.id), { params: { unitId: unit.id } });
+    expect((await blocked.json()).pricing.isAvailable).toBe(false);
+    const checkoutDay = await GET(
+      datedRequest(unit.id, '2026-12-18', '2026-12-20'),
+      { params: { unitId: unit.id } }
+    );
+    expect((await checkoutDay.json()).pricing.isAvailable).toBe(true);
+  });
+
+  it('does not publish a unit belonging to an inactive category', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    await db.inventoryCategory.update({
+      where: { id: unit.inventoryCategoryId! },
+      data: { status: 'draft' },
+    });
+    const response = await GET(makeRequest(), { params: { unitId: unit.id } });
+    expect(response.status).toBe(404);
   });
 });

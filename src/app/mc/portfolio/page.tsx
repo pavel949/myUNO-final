@@ -127,7 +127,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
       (b.status === 'confirmed' || b.status === 'checked_in' || b.status === 'checked_out' || b.status === 'completed') &&
       inNight(day, b.startDate, b.endDate))).length, 0);
   const openTasks = tickets.reduce((sum, ticket) => sum + ticket._count._all, 0);
-  const query = (date: Date, projectId = selectedProjectId) =>
+  const query = (date: Date, projectId?: string) =>
     `/mc/portfolio?month=${monthKey(date)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}`;
   const projectOptions = [...new Map(units.map((unit) => [unit.projectId, unit.project.name])).entries()];
   const label = month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -157,9 +157,9 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
             {projectOptions.map(([id, name]) => <Link key={id} href={query(month, id)} className={`rounded-full border px-12 py-8 text-small ${selectedProjectId === id ? 'bg-brand-deep text-white' : 'bg-surface-paper text-text-ink'}`}>{name}</Link>)}
           </nav>
           <nav aria-label="Month" className="flex items-center gap-12">
-            <Link href={query(previous)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Previous month">←</Link>
+            <Link href={query(previous, selectedProjectId)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Previous month">←</Link>
             <span className="min-w-120 text-center font-semibold text-text-ink">{label}</span>
-            <Link href={query(next)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Next month">→</Link>
+            <Link href={query(next, selectedProjectId)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Next month">→</Link>
           </nav>
         </div>
         <div className="mt-12 flex flex-wrap gap-16 text-small text-text-secondary">

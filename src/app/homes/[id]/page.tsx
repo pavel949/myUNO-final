@@ -16,6 +16,9 @@ export default async function CommercialHomePage({ params, searchParams }: {
   const requested: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const intent: HomeIntent = home.intents.includes(requested) ? requested : home.intents[0];
   const labels = await getLabels({
+    'homes.detail.inquiry.buy': 'Purchase enquiry',
+    'homes.detail.inquiry.rent': 'Long-term rental enquiry',
+    'homes.detail.inquiry.prompt': 'Please provide current availability and terms.',
     'homes.detail.back': 'All available homes',
     'homes.detail.title': 'Property enquiry',
     'homes.detail.bedrooms': 'Bedrooms',
@@ -26,8 +29,8 @@ export default async function CommercialHomePage({ params, searchParams }: {
     'homes.detail.rent': 'Long-term rental enquiry',
     'homes.detail.legal': 'Listing authority has been reviewed for this commercial mode. Legal title, contract and transaction details must be confirmed during due diligence.',
   });
-  const inquiry = (intent === 'buy' ? 'Purchase enquiry' : 'Long-term rental enquiry')+
-    ': '+home.name+' / '+home.project.name+' (unit '+home.id+'). Please provide current availability and terms.';
+  const inquiry = (intent === 'buy' ? labels['homes.detail.inquiry.buy'] : labels['homes.detail.inquiry.rent'])+
+    ': '+home.name+' / '+home.project.name+' ('+home.id+'). '+labels['homes.detail.inquiry.prompt'];
   return <main className="min-h-screen bg-surface-ivory">
     <div className="mx-auto max-w-5xl px-20 py-32 md:px-32">
       <Link href={'/homes?intent='+intent} className="text-small font-semibold text-brand-andaman">← {labels['homes.detail.back']}</Link>

@@ -130,6 +130,39 @@ describe('public unit detail uses the canonical booking price and inventory auth
     expect(quoteData.availableCapacity).toBe(detailData.pricing.availableCapacity);
   });
 
+  it('applies dated unit overrides to both public surfaces without per-night SQL divergence', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({
+      projectId: project.id, status: 'live', baseNightlyThb: 500000,
+    });
+    await db.pricingRule.create({
+      data: {
+        unitId: unit.id,
+        startDate: new Date('2026-12-16'),
+        endDate: new Date('2026-12-17'),
+        nightlyThb: 700000,
+        label: 'One-night override',
+      },
+    });
+    const detailResponse = await GET(datedRequest(unit.id), { params: { unitId: unit.id } });
+    const quoteResponse = await postCanonicalQuote(
+      new NextRequest('http://localhost/api/pricing/breakdown', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          unitId: unit.id, startDate: '2026-12-15',
+          endDate: '2026-12-18', guestCount: 2,
+        }),
+      })
+    );
+    expect(detailResponse.status).toBe(200);
+    expect(quoteResponse.status).toBe(200);
+    const detail = await detailResponse.json();
+    const quote = await quoteResponse.json();
+    expect(detail.pricing.total).toBe(quote.total);
+    expect(quote.lines.map((line: { nightly_thb: number }) => line.nightly_thb))
+      .toEqual([5000, 7000, 5000]);
+  });
+
   it('marks a confirmed booking unavailable, without hiding the unit detail', async () => {
     const project = await createProject({ status: 'live' });
     const unit = await createUnit({ projectId: project.id, status: 'live' });

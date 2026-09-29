@@ -1092,6 +1092,7 @@ model Unit {
   metricsDaily                 MetricDaily[]
   integrationAccounts          IntegrationAccount[]
   crmOpportunities             CrmOpportunity[]
+  propertyDeals                PropertyDeal[]
   operationalKpis              OperationalKpi[]
   incidentLogs                 IncidentLog[]
   complianceChecklistInstances ComplianceChecklistInstance[]
@@ -1118,10 +1119,12 @@ model BlockedDate {
   note                String?
   createdByIdentityId String?           @map("created_by_identity_id")
   externalRef         String?           @map("external_ref")
+  propertyDealId      String?           @unique @map("property_deal_id")
 
   // Relations
   unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  propertyDeal PropertyDeal? @relation(fields: [propertyDealId], references: [id], onDelete: Restrict)
 
   @@index([unitId, startDate, endDate])
   @@map("blocked_date")
@@ -1880,6 +1883,8 @@ model MediaAsset {
   orgLogos                 Organization[]         @relation("orgLogo")
   projectMasterplans       Project[]              @relation("projectMasterplan")
   regulatoryCredentialDocs RegulatoryCredential[] @relation("regulatoryDoc")
+  dealContracts PropertyDeal[] @relation("propertyDealContract")
+  dealCompletionEvidence PropertyDeal[] @relation("propertyDealCompletion")
 
   @@index([deleteAfter])
   @@map("media_asset")
@@ -2684,6 +2689,43 @@ model ProspectingAccount {
   @@map("prospecting_account")
 }
 
+/// One commercial agreement per canonical CRM opportunity; never a second
+/// lead, booking or ownership source of truth. All THB values are satang.
+model PropertyDeal {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  opportunityId String @unique @map("opportunity_id")
+  offeringId String @map("offering_id")
+  unitId String @map("unit_id")
+  kind String
+  status String @default("draft")
+  amountThb Int @map("amount_thb")
+  depositThb Int @default(0) @map("deposit_thb")
+  currency String @default("THB")
+  startsOn DateTime? @map("starts_on") @db.Date
+  endsOn DateTime? @map("ends_on") @db.Date
+  termsSnapshot Json @default("{}") @map("terms_snapshot") @db.JsonB
+  contractMediaId String? @map("contract_media_id")
+  completionMediaId String? @map("completion_media_id")
+  acceptedAt DateTime? @map("accepted_at")
+  signedAt DateTime? @map("signed_at")
+  closedAt DateTime? @map("closed_at")
+  settlementReference String? @map("settlement_reference")
+  handoverAt DateTime? @map("handover_at")
+
+  opportunity CrmOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  offering CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Restrict)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  contractMedia MediaAsset? @relation("propertyDealContract", fields: [contractMediaId], references: [id], onDelete: Restrict)
+  completionMedia MediaAsset? @relation("propertyDealCompletion", fields: [completionMediaId], references: [id], onDelete: Restrict)
+  calendarBlock BlockedDate?
+
+  @@index([unitId,status])
+  @@index([offeringId,status])
+  @@map("property_deal")
+}
+
 model CrmOpportunity {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -2714,6 +2756,7 @@ model CrmOpportunity {
   project    Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   unit       Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   activities CrmActivity[]
+  propertyDeal PropertyDeal?
 
   @@index([stage, nextActionAt])
   @@index([identityId, createdAt])
@@ -3049,6 +3092,7 @@ model CommercialOffering {
   project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
+  propertyDeals PropertyDeal[]
 
   @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
   @@index([unitId, offeringType])

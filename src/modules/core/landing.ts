@@ -34,6 +34,7 @@ export interface Landing {
     | 'owner'
     | 'resident'
     | 'buyer'
+    | 'guest'
     | 'public';
 }
 
@@ -64,6 +65,7 @@ const PRECEDENCE: { role: RoleType; path: string; reason: Landing['reason'] }[] 
   { role: 'owner', path: '/owner', reason: 'owner' },
   { role: 'resident', path: '/residence', reason: 'resident' },
   { role: 'buyer', path: '/buying', reason: 'buyer' },
+  { role: 'guest', path: '/trips', reason: 'guest' },
 ];
 
 export function resolveLanding(context: LandingContext): Landing {
@@ -91,7 +93,7 @@ export function resolveLanding(context: LandingContext): Landing {
     }
   }
 
-  // A guest between stays, a buyer, or somebody with no role yet. Search is
+  // A person with no relationship yet. Search is
   // where they can actually do something, and it is not a dead end.
   return { path: '/search', reason: 'public' };
 }

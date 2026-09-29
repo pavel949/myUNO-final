@@ -24,6 +24,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
     'homes.detail.bedrooms': 'Bedrooms',
     'homes.detail.bathrooms': 'Bathrooms',
     'homes.detail.size': 'Interior area',
+    'homes.detail.size_unit': 'sqm',
     'homes.detail.price': 'Price and individual terms are provided after enquiry and verification.',
     'homes.detail.buy': 'Purchase enquiry',
     'homes.detail.rent': 'Long-term rental enquiry',
@@ -46,7 +47,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
           <p className="text-small text-text-secondary">{labels['homes.detail.bathrooms']}</p><strong>{home.bathrooms}</strong>
         </div>
         {home.sizeSqm ? <div className="rounded-lg border border-border-line bg-surface-paper p-20">
-          <p className="text-small text-text-secondary">{labels['homes.detail.size']}</p><strong>{home.sizeSqm} m²</strong>
+          <p className="text-small text-text-secondary">{labels['homes.detail.size']}</p><strong>{home.sizeSqm} {labels['homes.detail.size_unit']}</strong>
         </div> : null}
       </div>
       <p className="mt-24 text-body text-text-secondary">{labels['homes.detail.price']}</p>

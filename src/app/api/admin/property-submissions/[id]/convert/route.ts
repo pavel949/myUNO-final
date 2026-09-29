@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const converted = await prisma.$transaction(async (tx) => {
       // Lock before read; JSON requirements is the existing immutable application record.
-      await tx.$queryRaw`SELECT id FROM crm_opportunity WHERE id = ${params.id}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM crm_opportunity WHERE id = ${params.id} FOR UPDATE`;
       const application = await tx.crmOpportunity.findUnique({
         where: { id: params.id },
         select: { id: true, source: true, identityId: true, projectId: true, requirements: true },

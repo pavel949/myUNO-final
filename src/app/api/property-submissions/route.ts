@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import { getPublicProjectBySlug } from '@/modules/projects';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
@@ -73,8 +72,9 @@ export async function POST(req: NextRequest) {
     const data = normalize(await req.json());
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
-      const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true, slug: true } });
-      if (!project || !await getPublicProjectBySlug(project.slug)) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
+      const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
+      if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) {
       return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
@@ -104,8 +104,9 @@ export async function PATCH(req: NextRequest) {
     const data = normalize({ ...previous, ...body });
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
-      const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true } });
-      if (!project) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
+      const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
+      if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
     const row = await prisma.crmOpportunity.update({ where: { id }, data: { title: data.unitName || 'New property draft', projectId: data.projectId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management', requirements: data }, select: { id: true, requirements: true } });

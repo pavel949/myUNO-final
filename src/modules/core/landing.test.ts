@@ -38,6 +38,7 @@ describe('where a person lands', () => {
     ['owner', '/owner'],
     ['resident', '/residence'],
     ['buyer', '/buying'],
+    ['guest', '/trips'],
   ] as const)('sends a %s to %s', (role, path) => {
     expect(resolveLanding({ ...base, roles: [role] }).path).toBe(path);
   });
@@ -54,8 +55,13 @@ describe('where a person lands', () => {
     expect(resolveLanding({ ...base, roles: ['buyer', 'owner'] }).reason).toBe('owner');
   });
 
-  it('sends a guest between stays to the search', () => {
-    expect(resolveLanding({ ...base, roles: ['guest'] }).path).toBe('/search');
+  it('returns a guest between stays to their trip history', () => {
+    expect(resolveLanding({ ...base, roles: ['guest'] })).toEqual({ path: '/trips', reason: 'guest' });
+  });
+
+  it('gives the guest a path back to their trips even when another workspace wins', () => {
+    const surfaces = availableSurfaces({ ...base, roles: ['guest', 'owner'] });
+    expect(surfaces.map((surface) => surface.path)).toEqual(['/owner', '/trips']);
   });
 
   it('sends someone with no role at all somewhere they can act', () => {
@@ -89,7 +95,10 @@ describe('the other hats a person is wearing', () => {
     expect(surfaces.map((s) => s.path)).toEqual(['/ops']);
   });
 
-  it('is empty for someone with nothing of their own', () => {
-    expect(availableSurfaces({ isAdmin: false, roles: ['guest'] })).toEqual([]);
+  it('shows trip history for guests and no workspace for a new identity', () => {
+    expect(availableSurfaces({ isAdmin: false, roles: ['guest'] })).toEqual([
+      { path: '/trips', reason: 'guest' },
+    ]);
+    expect(availableSurfaces({ isAdmin: false, roles: [] })).toEqual([]);
   });
 });

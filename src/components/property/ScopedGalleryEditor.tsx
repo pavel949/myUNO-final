@@ -17,19 +17,20 @@ function endpoint(target: Target) {
 }
 
 export default function ScopedGalleryEditor({
-  projectId, projectName, categories, units,
+  projectId, projectName, categories, units, initialSelection,
 }: {
   projectId: string;
   projectName: string;
   categories: Array<{ id: string; name: string }>;
   units: Array<{ id: string; name: string }>;
+  initialSelection?: string;
 }) {
   const targets: Target[] = [
     { scope: 'project', id: projectId, name: projectName },
     ...categories.map(c => ({ scope: 'category' as const, id: c.id, name: c.name })),
     ...units.map(u => ({ scope: 'unit' as const, id: u.id, name: u.name })),
   ];
-  const [selection, setSelection] = useState(`project:${projectId}`);
+  const [selection, setSelection] = useState(initialSelection ?? `project:${projectId}`);
   const [items, setItems] = useState<Item[]>([]);
   const [cover, setCover] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

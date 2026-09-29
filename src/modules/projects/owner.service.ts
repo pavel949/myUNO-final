@@ -6,6 +6,7 @@ import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytic
 import { notifyOwnerStayBooked } from './notify-owner-stay';
 import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
 import { satangToBaht } from '@/lib/money';
+import { allocateBookingGrossToPeriod } from './owner-period-allocation';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -170,38 +171,30 @@ export async function getOwnerDashboard(
     },
   });
 
-  // Compute this month's date range
+  // Use calendar-day UTC boundaries, matching Booking.startDate/endDate @db.Date.
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
   let combinedOccupancy = 0;
   let combinedRevenue = 0;
 
   const unitData = units.map((unit) => {
-    // Calculate occupancy this month (confirmed/checked-in/checked-out nights)
-    const monthBookings = unit.bookings.filter((b) => {
-      const end = b.checkedOutAt || b.endDate;
-      return (
-        (b.status === 'confirmed' || b.status === 'checked_in' || b.status === 'checked_out') &&
-        b.startDate < monthEnd &&
-        end > monthStart
-      );
-    });
+    const monthBookings = unit.bookings.filter((b) =>
+      ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(b.status) &&
+      b.startDate < monthEnd && b.endDate > monthStart
+    );
 
     let occupancyNights = 0;
     let monthRevenue = 0;
-
     monthBookings.forEach((b) => {
-      const start = Math.max(b.startDate.getTime(), monthStart.getTime());
-      const end = Math.min((b.checkedOutAt || b.endDate).getTime(), monthEnd.getTime());
-      const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-      occupancyNights += nights;
-
-      // Revenue only for guest stays (exclude owner_stay and internal_block)
-      if (b.totalThb > 0) {
-        monthRevenue += b.totalThb;
-      }
+      const allocation = allocateBookingGrossToPeriod(
+        b.totalThb, b.startDate, b.endDate, monthStart, monthEnd
+      );
+      occupancyNights += allocation.nights;
+      // Booking.totalThb is satang; this is gross booked revenue, not cash
+      // collected or an owner entitlement. Owner statements use the ledger.
+      if (b.totalThb > 0) monthRevenue += allocation.grossSatang;
     });
 
     combinedOccupancy += occupancyNights;

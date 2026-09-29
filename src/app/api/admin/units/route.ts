@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Only directly assigned internal staff can create a new inventory record.
     // An external MC member cannot attach an unmandated unit to their portfolio.
     const staffGrant = await prisma.roleAssignment.findFirst({
-      where: { identityId: user.identityId, role: 'staff_ops', projectId: body.projectId, status: 'active' },
+      where: { identityId: user.identityId, role: 'staff_ops', scopeType: 'project', projectId: body.projectId, status: 'active' },
       select: { id: true },
     });
     if (!identity.isAdmin && !staffGrant) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   // A project role for an external MC does NOT imply every condo in that building.
   const mcOnly = !identity.isAdmin && !(await prisma.roleAssignment.findFirst({
-    where: { identityId: user.identityId, status: 'active', role: 'staff_ops', projectId },
+    where: { identityId: user.identityId, status: 'active', role: 'staff_ops', scopeType: 'project', projectId },
     select: { id: true },
   }));
   const mcOr = mcOnly ? await prisma.roleAssignment.findMany({

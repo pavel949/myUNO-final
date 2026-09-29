@@ -109,7 +109,7 @@ export async function getPropertyReadiness(
     }
     if (unit.engagements.length === 0) add('blocker', 'unit.engagement', 'Record an active management engagement.', options);
     if (project.projectType && !unit.commercialOfferings.some((offering) =>
-      offering.offeringType === 'short_stay' && offering.status === 'active'
+      ['short_term_stay', 'short_stay'].includes(offering.offeringType) && offering.status === 'active'
     )) {
       add('blocker', 'unit.stay_offering', 'Activate a short-stay commercial offering before publication.', options);
     }

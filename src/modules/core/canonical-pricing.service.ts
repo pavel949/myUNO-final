@@ -8,6 +8,7 @@ import {
   DEFAULT_TIME_ZONE,
 } from '@/lib/date';
 import { getApplicableSeason, type PriceBreakdown } from './availability.service';
+import { quoteSeasonalTariffGrid, type TariffMode } from './seasonal-tariff';
 
 function applyRatePlanAdjustment(
   amount: number,
@@ -113,6 +114,62 @@ export async function computeCanonicalPriceBreakdown(
   const scope = { unitId: unit.id, projectId: unit.projectId };
   const nights = daysBetween(checkInDate, checkOutDate);
   if (nights < 1) throw new Error('Stay must contain at least one night');
+
+  // A validated seasonal tariff is the canonical commercial rate source.
+  // Both /api/pricing/breakdown and /api/bookings call THIS function, so a
+  // source-resort's quote cannot diverge from the amount booked. Legacy rows
+  // remain drafts until the signed source-authority cutover; no source SQL RPC
+  // is invoked at runtime.
+  const stayOffers = await db.commercialOffering.findMany({
+    where: { unitId: unit.id,
+      offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
+    select: { offeringType: true, status: true, pricingTerms: true },
+  });
+  const validatedGrid = (type: string) => {
+    const offer = stayOffers.find(o => o.offeringType === type);
+    if (!offer || offer.status !== 'active') return null;
+    const terms = offer.pricingTerms;
+    if (typeof terms !== 'object' || terms === null || Array.isArray(terms))
+      return null;
+    const settings = terms as Record<string, unknown>;
+    return settings.quoteEngine === 'canonical_tariff_grid_v1' &&
+      settings.taxPolicyVerified === true ? settings.tariffGrid : null;
+  };
+  const shortGrid = validatedGrid('short_term_stay');
+  const monthlyGrid = validatedGrid('long_term_rental');
+  if (shortGrid !== null) {
+    // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
+    // discount. A draft/unverified monthly offer cannot be silently substituted
+    // by an arbitrary 20% nightly discount.
+    const mode: TariffMode = nights >= 30 ? 'monthly' : 'daily';
+    if (mode === 'monthly' && monthlyGrid === null)
+      throw new Error('Validated monthly tariff is required for this stay');
+    const quoted = quoteSeasonalTariffGrid(
+      mode === 'monthly' ? monthlyGrid : shortGrid,
+      toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
+    );
+    const cleaningFee = quoted.includesServiceCharge
+      ? 0 : ((await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0);
+    const servicePct = quoted.includesServiceCharge
+      ? 0 : ((await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0);
+    const serviceFee = Math.round(quoted.subtotalSatang * servicePct / 100);
+    const vatPct = quoted.includesTaxes
+      ? 0 : ((await getConfig(db, 'finance.vat_pct', scope)) ?? 0);
+    const tax = Math.round((quoted.subtotalSatang + cleaningFee + serviceFee) * vatPct / 100);
+    return {
+      lines: quoted.lines.map(line => ({
+        date: line.date, nightly_thb: line.nightlySatang,
+        applied_from: mode === 'monthly' ? 'category_monthly' as const : 'category_season' as const,
+      })),
+      subtotal_thb: quoted.subtotalSatang,
+      cleaning_fee_thb: cleaningFee,
+      los_discount_thb: 0,
+      early_bird_discount_thb: 0,
+      service_fee_thb: serviceFee,
+      occupancy_tax_thb: tax,
+      total_thb: quoted.subtotalSatang + cleaningFee + serviceFee + tax,
+    };
+  }
 
   const ratePlan = await resolveBarPlan(
     db,

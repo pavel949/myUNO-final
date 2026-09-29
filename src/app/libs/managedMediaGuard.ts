@@ -11,7 +11,7 @@ export async function managedMediaAccess(scope: { projectId: string; unitId?: st
     where: {
       identityId: user.identityId, status: 'active', role: 'staff_ops',
       projectId: scope.projectId,
-      OR: [{ scopeType: 'project' }, ...(scope.unitId ? [{ scopeType: 'unit' as const, unitId: scope.unitId }] : [])],
+      OR: [{ scopeType: 'project' as const }, ...(scope.unitId ? [{ scopeType: 'unit' as const, unitId: scope.unitId }] : [])],
     },
     select: { id: true },
   });

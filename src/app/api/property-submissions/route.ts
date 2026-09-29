@@ -43,9 +43,9 @@ async function mediaOwned(ids: string[], ownerId: string): Promise<boolean> {
 async function authorized() {
   const user = await getCurrentUser();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) } as const;
-  if (!user.isAdmin && !user.roles.some(r => r.role === 'owner' || r.role === 'mc_member')) {
-    return { error: NextResponse.json({ error: 'Owner or property manager membership required' }, { status: 403 }) } as const;
-  }
+  // A signed-in applicant may request ownership/management verification. A role
+  // is never granted by submitting; only the admin conversion can record a
+  // verified owner, and every draft remains scoped to its applicant.
   return { user } as const;
 }
 

@@ -616,7 +616,7 @@ export function MCDashboardClient({
               href="/mc/portfolio"
               className="inline-flex items-center h-40 px-20 rounded-md bg-brand-deep text-white font-medium hover:opacity-90 transition-opacity"
             >
-              Portfolio calendar
+              {labels['mc.nav.calendar']}
             </Link>
             <Link
               href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}

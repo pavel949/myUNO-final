@@ -159,7 +159,11 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
             <h1 className="mt-8 font-display text-display-xl text-text-ink">Managed portfolio</h1>
             <p className="mt-4 text-small text-text-secondary">One occupancy calendar across your authorized properties. All dates are property nights; checkout is exclusive.</p>
           </div>
-          <Link href="/mc/calendar" className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Unit calendars & rates →</Link>
+          <div className="flex flex-wrap gap-8">
+            <Link href="/property/onboard" className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Submit a property →</Link>
+            {(user.isAdmin || (selectedProjectId && staffProjectIds.includes(selectedProjectId))) && selectedProjectId && <Link href={`/ops/projects/${selectedProjectId}/edit`} className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Edit complex →</Link>}
+            <Link href={user.isAdmin || staffProjectIds.length ? '/ops/calendar' : '/mc/calendar'} className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Unit calendars & rates →</Link>
+          </div>
         </div>
         <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
           {[

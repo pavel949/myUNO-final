@@ -140,7 +140,13 @@ export async function getPropertyReadiness(
     const hasLongTermOffering = activeOfferings.some(offering => offering.offeringType === 'long_term_rental');
     const hasSaleOffering = activeOfferings.some(offering => offering.offeringType === 'sale');
     if (project.projectType && activeOfferings.length === 0) {
-      add('blocker', 'unit.offering', 'Activate at least one commercial offering before publication.', options);
+      // Keep the established resort-specific readiness key for existing
+      // onboarding links while allowing a condominium to begin with sale or
+      // long-term offers instead of fabricating a short-stay business model.
+      const expectsStay = ['resort', 'villa_estate'].includes(project.projectType);
+      add('blocker', expectsStay ? 'unit.stay_offering' : 'unit.offering',
+        expectsStay ? 'Activate a short-stay commercial offering before publication.' :
+          'Activate at least one commercial offering before publication.', options);
     }
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);

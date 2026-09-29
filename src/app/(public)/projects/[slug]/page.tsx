@@ -62,6 +62,7 @@ export default async function ProjectLandingPage({
 
   const labels = await getLabels({
     'project_page.availability.title': 'Check availability',
+    'project_page.gallery.count': '{count} photos of the residence',
     'project_page.styles.title': 'Three styles, one resort',
     'project_page.categories.title': 'Villa categories',
     'project_page.categories.from_night': 'from ฿{price} / night',
@@ -207,7 +208,7 @@ export default async function ProjectLandingPage({
               </div>
             ))}
           </div>
-          {project.galleryUrls.length > 5 ? <p className="mt-12 text-small text-text-secondary">{project.galleryUrls.length} photos of the residence</p> : null}
+          {project.galleryUrls.length > 5 ? <p className="mt-12 text-small text-text-secondary">{labels['project_page.gallery.count'].replace('{count}', String(project.galleryUrls.length))}</p> : null}
         </section>
       ) : null}
 

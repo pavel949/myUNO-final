@@ -6,9 +6,10 @@ import { LeadForm } from '@/components/LeadForm';
  * shared `audience.lead.*` content keys and mounts the client form.
  */
 export async function LeadFormSection({
-  audience,
+  audience, initialMessage,
 }: {
-  audience: 'owners' | 'developers' | 'buyers' | 'mc';
+  audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
+  initialMessage?: string;
 }) {
   const labels = await getLabels({
     'audience.lead.title': 'Leave your contact — we reply within a day',
@@ -30,6 +31,7 @@ export async function LeadFormSection({
       <div className="max-w-2xl mx-auto">
         <LeadForm
           audience={audience}
+          initialMessage={initialMessage}
           labels={{
             title: labels['audience.lead.title'],
             name: labels['audience.lead.name'],

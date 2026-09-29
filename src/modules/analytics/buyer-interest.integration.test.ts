@@ -19,8 +19,8 @@ describe('someone saying they are thinking about buying', () => {
     buyerId = buyer.id;
     const admin = await createIdentity({ isAdmin: true });
     adminId = admin.id;
-    const project = await createProject();
-    const unit = await createUnit({ projectId: project.id, name: 'B-707' });
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, name: 'B-707', status: 'live' });
     unitId = unit.id;
     await db.commercialOffering.create({
       data: { projectId: project.id, unitId: unit.id, offeringType: 'sale', status: 'active', pricingTerms: { askingPriceThb: 12500000 }, ownershipTenure: { type: 'freehold', verification: 'pending_due_diligence' } },
@@ -48,6 +48,18 @@ describe('someone saying they are thinking about buying', () => {
       salePricingTermsSnapshot: { askingPriceThb: 12500000 },
       ownershipTenureSnapshot: { type: 'freehold' },
     });
+  });
+
+  it('treats a paused or unpublished unit ID as a general enquiry without revealing private terms', async () => {
+    const unit = await db.unit.update({ where: { id: unitId }, data: { status: 'paused' } });
+    const result = await registerPurchaseInterest(db, {
+      identityId: buyerId, unitId, message: 'Could you recommend a property?',
+    });
+    const opportunity = await db.crmOpportunity.findUnique({ where: { id: result.opportunityId } });
+    expect(opportunity?.unitId).toBeNull();
+    expect(JSON.stringify(opportunity?.requirements)).not.toContain('askingPriceThb');
+    const messages = await db.message.findMany({ where: { threadId: result.threadId } });
+    expect(messages[0].body).not.toContain(unit.name);
   });
 
   it('does not accept a unit-specific purchase enquiry without an active sale offering', async () => {

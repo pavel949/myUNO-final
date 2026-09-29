@@ -38,6 +38,8 @@ Date: 2026-09-29. Baseline: main 4a8ed81b24aee51020486fc049e9ef0af329ffd8. This 
 - availableSurfaces includes /trips for the guest role even when an owner/staff role wins default routing.
 - New/anonymous identities still land in /search; an active stay retains first priority, including for owners/admins.
 - Pure-policy regression tests cover guest default, multi-hat discoverability and unaffiliated identity.
+- A won purchase is commercially a buyer, never inferred legal ownership. A won management/sale opportunity does not infer mandate or title; a further stay/purchase preserves existing owner and buyer relationships. New CRM domain regressions cover these rules.
+- Separate audit remains necessary for the admin-only manual lifecycle transition route: CRM labels alone must never grant unit-scoped ownership access.
 
 ## Honest status
 

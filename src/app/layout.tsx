@@ -69,6 +69,7 @@ export default async function RootLayout({
   const navLabels = await getLabels({
     'nav.find_stay': 'Find a stay',
     'nav.residences': 'Residences',
+    'nav.homes': 'Buy / Rent',
     'nav.services': 'Services',
     'nav.owners': 'Owners',
     'nav.about': 'About',
@@ -163,6 +164,7 @@ export default async function RootLayout({
           labels={{
             findStay: navLabels['nav.find_stay'],
             residences: navLabels['nav.residences'],
+            homes: navLabels['nav.homes'],
             services: navLabels['nav.services'],
             owners: navLabels['nav.owners'],
             about: navLabels['nav.about'],

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds } from '@/app/libs/projectScope';
+import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getMCManagedUnits } from '@/modules/projects';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import {
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic';
 
 interface CalendarSearchParams {
   projectId?: string;
+  organizationId?: string;
   categoryId?: string;
   unitId?: string;
   start?: string;
@@ -26,9 +28,21 @@ export default async function UnifiedStayCalendarPage({
   if (!user) redirect('/login?next=/ops/calendar/board');
 
   const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
-  if (!user.isAdmin && !staffProjectIds.length) redirect('/');
-
-  const projectWhere = user.isAdmin ? {} : { id: { in: staffProjectIds } };
+  const mcMode = !user.isAdmin && staffProjectIds.length === 0;
+  // MC project roles alone are NOT unit authorization: require a matching
+  // active via-management-company engagement for every visible physical unit.
+  const mcScopes = mcMode ? getMCProjectScopes(user) : [];
+  if (mcMode && mcScopes.length === 0) redirect('/');
+  const activeScope = mcMode ? (
+    mcScopes.find(scope => scope.projectId === searchParams?.projectId &&
+      scope.organizationId === searchParams?.organizationId) ??
+    mcScopes.find(scope => scope.projectId === searchParams?.projectId) ?? mcScopes[0]
+  ) : null;
+  const managedIds = activeScope ? (await getMCManagedUnits(
+    prisma, user.identityId, activeScope.projectId, activeScope.organizationId,
+  )).map(unit => unit.id) : [];
+  const projectWhere = user.isAdmin ? {} : mcMode ?
+    { id: activeScope!.projectId } : { id: { in: staffProjectIds } };
   const [projects, sourceExcludedUnitIds] = await Promise.all([
     prisma.project.findMany({
       where: projectWhere, select: { id: true, name: true }, orderBy: { name: 'asc' },
@@ -38,10 +52,12 @@ export default async function UnifiedStayCalendarPage({
   const sourceExcluded = new Set(sourceExcludedUnitIds);
   const authorizedIds = new Set(projects.map((project) => project.id));
   const requestedProjectId = searchParams?.projectId;
-  const projectId = requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
+  const projectId = mcMode ? activeScope!.projectId :
+    requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
   const unitWhere = {
     status: { not: 'offboarded' as const },
-    ...(!user.isAdmin ? { projectId: { in: staffProjectIds } } : {}),
+    ...(mcMode ? { id: { in: managedIds }, projectId: activeScope!.projectId } :
+      !user.isAdmin ? { projectId: { in: staffProjectIds } } : {}),
     ...(projectId ? { projectId } : {}),
   };
   const units = await prisma.unit.findMany({
@@ -155,14 +171,18 @@ export default async function UnifiedStayCalendarPage({
     booking.id, {
       id: booking.id, kind: 'booking' as const, status: booking.status,
       channel: booking.channel,
-      label: [booking.guestIdentity.firstName, booking.guestIdentity.lastName].filter(Boolean).join(' ') || 'Reservation',
+      // MC's shared calendar exposes occupancy, not unrelated guest identity.
+      label: mcMode ? 'Reservation' :
+        [booking.guestIdentity.firstName, booking.guestIdentity.lastName].filter(Boolean).join(' ') || 'Reservation',
     },
   ]));
   const blockDetails = Object.fromEntries(blocks.map((block) => [
     block.id, { id: block.id, kind: 'block' as const, status: block.reason,
-      channel: null, label: block.note || block.reason.replace(/_/g, ' ') },
+      channel: null, label: mcMode ? block.reason.replace(/_/g, ' ') :
+        block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
+    mode={mcMode ? 'mc' : 'staff'} organizationId={activeScope?.organizationId ?? ''}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({

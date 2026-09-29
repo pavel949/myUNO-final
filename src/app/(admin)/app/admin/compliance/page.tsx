@@ -4,6 +4,7 @@ import { getLabels } from '@/lib/i18n';
 import { getAdminComplianceOverview } from '@/modules/core';
 import { safeDecrypt } from '@/modules/ops';
 import ComplianceProjectFilter from './compliance-project-filter';
+import RegulatoryCredentialsClient from './regulatory-credentials-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,12 @@ export default async function AdminCompliancePage({
     projectId: activeProjectId || undefined,
   });
 
+  const units = await prisma.unit.findMany({
+    select: { id: true, name: true, projectId: true },
+    orderBy: { name: 'asc' },
+    take: 500,
+  });
+
   const labels = (await getLabels({
     'admin.compliance.title': 'Compliance',
     'admin.compliance.subtitle':
@@ -98,6 +105,33 @@ export default async function AdminCompliancePage({
     'admin.compliance.record_type.license': 'License',
     'admin.compliance.record_type.title_audit': 'Title audit',
     'admin.compliance.record_type.other': 'Other',
+    'admin.compliance.credentials.title': 'Regulatory credentials',
+    'admin.compliance.credentials.subtitle':
+      'Hotel business licences, accommodation exemptions, and title legal-use verifications — the licensing proof a unit needs before it can go live for short-term stay or sale (Q71).',
+    'admin.compliance.credentials.loading': 'Loading credentials…',
+    'admin.compliance.credentials.empty': 'No regulatory credentials recorded yet.',
+    'admin.compliance.credentials.error': 'That did not work.',
+    'admin.compliance.credentials.scope.project': 'Project-wide',
+    'admin.compliance.credentials.scope.unit': 'Single unit',
+    'admin.compliance.credentials.select_project': 'Select project…',
+    'admin.compliance.credentials.select_unit': 'Select unit…',
+    'admin.compliance.credentials.issuing_authority': 'Issuing authority',
+    'admin.compliance.credentials.registration_number': 'Registration / licence no.',
+    'admin.compliance.credentials.create_submit': 'Record credential',
+    'admin.compliance.credentials.revoke': 'Revoke',
+    'admin.compliance.credentials.col_scope': 'Scope',
+    'admin.compliance.credentials.col_type': 'Type',
+    'admin.compliance.credentials.col_authority': 'Authority / registration',
+    'admin.compliance.credentials.col_expiry': 'Expiry',
+    'admin.compliance.credentials.col_status': 'Status',
+    'admin.compliance.credentials.col_action': '',
+    'admin.compliance.credentials.type.hotel_business_license': 'Hotel business licence',
+    'admin.compliance.credentials.type.accommodation_exemption': 'Accommodation exemption',
+    'admin.compliance.credentials.type.title_legal_use': 'Title legal-use verification',
+    'admin.compliance.credentials.status.active': 'Active',
+    'admin.compliance.credentials.status.expired': 'Expired',
+    'admin.compliance.credentials.status.revoked': 'Revoked',
+    'admin.compliance.credentials.status.pending': 'Pending',
   })) as Labels;
 
   const tm30Sorted = [...overview.tm30Filings].sort((a, b) => {
@@ -257,6 +291,16 @@ export default async function AdminCompliancePage({
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+          {labels['admin.compliance.credentials.title']}
+        </h2>
+        <p className="text-body text-text-secondary mb-16 max-w-3xl">
+          {labels['admin.compliance.credentials.subtitle']}
+        </p>
+        <RegulatoryCredentialsClient labels={labels} projects={projects} units={units} />
       </section>
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">

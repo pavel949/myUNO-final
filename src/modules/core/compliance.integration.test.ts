@@ -18,6 +18,7 @@ import {
   createIdentity,
 } from '@/test/util';
 import { createTm30Filing } from '@/modules/ops';
+import { createRegulatoryCredential } from '@/modules/compliance';
 
 describe('Compliance & Mobilization', () => {
   beforeEach(async () => {
@@ -195,6 +196,15 @@ describe('Compliance & Mobilization', () => {
       await db.unit.update({
         where: { id: unit.id },
         data: { permittedUseConfirmedAt: new Date() },
+      });
+
+      // Q71: an active regulatory credential is a second, independent
+      // go-live requirement alongside permitted_use.
+      await createRegulatoryCredential(db, {
+        credentialType: 'hotel_business_license',
+        scopeLevel: 'unit',
+        unitId: unit.id,
+        verifiedByIdentityId: staff.id,
       });
 
       // Now go-live should be allowed and flip unit to live

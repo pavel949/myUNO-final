@@ -6,6 +6,7 @@ import {
 } from '@/modules/booking';
 import { recordCashPayment } from '@/modules/finance';
 import { getProcessState } from '@/app/(admin)/app/admin/processes/process-state';
+import { getOwnerStatements, getOwnerBookingsList } from '@/modules/projects';
 
 const currentUser = vi.fn();
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: () => currentUser() }));
@@ -39,6 +40,20 @@ describe('canonical property → booking → operations → financial close', ()
         status: 'active', noiCapAnnualThb: 1_000_000_00,
       },
     });
+    // One physical unit may carry multiple commercial offers. The stay still
+    // uses the currently authoritative Unit + PricingRule price, not the sale offer.
+    const stayOffer = await db.commercialOffering.create({
+      data: { unitId: unit.id, projectId: project.id, offeringType: 'short_stay',
+        status: 'active', pricingTerms: { pricingAuthority: 'unit_pricing_rules' } },
+    });
+    await db.commercialOffering.create({
+      data: { unitId: unit.id, projectId: project.id, offeringType: 'sale',
+        status: 'draft', pricingTerms: { askingPriceSatang: 1200000000 } },
+    });
+    const offers = await db.commercialOffering.findMany({ where: { unitId: unit.id } });
+    expect(offers).toHaveLength(2);
+    expect(offers.every(offer => offer.unitId === unit.id && offer.projectId === project.id)).toBe(true);
+    expect(stayOffer.status).toBe('active');
 
     const booking = await createBooking(db, {
       unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
@@ -79,6 +94,23 @@ describe('canonical property → booking → operations → financial close', ()
     const statement = (await response.json()).statement;
     expect(statement.grossBookingsAmountThb).toBe(booking.totalThb);
     expect(statement.guestPaymentsReceivedThb).toBe(booking.totalThb);
+    // A draft statement must not leak to the owner. Publication changes
+    // visibility without creating a second statement or a second ledger.
+    expect(await getOwnerStatements(db, owner.id)).toEqual([]);
+    await db.ownerStatement.update({
+      where: { id: statement.id },
+      data: { status: 'published', publishedAt: new Date() },
+    });
+    const ownerStatements = await getOwnerStatements(db, owner.id);
+    expect(ownerStatements).toHaveLength(1);
+    expect(ownerStatements[0].id).toBe(statement.id);
+    const ownerBookings = await getOwnerBookingsList(db, unit.id, owner.id);
+    expect(ownerBookings).toHaveLength(1);
+    expect(ownerBookings[0].id).toBe(booking.id);
+    const unrelatedOwner = await createIdentity();
+    expect(await getOwnerStatements(db, unrelatedOwner.id)).toEqual([]);
+    await expect(getOwnerBookingsList(db, unit.id, unrelatedOwner.id))
+      .rejects.toThrow('Access denied');
 
     const stored = await db.booking.findUniqueOrThrow({
       where: { id: booking.id },

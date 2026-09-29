@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { resetDb, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 
 vi.mock('@/app/actions/getCurrentUser', () => ({
   getCurrentUser: async () => null,
@@ -80,5 +80,46 @@ describe('GET /api/units/[unitId] — a unit is only as public as its project', 
 
     expect(data.project).toEqual({ id: expect.any(String), name: expect.any(String) });
     expect(data.status).toBeUndefined();
+  });
+});
+
+describe('GET /api/units/[unitId] — truthful gallery scope', () => {
+  beforeEach(resetDb);
+
+  async function roomWithCategoryPhoto(projectType: 'hotel' | 'resort') {
+    const actor = await createIdentity();
+    const project = await createProject({ status: 'live' });
+    await db.project.update({ where: { id: project.id }, data: { projectType } });
+    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    const category = await db.inventoryCategory.findUniqueOrThrow({
+      where: { id: unit.inventoryCategoryId! },
+    });
+    const asset = await db.mediaAsset.create({ data: {
+      uploadedByIdentityId: actor.id, kind: 'photo', mimeType: 'image/jpeg',
+      sizeBytes: 12, storageKey: 'https://example.com/representative.jpg',
+    } });
+    await db.inventoryCategoryMedia.create({ data: {
+      categoryId: category.id, mediaId: asset.id, sort: 0,
+    } });
+    await db.inventoryCategory.update({ where: { id: category.id }, data: { coverMediaId: asset.id } });
+    return unit;
+  }
+
+  it('uses labeled category representative images for hotel rooms', async () => {
+    const unit = await roomWithCategoryPhoto('hotel');
+    const result = await GET(makeRequest(), { params: { unitId: unit.id } });
+    const body = await result.json();
+    expect(result.status).toBe(200);
+    expect(body.photoScope).toBe('room_type');
+    expect(body.images).toEqual(['https://example.com/representative.jpg']);
+  });
+
+  it('does not impersonate a private resort villa with category photos', async () => {
+    const unit = await roomWithCategoryPhoto('resort');
+    const result = await GET(makeRequest(), { params: { unitId: unit.id } });
+    const body = await result.json();
+    expect(result.status).toBe(200);
+    expect(body.photoScope).toBe('none');
+    expect(body.images).toEqual([]);
   });
 });

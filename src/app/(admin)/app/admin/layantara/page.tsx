@@ -23,7 +23,7 @@ export default async function LayantaraOperationsPage() {
       prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`,
       prisma.$queryRaw<SourceState[]>`SELECT payload->>'state' AS state, payload->>'occupancy_kind' AS occupancy_kind, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'operational_occupancies' GROUP BY 1,2 ORDER BY 1,2`,
       prisma.$queryRaw<Verification[]>`SELECT payload->>'specification_verification_status' AS specification, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'villa_master_crosswalk' GROUP BY 1 ORDER BY 1`,
-      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:'layantara'}}}),
+      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:'layantara_os'}}}),
       prisma.blockedDate.count({where:{unit:{projectId:PROJECT_ID},externalRef:{startsWith:'layantara:occupancy:'}}}),
       prisma.unit.count({where:{projectId:PROJECT_ID}}),
       prisma.inventoryCategory.count({where:{projectId:PROJECT_ID}}),

@@ -97,3 +97,5 @@ export {
 } from './bank-transfer.service';
 
 export { processOpnEvent, type OpnWebhookEvent } from './provider-webhook.service';
+
+export { getPaymentProvider } from './providers';

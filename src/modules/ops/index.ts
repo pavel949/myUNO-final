@@ -41,3 +41,15 @@ export {
   buildTm30AddressBlock,
   TM30_IMMIGRATION_PORTAL_URL,
 } from './tm30-address';
+
+export {
+  CHECK_IN_CHECKLIST_ITEMS,
+  formatCheckInChecklistNotes,
+  type CheckInChecklistItem,
+} from './check-in-checklist';
+
+export {
+  CHECK_OUT_CHECKLIST_ITEMS,
+  formatCheckOutChecklistNotes,
+  type CheckOutChecklistItem,
+} from './check-out-checklist';

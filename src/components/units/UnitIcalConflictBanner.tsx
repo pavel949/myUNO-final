@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
+import type { UnitIcalConflictAlert } from '@/modules/integrations';
 
 function fill(template: string, params: Record<string, string>): string {
   let result = template;

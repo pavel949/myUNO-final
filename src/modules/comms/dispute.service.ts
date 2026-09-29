@@ -1,7 +1,6 @@
 import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
-import { refund, recordCashRefund } from '@/modules/finance/finance.service';
-import { recordCost } from '@/modules/finance/ledger.service';
+import { refund, recordCashRefund, recordCost } from '@/modules/finance';
 
 /**
  * Disputes (doc 07 F-DIS-2, Q52).

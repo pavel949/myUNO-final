@@ -10,7 +10,7 @@ import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionRepo
 import UnitIcalConflictBanner, {
   UNIT_ICAL_CALENDAR_SURFACES,
 } from '@/components/units/UnitIcalConflictBanner';
-import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
+import type { UnitIcalConflictAlert } from '@/modules/integrations';
 import {
   HBarStack,
   MonthHeatStrip,

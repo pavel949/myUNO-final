@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { processOpnEvent, type OpnWebhookEvent } from '@/modules/finance/provider-webhook.service';
-import { getPaymentProvider } from '@/modules/finance/providers';
+import { processOpnEvent, type OpnWebhookEvent, getPaymentProvider } from '@/modules/finance';
 
 export const dynamic = 'force-dynamic';
 

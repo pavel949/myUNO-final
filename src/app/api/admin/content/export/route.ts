@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { exportToCSV } from '@/modules/content/edit.service';
+import { exportToCSV } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 

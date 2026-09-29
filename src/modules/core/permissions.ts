@@ -10,8 +10,9 @@ export type RequiredAccess = 'read' | 'allow';
  * Does a granted access level satisfy what the caller needs?
  *
  * 'allow' satisfies both; 'read' satisfies only a read. Lives here, beside
- * the PERMISSIONS rows it interprets, so `can()` and `canWithAccess()` cannot
- * drift apart on what a row means.
+ * the PERMISSIONS rows it interprets, so `can()` cannot drift from what a row
+ * means — the separate `canWithAccess()` seam that once risked drifting from
+ * it was removed once `can()` itself learned to check access (2026-09-29).
  */
 export function accessSatisfies(granted: AccessLevel, required: RequiredAccess): boolean {
   if (required === 'read') return granted === 'read' || granted === 'allow';

@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
 import { computeProviderRemittance } from '@/modules/finance'
+// Deliberately deep, not the module's index.ts: @/modules/finance's barrel
+// also re-exports code that imports `node:crypto` transitively, which a
+// 'use client' consumer of that same barrel elsewhere (owner statement detail)
+// cannot bundle. Re-exporting this from the index would make the whole
+// barrel unsafe for that unrelated client component. This route is
+// server-only, so importing the file directly costs nothing.
 import { recordProviderPayoutAtomic } from '@/modules/finance/payout-ledger.service'
 
 export const dynamic = 'force-dynamic'

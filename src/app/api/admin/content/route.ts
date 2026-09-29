@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { listNamespaces } from '@/modules/content/edit.service';
+import { listNamespaces } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 

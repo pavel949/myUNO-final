@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyIcalFeedToken, icalEventUid } from '@/modules/integrations/ical-token';
+import { verifyIcalFeedToken, icalEventUid } from '@/modules/integrations';
 import { toCalendarDay } from '@/lib/date';
 
 // No dynamic request API in this GET — force it dynamic so OTA calendar

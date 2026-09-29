@@ -3,12 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { createNotification } from '@/modules/comms';
 import { checkOutBooking } from '@/modules/booking';
-import { createConditionReport } from '@/modules/ops';
 import {
+  createConditionReport,
   CHECK_OUT_CHECKLIST_ITEMS,
   formatCheckOutChecklistNotes,
   type CheckOutChecklistItem,
-} from '@/modules/ops/check-out-checklist';
+} from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 

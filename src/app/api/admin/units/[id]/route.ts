@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { updateUnit, getUnitDetail } from '@/modules/projects';
-import { canWithAccess } from '@/modules/core/authority.service';
+import { can } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 
-  const allowed = await canWithAccess(prisma, {
+  const allowed = await can({
     identity: context.identity,
     action: 'units:edit_listing',
     requiredAccess: 'allow',
@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 
-  const allowed = await canWithAccess(prisma, {
+  const allowed = await can({
     identity: context.identity,
     action: 'units:view_full_record',
     requiredAccess: 'read',

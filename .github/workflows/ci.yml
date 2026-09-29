@@ -102,6 +102,11 @@ jobs:
       # "<Html> should not be imported outside of pages/_document".
       # CONTENT_REVIEW_GATE_ENABLED=false is the CI-safe way to skip the
       # founder-review gate without poisoning NODE_ENV.
+      - name: Typecheck
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+        run: npx tsc --noEmit
+
       - name: Build
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test

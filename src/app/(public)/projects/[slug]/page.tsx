@@ -63,6 +63,7 @@ export default async function ProjectLandingPage({
   const labels = await getLabels({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
+    'project_page.gallery.view_all': 'View all photos',
     'project_page.styles.title': 'Three styles, one resort',
     'project_page.categories.title': 'Villa categories',
     'project_page.categories.from_night': 'from ฿{price} / night',
@@ -208,7 +209,7 @@ export default async function ProjectLandingPage({
               </div>
             ))}
           </div>
-          {project.galleryUrls.length > 5 ? <p className="mt-12 text-small text-text-secondary">{labels['project_page.gallery.count'].replace('{count}', String(project.galleryUrls.length))}</p> : null}
+          {project.galleryUrls.length > 5 ? <details className="mt-16 rounded-lg border border-border-line p-16"><summary className="cursor-pointer font-semibold text-brand-andaman">{labels['project_page.gallery.view_all']} · {labels['project_page.gallery.count'].replace('{count}', String(project.galleryUrls.length))}</summary><div className="mt-16 grid grid-cols-2 gap-12 md:grid-cols-3">{project.galleryUrls.map((url, index) => <div key={url + index} className="overflow-hidden rounded-lg"><Image src={url} alt={`${project.name} — photo ${index + 1}`} width={640} height={400} className="h-44 w-full object-cover" /></div>)}</div></details> : null}
         </section>
       ) : null}
 

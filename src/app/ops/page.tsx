@@ -87,6 +87,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.mobilization_link': 'Mobilization →',
     'staff.ops.calendar_link': 'Unit calendars →',
     'staff.ops.add_unit_link': 'Add managed unit',
+    'staff.ops.portfolio_link': 'Portfolio calendar',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.announcements_link': 'Post announcement →',
@@ -274,6 +275,9 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             </Link>
             <Link href={opsHref('/ops/mobilization', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.mobilization_link']}
+            </Link>
+            <Link href="/mc/portfolio" className={navClass}>
+              {labels['staff.ops.portfolio_link']}
             </Link>
             <Link href="/ops/new-unit" className={navClass}>
               {labels['staff.ops.add_unit_link']}

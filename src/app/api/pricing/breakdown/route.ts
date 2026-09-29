@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
         ),
         total: toBaht(engine.total_thb),
         lines: engine.lines.map((line) => ({ ...line, nightly_thb: toBaht(line.nightly_thb) })),
+        ...(engine.commercialTerms ? { bookingTerms: engine.commercialTerms } : {}),
       },
       { status: 200 }
     );

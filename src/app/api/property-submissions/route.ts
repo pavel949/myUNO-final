@@ -58,7 +58,12 @@ export async function GET() {
     orderBy: { updatedAt: 'desc' },
     take: 50,
   });
-  return NextResponse.json({ items: rows });
+  const ids = [...new Set(rows.flatMap(row => {
+    const data = row.requirements as Record<string, unknown>;
+    return [...(Array.isArray(data.photos) ? data.photos : []), ...(Array.isArray(data.projectPhotos) ? data.projectPhotos : [])].filter((id): id is string => typeof id === 'string');
+  }))];
+  const assets = ids.length ? await prisma.mediaAsset.findMany({ where: { id: { in: ids }, uploadedByIdentityId: access.user.identityId, kind: 'photo', encrypted: false }, select: { id: true, storageKey: true } }) : [];
+  return NextResponse.json({ items: rows, media: Object.fromEntries(assets.map(asset => [asset.id, asset.storageKey])) });
 }
 
 export async function POST(req: NextRequest) {

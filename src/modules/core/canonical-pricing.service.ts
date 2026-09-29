@@ -212,14 +212,20 @@ export async function computeCanonicalPriceBreakdown(
     unit.projectId
   );
 
-  const arrivalRule = await db.pricingRule.findFirst({
+  // Fetch all dated overrides once per quote, not once per night. Search can
+  // calculate dozens of units over long stays, so per-night SQL would grow
+  // with (units × nights). Same half-open interval semantics as booking.
+  const datedRules = await db.pricingRule.findMany({
     where: {
       unitId: unit.id,
-      startDate: { lte: checkInDate },
+      startDate: { lt: checkOutDate },
       endDate: { gt: checkInDate },
     },
-    select: { minNightsOverride: true },
+    orderBy: [{ startDate: 'desc' }, { endDate: 'asc' }, { id: 'asc' }],
   });
+  const ruleFor = (day: Date) => datedRules.find(rule =>
+    rule.startDate <= day && rule.endDate > day);
+  const arrivalRule = ruleFor(checkInDate);
 
   const canonicalMinNights =
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
@@ -240,13 +246,7 @@ export async function computeCanonicalPriceBreakdown(
   let currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const rule = await db.pricingRule.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lte: currentDate },
-        endDate: { gt: currentDate },
-      },
-    });
+    const rule = ruleFor(currentDate);
     const season = await getApplicableSeason(db, currentDate, scope);
     const categoryEntry = categoryKey && categoryRates ? categoryRates[categoryKey] : undefined;
     const monthlyRate = (season && categoryEntry?.monthly?.[season.name]) ?? null;

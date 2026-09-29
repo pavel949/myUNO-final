@@ -152,8 +152,8 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
         return;
       }
 
-      if (data?.checkout?.checkoutUrl) {
-        router.push(data.checkout.checkoutUrl);
+      if (data?.pricing?.checkoutUrl) {
+        router.push(data.pricing.checkoutUrl);
         return;
       }
       router.refresh();

@@ -20,6 +20,15 @@ async function layantaraAuthority(unitId: string): Promise<{ linked: boolean; ve
     safe.bookingAuthority === 'myuno' && safe.cutoverVerified === true };
 }
 
+async function findExistingStayOffering(unitId: string, preferCanonical: boolean) {
+  const offers = await prisma.commercialOffering.findMany({
+    where: { unitId, offeringType: { in: ['short_term_stay', 'short_stay'] } },
+    orderBy: { createdAt: 'asc' },
+  });
+  return offers.find(offer => offer.offeringType ===
+    (preferCanonical ? 'short_term_stay' : 'short_stay')) ?? offers[0] ?? null;
+}
+
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
@@ -69,11 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }
       // Read the canonical offer first on source-linked units; historical
       // short_stay offers remain accessible for legacy non-Layantara units.
-      const existing = await prisma.commercialOffering.findFirst({
-        where: { unitId: params.id,
-          offeringType: { in: ['short_term_stay', 'short_stay'] } },
-        orderBy: { createdAt: 'asc' },
-      });
+      const existing = await findExistingStayOffering(params.id, authority.linked);
       if (status === 'active' && authority.linked) {
         if (!authority.verified) return NextResponse.json(
           { error: 'source_calendar_cutover_required' }, { status: 409 });
@@ -104,13 +109,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const offeringType = authority.linked && stayType ? 'short_term_stay' : requestedType;
       const existingOffering = body.offeringId
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
-        : await prisma.commercialOffering.findFirst({
-            where: { unitId: params.id,
-              offeringType: stayType
-                ? { in: ['short_term_stay', 'short_stay'] }
-                : offeringType },
-            orderBy: { createdAt: 'asc' },
-          });
+        : stayType
+          ? await findExistingStayOffering(params.id, authority.linked)
+          : await prisma.commercialOffering.findFirst({
+              where: { unitId: params.id, offeringType },
+              orderBy: { createdAt: 'asc' },
+            });
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
       // Mapping a channel must not activate a source-owned Layantara offer.
       const offering = existingOffering || await prisma.commercialOffering.create({

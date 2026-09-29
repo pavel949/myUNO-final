@@ -19,7 +19,7 @@ export const RESOURCE_FIELDS: Record<string, readonly string[]> = {
   "villa_category_content": ["id","project_id","category_id","product_key","locale","title","description","published"],
   "villa_media": ["id","project_id","inventory_id","media_type","storage_path","mime_type","alt_text","caption","width","height","byte_size","sort_order","is_cover","published"],
   "rate_plans": ["id","project_id","code","name","min_nights","meal_plan","cancellation_policy","active"],
-  "rate_seasons": ["id","project_id","code","name","rate_mode","date_windows","min_nights","min_nights_status","active"],
+  "rate_seasons": ["id","project_id","code","name","rate_mode","date_windows","min_nights","min_nights_status","notes","active"],
   "category_rates": ["id","project_id","category_id","season_id","amount","currency","pricing_unit","includes_taxes","includes_service_charge","includes_breakfast","agent_commission_note","source_date","source_document","active","is_sellable","rate_set_id","source_label"],
   "channel_product_rates": ["id","project_id","structure_id","product_code","season_code","amount","pricing_unit"],
   "channel_rate_structures": ["id","project_id","code","name","currency","booking_rule","channel_scope","early_booking_days","min_units","source_document","source_note","active"],

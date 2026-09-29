@@ -194,6 +194,14 @@ export async function findAvailableUnitsForCategory(
       // unit status alone said it was, so archiving a project stopped its
       // pages without stopping its sales.
       project: { status: 'live' },
+      // Explicit commercial eligibility for typed projects. Untyped legacy
+      // supply keeps its original behavior until onboarding migration.
+      AND: [{ OR: [
+        { project: { projectType: null } },
+        { commercialOfferings: { some: {
+          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+        } } },
+      ] }],
       bookings: {
         none: {
           ...overlaps,

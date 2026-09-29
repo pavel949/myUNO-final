@@ -16,15 +16,15 @@ export default async function ProjectStructurePage({params}:{params:{id:string}}
   });
   if(!project)notFound();
   const translated = await getLabels({
-    'property.structure.back':'{labels.back}',
+    'property.structure.back':'← Property onboarding',
     'property.structure.title':'Physical hierarchy',
-    'property.structure.description':'{labels.description}',
+    'property.structure.description':'Build the real phase / building / wing / floor tree. Rates and room types remain independent.',
   });
   const labels = {back:translated['property.structure.back'],title:translated['property.structure.title'],description:translated['property.structure.description']};
   return <main className="mx-auto max-w-5xl space-y-24 px-16 py-32">
-    <Link href={'/app/admin/properties/'+project.id+'/onboarding'} className="text-small font-semibold text-brand-andaman">← Property onboarding</Link>
+    <Link href={'/app/admin/properties/'+project.id+'/onboarding'} className="text-small font-semibold text-brand-andaman">{labels.back}</Link>
     <header><h1 className="font-display text-heading-1 font-semibold text-text-ink">{project.name} · {labels.title}</h1>
-      <p className="text-body text-text-secondary">Build the real phase / building / wing / floor tree. Rates and room types remain independent.</p>
+      <p className="text-body text-text-secondary">{labels.description}</p>
     </header>
     <StructureEditor projectId={project.id} initialNodes={project.structureNodes}/>
   </main>;

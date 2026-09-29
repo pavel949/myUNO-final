@@ -45,6 +45,17 @@ const TARIFF_TABLES = new Set(Object.keys(RESOURCE_FIELDS).filter(k =>
   /^(rate_|category_rates|channel_|inventory_product_configurations|pricing_|project_commercial_policies|booking_condition_rules)/.test(k)
 ));
 
+function rejectOperationalKeys(value: unknown, path = 'resource'): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => rejectOperationalKeys(item, `${path}[${index}]`));
+  } else if (value !== null && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      if (FORBIDDEN.test(key)) throw new Error(`Operational data in static profile: ${path}.${key}`);
+      rejectOperationalKeys(child, `${path}.${key}`);
+    }
+  }
+}
+
 export function sanitizeResourceRow(table: string, payload: Record<string, unknown>) {
   const fields = RESOURCE_FIELDS[table];
   if (!fields) throw new Error('Source table is not allowed in the resource profile');
@@ -57,6 +68,7 @@ export function sanitizeResourceRow(table: string, payload: Record<string, unkno
     if (FORBIDDEN.test(field)) throw new Error(`Forbidden resource field: ${field}`);
     if (Object.prototype.hasOwnProperty.call(payload,field)) sanitized[field]=payload[field];
   }
+  rejectOperationalKeys(sanitized);
   if (!sanitized.id) throw new Error(`Missing stable source identity in ${table}`);
   return sanitized;
 }

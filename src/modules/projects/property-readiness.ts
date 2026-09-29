@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
 
 export type ReadinessSeverity = 'blocker' | 'warning';
 
@@ -173,9 +174,15 @@ export async function getPropertyReadiness(
       (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed'))) {
       add('blocker', 'unit.permitted_use', 'Confirm a permitted-use compliance record.', options);
     }
-    if (hasSaleOffering && ![...project.regulatoryCredentials, ...unit.regulatoryCredentials].some(credential =>
-      credential.credentialType === 'title_legal_use' && credential.status === 'active')) {
-      add('blocker', 'unit.sale_title', 'Verify active title and legal-use evidence before publishing a sale offering.', options);
+    if (hasSaleOffering && !unit.regulatoryCredentials.some(credential =>
+      credential.credentialType === 'title_legal_use' && isCredentialCurrentlyVerified(credential))) {
+      add('blocker', 'unit.sale_title',
+        'Attach and verify current title/legal-use evidence for this specific unit before publishing a sale offering.', options);
+    }
+    if (hasSaleOffering && !unit.regulatoryCredentials.some(credential =>
+      credential.credentialType === 'sale_authority' && isCredentialCurrentlyVerified(credential))) {
+      add('blocker', 'unit.sale_authority',
+        'Attach a current verified seller or marketing authority document for this unit.', options);
     }
     const completed = new Set(unit.mobilizationChecklist.filter((item) => item.status === 'done' || item.status === 'skipped').map((item) => item.step));
     if (hasStayOffering && completed.size < 7) {

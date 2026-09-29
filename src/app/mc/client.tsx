@@ -613,6 +613,12 @@ export function MCDashboardClient({
               {labels['mc.nav.mobilization']}
             </Link>
             <Link
+              href="/mc/portfolio"
+              className="inline-flex items-center h-40 px-20 rounded-md bg-brand-deep text-white font-medium hover:opacity-90 transition-opacity"
+            >
+              Portfolio calendar
+            </Link>
+            <Link
               href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
               className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
             >

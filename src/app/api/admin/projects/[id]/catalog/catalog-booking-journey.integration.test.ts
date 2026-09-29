@@ -19,6 +19,7 @@ import { getPropertyReadiness } from '@/modules/projects/property-readiness';
 import { POST as pricingPost } from '@/app/api/pricing/breakdown/route';
 import { POST as bookingPost } from '@/app/api/bookings/route';
 import { GET as searchGet } from '@/app/api/search/units/route';
+import { GET as unitDetailGet } from '@/app/api/units/[unitId]/route';
 
 function request(url: string, body: unknown): NextRequest {
   return new NextRequest(`http://localhost${url}`, {
@@ -231,6 +232,40 @@ describe('canonical onboarding → pricing → search → booking route journey'
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
     }));
     expect(booking.status).toBe(404);
+  });
+
+  it('never sells a sale-only unit as an accommodation until an active stay offering exists', async () => {
+    const c = await category('sale_only_2br');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
+    });
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'condominium' } });
+    await db.commercialOffering.create({
+      data: { projectId, unitId: unit.id, offeringType: 'sale', status: 'active' },
+    });
+    const dates = { startDate: '2026-11-10', endDate: '2026-11-14' };
+    const find = () => searchGet(new NextRequest(
+      'http://localhost/api/search/units?projectId=' + projectId +
+      '&adultsCount=2&startDate=' + dates.startDate + '&endDate=' + dates.endDate
+    ));
+
+    expect((await (await find()).json()).units).toHaveLength(0);
+    const detail = await unitDetailGet(
+      new NextRequest('http://localhost/api/units/' + unit.id),
+      { params: { unitId: unit.id } }
+    );
+    expect(detail.status).toBe(404);
+    const quote = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: unit.id, ...dates, guestCount: 2,
+    }));
+    expect(quote.status).toBe(404);
+    session.identityId = guestId;
+    const attempted = await bookingPost(request('/api/bookings', {
+      inventoryCategoryId: c.id, projectId, ...dates,
+      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
+    }));
+    expect(attempted.status).toBe(409);
+    expect(await db.booking.count({ where: { unitId: unit.id } })).toBe(0);
   });
 
   it('recognizes the canonical short_term_stay offer during readiness', async () => {

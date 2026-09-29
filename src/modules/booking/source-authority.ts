@@ -37,3 +37,24 @@ export async function excludedSourceControlledUnits(
   },select:{internal_id:true,externalSystem:{select:{config:true}}}});
   return mapped.filter(row=>!sellable(row.externalSystem.config)).map(row=>row.internal_id);
 }
+
+
+/**
+ * Exclusions for public discovery, including searches without dates. These
+ * records are tiny compared with physical inventory and are filtered before
+ * pagination/aggregation so totals and category capacity cannot advertise
+ * source-controlled villas before their signed cutover.
+ */
+export async function allExcludedSourceControlledUnitIds(db: MappingReader): Promise<string[]> {
+  const mapped = await db.externalMapping.findMany({
+    where: {
+      entity_type: 'unit',
+      externalSystem: { system_key: 'layantara_os' },
+    },
+    select: {
+      internal_id: true,
+      externalSystem: { select: { config: true } },
+    },
+  });
+  return mapped.filter(row => !sellable(row.externalSystem.config)).map(row => row.internal_id);
+}

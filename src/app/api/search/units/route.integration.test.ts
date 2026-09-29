@@ -201,3 +201,84 @@ describe('GET /api/search/units — a unit is only as public as its project', ()
     expect(outOfView.units).toHaveLength(0);
   });
 });
+
+
+describe('source-controlled inventory is excluded before public search and category aggregation', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('omits a source-controlled villa from undated/dated results and capacity until cutover', async () => {
+    const project = await createProject({ status: 'live' });
+    const sourceUnit = await createUnit({
+      projectId: project.id, name: 'Real-source-01', status: 'live',
+      categoryKey: 'source_2br', baseNightlyThb: 500000,
+    });
+    const sellableUnit = await createUnit({
+      projectId: project.id, name: 'Local-02', status: 'live',
+      categoryKey: 'source_2br', baseNightlyThb: 500000,
+    });
+    const source = await db.externalSystem.create({
+      data: {
+        system_key: 'layantara_os', environment: 'test',
+        display_name: 'Layantara source',
+        config: { bookingAuthority: 'layantara_os', cutoverVerified: false },
+      },
+    });
+    await db.externalMapping.create({
+      data: {
+        external_system_id: source.id,
+        entity_type: 'unit',
+        internal_id: sourceUnit.id,
+        external_id: 'villa-real-source-01',
+      },
+    });
+
+    const undated = await GET(makeRequest({ projectId: project.id, adultsCount: '2' }));
+    expect(undated.status).toBe(200);
+    const undatedData = await undated.json();
+    expect(undatedData.total).toBe(1);
+    expect(undatedData.units.map((unit: { id: string }) => unit.id)).toEqual([sellableUnit.id]);
+
+    const grouped = await GET(makeRequest({
+      projectId: project.id, adultsCount: '2', groupBy: 'category',
+      startDate: '2026-12-15', endDate: '2026-12-18',
+    }));
+    expect(grouped.status).toBe(200);
+    const groupData = await grouped.json();
+    expect(groupData.categories).toHaveLength(1);
+    expect(groupData.categories[0].available_count).toBe(1);
+
+    await db.externalSystem.update({
+      where: { id: source.id },
+      data: { config: { bookingAuthority: 'myuno', cutoverVerified: true } },
+    });
+    const after = await GET(makeRequest({ projectId: project.id, adultsCount: '2' }));
+    expect(after.status).toBe(200);
+    expect((await after.json()).total).toBe(2);
+
+    // Even after calendar cutover, unapproved tariff terms must exclude only
+    // the affected villa, not turn the entire dated search into HTTP 500.
+    await db.project.update({
+      where: { id: project.id }, data: { projectType: 'resort' },
+    });
+    await db.commercialOffering.create({
+      data: {
+        unitId: sourceUnit.id, offeringType: 'short_term_stay',
+        status: 'active',
+        pricingTerms: { sourceSystem: 'layantara_os', quoteEngine: 'pending_validation' },
+      },
+    });
+    await db.commercialOffering.create({
+      data: { unitId: sellableUnit.id, offeringType: 'short_stay', status: 'active' },
+    });
+    const dated = await GET(makeRequest({
+      projectId: project.id, adultsCount: '2',
+      startDate: '2026-12-15', endDate: '2026-12-18',
+    }));
+    expect(dated.status).toBe(200);
+    const data = await dated.json();
+    expect(data.total).toBe(1);
+    expect(data.units.map((unit: { id: string }) => unit.id)).toEqual([sellableUnit.id]);
+  });
+});

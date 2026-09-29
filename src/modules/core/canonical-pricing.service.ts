@@ -88,7 +88,7 @@ export async function computeCanonicalPriceBreakdown(
   const unit = await db.unit.findUnique({
     where: { id: unitId },
     include: {
-      project: { select: { id: true, status: true, timezone: true } },
+      project: { select: { id: true, status: true, timezone: true, projectType: true } },
       inventoryCategory: true,
     },
   });
@@ -123,9 +123,16 @@ export async function computeCanonicalPriceBreakdown(
   // is invoked at runtime.
   const stayOffers = await db.commercialOffering.findMany({
     where: { unitId: unit.id,
-      offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
+      offeringType: { in: ['short_term_stay', 'short_stay', 'long_term_rental'] } },
     select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
   });
+  // New canonical properties explicitly choose what can be sold. A sale-only
+  // or lease-only unit must never become a guest stay merely because its
+  // physical Unit is live. Untyped legacy projects retain compatibility.
+  if (unit.project.projectType && !stayOffers.some(offer =>
+    ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')) {
+    throw new Error('No active short-stay offering for this property');
+  }
   const validatedGrid = (type: string) => {
     const offer = stayOffers.find(o => o.offeringType === type);
     if (!offer || offer.status !== 'active') return null;
@@ -212,14 +219,20 @@ export async function computeCanonicalPriceBreakdown(
     unit.projectId
   );
 
-  const arrivalRule = await db.pricingRule.findFirst({
+  // Fetch all dated overrides once per quote, not once per night. Search can
+  // calculate dozens of units over long stays, so per-night SQL would grow
+  // with (units × nights). Same half-open interval semantics as booking.
+  const datedRules = await db.pricingRule.findMany({
     where: {
       unitId: unit.id,
-      startDate: { lte: checkInDate },
+      startDate: { lt: checkOutDate },
       endDate: { gt: checkInDate },
     },
-    select: { minNightsOverride: true },
+    orderBy: [{ startDate: 'desc' }, { endDate: 'asc' }, { id: 'asc' }],
   });
+  const ruleFor = (day: Date) => datedRules.find(rule =>
+    rule.startDate <= day && rule.endDate > day);
+  const arrivalRule = ruleFor(checkInDate);
 
   const canonicalMinNights =
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
@@ -240,13 +253,7 @@ export async function computeCanonicalPriceBreakdown(
   let currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const rule = await db.pricingRule.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lte: currentDate },
-        endDate: { gt: currentDate },
-      },
-    });
+    const rule = ruleFor(currentDate);
     const season = await getApplicableSeason(db, currentDate, scope);
     const categoryEntry = categoryKey && categoryRates ? categoryRates[categoryKey] : undefined;
     const monthlyRate = (season && categoryEntry?.monthly?.[season.name]) ?? null;

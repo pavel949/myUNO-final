@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, checkAvailability } from '@/modules/core';
+import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { checkRateLimit } from '@/app/libs/rateLimit';
 
@@ -48,12 +49,27 @@ export async function POST(req: NextRequest) {
       throw createPublicError('invalid request: startDate must be before endDate', 400);
     }
 
-    const engine = await computePriceBreakdown(
-      prisma,
-      unitId,
-      startDate,
-      endDate,
-      Number(guestCount) || 1
+    // A quote is informative, not an inventory hold. Its availability flag
+    // must nevertheless use the same booking/blocked-date and source-authority
+    // inputs as the unit detail. Booking re-checks under its transaction lock.
+    const [engine, unit, calendarAvailable, sourceExcluded] = await Promise.all([
+      computePriceBreakdown(prisma, unitId, startDate, endDate, Number(guestCount) || 1),
+      prisma.unit.findUnique({
+        where: { id: unitId },
+        select: {
+          status: true,
+          assetStatus: true,
+          inventoryCategory: { select: { status: true } },
+          project: { select: { status: true } },
+        },
+      }),
+      checkAvailability(prisma, unitId, startDate, endDate),
+      excludedSourceControlledUnits(prisma, [unitId]),
+    ]);
+    const isAvailable = Boolean(
+      unit && unit.status === 'live' && unit.assetStatus !== 'suspended' &&
+      unit.inventoryCategory?.status === 'live' && unit.project.status === 'live' &&
+      calendarAvailable && sourceExcluded.length === 0
     );
 
     const nights = engine.lines.length;
@@ -70,6 +86,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         nights,
+        isAvailable,
+        availableCapacity: isAvailable ? 1 : 0,
         nightlyRate: nights > 0 ? toBaht(Math.round(engine.subtotal_thb / nights)) : 0,
         subtotal: toBaht(engine.subtotal_thb),
         lengthOfStayDiscount: toBaht(engine.los_discount_thb),
@@ -90,7 +108,8 @@ export async function POST(req: NextRequest) {
     // Guest-actionable validation errors from the engine
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;
-      if (msg.includes('inventory category is not live') || msg.includes('Unit project is not live')) {
+      if (msg.includes('inventory category is not live') || msg.includes('Unit project is not live') ||
+        msg.includes('No active short-stay offering')) {
         return NextResponse.json({ error: 'This stay is not available' }, { status: 404 });
       }
       if (msg.includes('minimum') || msg.includes('exceeds') || msg.includes('not found')) {

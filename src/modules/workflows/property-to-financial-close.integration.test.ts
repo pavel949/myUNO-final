@@ -43,7 +43,7 @@ describe('canonical property → booking → operations → financial close', ()
     // One physical unit may carry multiple commercial offers. The stay still
     // uses the currently authoritative Unit + PricingRule price, not the sale offer.
     const stayOffer = await db.commercialOffering.create({
-      data: { unitId: unit.id, projectId: project.id, offeringType: 'short_stay',
+      data: { unitId: unit.id, projectId: project.id, offeringType: 'short_term_stay',
         status: 'active', pricingTerms: { pricingAuthority: 'unit_pricing_rules' } },
     });
     await db.commercialOffering.create({

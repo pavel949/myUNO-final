@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (data.status !== 'submitted') throw new Error('Only submitted applications can be converted.');
       const applicant = await tx.identity.findUnique({
         where: { id: application.identityId },
-        select: { id: true, roleAssignments: { where: { status: 'active', role: 'owner' }, select: { id: true } } },
+        select: { id: true },
       });
       if (!applicant) throw new Error('Applicant identity not found');
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           data: { projectId, categoryKey, name: unitName + ' category', bedrooms, bathrooms, maxGuests, baseNightlyThb: 0, minNights: 1, status: 'draft' },
           select: { id: true },
         });
-        const ownerIdentityId = review.verifiedOwner === true && applicant.roleAssignments.length > 0 ? applicant.id : null;
+        const ownerIdentityId = review.verifiedOwner === true ? applicant.id : null;
         const unit = await tx.unit.create({
           data: {
             projectId, inventoryCategoryId: category.id, categoryKey,
@@ -119,6 +119,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         });
         unitId = unit.id;
         if (ownerIdentityId) {
+          await tx.roleAssignment.create({ data: { identityId: ownerIdentityId, role: 'owner', scopeType: 'unit', unitId: unit.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
           await tx.ownershipPeriod.create({
             data: { unitId, ownerIdentityId, startsOn: new Date(new Date().toISOString().slice(0, 10)), recordedByIdentityId: guard.actorIdentityId, note: 'Verified during property submission conversion' },
           });

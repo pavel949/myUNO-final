@@ -6,7 +6,7 @@ import { getPublicProjectBySlug } from '@/modules/projects';
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; projectId: string | null; proposedProject: string; unitName: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; floor: string; description: string; offers: string[]; contact: string; status: 'draft' | 'submitted' };
+type Submission = { kind: string; projectId: string | null; proposedProject: string; unitName: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -22,8 +22,15 @@ function normalize(body: Record<string, unknown>): Submission {
     bedrooms, bathrooms, sizeSqm, floor: String(body.floor || '').trim().slice(0, 40),
     description: String(body.description || '').trim().slice(0, 3000),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
+    photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
     status: body.status === 'submitted' ? 'submitted' : 'draft',
   };
+}
+
+async function mediaOwned(ids: string[], ownerId: string): Promise<boolean> {
+  if (!ids.length) return true;
+  const count = await prisma.mediaAsset.count({ where: { id: { in: ids }, uploadedByIdentityId: ownerId, kind: 'photo', encrypted: false } });
+  return count === ids.length;
 }
 
 async function authorized() {
@@ -52,6 +59,7 @@ export async function POST(req: NextRequest) {
   if ('error' in access) return access.error;
   try {
     const data = normalize(await req.json());
+    if (!await mediaOwned(data.photos, access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true, slug: true } });
       if (!project || !await getPublicProjectBySlug(project.slug)) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
@@ -82,6 +90,7 @@ export async function PATCH(req: NextRequest) {
     const previous = existing.requirements as Record<string, unknown>;
     if (previous.status === 'submitted') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
     const data = normalize({ ...previous, ...body });
+    if (!await mediaOwned(data.photos, access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true } });
       if (!project) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });

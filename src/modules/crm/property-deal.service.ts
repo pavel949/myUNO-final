@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { assertLayantaraBookingAuthority } from '@/modules/booking/source-authority';
+import { lifecycleAfterWinForExisting } from './domain';
 
 export type PropertyDealKind = 'sale' | 'long_term_rental';
 export type PropertyDealStatus = 'draft' | 'proposed' | 'accepted' | 'signed' | 'closed' | 'cancelled';
@@ -51,7 +52,7 @@ export async function createPropertyDeal(db: PrismaClient, input: PropertyDealDr
   await validateRefs(db,input);
   return db.propertyDeal.create({data:{
     opportunityId:input.opportunityId,unitId:input.unitId,offeringId:input.offeringId,
-    kind:input.kind,amountThb:input.amountSatang,depositThb:input.depositSatang??0,
+    kind:input.kind,amountThb:BigInt(input.amountSatang),depositThb:BigInt(input.depositSatang??0),
     startsOn:input.kind==='long_term_rental'?input.startsOn:null,
     endsOn:input.kind==='long_term_rental'?input.endsOn:null,
     termsSnapshot:input.termsSnapshot??{},status:'draft',
@@ -61,15 +62,15 @@ export async function updateDraftPropertyDeal(db: PrismaClient, opportunityId:st
   const deal=await db.propertyDeal.findUnique({where:{opportunityId}});
   if(!deal)throw new Error('property_deal_not_found');
   if(deal.status!=='draft')throw new Error('only_draft_agreements_are_editable');
-  const amount=input.amountSatang??deal.amountThb;
-  const deposit=input.depositSatang??deal.depositThb;
+  const amount=input.amountSatang??Number(deal.amountThb);
+  const deposit=input.depositSatang??Number(deal.depositThb);
   validateMoney(amount,deposit);
   const startsOn=input.startsOn===undefined?deal.startsOn:input.startsOn;
   const endsOn=input.endsOn===undefined?deal.endsOn:input.endsOn;
   validateDates(deal.kind,startsOn,endsOn);
   return db.propertyDeal.update({where:{id:deal.id},data:{
-    ...(input.amountSatang!==undefined&&{amountThb:amount}),
-    ...(input.depositSatang!==undefined&&{depositThb:deposit}),
+    ...(input.amountSatang!==undefined&&{amountThb:BigInt(amount)}),
+    ...(input.depositSatang!==undefined&&{depositThb:BigInt(deposit)}),
     ...(input.startsOn!==undefined&&{startsOn}),
     ...(input.endsOn!==undefined&&{endsOn}),
     ...(input.termsSnapshot!==undefined&&{termsSnapshot:input.termsSnapshot}),
@@ -144,6 +145,22 @@ export async function transitionPropertyDeal(db:PrismaClient,input:PropertyDealT
       }))throw new Error('signed_lease_calendar_block_missing');
       // A commercial closing does not fabricate a payment or title transfer.
       // OwnershipPeriod must be updated separately after title verification.
+    }
+    if(input.nextStatus==='closed'){
+      if(fresh.opportunity.stage==='lost')throw new Error('lost_opportunity_cannot_close');
+      const existing=await tx.crmProfile.findUnique({
+        where:{identityId:fresh.opportunity.identityId},select:{lifecycleStage:true},
+      });
+      const lifecycle=lifecycleAfterWinForExisting(fresh.opportunity.type,existing?.lifecycleStage??null);
+      await tx.crmOpportunity.update({where:{id:fresh.opportunityId},data:{
+        stage:'won',wonAt:now,lostAt:null,lostReason:null,probability:100,
+      }});
+      if(lifecycle)await tx.crmProfile.upsert({
+        where:{identityId:fresh.opportunity.identityId},
+        create:{identityId:fresh.opportunity.identityId,lifecycleStage:lifecycle},
+        update:{lifecycleStage:lifecycle,lifecycleChangedAt:now,
+          lifecycleChangeReason:'Verified commercial agreement closed; title requires separate evidence'},
+      });
     }
     const updated=await tx.propertyDeal.update({where:{id:fresh.id},data:{
       status:input.nextStatus,

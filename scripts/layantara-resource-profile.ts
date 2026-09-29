@@ -22,7 +22,7 @@ export const RESOURCE_FIELDS: Record<string, readonly string[]> = {
   "rate_seasons": ["id","project_id","code","name","rate_mode","date_windows","min_nights","min_nights_status","active"],
   "category_rates": ["id","project_id","category_id","season_id","amount","currency","pricing_unit","includes_taxes","includes_service_charge","includes_breakfast","agent_commission_note","source_date","source_document","active","is_sellable","rate_set_id","source_label"],
   "channel_product_rates": ["id","project_id","structure_id","product_code","season_code","amount","pricing_unit"],
-  "channel_rate_structures": ["id","project_id","code","name","currency","booking_rule","channel_scope","early_booking_days","min_units","source_document","active"],
+  "channel_rate_structures": ["id","project_id","code","name","currency","booking_rule","channel_scope","early_booking_days","min_units","source_document","source_note","active"],
   "inventory_product_configurations": ["id","project_id","inventory_id","product_code","product_family","product_name","sellable_bedrooms","source_document","source_note","active"],
   "pricing_rate_sets": ["id","project_id","name","effective_from","effective_to","source_document","status","version","approved_at"],
   "pricing_charge_rules": ["id","project_id","code","label","amount","currency","included","rate_mode","sort_order","unit_label","active"],
@@ -32,7 +32,6 @@ export const RESOURCE_FIELDS: Record<string, readonly string[]> = {
   "pricing_engine_settings": ["id","project_id","setting_key","setting_value","description"],
   "project_commercial_policies": ["id","project_id","policy_code","policy_data","source_date","source_document","active"],
   "booking_condition_rules": ["id","project_id","name","scope_type","category_id","inventory_id","season_code","stay_start","stay_end","min_nights","payment_percent_to_confirm","balance_timing","cancellation_summary","security_deposit_thb","included","excluded","stay_terms","priority","active","rate_mode","security_deposit_usd","confirmation_payment_type","confirmation_payment_value","security_deposit_type","security_deposit_multiplier","amendments_allowed"],
-  "property_operating_profiles": ["id","project_id","settings","capabilities"],
 };
 const PROVENANCE_FIELDS = new Set(['created_at','updated_at','created_by','updated_by']);
 const FORBIDDEN = /^(guest|guest_id|guest_name|email|phone|passport|booking_id|reservation_id|payment_id|receipt_id|transaction_id|owner_statement_id|amount_paid|balance|account_number|bank_account|session_id|access_token|refresh_token|audit_log)$/i;

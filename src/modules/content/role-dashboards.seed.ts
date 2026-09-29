@@ -1,5 +1,6 @@
 /** Role dashboard labels introduced by PR #153; editor review required. */
 export const ROLE_DASHBOARD_KEYS = [
+  { key: 'admin.nav.mobile_menu', namespace: 'admin', description: 'Role dashboard UX; translation review required', en: "Open admin navigation", ru: "Открыть меню администратора", status: 'needs_review' as const },
   { key: 'admin.dashboard.add_property', namespace: 'admin', description: 'Role dashboard UX; translation review required', en: "Add property", ru: "Добавить объект", status: 'needs_review' as const },
   { key: 'admin.dashboard.as_of', namespace: 'admin', description: 'Role dashboard UX; translation review required', en: "As of {time} ICT", ru: "По состоянию на {time} ICT", status: 'needs_review' as const },
   { key: 'admin.dashboard.attention_hint', namespace: 'admin', description: 'Role dashboard UX; translation review required', en: "Open the source workspace to resolve each item. Counts are platform-wide.", ru: "Откройте соответствующий раздел для выполнения задачи. Показатели по всей платформе.", status: 'needs_review' as const },

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getMCProjectScopes } from '@/app/libs/projectScope';
+import { getMCProjectScopes, getStaffProjectIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +28,8 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/mc/portfolio');
   const scopes = getMCProjectScopes(user);
-  if (!scopes.length) redirect('/');
+  const staffProjectIds = getStaffProjectIds(user);
+  if (!scopes.length && !staffProjectIds.length && !user.isAdmin) redirect('/');
 
   const month = monthStart(searchParams?.month);
   const end = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 1));
@@ -57,24 +58,40 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
       .map((role) => `${role.projectId}:${role.organizationId}`)
   );
   const approvedScopes = scopes.filter((scope) => approvedPairs.has(`${scope.projectId}:${scope.organizationId}`));
-  if (!approvedScopes.length) redirect('/');
-
-  const selectedProjectId = approvedScopes.some((scope) => scope.projectId === searchParams?.projectId)
-    ? searchParams!.projectId : undefined;
+  const projectScopeIds = [...new Set([...approvedScopes.map((scope) => scope.projectId), ...staffProjectIds])];
+  const validProjectId = typeof searchParams?.projectId === 'string' &&
+    (user.isAdmin || projectScopeIds.includes(searchParams.projectId))
+    ? searchParams.projectId : undefined;
+  const selectedProjectId = validProjectId;
   const eligible = selectedProjectId
     ? approvedScopes.filter((scope) => scope.projectId === selectedProjectId)
     : approvedScopes;
+  const staffEligibleIds = selectedProjectId
+    ? staffProjectIds.filter((id) => id === selectedProjectId) : staffProjectIds;
+  const visibility = [
+    ...eligible.map((scope) => ({
+      projectId: scope.projectId,
+      engagements: { some: {
+        engagementType: 'via_management_company' as const,
+        status: 'active' as const,
+        managementOrgId: scope.organizationId,
+      } },
+    })),
+    ...staffEligibleIds.map((projectId) => ({
+      projectId,
+      engagements: { some: { status: 'active' as const } },
+    })),
+    ...(user.isAdmin ? [{ engagements: { some: { status: 'active' as const } }, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }] : []),
+  ];
+  const availableProjects = await prisma.project.findMany({
+    where: user.isAdmin ? {} : { id: { in: projectScopeIds } },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
   const units = await prisma.unit.findMany({
     where: {
       status: { not: 'offboarded' },
-      OR: eligible.map((scope) => ({
-        projectId: scope.projectId,
-        engagements: { some: {
-          engagementType: 'via_management_company' as const,
-          status: 'active' as const,
-          managementOrgId: scope.organizationId,
-        } },
-      })),
+      OR: visibility,
     },
     select: {
       id: true, name: true, projectId: true, status: true, baseNightlyThb: true,
@@ -130,7 +147,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
   const openTasks = tickets.reduce((sum, ticket) => sum + ticket._count._all, 0);
   const query = (date: Date, projectId?: string) =>
     `/mc/portfolio?month=${monthKey(date)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}`;
-  const projectOptions = [...new Map(units.map((unit) => [unit.projectId, unit.project.name])).entries()];
+  const projectOptions = availableProjects.map((project) => [project.id, project.name] as const);
   const label = month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   return (
@@ -180,7 +197,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
               const unitRules = rulesByUnit.get(unit.id) || [];
               return <tr key={unit.id} className={i % 2 ? 'bg-surface-ivory/50' : ''}>
                 <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper px-12 py-8 text-left">
-                  <Link href={`/mc/units/${unit.id}`} className="font-semibold text-brand-andaman hover:underline">{unit.name}</Link>
+                  <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} className="font-semibold text-brand-andaman hover:underline">{unit.name}</Link>
                   <span className="block text-text-secondary">{unit.project.name} · {unit.inventoryCategory?.name || unit.status}</span>
                 </th>
                 {days.map((day) => {
@@ -193,7 +210,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
                   const rule = unitRules.find((r) => inNight(day, r.startDate, r.endDate));
                   const title = `${unit.name} · ${dayKey(day)}: ${conflict ? 'overlap / reconcile' : confirmed ? 'occupied' : activeBlocks.length ? activeBlocks.map((b) => b.reason).join(', ') : hold ? 'payment hold' : requested ? 'request only' : 'available'}${rule ? ` · rate override ฿${asBaht(rule.nightlyThb)}` : ''}`;
                   return <td key={dayKey(day)} title={title} className="border-b border-l border-border-line p-1 text-center">
-                    <Link href={`/mc/units/${unit.id}`} aria-label={title} className={`block rounded-md py-8 font-semibold ${conflict ? 'bg-red-100 text-red-800' : confirmed ? 'bg-brand-andaman text-white' : activeBlocks.length ? 'bg-amber-100 text-amber-900' : hold ? 'bg-violet-100 text-violet-900' : requested ? 'bg-blue-50 text-blue-800' : 'text-text-secondary hover:bg-surface-ivory'}`}>{conflict ? '!' : confirmed ? '■' : activeBlocks.length ? '×' : hold ? 'H' : requested ? '◇' : rule ? '·' : ' '}</Link>
+                    <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} aria-label={title} className={`block rounded-md py-8 font-semibold ${conflict ? 'bg-red-100 text-red-800' : confirmed ? 'bg-brand-andaman text-white' : activeBlocks.length ? 'bg-amber-100 text-amber-900' : hold ? 'bg-violet-100 text-violet-900' : requested ? 'bg-blue-50 text-blue-800' : 'text-text-secondary hover:bg-surface-ivory'}`}>{conflict ? '!' : confirmed ? '■' : activeBlocks.length ? '×' : hold ? 'H' : requested ? '◇' : rule ? '·' : ' '}</Link>
                   </td>;
                 })}
                 <td className="border-b border-border-line px-12 text-right text-text-ink">฿{asBaht(unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb)}</td>

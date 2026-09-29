@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
@@ -11,6 +11,7 @@ type Category = { id: string; name: string; categoryKey: string; baseNightlyThb:
 type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ offeringType: string; status: string; channelMappings: Array<{ channel: string; syncState: string }> }> };
 type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; units: Unit[] };
 
+const StepContext = createContext(1);
 const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance', 'Stay offering', 'Pricing', 'Content & photos', 'Availability & channels', 'Team', 'Review & publish'];
 const input = 'h-40 rounded-sm border border-border-line bg-surface-paper px-12';
 function unitPropertyDetailsPath(unitId: string) { return `/api/admin/units/${unitId}/property-details`; }
@@ -19,6 +20,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
   const submit = async (url: string, body: object, method = 'POST') => {
     if (busy) return null;
     setBusy(true);
@@ -45,9 +47,11 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   };
   const form = (handler: (data: FormData) => Promise<void>) => async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); await handler(new FormData(event.currentTarget)); };
 
-  return <main className="max-w-6xl pb-48">
-    <div className="flex flex-wrap items-start justify-between gap-16 mb-24"><div><p className="text-kicker text-brand-andaman">Canonical Stay onboarding</p><h1 className="font-display text-display-xl font-semibold">{initialProject.name}</h1></div><span className={`rounded-full px-12 py-8 text-small ${initialReadiness.readyForActivation ? 'bg-state-success-soft text-state-success' : 'bg-state-warning-soft text-state-warning'}`}>{initialReadiness.score}% ready</span></div>
-    <nav aria-label="Onboarding progress" className="flex gap-8 overflow-x-auto mb-24">{steps.map((step, index) => <a key={step} href={`#step-${index + 1}`} className="shrink-0 rounded-full border border-border-line px-12 py-8 text-small">{index + 1}. {step}</a>)}</nav>
+  return <StepContext.Provider value={activeStep}><main className="max-w-6xl pb-48">
+    <div className="flex flex-wrap items-start justify-between gap-16 mb-24"><div><p className="text-kicker text-brand-andaman">Set up your property</p><h1 className="font-display text-display-xl font-semibold">{initialProject.name}</h1></div><span className={`rounded-full px-12 py-8 text-small ${initialReadiness.readyForActivation ? 'bg-state-success-soft text-state-success' : 'bg-state-warning-soft text-state-warning'}`}>{initialReadiness.score}% ready</span></div>
+    <nav aria-label="Onboarding progress" className="flex gap-8 overflow-x-auto mb-24">{steps.map((step, index) => <button key={step} type="button" onClick={() => setActiveStep(index + 1)} aria-current={activeStep === index + 1 ? 'step' : undefined} className={`shrink-0 rounded-full border px-12 py-8 text-small ${activeStep === index + 1 ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line'}`}>{index + 1}. {step}</button>)}</nav>
+    <div className="mb-24 h-2 overflow-hidden rounded-full bg-surface-muted"><div className="h-full bg-brand-andaman transition-all" style={{width: `${activeStep / steps.length * 100}%`}} /></div>
+    <p className="mb-20 text-small text-text-secondary">Step {activeStep} of {steps.length}. Complete this step, then continue. Your changes are saved to the existing property record.</p>
     {message ? <p role="status" className="mb-16 rounded-md bg-surface-muted p-12">{message}</p> : null}
 
     <Section id="step-1" title="1. Project and area"><p>Canonical area and location are set on the project record. Use Project 360 for detailed physical facts.</p><div className="mt-12 flex gap-12"><Link className="text-brand-andaman underline" href={`/app/admin/projects/${initialProject.id}`}>Open Project 360</Link><Link className="text-brand-andaman underline" href="/app/admin/areas">Manage areas</Link></div></Section>
@@ -109,10 +113,11 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
     <Section id="step-8" title="8. Availability and channels"><p className="mb-12">Availability is derived from Booking, active holds, BlockedDate and approved external blocks. This screen configures inputs to that engine; it never maintains a second availability truth.</p><div className="rounded-md bg-state-warning-soft p-12 mb-16"><strong>Manual-risk warning:</strong> iCal and manual mappings do not push ARI. After every direct booking, close inventory in the OTA extranets until an ARI-capable connection reports <code>ari_push</code>.</div><ChannelForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-9" title="9. Team"><p>Invite people from the owner form above, then grant project or unit roles in People & access.</p><Link className="text-brand-andaman underline" href="/app/admin/people">Open People & access</Link></Section>
     <Section id="step-10" title="10. Review and publish"><Readiness report={initialReadiness}/><Button disabled={busy || !initialReadiness.readyForActivation || initialProject.status === 'live'} onClick={() => submit(`/api/admin/projects/${initialProject.id}`, { status: 'live' }, 'PUT')}>{initialProject.status === 'live' ? 'Property is live' : 'Publish property'}</Button></Section>
-  </main>;
+    <div className="mt-20 flex items-center justify-between gap-12"><Button type="button" variant="secondary" disabled={activeStep === 1} onClick={() => setActiveStep(v => Math.max(1, v - 1))}>Back</Button><Button type="button" disabled={activeStep === steps.length} onClick={() => { setActiveStep(v => Math.min(steps.length, v + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Continue →</Button></div>
+  </main></StepContext.Provider>;
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) { return <section id={id} className="scroll-mt-24 mb-20 rounded-lg border border-border-line bg-surface-paper p-20"><h2 className="font-display text-heading-lg font-semibold mb-12">{title}</h2>{children}</section>; }
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) { const activeStep = useContext(StepContext); const visible = Number(id.replace('step-', '')) === activeStep; return <section id={id} hidden={!visible} className="scroll-mt-24 mb-20 rounded-lg border border-border-line bg-surface-paper p-20"><h2 className="font-display text-heading-lg font-semibold mb-12">{title}</h2>{children}</section>; }
 function UnitLinks({ units, label }: { units: Unit[]; label: string }) { return <ul className="mt-12 space-y-8">{units.map(u => <li key={u.id}><Link className="text-brand-andaman underline" href={`/app/admin/units/${u.id}`}>{label}: {u.name}</Link></li>)}</ul>; }
 function OwnerInvite({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); const invite = await submit('/api/admin/people/invite', { email: d.get('email'), firstName: d.get('firstName'), lastName: d.get('lastName'), preferredLocale: 'en' }); if (invite) await submit(`/api/admin/units/${d.get('unit')}/owner`, { ownerIdentityId: invite.identity.id }, 'PUT'); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="firstName" placeholder="First name" required/><input className={input} name="lastName" placeholder="Last name" required/><input className={input} name="email" type="email" placeholder="Owner email" required/><Button>Invite and assign owner</Button></form>; }
 function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) {

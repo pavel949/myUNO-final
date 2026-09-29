@@ -74,6 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       title: labels['admin.nav.section.inventory'],
       items: [
         { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
+        { href: '/app/admin/property-submissions', label: 'Property applications' },
         { href: '/app/admin/areas', label: labels['admin.projects.manage_areas'] },
         { href: '/app/admin/units', label: labels['admin.nav.units'] },
         { href: '/app/admin/people', label: labels['admin.nav.people'] },

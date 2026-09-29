@@ -65,6 +65,8 @@ Source policy divergence requiring written approval:
 - Target canonical Booking = 0 for live Layantara; protective blocks are not converted guest, booking or payment records.
 - Source writer is still `bookingAuthority='source'`, `cutoverVerified=false`. No source freeze, last-delta snapshot, OTA acknowledgement or signed handover has occurred.
 
+The existing read-only `scripts/layantara-cutover-readiness.sql` was executed against the live target: **7 PASS / 4 BLOCK**. PASS: snapshot counts (53/53), 39/39 physical units, 8/8 categories, 39/39 verified identity crosswalk, 39/39 category assignments, zero prematurely live units, source authority intact. BLOCK: coordinates `0,0`, physical specs 8/39, exact-unit gallery 5/39 and active validated short-stay rates 0/39. This query made no changes.
+
 **Production calendar ownership: remains Layantara OS.** Keep target draft, all 84 protective blocks and single-writer guard. A safe cutover is forbidden until backup/restore, migrations, 31/31 approved specs, media/coordinates, tax/term signoff, mathematical Golden Master, real authenticated E2E, final source delta, serialized writer freeze/flip and rollback checks are evidenced.
 
 No customer identity, credentials, source media URLs, payment details or raw secret values are stored in this file.

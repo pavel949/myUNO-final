@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -33,6 +34,7 @@ export function eligiblePublicHomeIntents(input: {
   complianceRecords: Array<{ recordType: string; status: string }>;
   engagements: Array<{ status: string; mandateMediaId: string | null; startsOn: Date | null; endsOn: Date | null }>;
   commercialOfferings: Array<{ offeringType: string; status: string }>;
+  sourceBookingOwned?: boolean;
 }, now: Date = new Date()): HomeIntent[] {
   const active = new Set(input.commercialOfferings.filter(o => o.status === 'active').map(o => o.offeringType));
   const result: HomeIntent[] = [];
@@ -43,11 +45,12 @@ export function eligiblePublicHomeIntents(input: {
     (!e.startsOn || e.startsOn <= now) && (!e.endsOn || e.endsOn > now));
   const permitted = Boolean(input.permittedUseConfirmedAt) &&
     input.complianceRecords.some(c => c.recordType === 'permitted_use' && c.status === 'confirmed');
-  if (active.has('long_term_rental') && hasMandate && permitted) result.push('rent');
+  if (active.has('long_term_rental') && !input.sourceBookingOwned && hasMandate && permitted) result.push('rent');
   return result;
 }
 
 export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeIntent, unitId?: string): Promise<PublicCommercialHome[]> {
+  const sourceExcluded = new Set(await allExcludedSourceControlledUnitIds(db));
   const rows = await db.unit.findMany({
     where: {
       ...(unitId ? { id: unitId } : {}),
@@ -78,7 +81,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
   });
   const now = new Date();
   return rows.flatMap(row => {
-    const intents = eligiblePublicHomeIntents(row, now);
+    const intents = eligiblePublicHomeIntents({ ...row, sourceBookingOwned: sourceExcluded.has(row.id) }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
     return [{
       id: row.id, name: row.name, project: row.project,

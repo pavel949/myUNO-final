@@ -62,16 +62,22 @@ export async function GET(
         cancellationPolicyKey: true,
         status: true,
         assetStatus: true,
+        accommodationType: true,
         inventoryCategory: {
           select: {
             id: true,
             categoryKey: true,
             name: true,
             status: true,
+            coverMedia: { select: { storageKey: true } },
+            galleryMedia: {
+              orderBy: { sort: 'asc' },
+              select: { media: { select: { storageKey: true } } },
+            },
           },
         },
         project: {
-          select: { id: true, name: true, status: true },
+          select: { id: true, name: true, status: true, projectType: true },
         },
         coverMedia: { select: { storageKey: true } },
         media: {
@@ -147,13 +153,26 @@ export async function GET(
     } = unit;
     const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
     const gallery = media.map((m) => m.media.storageKey);
-    const cover = coverMedia?.storageKey || gallery[0] || null;
+    const exactCover = coverMedia?.storageKey || gallery[0] || null;
+    // Only an actual hotel room may use representative room-type photos.
+    // A private villa/condo never presents another unit's photo as its own.
+    const isRoomType = project.projectType === 'hotel' ||
+      unit.accommodationType === 'hotel_room';
+    const representative = isRoomType && gallery.length === 0 && !exactCover
+      ? unit.inventoryCategory?.galleryMedia.map(m => m.media.storageKey) ?? []
+      : [];
+    const representativeCover = isRoomType && gallery.length === 0 && !exactCover
+      ? unit.inventoryCategory?.coverMedia?.storageKey ?? representative[0] ?? null
+      : null;
+    const selected = representative.length ? representative : gallery;
+    const cover = exactCover || representativeCover;
     return NextResponse.json({
       ...publicUnit,
       // Compatibility field for old clients. New date-aware surfaces use pricing.averageNightly.
       baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
       pricing,
-      images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
+      photoScope: representative.length ? 'room_type' : gallery.length ? 'exact_unit' : 'none',
+      images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

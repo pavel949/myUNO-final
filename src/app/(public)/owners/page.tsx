@@ -32,6 +32,7 @@ export default async function OwnersPage() {
     'audience.owners.hero_lede':
       'myUNO runs your unit to hotel standard and shows you everything from wherever you live: nights sold, money in and out, who entered, what it cost.',
     'audience.owners.cta': 'Entrust your unit',
+    'audience.owners.add_property': 'Add my property',
     'audience.owners.problem.title': "You can't manage what you can't see.",
     'audience.owners.problem.lede':
       'Ask the simple questions about your own property, and watch how long the answers take — if they come at all.',
@@ -121,11 +122,12 @@ export default async function OwnersPage() {
             {labels['audience.owners.hero_lede']}
           </p>
           <Link
-            href="#lead-form"
+            href="/property/onboard"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
-            {labels['audience.owners.cta']} →
+            {labels['audience.owners.add_property']} →
           </Link>
+          <Link href="#lead-form" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{labels['audience.owners.cta']}</Link>
         </div>
       </section>
 

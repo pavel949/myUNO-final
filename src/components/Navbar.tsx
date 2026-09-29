@@ -86,6 +86,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         // still had the link.
         { href: '/trips', label: labels.myTrips },
         { href: '/saved', label: labels.saved || 'Saved' },
+        { href: '/property/onboard', label: 'Add a property' },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },

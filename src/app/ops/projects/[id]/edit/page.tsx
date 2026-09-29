@@ -9,7 +9,7 @@ export default async function EditProjectFactsPage({ params }: { params: { id: s
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops');
   const assigned = await prisma.roleAssignment.findFirst({
-    where: { identityId: user.identityId, role: 'staff_ops', status: 'active', projectId: params.id },
+    where: { identityId: user.identityId, role: 'staff_ops', scopeType: 'project', status: 'active', projectId: params.id },
     select: { id: true },
   });
   if (!user.isAdmin && !assigned) notFound();

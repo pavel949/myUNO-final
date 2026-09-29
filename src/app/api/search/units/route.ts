@@ -567,7 +567,7 @@ export async function GET(req: NextRequest) {
               ratePlanCode: priced.ratePlanCode,
               minNights: priced.minNights,
             },
-            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || unit.inventoryCategory?.coverMedia?.storageKey || null,
+            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || priced.unit.inventoryCategory?.coverMedia?.storageKey || null,
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,
           };

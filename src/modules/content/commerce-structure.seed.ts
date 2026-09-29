@@ -1,0 +1,16 @@
+/** Canonical PMS, physical hierarchy and agreement editor copy.
+ * Draft translations are visible to Content Studio and require review. */
+export const COMMERCE_STRUCTURE_KEYS = [
+  { key: 'staff.unified_calendar.open_stay', namespace: 'staff', description: 'Open canonical booking lifecycle', en: 'Open canonical stay', ru: 'Открыть карточку проживания', th: 'เปิดข้อมูลการเข้าพัก', status: 'needs_review' as const },
+  { key: 'staff.unified_calendar.manage_block', namespace: 'staff', description: 'Open physical unit blocked-date management', en: 'Manage availability block', ru: 'Управление блокировкой дат', th: 'จัดการการปิดกั้นวันว่าง', status: 'needs_review' as const },
+  { key: 'property.structure.back', namespace: 'property', description: 'Structure editor back to property', en: '← Property onboarding', ru: '← К настройке объекта', th: '← กลับไปตั้งค่าที่พัก', status: 'needs_review' as const },
+  { key: 'property.structure.title', namespace: 'property', description: 'Physical hierarchy editor title', en: 'Physical hierarchy', ru: 'Физическая структура', th: 'โครงสร้างอาคาร', status: 'needs_review' as const },
+  { key: 'property.structure.description', namespace: 'property', description: 'Physical hierarchy separation', en: 'Build the real phase / building / wing / floor tree. Rates and room types remain independent.', ru: 'Создайте реальную структуру очередей, корпусов, крыльев и этажей. Тарифы и категории номеров настраиваются отдельно.', th: 'จัดลำดับเฟส อาคาร ปีกอาคาร และชั้นตามจริง โดยแยกจากประเภทห้องและราคา', status: 'needs_review' as const },
+  { key: 'unit.structure.back', namespace: 'unit', description: 'Back to unit record', en: '← Physical unit', ru: '← К карточке объекта', th: '← กลับไปยังยูนิต', status: 'needs_review' as const },
+  { key: 'unit.structure.title', namespace: 'unit', description: 'Physical unit location editor', en: 'Location', ru: 'Расположение', th: 'ตำแหน่งยูนิต', status: 'needs_review' as const },
+  { key: 'unit.structure.description', namespace: 'unit', description: 'Unit location editor help', en: 'Assign a verified building, wing or floor without changing the commercial category.', ru: 'Назначьте подтверждённый корпус, крыло или этаж без изменения коммерческой категории.', th: 'กำหนดอาคาร ปีกอาคาร หรือชั้นที่ยืนยันแล้วโดยไม่เปลี่ยนประเภทการขาย', status: 'needs_review' as const },
+  { key: 'admin.crm.opportunities.agreement', namespace: 'admin', description: 'Open CRM-linked agreement', en: 'Lease / sale agreement', ru: 'Договор аренды / продажи', th: 'สัญญาเช่า / ซื้อขาย', status: 'needs_review' as const },
+  { key: 'admin.deal.back', namespace: 'admin', description: 'Return to canonical opportunity', en: 'Back to opportunity', ru: 'К сделке CRM', th: 'กลับไปยังโอกาสการขาย', status: 'needs_review' as const },
+  { key: 'admin.deal.title', namespace: 'admin', description: 'Agreement page heading', en: 'Commercial agreement', ru: 'Коммерческий договор', th: 'สัญญาทางการค้า', status: 'needs_review' as const },
+  { key: 'admin.deal.no_unit', namespace: 'admin', description: 'Deal unit prerequisite', en: 'Select a physical unit in CRM before drafting an agreement.', ru: 'Выберите конкретный объект в CRM перед созданием договора.', th: 'เลือกยูนิตใน CRM ก่อนจัดทำสัญญา', status: 'needs_review' as const },
+];

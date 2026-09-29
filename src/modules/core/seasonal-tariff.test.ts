@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { quoteSeasonalTariffGrid as quote, type TariffRow } from './seasonal-tariff';
+import { quoteSeasonalTariffGrid as quote, previewAnnualLeaseTariff, type TariffRow } from './seasonal-tariff';
 
 const row = (id: string, start: string, end: string, amount: number,
   mode: 'daily' | 'monthly' = 'daily', min: number = 1): TariffRow => ({
@@ -10,6 +10,14 @@ const row = (id: string, start: string, end: string, amount: number,
   includesBreakfast: mode === 'daily', sourceSellable: true,
 });
 describe('project-neutral canonical tariff grid', () => {
+  it('retains the annual rental as a signed contract, not a nightly booking', () => {
+    const annual={...row('YEAR','01-01','12-31',8000000,'monthly',365),
+      rateMode:'yearly',pricingUnit:'month',dateWindows:[]};
+    const result=previewAnnualLeaseTariff([annual]);
+    expect(result.monthlySatang).toBe(8000000);
+    expect(result.illustrativeTwelveMonthSatang).toBe(96000000);
+    expect(result.bookingEngineEligible).toBe(false);
+  });
   it('prices daily seasons at year boundary with exclusive checkout', () => {
     const rows = [
       row('HIGH','11-01','12-21',750000),

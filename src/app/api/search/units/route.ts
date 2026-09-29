@@ -381,6 +381,7 @@ export async function GET(req: NextRequest) {
           status: true,
           baseNightlyThb: true,
           minNights: true,
+          coverMedia: { select: { storageKey: true } },
         },
       },
       coverMedia: { select: { storageKey: true } },
@@ -566,7 +567,7 @@ export async function GET(req: NextRequest) {
               ratePlanCode: priced.ratePlanCode,
               minNights: priced.minNights,
             },
-            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
+            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || priced.unit.inventoryCategory?.coverMedia?.storageKey || null,
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,
           };

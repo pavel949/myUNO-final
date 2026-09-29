@@ -47,9 +47,10 @@ export function eligiblePublicHomeIntents(input: {
   return result;
 }
 
-export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeIntent): Promise<PublicCommercialHome[]> {
+export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeIntent, unitId?: string): Promise<PublicCommercialHome[]> {
   const rows = await db.unit.findMany({
     where: {
+      ...(unitId ? { id: unitId } : {}),
       status: 'live', assetStatus: { not: 'suspended' },
       project: { status: 'live' },
       commercialOfferings: { some: { status: 'active', offeringType: { in: kinds } } },
@@ -73,7 +74,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-    take: 200,
+    take: unitId ? 1 : 200,
   });
   const now = new Date();
   return rows.flatMap(row => {
@@ -86,4 +87,12 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       intents,
     }];
   });
+}
+
+/** Unit-specific public lookup with the identical legal and authority gates as browse. */
+export async function getPublicCommercialHomeById(
+  db: PrismaClient, unitId: string,
+): Promise<PublicCommercialHome | null> {
+  const [home] = await listPublicCommercialHomes(db, undefined, unitId);
+  return home ?? null;
 }

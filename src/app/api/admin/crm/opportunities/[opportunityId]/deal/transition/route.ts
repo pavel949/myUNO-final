@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { propertyDealJson } from '@/modules/crm/property-deal-serialization';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import {
   transitionPropertyDeal, type PropertyDealStatus,
@@ -26,7 +27,7 @@ export async function POST(req:NextRequest,{params}:{
       settlementReference:typeof body.settlementReference==='string'?body.settlementReference:undefined,
       handoverAt,
     });
-    return NextResponse.json(updated);
+    return NextResponse.json(propertyDealJson(updated));
   }catch(error){
     const message=error instanceof Error?error.message:'invalid_transition';
     const code=message==='lease_dates_unavailable'||message==='property_deal_changed_retry'||

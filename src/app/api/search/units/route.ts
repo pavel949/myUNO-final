@@ -3,6 +3,7 @@ import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown } from '@/modules/core';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
 import {
@@ -157,8 +158,13 @@ export async function GET(req: NextRequest) {
       ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
     };
 
+    // Source-controlled units must be absent from *all* public search modes,
+    // including undated browsing and grouped category capacity. Exclusion is
+    // applied before pagination, counts and prices, never as a cosmetic filter.
+    const sourceExcludedUnitIds = await allExcludedSourceControlledUnitIds(prisma);
     const where: any = {
       status: 'live',
+      ...(sourceExcludedUnitIds.length > 0 && { id: { notIn: sourceExcludedUnitIds } }),
       assetStatus: { not: 'suspended' },
       inventoryCategory: { status: 'live' },
       project: projectFilter,
@@ -202,7 +208,10 @@ export async function GET(req: NextRequest) {
       });
 
       const unavailableUnitIds = new Set(
-        conflictingUnits.map((b) => b.unitId).concat(blockedUnits.map((b) => b.unitId))
+        sourceExcludedUnitIds.concat(
+          conflictingUnits.map((b) => b.unitId),
+          blockedUnits.map((b) => b.unitId)
+        )
       );
 
       if (unavailableUnitIds.size > 0) {

@@ -341,7 +341,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             }
           />
           <StatTile
-            label={labels['owner.dashboard.revenue_this_month']}
+            label={labels['owner.dashboard.booked_value_this_month']}
             value={<MoneyAmount satang={revenueNow * 100} />}
             variant="revenue"
             delta={
@@ -354,6 +354,8 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             }
           />
         </div>
+
+        <p className="text-small text-text-secondary -mt-24 mb-32">{labels['owner.dashboard.booked_value_note']}</p>
 
         {/* Trends — last 6 months from the analytics rollup */}
         <div className="mb-40">

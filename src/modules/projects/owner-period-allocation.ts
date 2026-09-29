@@ -24,6 +24,7 @@ export function allocateBookingGrossToPeriod(
   const to = utcDay(periodEnd);
   const totalNights = (end - start) / DAY_MS;
   if (!Number.isSafeInteger(totalSatang) || totalSatang < 0 ||
+      ![start, end, from, to].every(Number.isFinite) ||
       totalNights <= 0 || to <= from) return { nights: 0, grossSatang: 0 };
   const boundedFrom = Math.max(start, Math.min(end, from));
   const boundedTo = Math.max(start, Math.min(end, to));

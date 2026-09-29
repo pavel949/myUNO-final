@@ -97,24 +97,26 @@ export async function POST(
       }
     }
 
-    const updatedProfile = await prisma.crmProfile.update({
-      where: { id: params.profileId },
-      data: {
-        lifecycleStage: body.to_stage,
-        lifecycleChangedAt: new Date(),
-        lifecycleChangeReason: body.reason,
-        lifecycleChangeApprovedBy: guard.actorIdentityId,
-      },
-    });
-
-    await prisma.lifecycleTransitionLog.create({
-      data: {
-        profileId: params.profileId,
-        fromStage: currentStage,
-        toStage: body.to_stage,
-        reason: body.reason,
-        approvedByIdentityId: guard.actorIdentityId,
-      },
+    const updatedProfile = await prisma.$transaction(async (tx) => {
+      const updated = await tx.crmProfile.update({
+        where: { id: params.profileId },
+        data: {
+          lifecycleStage: body.to_stage,
+          lifecycleChangedAt: new Date(),
+          lifecycleChangeReason: body.reason,
+          lifecycleChangeApprovedBy: guard.actorIdentityId,
+        },
+      });
+      await tx.lifecycleTransitionLog.create({
+        data: {
+          profileId: params.profileId,
+          fromStage: currentStage,
+          toStage: body.to_stage,
+          reason: body.reason,
+          approvedByIdentityId: guard.actorIdentityId,
+        },
+      });
+      return updated;
     });
 
     return NextResponse.json({

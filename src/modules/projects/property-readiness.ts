@@ -55,6 +55,20 @@ export async function getPropertyReadiness(
   });
   if (!project) return null;
 
+  // One batch read for source-linked units. Being in the physical portfolio
+  // does not grant myUNO authority to sell a Layantara villa.
+  const sourceMappings = project.units.length
+    ? await db.externalMapping.findMany({
+        where: { entity_type: 'unit',
+          internal_id: { in: project.units.map(unit => unit.id) },
+          externalSystem: { system_key: 'layantara_os' } },
+        select: { internal_id: true, externalSystem: { select: { config: true } } },
+      })
+    : [];
+  const sourceConfigByUnit = new Map(sourceMappings.map(mapping =>
+    [mapping.internal_id, mapping.externalSystem.config] as const
+  ));
+
   const blockers: PropertyReadinessItem[] = [];
   const warnings: PropertyReadinessItem[] = [];
   const projectHref = `/app/admin/properties/${project.id}/onboarding`;
@@ -95,6 +109,26 @@ export async function getPropertyReadiness(
   for (const unit of project.units) {
     const href = `/app/admin/units/${unit.id}`;
     const options = { scope: 'unit' as const, unitId: unit.id, unitName: unit.name, href };
+    if (sourceConfigByUnit.has(unit.id)) {
+      const raw = sourceConfigByUnit.get(unit.id);
+      const config = typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+        ? raw as Record<string, unknown> : {};
+      if (config.bookingAuthority !== 'myuno' || config.cutoverVerified !== true) {
+        add('blocker', 'unit.source_authority',
+          'Layantara source calendar remains authoritative; signed cutover is required.', options);
+      }
+      const canonicalStay = unit.commercialOfferings.find(offering =>
+        offering.offeringType === 'short_term_stay');
+      const terms = canonicalStay?.pricingTerms;
+      const validated = typeof terms === 'object' && terms !== null &&
+        !Array.isArray(terms) &&
+        (terms as Record<string, unknown>).quoteEngine !== undefined &&
+        (terms as Record<string, unknown>).quoteEngine !== 'pending_validation';
+      if (unit.baseNightlyThb <= 0 || !validated) {
+        add('blocker', 'unit.source_pricing',
+          'Validate the source tariff grid and enable the canonical price engine before sale.', options);
+      }
+    }
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);
     if (!unit.descriptionKey) add('blocker', 'unit.description', 'Add a unit description key.', options);

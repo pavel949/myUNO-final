@@ -19,11 +19,14 @@ All seven files from #140 were verified byte-identical in #139 before #140 was c
 | Statement → Owner Hub | draft hidden; published visible only to verified owner; foreign owner rejected | extended property-to-financial-close integration | scoped API/SSR/aggregate/media tests before cutover |
 | Owner dashboard month view | completed stays included; cross-month gross booked value apportioned exactly in satang | owner-period-allocation unit tests | display is booked gross, NOT receipt/NOI/payout ledger |
 
+## Read-only real-data activation check
+Run `scripts/layantara-cutover-readiness.sql` only as an authorized operator against the intended target after staging migrations. It emits aggregate PASS/BLOCK checks for snapshot parity, 39 real unit mappings, 8 categories, verified coordinates and specs, physical media, validated short-stay offers, and source-authority preservation. It does not activate inventory or expose PII; payment, booking, staff and legal/compliance reconciliation still require independent signed evidence. A BLOCK is expected while staging is intentionally incomplete.
+
 ## Corrections included in consolidated branch
 - Admin Layantara mapping counter now queries `layantara_os` rather than the nonexistent `layantara` key used in that card.
 - Commercial offering and owner-visibility checks extend the existing full-chain DB integration test.
 - Owner dashboard now includes `completed` bookings and splits cross-month gross by calendar nights without duplicate total, preserving one exact satang sum across adjacent months. Owner statement remains the financial authority.
-- Guest return path and CRM ownership/mandate guard are inherited from #140.
+- Guest return path and CRM ownership/mandate guard are inherited from #140. Root navigation includes the new guest label and avoids the duplicate Trips link.
 
 ## Run these checks on this exact branch HEAD, with isolated test database
 1. `npm ci`, `npx prisma generate`, `npm run lint`, `npm test`, `npm run build`.

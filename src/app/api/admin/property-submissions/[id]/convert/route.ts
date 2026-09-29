@@ -43,8 +43,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       const name = String(data.proposedProject || '').trim();
       const unitName = String(data.unitName || '').trim();
-      const isNew = !application.projectId;
-      let projectId = application.projectId;
+      const chosenProjectId = typeof review.projectId === 'string' && review.projectId ? review.projectId : application.projectId;
+      const isNew = !chosenProjectId;
+      let projectId = chosenProjectId;
 
       if (isNew) {
         const address = String(data.projectAddress || '').trim();

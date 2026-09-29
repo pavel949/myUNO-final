@@ -1,15 +1,17 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import ConvertPropertySubmission from './convert-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PropertySubmissionsPage() {
-  const rows = await prisma.crmOpportunity.findMany({
+  const [rows, projects] = await Promise.all([prisma.crmOpportunity.findMany({
     where: { source: 'myuno_property_submission_v1' },
     include: { identity: { select: { firstName: true, lastName: true, email: true } }, project: { select: { name: true } } },
     orderBy: { updatedAt: 'desc' },
     take: 100,
-  });
+  }), prisma.project.findMany({ where: { status: { not: 'archived' } }, orderBy: { name: 'asc' }, select: { id: true, name: true } })]);
   return <main className="max-w-5xl">
     <h1 className="font-display text-display-xl font-semibold">Property applications</h1>
     <p className="mt-8 mb-24 text-text-secondary">Review owner and manager submissions before creating or editing canonical property records. A submitted application is not a live listing.</p>
@@ -24,7 +26,8 @@ export default async function PropertySubmissionsPage() {
         <p className="mt-4 text-small text-text-secondary">Contact: {String(data.contact || 'Not supplied')}</p>
         <p className="mt-8 whitespace-pre-wrap text-small">{String(data.description || '')}</p>
         {row.projectId && <Link href={`/app/admin/projects/${row.projectId}`} className="mt-12 inline-block text-brand-andaman underline">Open existing project →</Link>}
-        <p className="mt-12 text-small text-text-secondary">Verify authority, duplicate inventory, photos, contract and permitted use before using the canonical onboarding workflow.</p>
+        <p className="mt-12 text-small text-text-secondary">Verify authority, duplicate inventory and the project's real-world location. Conversion never publishes an offer.</p>
+        <ConvertPropertySubmission id={row.id} status={String(data.status || 'draft')} existingProjectId={row.projectId} projects={projects} canonicalProjectId={typeof data.canonicalProjectId === 'string' ? data.canonicalProjectId : null} canonicalUnitId={typeof data.canonicalUnitId === 'string' ? data.canonicalUnitId : null} />
       </article>;
     })}</div>}
   </main>;

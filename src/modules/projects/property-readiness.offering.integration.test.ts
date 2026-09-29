@@ -30,6 +30,9 @@ describe('property readiness respects commercial offering type', () => {
     expect(keys).not.toContain('unit.stay_offering');
     expect(keys).not.toContain('unit.pricing');
     expect(keys).not.toContain('unit.sleeping');
+    expect(keys).not.toContain('unit.mobilization');
+    expect(keys).not.toContain('unit.permitted_use');
+    expect(keys).toContain('unit.sale_title');
   });
 
   it('does not require short-stay facilities for a yearly rental-only unit', async () => {
@@ -37,6 +40,8 @@ describe('property readiness respects commercial offering type', () => {
     expect(keys).not.toContain('unit.offering');
     expect(keys).not.toContain('unit.pricing');
     expect(keys).not.toContain('unit.sleeping');
+    expect(keys).not.toContain('unit.mobilization');
+    expect(keys).toContain('unit.permitted_use');
   });
 
   it('still blocks publishing when no offering is active', async () => {
@@ -47,5 +52,7 @@ describe('property readiness respects commercial offering type', () => {
   it('requires an actual sleeping layout for an active short-stay offering', async () => {
     const keys = await setup('short_term_stay');
     expect(keys).toContain('unit.sleeping');
+    expect(keys).toContain('unit.mobilization');
+    expect(keys).toContain('unit.permitted_use');
   });
 });

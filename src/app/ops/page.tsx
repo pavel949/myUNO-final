@@ -86,6 +86,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.mobilization_link': 'Mobilization →',
     'staff.ops.calendar_link': 'Unit calendars →',
+    'staff.ops.add_unit_link': 'Add managed unit',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.announcements_link': 'Post announcement →',
@@ -275,7 +276,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               {labels['staff.ops.mobilization_link']}
             </Link>
             <Link href="/ops/new-unit" className={navClass}>
-              {labels['staff.ops.add_unit_link'] || 'Add managed unit'}
+              {labels['staff.ops.add_unit_link']}
             </Link>
             <Link href={opsHref('/ops/calendar', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.calendar_link']}

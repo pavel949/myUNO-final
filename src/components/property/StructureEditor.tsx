@@ -27,7 +27,7 @@ export default function StructureEditor({projectId,initialNodes,initialUnit}:Pro
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [success,setSuccess]=useState('');
-  const endpoint='/api/admin/projects/'+encodeURIComponent(projectId)+'/structure';
+  const endpoint=`/api/admin/projects/${projectId}/structure`;
   const refresh=async()=>{
     const result=await fetch(endpoint,{cache:'no-store'});
     if(!result.ok)throw new Error('Unable to load physical structure');
@@ -108,7 +108,7 @@ export default function StructureEditor({projectId,initialNodes,initialUnit}:Pro
             <p className="text-small text-text-secondary">{node.parentId?'Parent: '+(nodes.find(p=>p.id===node.parentId)?.name||'unknown'):'Project root'} · {node._count.units} units · {node._count.children} children</p>
           </div>
           <button type="button" disabled={busy||node._count.units>0||node._count.children>0}
-            onClick={()=>send(endpoint+'/'+encodeURIComponent(node.id),'DELETE')}
+            onClick={()=>send(`/api/admin/projects/${projectId}/structure/${node.id}`,'DELETE')}
             className="rounded-md border border-border-line px-12 py-8 text-small disabled:opacity-30">
             Delete empty node
           </button>

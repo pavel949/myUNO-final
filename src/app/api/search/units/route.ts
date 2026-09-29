@@ -169,6 +169,14 @@ export async function GET(req: NextRequest) {
       inventoryCategory: { status: 'live' },
       project: projectFilter,
       ...projectScope,
+      // A sale-only or lease-only physical unit is not a guest stay. The
+      // legacy untyped portfolio remains readable during staged migration.
+      AND: [{ OR: [
+        { project: { projectType: null } },
+        { commercialOfferings: { some: {
+          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+        } } },
+      ] }],
       maxGuests: { gte: totalGuests },
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),

@@ -1068,7 +1068,7 @@ model Unit {
   // Relations
   project                      Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inventoryCategory            InventoryCategory?            @relation(fields: [inventoryCategoryId], references: [id], onDelete: SetNull)
-  structureNode                ProjectStructureNode?          @relation(fields: [structureNodeId], references: [id], onDelete: SetNull)
+  structureNode                ProjectStructureNode?          @relation(fields: [structureNodeId], references: [id], onDelete: Restrict)
   owner                        Identity?                     @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
   coverMedia                   MediaAsset?                   @relation(name: "unitCover", fields: [coverMediaId], references: [id])
   media                        UnitMedia[]

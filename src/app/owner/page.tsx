@@ -45,6 +45,8 @@ export default async function OwnerPage() {
     'common.status.statement.distributed': 'Paid out',
     'owner.dashboard.occupancy_this_month': 'Occupied This Month',
     'owner.dashboard.revenue_this_month': 'Revenue This Month',
+    'owner.dashboard.booked_value_this_month': 'Booked rental value this month',
+    'owner.dashboard.booked_value_note': 'Gross booking value, not cash received or owner payout. See statements for your distribution.',
     'owner.stats.nights': 'nights',
     'owner.stats.vs_last_month': 'vs last month',
     'owner.stats.new_period': 'New',

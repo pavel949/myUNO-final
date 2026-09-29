@@ -21,6 +21,8 @@ interface SearchBarProps {
   /** Scope the search to one project — a landing's "check availability"
    *  must never return other resorts' homes (LY-5 bugfix). */
   projectId?: string;
+  areaSlug?: string;
+  stayMode?: string;
 }
 
 export function SearchBar({
@@ -30,6 +32,8 @@ export function SearchBar({
   initialAdults = 2,
   initialChildren = 0,
   projectId,
+  areaSlug,
+  stayMode,
 }: SearchBarProps) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initialStartDate);
@@ -40,7 +44,7 @@ export function SearchBar({
 
   // Set today's date only on client to avoid hydration mismatch
   useEffect(() => {
-    setTodayISO(new Date().toISOString().slice(0, 10));
+    setTodayISO(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }));
   }, []);
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -53,6 +57,8 @@ export function SearchBar({
       children: String(children),
     });
     if (projectId) params.set('projectId', projectId);
+    if (areaSlug) params.set('areaSlug', areaSlug);
+    if (stayMode) params.set('stayMode', stayMode);
     router.push(`/search?${params.toString()}`);
   };
 

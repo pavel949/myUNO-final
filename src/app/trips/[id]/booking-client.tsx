@@ -440,7 +440,13 @@ export default function BookingDetailClient({
             <div className="relative">
               <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
               <p className="text-body font-semibold text-text-ink">
-                {labels['booking.detail.timeline_confirmed'] || 'Booking confirmed'}
+                {booking.status === 'requested'
+                  ? labels['booking.detail.timeline_requested']
+                  : booking.status === 'pending_payment'
+                    ? labels['booking.detail.timeline_payment_pending']
+                    : ['cancelled', 'declined', 'expired'].includes(booking.status)
+                      ? statusLabel
+                      : labels['booking.detail.timeline_confirmed']}
               </p>
               {booking.createdAt && (
                 <p className="text-small text-text-secondary">
@@ -456,7 +462,7 @@ export default function BookingDetailClient({
                 </p>
               </div>
             )}
-            <div className="relative">
+            {stayStartedOrConfirmed && <div className="relative">
               <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
               <p className="text-body font-semibold text-text-ink">
                 {labels['booking.detail.timeline_checkin'] || 'Check-in'}
@@ -464,8 +470,8 @@ export default function BookingDetailClient({
               <p className="text-small text-text-secondary">
                 {new Date(booking.startDate).toLocaleDateString()}
               </p>
-            </div>
-            <div className="relative">
+            </div>}
+            {stayStartedOrConfirmed && <div className="relative">
               <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-border-line" />
               <p className="text-body font-semibold text-text-ink">
                 {labels['booking.detail.timeline_checkout'] || 'Check-out'}
@@ -473,7 +479,7 @@ export default function BookingDetailClient({
               <p className="text-small text-text-secondary">
                 {new Date(booking.endDate).toLocaleDateString()}
               </p>
-            </div>
+            </div>}
           </div>
         </div>
 

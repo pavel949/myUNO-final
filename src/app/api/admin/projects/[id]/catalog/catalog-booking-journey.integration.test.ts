@@ -248,6 +248,42 @@ describe('canonical onboarding → pricing → search → booking route journey'
     )).toBe(false);
   });
 
+  it('uses one validated seasonal tariff for public quote and server booking, not the category base', async () => {
+    const cat = await category('priced_2br', '3500', 1);
+    const unit = await createUnit({
+      projectId, categoryKey: cat.categoryKey, status: 'live',
+      baseNightlyThb: 350_000, instantBook: true,
+    });
+    await db.commercialOffering.create({ data: {
+      projectId, unitId: unit.id, offeringType: 'short_term_stay', status: 'active',
+      pricingTerms: { quoteEngine: 'canonical_tariff_grid_v1', taxPolicyVerified: true,
+        tariffGrid: [{
+          sourceRateId: 'canonical-high', seasonCode: 'HIGH',
+          dateWindows: [{ start: '01-01', end: '12-31' }],
+          rateMode: 'daily', pricingUnit: 'night', amountSatang: 560_000,
+          currency: 'THB', minimumNights: 1,
+          includesTaxes: true, includesServiceCharge: true,
+          includesBreakfast: true, sourceSellable: true,
+        }] },
+    } });
+    const dates = { startDate: '2026-11-10', endDate: '2026-11-12' };
+    const quoted = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: unit.id, ...dates, guestCount: 2,
+    }));
+    expect(quoted.status).toBe(200);
+    expect((await quoted.json()).total).toBe(11_200);
+    session.identityId = guestId;
+    const booked = await bookingPost(request('/api/bookings', {
+      inventoryCategoryId: cat.id, projectId, ...dates,
+      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', totalThb: 1,
+    }));
+    expect(booked.status).toBe(201);
+    const result = await booked.json();
+    expect(result.booking.unitId).toBe(unit.id);
+    expect(result.booking.totalThb).toBe(1_120_000);
+    expect(result.booking.priceBreakdown.subtotal_thb).toBe(1_120_000);
+  });
+
   it('keeps a source-linked Layantara offer draft even when an admin maps a channel', async () => {
     const c = await category('source_villa', '3500');
     const unit = await createUnit({

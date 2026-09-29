@@ -3,7 +3,7 @@ import { can } from '@/modules/core';
 import { createUnit } from '@/modules/projects';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import type { UnitType, UnitStatus } from '@prisma/client';
+import type { UnitType } from '@prisma/client';
 
 // Existing canonical createUnit is the only writer. No alternative inventory model.
 export async function POST(req: NextRequest) {

@@ -230,7 +230,7 @@ export default function ProviderOrdersClient({
           <p className="text-body text-text-secondary py-8">
             {labels['provider.orders.loading']}
           </p>
-        ) : orders.length === 0 ? (
+        ) : error && orders.length === 0 ? null : orders.length === 0 ? (
           <p className="text-body text-text-secondary py-8">
             {labels['provider.orders.empty']}
           </p>

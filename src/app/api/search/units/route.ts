@@ -227,8 +227,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const isMinimumStayError = (error: unknown) =>
-      error instanceof Error && error.message.includes('below minimum of');
+    // Commercially unapproved imported inventory is an unavailable search
+    // candidate, not a reason to fail the whole public discovery request.
+    // Unexpected calculator/database failures must still surface as errors.
+    const isUnavailablePriceError = (error: unknown) =>
+      error instanceof Error && [
+        'below minimum of',
+        'source tariff has not been validated',
+        'Validated monthly tariff is required',
+        'Source booking policy requires approval',
+        'Arrival tariff identity missing',
+        'No active short-stay offering',
+      ].some(reason => error.message.includes(reason));
 
     if (groupBy === 'category') {
       const categoryUnits = await prisma.unit.findMany({
@@ -330,7 +340,7 @@ export async function GET(req: NextRequest) {
                     : entry.minBase;
                   return { nightly, total: breakdown.total_thb };
                 } catch (error) {
-                  if (isMinimumStayError(error)) return null;
+                  if (isUnavailablePriceError(error)) return null;
                   throw error;
                 }
               })
@@ -439,7 +449,7 @@ export async function GET(req: NextRequest) {
         } catch (error) {
           // A unit whose min-stay rule rejects this range is not a search result,
           // not a server error. Other pricing failures remain visible as errors.
-          if (isMinimumStayError(error)) return null;
+          if (isUnavailablePriceError(error)) return null;
           throw error;
         }
       }

@@ -14,6 +14,7 @@ export default async function Project360Page({ params }: { params: { id: string 
 
   const labels = await getLabels({
     'admin.project360.home': 'Home',
+    'admin.gallery.manage': 'Manage photos and galleries',
     'admin.project360.admin': 'Admin',
     'admin.project360.projects': 'Projects',
     'admin.project360.back': 'All projects',
@@ -80,6 +81,10 @@ export default async function Project360Page({ params }: { params: { id: string 
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {data.project.name}
       </h1>
+      <Link href={`/app/admin/properties/${data.project.id}/onboarding?gallery=project:${data.project.id}#step-7`}
+        className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+        {labels['admin.gallery.manage']} →
+      </Link>
       <Project360Client
         project={{
           id: data.project.id,

@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const isMc = context.user.roles.some((role) => role.role === 'mc_member');
-  const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId && role.status === 'active');
+  const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId);
   if (!context.identity.isAdmin && !hasStaff && (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -75,8 +75,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const isMc = context.user.roles.some((role) => role.role === 'mc_member');
-  const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId && role.status === 'active');
-  const isOwner = context.user.roles.some((role) => role.role === 'owner' && (role.unitId === params.id || role.scopeType === 'platform'));
+  const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId);
+  const ownerRecord = await prisma.unit.findFirst({ where: { id: params.id, OR: [ { ownerIdentityId: context.user.identityId }, { engagements: { some: { ownerIdentityId: context.user.identityId, status: 'active' } } } ] }, select: { id: true } });
+  const isOwner = Boolean(ownerRecord);
   if (!context.identity.isAdmin && !hasStaff && !isOwner &&
     (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

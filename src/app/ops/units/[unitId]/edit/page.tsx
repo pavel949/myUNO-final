@@ -16,7 +16,7 @@ export default async function EditManagedUnitPage({ params }: { params: { unitId
     project: { select: { name: true } },
   } });
   if (!unit) notFound();
-  const staff = user.roles.some((role) => role.role === 'staff_ops' && role.projectId === unit.projectId);
+  const staff = user.roles.some((role) => role.role === 'staff_ops' && role.projectId === unit.projectId && (!role.unitId || role.unitId === unit.id));
   const mc = await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id });
   if (!user.isAdmin && !staff && !mc) notFound();
   return <main className="min-h-screen bg-surface-ivory px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">

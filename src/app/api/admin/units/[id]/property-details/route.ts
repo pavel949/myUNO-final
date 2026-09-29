@@ -85,8 +85,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const terms = existing?.pricingTerms;
         const priceValidated = typeof terms === 'object' && terms !== null &&
           !Array.isArray(terms) &&
-          (terms as Record<string, unknown>).quoteEngine !== 'pending_validation' &&
-          (terms as Record<string, unknown>).quoteEngine !== undefined;
+          (terms as Record<string, unknown>).quoteEngine === 'canonical_tariff_grid_v1' &&
+          (terms as Record<string, unknown>).taxPolicyVerified === true &&
+          (terms as Record<string, unknown>).policyEngineVerified === true;
         if (!priceValidated || unit.baseNightlyThb <= 0 ||
             !unit.inventoryCategory || unit.inventoryCategory.status !== 'live' ||
             unit.inventoryCategory.baseNightlyThb <= 0) {

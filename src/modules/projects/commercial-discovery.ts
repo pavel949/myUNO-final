@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -24,9 +25,7 @@ type Credential = {
   evidenceMediaId: string | null; expiryDate: Date | null; effectiveDate: Date | null;
 };
 const hasValidEvidence = (credentials: Credential[], type: string, now: Date) =>
-  credentials.some(c => c.credentialType === type && c.status === 'active' &&
-    c.verificationStatus === 'verified' && Boolean(c.evidenceMediaId) &&
-    (!c.effectiveDate || c.effectiveDate <= now) && (!c.expiryDate || c.expiryDate > now));
+  credentials.some(c => c.credentialType === type && isCredentialCurrentlyVerified(c, now));
 
 export function eligiblePublicHomeIntents(input: {
   credentials: Credential[];

@@ -33,6 +33,7 @@ export default async function OwnerPage() {
     'owner.dashboard.title': 'Owner Dashboard',
     'owner.dashboard.subtitle': 'Manage your properties and stay informed',
     'owner.dashboard.portfolio_subtitle': '{units} units across {projects} projects',
+    'owner.dashboard.scope_project': 'Showing figures and records for {project} only.',
     'owner.compliance.permitted_yes': 'Confirmed',
     'owner.compliance.permitted_no': 'Not confirmed',
     'owner.switcher.all_projects': 'All projects',

@@ -1,5 +1,6 @@
 /** Admin gallery editor copy. Locale drafts may be refined in Content Admin. */
 export const GALLERY_EDITOR_KEYS = [
+  { key: 'admin.gallery.manage', namespace: 'admin', description: 'Gallery entry point', en: 'Manage photos and galleries', ru: 'Управление фотографиями и галереями', th: 'จัดการภาพและแกลเลอรี', status: 'needs_review' as const },
   { key: 'admin.gallery.title', namespace: 'admin', description: 'Gallery onboarding/editor', en: "Which gallery are you editing?", ru: "Какую галерею вы редактируете?", th: "คุณกำลังแก้ไขแกลเลอรีใด", status: 'needs_review' as const },
   { key: 'admin.gallery.scope_hint', namespace: 'admin', description: 'Gallery onboarding/editor', en: "Project photos show the whole property. Category photos show a room or villa type. Unit photos show the exact villa or condo.", ru: "Фотографии проекта показывают весь комплекс, категории — тип номера или виллы, а юнита — конкретную виллу или кондоминиум.", th: "ภาพโครงการแสดงทั้งพื้นที่ ภาพหมวดหมู่แสดงประเภทห้องหรือวิลล่า และภาพยูนิตแสดงยูนิตจริง", status: 'needs_review' as const },
   { key: 'admin.gallery.level', namespace: 'admin', description: 'Gallery onboarding/editor', en: "Level", ru: "Уровень", th: "ระดับ", status: 'needs_review' as const },

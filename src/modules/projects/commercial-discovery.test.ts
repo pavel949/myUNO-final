@@ -10,7 +10,7 @@ const credential = (credentialType: string, overrides: Partial<{
   evidenceMediaId: credentialType + '-evidence', effectiveDate: null, expiryDate: null,
   ...overrides,
 });
-const base = () => ({
+const base = (): Parameters<typeof eligiblePublicHomeIntents>[0] => ({
   credentials: [credential('title_legal_use'), credential('sale_authority')],
   permittedUseConfirmedAt: new Date('2026-09-28'),
   complianceRecords: [{ recordType: 'permitted_use', status: 'confirmed' }],

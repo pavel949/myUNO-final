@@ -7,11 +7,11 @@ import {
 } from './domain';
 
 describe('CRM domain rules', () => {
-  it('maps a guest purchase win to the owner lifecycle', () => {
+  it('never infers legal ownership or management authority from an opportunity win', () => {
     expect(lifecycleAfterWin('rental')).toBe('guest');
-    expect(lifecycleAfterWin('purchase')).toBe('owner');
-    expect(lifecycleAfterWin('sale')).toBe('former_client');
-    expect(lifecycleAfterWin('management')).toBe('owner');
+    expect(lifecycleAfterWin('purchase')).toBe('buyer');
+    expect(lifecycleAfterWin('sale')).toBeNull();
+    expect(lifecycleAfterWin('management')).toBeNull();
     expect(lifecycleAfterWin('developer_advisory')).toBeNull();
   });
 

@@ -14,6 +14,9 @@ export default async function HomesPage({ searchParams }: {
   const [homes, labels] = await Promise.all([
     listPublicCommercialHomes(prisma, intent),
     getLabels({
+      'homes.kicker': 'myUNO · REAL ESTATE',
+      'homes.inquiry.buy': 'I am looking to purchase a property in Phuket.',
+      'homes.inquiry.rent': 'I am looking for a long-term rental in Phuket.',
       'homes.title': 'Homes in Phuket',
       'homes.subtitle': 'Explore real properties with documented listing authority. Every transaction is reviewed individually.',
       'homes.buy': 'Buy',
@@ -31,7 +34,7 @@ export default async function HomesPage({ searchParams }: {
   return <main className="min-h-screen bg-surface-ivory">
     <section className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">
       <div className="mx-auto max-w-6xl">
-        <p className="text-kicker uppercase tracking-widest text-brand-sun-soft">myUNO · REAL ESTATE</p>
+        <p className="text-kicker uppercase tracking-widest text-brand-sun-soft">{labels['homes.kicker']}</p>
         <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['homes.title']}</h1>
         <p className="mt-12 max-w-2xl text-body text-surface-ivory/90">{labels['homes.subtitle']}</p>
       </div>
@@ -68,7 +71,7 @@ export default async function HomesPage({ searchParams }: {
     </div>
     <section aria-label={labels['homes.contact']}>
       <LeadFormSection audience={intent==='buy'?'buyers':'renters'}
-        initialMessage={intent==='buy'?'I am looking to purchase a property in Phuket.':'I am looking for a long-term rental in Phuket.'} />
+        initialMessage={intent==='buy'?labels['homes.inquiry.buy']:labels['homes.inquiry.rent']} />
     </section>
   </main>;
 }

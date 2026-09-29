@@ -15,6 +15,23 @@ export function lifecycleAfterWin(type: CrmOpportunityType): CrmLifecycleStage |
   return null;
 }
 
+/** A new commercial win must not erase a more established customer relationship. */
+export function lifecycleAfterWinForExisting(
+  type: CrmOpportunityType,
+  current: CrmLifecycleStage | null
+): CrmLifecycleStage | null {
+  const proposed = lifecycleAfterWin(type);
+  if (!proposed) return null;
+  // An additional purchase or stay must never downgrade a verified owner,
+  // managed owner, or seller to buyer/guest.
+  if (current && ['owner', 'managed', 'seller'].includes(current)) return null;
+  // A new rental must not erase a buyer or investor relationship.
+  if (proposed === 'guest' && current &&
+      ['buyer', 'investor', 'prospect', 'repeat'].includes(current)) return null;
+  if (current === proposed) return null;
+  return proposed;
+}
+
 export function opportunityTypeForAudience(
   audience: 'owners' | 'developers' | 'buyers' | 'mc'
 ): CrmOpportunityType {

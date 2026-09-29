@@ -15,6 +15,8 @@ export interface PublicProjectCategory {
   fromNightlyThb: number | null;
   /** Lowest flat month price (satang) when the category sells long stays. */
   monthlyFromThb: number | null;
+  coverUrl: string | null;
+  galleryUrls: string[];
 }
 
 export interface PublicProjectReview {
@@ -55,6 +57,7 @@ export interface PublicProjectUnit {
   baseNightlyThb: number;
   instantBook: boolean;
   coverUrl: string | null;
+  galleryUrls: string[];
 }
 
 export interface PublicProjectDetail {
@@ -124,6 +127,7 @@ export async function getPublicProjectBySlug(
         orderBy: { baseNightlyThb: 'asc' },
         include: {
           coverMedia: { select: { storageKey: true } },
+          media: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
           inventoryCategory: {
             select: {
               id: true,
@@ -131,6 +135,8 @@ export async function getPublicProjectBySlug(
               baseNightlyThb: true,
               minNights: true,
               status: true,
+              coverMedia: { select: { storageKey: true } },
+              galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
             },
           },
         },
@@ -169,7 +175,8 @@ export async function getPublicProjectBySlug(
       sizeSqm: u.sizeSqm,
       baseNightlyThb: u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb,
       instantBook: u.instantBook,
-      coverUrl: u.coverMedia?.storageKey ?? null,
+      coverUrl: u.coverMedia?.storageKey ?? u.media[0]?.media.storageKey ?? u.inventoryCategory?.coverMedia?.storageKey ?? null,
+      galleryUrls: u.media.map(row => row.media.storageKey),
     })),
     categories,
     reviews,
@@ -204,6 +211,8 @@ async function buildPublicCategories(
       name: true,
       bedrooms: true,
       baseNightlyThb: true,
+      coverMedia: { select: { storageKey: true } },
+      galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
     },
   });
 
@@ -219,6 +228,8 @@ async function buildPublicCategories(
         unitCount: units.length,
         fromNightlyThb: category.baseNightlyThb,
         monthlyFromThb: null,
+        coverUrl: category.coverMedia?.storageKey ?? category.galleryMedia[0]?.media.storageKey ?? null,
+        galleryUrls: category.galleryMedia.map(row => row.media.storageKey),
       };
     })
     .filter((category) => category.unitCount > 0);
@@ -267,6 +278,7 @@ async function buildPublicReviews(projectId: string): Promise<PublicProjectRevie
 export interface PublicUnitDetail extends PublicProjectUnit {
   descriptionKey: string | null;
   minNights: number;
+  galleryUrls: string[];
   amenityKeys: string[];
   project: {
     slug: string;
@@ -282,12 +294,15 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     where: { id },
     include: {
       coverMedia: { select: { storageKey: true } },
+      media: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
       inventoryCategory: {
         select: {
           categoryKey: true,
           baseNightlyThb: true,
           minNights: true,
           status: true,
+          coverMedia: { select: { storageKey: true } },
+          galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
         },
       },
       project: {
@@ -316,7 +331,8 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     sizeSqm: unit.sizeSqm,
     baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
     instantBook: unit.instantBook,
-    coverUrl: unit.coverMedia?.storageKey ?? null,
+    coverUrl: unit.coverMedia?.storageKey ?? unit.media[0]?.media.storageKey ?? unit.inventoryCategory?.coverMedia?.storageKey ?? null,
+    galleryUrls: unit.media.map(row => row.media.storageKey),
     descriptionKey: unit.descriptionKey,
     minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
     amenityKeys: unit.amenityKeys,

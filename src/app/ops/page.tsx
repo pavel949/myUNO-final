@@ -274,6 +274,9 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             <Link href={opsHref('/ops/mobilization', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.mobilization_link']}
             </Link>
+            <Link href="/ops/new-unit" className={navClass}>
+              {labels['staff.ops.add_unit_link'] || 'Add managed unit'}
+            </Link>
             <Link href={opsHref('/ops/calendar', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.calendar_link']}
             </Link>

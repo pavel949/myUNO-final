@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { resolveEffectiveStayOffer } from '@/modules/booking';
+import { computePriceBreakdown, checkAvailability } from '@/modules/core';
+import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 /**
@@ -11,7 +12,10 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
  * (no owner identity, no engagement economics, no internal status detail).
  *
  * When startDate + endDate are supplied, `pricing` is resolved through the
- * canonical InventoryCategory → RatePlan → PricingRule quotation engine.
+ * the same canonical calculator used by search, checkout and Booking.
+ * The inventory read additionally respects live bookings/holds, owner/OTA
+ * blocks and source-calendar cutover. It is advisory; booking commits still
+ * re-check availability transactionally.
  * Legacy baseNightlyThb/minNights remain in the response temporarily for old
  * clients, but new guest surfaces should prefer `pricing`.
  */
@@ -68,6 +72,7 @@ export async function GET(
             categoryKey: true,
             name: true,
             status: true,
+            minNights: true,
           },
         },
         project: {
@@ -87,7 +92,8 @@ export async function GET(
       !unit ||
       unit.status !== 'live' ||
       unit.assetStatus === 'suspended' ||
-      unit.project.status !== 'live'
+      unit.project.status !== 'live' ||
+      unit.inventoryCategory?.status !== 'live'
     ) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
@@ -106,26 +112,30 @@ export async function GET(
     } | null = null;
 
     if (startDate && endDate) {
-      const offer = await resolveEffectiveStayOffer(prisma, {
-        unitId: unit.id,
-        startDate,
-        endDate,
-        guests,
-        ratePlanCode: 'BAR',
-      });
+      // Never quote with the legacy effective-offer calculator: it has
+      // independent tax/discount semantics and does not inspect bookings.
+      // This is the exact price authority used by /api/pricing/breakdown and
+      // createBooking; the final capacity claim remains transactional there.
+      const [breakdown, calendarAvailable, sourceExcluded] = await Promise.all([
+        computePriceBreakdown(prisma, unit.id, startDate, endDate, guests),
+        checkAvailability(prisma, unit.id, startDate, endDate),
+        excludedSourceControlledUnits(prisma, [unit.id]),
+      ]);
+      const nights = breakdown.lines.length;
       const toBaht = (satang: number) => Math.round(satang / 100);
+      const isAvailable = calendarAvailable && sourceExcluded.length === 0;
       pricing = {
-        ratePlanCode: offer.ratePlanCode,
-        nights: offer.nightsCount,
-        averageNightly:
-          offer.nightsCount > 0 ? toBaht(Math.round(offer.subtotalThb / offer.nightsCount)) : 0,
-        subtotal: toBaht(offer.subtotalThb),
-        vatTax: toBaht(offer.vatTaxThb),
-        total: toBaht(offer.totalThb),
-        minNights: offer.minNights,
-        cancellationPolicyKey: offer.cancellationPolicyKey,
-        isAvailable: offer.isAvailable,
-        availableCapacity: offer.availableCapacity,
+        ratePlanCode: 'BAR',
+        nights,
+        averageNightly: nights > 0 ? toBaht(Math.round(breakdown.subtotal_thb / nights)) : 0,
+        subtotal: toBaht(breakdown.subtotal_thb),
+        vatTax: toBaht(breakdown.occupancy_tax_thb),
+        total: toBaht(breakdown.total_thb),
+        minNights: breakdown.commercialTerms?.minimumNights ??
+          unit.inventoryCategory?.minNights ?? unit.minNights,
+        cancellationPolicyKey: unit.cancellationPolicyKey ?? 'flexible',
+        isAvailable,
+        availableCapacity: isAvailable ? 1 : 0,
       };
     }
 
@@ -160,6 +170,8 @@ export async function GET(
     if (message.includes('minimum') || message.includes('exceeds')) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Incomplete or unapproved source tariffs must fail closed without leaking
+    // internal pricing configuration through a public response.
+    return NextResponse.json({ error: 'Stay quote unavailable' }, { status: 503 });
   }
 }

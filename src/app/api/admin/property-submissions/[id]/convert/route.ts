@@ -84,6 +84,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (!projectId) throw new Error('Project is required.');
       const project = await tx.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
       if (!project || project.status === 'archived') throw new Error('Selected project cannot accept submissions.');
+      const requestedOrgId = typeof review.organizationId === 'string' && review.organizationId ? review.organizationId : null;
+      if (requestedOrgId) {
+        if (data.kind !== 'management') throw new Error('An organization may only be linked to a management-company application.');
+        const org = await tx.organization.findFirst({ where: { id: requestedOrgId, status: 'active', orgType: 'management_company', OR: [{ projectId: null }, { projectId }] }, select: { id: true } });
+        if (!org) throw new Error('Management organization is not approved for this project.');
+        await tx.roleAssignment.create({ data: { identityId: applicant.id, role: 'mc_member', scopeType: 'project', projectId, organizationId: org.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
+      }
 
       let unitId: string | null = null;
       // A complex can be registered independently of its future inventory.
@@ -139,7 +146,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await tx.crmOpportunity.update({ where: { id: application.id }, data: { projectId, unitId, requirements: result as Prisma.InputJsonValue } });
       await tx.auditLog.create({
         data: { actorIdentityId: guard.actorIdentityId, action: 'property_submission:convert', entityType: 'CrmOpportunity', entityId: application.id,
-          data: { projectId, unitId, applicantIdentityId: application.identityId, createdNewProject: isNew, verifiedOwner: Boolean(review.verifiedOwner) } },
+          data: { projectId, unitId, applicantIdentityId: application.identityId, createdNewProject: isNew, verifiedOwner: Boolean(review.verifiedOwner), organizationId: requestedOrgId } },
       });
       return { projectId, unitId, alreadyConverted: false };
     }, { timeout: 20000 });

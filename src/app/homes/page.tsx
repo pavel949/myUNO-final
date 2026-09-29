@@ -42,7 +42,7 @@ export default async function HomesPage({ searchParams }: {
           <Link key={mode} href={modeLink(mode)} aria-current={intent===mode?'page':undefined}
             className={'rounded-full border px-24 py-12 text-small font-semibold '+
               (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper text-text-ink')}>
-            {labels['homes.'+mode]}
+            {mode==='buy'?labels['homes.buy']:labels['homes.rent']}
           </Link>)}
       </nav>
       {homes.length ? <div className="grid gap-20 sm:grid-cols-2 lg:grid-cols-3">

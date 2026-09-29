@@ -79,6 +79,7 @@ export interface PublicProjectUnit {
 
 export interface PublicProjectDetail {
   id: string;
+  projectType: string | null;
   slug: string;
   name: string;
   areaLabelKey: string;
@@ -172,6 +173,7 @@ export async function getPublicProjectBySlug(
 
   return {
     id: project.id,
+    projectType: project.projectType,
     slug: project.slug,
     name: project.name,
     areaLabelKey: project.areaLabelKey,

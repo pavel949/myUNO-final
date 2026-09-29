@@ -1,18 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
   lifecycleAfterWin,
+  lifecycleAfterWinForExisting,
   opportunityTypeForAudience,
   parseLeadContact,
   validateProbability,
 } from './domain';
 
 describe('CRM domain rules', () => {
-  it('maps a guest purchase win to the owner lifecycle', () => {
+  it('never infers legal ownership or management authority from an opportunity win', () => {
     expect(lifecycleAfterWin('rental')).toBe('guest');
-    expect(lifecycleAfterWin('purchase')).toBe('owner');
-    expect(lifecycleAfterWin('sale')).toBe('former_client');
-    expect(lifecycleAfterWin('management')).toBe('owner');
+    expect(lifecycleAfterWin('purchase')).toBe('buyer');
+    expect(lifecycleAfterWin('sale')).toBeNull();
+    expect(lifecycleAfterWin('management')).toBeNull();
     expect(lifecycleAfterWin('developer_advisory')).toBeNull();
+  });
+
+  it('preserves owner and buyer relationships on additional transactions', () => {
+    expect(lifecycleAfterWinForExisting('purchase', 'owner')).toBeNull();
+    expect(lifecycleAfterWinForExisting('purchase', 'managed')).toBeNull();
+    expect(lifecycleAfterWinForExisting('rental', 'buyer')).toBeNull();
+    expect(lifecycleAfterWinForExisting('rental', 'prospect')).toBeNull();
+    expect(lifecycleAfterWinForExisting('purchase', 'prospect')).toBe('buyer');
+    expect(lifecycleAfterWinForExisting('rental', 'contact')).toBe('guest');
+    expect(lifecycleAfterWinForExisting('purchase', 'buyer')).toBeNull();
   });
 
   it('maps each public audience to the correct pipeline', () => {

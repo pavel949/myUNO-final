@@ -205,8 +205,8 @@ export default function BookingDetailClient({
       if (!response.ok) {
         throw new Error(data?.error || labels['booking.detail.error_generic']);
       }
-      if (data?.checkout?.checkoutUrl) {
-        router.push(data.checkout.checkoutUrl);
+      if (data?.pricing?.checkoutUrl) {
+        router.push(data.pricing.checkoutUrl);
         return;
       }
       setNewStart('');

@@ -284,6 +284,14 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(offers).toHaveLength(1);
     expect(offers[0]).toMatchObject({ offeringType: 'short_term_stay', status: 'draft' });
     expect(await db.channelMapping.count({ where: { offeringId: offers[0].id } })).toBe(1);
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
+    const readiness = await getPropertyReadiness(db, projectId);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.source_authority' && b.unitId === unit.id
+    )).toBe(true);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.source_pricing' && b.unitId === unit.id
+    )).toBe(true);
   });
 
   it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {

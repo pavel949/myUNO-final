@@ -1,4 +1,5 @@
 import { PrismaClient, Unit, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
+import type { SourceBookingTerms } from './commercial-booking-terms';
 import {
   getConfig,
   type SeasonPeriod,
@@ -38,6 +39,7 @@ export interface PriceBreakdown {
   service_fee_thb: number;
   occupancy_tax_thb: number;
   total_thb: number;
+  commercialTerms?: SourceBookingTerms;
 }
 
 function isDateInSeason(date: Date, season: SeasonPeriod): boolean {

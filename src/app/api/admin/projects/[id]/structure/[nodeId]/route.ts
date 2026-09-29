@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
-import { structureKinds } from '../route';
+import { structureKinds } from '@/modules/projects/structure-kinds';
 
 type Params = { params: { id: string; nodeId: string } };
 const codePattern = /^[a-z0-9][a-z0-9_-]{0,79}$/;

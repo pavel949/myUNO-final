@@ -8,10 +8,10 @@ export function validateProbability(value: number): number {
 }
 
 export function lifecycleAfterWin(type: CrmOpportunityType): CrmLifecycleStage | null {
-  if (type === 'purchase') return 'owner';
-  if (type === 'sale') return 'former_client';
+  // Commercial close is not legal title or a management mandate.
+  // Those transitions require verified ownership/authority evidence.
+  if (type === 'purchase') return 'buyer';
   if (type === 'rental') return 'guest';
-  if (type === 'management') return 'owner';
   return null;
 }
 

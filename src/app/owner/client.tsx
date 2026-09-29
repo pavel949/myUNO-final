@@ -169,11 +169,24 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
+  const selectedUnitIds = new Set(filteredUnits.map((unit) => unit.id));
+  const visibleAlerts = selectedProjectId
+    ? alerts.filter((alert) => selectedUnitIds.has(alert.unitId))
+    : alerts;
+  const visibleCompliance = selectedProjectId
+    ? complianceSummary.filter((status) => selectedUnitIds.has(status.unitId))
+    : complianceSummary;
+  const visibleStatements = selectedProjectId
+    ? statements.filter((statement) => selectedUnitIds.has(statement.unitId))
+    : statements;
+  const scopedTrends = selectedProjectId
+    ? trends.byProject[selectedProjectId] ?? { monthly: [], prevMonth: null }
+    : trends;
   const occupancyNow = shape.isPortfolio
-    ? dashboard.combinedOccupancyThisMonth
+    ? filteredUnits.reduce((sum, unit) => sum + unit.occupancyThisMonth, 0)
     : currentUnit?.occupancyThisMonth || 0;
   const revenueNow = shape.isPortfolio
-    ? dashboard.combinedRevenueThisMonth
+    ? filteredUnits.reduce((sum, unit) => sum + unit.revenueThisMonth, 0)
     : currentUnit?.revenueThisMonth || 0;
 
   const chartLabels = {
@@ -263,14 +276,23 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           </div>
         )}
 
+        {/* All figures and lists follow the same project scope. */}
+        {selectedProjectId && (
+          <p className="mb-24 text-small text-text-secondary" role="status">
+            {fill(labels['owner.dashboard.scope_project'], {
+              project: projects.find((project) => project.id === selectedProjectId)?.name ?? '',
+            })}
+          </p>
+        )}
+
         {/* Alerts Section (D2) */}
-        {alerts.length > 0 && (
+        {visibleAlerts.length > 0 && (
           <div className="mb-40">
             <h2 className="font-display text-display font-semibold text-text-ink mb-16">
               {labels['owner.alerts.title']}
             </h2>
             <div className="space-y-12">
-              {alerts.map((alert) => (
+              {visibleAlerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={`bg-surface-paper border rounded-md p-16 ${
@@ -312,7 +334,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             delta={
               <DeltaChip
                 currentValue={occupancyNow}
-                previousValue={trends.prevMonth ? trends.prevMonth.nights : null}
+                previousValue={scopedTrends.prevMonth ? scopedTrends.prevMonth.nights : null}
                 vsLabel={labels['owner.stats.vs_last_month']}
                 newLabel={labels['owner.stats.new_period']}
               />
@@ -325,7 +347,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             delta={
               <DeltaChip
                 currentValue={revenueNow}
-                previousValue={trends.prevMonth ? trends.prevMonth.revenueThb : null}
+                previousValue={scopedTrends.prevMonth ? scopedTrends.prevMonth.revenueThb : null}
                 vsLabel={labels['owner.stats.vs_last_month']}
                 newLabel={labels['owner.stats.new_period']}
               />
@@ -344,7 +366,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {labels['owner.trends.revenue']}
               </h3>
               <BarChart
-                data={trends.monthly.map((p) => ({
+                data={scopedTrends.monthly.map((p) => ({
                   label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
                     month: 'short',
                     timeZone: 'UTC',
@@ -362,7 +384,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {labels['owner.trends.occupancy']}
               </h3>
               <LineChart
-                data={trends.monthly.map((p) => ({
+                data={scopedTrends.monthly.map((p) => ({
                   label: new Date(`${p.period}-01T00:00:00Z`).toLocaleDateString(locale, {
                     month: 'short',
                     timeZone: 'UTC',
@@ -379,7 +401,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         </div>
 
         {/* Compliance Summary (D2) */}
-        {complianceSummary.length > 0 && (
+        {visibleCompliance.length > 0 && (
           <div className="mb-40">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.compliance.title']}
@@ -388,7 +410,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {labels['owner.compliance.subtitle']}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
-              {complianceSummary.map((status) => (
+              {visibleCompliance.map((status) => (
                 <div
                   key={status.unitId}
                   className="bg-surface-paper border border-border-line rounded-md p-24"
@@ -432,7 +454,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                         {labels['owner.compliance.mobilization']}
                       </span>
                       <span className="text-body font-medium text-text-ink">
-                        {Math.round((status.mobilizationProgress.completed / status.mobilizationProgress.total) * 100)}%
+                        {status.mobilizationProgress.total > 0
+                          ? Math.round((status.mobilizationProgress.completed / status.mobilizationProgress.total) * 100)
+                          : 0}%
                       </span>
                     </div>
                   </div>
@@ -443,7 +467,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         )}
 
         {/* Statements (D2) */}
-        {statements.length > 0 && (
+        {visibleStatements.length > 0 && (
           <div className="mb-40">
             <div className="flex items-center justify-between gap-16 mb-16">
               <h2 className="text-heading-2 font-semibold text-text-ink">
@@ -454,7 +478,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               </Link>
             </div>
             <div className="space-y-16">
-              {statements.map((statement) => (
+              {visibleStatements.map((statement) => (
                 <div
                   key={statement.id}
                   className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"

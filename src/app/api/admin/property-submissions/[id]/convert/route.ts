@@ -115,7 +115,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const unit = await tx.unit.create({
           data: {
             projectId, inventoryCategoryId: category.id, categoryKey,
-            name: unitName, unitType: ['villa', 'apartment', 'condo', 'house'].includes(String(data.unitType)) ? data.unitType as 'villa' | 'apartment' | 'condo' | 'house' : 'condo',
+            name: unitName, unitType: String(data.unitType) === 'villa' ? 'villa' : String(data.unitType) === 'house' ? 'townhouse' : 'condo',
+            accommodationType: String(data.unitType || 'condo'),
             bedrooms, bathrooms, maxGuests,
             sizeSqm: data.sizeSqm == null ? null : Number(data.sizeSqm),
             floor: String(data.floor || '') || null, addressSupplement: unitName,

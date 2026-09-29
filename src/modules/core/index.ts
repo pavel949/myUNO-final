@@ -4,7 +4,6 @@
 
 export {
   can,
-  canWriteAvailabilityAndPricing,
   getIdentityRoles,
   hasRole,
   isKnownPermissionAction,

@@ -1,6 +1,7 @@
 /** Canonical PMS, physical hierarchy and agreement editor copy.
  * Draft translations are visible to Content Studio and require review. */
 export const COMMERCE_STRUCTURE_KEYS = [
+  { key: 'mc.calendar_index.occupancy', namespace: 'mc', description: 'Open the shared occupancy calendar for managed units', en: 'Open unified occupancy calendar', ru: 'Открыть единый календарь занятости', th: 'เปิดปฏิทินการเข้าพักรวม', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.open_stay', namespace: 'staff', description: 'Open canonical booking lifecycle', en: 'Open canonical stay', ru: 'Открыть карточку проживания', th: 'เปิดข้อมูลการเข้าพัก', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.manage_block', namespace: 'staff', description: 'Open physical unit blocked-date management', en: 'Manage availability block', ru: 'Управление блокировкой дат', th: 'จัดการการปิดกั้นวันว่าง', status: 'needs_review' as const },
   { key: 'property.structure.back', namespace: 'property', description: 'Structure editor back to property', en: '← Property onboarding', ru: '← К настройке объекта', th: '← กลับไปตั้งค่าที่พัก', status: 'needs_review' as const },

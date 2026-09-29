@@ -61,6 +61,42 @@ export async function POST(
       );
     }
 
+    // CRM labels must not masquerade as verified legal title or a signed mandate.
+    // The owner workspace continues to enforce its own unit-scoped authorization.
+    if (body.to_stage === 'owner' || body.to_stage === 'managed') {
+      const now = new Date();
+      const currentTitle = await prisma.unit.findFirst({
+        where: { ownerIdentityId: profile.identityId },
+        select: { id: true },
+      });
+      const effectiveTitle = currentTitle ?? await prisma.ownershipPeriod.findFirst({
+        where: {
+          ownerIdentityId: profile.identityId,
+          startsOn: { lte: now },
+          OR: [{ endsOn: null }, { endsOn: { gte: now } }],
+        },
+        select: { unitId: true },
+      });
+      if (!effectiveTitle) {
+        return NextResponse.json({ error: 'verified_ownership_required' }, { status: 409 });
+      }
+      if (body.to_stage === 'managed') {
+        const signedMandate = await prisma.managementContract.findFirst({
+          where: {
+            ownerIdentityId: profile.identityId,
+            status: 'active',
+            signedAt: { not: null },
+            contractStartDate: { lte: now },
+            OR: [{ contractEndDate: null }, { contractEndDate: { gte: now } }],
+          },
+          select: { id: true },
+        });
+        if (!signedMandate) {
+          return NextResponse.json({ error: 'active_signed_mandate_required' }, { status: 409 });
+        }
+      }
+    }
+
     const updatedProfile = await prisma.crmProfile.update({
       where: { id: params.profileId },
       data: {

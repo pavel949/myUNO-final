@@ -96,6 +96,7 @@ export default async function McCalendarIndexPage({ searchParams }: McCalendarIn
     'mc.calendar_index.empty': 'No managed units in this portfolio context.',
     'mc.calendar_index.open': 'Open calendar →',
     'mc.calendar_index.context': 'Portfolio context',
+    'mc.calendar_index.occupancy': 'Open unified occupancy calendar',
   });
 
   return (
@@ -108,6 +109,11 @@ export default async function McCalendarIndexPage({ searchParams }: McCalendarIn
           {labels['mc.calendar_index.title']}
         </h1>
         <p className="text-body text-text-secondary mb-24">{labels['mc.calendar_index.hint']}</p>
+        <Link href={'/ops/calendar/board?'+new URLSearchParams({
+          projectId:activeScope.projectId,organizationId:activeScope.organizationId,
+        }).toString()} className="mb-24 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">
+          {labels['mc.calendar_index.occupancy']} →
+        </Link>
 
         {contexts.length > 1 && (
           <div className="mb-24">

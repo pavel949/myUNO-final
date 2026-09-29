@@ -9,6 +9,7 @@ import type { CalendarCell, CalendarState } from '@/modules/booking/calendar-pro
 interface UnitRow { id: string; name: string; projectId: string; projectName: string; categoryId: string | null; categoryName: string; sellable: boolean }
 interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
 type Props = {
+  mode?: 'staff' | 'mc'; organizationId?: string;
   labels: Record<string, string>;
   today: string; start: string; days: string[]; daysCount: number;
   projects: { id: string; name: string }[];
@@ -52,7 +53,8 @@ export default function UnifiedStayCalendar(props: Props) {
   const q = (patch: Record<string,string|null>) => {
     const params = new URLSearchParams();
     for (const [key,value] of Object.entries({
-      projectId:props.projectId, categoryId:props.categoryId, unitId:props.unitId,
+      projectId:props.projectId, organizationId:props.organizationId || '',
+      categoryId:props.categoryId, unitId:props.unitId,
       start:props.start, days:String(props.daysCount), ...patch,
     })) if (value) params.set(key,value);
     return '/ops/calendar/board?' + params.toString();
@@ -70,7 +72,9 @@ export default function UnifiedStayCalendar(props: Props) {
     // The outbox cursor is a lightweight fallback to database notifications in
     // serverless deployments. Only actual changes trigger an extra full refresh.
     const watch = window.setInterval(async () => {
-      if (document.visibilityState !== 'visible') return;
+      // The event cursor is staff-scoped. MC users rely on the normal 15s
+      // projection refresh, not a globally scoped event stream.
+      if (props.mode === 'mc' || document.visibilityState !== 'visible') return;
       try {
         const response = await fetch('/api/ops/calendar/changes',{cache:'no-store'});
         if (!response.ok) return;
@@ -87,7 +91,7 @@ export default function UnifiedStayCalendar(props: Props) {
       window.removeEventListener('focus',onFocus);
       window.removeEventListener('myuno:calendar-changed',onFocus);
     };
-  },[router]);
+  },[router, props.mode]);
   const rows = useMemo(() => props.units.filter((unit) =>
     (unit.name + ' ' + unit.projectName + ' ' + unit.categoryName).toLocaleLowerCase()
       .includes(search.toLocaleLowerCase().trim()),
@@ -109,7 +113,7 @@ export default function UnifiedStayCalendar(props: Props) {
     <div className="mx-auto max-w-[1600px] space-y-24">
       <header className="flex flex-wrap items-start justify-between gap-16">
         <div className="space-y-8">
-          <Link href="/ops" className="text-small font-semibold text-brand-andaman hover:underline">
+          <Link href={props.mode==='mc' ? '/mc/calendar' : '/ops'} className="text-small font-semibold text-brand-andaman hover:underline">
             {props.labels['staff.unified_calendar.back']}
           </Link>
           <p className="text-kicker font-bold tracking-widest text-brand-andaman">
@@ -124,9 +128,9 @@ export default function UnifiedStayCalendar(props: Props) {
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-12 py-6 text-small font-semibold text-emerald-900">
             {props.labels['staff.unified_calendar.source']}
           </span>
-          <Link href="/ops/stays" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          {props.mode!=='mc' && <Link href="/ops/stays" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
             {props.labels['staff.unified_calendar.work_queue']}
-          </Link>
+          </Link>}
           <button type="button" onClick={refresh} className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:bg-surface-ivory">
             ↻ {props.labels['staff.unified_calendar.refresh']}
           </button>
@@ -147,7 +151,7 @@ export default function UnifiedStayCalendar(props: Props) {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
           <label className="text-small font-semibold text-text-secondary">
             {props.labels['staff.unified_calendar.project']}
-            <select value={props.projectId} onChange={(event)=>router.push(q({projectId:event.target.value,categoryId:null,unitId:null}))}
+            <select value={props.projectId} disabled={props.mode==='mc'} onChange={(event)=>router.push(q({projectId:event.target.value,categoryId:null,unitId:null}))}
               className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
               <option value="">{props.labels['staff.unified_calendar.all_projects']}</option>
               {props.projects.map((item)=><option value={item.id} key={item.id}>{item.name}</option>)}
@@ -256,11 +260,12 @@ export default function UnifiedStayCalendar(props: Props) {
               <span className="font-semibold">{item.label}</span>
               <span className="ml-8 text-text-secondary">{item.channel||item.status}</span>
               {item.kind === 'booking' ?
+                props.mode === 'mc' ? null :
                 <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
-                <Link href={'/ops/calendar/'+encodeURIComponent(inspect.id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
+                <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
             </li> : null;
           })}</ul>}
-        <Link href={'/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+        <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
           {props.labels['staff.unified_calendar.open_unit']} →
         </Link>
       </aside>}

@@ -593,6 +593,9 @@ export async function removeBlockedDate(
   if (!block) {
     throw new Error(`BlockedDate ${blockedDateId} not found`);
   }
+  if (block.propertyDealId) {
+    throw new Error('SIGNED_LEASE_BLOCK: a signed agreement cannot be unblocked through the manual calendar');
+  }
   await db.blockedDate.delete({ where: { id: blockedDateId } });
   return block;
 }

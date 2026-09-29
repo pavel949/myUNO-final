@@ -123,6 +123,8 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.empty': 'No homes in this scope.',
       'staff.unified_calendar.inspect': 'Night details',
       'staff.unified_calendar.open_unit': 'Open home calendar',
+      'staff.unified_calendar.open_stay': 'Open canonical stay',
+      'staff.unified_calendar.manage_block': 'Manage availability block',
       'staff.unified_calendar.back': 'Back to operations',
       'staff.unified_calendar.work_queue': 'Stay operations →',
       'staff.unified_calendar.read_only': 'Calendar is read-only. All changes use the existing canonical booking and availability actions.',

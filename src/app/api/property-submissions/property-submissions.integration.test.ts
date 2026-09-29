@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { db, resetDb, createIdentity, createProject } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createOrganization } from '@/test/util';
 
 const session = { identityId: '' };
 vi.mock('@/lib/prisma', async () => ({ prisma: (await import('@/test/util')).db }));
@@ -77,6 +77,41 @@ describe('one property intake and verified canonical conversion', () => {
     const retry = await (await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } })).json();
     expect(retry.unitId).toBe(unit.id);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
+  });
+
+  it('creates a new draft complex independently of its future units', async () => {
+    const area = await db.area.create({ data: { slug: 'test-area', nameKey: 'area.test', status: 'live', sort: 1 } });
+    const created = await (await POST(req('POST', {
+      kind: 'resort', proposedProject: 'New Bay Resort', projectAddress: '101 Bay Road',
+      projectType: 'resort', areaId: area.id, latitude: 7.99, longitude: 98.32,
+      unitName: '', photos: [], projectPhotos: [], offers: [], status: 'submitted',
+    }))).json();
+    session.identityId = adminId;
+    const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.unitId).toBeNull();
+    const project = await db.project.findUniqueOrThrow({ where: { id: result.projectId } });
+    expect(project.status).toBe('draft');
+    expect(project.name).toBe('New Bay Resort');
+    expect(await db.unit.count({ where: { projectId: project.id } })).toBe(0);
+  });
+
+  it('grants a verified manager only the approved project and company scope', async () => {
+    const org = await createOrganization('Approved MC', projectId);
+    const created = await (await POST(req('POST', { ...application(), kind: 'management', unitName: 'F706', status: 'submitted' }))).json();
+    session.identityId = adminId;
+    const response = await convert(req('POST', {
+      verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, organizationId: org.id,
+    }), { params: { id: created.id } });
+    expect(response.status).toBe(200);
+    const { unitId } = await response.json();
+    expect((await db.unit.findUniqueOrThrow({ where: { id: unitId } })).ownerIdentityId).toBeNull();
+    const role = await db.roleAssignment.findFirstOrThrow({ where: { identityId: applicantId, role: 'mc_member' } });
+    expect(role.projectId).toBe(projectId);
+    expect(role.organizationId).toBe(org.id);
+    expect(role.unitId).toBeNull();
+    expect(await db.unitEngagement.count({ where: { unitId } })).toBe(0);
   });
 
   it('does not create duplicate physical units in the same complex', async () => {

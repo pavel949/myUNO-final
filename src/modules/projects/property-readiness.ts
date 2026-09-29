@@ -48,7 +48,7 @@ export async function getPropertyReadiness(
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
           commercialOfferings: { include: { channelMappings: true } },
-          inventoryCategory: true,
+          inventoryCategory: { include: { galleryMedia: true } },
         },
       },
     },
@@ -135,8 +135,19 @@ export async function getPropertyReadiness(
     if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
       add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);
     }
-    if (!unit.coverMediaId || unit.media.length < 3) {
-      add('blocker', 'unit.media', 'Upload at least three photos and choose a cover.', options);
+    // Hotels commonly sell a room *type* using representative category photos.
+    // Private villas and condos should show the exact physical unit instead.
+    const representativeRoom = project.projectType === 'hotel' ||
+      unit.accommodationType === 'hotel_room';
+    const hasOwnGallery = Boolean(unit.coverMediaId) && unit.media.length >= 3;
+    const hasCategoryGallery = Boolean(unit.inventoryCategory?.coverMediaId) &&
+      (unit.inventoryCategory?.galleryMedia.length ?? 0) >= 3;
+    if (!hasOwnGallery && !(representativeRoom && hasCategoryGallery)) {
+      add('blocker', 'unit.media',
+        representativeRoom
+          ? 'Add three room-type photos with a cover or photograph this room individually.'
+          : 'Add at least three exact-unit photos and choose a cover.',
+        options);
     }
     if (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0)) {
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);

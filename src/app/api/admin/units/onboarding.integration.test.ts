@@ -18,6 +18,7 @@ import { PATCH as confirmCompliance } from './[id]/compliance/[recordId]/route';
 import { POST as startChecklist, GET as readChecklist } from './[id]/mobilization/route';
 import { POST as completeStep } from './[id]/mobilization/[itemId]/route';
 import { PUT as setOwner } from './[id]/owner/route';
+import { createRegulatoryCredential } from '@/modules/compliance';
 
 /**
  * The onboarding services existed and were tested; none had a route, so doc 07
@@ -354,6 +355,15 @@ describe('property onboarding routes', () => {
         const res = await completeStep(post(), { params: { id: unitId, itemId: item.id } });
         expect(res.status).toBe(200);
       }
+
+      // Q71: an active regulatory credential is a second, independent
+      // go-live requirement alongside the permitted_use record above.
+      await createRegulatoryCredential(db, {
+        credentialType: 'hotel_business_license',
+        scopeLevel: 'unit',
+        unitId,
+        verifiedByIdentityId: adminId,
+      });
 
       const golive = items.find((i) => i.step === 'golive_checklist');
       const res = await completeStep(post(), { params: { id: unitId, itemId: golive!.id } });

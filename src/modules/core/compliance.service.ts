@@ -1,5 +1,6 @@
 import { PrismaClient, ComplianceRecordStatus, ComplianceRecordType } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { checkRegulatoryCredentialForGoLive } from '@/modules/compliance';
 
 export interface CreateComplianceRecordInput {
   unitId: string;
@@ -204,6 +205,14 @@ export async function checkMobilizationGate(
     );
     if (!permittedUseRecord) {
       return { canProceed: false, reason: 'Permitted use compliance record must be confirmed' };
+    }
+    // Independent of the check above (Q71 founder ruling, 2026-09-29): an
+    // active short-term-rental regulatory credential answers a different
+    // legal question than the general permitted-use confirmation, and both
+    // are required before a unit can go live via mobilization.
+    const credentialCheck = await checkRegulatoryCredentialForGoLive(db, unitId);
+    if (!credentialCheck.ok) {
+      return { canProceed: false, reason: credentialCheck.reason };
     }
     return { canProceed: true };
   }

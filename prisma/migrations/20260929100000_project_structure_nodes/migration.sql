@@ -24,7 +24,7 @@ ALTER TABLE public.unit
   ADD COLUMN structure_node_id text;
 ALTER TABLE public.unit
   ADD CONSTRAINT unit_structure_node_id_fkey FOREIGN KEY (structure_node_id)
-  REFERENCES public.project_structure_node(id) ON DELETE SET NULL ON UPDATE CASCADE;
+  REFERENCES public.project_structure_node(id) ON DELETE RESTRICT ON UPDATE CASCADE;
 CREATE INDEX unit_structure_node_id_idx ON public.unit(structure_node_id);
 
 -- Every parent and every unit must stay inside the *same* canonical project.

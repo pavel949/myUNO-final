@@ -7,7 +7,7 @@ async function guard(projectId: string) {
   const user = await getCurrentUser();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) } as const;
   const assigned = await prisma.roleAssignment.findFirst({
-    where: { identityId: user.identityId, role: 'staff_ops', projectId, status: 'active' },
+    where: { identityId: user.identityId, role: 'staff_ops', scopeType: 'project', projectId, status: 'active' },
     select: { id: true },
   });
   if (!user.isAdmin && !assigned) return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;

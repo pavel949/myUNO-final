@@ -78,7 +78,7 @@ export default async function ProjectLandingPage({
     'project_page.units.guests': 'up to {count} guests',
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
-    'project_page.units.empty': 'Homes here are being prepared for booking.',
+    'project_page.units.empty': 'No accommodation is currently available for online booking.',
     'project_page.story.title': 'About the residence',
     'project_page.amenities.title': 'Residence amenities',
     'project_page.services.title': 'Services available here',
@@ -197,8 +197,8 @@ export default async function ProjectLandingPage({
         </div>
       </section>
 
-      {/* Availability bar */}
-      <section className="bg-surface-ivory py-40 px-24">
+      {/* An editorial Project Space may remain published for sales or long stays without any eligible Stay offers. */}
+      {project.units.length > 0 && <section className="bg-surface-ivory py-40 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}
@@ -214,7 +214,7 @@ export default async function ProjectLandingPage({
             }}
           />
         </div>
-      </section>
+      </section>}
 
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}

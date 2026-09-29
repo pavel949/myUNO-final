@@ -65,6 +65,11 @@ export async function POST(
     // The owner workspace continues to enforce its own unit-scoped authorization.
     if (body.to_stage === 'owner' || body.to_stage === 'managed') {
       const now = new Date();
+      // Date-only ownership/contract boundaries include the entire effective day.
+      // PostgreSQL DATE values are represented by Prisma as UTC midnight.
+      const today = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()
+      ));
       const currentTitle = await prisma.unit.findFirst({
         where: { ownerIdentityId: profile.identityId },
         select: { id: true },
@@ -72,8 +77,8 @@ export async function POST(
       const effectiveTitle = currentTitle ?? await prisma.ownershipPeriod.findFirst({
         where: {
           ownerIdentityId: profile.identityId,
-          startsOn: { lte: now },
-          OR: [{ endsOn: null }, { endsOn: { gte: now } }],
+          startsOn: { lte: today },
+          OR: [{ endsOn: null }, { endsOn: { gte: today } }],
         },
         select: { unitId: true },
       });
@@ -86,8 +91,8 @@ export async function POST(
             ownerIdentityId: profile.identityId,
             status: 'active',
             signedAt: { not: null },
-            contractStartDate: { lte: now },
-            OR: [{ contractEndDate: null }, { contractEndDate: { gte: now } }],
+            contractStartDate: { lte: today },
+            OR: [{ contractEndDate: null }, { contractEndDate: { gte: today } }],
           },
           select: { id: true },
         });

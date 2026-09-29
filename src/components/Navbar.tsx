@@ -26,6 +26,7 @@ export interface NavbarUser {
 export interface NavbarLabels {
   findStay: string;
   residences: string;
+  homes?: string;
   services: string;
   owners: string;
   about: string;
@@ -113,6 +114,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             </Link>
             <Link href="/projects" className={navLinkClass(pathname, '/projects')}>
               {labels.residences}
+            </Link>
+            <Link href="/homes" className={navLinkClass(pathname, '/homes')}>
+              {labels.homes || 'Homes'}
             </Link>
             <Link href="/services" className={navLinkClass(pathname, '/services')}>
               {labels.services}
@@ -203,6 +207,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           </Link>
           <Link href="/projects" className={navLinkClass(pathname, '/projects', 'py-8')} onClick={closeMenu}>
             {labels.residences}
+          </Link>
+          <Link href="/homes" className={navLinkClass(pathname, '/homes', 'py-8')} onClick={closeMenu}>
+            {labels.homes || 'Homes'}
           </Link>
           <Link href="/services" className={navLinkClass(pathname, '/services', 'py-8')} onClick={closeMenu}>
             {labels.services}

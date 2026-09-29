@@ -25,6 +25,7 @@ describe('property onboarding form wiring', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'category-1' }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} />);
+    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
 
     const form = screen.getByLabelText('Base nightly rate (THB)').closest('form')!;
     fireEvent.change(screen.getByLabelText('Category key'), { target: { value: 'garden_2br' } });
@@ -56,6 +57,7 @@ describe('property onboarding form wiring', () => {
       }}
       initialReadiness={readiness}
     />);
+    fireEvent.click(screen.getByRole('button', { name: /6\. Pricing/ }));
     const form = screen.getByRole('button', { name: 'Save BAR' }).closest('form')!;
     const category = form.querySelector('select[name="category"]')!;
     fireEvent.change(category, { target: { value: 'category-1' } });
@@ -72,6 +74,7 @@ describe('property onboarding form wiring', () => {
       .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Attachment denied' }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} />);
+    fireEvent.click(screen.getByRole('button', { name: /7\. Content & photos/ }));
     const input = screen.getByLabelText('Gallery image') as HTMLInputElement;
     const image = new File(['image'], 'photo.png', { type: 'image/png' });
     fireEvent.change(input, { target: { files: [image] } });

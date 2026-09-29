@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { SlaCountdown } from '@/components/SlaCountdown';
 
 interface Booking {
@@ -64,7 +65,7 @@ export default function TripsList({ labels }: TripsListProps) {
             router.push('/login?next=/trips');
             return;
           }
-          throw new Error('Failed to fetch trips');
+          throw new Error(labels['booking.trips.fetch_error']);
         }
         const data: TripsResponse = await response.json();
         setTrips(data.bookings);
@@ -108,23 +109,27 @@ export default function TripsList({ labels }: TripsListProps) {
           </div>
         )}
 
-        {trips.length === 0 ? (
+        {error ? (
+          <a href="/trips" className="inline-flex h-40 items-center rounded-md border border-brand-andaman px-16 text-small font-semibold text-brand-andaman">
+            {labels['booking.trips.retry']}
+          </a>
+        ) : trips.length === 0 ? (
           <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
             <p className="text-body text-text-secondary mb-16">{labels['booking.trips.empty_title']}</p>
-            <a
-              href="/"
+            <Link
+              href="/search"
               className="inline-block h-48 px-24 leading-[48px] bg-brand-andaman text-surface-ivory rounded-sm hover:bg-brand-deep"
             >
               {labels['booking.trips.empty_action']}
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="space-y-16">
             {trips.map((trip) => (
-              <div
+              <Link
                 key={trip.id}
-                onClick={() => router.push(`/trips/${trip.id}`)}
-                className="bg-surface-paper border border-border-line rounded-lg p-24 hover:shadow-card transition cursor-pointer"
+                href={`/trips/${trip.id}`}
+                className="block bg-surface-paper border border-border-line rounded-lg p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
               >
                 <div className="flex items-start justify-between mb-16">
                   <div>
@@ -141,9 +146,7 @@ export default function TripsList({ labels }: TripsListProps) {
                       'bg-surface-ivory text-text-ink'
                     }`}
                   >
-                    {trip.status
-                      .replace(/_/g, ' ')
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    {labels[`booking.trips.status.${trip.status}`] || trip.status.replace(/_/g, ' ')}
                   </span>
                 </div>
 
@@ -151,13 +154,13 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.startDate).toLocaleDateString()}
+                      {new Date(trip.startDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
                     </p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.endDate).toLocaleDateString()}
+                      {new Date(trip.endDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
                     </p>
                   </div>
                 </div>
@@ -184,12 +187,9 @@ export default function TripsList({ labels }: TripsListProps) {
                           />
                         </p>
                       ) : null}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}`); }}
-                        className="h-40 px-16 bg-brand-andaman text-surface-ivory rounded-sm hover:bg-brand-deep text-small"
-                      >
+                      <span className="inline-flex h-40 items-center px-16 bg-brand-andaman text-surface-ivory rounded-sm text-small">
                         {labels['booking.trips.payment_action']}
-                      </button>
+                      </span>
                     </div>
                   )}
 
@@ -208,7 +208,7 @@ export default function TripsList({ labels }: TripsListProps) {
                     <p className="text-body text-text-ink">{trip.guestNote}</p>
                   </div>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         )}

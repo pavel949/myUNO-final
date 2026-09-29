@@ -256,5 +256,29 @@ describe('source-controlled inventory is excluded before public search and categ
     const after = await GET(makeRequest({ projectId: project.id, adultsCount: '2' }));
     expect(after.status).toBe(200);
     expect((await after.json()).total).toBe(2);
+
+    // Even after calendar cutover, unapproved tariff terms must exclude only
+    // the affected villa, not turn the entire dated search into HTTP 500.
+    await db.project.update({
+      where: { id: project.id }, data: { projectType: 'resort' },
+    });
+    await db.commercialOffering.create({
+      data: {
+        unitId: sourceUnit.id, offeringType: 'short_term_stay',
+        status: 'active',
+        pricingTerms: { sourceSystem: 'layantara_os', quoteEngine: 'pending_validation' },
+      },
+    });
+    await db.commercialOffering.create({
+      data: { unitId: sellableUnit.id, offeringType: 'short_stay', status: 'active' },
+    });
+    const dated = await GET(makeRequest({
+      projectId: project.id, adultsCount: '2',
+      startDate: '2026-12-15', endDate: '2026-12-18',
+    }));
+    expect(dated.status).toBe(200);
+    const data = await dated.json();
+    expect(data.total).toBe(1);
+    expect(data.units.map((unit: { id: string }) => unit.id)).toEqual([sellableUnit.id]);
   });
 });

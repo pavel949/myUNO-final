@@ -1,9 +1,9 @@
 -- Physical structure is optional and additive. Do not infer building/floor from
 -- legacy free-text unit.floor or from arbitrary resort villa numbers.
 CREATE TABLE public.project_structure_node (
-  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  id text PRIMARY KEY,
   created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp(3) NOT NULL,
   project_id text NOT NULL REFERENCES public.project(id) ON DELETE CASCADE ON UPDATE CASCADE,
   parent_id text REFERENCES public.project_structure_node(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   kind text NOT NULL CHECK (kind IN ('phase','cluster','building','tower','wing','floor','block','zone','standalone')),

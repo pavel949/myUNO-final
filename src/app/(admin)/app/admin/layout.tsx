@@ -18,6 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const labels = await getLabels({
     'admin.nav.title': 'myUNO Admin',
+    'admin.nav.mobile_menu': 'Open admin navigation',
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.processes': 'Operations map',
     'admin.nav.section.grow': 'Grow',
@@ -124,10 +125,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface-ivory">
-      <aside className="md:w-56 shrink-0 bg-brand-deep text-on-dark-text p-16 md:min-h-screen" style={{ minWidth: '220px' }}>
-        <p className="font-display text-subtitle font-bold mb-20">{labels['admin.nav.title']}</p>
-        <AdminNavLinks sections={sections} />
-        <p className="mt-24">
+      <aside className="sticky top-0 z-30 shrink-0 bg-brand-deep text-on-dark-text p-16 md:static md:w-56 md:min-h-screen" style={{ minWidth: '220px' }}>
+        <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
+        <details className="md:hidden">
+          <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-10 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
+            {labels['admin.nav.mobile_menu']}
+          </summary>
+          <div className="mt-12 max-h-[65vh] overflow-y-auto overscroll-contain pb-12">
+            <AdminNavLinks sections={sections} />
+          </div>
+        </details>
+        <div className="hidden md:block">
+          <AdminNavLinks sections={sections} />
+        </div>
+        <p className="hidden md:block mt-24">
           <Link href="/" className="text-small text-on-dark-muted hover:underline">
             {labels['admin.nav.back_to_site']}
           </Link>

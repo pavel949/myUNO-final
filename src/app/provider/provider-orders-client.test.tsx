@@ -43,4 +43,36 @@ describe('ProviderOrdersClient money display', () => {
     expect(screen.getByText(/฿3,000/)).toBeInTheDocument();
     expect(screen.queryByText(/300,000/)).not.toBeInTheDocument();
   });
+  it('shows Phuket appointment time and puts requests before fulfilled history', () => {
+    render(
+      <ProviderOrdersClient
+        initialOrders={[
+          {
+            id: 'history', status: 'fulfilled',
+            scheduledStart: '2026-09-01T10:00:00.000Z', scheduledEnd: null,
+            quantity: 1, totalThb: 10000, serviceTitle: 'Earlier service',
+            noteToProvider: null, acceptDeadline: null,
+          },
+          {
+            id: 'new', status: 'placed',
+            scheduledStart: '2026-09-01T10:00:00.000Z', scheduledEnd: null,
+            quantity: 1, totalThb: 20000, serviceTitle: 'New request',
+            noteToProvider: null, acceptDeadline: null,
+          },
+        ]}
+        labels={{
+          ...labels,
+          'provider.orders.needs_response': 'Awaiting response',
+          'provider.orders.to_fulfil': 'Ready to fulfil',
+          'provider.orders.refresh': 'Refresh orders',
+        }}
+      />
+    );
+    expect(screen.getAllByText(/01 Sept 2026, 17:00 ICT/)).toHaveLength(2);
+    const request = screen.getByText('New request');
+    const history = screen.getByText('Earlier service');
+    expect(request.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText(/Awaiting response:/)).toBeInTheDocument();
+  });
+
 });

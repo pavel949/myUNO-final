@@ -180,7 +180,7 @@ export default async function ResidencePage() {
                 {labels['residence.services']}
               </h3>
               <Link
-                href="/services"
+                href={`/services?projectId=${encodeURIComponent(residence.projectId)}`}
                 className="text-small text-brand-andaman font-semibold hover:underline"
               >
                 {labels['residence.services_all']}
@@ -207,6 +207,17 @@ export default async function ResidencePage() {
                 ))}
               </ul>
             )}
+            <div className="mt-20 flex flex-wrap gap-12">
+              <Link
+                href={`/tickets/new?projectId=${encodeURIComponent(residence.projectId)}${residence.units.length === 1 ? `&unitId=${encodeURIComponent(residence.units[0].id)}` : ''}`}
+                className="inline-flex items-center rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-on-dark-text hover:opacity-90"
+              >
+                {labels['residence.raise_ticket']}
+              </Link>
+              <Link href="/tickets" className="inline-flex items-center px-12 py-12 text-small font-semibold text-brand-andaman hover:underline">
+                {labels['residence.my_tickets']}
+              </Link>
+            </div>
           </section>
         ))}
 
@@ -215,13 +226,7 @@ export default async function ResidencePage() {
             {labels['residence.actions']}
           </h3>
           <div className="flex flex-wrap gap-16">
-            <Link
-              href="/tickets/new"
-              className="px-16 py-8 rounded-lg bg-brand-deep text-on-dark-text text-small font-semibold"
-            >
-              {labels['residence.raise_ticket']}
-            </Link>
-            <Link href="/tickets" className="text-small text-brand-andaman hover:underline py-8">
+             <Link href="/tickets" className="text-small text-brand-andaman hover:underline py-8">
               {labels['residence.my_tickets']}
             </Link>
             <Link href="/messages" className="text-small text-brand-andaman hover:underline py-8">

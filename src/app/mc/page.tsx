@@ -85,6 +85,10 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
   );
 
   const labels = await getLabels({
+    'mc.attention.title': 'Needs attention',
+    'mc.attention.requests': 'Booking requests',
+    'mc.attention.tickets': 'Open tickets',
+    'mc.attention.services': 'Service orders to respond',
     'mc.portal.title': 'Management Company Portal',
     'mc.portal.subtitle': 'Manage your units, bookings, and operations',
     'mc.context.active': 'Active context',

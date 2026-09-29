@@ -108,7 +108,8 @@ export async function POST(req: NextRequest) {
     // Guest-actionable validation errors from the engine
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;
-      if (msg.includes('inventory category is not live') || msg.includes('Unit project is not live')) {
+      if (msg.includes('inventory category is not live') || msg.includes('Unit project is not live') ||
+        msg.includes('No active short-stay offering')) {
         return NextResponse.json({ error: 'This stay is not available' }, { status: 404 });
       }
       if (msg.includes('minimum') || msg.includes('exceeds') || msg.includes('not found')) {

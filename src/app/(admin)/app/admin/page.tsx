@@ -35,6 +35,9 @@ export default async function AdminDashboardPage() {
 
   const labels = await getLabels({
     'admin.dashboard.title': 'Dashboard',
+    'admin.dashboard.process_title': 'Work by process',
+    'admin.dashboard.process_hint': 'Start with a task, then follow its connected workflow across myUNO.',
+    'admin.dashboard.process_action': 'Open operations map →',
     'admin.dashboard.setup_title': 'Add to the portfolio',
     'admin.dashboard.setup_intro':
       'A project is the development; a unit is a home inside it. Create the project first, then add its units.',
@@ -105,6 +108,13 @@ export default async function AdminDashboardPage() {
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
         {labels['admin.dashboard.title']}
       </h1>
+      <section className="mb-24 rounded-lg border border-brand-andaman bg-surface-paper p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-16">
+        <div>
+          <h2 className="font-display text-title font-semibold text-text-ink mb-4">{labels['admin.dashboard.process_title']}</h2>
+          <p className="text-small text-text-secondary">{labels['admin.dashboard.process_hint']}</p>
+        </div>
+        <Link href="/app/admin/processes" className="shrink-0 rounded-md bg-brand-andaman text-on-dark-text px-16 py-12 text-small font-semibold hover:opacity-90 transition-opacity">{labels['admin.dashboard.process_action']}</Link>
+      </section>
       {/* Where things are entered. The admin surface opened straight onto
           analytics, so on a fresh portfolio it was a wall of zeroes with no
           visible way in — the create screens existed but nothing pointed at

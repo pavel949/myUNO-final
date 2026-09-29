@@ -26,13 +26,15 @@ async function findPaymentForCharge(
   if (!charge.id) return null;
 
   const bySession = await db.payment.findFirst({
-    where: { providerSessionId: charge.id },
+    where: { provider: 'opn', providerSessionId: charge.id },
   });
   if (bySession) return bySession;
 
   const paymentId = charge.metadata?.paymentId;
   if (typeof paymentId === 'string') {
-    return db.payment.findUnique({ where: { id: paymentId } });
+    return db.payment.findFirst({
+      where: { id: paymentId, provider: 'opn', providerSessionId: charge.id },
+    });
   }
 
   return null;

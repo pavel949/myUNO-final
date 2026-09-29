@@ -27,6 +27,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     'payments.checkout.decline_simulate': 'Simulate card declined',
     'payments.checkout.back_to_trip': 'Back to your trip',
     'payments.checkout.test_note': 'No real payment is charged in test mode.',
+    'payments.checkout.provider_pending': 'This payment is handled by the external provider. Check your trip for its confirmed status; do not submit a mock payment here.',
   });
 
   return <CheckoutClient sessionId={params.sessionId} labels={labels} />;

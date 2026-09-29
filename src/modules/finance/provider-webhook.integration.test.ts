@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   db,
   resetDb,
@@ -13,6 +13,11 @@ import * as financeService from './finance.service';
 describe('processOpnEvent (Opn webhook)', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it('confirms a pending payment on charge.complete', async () => {
@@ -41,6 +46,22 @@ describe('processOpnEvent (Opn webhook)', () => {
       },
     });
 
+    // The event is verified by the route, but the payment service independently
+    // re-fetches the charge and checks its amount. Stub the provider transport
+    // rather than bypassing the real-provider verification gate.
+    vi.stubEnv('PAYMENT_PROVIDER', 'opn');
+    vi.stubEnv('OMISE_SECRET_KEY', 'skey_test_webhook_integration');
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      expect(String(url)).toContain('/charges/chrg_test_confirm');
+      return {
+        status: 200,
+        json: async () => ({
+          id: 'chrg_test_confirm', object: 'charge', amount: 400_000,
+          currency: 'thb', status: 'successful', paid: true, authorized: true,
+        }),
+      };
+    }));
+
     const result = await processOpnEvent(db, {
       id: 'evnt_1',
       object: 'event',
@@ -56,6 +77,30 @@ describe('processOpnEvent (Opn webhook)', () => {
 
     const updatedPayment = await db.payment.findUnique({ where: { id: payment.id } });
     expect(updatedPayment?.status).toBe('succeeded');
+  });
+
+  it('does not let an Opn event confirm a mock session by matching metadata only', async () => {
+    const guest = await createIdentity();
+    const project = await createProject();
+    const unit = await createUnit(project.id);
+    const booking = await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: guest.id,
+      status: 'pending_payment', totalThb: 400_000,
+    });
+    const mockPayment = await db.payment.create({
+      data: {
+        purpose: 'stay', bookingId: booking.id, payerIdentityId: guest.id,
+        method: 'card_provider', provider: 'mock', amountThb: 400_000,
+        status: 'pending', providerSessionId: 'chrg_spoof',
+      },
+    });
+    const result = await processOpnEvent(db, {
+      id: 'evnt_spoof', object: 'event', key: 'charge.complete',
+      data: { id: 'chrg_spoof', paid: true, metadata: { paymentId: mockPayment.id } },
+    });
+    expect(result.action).toBe('payment_not_found');
+    expect((await db.payment.findUniqueOrThrow({ where: { id: mockPayment.id } })).status).toBe('pending');
+    expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('pending_payment');
   });
 
   it('marks refund failed when provider voids refund (N-10)', async () => {

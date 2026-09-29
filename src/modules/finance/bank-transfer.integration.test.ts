@@ -182,6 +182,7 @@ describe('paying by transfer into the company account', () => {
         endDate: new Date('2026-08-03'),
       });
 
+      await db.booking.update({ where: { id: other.id }, data: { balanceDueThb: 1_000_00 } });
       await recordBankTransfer(db, {
         purpose: 'stay_balance',
         bookingId: other.id,
@@ -196,6 +197,40 @@ describe('paying by transfer into the company account', () => {
         select: { status: true },
       });
       expect(after?.status).toBe('checked_in');
+    });
+
+    it('refuses a mismatched initial amount before writing any money', async () => {
+      await expect(recordBankTransfer(db, {
+        purpose: 'stay', bookingId, payerIdentityId: guestId, amountThb: 4_499_99,
+        confirmedByIdentityId: staffId, bankReference: 'BAD-AMOUNT',
+      })).rejects.toThrow(/does not match booking total/i);
+      expect(await db.payment.count({ where: { bookingId } })).toBe(0);
+      expect(await db.ledgerEntry.count({ where: { bookingId } })).toBe(0);
+    });
+
+    it('refuses a repeated transfer without duplicating payment or ledger', async () => {
+      const input = {
+        purpose: 'stay' as const, bookingId, payerIdentityId: guestId,
+        amountThb: 4_500_00, confirmedByIdentityId: staffId, bankReference: 'TRANSFER-ONCE',
+      };
+      await recordBankTransfer(db, input);
+      await expect(recordBankTransfer(db, input)).rejects.toThrow(/not awaiting initial payment/i);
+      expect(await db.payment.count({ where: { bookingId, status: 'succeeded' } })).toBe(1);
+      expect(await db.ledgerEntry.count({ where: { bookingId, entryType: 'rental_revenue' } })).toBe(1);
+    });
+
+    it('settles the exact balance once without changing the stay status', async () => {
+      await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed', balanceDueThb: 1_000_00 } });
+      const input = {
+        purpose: 'stay_balance' as const, bookingId, payerIdentityId: guestId,
+        amountThb: 1_000_00, confirmedByIdentityId: staffId, bankReference: 'BALANCE-ONCE',
+      };
+      await recordBankTransfer(db, input);
+      const after = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+      expect(after.status).toBe('confirmed');
+      expect(after.balanceDueThb).toBe(0);
+      expect(await db.ledgerEntry.count({ where: { bookingId, entryType: 'rental_revenue' } })).toBe(1);
+      await expect(recordBankTransfer(db, input)).rejects.toThrow(/outstanding balance/i);
     });
 
     it('refuses without a bank reference, because an untraceable credit cannot be reconciled', async () => {

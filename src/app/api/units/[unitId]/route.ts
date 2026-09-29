@@ -171,7 +171,7 @@ export async function GET(
       // Compatibility field for old clients. New date-aware surfaces use pricing.averageNightly.
       baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
       pricing,
-      photoScope: representative.length ? 'room_type' : gallery.length ? 'exact_unit' : 'none',
+      photoScope: representativeCover ? 'room_type' : exactCover ? 'exact_unit' : 'none',
       images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,
     });
   } catch (error) {

@@ -2700,8 +2700,8 @@ model PropertyDeal {
   unitId String @map("unit_id")
   kind String
   status String @default("draft")
-  amountThb Int @map("amount_thb")
-  depositThb Int @default(0) @map("deposit_thb")
+  amountThb BigInt @map("amount_thb")
+  depositThb BigInt @default(0) @map("deposit_thb")
   currency String @default("THB")
   startsOn DateTime? @map("starts_on") @db.Date
   endsOn DateTime? @map("ends_on") @db.Date

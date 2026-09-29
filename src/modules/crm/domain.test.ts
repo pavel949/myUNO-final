@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   lifecycleAfterWin,
+  lifecycleAfterWinForExisting,
   opportunityTypeForAudience,
   parseLeadContact,
   validateProbability,
@@ -13,6 +14,16 @@ describe('CRM domain rules', () => {
     expect(lifecycleAfterWin('sale')).toBeNull();
     expect(lifecycleAfterWin('management')).toBeNull();
     expect(lifecycleAfterWin('developer_advisory')).toBeNull();
+  });
+
+  it('preserves owner and buyer relationships on additional transactions', () => {
+    expect(lifecycleAfterWinForExisting('purchase', 'owner')).toBeNull();
+    expect(lifecycleAfterWinForExisting('purchase', 'managed')).toBeNull();
+    expect(lifecycleAfterWinForExisting('rental', 'buyer')).toBeNull();
+    expect(lifecycleAfterWinForExisting('rental', 'prospect')).toBeNull();
+    expect(lifecycleAfterWinForExisting('purchase', 'prospect')).toBe('buyer');
+    expect(lifecycleAfterWinForExisting('rental', 'contact')).toBe('guest');
+    expect(lifecycleAfterWinForExisting('purchase', 'buyer')).toBeNull();
   });
 
   it('maps each public audience to the correct pipeline', () => {

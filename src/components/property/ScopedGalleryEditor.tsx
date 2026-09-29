@@ -72,12 +72,12 @@ export default function ScopedGalleryEditor({
     finally { setBusy(false); }
   }
 
-  async function upload(file: File) {
+  async function upload(file: File, makeCover: boolean) {
     const data = new FormData(); data.set('file', file); data.set('kind', 'photo');
     const res = await fetch('/api/media/upload', { method: 'POST', body: data });
     const body = await res.json().catch(() => null);
     if (!res.ok || !body?.mediaAssetId) throw new Error(body?.error || 'Upload failed');
-    await write('POST', { mediaAssetId: body.mediaAssetId, cover: items.length === 0 });
+    await write('POST', { mediaAssetId: body.mediaAssetId, cover: makeCover });
   }
 
   async function persistOrder(ordered: Item[], nextCover = cover) {
@@ -124,7 +124,7 @@ export default function ScopedGalleryEditor({
             const files = Array.from(e.target.files ?? []);
             e.target.value = '';
             if (files.length) void perform(async () => {
-              for (const file of files) await upload(file);
+              for (const [index, file] of files.entries()) await upload(file, items.length === 0 && index === 0);
             });
           }}/>
       </label>

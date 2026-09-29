@@ -16,7 +16,7 @@ const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance'
 const input = 'h-40 rounded-sm border border-border-line bg-surface-paper px-12';
 function unitPropertyDetailsPath(unitId: string) { return `/api/admin/units/${unitId}/property-details`; }
 
-export default function PropertyOnboardingClient({ initialProject, initialReadiness, initialGallery }: { initialProject: Project; initialReadiness: PropertyReadinessReport; initialGallery?: string }) {
+export default function PropertyOnboardingClient({ initialProject, initialReadiness, initialGallery, galleryLabels }: { initialProject: Project; initialReadiness: PropertyReadinessReport; initialGallery?: string; galleryLabels: Record<string,string> }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,7 +106,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
         {initialProject.inventoryCategories.map(c => <p key={c.id}>{c.name}: {c.ratePlans.filter(plan => plan.code === 'BAR').map(plan => `${plan.name} · ${plan.minNights ?? c.minNights} night minimum`).join(' · ') || 'BAR not configured'}</p>)}
       </div>
     </Section>
-    <Section id="step-7" title="7. Content and galleries"><p>Project and unit media support ordered galleries and an explicit cover. Activation requires a project cover and at least three unit photos.</p><ScopedGalleryEditor projectId={initialProject.id} projectName={initialProject.name} categories={initialProject.inventoryCategories} units={initialProject.units} initialSelection={initialGallery}/><UnitLinks units={initialProject.units} label="Open unit gallery"/></Section>
+    <Section id="step-7" title="7. Content and galleries"><p>Project and unit media support ordered galleries and an explicit cover. Activation requires a project cover and at least three unit photos.</p><ScopedGalleryEditor projectId={initialProject.id} projectName={initialProject.name} categories={initialProject.inventoryCategories} units={initialProject.units} initialSelection={initialGallery} labels={galleryLabels}/><UnitLinks units={initialProject.units} label="Open unit gallery"/></Section>
     <Section id="step-8" title="8. Availability and channels"><p className="mb-12">Availability is derived from Booking, active holds, BlockedDate and approved external blocks. This screen configures inputs to that engine; it never maintains a second availability truth.</p><div className="rounded-md bg-state-warning-soft p-12 mb-16"><strong>Manual-risk warning:</strong> iCal and manual mappings do not push ARI. After every direct booking, close inventory in the OTA extranets until an ARI-capable connection reports <code>ari_push</code>.</div><ChannelForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-9" title="9. Team"><p>Invite people from the owner form above, then grant project or unit roles in People & access.</p><Link className="text-brand-andaman underline" href="/app/admin/people">Open People & access</Link></Section>
     <Section id="step-10" title="10. Review and publish"><Readiness report={initialReadiness}/><Button disabled={busy || !initialReadiness.readyForActivation || initialProject.status === 'live'} onClick={() => submit(`/api/admin/projects/${initialProject.id}`, { status: 'live' }, 'PUT')}>{initialProject.status === 'live' ? 'Property is live' : 'Publish property'}</Button></Section>

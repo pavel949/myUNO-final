@@ -66,6 +66,7 @@ export async function GET(
         cancellationPolicyKey: true,
         status: true,
         assetStatus: true,
+        commercialOfferings: { select: { offeringType: true, status: true } },
         inventoryCategory: {
           select: {
             id: true,
@@ -76,7 +77,7 @@ export async function GET(
           },
         },
         project: {
-          select: { id: true, name: true, status: true },
+          select: { id: true, name: true, status: true, projectType: true },
         },
         coverMedia: { select: { storageKey: true } },
         media: {
@@ -93,7 +94,9 @@ export async function GET(
       unit.status !== 'live' ||
       unit.assetStatus === 'suspended' ||
       unit.project.status !== 'live' ||
-      unit.inventoryCategory?.status !== 'live'
+      unit.inventoryCategory?.status !== 'live' ||
+      (Boolean(unit.project.projectType) && !unit.commercialOfferings.some(offer =>
+        ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active'))
     ) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
@@ -152,6 +155,7 @@ export async function GET(
       assetStatus: _assetStatus,
       coverMedia,
       media,
+      commercialOfferings: _commercialOfferings,
       project,
       ...rest
     } = unit;

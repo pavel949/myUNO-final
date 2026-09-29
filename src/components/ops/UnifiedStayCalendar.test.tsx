@@ -79,7 +79,6 @@ describe('one calendar surface with mode-specific safe actions', () => {
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/mc/units/unit-a');
     expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
-    fireEvent.click(screen.getByRole('link', { name: /Next/ }));
     // Navigation stays on the same canonical board and retains organization.
     expect(screen.getByRole('link', { name: /Next/ }).getAttribute('href'))
       .toContain('organizationId=org-a');

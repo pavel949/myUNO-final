@@ -47,4 +47,5 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'homes.detail.inquiry.buy', namespace: 'homes', description: "Specific-unit purchase enquiry prefill", en: "Purchase enquiry", ru: "Запрос на покупку", th: "สอบถามการซื้อ", status: 'needs_review' as const },
   { key: 'homes.detail.inquiry.rent', namespace: 'homes', description: "Specific-unit lease enquiry prefill", en: "Long-term rental enquiry", ru: "Запрос на долгосрочную аренду", th: "สอบถามเช่าระยะยาว", status: 'needs_review' as const },
   { key: 'homes.detail.inquiry.prompt', namespace: 'homes', description: "Specific-unit enquiry request", en: "Please provide current availability and terms.", ru: "Пожалуйста, сообщите актуальную доступность и условия.", th: "กรุณาแจ้งสถานะว่างและเงื่อนไขล่าสุด", status: 'needs_review' as const },
+  { key: 'homes.detail.size_unit', namespace: 'homes', description: 'Home area display unit', en: 'sqm', ru: 'м²', th: 'ตร.ม.', status: 'needs_review' as const },
 ];

@@ -95,7 +95,7 @@ export async function PATCH(req: NextRequest) {
     const existing = await prisma.crmOpportunity.findFirst({ where: { id, identityId: access.user.identityId, source: MARKER }, select: { id: true, requirements: true } });
     if (!existing) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
     const previous = existing.requirements as Record<string, unknown>;
-    if (previous.status === 'submitted') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
+    if (previous.status !== 'draft') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
     const data = normalize({ ...previous, ...body });
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {

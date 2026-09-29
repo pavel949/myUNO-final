@@ -138,6 +138,15 @@ export async function computeCanonicalPriceBreakdown(
   };
   const shortGrid = validatedGrid('short_term_stay');
   const monthlyGrid = validatedGrid('long_term_rental');
+  const sourceOwnedTariff = stayOffers.some(offer => {
+    const terms = offer.pricingTerms;
+    return typeof terms === 'object' && terms !== null && !Array.isArray(terms) &&
+      (terms as Record<string, unknown>).sourceSystem === 'layantara_os';
+  });
+  // Never fall back to zero/placeholder category pricing for imported supply:
+  // even a mistakenly live unit must stay unquotable until tariff approval.
+  if (sourceOwnedTariff && shortGrid === null)
+    throw new Error('This stay is not available: source tariff has not been validated');
   if (shortGrid !== null) {
     // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
     // discount. A draft/unverified monthly offer cannot be silently substituted

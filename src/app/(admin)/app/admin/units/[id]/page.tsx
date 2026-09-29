@@ -49,6 +49,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'admin.units.breadcrumb_units': 'Units',
     'admin.units.breadcrumb_detail': 'Unit Details',
     'admin.onboarding.title': 'Onboarding',
+    'admin.gallery.manage': 'Manage photos and galleries',
     'admin.onboarding.back': 'All units',
     'admin.onboarding.step': 'Step',
     'admin.onboarding.done': 'Done',
@@ -159,6 +160,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {unit.name} · {labels['admin.onboarding.title']}
       </h1>
+      <Link href={`/app/admin/properties/${unit.project.id}/onboarding?gallery=unit:${unit.id}#step-7`}
+        className="inline-block mb-24 rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+        {labels['admin.gallery.manage']} →
+      </Link>
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">

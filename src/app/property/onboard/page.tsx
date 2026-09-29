@@ -7,11 +7,10 @@ export const dynamic = 'force-dynamic';
 export default async function PropertyOnboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/property/onboard');
-  if (!user.isAdmin && !user.roles.some(r => r.role === 'owner' || r.role === 'mc_member')) redirect('/owners');
-  const projects = await prisma.project.findMany({
+  const [projects, areas] = await Promise.all([prisma.project.findMany({
     where: { status: 'live' }, orderBy: { name: 'asc' },
     select: { id: true, name: true, address: true },
     take: 500,
-  });
-  return <PropertySubmissionWizard projects={projects} />;
+  }), prisma.area.findMany({ where: { status: 'live' }, select: { id: true, slug: true }, orderBy: { sort: 'asc' } })]);
+  return <PropertySubmissionWizard projects={projects} areas={areas} />;
 }

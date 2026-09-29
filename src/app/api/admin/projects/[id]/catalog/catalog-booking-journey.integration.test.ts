@@ -233,6 +233,21 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(booking.status).toBe(404);
   });
 
+  it('recognizes the canonical short_term_stay offer during readiness', async () => {
+    const c = await category('canonical_2br', '3500');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'draft', baseNightlyThb: 350_000,
+    });
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
+    await db.commercialOffering.create({
+      data: { projectId, unitId: unit.id, offeringType: 'short_term_stay', status: 'active' },
+    });
+    const readiness = await getPropertyReadiness(db, projectId);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.stay_offering' && b.unitId === unit.id
+    )).toBe(false);
+  });
+
   it('keeps a source-linked Layantara offer draft even when an admin maps a channel', async () => {
     const c = await category('source_villa', '3500');
     const unit = await createUnit({

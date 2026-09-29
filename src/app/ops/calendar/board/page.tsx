@@ -28,7 +28,11 @@ export default async function UnifiedStayCalendarPage({
   if (!user) redirect('/login?next=/ops/calendar/board');
 
   const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
-  const mcMode = !user.isAdmin && staffProjectIds.length === 0;
+  // A dual-role user explicitly entering via /mc/calendar keeps the MC unit
+  // boundary; direct /ops/calendar visits retain their staff scope.
+  const mcMode = !user.isAdmin && (
+    Boolean(searchParams?.organizationId) || staffProjectIds.length === 0
+  );
   // MC project roles alone are NOT unit authorization: require a matching
   // active via-management-company engagement for every visible physical unit.
   const mcScopes = mcMode ? getMCProjectScopes(user) : [];

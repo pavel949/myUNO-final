@@ -126,6 +126,8 @@ describe('public unit detail uses the canonical booking price and inventory auth
     expect(detailData.pricing.nights).toBe(quoteData.nights);
     expect(detailData.pricing.isAvailable).toBe(true);
     expect(detailData.pricing.availableCapacity).toBe(1);
+    expect(quoteData.isAvailable).toBe(detailData.pricing.isAvailable);
+    expect(quoteData.availableCapacity).toBe(detailData.pricing.availableCapacity);
   });
 
   it('marks a confirmed booking unavailable, without hiding the unit detail', async () => {

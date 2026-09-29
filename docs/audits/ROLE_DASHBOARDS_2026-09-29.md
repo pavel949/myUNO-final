@@ -8,7 +8,7 @@ Keep one canonical Project → Category → Unit → Offering → Booking/Stay s
 
 | Audience / route | Existing entry and reviewed behavior | Improvement / acceptance |
 |---|---|---|
-| Founder/admin `/app/admin` | Platform counts, rollup KPIs, projects, broad ERP sidebar | **In PR #153:** attention queues link to bookings, active tickets, and unpublished inventory; add-property and live-calendar shortcuts; as-of ICT. Future: integrity and sync health from verified job data, not invented green badges. |
+| Founder/admin `/app/admin` | Platform counts, rollup KPIs, projects, broad ERP sidebar | **In PR #153:** attention queues link to bookings, active tickets, and unpublished inventory; add-property/live-calendar shortcuts; as-of ICT; mobile navigation is collapsed and scrollable instead of preceding the entire dashboard. Future: integrity and sync health from verified job data, not invented green badges. |
 | Operations / reception `/ops`, `/ops/stays`, `/ops/calendar/board` | Project-scoped workboard with arrivals, departures, requests, payment tasks, OTA conflicts and canonical stay navigation in #144 | Keep one booking lifecycle. E2E: reserve/block, payment, arrival, stay, departure, owner isolation, and responsive staff access. |
 | Management company `/mc` | Project+organization context; requests, units, tickets, service orders, calendar and fee report | **In PR #153:** responsive nav and scoped queue shortcuts; do not change financial source or permit writes outside role scope. E2E across two different management organizations remains required. |
 | Owner `/owner`, `/owner/units/[unitId]` | Portfolio switcher, monthly booked value, historical MetricDaily chart, alerts, statements and unit detail | **In PR #153:** project selection scopes numbers, historical series, alerts, compliance and statements together; guard empty mobilization denominator. Distinguish booked gross from ledger-based owner entitlement. |
@@ -26,7 +26,7 @@ Keep one canonical Project → Category → Unit → Offering → Booking/Stay s
 
 1. Owner project filter had only affected unit cards and ticket list; headline booked-value/occupied nights, chart, alerts, compliance and statements still represented the complete portfolio. The fix derives a single selected unit scope and server-side MetricDaily project rollups restricted to owned unit IDs.
 2. Mobilization progress divided by zero when total checklist steps were zero.
-3. Admin showed metrics ahead of actionable work, and its tickets tile led to generic `/ops` instead of the cross-project admin ticket board.
+3. Admin showed metrics ahead of actionable work, and its tickets tile led to generic `/ops` instead of the cross-project admin ticket board; a full-size navigation sidebar pushed mobile work below the fold.
 4. Management-company header's fixed row of navigation controls could overflow mobile screens, with no fast action count on the overview.
 5. Provider order queue mixed new orders and history without priority or refresh, depended on browser timezone, and could claim the queue was empty after an API failure.
 6. Guest trip cards were mouse-only click targets containing another button; fetch errors were accompanied by a false empty state; labels were generated from English status names and date-only fields used device-local rendering.

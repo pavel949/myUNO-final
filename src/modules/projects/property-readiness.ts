@@ -48,7 +48,7 @@ export async function getPropertyReadiness(
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
           commercialOfferings: { include: { channelMappings: true } },
-          inventoryCategory: true,
+          inventoryCategory: { include: { galleryMedia: true } },
         },
       },
     },
@@ -135,8 +135,18 @@ export async function getPropertyReadiness(
     if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
       add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);
     }
-    if (!unit.coverMediaId || unit.media.length < 3) {
-      add('blocker', 'unit.media', 'Upload at least three photos and choose a cover.', options);
+    // Hotel rooms may use representative category media. Standalone condos and
+    // private villas require photos of the exact physical unit.
+    const representativeRoom = project.projectType === 'hotel' || unit.accommodationType === 'hotel_room';
+    const ownMediaReady = Boolean(unit.coverMediaId) && unit.media.length >= 3;
+    const categoryMediaReady = Boolean(unit.inventoryCategory?.coverMediaId) &&
+      (unit.inventoryCategory?.galleryMedia.length ?? 0) >= 3;
+    if (!ownMediaReady && !(representativeRoom && categoryMediaReady)) {
+      add('blocker', 'unit.media',
+        representativeRoom
+          ? 'Add three room-type photos with a cover or photograph this room individually.'
+          : 'Add at least three exact-unit photos and choose a cover.',
+        options);
     }
     if (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0)) {
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);

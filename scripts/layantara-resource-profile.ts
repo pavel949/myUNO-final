@@ -11,11 +11,12 @@ import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 
 export const RESOURCE_FIELDS: Record<string, readonly string[]> = {
-  "projects": ["id","name","location","timezone","project_type"],
-  "project_public_profile": ["id","project_id","name","address","location","short_description","long_description","amenities","facilities","latitude","longitude"],
-  "villa_categories": ["id","project_id","code","name","bedrooms","max_adults","max_children","max_guests","booking_mode","positioning"],
-  "operational_inventory": ["id","project_id","unit_code","category_id","bedrooms","bathrooms","internal_area_sqm","external_area_sqm","total_building_area_sqm","plot_area_sqm","view_type","bed_configuration","amenities","equipment","features","public_name","public_description","phase"],
-  "villa_master_crosswalk": ["id","project_id","inventory_id","villa_id","unit_code","category_id","operational_verification_status","category_verification_status","specification_verification_status"],
+  "projects": ["id","name","location","timezone","currency"],
+  "project_public_profile": ["project_id","public_name","address","short_description","tagline","positioning"],
+  "villa_categories": ["id","project_id","code","name","bedrooms","max_adults","max_children","max_guests","booking_mode","positioning","source_aliases"],
+  "operational_inventory": ["id","project_id","unit_code","category_id","bedrooms","bathrooms","internal_area_sqm","external_area_sqm","total_building_area_sqm","plot_area_sqm","view_type","bed_configuration","amenities","equipment","features","house_rules","public_name","public_description","phase","source_aliases","mapping_status","mapping_confidence"],
+  "villa_master_crosswalk": ["id","project_id","inventory_id","operational_unit_code","physical_source_unit_code","operational_verification_status","category_verification_status","specification_verification_status","source_document","source_page","verification_note"],
+  "villas": ["id","project_id","id_code","category_id","bedrooms","bathrooms","max_guests","amenities","public_title","public_description","hero_image_url","gallery","base_rate","rate_is_demo"],
   "villa_category_content": ["id","project_id","category_id","product_key","locale","title","description","published"],
   "villa_media": ["id","project_id","inventory_id","media_type","storage_path","mime_type","alt_text","caption","width","height","byte_size","sort_order","is_cover","published"],
   "rate_plans": ["id","project_id","code","name","min_nights","meal_plan","cancellation_policy","active"],
@@ -36,7 +37,7 @@ export const RESOURCE_FIELDS: Record<string, readonly string[]> = {
 const PROVENANCE_FIELDS = new Set(['created_at','updated_at','created_by','updated_by']);
 const FORBIDDEN = /^(guest|guest_id|guest_name|email|phone|passport|booking_id|reservation_id|payment_id|receipt_id|transaction_id|owner_statement_id|amount_paid|balance|account_number|bank_account|session_id|access_token|refresh_token|audit_log)$/i;
 const MIN_COUNTS: Record<string, number> = {
-  projects: 1, villa_categories: 8, operational_inventory: 39,
+  projects: 1, villas: 39, villa_categories: 8, operational_inventory: 39,
   villa_master_crosswalk: 39, villa_category_content: 24, category_rates: 72,
   villa_media: 67,
 };
@@ -68,7 +69,7 @@ export function sanitizeResourceRow(table: string, payload: Record<string, unkno
     if (Object.prototype.hasOwnProperty.call(payload,field)) sanitized[field]=payload[field];
   }
   rejectOperationalKeys(sanitized);
-  if (!sanitized.id) throw new Error(`Missing stable source identity in ${table}`);
+  if (!sanitized.id && !['project_public_profile'].includes(table)) throw new Error(`Missing stable source identity in ${table}`);
   return sanitized;
 }
 

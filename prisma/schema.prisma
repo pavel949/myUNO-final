@@ -1856,6 +1856,8 @@ model MediaAsset {
   uploadedBy               Identity               @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
   identityAvatars          Identity[]             @relation("identityAvatar")
   projectCovers            Project[]              @relation("projectCover")
+  categoryCovers           InventoryCategory[]    @relation("categoryCover")
+  categoryMedia            InventoryCategoryMedia[]
   unitCovers               Unit[]                 @relation("unitCover")
   unitMedia                UnitMedia[]
   projectMedia             ProjectMedia[]
@@ -1910,6 +1912,17 @@ model UnitMedia {
 
   @@id([unitId, mediaId])
   @@map("unit_media")
+}
+
+model InventoryCategoryMedia {
+  categoryId String @map("category_id")
+  mediaId String @map("media_id")
+  sort Int @default(0)
+  category InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, mediaId])
+  @@map("inventory_category_media")
 }
 
 model ProjectMedia {
@@ -3119,6 +3132,9 @@ model InventoryCategory {
   project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   units     Unit[]
   ratePlans RatePlan[]
+  galleryMedia InventoryCategoryMedia[]
+  coverMediaId String? @map("cover_media_id")
+  coverMedia MediaAsset? @relation("categoryCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
 
   @@unique([projectId, categoryKey])
   @@map("inventory_category")

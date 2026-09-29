@@ -9,6 +9,7 @@ import {
 } from '@/lib/date';
 import { getApplicableSeason, type PriceBreakdown } from './availability.service';
 import { quoteSeasonalTariffGrid, type TariffMode } from './seasonal-tariff';
+import { resolveSourceBookingTerms } from './commercial-booking-terms';
 
 function applyRatePlanAdjustment(
   amount: number,
@@ -123,7 +124,7 @@ export async function computeCanonicalPriceBreakdown(
   const stayOffers = await db.commercialOffering.findMany({
     where: { unitId: unit.id,
       offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
-    select: { offeringType: true, status: true, pricingTerms: true },
+    select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
   });
   const validatedGrid = (type: string) => {
     const offer = stayOffers.find(o => o.offeringType === type);
@@ -144,10 +145,33 @@ export async function computeCanonicalPriceBreakdown(
     const mode: TariffMode = nights >= 30 ? 'monthly' : 'daily';
     if (mode === 'monthly' && monthlyGrid === null)
       throw new Error('Validated monthly tariff is required for this stay');
+    const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
     const quoted = quoteSeasonalTariffGrid(
-      mode === 'monthly' ? monthlyGrid : shortGrid,
-      toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
+      selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
     );
+    const selectedOffer = stayOffers.find(o => o.offeringType ===
+      (mode === 'monthly' ? 'long_term_rental' : 'short_term_stay'))!;
+    const terms = selectedOffer.pricingTerms as Record<string, unknown>;
+    let commercialTerms: PriceBreakdown['commercialTerms'];
+    if (terms.sourceSystem === 'layantara_os') {
+      if (terms.policyEngineVerified !== true)
+        throw new Error('Source booking policy requires approval');
+      const gridRows = selectedGrid as Array<Record<string, unknown>>;
+      const arrivalRate = gridRows.find(row =>
+        row.sourceRateId === quoted.lines[0].sourceRateId);
+      if (!arrivalRate || typeof arrivalRate.seasonCode !== 'string')
+        throw new Error('Arrival tariff identity missing');
+      const policies = selectedOffer.rulesAndPolicies;
+      const rules = typeof policies === 'object' && policies !== null &&
+        !Array.isArray(policies)
+        ? (policies as Record<string, unknown>).bookingPolicies : null;
+      commercialTerms = resolveSourceBookingTerms(
+        rules, mode, arrivalRate.seasonCode,
+      );
+      if (nights < commercialTerms.minimumNights)
+        throw new Error('Stay length below booking-policy minimum of ' +
+          commercialTerms.minimumNights);
+    }
     const cleaningFee = quoted.includesServiceCharge
       ? 0 : ((await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0);
     const servicePct = quoted.includesServiceCharge
@@ -168,6 +192,7 @@ export async function computeCanonicalPriceBreakdown(
       service_fee_thb: serviceFee,
       occupancy_tax_thb: tax,
       total_thb: quoted.subtotalSatang + cleaningFee + serviceFee + tax,
+      ...(commercialTerms ? { commercialTerms } : {}),
     };
   }
 

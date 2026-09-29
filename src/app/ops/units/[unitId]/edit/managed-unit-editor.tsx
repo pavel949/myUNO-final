@@ -19,7 +19,7 @@ export default function ManagedUnitEditor({ unit }: { unit: RecordData }) {
         floor: String(data.get('floor') || ''),
         bedrooms: Number(data.get('bedrooms')), bathrooms: Number(data.get('bathrooms')),
         maxGuests: Number(data.get('maxGuests')),
-        sizeSqm: data.get('sizeSqm') ? String(data.get('sizeSqm')) : null,
+        sizeSqm: data.get('sizeSqm') ? Number(data.get('sizeSqm')) : null,
       }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Update failed');

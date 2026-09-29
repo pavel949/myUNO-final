@@ -39,6 +39,10 @@ export default async function ProviderPage() {
   }
 
   const labels = await getLabels({
+    'provider.orders.refresh': 'Refresh orders',
+    'provider.orders.needs_response': 'Awaiting response',
+    'provider.orders.to_fulfil': 'Ready to fulfil',
+    'provider.orders.untitled': 'Service order',
       'provider.orders.title': 'Order queue',
       'provider.orders.loading': 'Loading your orders…',
       'provider.orders.empty': 'No orders yet — they will appear here the moment a customer books you.',

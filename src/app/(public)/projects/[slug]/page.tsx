@@ -246,6 +246,12 @@ export default async function ProjectLandingPage({
                 key={category.key}
                 className="bg-surface-paper border border-border-line rounded-lg p-24"
               >
+                {category.coverUrl ? (
+                  <Image src={category.coverUrl}
+                    alt={categoryLabels[category.key] || category.key}
+                    width={640} height={360}
+                    className="mb-16 aspect-video w-full rounded-md object-cover" />
+                ) : null}
                 <h3 className="text-heading-3 font-bold text-text-ink mb-8">
                   {categoryLabels[category.key] || category.key}
                 </h3>

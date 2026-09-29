@@ -16,6 +16,7 @@ interface CreateUnitInput {
   maxGuests: number;
   sizeSqm?: number;
   floor?: string;
+  structureNodeId?: string | null;
   addressSupplement: string;
   descriptionKey?: string;
   amenityKeys?: string[];
@@ -38,6 +39,7 @@ interface UpdateUnitInput {
   maxGuests?: number;
   sizeSqm?: string | null;
   floor?: string | null;
+  structureNodeId?: string | null;
   addressSupplement?: string;
   descriptionKey?: string | null;
   amenityKeys?: string[];
@@ -57,6 +59,14 @@ interface UpdateUnitInput {
  * write links the canonical row whenever one exists. Commercial Unit columns
  * mirror the category for compatibility rather than defining a second price.
  */
+async function assertStructureScope(projectId: string, structureNodeId?: string | null) {
+  if (!structureNodeId) return;
+  const node = await prisma.projectStructureNode.findFirst({
+    where: { id: structureNodeId, projectId }, select: { id: true },
+  });
+  if (!node) throw new Error('Structure node does not belong to this project');
+}
+
 async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?: string | null) {
   if (!categoryKey) return null;
   return prisma.inventoryCategory.findUnique({
@@ -92,6 +102,7 @@ export async function createUnit(input: CreateUnitInput) {
     maxGuests,
     sizeSqm,
     floor,
+    structureNodeId,
     addressSupplement,
     descriptionKey,
     amenityKeys = [],
@@ -146,6 +157,8 @@ export async function createUnit(input: CreateUnitInput) {
     throw new Error('Inventory category does not belong to this project');
   }
 
+  await assertStructureScope(projectId, structureNodeId);
+
   const unit = await prisma.unit.create({
     data: {
       projectId,
@@ -159,6 +172,7 @@ export async function createUnit(input: CreateUnitInput) {
       maxGuests,
       sizeSqm: sizeSqm || null,
       floor: floor || null,
+      structureNodeId: structureNodeId ?? null,
       addressSupplement,
       descriptionKey: descriptionKey || null,
       amenityKeys,
@@ -225,6 +239,7 @@ export async function updateUnit(input: UpdateUnitInput) {
     maxGuests,
     sizeSqm,
     floor,
+    structureNodeId,
     addressSupplement,
     descriptionKey,
     amenityKeys,
@@ -276,6 +291,7 @@ export async function updateUnit(input: UpdateUnitInput) {
   await assertCatalogKeys(prisma, 'catalog.unit_categories', input.categoryKey, {
     projectId: unit.projectId,
   });
+  await assertStructureScope(unit.projectId, structureNodeId);
 
   // Resolve the resulting category on every update. That keeps the compatibility
   // commercial columns synchronized even when an older caller tries to write a
@@ -320,6 +336,7 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(maxGuests !== undefined && { maxGuests }),
       ...(sizeSqm !== undefined && { sizeSqm }),
       ...(floor !== undefined && { floor }),
+      ...(structureNodeId !== undefined && { structureNodeId }),
       ...(addressSupplement !== undefined && { addressSupplement }),
       ...(descriptionKey !== undefined && { descriptionKey }),
       ...(amenityKeys !== undefined && { amenityKeys }),
@@ -392,6 +409,7 @@ export async function getUnitDetail(unitId: string) {
     include: {
       project: true,
       inventoryCategory: true,
+      structureNode: { include: { parent: true } },
       owner: true,
       engagements: {
         orderBy: { createdAt: 'desc' },

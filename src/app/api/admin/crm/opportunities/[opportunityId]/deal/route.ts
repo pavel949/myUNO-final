@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { propertyDealJson } from '@/modules/crm/property-deal-serialization';
 import { bahtToSatang } from '@/lib/money';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import {
@@ -44,7 +45,7 @@ export async function GET(_req:NextRequest,{params}:Params){
       }},
     },
   });
-  return opportunity?NextResponse.json(opportunity):
+  return opportunity?NextResponse.json(propertyDealJson(opportunity)):
     NextResponse.json({error:'opportunity_not_found'},{status:404});
 }
 
@@ -66,7 +67,7 @@ export async function POST(req:NextRequest,{params}:Params){
       endsOn:parseDate(body.endsOn,'endsOn'),
       termsSnapshot:terms(body.termsSnapshot??{}),
     });
-    return NextResponse.json(deal,{status:201});
+    return NextResponse.json(propertyDealJson(deal),{status:201});
   }catch(error){return failed(error,'Unable to create agreement');}
 }
 
@@ -82,6 +83,6 @@ export async function PATCH(req:NextRequest,{params}:Params){
     if(body.endsOn!==undefined)data.endsOn=parseDate(body.endsOn,'endsOn');
     if(body.termsSnapshot!==undefined)data.termsSnapshot=terms(body.termsSnapshot);
     const deal=await updateDraftPropertyDeal(prisma,params.opportunityId,data);
-    return NextResponse.json(deal);
+    return NextResponse.json(propertyDealJson(deal));
   }catch(error){return failed(error,'Unable to edit agreement');}
 }

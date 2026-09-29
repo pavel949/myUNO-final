@@ -98,16 +98,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     if (body.action === 'channel_mapping') {
       if (body.syncState === 'ari_push') throw new Error('ARI push cannot be marked manually; connect a verified ARI provider first');
-      const offeringType = body.offeringType || 'short_stay';
+      const authority = await layantaraAuthority(params.id);
+      const requestedType = body.offeringType || (authority.linked ? 'short_term_stay' : 'short_stay');
+      const stayType = requestedType === 'short_stay' || requestedType === 'short_term_stay';
+      const offeringType = authority.linked && stayType ? 'short_term_stay' : requestedType;
       const existingOffering = body.offeringId
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
         : await prisma.commercialOffering.findFirst({
-            where: { unitId: params.id, offeringType },
+            where: { unitId: params.id,
+              offeringType: stayType
+                ? { in: ['short_term_stay', 'short_stay'] }
+                : offeringType },
             orderBy: { createdAt: 'asc' },
           });
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
+      // Mapping a channel must not activate a source-owned Layantara offer.
       const offering = existingOffering || await prisma.commercialOffering.create({
-        data: { unitId: params.id, offeringType, status: 'active' },
+        data: { unitId: params.id, offeringType,
+          status: authority.linked ? 'draft' : 'active' },
       });
       const mapping = await prisma.channelMapping.upsert({
         where: { offeringId_channel: { offeringId: offering.id, channel: body.channel } },

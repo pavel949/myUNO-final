@@ -127,7 +127,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         });
         unitId = unit.id;
         if (ownerIdentityId) {
-          await tx.roleAssignment.create({ data: { identityId: ownerIdentityId, role: 'owner', scopeType: 'unit', unitId: unit.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
+          await tx.roleAssignment.create({ data: { identityId: ownerIdentityId, role: 'owner', scopeType: 'unit', projectId, unitId: unit.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
           await tx.ownershipPeriod.create({
             data: { unitId, ownerIdentityId, startsOn: new Date(new Date().toISOString().slice(0, 10)), recordedByIdentityId: guard.actorIdentityId, note: 'Verified during property submission conversion' },
           });

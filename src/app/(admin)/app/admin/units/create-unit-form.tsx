@@ -24,11 +24,11 @@ type Labels = Record<string, string>;
 
 export default function CreateUnitForm({
   projects,
-  categories,
+  categories = [],
   labels,
 }: {
   projects: Array<{ id: string; name: string }>;
-  categories: Array<{ id: string; projectId: string; name: string }>;
+  categories?: Array<{ id: string; projectId: string; name: string }>;
   labels: Labels;
 }) {
   const router = useRouter();

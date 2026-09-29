@@ -2,63 +2,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-
-/**
- * POST /api/admin/units/[id]/media — attach an uploaded MediaAsset to a
- * unit's gallery; { mediaAssetId, cover?: boolean } sets it as the cover.
- * Admin-only.
- */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const guard = await requireAdmin();
-    if (!guard.ok) return guard.error;
-
-    const { mediaAssetId, cover } = await req.json();
-    if (!mediaAssetId) {
-      throw createPublicError('invalid request: mediaAssetId is required', 400);
-    }
-
-    const [unit, asset] = await Promise.all([
-      prisma.unit.findUnique({ where: { id: params.id }, select: { id: true } }),
-      prisma.mediaAsset.findUnique({ where: { id: mediaAssetId }, select: { id: true } }),
-    ]);
-    if (!unit || !asset) {
-      throw createPublicError('not found', 404);
-    }
-
-    await prisma.unitMedia.upsert({
-      where: { unitId_mediaId: { unitId: unit.id, mediaId: asset.id } },
-      create: { unitId: unit.id, mediaId: asset.id, sort: 0 },
-      update: {},
-    });
-
-    if (cover) {
-      await prisma.unit.update({
-        where: { id: unit.id },
-        data: { coverMediaId: asset.id },
-      });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return handleError(error);
-  }
-}
+import { validateGalleryOrder, nextCover } from '@/modules/media/gallery-policy';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
-  const unit = await prisma.unit.findUnique({
+  const target = await prisma.unit.findUnique({
     where: { id: params.id },
-    select: {
-      coverMediaId: true,
-      media: { include: { media: true }, orderBy: { sort: 'asc' } },
+    select: { coverMediaId: true,
+      media: { include: { media: true }, orderBy: [{ sort: 'asc' }, { mediaId: 'asc' }] },
     },
   });
-  return unit ? NextResponse.json(unit) : NextResponse.json({ error: 'not found' }, { status: 404 });
+  return target ? NextResponse.json(target) : NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+}
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.error;
+    const { mediaAssetId, cover } = await req.json();
+    if (typeof mediaAssetId !== 'string' || !mediaAssetId) {
+      throw createPublicError('mediaAssetId is required', 400);
+    }
+    await prisma.$transaction(async tx => {
+      const [target, asset] = await Promise.all([
+        tx.unit.findUnique({ where: { id: params.id }, select: { id: true } }),
+        tx.mediaAsset.findUnique({ where: { id: mediaAssetId }, select: { id: true, kind: true } }),
+      ]);
+      if (!target || !asset) throw createPublicError('not found', 404);
+      if (asset.kind !== 'photo') throw createPublicError('Only photo assets can join a gallery', 400);
+      const count = await tx.unitMedia.count({ where: { unitId: params.id } });
+      await tx.unitMedia.upsert({
+        where: { unitId_mediaId: { unitId: params.id, mediaId: mediaAssetId } },
+        create: { unitId: params.id, mediaId: mediaAssetId, sort: count },
+        update: {},
+      });
+      if (cover || count === 0) await tx.unit.update({
+        where: { id: params.id }, data: { coverMediaId: mediaAssetId },
+      });
+    });
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error) { return handleError(error); }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -66,17 +50,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;
     const body = await req.json();
-    const orderedIds = Array.isArray(body.orderedMediaIds) ? body.orderedMediaIds : [];
-    await prisma.$transaction([
-      ...orderedIds.map((mediaId: string, sort: number) =>
-        prisma.unitMedia.update({ where: { unitId_mediaId: { unitId: params.id, mediaId } }, data: { sort } })
-      ),
-      ...(body.coverMediaId ? [prisma.unit.update({ where: { id: params.id }, data: { coverMediaId: body.coverMediaId } })] : []),
-    ]);
+    await prisma.$transaction(async tx => {
+      const target = await tx.unit.findUnique({ where: { id: params.id }, select: { id: true } });
+      if (!target) throw createPublicError('Unit not found', 404);
+      const existing = await tx.unitMedia.findMany({
+        where: { unitId: params.id }, select: { mediaId: true },
+      });
+      let order: ReturnType<typeof validateGalleryOrder>;
+      try {
+        order = validateGalleryOrder(existing.map(link => link.mediaId), body.orderedMediaIds, body.coverMediaId);
+      } catch (error) {
+        throw createPublicError(error instanceof Error ? error.message : 'Invalid gallery order', 400);
+      }
+      for (const [sort, mediaId] of order.ordered.entries()) {
+        await tx.unitMedia.update({
+          where: { unitId_mediaId: { unitId: params.id, mediaId } }, data: { sort },
+        });
+      }
+      if (order.cover !== undefined) await tx.unit.update({
+        where: { id: params.id }, data: { coverMediaId: order.cover },
+      });
+    });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return handleError(error);
-  }
+  } catch (error) { return handleError(error); }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
@@ -84,14 +80,28 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;
     const mediaId = req.nextUrl.searchParams.get('mediaId');
-    if (!mediaId) throw createPublicError('invalid request: mediaId is required', 400);
-    await prisma.$transaction(async (tx) => {
-      await tx.unitMedia.delete({ where: { unitId_mediaId: { unitId: params.id, mediaId } } });
-      const unit = await tx.unit.findUnique({ where: { id: params.id }, select: { coverMediaId: true } });
-      if (unit?.coverMediaId === mediaId) await tx.unit.update({ where: { id: params.id }, data: { coverMediaId: null } });
+    if (!mediaId) throw createPublicError('mediaId is required', 400);
+    await prisma.$transaction(async tx => {
+      const link = await tx.unitMedia.findUnique({
+        where: { unitId_mediaId: { unitId: params.id, mediaId } },
+      });
+      if (!link) throw createPublicError('Photo not attached to this gallery', 404);
+      await tx.unitMedia.delete({
+        where: { unitId_mediaId: { unitId: params.id, mediaId } },
+      });
+      const target = await tx.unit.findUnique({
+        where: { id: params.id }, select: { coverMediaId: true },
+      });
+      const remaining = await tx.unitMedia.findMany({
+        where: { unitId: params.id }, select: { mediaId: true },
+        orderBy: [{ sort: 'asc' }, { mediaId: 'asc' }],
+      });
+      const replacement = nextCover(target?.coverMediaId ?? null, mediaId, remaining);
+      if (replacement !== target?.coverMediaId) await tx.unit.update({
+        where: { id: params.id }, data: { coverMediaId: replacement },
+      });
     });
+    // Safe unlink: shared MediaAsset remains available in other galleries.
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return handleError(error);
-  }
+  } catch (error) { return handleError(error); }
 }

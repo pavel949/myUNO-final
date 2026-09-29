@@ -129,6 +129,15 @@ export async function getPropertyReadiness(
           'Validate the source tariff grid and enable the canonical price engine before sale.', options);
       }
     }
+    // A property's physical facts and title are shared, but commercial
+    // activation is specific to the enabled offering. A sale-only or yearly
+    // rental must not be forced to turn on short-stay inventory to go live.
+    const activeOfferings = unit.commercialOfferings.filter(offering => offering.status === 'active');
+    const hasStayOffering = activeOfferings.some(offering =>
+      ['short_term_stay', 'short_stay', 'serviced_residence'].includes(offering.offeringType));
+    if (project.projectType && activeOfferings.length === 0) {
+      add('blocker', 'unit.offering', 'Activate at least one commercial offering before publication.', options);
+    }
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);
     if (!unit.descriptionKey) add('blocker', 'unit.description', 'Add a unit description key.', options);
@@ -138,27 +147,21 @@ export async function getPropertyReadiness(
     if (!unit.coverMediaId || unit.media.length < 3) {
       add('blocker', 'unit.media', 'Upload at least three photos and choose a cover.', options);
     }
-    if (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0)) {
+    if (hasStayOffering && (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0))) {
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);
     }
     if (unit.engagements.length === 0) add('blocker', 'unit.engagement', 'Record an active management engagement.', options);
-    if (project.projectType && !unit.commercialOfferings.some((offering) =>
-      ['short_term_stay', 'short_stay'].includes(offering.offeringType) && offering.status === 'active'
-    )) {
-      add('blocker', 'unit.stay_offering', 'Activate a short-stay commercial offering before publication.', options);
-    }
-
     if (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed')) {
       add('blocker', 'unit.permitted_use', 'Confirm a permitted-use compliance record.', options);
     }
     const completed = new Set(unit.mobilizationChecklist.filter((item) => item.status === 'done' || item.status === 'skipped').map((item) => item.step));
     if (completed.size < 7) add('blocker', 'unit.mobilization', 'Complete all seven mobilization steps.', options);
-    if (
+    if (hasStayOffering && (
       !unit.inventoryCategory ||
       unit.inventoryCategory.status !== 'live' ||
       unit.inventoryCategory.baseNightlyThb <= 0 ||
       unit.inventoryCategory.minNights < 1
-    ) {
+    )) {
       add(
         'blocker',
         'unit.pricing',
@@ -171,7 +174,7 @@ export async function getPropertyReadiness(
     const mappings = unit.commercialOfferings.flatMap((offering) => offering.channelMappings);
     if (mappings.length === 0 && unit.integrationAccounts.length === 0) {
       add('warning', 'unit.channels', 'No OTA or calendar connection is configured.', options);
-    } else if (mappings.some((mapping) => mapping.syncState !== 'ari_push')) {
+    } else if (hasStayOffering && mappings.some((mapping) => mapping.syncState !== 'ari_push')) {
       add('warning', 'unit.ota_push', 'OTA connection has no ARI push. A direct booking may not close external availability immediately.', options);
     }
   }

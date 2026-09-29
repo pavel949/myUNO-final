@@ -2,9 +2,9 @@
 -- separate authorities; closing a deal does not fabricate a payment or change
 -- ownership. Monetary values are integer satang in THB.
 CREATE TABLE public.property_deal (
-  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  id text PRIMARY KEY,
   created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp(3) NOT NULL,
   opportunity_id text NOT NULL REFERENCES public.crm_opportunity(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   offering_id text NOT NULL REFERENCES public.commercial_offering(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   unit_id text NOT NULL REFERENCES public.unit(id) ON DELETE RESTRICT ON UPDATE CASCADE,

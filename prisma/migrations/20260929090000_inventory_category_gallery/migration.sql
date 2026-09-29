@@ -5,10 +5,10 @@ ALTER TABLE public.inventory_category
   ADD COLUMN IF NOT EXISTS cover_media_id text;
 ALTER TABLE public.inventory_category
   ADD CONSTRAINT inventory_category_cover_media_id_fkey
-  FOREIGN KEY (cover_media_id) REFERENCES public.media_asset(id) ON DELETE SET NULL;
+  FOREIGN KEY (cover_media_id) REFERENCES public.media_asset(id) ON DELETE SET NULL ON UPDATE CASCADE;
 CREATE TABLE IF NOT EXISTS public.inventory_category_media (
-  category_id text NOT NULL REFERENCES public.inventory_category(id) ON DELETE CASCADE,
-  media_id text NOT NULL REFERENCES public.media_asset(id) ON DELETE CASCADE,
+  category_id text NOT NULL REFERENCES public.inventory_category(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  media_id text NOT NULL REFERENCES public.media_asset(id) ON DELETE CASCADE ON UPDATE CASCADE,
   sort integer NOT NULL DEFAULT 0,
   PRIMARY KEY (category_id,media_id)
 );

@@ -14,7 +14,7 @@
 | Source future feed (checkout after 2026-09-29) | 69 confirmed, 1 pending, **11 cancelled** | Do not create restrictions from the 11 cancellations |
 | Target resort | `layantara-villas` draft; 39 draft Unit / 8 draft InventoryCategory | None is publicly sellable |
 | Target media | 67 media links, exact-unit covers on 5 units | The linked source URLs are not independently verified target-owned bytes |
-| Target protective occupancy | 83 `ota_import` blocks, all 83 `external_ref` non-null and distinct, plus 1 `owner_hold` | 84 blocks in total; 70 future target blocks; **not** 95 imported bookings |
+| Target protective occupancy | 83 `ota_import` blocks, all 83 `external_ref` non-null and distinct, plus 1 `owner_hold` | 84 blocks in total; 70 future target blocks; point-in-time rowwise comparison **84/84 exact** across source ID, unit, dates and reason; **not** 95 imported bookings |
 | Target commercial offers | 39 draft `short_term_stay` + 39 draft `long_term_rental`; zero `taxPolicyVerified=true` | Do not activate rates/offerings |
 | Target Booking | 0 canonical bookings | Protective blocks are not booking/payment/guest records |
 | Current writer | `external_system(system_key='layantara_os', environment='source-live')` has `bookingAuthority='source'`, `cutoverVerified=false`, `mode='read_only'` | The source remains booking authority; leave protective blocks intact |
@@ -22,9 +22,11 @@
 
 ### What the apparent “95 vs 84” discrepancy means
 
-`source_reservation_blocks` has **95** entries but includes **12 cancelled** rows. Its **83** non-cancelled entries correspond to the **83** target imported protective blocks in aggregate; the 84th target record is a separate owner hold. The source feed is not the only occupancy source and an aggregate count is not a row-level proof: the existing reconciliation report records exact 84 active source-to-target protections from its broader source snapshot. Re-run rowwise key/date/unit comparison and delta reconciliation immediately before handover. Do not assume that the latest source feed, old workbook and other operational tables remain unchanged.
+`source_reservation_blocks` has **95** entries but includes **12 cancelled** rows. Its **83** non-cancelled entries correspond to the **83** target imported protective blocks in aggregate; the 84th target record is a separate owner hold. The source feed is not the only occupancy source. A subsequent **read-only, rowwise** comparison used the source `operational_occupancies` active rows, target `blocked_date.external_ref='layantara:occupancy:<source id>'`, and the authoritative source-inventory-ID → target Unit mapping in `external_mapping`. The result was **84/84 exact matches** for source ID, physical unit, check-in, exclusive checkout and reason (`imported_reservation` → `ota_import`, `owner_stay` → `owner_hold`); zero unmatched, date, unit or reason mismatches. This is a point-in-time, independently refreshed comparison, not an atomic cross-database snapshot. Re-run it and reconcile all new source deltas immediately before handover. Do not assume that the latest source feed, old workbook and other operational tables remain unchanged.
 
 ## Reproducible SQL — counts only; no PII
+
+For the independent rowwise check, query `operational_occupancies` with `state='active'` and return only `id`, `inventory_id`, `occupancy_kind`, `check_in`, `check_out`; query target `blocked_date` with `external_ref LIKE 'layantara:occupancy:%'` and target `external_mapping` with `system_key='layantara_os'` and `entity_type='unit'`. Compare the source UUID encoded in each target `external_ref`, mapped physical unit, check-in, exclusive checkout, and owner/import reason. Do not export guest names, source payloads or payment details. This comparison was performed read-only and returned all 84 exact matches.
 
 Source:
 ```sql

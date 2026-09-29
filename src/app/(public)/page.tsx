@@ -108,10 +108,10 @@ export default async function LandingPage() {
   const heroImage = heroProject ? projectPresentationImage(heroProject.id, heroProject.coverUrl) : projectPresentationImage('homepage', null);
   const organizationJsonLd = { '@context': 'https://schema.org', '@type': 'Organization', name: 'myUNO', legalName: 'Ignatev Estate Co., Ltd', url: siteUrl(), areaServed: 'Phuket, Thailand' };
   const destinations = [
-    { name: 'Bang Tao', subtitle: 'Coastal living', href: '/projects' },
-    { name: 'Layan', subtitle: 'Privacy & nature', href: '/projects' },
-    { name: 'Cherng Talay', subtitle: 'Connected island life', href: '/projects' },
-    { name: 'Nai Yang', subtitle: 'A slower pace', href: '/projects' },
+    { name: 'Bang Tao', subtitle: 'Coastal living', href: '/search?areaSlug=bang-tao' },
+    { name: 'Layan', subtitle: 'Privacy & nature', href: '/search?areaSlug=layan' },
+    { name: 'Cherng Talay', subtitle: 'Connected island life', href: '/search?areaSlug=cherng-talay' },
+    { name: 'Nai Yang', subtitle: 'A slower pace', href: '/search?areaSlug=nai-yang' },
   ];
   return (
     <main className="min-h-screen bg-surface-ivory">

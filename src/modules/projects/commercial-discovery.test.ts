@@ -50,6 +50,11 @@ describe('public sale and long-lease publication evidence', () => {
     input.engagements[0].endsOn = now;
     expect(eligiblePublicHomeIntents(input, now)).toEqual(['buy']);
   });
+  it('does not offer long-term possession while a source PMS still controls occupancy', () => {
+    const input = base();
+    input.sourceBookingOwned = true;
+    expect(eligiblePublicHomeIntents(input, now)).toEqual(['buy']);
+  });
   it('never publishes modes with only paused offerings', () => {
     const input = base();
     input.commercialOfferings.forEach(o => o.status = 'draft');

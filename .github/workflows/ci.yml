@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test platform inventory discovery
+        run: npm run audit:inventory:test
+
       - name: Run linter
         run: npm run lint
 

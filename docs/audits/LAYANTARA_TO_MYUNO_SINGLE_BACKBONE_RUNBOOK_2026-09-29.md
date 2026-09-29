@@ -1,6 +1,9 @@
 # LayantaraOS → myUNO OS: single-backbone migration runbook
 Date: 2026-09-29. Change control: consolidated PR #139. Source Supabase project `omwoglpcwaiflaprgrne`; target `burcnghheyzbzffzgmjz`. **This is not cutover approval.**
 
+## Scope amendment (2026-09-29): commercial-engine release
+Historical Layantara bookings and finance remain immutable archival evidence and do **not** block the catalog/tariff-engine release. Only current/future occupancy, source-authority handover, validated pricing/booking policy, safety and compliance block live bookings. Historical booking and payment conversion is a separate optional archival workstream. See `docs/audits/REVENUE_ENGINE_CONSOLIDATION_2026-09-29.md` for the updated execution contract.
+
 ## Architecture and non-negotiable authority
 myUNO is the sole future application/backbone: Identity/RoleAssignment, Project → InventoryCategory → Unit, CommercialOffering and one server quote, Booking and BlockedDate, PMS work projections, Payment/Refund/Ledger, OwnerStatement/Owner Hub, ContentKey/Translation, MediaAsset, and one event/outbox model. Source LayantaraOS is a TEMPORARY read-only legacy source / audit archive until an independently signed cutover. Source and target must never both accept new operational writes for the same physical unit. No per-resort fork or duplicate PMS database is permitted after cutover; tenant-scoped configuration handles new complexes.
 

@@ -7,12 +7,12 @@ import ConvertPropertySubmission from './convert-client';
 export const dynamic = 'force-dynamic';
 
 export default async function PropertySubmissionsPage() {
-  const [rows, projects] = await Promise.all([prisma.crmOpportunity.findMany({
+  const [rows, projects, organizations] = await Promise.all([prisma.crmOpportunity.findMany({
     where: { source: 'myuno_property_submission_v1' },
     include: { identity: { select: { firstName: true, lastName: true, email: true } }, project: { select: { name: true } } },
     orderBy: { updatedAt: 'desc' },
     take: 100,
-  }), prisma.project.findMany({ where: { status: { not: 'archived' } }, orderBy: { name: 'asc' }, select: { id: true, name: true } })]);
+  }), prisma.project.findMany({ where: { status: { not: 'archived' } }, orderBy: { name: 'asc' }, select: { id: true, name: true } }), prisma.organization.findMany({ where: { status: 'active', orgType: 'management_company' }, select: { id: true, name: true, projectId: true }, orderBy: { name: 'asc' } })]);
   const mediaIds = [...new Set(rows.flatMap(row => {
     const data = row.requirements as Record<string, unknown>;
     return [...(Array.isArray(data.photos) ? data.photos : []), ...(Array.isArray(data.projectPhotos) ? data.projectPhotos : [])].filter((id): id is string => typeof id === 'string');
@@ -36,7 +36,7 @@ export default async function PropertySubmissionsPage() {
         <p className="mt-8 whitespace-pre-wrap text-small">{String(data.description || '')}</p>
         {row.projectId && <Link href={`/app/admin/projects/${row.projectId}`} className="mt-12 inline-block text-brand-andaman underline">Open existing project →</Link>}
         <p className="mt-12 text-small text-text-secondary">Verify authority, duplicate inventory and the project's real-world location. Conversion never publishes an offer.</p>
-        <ConvertPropertySubmission id={row.id} status={String(data.status || 'draft')} existingProjectId={row.projectId} projects={projects} canonicalProjectId={typeof data.canonicalProjectId === 'string' ? data.canonicalProjectId : null} canonicalUnitId={typeof data.canonicalUnitId === 'string' ? data.canonicalUnitId : null} />
+        <ConvertPropertySubmission id={row.id} status={String(data.status || 'draft')} existingProjectId={row.projectId} projects={projects} organizations={organizations} applicantKind={String(data.kind || '')} canonicalProjectId={typeof data.canonicalProjectId === 'string' ? data.canonicalProjectId : null} canonicalUnitId={typeof data.canonicalUnitId === 'string' ? data.canonicalUnitId : null} />
       </article>;
     })}</div>}
   </main>;

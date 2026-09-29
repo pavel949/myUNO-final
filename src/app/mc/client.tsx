@@ -234,6 +234,11 @@ export function MCDashboardClient({
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   const [serviceUnitId, setServiceUnitId] = useState(units[0]?.id ?? '');
 
+  const requestedBookings = bookings.filter((booking) => booking.status === 'requested').length;
+  const actionableServiceOrders = serviceOrders.filter((order) =>
+    order.status === 'placed' || order.status === 'paid'
+  ).length;
+
   const tabs = [
     { key: 'overview' as const, label: labels['mc.tabs.overview'] },
     { key: 'bookings' as const, label: labels['mc.tabs.bookings'] },
@@ -568,7 +573,7 @@ export function MCDashboardClient({
     <main className="min-h-screen bg-surface-ivory">
       {/* Header */}
       <section className="bg-surface-paper border-b border-border-line px-24 py-16">
-        <div className="max-w-7xl mx-auto flex items-start justify-between gap-16">
+        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row xl:items-start xl:justify-between gap-16">
           <div>
             <h1 className="font-display text-display-xl font-semibold text-text-ink mb-4">
               {labels['mc.portal.title']}
@@ -599,7 +604,7 @@ export function MCDashboardClient({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-12 shrink-0">
+          <nav aria-label={labels['mc.portal.title']} className="flex flex-wrap items-center gap-8 xl:justify-end">
             <Link
               href={`/mc/requests?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
               className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
@@ -642,7 +647,7 @@ export function MCDashboardClient({
             >
               {labels['mc.nav.announcements']}
             </Link>
-          </div>
+          </nav>
         </div>
       </section>
 
@@ -663,7 +668,9 @@ export function MCDashboardClient({
             {tabs.map((tab) => (
               <button
                 key={tab.key}
+                type="button"
                 onClick={() => setActiveTab(tab.key)}
+                aria-pressed={activeTab === tab.key}
                 className={`py-16 font-semibold text-body border-b-3 whitespace-nowrap transition ${
                   activeTab === tab.key
                     ? 'border-brand-andaman text-brand-andaman'
@@ -682,6 +689,27 @@ export function MCDashboardClient({
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            {/* Action queues use the same scoped booking, ticket and service records as their tabs. */}
+            <div className="mb-24 rounded-lg border border-border-line bg-surface-paper p-24">
+              <h2 className="text-heading-2 font-bold text-text-ink mb-8">{labels['mc.attention.title']}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
+                {[
+                  { tab: 'bookings' as const, label: labels['mc.attention.requests'], count: requestedBookings },
+                  { tab: 'tickets' as const, label: labels['mc.attention.tickets'], count: dashboard.openTicketsCount },
+                  { tab: 'service_orders' as const, label: labels['mc.attention.services'], count: actionableServiceOrders },
+                ].map((item) => (
+                  <button
+                    key={item.tab}
+                    type="button"
+                    onClick={() => setActiveTab(item.tab)}
+                    className="flex items-center justify-between rounded-md border border-border-line p-16 text-left hover:border-brand-andaman focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
+                  >
+                    <span className="text-small text-text-ink">{item.label}</span>
+                    <span className="font-display text-title font-semibold tabular-nums text-brand-andaman">{item.count} →</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Stats Tiles */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-24 mb-40">
               <StatTile label={labels['mc.stats.units']} value={dashboard.unitsCount} variant="occupancy" />

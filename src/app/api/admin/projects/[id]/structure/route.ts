@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { structureKinds, type StructureKind } from '@/modules/projects/structure-kinds';
 
-export const structureKinds = [
-  'phase', 'cluster', 'building', 'tower', 'wing',
-  'floor', 'block', 'zone', 'standalone',
-] as const;
-export type StructureKind = (typeof structureKinds)[number];
 const codePattern = /^[a-z0-9][a-z0-9_-]{0,79}$/;
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {

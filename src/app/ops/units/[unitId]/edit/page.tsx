@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
+import ManagedGallery from '@/components/property/ManagedGallery';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
@@ -23,6 +24,6 @@ export default async function EditManagedUnitPage({ params }: { params: { unitId
     <Link href={mc && !staff ? `/mc/units/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
     <h1 className="mt-12 font-display text-display-xl text-text-ink">Edit {unit.name}</h1>
     <p className="mt-8 text-text-secondary">{unit.project.name} · {unit.status} · Canonical physical record</p>
-    <ManagedUnitEditor unit={unit}/>
+    <ManagedUnitEditor unit={unit}/><ManagedGallery scope="unit" id={unit.id}/>
   </div></main>;
 }

@@ -30,7 +30,7 @@ Existing repository docs remain evidence of current behavior. Where they conflic
 
 ## 0.1 Mandatory current-state assessment companion
 
-Before any broad “fix all”, release-readiness, property migration, cross-domain implementation or platform-wide UI work, follow [AI Full-Platform Assessment Contract](docs/audits/AI_FULL_PLATFORM_AUDIT.md) and its [Flow / Surface / Writer Matrix](docs/audits/AI_FLOW_SURFACE_MATRIX.md). Run `npm run audit:inventory` to discover live repository routes, APIs, modules, tests and Prisma models. The generated inventory is not E2E or production evidence. Record branch/main/deploy differences, nine readiness dimensions and CO01–CO30 / AT01–AT30 status separately. The canonical product decisions below remain authoritative.
+For the Phuket one-stop-shop implementation scope, read [PRD — Integrated Property, Hospitality & Services](docs/PRD_MYUNO_ONE_STOP_SHOP.md). Before any broad “fix all”, release-readiness, property migration, cross-domain implementation or platform-wide UI work, follow [AI Full-Platform Assessment Contract](docs/audits/AI_FULL_PLATFORM_AUDIT.md) and its [Flow / Surface / Writer Matrix](docs/audits/AI_FLOW_SURFACE_MATRIX.md). Run `npm run audit:inventory` to discover live repository routes, APIs, modules, tests and Prisma models. The generated inventory is not E2E or production evidence. Record branch/main/deploy differences, nine readiness dimensions and CO01–CO30 / AT01–AT30 status separately. The canonical product decisions below remain authoritative.
 
 ## 1. Mission
 

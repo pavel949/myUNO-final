@@ -38,12 +38,14 @@ export async function getPropertyReadiness(
       orgRoles: true,
       ratePlans: true,
       integrationAccounts: true,
+      regulatoryCredentials: true,
       units: {
         include: {
           media: true,
           sleepingSpaces: { include: { beds: true } },
           engagements: { where: { status: 'active' } },
           complianceRecords: true,
+          regulatoryCredentials: true,
           mobilizationChecklist: true,
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
@@ -135,6 +137,8 @@ export async function getPropertyReadiness(
     const activeOfferings = unit.commercialOfferings.filter(offering => offering.status === 'active');
     const hasStayOffering = activeOfferings.some(offering =>
       ['short_term_stay', 'short_stay', 'serviced_residence'].includes(offering.offeringType));
+    const hasLongTermOffering = activeOfferings.some(offering => offering.offeringType === 'long_term_rental');
+    const hasSaleOffering = activeOfferings.some(offering => offering.offeringType === 'sale');
     if (project.projectType && activeOfferings.length === 0) {
       add('blocker', 'unit.offering', 'Activate at least one commercial offering before publication.', options);
     }
@@ -151,11 +155,18 @@ export async function getPropertyReadiness(
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);
     }
     if (unit.engagements.length === 0) add('blocker', 'unit.engagement', 'Record an active management engagement.', options);
-    if (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed')) {
+    if ((hasStayOffering || hasLongTermOffering) &&
+      (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed'))) {
       add('blocker', 'unit.permitted_use', 'Confirm a permitted-use compliance record.', options);
     }
+    if (hasSaleOffering && ![...project.regulatoryCredentials, ...unit.regulatoryCredentials].some(credential =>
+      credential.credentialType === 'title_legal_use' && credential.status === 'active')) {
+      add('blocker', 'unit.sale_title', 'Verify active title and legal-use evidence before publishing a sale offering.', options);
+    }
     const completed = new Set(unit.mobilizationChecklist.filter((item) => item.status === 'done' || item.status === 'skipped').map((item) => item.step));
-    if (completed.size < 7) add('blocker', 'unit.mobilization', 'Complete all seven mobilization steps.', options);
+    if (hasStayOffering && completed.size < 7) {
+      add('blocker', 'unit.mobilization', 'Complete all seven hospitality mobilization steps.', options);
+    }
     if (hasStayOffering && (
       !unit.inventoryCategory ||
       unit.inventoryCategory.status !== 'live' ||

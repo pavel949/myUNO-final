@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { subscribe } from '@/modules/comms/notification.bus';
+import { subscribe } from '@/modules/comms';
 
 /**
  * GET /api/notifications/stream

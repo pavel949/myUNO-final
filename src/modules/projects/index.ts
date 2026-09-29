@@ -123,6 +123,8 @@ export {
   type PropertyReadinessItem,
 } from './property-readiness';
 
+export { ensureSeedInventoryCategory } from './inventory.seed';
+
 export {
   PROJECT_TYPES,
   ORGANIZATION_ROLES,

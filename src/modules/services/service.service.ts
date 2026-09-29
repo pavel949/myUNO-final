@@ -1,6 +1,6 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
 import { getConfig, assertCatalogKeys } from '@/modules/config';
-import type { Locale } from '@/modules/content/types';
+import type { Locale } from '@/modules/content';
 
 /**
  * A service's title/description are per-service data, not content keys

@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { getConfig } from '@/modules/config/config.service';
-import { updateConfigParameter, clearConfigOverride } from '@/modules/config/edit.service';
+import { getConfig, updateConfigParameter, clearConfigOverride } from '@/modules/config';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 

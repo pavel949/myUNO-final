@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { canWithAccess } from '@/modules/core/authority.service';
+import { can } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { fileDepositClaim } from '@/modules/finance';
 import { logAudit } from '@/modules/audit';
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-  const allowed = await canWithAccess(prisma, {
+  const allowed = await can({
     identity,
     action: 'stays:record_checkin_checkout_and_reports',
     requiredAccess: 'allow',

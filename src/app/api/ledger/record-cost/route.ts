@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { canWithAccess } from '@/modules/core/authority.service';
+import { can } from '@/modules/core';
 import { recordCost } from '@/modules/finance';
 import { LedgerEntryType } from '@prisma/client';
 
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (
-      !(await canWithAccess(prisma, {
+      !(await can({
         identity,
         action: 'money:record_costs_on_units',
         requiredAccess: 'allow',

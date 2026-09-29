@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ensureContentKey, setTranslation } from '@/modules/content';
-import { ensureSeedInventoryCategory } from '@/modules/projects/inventory.seed';
+import { ensureSeedInventoryCategory } from '@/modules/projects';
 
 /**
  * Seed Layantara Resort — the first real project on the platform (LY-4).

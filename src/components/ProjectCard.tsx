@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { PublicProjectCard as PublicProject } from '@/modules/projects/public.service';
+import type { PublicProjectCard as PublicProject } from '@/modules/projects';
 import { projectPresentationImage } from '@/lib/presentation-media';
 
 export interface ProjectCardLabels {

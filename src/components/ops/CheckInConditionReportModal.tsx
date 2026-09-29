@@ -2,6 +2,12 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '@/components/Button';
+// Deliberately deep, not the module's index.ts: this is a 'use client'
+// component, and @/modules/ops's barrel transitively pulls in server-only
+// code (ops-board.service -> booking's index -> home-space.service ->
+// src/lib/i18n.ts, which imports next/headers) that Next.js refuses to bundle
+// into a client component. Importing this one file keeps the client bundle
+// server-code-free without changing what's exported from the module.
 import {
   CHECK_IN_CHECKLIST_ITEMS,
   type CheckInChecklistItem,

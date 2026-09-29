@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
+// Deliberately deep, not the module's index.ts — see the identical note in
+// ../provider/route.ts: @/modules/finance's barrel also re-exports code that
+// imports `node:crypto`, which an unrelated 'use client' consumer of that
+// barrel (owner statement detail) cannot bundle.
 import { recordOwnerPayoutAtomic } from '@/modules/finance/payout-ledger.service'
 
 export const dynamic = 'force-dynamic'

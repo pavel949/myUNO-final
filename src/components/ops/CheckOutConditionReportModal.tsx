@@ -2,6 +2,10 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '@/components/Button';
+// Deliberately deep, not the module's index.ts — see the identical note in
+// CheckInConditionReportModal.tsx: this is a 'use client' component, and
+// @/modules/ops's barrel transitively pulls in server-only code that Next.js
+// refuses to bundle client-side.
 import {
   CHECK_OUT_CHECKLIST_ITEMS,
   type CheckOutChecklistItem,

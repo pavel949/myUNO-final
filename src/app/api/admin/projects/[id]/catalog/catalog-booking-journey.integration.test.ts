@@ -233,6 +233,44 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(booking.status).toBe(404);
   });
 
+  it('keeps a source-linked Layantara offer draft even when an admin maps a channel', async () => {
+    const c = await category('source_villa', '3500');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'draft', baseNightlyThb: 350_000,
+    });
+    const system = await db.externalSystem.create({ data: {
+      system_key: 'layantara_os', environment: 'source-live',
+      display_name: 'Layantara source', status: 'staging',
+      config: { bookingAuthority: 'source', cutoverVerified: false },
+    } });
+    await db.externalMapping.create({ data: {
+      external_system_id: system.id, entity_type: 'unit',
+      external_id: 'villa-source-villa', internal_id: unit.id,
+      metadata: { verified: true },
+    } });
+    const offer = () => propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'stay_offering', status: 'draft' }),
+      { params: { id: unit.id } }
+    );
+    expect((await offer()).status).toBe(201);
+    expect((await offer()).status).toBe(200);
+    expect((await propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'stay_offering', status: 'active' }),
+      { params: { id: unit.id } }
+    )).status).toBe(409);
+    expect((await propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'channel_mapping', channel: 'airbnb', syncState: 'ical_only' }),
+      { params: { id: unit.id } }
+    )).status).toBe(201);
+    const offers = await db.commercialOffering.findMany({ where: { unitId: unit.id } });
+    expect(offers).toHaveLength(1);
+    expect(offers[0]).toMatchObject({ offeringType: 'short_term_stay', status: 'draft' });
+    expect(await db.channelMapping.count({ where: { offeringId: offers[0].id } })).toBe(1);
+  });
+
   it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {
     const c = await category('garden_2br');
     const unit = await createUnit({

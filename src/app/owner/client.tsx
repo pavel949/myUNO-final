@@ -19,6 +19,7 @@ import { BarChart, LineChart, Sparkline, DeltaChip, CHART_SERIES, formatThbCompa
 import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
+import { scopeOwnerPortfolio } from './portfolio-scope';
 
 function fill(template: string, params?: Record<string, string>): string {
   if (!params) return template;
@@ -156,9 +157,8 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
   const isSingleUnit = !shape.isPortfolio;
   const currentUnit = isSingleUnit ? dashboard.units[0] : null;
-  const filteredUnits = selectedProjectId
-    ? dashboard.units.filter((u) => u.projectId === selectedProjectId)
-    : dashboard.units;
+  const portfolioScope = scopeOwnerPortfolio(dashboard.units, selectedProjectId);
+  const filteredUnits = portfolioScope.units;
   const portfolioOpenTickets = filteredUnits
     .flatMap((unit) =>
       unit.openTickets.map((ticket) => ({
@@ -169,7 +169,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  const selectedUnitIds = new Set(filteredUnits.map((unit) => unit.id));
+  const selectedUnitIds = portfolioScope.unitIds;
   const visibleAlerts = selectedProjectId
     ? alerts.filter((alert) => selectedUnitIds.has(alert.unitId))
     : alerts;
@@ -183,10 +183,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     ? trends.byProject[selectedProjectId] ?? { monthly: [], prevMonth: null }
     : trends;
   const occupancyNow = shape.isPortfolio
-    ? filteredUnits.reduce((sum, unit) => sum + unit.occupancyThisMonth, 0)
+    ? portfolioScope.occupiedNights
     : currentUnit?.occupancyThisMonth || 0;
   const revenueNow = shape.isPortfolio
-    ? filteredUnits.reduce((sum, unit) => sum + unit.revenueThisMonth, 0)
+    ? portfolioScope.bookedRevenueThb
     : currentUnit?.revenueThisMonth || 0;
 
   const chartLabels = {

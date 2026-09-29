@@ -29,7 +29,7 @@ export async function managedMediaAccess(scope: { projectId: string; unitId?: st
 export async function assertPublicPhoto(mediaAssetId: unknown, actorId: string, isAdmin: boolean) {
   if (typeof mediaAssetId !== 'string' || !mediaAssetId) return false;
   const asset = await prisma.mediaAsset.findFirst({
-    where: { id: mediaAssetId, kind: 'photo', encrypted: false,
+    where: { id: mediaAssetId, kind: 'photo', encrypted: false, mimeType: { in: ['image/jpeg', 'image/png', 'image/webp'] },
       ...(!isAdmin ? { uploadedByIdentityId: actorId } : {}) },
     select: { id: true },
   });

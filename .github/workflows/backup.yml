@@ -110,7 +110,10 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_restore --version
+          # Ubuntu's pg_wrapper may otherwise pick its older default (16) even
+          # after client-17 is installed. Use explicit 17 binaries throughout.
 
       - name: Check required configuration
         env:
@@ -133,7 +136,7 @@ jobs:
           # what makes a partial recovery ("just the ledger") possible.
           # --no-owner / --no-privileges so the dump restores into a scratch
           # database whose roles do not exist.
-          pg_dump "$BACKUP_DATABASE_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump "$BACKUP_DATABASE_URL" \
             --format=custom \
             --no-owner \
             --no-privileges \
@@ -149,7 +152,7 @@ jobs:
           set -euo pipefail
           # This is the step that makes the backup real. If the dump cannot be
           # restored, the run fails here and nothing is stored.
-          pg_restore \
+          /usr/lib/postgresql/17/bin/pg_restore \
             --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check \
             --no-owner --no-privileges \
             --exit-on-error \
@@ -160,7 +163,7 @@ jobs:
           PGPASSWORD: scratch
         run: |
           set -euo pipefail
-          q() { psql --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check -tAc "$1"; }
+          q() { /usr/lib/postgresql/17/bin/psql --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check -tAc "$1"; }
 
           tables="$(q "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';")"
           echo "Tables restored: ${tables}"

@@ -3,8 +3,8 @@
 **Status:** authoritative product, architecture and implementation specification  
 **Repository:** `pavel949/myUNO-final`  
 **Target:** `myUNO.app`  
-**Version:** 3.0  
-**Date:** 2026-09-09  
+**Version:** 3.1  
+**Date:** 2026-09-29  
 **Audience:** any capable coding agent or engineering team. Vendor-neutral.
 
 ## 0. Canonical document hierarchy
@@ -27,6 +27,10 @@
 16. `docs/canonical/DECISIONS_CHANGELOG.md`
 
 Existing repository docs remain evidence of current behavior. Where they conflict with this pack: preserve production data/safety, preserve verified behavior until migration, follow this pack as target state, and record reconciliation through an ADR/change record. No document may silently contradict another.
+
+## 0.1 Mandatory current-state assessment companion
+
+Before any broad “fix all”, release-readiness, property migration, cross-domain implementation or platform-wide UI work, follow [AI Full-Platform Assessment Contract](docs/audits/AI_FULL_PLATFORM_AUDIT.md) and its [Flow / Surface / Writer Matrix](docs/audits/AI_FLOW_SURFACE_MATRIX.md). Run `npm run audit:inventory` to discover live repository routes, APIs, modules, tests and Prisma models. The generated inventory is not E2E or production evidence. Record branch/main/deploy differences, nine readiness dimensions and CO01–CO30 / AT01–AT30 status separately. The canonical product decisions below remain authoritative.
 
 ## 1. Mission
 

@@ -8,6 +8,7 @@ import {
 } from '@/modules/booking/calendar-projection';
 import type { CalendarEntry } from '@/modules/booking/calendar-projection';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +29,13 @@ export default async function UnifiedStayCalendarPage({
   if (!user.isAdmin && !staffProjectIds.length) redirect('/');
 
   const projectWhere = user.isAdmin ? {} : { id: { in: staffProjectIds } };
-  const projects = await prisma.project.findMany({
-    where: projectWhere, select: { id: true, name: true }, orderBy: { name: 'asc' },
-  });
+  const [projects, sourceExcludedUnitIds] = await Promise.all([
+    prisma.project.findMany({
+      where: projectWhere, select: { id: true, name: true }, orderBy: { name: 'asc' },
+    }),
+    allExcludedSourceControlledUnitIds(prisma),
+  ]);
+  const sourceExcluded = new Set(sourceExcludedUnitIds);
   const authorizedIds = new Set(projects.map((project) => project.id));
   const requestedProjectId = searchParams?.projectId;
   const projectId = requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
@@ -43,8 +48,9 @@ export default async function UnifiedStayCalendarPage({
     where: unitWhere,
     select: {
       id: true, name: true, projectId: true, inventoryCategoryId: true, status: true,
-      project: { select: { name: true, status: true } },
-      inventoryCategory: { select: { name: true } },
+      project: { select: { name: true, status: true, projectType: true } },
+      inventoryCategory: { select: { name: true, status: true } },
+      commercialOfferings: { select: { offeringType: true, status: true } },
     },
     orderBy: [{ project: { name: 'asc' } }, { inventoryCategory: { name: 'asc' } }, { name: 'asc' }],
   });
@@ -159,7 +165,12 @@ export default async function UnifiedStayCalendarPage({
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({
       id: unit.id, name: unit.name, projectId: unit.projectId,
-      projectName: unit.project.name, sellable: unit.status === 'live' && unit.project.status === 'live', categoryId: unit.inventoryCategoryId,
+      projectName: unit.project.name,
+      sellable: unit.status === 'live' && unit.project.status === 'live' &&
+        unit.inventoryCategory?.status === 'live' && !sourceExcluded.has(unit.id) &&
+        (!unit.project.projectType || unit.commercialOfferings.some(offer =>
+          ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')),
+      categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
     }))}
     allUnits={categoryUnits.map((unit) => ({ id: unit.id, name: unit.name }))}

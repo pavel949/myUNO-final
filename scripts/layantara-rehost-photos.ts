@@ -5,6 +5,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { put } from '@vercel/blob';
+import { createHash } from 'node:crypto';
 
 const prisma=new PrismaClient();
 const PREFIX='https://omwoglpcwaiflaprgrne.supabase.co/storage/v1/object/public/villa-media/';
@@ -35,13 +36,23 @@ async function main(){
       const bytes=Buffer.from(await response.arrayBuffer());
       if(bytes.byteLength!==asset.sizeBytes||bytes.byteLength>8*1024*1024)throw Error('Source file size mismatch');
       const extension=asset.mimeType==='image/jpeg'?'jpg':asset.mimeType==='image/png'?'png':'webp';
+      const sourceSha256=createHash('sha256').update(bytes).digest('hex');
       const blob=await put('layantara/'+m.external_id+'.'+extension,bytes,{
         access:'public',contentType:asset.mimeType,addRandomSuffix:true,
       });
+      // Never mark the physical copy complete based only on a successful
+      // upload response. Read the new object back and compare actual bytes.
+      const copied=await fetch(blob.url,{signal:AbortSignal.timeout(20000)});
+      if(!copied.ok)throw Error('Target media verification fetch failed');
+      const targetBytes=Buffer.from(await copied.arrayBuffer());
+      const targetSha256=createHash('sha256').update(targetBytes).digest('hex');
+      if(targetBytes.length!==bytes.length||targetSha256!==sourceSha256)
+        throw Error('Target media SHA-256/byte-size mismatch');
       await prisma.$transaction(async tx=>{
         await tx.mediaAsset.update({where:{id:asset.id},data:{storageKey:blob.url}});
         await tx.externalMapping.update({where:{id:m.id},data:{
           metadata:{...metadata,physicalCopyComplete:true,verifiedByteSize:bytes.byteLength,
+            sourceSha256,targetSha256,
             targetStorage:'vercel_blob',rehostedAt:new Date().toISOString()},
         }});
       });

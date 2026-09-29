@@ -68,7 +68,7 @@ describe('ProviderOrdersClient money display', () => {
         }}
       />
     );
-    expect(screen.getByText(/01 Sept 2026, 17:00 ICT/)).toBeInTheDocument();
+    expect(screen.getAllByText(/01 Sept 2026, 17:00 ICT/)).toHaveLength(2);
     const request = screen.getByText('New request');
     const history = screen.getByText('Earlier service');
     expect(request.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

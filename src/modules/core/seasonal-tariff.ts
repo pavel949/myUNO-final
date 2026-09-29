@@ -112,3 +112,32 @@ export function quoteSeasonalTariffGrid(
     includesServiceCharge: includesServiceCharge!, includesBreakfast: includesBreakfast!,
     minNights: firstMin };
 }
+
+/** Contract-only yearly rental preview. Never pass through the nightly
+ * Booking Engine: legal lease duration, deposit and instalments require a
+ * separate accepted contract. The monthly published figure is retained.
+ */
+export function previewAnnualLeaseTariff(raw: unknown) {
+  if (!Array.isArray(raw)) throw new Error('Annual lease tariff missing');
+  const rows = raw.filter(r => r && r.rateMode === 'yearly');
+  if (rows.length !== 1) throw new Error('Annual lease tariff missing or ambiguous');
+  const row = rows[0] as Record<string, unknown>;
+  const amount = row.amountSatang;
+  const minimum = row.minimumNights;
+  if (row.currency !== 'THB' || row.pricingUnit !== 'month' ||
+      row.sourceSellable !== true || !Number.isSafeInteger(amount) ||
+      (amount as number) <= 0 || !Number.isSafeInteger(minimum) ||
+      (minimum as number) < 365)
+    throw new Error('Invalid annual lease tariff');
+  const total = (amount as number) * 12;
+  if (!Number.isSafeInteger(total)) throw new Error('Annual lease total overflow');
+  return {
+    sourceRateId: row.sourceRateId,
+    currency: 'THB',
+    monthlySatang: amount as number,
+    illustrativeTwelveMonthSatang: total,
+    minimumNights: minimum as number,
+    bookingEngineEligible: false,
+    requiresSignedLease: true,
+  };
+}

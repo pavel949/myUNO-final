@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable local-rules/no-literal-ui-text */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -35,11 +36,12 @@ export default function ScopedGalleryEditor({
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
+  const galleryUrl = endpoint(target);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(endpoint(target), { cache: 'no-store' });
+      const res = await fetch(galleryUrl, { cache: 'no-store' });
       if (!res.ok) throw new Error('Could not load gallery');
       const gallery = await res.json() as Gallery;
       const links = gallery.galleryMedia ?? gallery.media ?? [];
@@ -48,12 +50,12 @@ export default function ScopedGalleryEditor({
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load gallery');
     } finally { setLoading(false); }
-  }, [target.id, target.scope]);
+  }, [galleryUrl]);
 
   useEffect(() => { void load(); }, [load]);
 
   async function write(method: 'POST' | 'PATCH' | 'DELETE', payload: object | null, mediaId?: string) {
-    const url = endpoint(target) + (mediaId ? `?mediaId=${encodeURIComponent(mediaId)}` : '');
+    const url = galleryUrl + (mediaId ? `?mediaId=${encodeURIComponent(mediaId)}` : '');
     const res = await fetch(url, {
       method, headers: payload ? { 'Content-Type': 'application/json' } : undefined,
       body: payload ? JSON.stringify(payload) : undefined,

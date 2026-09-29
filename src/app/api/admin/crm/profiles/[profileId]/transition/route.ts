@@ -61,24 +61,67 @@ export async function POST(
       );
     }
 
-    const updatedProfile = await prisma.crmProfile.update({
-      where: { id: params.profileId },
-      data: {
-        lifecycleStage: body.to_stage,
-        lifecycleChangedAt: new Date(),
-        lifecycleChangeReason: body.reason,
-        lifecycleChangeApprovedBy: guard.actorIdentityId,
-      },
-    });
+    // CRM labels must not masquerade as verified legal title or a signed mandate.
+    // The owner workspace continues to enforce its own unit-scoped authorization.
+    if (body.to_stage === 'owner' || body.to_stage === 'managed') {
+      const now = new Date();
+      // Date-only ownership/contract boundaries include the entire effective day.
+      // PostgreSQL DATE values are represented by Prisma as UTC midnight.
+      const today = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()
+      ));
+      const currentTitle = await prisma.unit.findFirst({
+        where: { ownerIdentityId: profile.identityId },
+        select: { id: true },
+      });
+      const effectiveTitle = currentTitle ?? await prisma.ownershipPeriod.findFirst({
+        where: {
+          ownerIdentityId: profile.identityId,
+          startsOn: { lte: today },
+          OR: [{ endsOn: null }, { endsOn: { gte: today } }],
+        },
+        select: { unitId: true },
+      });
+      if (!effectiveTitle) {
+        return NextResponse.json({ error: 'verified_ownership_required' }, { status: 409 });
+      }
+      if (body.to_stage === 'managed') {
+        const signedMandate = await prisma.managementContract.findFirst({
+          where: {
+            ownerIdentityId: profile.identityId,
+            status: 'active',
+            signedAt: { not: null },
+            contractStartDate: { lte: today },
+            OR: [{ contractEndDate: null }, { contractEndDate: { gte: today } }],
+          },
+          select: { id: true },
+        });
+        if (!signedMandate) {
+          return NextResponse.json({ error: 'active_signed_mandate_required' }, { status: 409 });
+        }
+      }
+    }
 
-    await prisma.lifecycleTransitionLog.create({
-      data: {
-        profileId: params.profileId,
-        fromStage: currentStage,
-        toStage: body.to_stage,
-        reason: body.reason,
-        approvedByIdentityId: guard.actorIdentityId,
-      },
+    const updatedProfile = await prisma.$transaction(async (tx) => {
+      const updated = await tx.crmProfile.update({
+        where: { id: params.profileId },
+        data: {
+          lifecycleStage: body.to_stage,
+          lifecycleChangedAt: new Date(),
+          lifecycleChangeReason: body.reason,
+          lifecycleChangeApprovedBy: guard.actorIdentityId,
+        },
+      });
+      await tx.lifecycleTransitionLog.create({
+        data: {
+          profileId: params.profileId,
+          fromStage: currentStage,
+          toStage: body.to_stage,
+          reason: body.reason,
+          approvedByIdentityId: guard.actorIdentityId,
+        },
+      });
+      return updated;
     });
 
     return NextResponse.json({

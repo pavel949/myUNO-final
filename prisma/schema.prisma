@@ -1922,6 +1922,7 @@ model InventoryCategoryMedia {
   media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@id([categoryId, mediaId])
+  @@index([categoryId, sort], map: "inventory_category_media_sort_idx")
   @@map("inventory_category_media")
 }
 

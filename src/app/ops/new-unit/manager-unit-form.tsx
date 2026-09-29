@@ -33,7 +33,7 @@ export default function ManagerUnitForm({ projects }: { projects: Project[] }) {
       const response = await fetch('/api/admin/units', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not create property');
-      router.push(`/app/admin/units/${result.id}`);
+      router.push(`/ops/calendar/${result.id}`);
       router.refresh();
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save'); setBusy(false); }
   }}>

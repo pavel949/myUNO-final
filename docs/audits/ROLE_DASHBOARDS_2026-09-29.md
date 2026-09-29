@@ -14,7 +14,7 @@ Keep one canonical Project → Category → Unit → Offering → Booking/Stay s
 | Owner `/owner`, `/owner/units/[unitId]` | Portfolio switcher, monthly booked value, historical MetricDaily chart, alerts, statements and unit detail | **In PR #153:** project selection scopes numbers, historical series, alerts, compliance and statements together; guard empty mobilization denominator. Distinguish booked gross from ledger-based owner entitlement. |
 | Provider `/provider` | Provider-member queue; applicant status, services and remittances | **In PR #153:** response/fulfil queues, refresh, prioritized rows, invalid-date guard and explicit Phuket appointment times. Verify accept/decline/fulfil and remittance with real scoped accounts. |
 | Guest `/trips`, `/trips/[id]`, home-space | Own booking snapshot and payment/pre-arrival actions | **In PR #153:** semantic trip links, separate API error from no trips, date-only/UTC rendering and localized statuses. E2E payment failure, hold expiry, check-in, cancellation and support. |
-| Resident `/residence` | Residence relationship, announcements, messages, services and tickets | Validate multiple-building selection and no unauthorized building information in API payloads. |
+| Resident `/residence` | Residence relationship, announcements, messages, services and tickets | **In PR #153:** ticket creation and service links now carry the authorized building context; single-unit home is preselected only when unambiguous. Validate multi-building isolation at runtime. |
 | Buyer `/buying`, public `/homes` (in #148) | Enquiry/message flow, selection, legal/title due diligence separated from advertising | Consolidate the release before testing new homes routes. Buyers should see offer and enquiry state, not fabricated verified ownership claims. |
 | Sales/CRM `/app/admin/crm` | Pipeline and next-actions panels | Make assigned next action and overdue follow-up primary; verify assignment scoping and handoff into buyer/rental/owner journeys. |
 | Finance `/admin/finance/reconciliation`, `/app/admin/ledger`, statements | Dedicated reconciliation and ledger-backed surfaces | Add exception-first sign-off after data-cutover tests; never derive paid cash from gross booked value. |
@@ -30,6 +30,7 @@ Keep one canonical Project → Category → Unit → Offering → Booking/Stay s
 4. Management-company header's fixed row of navigation controls could overflow mobile screens, with no fast action count on the overview.
 5. Provider order queue mixed new orders and history without priority or refresh, depended on browser timezone, and could claim the queue was empty after an API failure.
 6. Guest trip cards were mouse-only click targets containing another button; fetch errors were accompanied by a false empty state; labels were generated from English status names and date-only fields used device-local rendering.
+7. Resident ticket creation previously omitted the project ID required by the form; building-specific actions now carry valid context.
 
 ## Unresolved acceptance gates (do not mark green from code review)
 

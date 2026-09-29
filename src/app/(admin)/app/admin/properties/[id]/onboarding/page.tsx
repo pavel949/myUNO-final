@@ -12,6 +12,7 @@ export default async function PropertyOnboardingPage({ params, searchParams }: {
       where: { id: params.id },
       include: {
         inventoryCategories: { include: { ratePlans: true }, orderBy: { name: 'asc' } },
+        structureNodes: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
         ratePlans: { orderBy: { name: 'asc' } },
         galleryMedia: { include: { media: true }, orderBy: { sort: 'asc' } },
         units: { include: { inventoryCategory: true, media: true, sleepingSpaces: { include: { beds: true } }, commercialOfferings: { include: { channelMappings: true } } }, orderBy: { name: 'asc' } },

@@ -8,7 +8,7 @@ import {
   PrismaClient,
 } from '@prisma/client';
 import {
-  lifecycleAfterWin,
+  lifecycleAfterWinForExisting,
   opportunityTypeForAudience,
   parseLeadContact,
   validateProbability,
@@ -201,12 +201,23 @@ export async function transitionOpportunity(
     });
 
     if (stage === 'won') {
-      const lifecycleStage = lifecycleAfterWin(opportunity.type);
+      const profile = await tx.crmProfile.findUnique({
+        where: { identityId: opportunity.identityId },
+        select: { lifecycleStage: true },
+      });
+      const lifecycleStage = lifecycleAfterWinForExisting(
+        opportunity.type,
+        profile?.lifecycleStage ?? null
+      );
       if (lifecycleStage) {
         await tx.crmProfile.upsert({
           where: { identityId: opportunity.identityId },
           create: { identityId: opportunity.identityId, lifecycleStage },
-          update: { lifecycleStage },
+          update: {
+            lifecycleStage,
+            lifecycleChangedAt: now,
+            lifecycleChangeReason: 'Commercial opportunity won; ownership requires separate evidence',
+          },
         });
       }
     }

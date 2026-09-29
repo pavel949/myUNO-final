@@ -64,8 +64,9 @@ export async function POST(req: NextRequest) {
     // here is ever sent back to a payment/booking endpoint — the widget
     // resubmits just dates/guest counts and the server recomputes the total
     // in satang independently), so it's safe to convert every money field
-    // to baht here, at the response boundary.
-    const toBaht = (satang: number) => Math.round(satang / 100);
+    // to baht here, at the response boundary. Preserve two-decimal baht
+    // precision: monthly proration may end in non-zero satang.
+    const toBaht = (satang: number) => satang / 100;
     return NextResponse.json(
       {
         nights,

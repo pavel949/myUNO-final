@@ -105,7 +105,7 @@ jobs:
       - name: Typecheck
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
-        run: npx tsc --noEmit
+        run: npx tsc --noEmit --project tsconfig.production.json
 
       - name: Build
         env:

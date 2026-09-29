@@ -123,6 +123,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     'admin.crm.opportunities.breadcrumb_detail': 'Opportunity',
     'admin.crm.opportunities.back_link': 'Back to CRM',
     'admin.crm.opportunities.details_heading': 'Opportunity Details',
+    'admin.crm.opportunities.agreement': 'Lease / sale agreement',
     'admin.crm.activity.title': 'Log activity',
     'admin.crm.activity.subject': 'Subject',
     'admin.crm.activity.body': 'Notes (optional)',
@@ -155,6 +156,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
           <h1 className="font-display text-display-xl font-semibold text-text-ink">
             {opportunity.title}
           </h1>
+          {opportunity.unit && ['rental','sale','purchase'].includes(opportunity.type) && <Link href={'/app/admin/crm/opportunities/'+opportunity.id+'/deal'} className="mt-12 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">{labels['admin.crm.opportunities.agreement']} →</Link>}
           <p className="text-body text-text-secondary mt-8">
             {labels['admin.crm.opportunities.details_heading']}
           </p>

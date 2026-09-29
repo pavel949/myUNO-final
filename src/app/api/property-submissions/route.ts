@@ -6,20 +6,27 @@ import { getPublicProjectBySlug } from '@/modules/projects';
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; projectId: string | null; proposedProject: string; unitName: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
   if (!allowedKinds.has(kind)) throw new Error('Choose what you are adding.');
   const offers = Array.isArray(body.offers) ? body.offers.filter((v): v is string => typeof v === 'string' && allowedOffers.has(v)) : [];
   const num = (v: unknown) => v === '' || v === null || v === undefined ? null : Number(v);
-  const bedrooms = num(body.bedrooms), bathrooms = num(body.bathrooms), sizeSqm = num(body.sizeSqm);
-  if ([bedrooms, bathrooms, sizeSqm].some(v => v !== null && (!Number.isFinite(v) || v < 0))) throw new Error('Invalid property measurements.');
+  const bedrooms = num(body.bedrooms), bathrooms = num(body.bathrooms), sizeSqm = num(body.sizeSqm), maxGuests = num(body.maxGuests), latitude = num(body.latitude), longitude = num(body.longitude);
+  if ([bedrooms, bathrooms, sizeSqm, maxGuests].some(v => v !== null && (!Number.isFinite(v) || v < 0)) || (maxGuests !== null && !Number.isInteger(maxGuests))) throw new Error('Invalid property measurements.');
+  if ((latitude !== null && (!Number.isFinite(latitude) || Math.abs(latitude) > 90)) || (longitude !== null && (!Number.isFinite(longitude) || Math.abs(longitude) > 180))) throw new Error('Invalid project location.');
   return {
     kind, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
     proposedProject: String(body.proposedProject || '').trim().slice(0, 160),
+    projectAddress: String(body.projectAddress || '').trim().slice(0, 500),
+    projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(body.projectType)) ? String(body.projectType) : 'condominium',
+    areaId: typeof body.areaId === 'string' && body.areaId ? body.areaId : null,
+    latitude, longitude,
+    projectPhotos: Array.isArray(body.projectPhotos) ? [...new Set(body.projectPhotos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
     unitName: String(body.unitName || '').trim().slice(0, 160),
-    bedrooms, bathrooms, sizeSqm, floor: String(body.floor || '').trim().slice(0, 40),
+    unitType: ['villa', 'apartment', 'condo', 'house'].includes(String(body.unitType)) ? String(body.unitType) : 'condo',
+    bedrooms, bathrooms, sizeSqm, maxGuests, floor: String(body.floor || '').trim().slice(0, 40),
     description: String(body.description || '').trim().slice(0, 3000),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
     photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
@@ -59,12 +66,12 @@ export async function POST(req: NextRequest) {
   if ('error' in access) return access.error;
   try {
     const data = normalize(await req.json());
-    if (!await mediaOwned(data.photos, access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
+    if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true, slug: true } });
       if (!project || !await getPublicProjectBySlug(project.slug)) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
     }
-    if (data.status === 'submitted' && (!data.unitName || (!data.projectId && !data.proposedProject) || !data.offers.length)) {
+    if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) {
       return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
     }
     const row = await prisma.crmOpportunity.create({
@@ -90,12 +97,12 @@ export async function PATCH(req: NextRequest) {
     const previous = existing.requirements as Record<string, unknown>;
     if (previous.status === 'submitted') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
     const data = normalize({ ...previous, ...body });
-    if (!await mediaOwned(data.photos, access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
+    if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findFirst({ where: { id: data.projectId, status: 'live' }, select: { id: true } });
       if (!project) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
     }
-    if (data.status === 'submitted' && (!data.unitName || (!data.projectId && !data.proposedProject) || !data.offers.length)) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
+    if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
     const row = await prisma.crmOpportunity.update({ where: { id }, data: { title: data.unitName || 'New property draft', projectId: data.projectId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management', requirements: data }, select: { id: true, requirements: true } });
     return NextResponse.json(row);
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid submission' }, { status: 400 }); }

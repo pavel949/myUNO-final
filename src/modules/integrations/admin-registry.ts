@@ -43,49 +43,6 @@ export const LIVE_INTEGRATIONS: IntegrationDefinition[] = [
       { key: 'from', label: 'From address', env: 'EMAIL_FROM', placeholder: 'hello@myuno.app' },
     ],
   },
-  {
-    key: 'google_oauth',
-    title: 'Google OAuth',
-    description: 'Google sign-in credentials.',
-    fields: [
-      { key: 'clientId', label: 'Client ID', env: 'NEXT_PUBLIC_GOOGLE_CLIENT_ID' },
-      { key: 'clientSecret', label: 'Client secret', secret: true, env: 'GOOGLE_CLIENT_SECRET' },
-    ],
-  },
-  {
-    key: 'whatsapp',
-    title: 'WhatsApp',
-    description: 'Messaging provider credentials when enabled.',
-    fields: [
-      { key: 'accessToken', label: 'Access token', secret: true },
-      { key: 'phoneNumberId', label: 'Phone number ID' },
-    ],
-  },
-  {
-    key: 'telegram',
-    title: 'Telegram',
-    description: 'Telegram bot integration credentials.',
-    fields: [
-      { key: 'botToken', label: 'Bot token', secret: true },
-      { key: 'chatId', label: 'Default chat ID' },
-    ],
-  },
-  {
-    key: 'crm_hubspot',
-    title: 'HubSpot CRM',
-    description: 'HubSpot private app credentials.',
-    fields: [
-      { key: 'accessToken', label: 'Private app access token', secret: true },
-    ],
-  },
-  {
-    key: 'ops_alerting',
-    title: 'Ops alerting',
-    description: 'Slack/Discord/PagerDuty-compatible incoming webhook.',
-    fields: [
-      { key: 'webhookUrl', label: 'Webhook URL', secret: true, env: 'ALERT_WEBHOOK_URL' },
-    ],
-  },
 ];
 
 export const BOOTSTRAP_VARIABLES = [
@@ -95,6 +52,8 @@ export const BOOTSTRAP_VARIABLES = [
   { group: 'Security', env: 'ENCRYPTION_KEY', description: 'Root AES-256-GCM key. Never store inside the database vault.' },
   { group: 'Security', env: 'SESSION_SECRET', description: 'Session-cookie signing secret.' },
   { group: 'Security', env: 'NEXTAUTH_SECRET', description: 'Fallback auth secret.' },
+  { group: 'OAuth', env: 'NEXT_PUBLIC_GOOGLE_CLIENT_ID', description: 'Google OAuth client ID.' },
+  { group: 'OAuth', env: 'GOOGLE_CLIENT_SECRET', description: 'Google OAuth client secret.' },
   { group: 'Security', env: 'ICAL_FEED_SECRET', description: 'Signs private iCal feed URLs.' },
   { group: 'Scheduler', env: 'CRON_SECRET', description: 'Protects scheduled-job endpoints.' },
   { group: 'Scheduler', env: 'SCHEDULER_MODE', description: 'Scheduler source/cadence mode.' },
@@ -103,6 +62,7 @@ export const BOOTSTRAP_VARIABLES = [
   { group: 'Payments', env: 'OMISE_SECRET_KEY', description: 'Opn/Omise secret key.' },
   { group: 'Payments', env: 'OMISE_WEBHOOK_SECRET', description: 'Opn webhook verification secret.' },
   { group: 'Storage', env: 'BLOB_READ_WRITE_TOKEN', description: 'Media object-storage token.' },
+  { group: 'Observability', env: 'ALERT_WEBHOOK_URL', description: 'Production incident alert webhook.' },
   { group: 'App', env: 'NEXT_PUBLIC_APP_URL', description: 'Canonical deployed application URL.' },
   { group: 'App', env: 'NEXTAUTH_URL', description: 'Auth callback/base URL.' },
   { group: 'App', env: 'CONTENT_REVIEW_GATE_ENABLED', description: 'Content review deployment gate.' },

@@ -103,8 +103,10 @@ export async function rotateIntegrationSecret(
     currentConfig
   );
 
+  const latestConfig = await getPlatformIntegrationConfig(db, input.integrationKey);
   const before = await platformAccount(db, input.integrationKey);
   const previousConfig = before?.config ?? null;
+  const expectedBeforeHash = configHash(previousConfig);
 
   const rotation = await db.integrationSecretRotation.create({
     data: {
@@ -120,7 +122,14 @@ export async function rotateIntegrationSecret(
   });
 
   try {
-    const next = { ...currentConfig, [input.fieldKey]: input.candidate.trim() };
+    const currentAccount = await platformAccount(db, input.integrationKey);
+    if (configHash(currentAccount?.config ?? null) !== expectedBeforeHash) {
+      throw new Error(
+        'Integration settings changed during rotation. Nothing was applied; reload and validate again.'
+      );
+    }
+
+    const next = { ...latestConfig, [input.fieldKey]: input.candidate.trim() };
     await savePlatformIntegrationConfig(db, input.integrationKey, next);
 
     const after = await platformAccount(db, input.integrationKey);

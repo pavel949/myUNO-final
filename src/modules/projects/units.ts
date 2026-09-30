@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
+import { checkRegulatoryCredentialForGoLive } from '@/modules/compliance';
 import { UnitStatus, UnitType } from '@prisma/client';
 import { ensureOwnershipRecorded } from './ownership.service';
 import { assertUnitReadyForActivation } from './property-readiness';
@@ -267,6 +268,15 @@ export async function updateUnit(input: UpdateUnitInput) {
         throw new Error(
           'Unit cannot move to live status without permitted use confirmation'
         );
+      }
+      // Independent of the permitted-use check above (Q71 founder ruling,
+      // 2026-09-29): a general permitted-use confirmation and an active
+      // short-term-rental credential answer different legal questions, and
+      // both are required going forward. Only fires on the transition to
+      // live, so a unit already selling is never retroactively affected.
+      const credentialCheck = await checkRegulatoryCredentialForGoLive(prisma, unitId);
+      if (!credentialCheck.ok) {
+        throw new Error(credentialCheck.reason);
       }
       await assertUnitReadyForActivation(prisma, unitId);
     }

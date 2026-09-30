@@ -249,7 +249,6 @@ export async function updateProject(input: UpdateProjectInput) {
     longitude,
     address,
     timezone,
-    amenityKeys,
     handbookKey,
     status,
     coverMediaId,
@@ -268,7 +267,6 @@ export async function updateProject(input: UpdateProjectInput) {
     totalUnits,
     totalBuildings,
     floors,
-    facilities,
     landAreaSqm,
     commonAreaSqm,
   } = input;

@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { logAudit } from '@/modules/audit';
 
+/**
+ * Project-specific concierge preferences only.
+ * myUNO marketplace services remain platform-wide; this route never hides a
+ * service from another Project Space. It only creates/removes a project
+ * commercial override.
+ */
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
@@ -15,50 +21,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const action = typeof body?.action === 'string' ? body.action : '';
   if (!serviceId) return NextResponse.json({ error: 'serviceId is required' }, { status: 400 });
 
-  const service = await prisma.service.findUnique({
-    where: { id: serviceId },
-    select: { id: true, availableProjects: { select: { project_id: true } } },
-  });
+  const service = await prisma.service.findUnique({ where: { id: serviceId }, select: { id: true } });
   if (!service) return NextResponse.json({ error: 'Service not found' }, { status: 404 });
 
-  if (action === 'restrict_here') {
-    if (service.availableProjects.length !== 0) {
-      return NextResponse.json({ error: 'Service is already project-restricted' }, { status: 409 });
-    }
-    await prisma.serviceProject.create({
-      data: { service_id: serviceId, project_id: project.id, enabled: true, public: true },
-    });
-  } else if (action === 'add') {
-    await prisma.serviceProject.upsert({
-      where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
-      create: { service_id: serviceId, project_id: project.id, enabled: true, public: true },
-      update: { enabled: true, public: true, updated_at: new Date() },
-    });
-  } else if (action === 'remove') {
-    if (service.availableProjects.length <= 1) {
-      return NextResponse.json({
-        error: 'Removing the final project restriction would make this service global. Use make_global explicitly or pause the service.',
-      }, { status: 409 });
-    }
-    await prisma.serviceProject.deleteMany({
-      where: { service_id: serviceId, project_id: project.id },
-    });
-  } else if (action === 'set_visibility') {
-    const enabled = body.enabled === true;
-    const isPublic = body.public === true;
-    const existing = service.availableProjects.some(row => row.project_id === project.id);
-    if (!existing) {
-      return NextResponse.json({ error: 'Service is not explicitly scoped to this project' }, { status: 409 });
-    }
-    await prisma.serviceProject.update({
-      where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
-      data: { enabled, public: isPublic, updated_at: new Date() },
-    });
+  if (action === 'clear_override') {
+    await prisma.serviceProject.deleteMany({ where: { service_id: serviceId, project_id: project.id } });
   } else if (action === 'update_terms') {
-    const existing = service.availableProjects.some(row => row.project_id === project.id);
-    if (!existing) {
-      return NextResponse.json({ error: 'Service is not explicitly scoped to this project' }, { status: 409 });
-    }
     const priceOverrideBaht = body.priceOverrideBaht === '' || body.priceOverrideBaht == null
       ? null : Number(body.priceOverrideBaht);
     const leadTimeHours = body.leadTimeHours === '' || body.leadTimeHours == null
@@ -74,9 +42,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (takeRatePct !== null && (!Number.isFinite(takeRatePct) || takeRatePct < 0 || takeRatePct > 100)) {
       return NextResponse.json({ error: 'Take rate must be between 0 and 100 percent' }, { status: 400 });
     }
-    await prisma.serviceProject.update({
+
+    await prisma.serviceProject.upsert({
       where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
-      data: {
+      create: {
+        service_id: serviceId,
+        project_id: project.id,
+        enabled: true,
+        public: true,
+        price_override_thb: priceOverrideBaht === null ? null : Math.round(priceOverrideBaht * 100),
+        lead_time_hours: leadTimeHours,
+        take_rate_pct: takeRatePct,
+        terms_version: 1,
+      },
+      update: {
+        enabled: true,
+        public: true,
         price_override_thb: priceOverrideBaht === null ? null : Math.round(priceOverrideBaht * 100),
         lead_time_hours: leadTimeHours,
         take_rate_pct: takeRatePct,
@@ -84,15 +65,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         updated_at: new Date(),
       },
     });
-  } else if (action === 'make_global') {
-    await prisma.serviceProject.deleteMany({ where: { service_id: serviceId } });
   } else {
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
   }
 
   await logAudit({
     actorIdentityId: guard.actorIdentityId,
-    action: 'services:project_scope_update',
+    action: 'services:project_preference_update',
     entityType: 'Service',
     entityId: serviceId,
     data: { projectId: project.id, action },

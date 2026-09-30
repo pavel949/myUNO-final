@@ -796,4 +796,28 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     ru: 'Saved homes',
     status: 'needs_review' as const,
   },
+  {
+    key: 'staff.ops.portfolio_link',
+    namespace: 'staff',
+    description: 'Ops navigation to managed portfolio',
+    en: 'Managed portfolio →',
+    ru: 'Управляемый портфель →',
+    status: 'needs_review' as const,
+  },
+  {
+    key: 'staff.ops.add_unit_link',
+    namespace: 'staff',
+    description: 'Ops navigation to add property',
+    en: 'Add property →',
+    ru: 'Добавить объект →',
+    status: 'needs_review' as const,
+  },
+  {
+    key: 'staff.ops.team_link',
+    namespace: 'staff',
+    description: 'Ops navigation to project team',
+    en: 'Project team →',
+    ru: 'Команда проекта →',
+    status: 'needs_review' as const,
+  },
 ];

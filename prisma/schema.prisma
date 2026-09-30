@@ -987,6 +987,7 @@ model Project {
   structureNodes        ProjectStructureNode[]
   roleAssignments       RoleAssignment[]          @relation("projectScope")
   galleryMedia          ProjectMedia[]
+  amenities             ProjectAmenity[]
   organizations         Organization[]
   orgRoles              ProjectOrganizationRole[]
   commercialOfferings   CommercialOffering[]
@@ -1868,6 +1869,8 @@ model MediaAsset {
   unitCovers               Unit[]                 @relation("unitCover")
   unitMedia                UnitMedia[]
   projectMedia             ProjectMedia[]
+  amenityCovers            ProjectAmenity[]      @relation("projectAmenityCover")
+  amenityMedia             ProjectAmenityMedia[]
   engagementMandates       UnitEngagement[]       @relation("engagementMandate")
   bookingGuestPassports    BookingGuest[]
   paymentReceipts          Payment[]              @relation("paymentReceipt")
@@ -1945,6 +1948,68 @@ model ProjectMedia {
 
   @@id([projectId, mediaId])
   @@map("project_media")
+}
+
+model ProjectAmenity {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId        String   @map("project_id")
+  slug             String
+  name             String
+  categoryKey      String?  @map("category_key")
+  shortDescription String?  @map("short_description")
+  description      String?
+  iconKey          String?  @map("icon_key")
+  locationLabel    String?  @map("location_label")
+  coverMediaId     String?  @map("cover_media_id")
+
+  // Guest access / use. Strings are intentionally open vocabularies: projects
+  // can add novel access or booking modes without a database migration.
+  accessType         String  @default("open") @map("access_type")
+  accessInstructions String? @map("access_instructions")
+  bookingRequired    Boolean @default(false) @map("booking_required")
+  bookingMode        String  @default("none") @map("booking_mode")
+  bookingUrl         String? @map("booking_url")
+
+  // Commercial/use policy. Monetary values are integer satang, matching the
+  // rest of myUNO money storage.
+  pricingType String  @default("included") @map("pricing_type")
+  priceThb    Int?    @map("price_thb")
+  capacity    Int?
+  minAge      Int?    @map("min_age")
+
+  // Flexible structured schedules/rules while keeping common fields queryable.
+  openingHours Json?  @map("opening_hours") @db.JsonB
+  rules        Json?  @db.JsonB
+  terms        String?
+
+  isFeatured Boolean @default(false) @map("is_featured")
+  published  Boolean @default(false)
+  sort       Int     @default(0)
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  coverMedia MediaAsset? @relation("projectAmenityCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  media      ProjectAmenityMedia[]
+
+  @@unique([projectId, slug])
+  @@index([projectId, published, sort])
+  @@index([projectId, categoryKey])
+  @@map("project_amenity")
+}
+
+model ProjectAmenityMedia {
+  amenityId String @map("amenity_id")
+  mediaId   String @map("media_id")
+  sort      Int    @default(0)
+
+  amenity ProjectAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  media   MediaAsset     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([amenityId, mediaId])
+  @@index([amenityId, sort])
+  @@map("project_amenity_media")
 }
 
 // --- Configuration & content (minimal stubs for T-002, full schema in T-003/T-004) ---

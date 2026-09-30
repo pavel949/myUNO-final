@@ -941,6 +941,8 @@ model Project {
   latitude       Decimal       @db.Decimal(9, 6)
   longitude      Decimal       @db.Decimal(9, 6)
   address        String
+  mapVisibility  Boolean       @default(true) @map("map_visibility")
+  googlePlaceId  String?       @map("google_place_id")
   timezone       String        @default("Asia/Bangkok")
   coverMediaId   String?       @map("cover_media_id")
   amenityKeys    String[]      @default([]) @map("amenity_keys")
@@ -1595,6 +1597,11 @@ model Provider {
   applicant_identity_id String?        @map("applicant_identity_id")
   payoutMethod          Json?          @map("payout_method") @db.JsonB
   logoMediaId           String?        @map("logo_media_id")
+  address               String?
+  latitude              Decimal?       @db.Decimal(9, 6)
+  longitude             Decimal?       @db.Decimal(9, 6)
+  mapVisibility         Boolean        @default(true) @map("map_visibility")
+  googlePlaceId         String?        @map("google_place_id")
 
   // Relations
   vetted_by       Identity?         @relation("providerVettedBy", fields: [vetted_by_identity_id], references: [id], onDelete: SetNull)

@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 interface AdminUnit {
   id: string;
   name: string;
+  categoryName: string | null;
   projectName: string;
   status: string;
   assetStatus: string;
@@ -137,7 +138,9 @@ export default function UnitsAdminClient({
               </Link>
               <span className="text-text-secondary font-normal"> · {unit.projectName}</span>
             </p>
+            <p className="text-small font-medium text-brand-andaman">{labels['admin.units.category']}: {unit.categoryName || labels['admin.units.no_category']}</p>
             <p className="text-small text-text-secondary">
+            </p>
               {labels['admin.units.owner']}: {unit.ownerName} · {labels['admin.units.price']}: ฿
               {unit.baseNightlyThb.toLocaleString()} · {labels['admin.units.status']}:{' '}
               <span className="font-semibold text-text-ink">{unit.status}</span>

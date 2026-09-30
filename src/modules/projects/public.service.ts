@@ -27,6 +27,7 @@ function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
  */
 
 export interface PublicProjectCategory {
+  id: string;
   key: string;
   name: string;
   titleKey: string;
@@ -268,6 +269,7 @@ async function buildPublicCategories(
         (unit) => (unit.inventoryCategory?.categoryKey ?? unit.categoryKey) === category.categoryKey
       );
       return {
+        id: category.id,
         key: category.categoryKey,
         name: category.name,
         ...categoryEditorialKeys(projectSlug, category.id, category.categoryKey),

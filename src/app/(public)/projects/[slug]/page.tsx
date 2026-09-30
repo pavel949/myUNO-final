@@ -9,6 +9,7 @@ import { getConfig } from '@/modules/config';
 import { t, tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarketplace';
+import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
@@ -112,6 +113,7 @@ export default async function ProjectLandingPage({
     'project_page.owner_intake.cta': 'Add your home →',
     'project_page.story.title': 'About the residence',
     'project_page.amenities.title': 'Residence amenities',
+    'project_page.amenities.view_all': 'View all amenities →',
     'project_page.services.title': 'Services available here',
     'project_page.services.view_all': 'Browse all services →',
     'project.services.eyebrow': 'myUNO services',
@@ -493,18 +495,21 @@ export default async function ProjectLandingPage({
         </section>
       ) : null}
 
-      {/* Amenities */}
-      {project.amenityKeys.length > 0 ? (
+      {project.amenities.length > 0 ? (
+        <ProjectAmenitiesSection
+          projectSlug={project.slug}
+          amenities={project.amenities}
+          title={labels['project_page.amenities.title']}
+          viewAllLabel={labels['project_page.amenities.view_all']}
+        />
+      ) : project.amenityKeys.length > 0 ? (
         <section className="max-w-6xl mx-auto py-64 px-24">
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
             {labels['project_page.amenities.title']}
           </h2>
           <div className="flex flex-wrap gap-16">
             {project.amenityKeys.map((key) => (
-              <span
-                key={key}
-                className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
-              >
+              <span key={key} className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink">
                 {amenityLabel(key)}
               </span>
             ))}

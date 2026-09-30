@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mayHoldSession } from './session';
+import { mayHoldSession } from './session-policy';
 
 describe('current identity lifecycle limits sessions', () => {
   it('allows only active identities, even when a signed token still exists', () => {

@@ -45,3 +45,32 @@ export async function projectExperienceAccess(projectId: string) {
   }
   return { user: actor } as const;
 }
+
+
+/** Project-scoped staff who may operate amenity reservation queues. */
+export async function getProjectAmenityOpsActor(projectId: string) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  if (user.isAdmin) return user;
+
+  const [role, permission] = await Promise.all([
+    prisma.roleAssignment.findFirst({
+      where: {
+        identityId: user.identityId,
+        status: 'active',
+        role: 'staff_ops',
+        scopeType: 'project',
+        projectId,
+      },
+      select: { id: true },
+    }),
+    prisma.projectStaffPermission.findUnique({
+      where: { projectId_identityId: { projectId, identityId: user.identityId } },
+      select: { departments: true },
+    }),
+  ]);
+  const allowed = permission?.departments.some(department =>
+    ['front_desk', 'guest_care', 'reservations'].includes(department)
+  );
+  return role && allowed ? user : null;
+}

@@ -31,6 +31,7 @@ export default async function IntegrationsPage() {
     'admin.integrations.subtitle':
       'Manage external providers, encrypted credentials, environment-variable readiness and channel synchronization health.'
     'admin.integrations.empty': 'No integration accounts configured',
+    'admin.integrations.health_title': 'Integration health',
     'admin.integrations.table_title': 'Integration health ({total})',
     'admin.integrations.col_integration': 'Integration',
     'admin.integrations.col_scope': 'Scope',
@@ -76,7 +77,7 @@ export default async function IntegrationsPage() {
 
       <div>
         <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-12">
-          Integration health
+          {labels['admin.integrations.health_title']}
         </h2>
         <IntegrationHealthPanel accounts={accounts} total={total} labels={labels} locale={locale} />
       </div>

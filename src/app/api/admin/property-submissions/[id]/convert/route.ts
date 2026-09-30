@@ -69,6 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const project = await tx.project.create({
           data: {
             slug, name, address, latitude: lat, longitude: lng, areaId, status: 'draft',
+            googlePlaceId: typeof data.googlePlaceId === 'string' && data.googlePlaceId ? data.googlePlaceId : null,
             projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(data.projectType)) ? String(data.projectType) : 'standalone',
             areaLabelKey: `project.${slug}.area`, descriptionKey: `project.${slug}.description`,
             handbookKey: `project.${slug}.handbook`,

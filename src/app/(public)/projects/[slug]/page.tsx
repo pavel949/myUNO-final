@@ -140,7 +140,7 @@ export default async function ProjectLandingPage({
   const editorialPrefix = `project.${project.slug}.editorial.`;
   const locale = getRequestLocale();
   const editorialKeys = editorialFields.map(field => editorialPrefix + field);
-  const categoryDescriptionKeys = project.categories.map(category => category.descriptionKey);
+  const categoryDescriptionKeys = project.categories.flatMap(category => [category.titleKey, category.descriptionKey]);
   const editorialCopy = await tMany(prisma, [
     ...editorialKeys,
     ...categoryDescriptionKeys,
@@ -316,6 +316,9 @@ export default async function ProjectLandingPage({
                 <h3 className="text-heading-3 font-bold text-text-ink mb-8">
                   {category.name}
                 </h3>
+                {editorialCopy[category.titleKey] && (
+                  <p className="mb-8 font-medium text-brand-andaman">{editorialCopy[category.titleKey]}</p>
+                )}
                 {editorialCopy[category.descriptionKey] && (
                   <p className="mb-12 text-small leading-relaxed text-text-secondary">{editorialCopy[category.descriptionKey]}</p>
                 )}

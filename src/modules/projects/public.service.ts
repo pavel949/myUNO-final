@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { categoryEditorialKeys } from './project-editorial';
-import type { Locale } from '@/modules/content';
+import { tMany, type Locale } from '@/modules/content';
 import { listPublicProjectAmenities } from './project-amenities.service';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
@@ -108,7 +108,7 @@ export interface PublicProjectDetail {
 }
 
 /** All live projects, for the /projects hub and the sitemap. */
-export async function listPublicProjects(): Promise<PublicProjectCard[]> {
+export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicProjectCard[]> {
   const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const projects = await prisma.project.findMany({
     where: { status: 'live' },
@@ -131,6 +131,13 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
     },
   });
 
+  const amenityNameKeys = projects.flatMap(project =>
+    project.amenities.map(amenity => `project_amenity.${amenity.id}.name`)
+  );
+  const amenityNames = amenityNameKeys.length
+    ? await tMany(prisma, amenityNameKeys, locale)
+    : {};
+
   return projects.map((p) => ({
     id: p.id,
     slug: p.slug,
@@ -144,7 +151,10 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
           ...p.units.map((u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb)
         )
       : null,
-    featuredAmenities: p.amenities,
+    featuredAmenities: p.amenities.map(amenity => ({
+      ...amenity,
+      name: amenityNames[`project_amenity.${amenity.id}.name`] || amenity.name,
+    })),
   }));
 }
 

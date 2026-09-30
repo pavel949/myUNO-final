@@ -28,9 +28,8 @@ export function DiscoverySearch({ labels }: { labels: {
     if (mode === 'buy') { router.push('/homes?intent=buy'); return; }
     if (mode === 'monthly') { router.push('/homes?intent=rent'); return; }
     if (mode === 'invest') { router.push('/buyers'); return; }
-    if (!startDate || !endDate || endDate <= startDate || (mode === 'monthly' && (Date.parse(endDate) - Date.parse(startDate)) / 86400000 < 28)) { setError(labels.error); return; }
+    if (!startDate || !endDate || endDate <= startDate) { setError(labels.error); return; }
     const params = new URLSearchParams({ startDate, endDate, adults: String(adults), children: String(children) });
-    if (mode === 'monthly') params.set('stayMode', 'monthly');
     router.push('/search?' + params.toString());
   }
   return (

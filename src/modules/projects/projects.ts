@@ -32,6 +32,8 @@ interface CreateProjectInput {
   totalBuildings?: number;
   floors?: number;
   facilities?: string[];
+  googlePlaceId?: string | null;
+  mapVisibility?: boolean;
 }
 
 interface UpdateProjectInput {
@@ -98,6 +100,8 @@ export async function createProject(input: CreateProjectInput) {
     totalBuildings,
     floors,
     facilities = [],
+    googlePlaceId,
+    mapVisibility = true,
   } = input;
 
   // Check slug uniqueness
@@ -140,6 +144,8 @@ export async function createProject(input: CreateProjectInput) {
       totalBuildings: totalBuildings ?? null,
       floors: floors ?? null,
       facilities,
+      googlePlaceId: googlePlaceId || null,
+      mapVisibility,
     },
   });
 

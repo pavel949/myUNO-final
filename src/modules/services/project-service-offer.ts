@@ -56,10 +56,10 @@ export function resolveProjectServiceOffer(input: {
   const row = input.rows.find(item => item.project_id === input.projectId);
   if (!row) {
     return {
-      available: false,
-      publiclyVisible: false,
-      source: 'unavailable',
-      unitPriceThb: null,
+      available: true,
+      publiclyVisible: true,
+      source: 'global',
+      unitPriceThb: input.basePriceThb,
       leadTimeHours: input.baseLeadTimeHours,
       takeRatePct: null,
       termsVersion: null,
@@ -69,10 +69,21 @@ export function resolveProjectServiceOffer(input: {
   const effective =
     (!row.effective_from || row.effective_from <= at) &&
     (!row.effective_to || at < row.effective_to);
-  const available = row.enabled && effective;
+  if (!row.enabled || !row.public || !effective) {
+    return {
+      available: true,
+      publiclyVisible: true,
+      source: 'global',
+      unitPriceThb: input.basePriceThb,
+      leadTimeHours: input.baseLeadTimeHours,
+      takeRatePct: null,
+      termsVersion: null,
+    };
+  }
+
   return {
-    available,
-    publiclyVisible: available && row.public,
+    available: true,
+    publiclyVisible: true,
     source: 'project',
     unitPriceThb: row.price_override_thb ?? input.basePriceThb,
     leadTimeHours: row.lead_time_hours ?? input.baseLeadTimeHours,

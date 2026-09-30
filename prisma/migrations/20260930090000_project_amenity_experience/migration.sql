@@ -3,9 +3,9 @@
 -- a specific project (gym, sauna, cinema, shuttle, coworking, etc.).
 
 CREATE TABLE IF NOT EXISTS "project_amenity" (
-  "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+  "id" TEXT NOT NULL,
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP(3) NOT NULL,
   "project_id" TEXT NOT NULL,
   "slug" TEXT NOT NULL,
   "name" TEXT NOT NULL,

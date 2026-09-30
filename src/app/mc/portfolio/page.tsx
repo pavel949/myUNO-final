@@ -83,6 +83,26 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
     })),
     ...(user.isAdmin ? [{ engagements: { some: { status: 'active' as const } }, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }] : []),
   ];
+  const allManagedVisibility = [
+    ...approvedScopes.map(scope => ({
+      projectId: scope.projectId,
+      engagements: { some: {
+        engagementType: 'via_management_company' as const,
+        status: 'active' as const,
+        managementOrgId: scope.organizationId,
+      } },
+    })),
+    ...staffProjectIds.map(projectId => ({
+      projectId,
+      engagements: { some: { status: 'active' as const } },
+    })),
+    ...(user.isAdmin ? [{ engagements: { some: { status: 'active' as const } } }] : []),
+  ];
+  const managedProjectRows = await prisma.unit.findMany({
+    where: { status: { not: 'offboarded' }, OR: allManagedVisibility },
+    select: { projectId: true, project: { select: { name: true } } },
+    distinct: ['projectId'],
+  });
   const units = await prisma.unit.findMany({
     where: {
       status: { not: 'offboarded' },
@@ -165,7 +185,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
   const query = (date: Date, projectId?: string) =>
     `/mc/portfolio?month=${monthKey(date)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}`;
   // Offer only projects actually represented by an authorized managed unit.
-  const projectOptions = [...new Map(units.map(unit => [unit.projectId, unit.project.name] as const))]
+  const projectOptions = managedProjectRows.map(row => [row.projectId, row.project.name] as const)
     .sort((a, b) => a[1].localeCompare(b[1]));
   const label = month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 

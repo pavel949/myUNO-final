@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/services/[id] — service detail (F-SVC-1).
  * Public read; returns service + provider + media.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
 
@@ -35,6 +35,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
           select: { media_id: true, media: { select: { storageKey: true } } },
           orderBy: { position: 'asc' },
         },
+        availableProjects: { select: { project_id: true } },
       },
     });
 
@@ -45,6 +46,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     // Verify provider is active and vetted
     if (!service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
       return NextResponse.json({ error: 'Service not available' }, { status: 404 });
+    }
+
+    // Project context is part of the marketplace contract. If a service has
+    // explicit project restrictions, a portal must not deep-link around them.
+    const projectId = req.nextUrl.searchParams.get('projectId');
+    if (projectId && service.availableProjects.length > 0 &&
+        !service.availableProjects.some(row => row.project_id === projectId)) {
+      return NextResponse.json({ error: 'Service not available in this project' }, { status: 404 });
     }
 
     // Track analytics event

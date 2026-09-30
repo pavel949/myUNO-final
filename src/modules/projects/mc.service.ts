@@ -4,8 +4,7 @@ import {
   type BookingRequestInboxItem,
 } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
-import { getProjectIcalConflictAlerts } from '@/modules/integrations';
-import type { UnitIcalConflictAlert } from '@/modules/integrations/unit-ical-conflicts';
+import { getProjectIcalConflictAlerts, type UnitIcalConflictAlert } from '@/modules/integrations';
 import { satangToBaht } from '@/lib/money';
 
 /**

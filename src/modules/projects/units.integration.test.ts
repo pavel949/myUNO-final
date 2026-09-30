@@ -3,6 +3,7 @@ import { db as prisma, resetDb, createIdentity, createProject, createUnit } from
 import { createUnit as createUnitFn, updateUnit, confirmPermittedUse } from './units';
 import { UnitStatus } from '@prisma/client';
 import { ensureSeedInventoryCategory } from './inventory.seed';
+import { createRegulatoryCredential } from '@/modules/compliance';
 
 describe('Units module', () => {
   beforeEach(async () => {
@@ -176,6 +177,15 @@ describe('Units module', () => {
         actorIdentityId: admin.id,
       });
       await confirmPermittedUse(unit.id, admin.id);
+
+      // Q71: an active regulatory credential is a second, independent
+      // go-live requirement alongside permitted_use.
+      await createRegulatoryCredential(prisma, {
+        credentialType: 'hotel_business_license',
+        scopeLevel: 'unit',
+        unitId: unit.id,
+        verifiedByIdentityId: admin.id,
+      });
 
       const updated = await updateUnit({
         unitId: unit.id,

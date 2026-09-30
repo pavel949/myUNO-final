@@ -4,13 +4,14 @@
 
 export {
   can,
-  canWriteAvailabilityAndPricing,
+  accessSatisfies,
   getIdentityRoles,
   hasRole,
   isKnownPermissionAction,
   resolvePermissionAction,
   PERMISSIONS,
   type AccessLevel,
+  type RequiredAccess,
 } from './permissions';
 
 export {

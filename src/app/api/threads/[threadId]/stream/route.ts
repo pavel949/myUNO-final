@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { subscribe } from '@/modules/comms/thread.bus';
+import { subscribeThread as subscribe } from '@/modules/comms';
 
 /**
  * GET /api/threads/[id]/stream

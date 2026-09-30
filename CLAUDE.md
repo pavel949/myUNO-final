@@ -1,14 +1,37 @@
 # CLAUDE.md — myUNO Platform (Ignatev Estate)
 
-This file is read at the start of every session. It is the project's constitution. Follow it.
+This file is read at the start of every session. It is supplementary to, and never competes with, the canonical hierarchy below — read that first.
+
+## Canonical document hierarchy — read this first
+
+**Founder ruling, 2026-09-29: `docs/canonical/` + `PROJECT.md` is the target architecture.** Per `PROJECT.md`'s own required read order:
+
+1. `PROJECT.md`
+2. `docs/canonical/PRODUCT.md`
+3. `docs/canonical/DESIGN.md`
+4. `docs/canonical/ARCHITECTURE.md`
+5. `docs/canonical/DATA_MODEL.md`
+6. `docs/canonical/SERVICES_MARKETPLACE.md`
+7. `docs/canonical/CRM_SPEC.md`
+8. `docs/canonical/PROCESS_MAP.md`
+9. `docs/canonical/ROLE_WORKSPACES.md`
+10. `docs/canonical/MIGRATION_DELIVERY.md`
+11. `docs/canonical/AI_AGENT_RULES.md` — the operating rules for any coding agent (inspect-before-changing, no-invention specifics, the PR contract, completion-evidence bar). Follow it exactly; it is more specific than this file's older "stop and ask" language below.
+12. `docs/canonical/QA_ACCEPTANCE.md`
+13. `docs/canonical/READINESS_ACCEPTANCE.md`
+14. `docs/canonical/ROADMAP.md` — the current delivery sequence (Phase 0–8). This supersedes `docs/16_build_plan.md` as the forward task list.
+15. `docs/canonical/RECONCILIATION.md` — what's already fixed vs. still open against the target, by finding ID.
+16. `docs/canonical/DECISIONS_CHANGELOG.md`
+
+**What this file is now:** the numbered `docs/00`–`docs/18` suite and this file remain **evidence of current, shipped behavior** — accurate mechanics for content i18n, the permissions matrix, the notification catalog, and other detail the canonical pack states at a higher level. Where they conflict with the canonical pack, **the canonical pack wins**; record the reconciliation in `docs/canonical/RECONCILIATION.md` or `docs/open_questions.md`, never silently pick a side. Everything below this point is the still-applicable operational detail: legal non-negotiables, money rules, and the Ignatev Estate business/brand content the vendor-neutral canonical pack deliberately doesn't restate.
 
 ## What we are building
 
-**myUNO** — the operating platform for serviced living in Phuket's Andaman corridor, for a Russian-speaking clientele. It runs a residence's whole life: **stay, live, own**. Model: `docs/business/Ignatev_Estate_Business_and_Operating_Model_v3.md`. Positioning: `docs/business/positioning.md`. Journey coverage: `docs/business/user_journey_audit.md`.
+**myUNO** — a unified property, stay, ownership, relationship and Phuket services network (see `PROJECT.md` §1 for the full mission and north star). It grew from a narrower first loop — serviced living in Phuket's Andaman corridor for a Russian-speaking clientele, running a residence's whole life: **stay, live, own** — and that loop's model/positioning/journey docs remain accurate reading: `docs/business/Ignatev_Estate_Business_and_Operating_Model_v3.md`, `docs/business/positioning.md`, `docs/business/user_journey_audit.md`.
 
-**Status: the specification suite (docs 00–16) is complete.** The build phase executes `docs/16_build_plan.md` one task at a time. Decisions D1–D10 are locked in `docs/01_architecture_decisions.md`; if any must move, that document changes first and the suite follows.
+**Status:** the original specification suite (docs 00–16) and its build plan (through T-043) are **complete and shipped** — that is the "current behavior" the canonical pack's `RECONCILIATION.md` reconciles against. Forward work now follows `docs/canonical/ROADMAP.md`'s phases, not `docs/16_build_plan.md`'s task list. Decisions D1–D10 in `docs/01_architecture_decisions.md` still describe real, locked choices for the shipped system; a decision that the canonical pack revises is superseded there, not silently overridden here.
 
-## The architecture spine — non-negotiable
+## The architecture spine — current shipped shape
 
 **project → unit → identity → roles**, enforced **in the schema** (doc 02), not by convention:
 
@@ -18,11 +41,15 @@ This file is read at the start of every session. It is the project's constitutio
 - **Roles** — `RoleAssignment` rows scoped to projects and units; **roles are data, not code branches**. Permission checks go through `core.can()` against the doc 03 matrix.
 - **Portfolio overlay** — an owner's aggregated view across all projects where they hold units.
 
-The platform is the single **system of record** (map: doc 14 §4). OTAs, Telegram, WhatsApp, the CRM, and payment tools are all **channels** onto it. Enter a unit once; it appears everywhere; the transaction happens on our rails. If a requirement seems to need a different shape, **stop and ask**.
+**Target state (`docs/canonical/ARCHITECTURE.md` §7):** the scope chain extends this to `platform → organization → property/project → collection → unit`, with identity and authority modeled separately (organization membership + scoped role assignment + operating authority, not role-implies-authority). This is a superset of the spine above, not a contradiction of it — a `collection` sits between project and unit for multi-building/phased developments, and `organization` generalizes what "management company" already meant. Building that extension is tracked in `docs/canonical/ROADMAP.md` Phase 2 (OperatingScope authority, organization membership).
 
-## The locked stack & shape (doc 01 D2, doc 14)
+The platform is the single **system of record**. OTAs, Telegram, WhatsApp, the CRM, and payment tools are all **channels** onto it (canonical: `ExternalSystem`/`ExternalRecordLink`/`BusinessEvent` contracts, doc `docs/canonical/ARCHITECTURE.md` §4 — never mirror a table, never treat a projection as command authority). Enter a unit once; it appears everywhere; the transaction happens on our rails. If a requirement seems to need a different shape, **stop and ask** per `docs/canonical/AI_AGENT_RULES.md` §14 (genuine commercial/legal/irreversible calls only — routine structure is yours to decide and build).
 
-One **modular monolith**: Next.js (App Router) + TypeScript strict + PostgreSQL + Prisma (migration files, never db-push), Tailwind themed from the design tokens, Vitest three-tier tests. Modules live in `src/modules/*`, each exposing one `index.ts` interface. **Three rules:** (1) a module never owns the customer — only `core` writes identities/roles; (2) modules connect only through the core and the shared seams; (3) common → core, specific → module. No microservices; no plugin infrastructure before the first loop.
+## The stack & module shape (doc 01 D2, doc 14; target state doc 01 above)
+
+One **modular monolith** — the canonical pack agrees explicitly (`ARCHITECTURE.md` §1: "do not split into microservices for aesthetics"): Next.js (App Router) + TypeScript strict + PostgreSQL + Prisma (migration files, never db-push), Tailwind themed from the design tokens, Vitest three-tier tests. Modules live in `src/modules/*` (17 today: `analytics, audit, auth, booking, browse, comms, compliance, config, content, core, crm, finance, integrations, media, ops, projects, services` — more than doc 14's original 10; the tech spec's module list is stale and due an update, not a source of truth for what exists), each exposing one `index.ts` interface. **Three rules:** (1) a module never owns the customer — only `core` writes identities/roles; (2) modules connect only through another module's `index.ts` and the shared seams in `lib/` — never reach into a module's internal files, and never export a function from an internal file that a caller outside the module already needs without also exporting it from `index.ts`; (3) common → core, specific → module. No plugin infrastructure. Splitting a service out of the monolith needs a measured bottleneck and a stable domain boundary first (`ARCHITECTURE.md` §10), never done for its own sake.
+
+**The one deliberate exception to rule (2):** a `'use client'` component may import a module's internal file directly instead of its barrel `index.ts` when the barrel would drag server-only code (`node:crypto`, `next/headers`, anything Node-only) into the client bundle through some unrelated export the same barrel carries — Next.js's build fails outright if this happens, so it is never silent. This bit twice in the 2026-09-29 boundary-violation cleanup: `CheckInConditionReportModal.tsx`/`CheckOutConditionReportModal.tsx` importing `@/modules/ops` transitively reached `next/headers` via `ops-board.service → booking's index → home-space.service → lib/i18n.ts`; the admin payout routes importing `@/modules/finance` would have made an *already-working, unrelated* client component (`owner/statements/[statementId]/client.tsx`, importing `SIGNABLE_STATEMENT_STATUSES` from the same barrel) newly fail to build, because `payout-ledger.service`'s `node:crypto` import joined that barrel. Before "fixing" a module-boundary bypass by pointing it at the barrel, run `npm run build` — if it breaks, the bypass was load-bearing, not sloppy; keep it, and leave a comment saying why (see the two files above for the pattern). Never solve this by widening what a barrel exports without checking every existing client-side importer of that same barrel first.
 
 ## Everything editable without code — three layers (built first, always used)
 
@@ -59,26 +86,33 @@ Charging is **cash-first in loop one** — a recorded cash payment captures who 
 - **Personal data:** passports, payment data, PII under PDPA per doc 12 — field-level encryption for 🔒 fields, access logging, retention jobs. Builders never log PII, never store card data, never put PII in analytics or URLs.
 - **PII encryption key:** The `ENCRYPTION_KEY` (AES-256-GCM) must be rotated/secured **before** any production go-live, but **never changed** once it contains encrypted data. A changed key causes permanent decryption failure — all encrypted passports become unreadable. See docs/15_deployment.md §4.
 
-## No invention — stop and ask
+## No invention — stop and ask (refined by `docs/canonical/AI_AGENT_RULES.md` §3, §14)
 
-If a detail is missing — a text, a rule, a field, a flow step, a component — the agent **STOPS and ASKS**: log it in `docs/open_questions.md` and stop at that edge. Never guess. ⚠-marked provisional defaults in the specs trace to open questions Q1–Q20 and stand until the founder rules.
+Never invent management authority, ownership, inventory, rates/taxes/fees, provider verification, supply availability, legal claims, performance stats, 24/7 promises, partner counts, or ROI. Missing truth becomes a draft/disabled state, an `unknown`, a validation blocker, or a config requirement — not a guess.
+
+That said, **stop-and-ask is narrower than the original wording above implied.** Ask the founder only for genuine commercial, legal, or irreversible decisions. Do **not** ask for table names, code patterns, routine bug fixes, or permission to preserve canonical integrity — those are yours to decide and build. For a commercial uncertainty (a rate, a threshold, a policy): gather evidence, present concrete options, implement the reversible structure, and keep the unapproved capability disabled — don't stall the whole feature on one unresolved number. When you do stop, log it in `docs/open_questions.md`. ⚠-marked provisional defaults in the doc 00–18 suite trace to open questions there and stand until the founder rules; canonical-pack findings needing evidence are tracked in `docs/canonical/DECISIONS_CHANGELOG.md`'s "Commercial decisions requiring real evidence" list.
 
 ## Legacy policy
 
 The founder's old repos (sibling folders, see `legacy/README.md`) are a **parts bin, not a foundation, and not the look**. Doc 00 holds the take/don't-take decisions: re-implement taken *patterns* idiomatically inside `src/modules/*`; never import legacy files, schemas, or visuals; never run legacy code as part of the new system.
 
-## Working conventions (build phase)
+## Working conventions
 
-- Execute `docs/16_build_plan.md` **one task per session, in order**. Read the task's named specs first.
-- Every task ends with green tests + build + lints and **a commit naming the task id**. Tests named in a DoD are mandatory.
+Follow `docs/canonical/AI_AGENT_RULES.md`'s mandatory workflow: **inspect** current HEAD/open PRs/schema/tests before changing anything → **reconcile** (state `preserve / extend / fix / migrate / already fixed / not checked` against `docs/canonical/RECONCILIATION.md`) → **implement the full vertical slice** (`input → authority → state → money → communication → failure → evidence → handover → UI` — a route or a table alone is not a feature) → **migrate safely** (expand → backfill → parity → cutover → observe → contract later; never mutate migration history from build/install) → **test** → **verify at runtime where credentials allow, else mark `not checked`** → **update docs/evidence**.
+
+- Work through `docs/canonical/ROADMAP.md`'s phases (currently Phase 0–8); a task from the old `docs/16_build_plan.md` that's still unbuilt is folded into whichever phase it now belongs to, not executed against a stale T-number.
+- Every change ends with green tests + build + lints. State the requirement/process ID it addresses (a doc-16 T-number for legacy-suite work, a `docs/canonical/ROADMAP.md` phase item, or an F-number/finding ID otherwise) in the commit — never an untraceable change.
 - New events → doc 13; new notifications → doc 11; new config → doc 04; new content namespaces → doc 05 — updated in the same commit, or the addition is invalid.
+- Don't declare something done from a green build alone (`AI_AGENT_RULES.md` §13) — completion evidence is code + schema + data/config + auth + UX + tests + deploy + runtime verification, as applicable; say plainly which of those you could and couldn't check.
 - Write and explain for a **non-technical founder** — plain language.
-- Do not expand scope. First loop first (through T-032); smaller and correct beats broad and shaky.
+- Smaller and correct beats broad and shaky — a phase's exit criteria (`ROADMAP.md`) is the unit of "done," not a whole phase rushed at once.
 
 ## Where things are
 
+- **`PROJECT.md`** and **`docs/canonical/`** — the target architecture (read order above). Start here.
 - `docs/business/` — model, positioning, journey audit. `docs/brand/` — brand and art direction.
-- The suite: `docs/00_legacy_audit` · `01_architecture_decisions` (locked D1–D10) · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` · `15_deployment` · `16_build_plan` · `17_crm_and_commercial_system` · `18_platform_architecture` · `corporate_bible_integration` (implementation roadmap, six phases) · `open_questions` (maintained — the founder's question queue).
+- `docs/architecture/` — deep-dive specs for pieces of the canonical build already underway (e.g. `CANONICAL_PROPERTY_DATA_ARCHITECTURE.md`, `CANONICAL_STAY_DOMAIN_CONTRACT.md`, `ERD_CORE_DOMAIN.md`) — read alongside `docs/canonical/ARCHITECTURE.md` and `DATA_MODEL.md`, not instead of them.
+- The original suite (current shipped behavior, doc 16's build plan complete through T-043): `docs/00_legacy_audit` · `01_architecture_decisions` (locked D1–D10) · `02_data_model` · `03_roles_and_permissions` · `04_configuration` · `05_content_i18n` · `06_design_system` · `07_flows` · `08_pages` · `09_communication_and_services` · `10_payments` · `11_notifications` · `12_security_privacy` · `13_analytics` · `14_tech_spec` (module list is stale — see the stack section above) · `15_deployment` · `16_build_plan` (complete; superseded going forward by `docs/canonical/ROADMAP.md`) · `17_crm_and_commercial_system` · `18_platform_architecture` · `corporate_bible_integration` · `open_questions` (maintained — the founder's question queue; keep it current, closed items must actually get closed, not just superseded silently).
 
 ## Business Model & Brand Architecture
 

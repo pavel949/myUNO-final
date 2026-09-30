@@ -1,5 +1,7 @@
 # 14 · Technical Specification — the modular monolith
 
+> **Superseded as forward direction by `docs/canonical/ARCHITECTURE.md` + `DATA_MODEL.md`** (founder ruling, 2026-09-29). This document remains accurate for what actually shipped (the stack choices in §1 still hold; canonical agrees explicitly on the modular monolith), but §2–3's module list and dependency diagram are **stale** — 17 modules exist today (`analytics, audit, auth, booking, browse, comms, compliance, config, content, core, crm, finance, integrations, media, ops, projects, services`), not the 10 named below, and several of the module-to-module boundary violations this staleness produced were fixed in the canonical-reconciliation pass referenced in `open_questions.md`. Read this for shipped mechanics; read `docs/canonical/ARCHITECTURE.md` for where the system is going.
+
 **What this document is.** The concrete technical shape: stack, repository layout, module boundaries and the core interface, how legacy pieces fit, integrations, and the system-of-record map. Decisions justified in doc 01; this is the how.
 
 ---
@@ -29,17 +31,27 @@ src/
     app/                    # authenticated app surfaces
     app/admin/              # admin panel
     api/                    # route handlers → call module services only
-  modules/                  # THE architecture (this doc §3)
-    core/                   #   identity, projects, units, roles, permissions
-    booking/                #   stays: availability, pricing, lifecycle
+  modules/                  # THE architecture (this doc §3) — 17 modules, corrected 2026-09-29
+    core/                   #   identity, roles, permissions (can()), availability/pricing engine,
+                            #   compliance records + mobilization checklist, engagement, retention, landing
+    auth/                   #   register/login/session, email seam
+    audit/                  #   AuditLog persistence and queries
+    projects/               #   project/unit CRUD, public listings, residence, owner + MC dashboards,
+                            #   ownership history, areas, canonical property-facts/readiness (Layer 1)
+    booking/                #   stays: lifecycle, cancellation policy, home-space, stay/guest reviews
+    browse/                 #   saved units/searches, unit sort, unit ratings, map bounds
     services/               #   providers, services, orders
-    finance/                #   payments seam, ledger, statements, payouts, refunds
-    compliance/             #   TM30, compliance records, condition reports, retention
-    comms/                  #   threads, tickets, announcements, notifications
+    finance/                #   payments seam, ledger, statement sign-off, remittance, payouts, deposits
+    compliance/             #   canonical commercial-eligibility engine (canPublishShortTerm/LongTerm/Sale,
+                            #   Layer 3 of docs/canonical/) — NOT TM30/condition reports, see `ops` below
+    ops/                    #   TM30 filing, condition reports, passport verification, ops board
+    comms/                  #   threads, tickets, announcements, notifications, disputes
     content/                #   content keys, translations, t()
     config/                 #   parameters, overrides, getConfig()
-    analytics/              #   track(), detectors, rollups
-    integrations/           #   ical, payment adapters, messenger adapters, crm
+    analytics/              #   track(), rollups, buyer signals, KPIs
+    integrations/           #   integration accounts, ical import/export/sync, messenger adapters
+    crm/                    #   opportunities, pipeline, consent (PDPA)
+    media/                  #   media storage seam
   components/               # design-system components (doc 06)
   lib/                      # cross-cutting: db client, auth, seams (bus, email, media), errors
   jobs/                     # scheduled job registry

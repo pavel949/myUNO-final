@@ -1,4 +1,4 @@
-import { ensureSeedInventoryCategory } from '@/modules/projects/inventory.seed';
+import { ensureSeedInventoryCategory } from '@/modules/projects';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { hash } from 'bcryptjs';
 

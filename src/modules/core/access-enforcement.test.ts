@@ -65,8 +65,7 @@ function handlers(): Handler[] {
         ...[...body.matchAll(/action:\s*'([^']+)'/g)].map((m) => m[1]),
         ...[...body.matchAll(/requireAction\(\s*'([^']+)'/g)].map((m) => m[1]),
       ];
-      const assertsWrite =
-        /requiredAccess:\s*'allow'/.test(body) || /canWriteAvailabilityAndPricing\s*\(/.test(body);
+      const assertsWrite = /requiredAccess:\s*'allow'/.test(body);
       if (actions.length) {
         out.push({ file: file.replace(`${process.cwd()}/`, ''), method, actions, assertsWrite });
       }

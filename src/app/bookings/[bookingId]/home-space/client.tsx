@@ -113,6 +113,8 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     if (response.ok) {
       const data = await response.json();
       router.push(`/messages/${data.threadId}`);
+    } else {
+      router.push(`/messages?projectId=${booking.unit.project.id}&bookingId=${booking.id}`);
     }
   };
 

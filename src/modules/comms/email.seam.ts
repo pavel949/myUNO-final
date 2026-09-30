@@ -5,6 +5,11 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+// Deliberately deep, not the module's index.ts: @/modules/content's barrel
+// also re-exports its seed script (content/seed.ts), which imports
+// `node:crypto`. comms -> finance -> an owner-statement client component
+// already depends on @/modules/finance's barrel, so pulling the whole content
+// barrel in through this file would make that unrelated client bundle fail.
 import { t } from '@/modules/content/content.service';
 import type { Locale } from '@/modules/content/types';
 

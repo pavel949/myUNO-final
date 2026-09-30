@@ -1,5 +1,7 @@
 # 01 · Architecture Decisions
 
+> **D1–D10 below are locked for the shipped first loop.** Where the canonical pack (`docs/canonical/`, founder ruling 2026-09-29) revises one — e.g. the scope chain extending past D-spine's `project → unit` — the canonical pack's `ARCHITECTURE.md`/`DECISIONS_CHANGELOG.md` is the new decision of record; that supersession is noted inline where it applies, never silently. A D-number here that canonical doesn't touch still stands as-is.
+
 **What this document is.** The locked technical and structural decisions the whole specification suite rests on, each with its reasoning in plain language — plus an honest critique of the v3 model where it under-specifies the build. Where a decision was a *real fork* whose answer belongs to the founder, it is logged in `docs/open_questions.md` and the spec proceeds on a clearly-marked provisional stance.
 
 ---

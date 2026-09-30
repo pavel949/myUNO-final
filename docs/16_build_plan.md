@@ -1,5 +1,7 @@
 # 16 · Build Plan — one task at a time, first loop first
 
+> **This plan is complete (through T-043).** Forward work now follows `docs/canonical/ROADMAP.md`'s phases (founder ruling, 2026-09-29 — see `CLAUDE.md`). This document stays as the historical record of how the first loop was built and sequenced; any task below still genuinely unbuilt is folded into whichever `ROADMAP.md` phase it now belongs to, not executed against its old T-number.
+
 **What this document is.** The ordered task list a cheaper model executes, one task per session, top to bottom. Each task says **what** it builds, **where** (files), its **definition of done (DoD)**, what it **connects to**, and which **specs** it draws from. Global rules for every task:
 
 - Read `CLAUDE.md` + the named spec sections before writing code. **Never invent** — a missing text/rule/field/flow goes to `docs/open_questions.md` and the task stops at that edge.

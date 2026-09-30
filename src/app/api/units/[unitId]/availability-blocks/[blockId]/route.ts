@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { canWriteAvailabilityAndPricing, removeBlockedDate } from '@/modules/core';
+import { can, removeBlockedDate } from '@/modules/core';
 import { logAudit } from '@/modules/audit';
 
 /**
@@ -30,9 +30,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
   }
 
-  const allowed = await canWriteAvailabilityAndPricing(identity, {
-    projectId: unit.projectId,
-    unitId: unit.id,
+  const allowed = await can({
+    identity,
+    action: 'units:manage_availability_and_pricing',
+    requiredAccess: 'allow',
+    resource: { projectId: unit.projectId, unitId: unit.id },
   });
   if (!allowed) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can, people } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
-import { sendEmail } from '@/modules/auth/email';
+import { sendEmail } from '@/modules/auth';
 import { logAudit } from '@/modules/audit';
 
 /**

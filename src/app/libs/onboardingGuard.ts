@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
-import { canWithAccess, type RequiredAccess } from '@/modules/core/authority.service';
+import { can, type RequiredAccess } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import type { Identity } from '@prisma/client';
 
@@ -78,7 +77,7 @@ export async function requireAction(
     projectId = unit.projectId;
   }
 
-  const allowed = await canWithAccess(prisma, {
+  const allowed = await can({
     identity: loaded.identity,
     action,
     requiredAccess: options.requiredAccess,

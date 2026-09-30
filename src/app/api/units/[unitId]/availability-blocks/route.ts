@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
   can,
-  canWriteAvailabilityAndPricing,
   createManualBlock,
   getUnitBlockedDates,
   type ManualBlockReason,
@@ -23,9 +22,9 @@ import { logAudit } from '@/modules/audit';
  *
  * Permission: doc 03 §3 "Manage availability blocks & pricing rules" —
  * `units:manage_availability_and_pricing` (admin, staff_ops, mc_member scoped
- * to their units; owner is read-only). GET uses the doc 03 matrix check;
- * POST additionally excludes the owner's read-only grant
- * (`canWriteAvailabilityAndPricing` — see permissions.ts, Q58).
+ * to their units; owner is read-only, doc 03's "👁 own units"). GET reads at
+ * the default `requiredAccess: 'read'`, which a read-only grant satisfies;
+ * POST asks for `'allow'`, which excludes the owner's read-only row (Q58).
  */
 
 const MANUAL_REASONS: ManualBlockReason[] = ['maintenance', 'owner_hold', 'other'];
@@ -82,9 +81,11 @@ export async function POST(req: NextRequest, { params }: { params: { unitId: str
   if ('error' in loaded) return loaded.error;
   const { identity, unit, actorIdentityId } = loaded;
 
-  const allowed = await canWriteAvailabilityAndPricing(identity, {
-    projectId: unit.projectId,
-    unitId: unit.id,
+  const allowed = await can({
+    identity,
+    action: 'units:manage_availability_and_pricing',
+    requiredAccess: 'allow',
+    resource: { projectId: unit.projectId, unitId: unit.id },
   });
   if (!allowed) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

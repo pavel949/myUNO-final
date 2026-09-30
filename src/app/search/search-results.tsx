@@ -98,6 +98,8 @@ export default function SearchResults({
   const adults = searchParams?.get('adults') || '1';
   const children = searchParams?.get('children') || '0';
   const projectId = searchParams?.get('projectId');
+  const areaSlug = searchParams?.get('areaSlug');
+  const stayMode = searchParams?.get('stayMode');
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
   const unitTypes = searchParams?.get('unitTypes') || '';
   const minPrice = searchParams?.get('minPrice') || '';
@@ -130,6 +132,8 @@ export default function SearchResults({
           offset: String(offset),
         });
         if (projectId) params.set('projectId', projectId);
+        if (areaSlug) params.set('areaSlug', areaSlug);
+        if (stayMode) params.set('stayMode', stayMode);
         if (unitTypes) params.set('unitTypes', unitTypes);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
@@ -170,7 +174,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, sort, unitTypes, minPrice, maxPrice, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -230,6 +234,8 @@ export default function SearchResults({
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>
           <SearchBar
             projectId={projectId ?? undefined}
+            areaSlug={areaSlug ?? undefined}
+            stayMode={stayMode ?? undefined}
             labels={{
               checkIn: labels.barCheckIn,
               checkOut: labels.barCheckOut,
@@ -403,7 +409,7 @@ export default function SearchResults({
             {units.map((unit) => (
               <Link
                 key={unit.id}
-                href={`/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`}
+                href={`/units/${unit.id}?${new URLSearchParams({ startDate: startDate || '', endDate: endDate || '', adults, children, ...(areaSlug ? { areaSlug } : {}), ...(stayMode ? { stayMode } : {}) }).toString()}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow duration-micro"
               >
                 {unit.coverUrl ? (

@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { accessSatisfies } from '@/modules/core/authority.service';
-import { PERMISSIONS, resolvePermissionAction } from '@/modules/core/permissions';
+import { accessSatisfies, PERMISSIONS, resolvePermissionAction } from '@/modules/core';
 
 /**
- * `canWithAccess` is the seam mutation routes use because `can()` does not
- * distinguish a matrix row's 'read' access from 'allow' (Q58). Two properties
- * have to hold for that seam to be safe, and both were briefly untrue.
+ * `can()` honours a matrix row's 'read' vs 'allow' access via `requiredAccess`
+ * (Q58, `docs/canonical/` reconciliation 2026-09-29). Two properties have to
+ * hold for a mutation route's write check to be safe, and both were briefly
+ * untrue. (The separate `canWithAccess` seam this file used to describe was
+ * a byte-for-byte duplicate of `can()` once `can()` learned to check access —
+ * removed in favour of calling `can()` directly.)
  */
-describe('canWithAccess action resolution', () => {
+describe('can() action resolution', () => {
   it('resolves legacy route action names to canonical matrix actions', () => {
     // Routes still use pre-matrix names. If the seam matched on the raw name it
     // would find zero permission rows and deny everyone but admin — closed, but

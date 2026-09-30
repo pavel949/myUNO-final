@@ -14,3 +14,5 @@ CREATE INDEX "provider_map_visibility_status_idx"
 
 CREATE INDEX "project_map_visibility_status_idx"
   ON "project" ("map_visibility", "status");
+
+CREATE UNIQUE INDEX "project_google_place_id_key" ON "project" ("google_place_id");

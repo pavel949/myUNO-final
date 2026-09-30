@@ -25,6 +25,8 @@ function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
 
 export interface PublicProjectCategory {
   key: string;
+  name: string;
+  descriptionKey: string;
   styleKey: string | null;
   bedrooms: number | null;
   unitCount: number;
@@ -89,6 +91,8 @@ export interface PublicProjectDetail {
   latitude: number;
   longitude: number;
   amenityKeys: string[];
+  areaNameKey: string | null;
+  areaDescriptionKey: string | null;
   coverUrl: string | null;
   galleryUrls: string[];
   units: PublicProjectUnit[];
@@ -137,6 +141,7 @@ export async function getPublicProjectBySlug(
   const project = await prisma.project.findUnique({
     where: { slug },
     include: {
+      area: { select: { nameKey: true, descriptionKey: true } },
       coverMedia: { select: { storageKey: true } },
       galleryMedia: {
         orderBy: { sort: 'asc' },
@@ -167,7 +172,7 @@ export async function getPublicProjectBySlug(
   if (!project || project.status !== 'live') return null;
 
   const [categories, reviews] = await Promise.all([
-    buildPublicCategories(project.id, project.units),
+    buildPublicCategories(project.id, project.slug, project.units),
     buildPublicReviews(project.id),
   ]);
 
@@ -183,6 +188,8 @@ export async function getPublicProjectBySlug(
     latitude: Number(project.latitude),
     longitude: Number(project.longitude),
     amenityKeys: project.amenityKeys,
+    areaNameKey: project.area?.nameKey ?? null,
+    areaDescriptionKey: project.area?.descriptionKey ?? null,
     coverUrl: project.coverMedia?.storageKey ?? null,
     galleryUrls: project.galleryMedia.map((g) => g.media.storageKey),
     units: project.units.map((u) => ({
@@ -212,6 +219,7 @@ export async function getPublicProjectBySlug(
  */
 async function buildPublicCategories(
   projectId: string,
+  projectSlug: string,
   liveUnits: {
     categoryKey: string | null;
     baseNightlyThb: number;
@@ -228,6 +236,7 @@ async function buildPublicCategories(
     where: { projectId, status: 'live' },
     orderBy: { createdAt: 'asc' },
     select: {
+      id: true,
       categoryKey: true,
       name: true,
       bedrooms: true,
@@ -244,6 +253,12 @@ async function buildPublicCategories(
       );
       return {
         key: category.categoryKey,
+        name: category.name,
+        // Imported Layantara rows retain their verified, translated source content.
+        // Every other project uses the same stable project/category editorial key contract.
+        descriptionKey: category.id.startsWith('layantara-category-')
+          ? `layantara.category.${category.id.slice('layantara-category-'.length)}.description`
+          : `project.${projectSlug}.category.${category.categoryKey}.description`,
         styleKey: null,
         bedrooms: category.bedrooms,
         unitCount: units.length,

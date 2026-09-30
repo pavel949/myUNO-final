@@ -36,29 +36,18 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
   });
 
   const labels = await getLabels({
-    'admin.project_services.title': 'Project services',
-    'admin.project_services.body': 'Choose which restricted myUNO services are available in this Project Space. Services with no project restrictions are available platform-wide.',
+    'admin.project_services.title': 'Concierge preferences',
+    'admin.project_services.body': 'myUNO marketplace services are available across all projects. Configure only optional project-specific prices, lead times or commercial preferences here.',
     'admin.project_services.back': 'Back to Project 360',
-    'admin.project_services.global': 'Global myUNO service · available in every project',
-    'admin.project_services.restrict_here': 'Restrict to this project',
-    'admin.project_services.restrict_confirm': 'Restrict this global service to this project only? It will stop being available in other projects until they are explicitly added.',
-    'admin.project_services.restricted_here': 'Restricted service · available in {count} project(s), including this one',
-    'admin.project_services.restricted_elsewhere': 'Restricted service · currently assigned to {count} other project(s)',
-    'admin.project_services.add': 'Add to this project',
-    'admin.project_services.remove': 'Remove from this project',
-    'admin.project_services.enable': 'Enable',
-    'admin.project_services.disable': 'Disable',
-    'admin.project_services.show': 'Show publicly',
-    'admin.project_services.hide': 'Hide publicly',
-    'admin.project_services.make_global': 'Make global',
-    'admin.project_services.global_confirm': 'Make this service available across every myUNO project?',
     'admin.project_services.base_price': 'Base price',
     'admin.project_services.price_override': 'Project price (THB)',
     'admin.project_services.lead_time': 'Project lead time (hours)',
     'admin.project_services.take_rate': 'Project take rate (%)',
-    'admin.project_services.save_terms': 'Save project terms',
-    'admin.project_services.inherit': 'inherit',
-    'admin.project_services.error': 'Could not update project service availability.',
+    'admin.project_services.save_terms': 'Save preference',
+    'admin.project_services.clear': 'Use global defaults',
+    'admin.project_services.saved': 'Concierge preference saved.',
+    'admin.project_services.inherit': 'global default',
+    'admin.project_services.error': 'Could not update concierge preference.',
   });
 
   const rows = services.map(service => {
@@ -68,17 +57,12 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
       title: service.title,
       providerName: service.provider.name,
       categoryKey: service.categoryKey,
-      scope: service.availableProjects.length === 0 ? 'global' as const
-        : here ? 'restricted_here' as const : 'restricted_elsewhere' as const,
-      projectCount: service.availableProjects.length,
-      basePriceThb: service.basePriceThb,
+       basePriceThb: service.basePriceThb,
       baseLeadTimeHours: service.advanceNoticeHours,
       priceOverrideThb: here?.price_override_thb ?? null,
       leadTimeHours: here?.lead_time_hours ?? null,
       takeRatePct: here?.take_rate_pct?.toString() ?? null,
       termsVersion: here?.terms_version ?? null,
-      enabledHere: here?.enabled ?? null,
-      publicHere: here?.public ?? null,
     };
   });
 

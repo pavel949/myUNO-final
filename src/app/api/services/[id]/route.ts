@@ -9,16 +9,32 @@ import { getPublicMarketplaceServiceDetail } from '@/modules/services';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/services/[id] — service detail (F-SVC-1).
- * Public read; returns service + provider + media.
+ * GET /api/services/[id] — public service detail.
+ * Project context personalizes project overrides/context but does not create a
+ * separate marketplace catalogue.
  */
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
-
     const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
-    return NextResponse.json(service);
+    const service = await getPublicMarketplaceServiceDetail(
+      prisma,
+      params.id,
+      getRequestLocale(),
+      projectId
+    );
+    if (!service) {
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+    }
 
+    const viewer = await getCurrentUser().catch(() => null);
+    await track(prisma, 'service_service_viewed', {
+      serviceId: service.id,
+      identityId: viewer?.identityId,
+      categoryKey: service.categoryKey,
+      projectId,
+    }).catch(() => null);
+
+    return NextResponse.json(service);
   } catch (error) {
     return handleError(error);
   }

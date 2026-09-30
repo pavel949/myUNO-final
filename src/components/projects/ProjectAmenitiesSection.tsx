@@ -43,11 +43,15 @@ export default function ProjectAmenitiesSection({
   amenities,
   title,
   viewAllLabel,
+  viewAllHref,
+  detailHrefFor,
 }: {
   projectSlug: string;
   amenities: PublicProjectAmenity[];
   title: string;
   viewAllLabel: string;
+  viewAllHref?: string;
+  detailHrefFor?: (amenity: PublicProjectAmenity) => string;
 }) {
   if (!amenities.length) return null;
   const featured = amenities.filter(item => item.isFeatured);
@@ -61,7 +65,7 @@ export default function ProjectAmenitiesSection({
           <h2 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{title}</h2>
         </div>
         <Link
-          href={`/projects/${projectSlug}/amenities`}
+          href={viewAllHref ?? `/projects/${projectSlug}/amenities`}
           className="font-semibold text-brand-andaman hover:underline"
         >
           {viewAllLabel}
@@ -72,7 +76,7 @@ export default function ProjectAmenitiesSection({
         {visible.map((amenity) => (
           <Link
             key={amenity.id}
-            href={`/projects/${projectSlug}/amenities/${amenity.slug}`}
+            href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}`}
             className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
           >
             {amenity.coverUrl ? (

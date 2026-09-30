@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getRequestLocale } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 
@@ -30,6 +30,15 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     },
   });
   if (!project) notFound();
+  const labels = await getLabels({
+    'admin.project_preview.private': 'Private preview · not published',
+    'admin.project_preview.project360': 'Project 360',
+    'admin.project_preview.edit_media': 'Edit project media',
+    'admin.project_preview.stats': '{categories} canonical categories · {units} physical units · {unitPhotos} linked unit photos · {projectPhotos} project gallery photos. Draft units are not available for booking.',
+    'admin.project_preview.categories': 'Accommodation categories and exact units',
+    'admin.project_preview.unit_stats': '{bedrooms} bedrooms · {units} villas · {status}',
+    'admin.project_preview.photos': '{count} exact-unit photos · {status}',
+  });
   const prefix = `project.${project.slug}.editorial.`;
   const fields = ['eyebrow', 'headline', 'lead', 'benefits.title',
     ...[1, 2, 3, 4].flatMap(i => [`benefit.${i}.title`, `benefit.${i}.body`]),
@@ -59,11 +68,11 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
   return <main className="min-h-screen bg-surface-ivory pb-64">
     <header className="border-b border-border-line bg-surface-paper px-24 py-16">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-12">
-        <div><p className="text-kicker text-brand-andaman">Private preview · not published</p>
+        <div><p className="text-kicker text-brand-andaman">{labels['admin.project_preview.private']}</p>
           <h1 className="font-display text-heading-2 font-semibold text-text-ink">{project.name}</h1></div>
         <div className="flex gap-12">
-          <Link href={`/app/admin/projects/${project.id}`} className="font-semibold text-brand-andaman underline">Project 360</Link>
-          <Link href={`/app/admin/properties/${project.id}/onboarding?gallery=project:${project.id}#step-7`} className="font-semibold text-brand-andaman underline">Edit project media</Link>
+          <Link href={`/app/admin/projects/${project.id}`} className="font-semibold text-brand-andaman underline">{labels['admin.project_preview.project360']}</Link>
+          <Link href={`/app/admin/properties/${project.id}/onboarding?gallery=project:${project.id}#step-7`} className="font-semibold text-brand-andaman underline">{labels['admin.project_preview.edit_media']}</Link>
         </div>
       </div>
     </header>
@@ -77,8 +86,11 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     </section>
     <section className="mx-auto max-w-6xl px-24 py-24">
       <p className="rounded-lg border border-border-line bg-surface-paper p-16 text-small text-text-secondary">
-        {project.inventoryCategories.length} canonical categories · {project.inventoryCategories.reduce((n,c)=>n+c.units.length,0)} physical units · {photoCount} linked unit photos · {project.galleryMedia.length} project gallery photos.
-        All units remain in their actual status. Prices and booking controls are intentionally excluded from this draft preview.
+        {labels['admin.project_preview.stats']
+          .replace('{categories}', String(project.inventoryCategories.length))
+          .replace('{units}', String(project.inventoryCategories.reduce((n,c)=>n+c.units.length,0)))
+          .replace('{unitPhotos}', String(photoCount))
+          .replace('{projectPhotos}', String(project.galleryMedia.length))}
       </p>
       {project.galleryMedia.length > 0 && <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4">
         {project.galleryMedia.map(row => <Image key={row.mediaId} src={row.media.storageKey} alt={project.name} width={500} height={320} className="aspect-video w-full rounded-lg object-cover"/>)}
@@ -86,7 +98,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     </section>
     <ProjectEditorialSections editorial={editorial} projectId={project.id} />
     <section className="mx-auto max-w-6xl px-24 py-48">
-      <h2 className="mb-24 font-display text-heading-2 font-semibold">Accommodation categories and exact units</h2>
+      <h2 className="mb-24 font-display text-heading-2 font-semibold">{labels['admin.project_preview.categories']}</h2>
       <div className="grid gap-16 md:grid-cols-2">
         {project.inventoryCategories.map(category => {
           const descriptionKey = category.id.startsWith('layantara-category-')
@@ -94,13 +106,13 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
             : `project.${project.slug}.category.${category.categoryKey}.description`;
           return <article key={category.id} className="rounded-xl border border-border-line bg-surface-paper p-24">
             <h3 className="font-display text-heading-3 font-semibold">{category.name}</h3>
-            <p className="mt-4 text-small text-text-secondary">{category.bedrooms} bedrooms · {category.units.length} villas · {category.status}</p>
+            <p className="mt-4 text-small text-text-secondary">{labels['admin.project_preview.unit_stats'].replace('{bedrooms}', String(category.bedrooms)).replace('{units}', String(category.units.length)).replace('{status}', category.status)}</p>
             {content[descriptionKey] && <p className="mt-12 text-small leading-relaxed text-text-secondary">{content[descriptionKey]}</p>}
             <div className="mt-16 grid grid-cols-2 gap-12">
               {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="rounded-lg border border-border-line p-8 hover:border-brand-andaman">
                 {unit.coverMedia ? <Image src={unit.coverMedia.storageKey} alt={unit.name} width={300} height={180} className="aspect-video w-full rounded-md object-cover"/> : <div className="aspect-video rounded-md bg-surface-muted"/>}
                 <p className="mt-8 font-semibold">{unit.name}</p>
-                <p className="text-small text-text-secondary">{unit._count.media} exact-unit photos · {unit.status}</p>
+                <p className="text-small text-text-secondary">{labels['admin.project_preview.photos'].replace('{count}', String(unit._count.media)).replace('{status}', unit.status)}</p>
               </Link>)}
             </div>
           </article>;

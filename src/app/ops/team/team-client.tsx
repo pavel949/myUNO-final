@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 type Project = { id: string; name: string };
 type Assignment = {
-  id: string; identityId: string; grantedByIdentityId: string | null;
+  id: string; identityId: string; grantedByIdentityId: string | null; canRevoke: boolean;
   identity: { firstName: string; lastName: string; email: string | null; status: string };
 };
 
@@ -77,8 +77,9 @@ export default function ProjectTeamClient({ projects }: { projects: Project[] })
       {assignments.map(a => <li key={a.id} className="flex flex-wrap items-center justify-between gap-12 py-12">
         <div><p className="font-semibold">{a.identity.firstName} {a.identity.lastName}</p>
         <p className="text-small text-text-secondary">{a.identity.email} · {a.identity.status}</p></div>
-        <button disabled={loading} type="button" onClick={() => void revoke(a.id)}
+        {a.canRevoke ? <button disabled={loading} type="button" onClick={() => void revoke(a.id)}
           className="rounded-lg border border-border-line px-12 py-8 text-small disabled:opacity-50">Revoke project role</button>
+          : <span className="text-small text-text-secondary">Admin-managed access</span>}
       </li>)}
     </ul>
   </section>;

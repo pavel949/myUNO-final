@@ -46,6 +46,7 @@ export default function ProjectAmenitiesSection({
   viewAllHref,
   detailHrefFor,
   labels,
+  bookingId,
 }: {
   projectSlug: string;
   amenities: PublicProjectAmenity[];
@@ -59,6 +60,7 @@ export default function ProjectAmenitiesSection({
     free: string;
     bookingRequired: string;
   };
+  bookingId?: string | null;
 }) {
   if (!amenities.length) return null;
   const featured = amenities.filter(item => item.isFeatured);
@@ -83,7 +85,7 @@ export default function ProjectAmenitiesSection({
         {visible.map((amenity) => (
           <Link
             key={amenity.id}
-            href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}`}
+            href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}${bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : ''}`}
             className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
           >
             {amenity.coverUrl ? (

@@ -2,6 +2,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +22,7 @@ export type AmenityRow = {
   bookingRequired: boolean;
   bookingMode: string;
   bookingUrl: string | null;
+  reservationConfig: unknown;
   pricingType: string;
   priceThb: number | null;
   capacity: number | null;
@@ -51,6 +53,17 @@ function parseJsonOrLines(value: string): unknown {
 }
 function money(satang: number | null) {
   return satang === null ? '' : String(satang / 100);
+}
+function reservationConfig(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+function configValue(value: unknown, key: string): string {
+  const raw = reservationConfig(value)[key];
+  return raw === undefined || raw === null ? '' : String(raw);
+}
+function configBool(value: unknown, key: string, fallback: boolean): boolean {
+  const raw = reservationConfig(value)[key];
+  return typeof raw === 'boolean' ? raw : fallback;
 }
 
 export default function ProjectExperienceClient({
@@ -124,6 +137,15 @@ export default function ProjectExperienceClient({
       bookingRequired: fd.get('bookingRequired') === 'on',
       bookingMode: fd.get('bookingMode'),
       bookingUrl: fd.get('bookingUrl'),
+      reservationConfig: {
+        slotMinutes: fd.get('slotMinutes') ? Number(fd.get('slotMinutes')) : undefined,
+        minLeadMinutes: fd.get('minLeadMinutes') ? Number(fd.get('minLeadMinutes')) : undefined,
+        maxAdvanceDays: fd.get('maxAdvanceDays') ? Number(fd.get('maxAdvanceDays')) : undefined,
+        maxPartySize: fd.get('maxPartySize') ? Number(fd.get('maxPartySize')) : undefined,
+        maxConcurrentGuests: fd.get('maxConcurrentGuests') ? Number(fd.get('maxConcurrentGuests')) : undefined,
+        exclusive: fd.get('exclusive') === 'on',
+        autoConfirm: fd.get('autoConfirm') === 'on',
+      },
       pricingType: fd.get('pricingType'),
       priceBaht: fd.get('priceBaht'),
       capacity: fd.get('capacity'),
@@ -225,7 +247,7 @@ export default function ProjectExperienceClient({
         <form key={selected.id} onSubmit={saveAmenity} className="space-y-20">
           <div className="rounded-xl border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12">
-              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p></div>
+              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p>{selected.bookingRequired ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
               <div className="flex gap-8">
                 <label className="flex items-center gap-6 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> Featured</label>
                 <label className="flex items-center gap-6 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> Published</label>
@@ -255,6 +277,15 @@ export default function ProjectExperienceClient({
               <label className="text-small">Booking method<input list="amenity-booking-modes" name="bookingMode" defaultValue={selected.bookingMode} className={input}/></label>
               <datalist id="amenity-booking-modes"><option value="none"/><option value="reception"/><option value="request"/><option value="time_slot"/><option value="external_link"/></datalist>
               <label className="text-small">Booking URL / action (optional)<input name="bookingUrl" defaultValue={selected.bookingUrl || ''} className={input}/></label>
+              <label className="text-small">Slot size (minutes)<input name="slotMinutes" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'slotMinutes')} className={input} placeholder="60"/></label>
+              <label className="text-small">Minimum lead (minutes)<input name="minLeadMinutes" type="number" min="0" defaultValue={configValue(selected.reservationConfig, 'minLeadMinutes')} className={input} placeholder="0"/></label>
+              <label className="text-small">Maximum advance window (days)<input name="maxAdvanceDays" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxAdvanceDays')} className={input} placeholder="90"/></label>
+              <label className="text-small">Maximum party size<input name="maxPartySize" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxPartySize')} className={input}/></label>
+              <label className="text-small">Shared capacity per slot<input name="maxConcurrentGuests" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxConcurrentGuests')} className={input}/></label>
+              <div className="flex flex-wrap gap-16 md:col-span-2">
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="exclusive" defaultChecked={configBool(selected.reservationConfig, 'exclusive', true)}/> Exclusive slot</label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="autoConfirm" defaultChecked={configBool(selected.reservationConfig, 'autoConfirm', true)}/> Auto-confirm available slots</label>
+              </div>
               <label className="text-small">Pricing / entitlement<input list="amenity-pricing-types" name="pricingType" defaultValue={selected.pricingType} className={input}/></label>
               <datalist id="amenity-pricing-types"><option value="included"/><option value="free"/><option value="paid"/><option value="deposit"/><option value="mixed"/></datalist>
               <label className="text-small">Price THB (optional)<input name="priceBaht" type="number" min="0" step="0.01" defaultValue={money(selected.priceThb)} className={input}/></label>

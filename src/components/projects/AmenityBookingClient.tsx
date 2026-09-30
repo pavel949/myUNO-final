@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 type Reservation = {
   id: string;
@@ -41,12 +41,12 @@ export default function AmenityBookingClient({
 
   const durationOptions = useMemo(() => [slotMinutes, slotMinutes * 2, slotMinutes * 3].filter((v,i,a)=>v>0&&a.indexOf(v)===i), [slotMinutes]);
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch(`/api/project-amenities/${amenityId}/reservations`, { cache: 'no-store' });
     const data = await res.json().catch(() => null);
     if (res.ok) setReservations(data?.reservations ?? []);
-  }
-  useEffect(() => { void load(); }, [amenityId]);
+  }, [amenityId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -6,6 +6,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
+import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
+import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 import { categoryEditorialKeys } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +23,13 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
       area: { select: { nameKey: true, descriptionKey: true } },
       coverMedia: { select: { storageKey: true } },
       galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
+      amenities: {
+        orderBy: [{ isFeatured: 'desc' }, { sort: 'asc' }, { name: 'asc' }],
+        include: {
+          coverMedia: { select: { storageKey: true } },
+          media: { orderBy: [{ sort: 'asc' }, { mediaId: 'asc' }], include: { media: { select: { storageKey: true } } } },
+        },
+      },
       inventoryCategories: { orderBy: { name: 'asc' }, select: {
         id: true, name: true, categoryKey: true, bedrooms: true, status: true,
         units: { select: {
@@ -66,7 +75,18 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     groupsCta: '', // No booking action in a draft preview.
   };
   const photoCount = project.inventoryCategories.reduce((n,c) => n+c.units.reduce((m,u) => m+u._count.media,0),0);
+  const amenities = project.amenities.map(row => ({
+    id: row.id, slug: row.slug, name: row.name, categoryKey: row.categoryKey,
+    shortDescription: row.shortDescription, description: row.description, iconKey: row.iconKey,
+    locationLabel: row.locationLabel, accessType: row.accessType, accessInstructions: row.accessInstructions,
+    bookingRequired: row.bookingRequired, bookingMode: row.bookingMode, bookingUrl: row.bookingUrl,
+    pricingType: row.pricingType, priceThb: row.priceThb, capacity: row.capacity, minAge: row.minAge,
+    openingHours: row.openingHours, rules: row.rules, terms: row.terms, isFeatured: row.isFeatured,
+    coverUrl: row.coverMedia?.storageKey ?? row.media[0]?.media.storageKey ?? null,
+    galleryUrls: row.media.map(item => item.media.storageKey),
+  }));
   return <main className="min-h-screen bg-surface-ivory pb-64">
+    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active="preview" /></div>
     <header className="border-b border-border-line bg-surface-paper px-24 py-16">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-12">
         <div><p className="text-kicker text-brand-andaman">{labels['admin.project_preview.private']}</p>
@@ -98,6 +118,14 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
       </div>}
     </section>
     <ProjectEditorialSections editorial={editorial} projectId={project.id} />
+    <ProjectAmenitiesSection
+      projectSlug={project.slug}
+      amenities={amenities}
+      title="Project amenities"
+      viewAllLabel="Manage amenities →"
+      viewAllHref={`/app/admin/projects/${project.id}/experience`}
+      detailHrefFor={() => `/app/admin/projects/${project.id}/experience`}
+    />
     <section className="mx-auto max-w-6xl px-24 py-48">
       <h2 className="mb-24 font-display text-heading-2 font-semibold">{labels['admin.project_preview.categories']}</h2>
       <div className="grid gap-16 md:grid-cols-2">

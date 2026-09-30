@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import maplibregl, { LngLatBounds, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
+import { LngLatBounds, Map as MapLibreMap, Marker, NavigationControl, Popup } from 'maplibre-gl';
 import type { MapEntity } from '@/modules/map';
 import { PHUKET_MAP_CENTER, PHUKET_MAP_ZOOM } from '@/modules/map';
 
@@ -42,7 +42,7 @@ export function MyUNOMap({
 
       if (cancelled || !containerRef.current || mapRef.current) return;
 
-      map = new maplibregl.Map({
+      map = new MapLibreMap({
         container: containerRef.current,
         style: styleUrl,
         center: [PHUKET_MAP_CENTER.longitude, PHUKET_MAP_CENTER.latitude],
@@ -50,7 +50,7 @@ export function MyUNOMap({
         attributionControl: true,
       });
 
-      map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+      map.addControl(new NavigationControl({ showCompass: true }), 'top-right');
       mapRef.current = map;
     };
 

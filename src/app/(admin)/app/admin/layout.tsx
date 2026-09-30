@@ -53,7 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.claims': 'Damage claims',
     'admin.nav.disputes': 'Disputes',
     'admin.nav.audit': 'Audit trail',
-    'admin.nav.integrations': 'Integrations',
+    'admin.nav.integrations': 'Integrations & Secrets',
     'admin.nav.scheduler': 'Scheduler',
     'admin.nav.back_to_site': '← Back to site',
   });

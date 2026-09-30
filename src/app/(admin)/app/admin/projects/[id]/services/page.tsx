@@ -22,8 +22,14 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
       title: true,
       categoryKey: true,
       provider: { select: { name: true } },
+      basePriceThb: true,
+      advanceNoticeHours: true,
       availableProjects: {
-        select: { project_id: true, enabled: true, public: true },
+        select: {
+          project_id: true, enabled: true, public: true,
+          price_override_thb: true, lead_time_hours: true,
+          take_rate_pct: true, terms_version: true,
+        },
       },
     },
     orderBy: [{ categoryKey: 'asc' }, { title: 'asc' }],
@@ -44,6 +50,12 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
     'admin.project_services.hide': 'Hide publicly',
     'admin.project_services.make_global': 'Make global',
     'admin.project_services.global_confirm': 'Make this service available across every myUNO project?',
+    'admin.project_services.base_price': 'Base price',
+    'admin.project_services.price_override': 'Project price (THB)',
+    'admin.project_services.lead_time': 'Project lead time (hours)',
+    'admin.project_services.take_rate': 'Project take rate (%)',
+    'admin.project_services.save_terms': 'Save project terms',
+    'admin.project_services.inherit': 'inherit',
     'admin.project_services.error': 'Could not update project service availability.',
   });
 
@@ -57,6 +69,12 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
       scope: service.availableProjects.length === 0 ? 'global' as const
         : here ? 'restricted_here' as const : 'restricted_elsewhere' as const,
       projectCount: service.availableProjects.length,
+      basePriceThb: service.basePriceThb,
+      baseLeadTimeHours: service.advanceNoticeHours,
+      priceOverrideThb: here?.price_override_thb ?? null,
+      leadTimeHours: here?.lead_time_hours ?? null,
+      takeRatePct: here?.take_rate_pct?.toString() ?? null,
+      termsVersion: here?.terms_version ?? null,
       enabledHere: here?.enabled ?? null,
       publicHere: here?.public ?? null,
     };

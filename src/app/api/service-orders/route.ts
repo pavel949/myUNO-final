@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (!service || service.status !== 'active' || service.provider?.status !== 'active') {
       throw createPublicError('not found', 404);
     }
-    if (service.priceModel === 'quote' || !service.basePriceThb) {
+    if (service.priceModel === 'quote') {
       throw createPublicError('invalid request: this service is quoted individually — message us instead', 400);
     }
 
@@ -62,14 +62,8 @@ export async function POST(req: NextRequest) {
     if (isNaN(start.getTime()) || start < new Date()) {
       throw createPublicError('invalid request: scheduledStart must be in the future', 400);
     }
-    const noticeMs = service.advanceNoticeHours * 60 * 60 * 1000;
-    if (start.getTime() - Date.now() < noticeMs) {
-      throw createPublicError(
-        `invalid request: this service needs ${service.advanceNoticeHours}h advance notice`,
-        400
-      );
-    }
-
+    // Project-specific lead time and price are enforced inside
+    // createServiceOrder after project context is validated.
     const qty = Math.max(1, Math.min(20, Number(quantity) || 1));
     const durationMs = (service.durationMin || 60) * 60 * 1000;
     const end = new Date(start.getTime() + durationMs * qty);

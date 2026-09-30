@@ -7,14 +7,22 @@ import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
 
 /** GET /api/service-orders — the caller's orders, newest first. */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       throw createPublicError('unauthorized', 401);
     }
+    const bookingId = req.nextUrl.searchParams.get('bookingId') || undefined;
+    const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
+    const unitId = req.nextUrl.searchParams.get('unitId') || undefined;
     const orders = await prisma.serviceOrder.findMany({
-      where: { orderer_identity_id: user.identityId },
+      where: {
+        orderer_identity_id: user.identityId,
+        ...(bookingId ? { booking_id: bookingId } : {}),
+        ...(projectId ? { project_id: projectId } : {}),
+        ...(unitId ? { unit_id: unitId } : {}),
+      },
       include: { service: { select: { title: true } } },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -54,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (!service || service.status !== 'active' || service.provider?.status !== 'active') {
       throw createPublicError('not found', 404);
     }
-    if (service.priceModel === 'quote' || !service.basePriceThb) {
+    if (service.priceModel === 'quote') {
       throw createPublicError('invalid request: this service is quoted individually — message us instead', 400);
     }
 
@@ -62,14 +70,8 @@ export async function POST(req: NextRequest) {
     if (isNaN(start.getTime()) || start < new Date()) {
       throw createPublicError('invalid request: scheduledStart must be in the future', 400);
     }
-    const noticeMs = service.advanceNoticeHours * 60 * 60 * 1000;
-    if (start.getTime() - Date.now() < noticeMs) {
-      throw createPublicError(
-        `invalid request: this service needs ${service.advanceNoticeHours}h advance notice`,
-        400
-      );
-    }
-
+    // Project-specific lead time and price are enforced inside
+    // createServiceOrder after project context is validated.
     const qty = Math.max(1, Math.min(20, Number(quantity) || 1));
     const durationMs = (service.durationMin || 60) * 60 * 1000;
     const end = new Date(start.getTime() + durationMs * qty);
@@ -139,7 +141,7 @@ export async function POST(req: NextRequest) {
       unitId,
       bookingId,
       ordererIdentityId: user.identityId,
-      ordererRole: (user.roles[0]?.role || 'guest') as RoleType,
+      ordererRole: (user.isAdmin ? 'staff_ops' : (user.roles[0]?.role || 'guest')) as RoleType,
       scheduledStart: start,
       scheduledEnd: end,
       quantity: qty,

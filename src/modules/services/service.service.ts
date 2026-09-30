@@ -1,6 +1,7 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
 import { getConfig, assertCatalogKeys } from '@/modules/config';
 import type { Locale } from '@/modules/content';
+import { resolveProjectServiceOffer } from './project-service-offer';
 
 /**
  * A service's title/description are per-service data, not content keys
@@ -251,22 +252,8 @@ export async function listPublicServices(
         status: 'active',
         vetted_at: { not: null },
       },
-      OR: [
-        // No project restrictions
-        {
-          availableProjects: {
-            none: {},
-          },
-        },
-        // Project is in available projects
-        {
-          availableProjects: {
-            some: {
-              project_id: projectId,
-            },
-          },
-        },
-      ],
+      // Marketplace services are platform-wide. ServiceProject customizes
+      // commercial terms for this Project but does not remove the base service.
       ...(filters?.categoryKey && { categoryKey: filters.categoryKey }),
     },
     include: {
@@ -280,14 +267,34 @@ export async function listPublicServices(
           vetted_at: true,
         },
       },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
     },
     orderBy: [{ createdAt: 'desc' }],
   });
 
-  return services.map((s) => ({
-    ...s,
-    isVetted: s.provider.vetted_at !== null,
-  }));
+  return services.flatMap((service) => {
+    const offer = resolveProjectServiceOffer({
+      rows: service.availableProjects,
+      projectId,
+      basePriceThb: service.basePriceThb,
+      baseLeadTimeHours: service.advanceNoticeHours,
+    });
+    if (!offer.publiclyVisible) return [];
+    return [{
+      ...service,
+      basePriceThb: offer.unitPriceThb,
+      advanceNoticeHours: offer.leadTimeHours,
+      isVetted: service.provider.vetted_at !== null,
+      projectOfferSource: offer.source,
+      projectTermsVersion: offer.termsVersion,
+    }];
+  });
 }
 
 export interface PublicMarketplaceService {
@@ -304,6 +311,82 @@ export interface PublicMarketplaceService {
   coverUrl: string | null;
 }
 
+export interface PublicMarketplaceServiceDetail extends PublicMarketplaceService {
+  fulfilmentMode: string;
+  mediaUrls: string[];
+  provider: {
+    id: string;
+    name: string;
+    description: string | null;
+    vetted: boolean;
+    vettedAt: string | null;
+  };
+}
+
+/** One public service-detail projection shared by the page and API. */
+export async function getPublicMarketplaceServiceDetail(
+  db: PrismaClient,
+  serviceId: string,
+  locale: Locale,
+  projectId?: string
+): Promise<PublicMarketplaceServiceDetail | null> {
+  const service = await db.service.findUnique({
+    where: { id: serviceId },
+    include: {
+      provider: {
+        select: { id: true, name: true, description: true, status: true, vetted_at: true },
+      },
+      coverMedia: { select: { storageKey: true } },
+      media: {
+        select: { media_id: true, media: { select: { storageKey: true } } },
+        orderBy: { position: 'asc' },
+      },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
+    },
+  });
+  if (!service || service.status !== 'active' ||
+      !service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
+    return null;
+  }
+  const offer = projectId ? resolveProjectServiceOffer({
+    rows: service.availableProjects,
+    projectId,
+    basePriceThb: service.basePriceThb,
+    baseLeadTimeHours: service.advanceNoticeHours,
+  }) : null;
+  if (offer && !offer.publiclyVisible) return null;
+
+  const copy = pickLocalizedServiceCopy(service, locale);
+  return {
+    id: service.id,
+    title: copy.title,
+    description: copy.description,
+    categoryKey: service.categoryKey,
+    priceModel: service.priceModel,
+    basePriceThb: offer?.unitPriceThb ?? service.basePriceThb,
+    durationMin: service.durationMin,
+    advanceNoticeHours: offer?.leadTimeHours ?? service.advanceNoticeHours,
+    providerName: service.provider.name,
+    providerVetted: true,
+    coverUrl: service.coverMedia?.storageKey ?? null,
+    fulfilmentMode: service.fulfilmentMode,
+    mediaUrls: service.media.map(row => row.media.storageKey),
+    provider: {
+      id: service.provider.id,
+      name: service.provider.name,
+      description: service.provider.description,
+      vetted: true,
+      vettedAt: service.provider.vetted_at.toISOString(),
+    },
+  };
+}
+
 /**
  * Public marketplace cards for discovery surfaces such as the homepage.
  * Reads the same Service/Provider/MediaAsset graph as /services; project
@@ -318,39 +401,49 @@ export async function listPublicMarketplaceServices(
     where: {
       status: 'active',
       provider: { status: 'active', vetted_at: { not: null } },
-      ...(options.projectId
-        ? {
-            OR: [
-              { availableProjects: { none: {} } },
-              { availableProjects: { some: { project_id: options.projectId } } },
-            ],
-          }
-        : {}),
+      // Project context applies optional overrides after retrieval; the
+      // marketplace catalogue itself remains platform-wide.
       ...(options.categoryKey ? { categoryKey: options.categoryKey } : {}),
     },
     include: {
       provider: { select: { name: true, vetted_at: true } },
       coverMedia: { select: { storageKey: true } },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit ?? 100,
   });
 
-  return services.map((service) => {
+  return services.flatMap((service) => {
+    const offer = options.projectId
+      ? resolveProjectServiceOffer({
+          rows: service.availableProjects,
+          projectId: options.projectId,
+          basePriceThb: service.basePriceThb,
+          baseLeadTimeHours: service.advanceNoticeHours,
+        })
+      : null;
+    if (offer && !offer.publiclyVisible) return [];
     const copy = pickLocalizedServiceCopy(service, locale);
-    return {
+    return [{
       id: service.id,
       title: copy.title,
       description: copy.description,
       categoryKey: service.categoryKey,
       priceModel: service.priceModel,
-      basePriceThb: service.basePriceThb,
+      basePriceThb: offer?.unitPriceThb ?? service.basePriceThb,
       durationMin: service.durationMin,
-      advanceNoticeHours: service.advanceNoticeHours,
+      advanceNoticeHours: offer?.leadTimeHours ?? service.advanceNoticeHours,
       providerName: service.provider?.name ?? null,
       providerVetted: Boolean(service.provider?.vetted_at),
       coverUrl: service.coverMedia?.storageKey ?? null,
-    };
+    }];
   });
 }
 

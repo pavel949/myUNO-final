@@ -23,6 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       expiryDate: body.expiryDate ? new Date(body.expiryDate) : undefined,
       exemptionBasis: body.exemptionBasis !== undefined ? body.exemptionBasis : undefined,
       notes: body.notes !== undefined ? body.notes : undefined,
+      evidenceMediaId: body.evidenceMediaId || undefined,
       verifiedByIdentityId: guard.actorIdentityId,
     });
 

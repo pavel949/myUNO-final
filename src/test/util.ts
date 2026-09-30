@@ -89,6 +89,15 @@ export async function setGlobalConfig(key: string, value: unknown) {
   });
 }
 
+/** Private proof fixture, never a public listing photo. */
+export async function createRegulatoryEvidence(uploadedByIdentityId: string) {
+  return db.mediaAsset.create({ data: {
+    storageKey: 'private:test-regulatory-evidence:' + uuid(),
+    kind: 'document', encrypted: true, mimeType: 'application/pdf',
+    sizeBytes: 18, uploadedByIdentityId,
+  } });
+}
+
 // --- Factories ---
 
 export interface IdentityFactoryOpts {

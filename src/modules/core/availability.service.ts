@@ -1,4 +1,5 @@
 import { PrismaClient, Unit, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
+import type { SourceBookingTerms } from './commercial-booking-terms';
 import {
   getConfig,
   type SeasonPeriod,
@@ -38,6 +39,7 @@ export interface PriceBreakdown {
   service_fee_thb: number;
   occupancy_tax_thb: number;
   total_thb: number;
+  commercialTerms?: SourceBookingTerms;
 }
 
 function isDateInSeason(date: Date, season: SeasonPeriod): boolean {
@@ -590,6 +592,9 @@ export async function removeBlockedDate(
   const block = await db.blockedDate.findUnique({ where: { id: blockedDateId } });
   if (!block) {
     throw new Error(`BlockedDate ${blockedDateId} not found`);
+  }
+  if (block.propertyDealId) {
+    throw new Error('SIGNED_LEASE_BLOCK: a signed agreement cannot be unblocked through the manual calendar');
   }
   await db.blockedDate.delete({ where: { id: blockedDateId } });
   return block;

@@ -3,6 +3,7 @@ import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/u
 import {
   saveUnit,
   unsaveUnit,
+  removeSavedEntry,
   listSavedUnits,
   listSavedCollections,
   saveSearch,
@@ -64,6 +65,19 @@ describe('saving villas and searches', () => {
       expect((await unsaveUnit(db, guestId, unitId)).removed).toBe(1);
       expect((await unsaveUnit(db, guestId, unitId)).removed).toBe(0);
       expect(await listSavedUnits(db, guestId)).toHaveLength(0);
+    });
+
+    it('removes only the selected saved entry and cannot delete another guest\'s entry', async () => {
+      const first = await saveUnit(db, { identityId: guestId, unitId, collection: 'New Year' });
+      const second = await saveUnit(db, { identityId: guestId, unitId, collection: 'Songkran' });
+      const other = await createIdentity();
+
+      expect((await removeSavedEntry(db, other.id, first.id)).removed).toBe(0);
+      expect(await listSavedUnits(db, guestId)).toHaveLength(2);
+      expect((await removeSavedEntry(db, guestId, first.id)).removed).toBe(1);
+      expect((await removeSavedEntry(db, guestId, first.id)).removed).toBe(0);
+      const remaining = await listSavedUnits(db, guestId);
+      expect(remaining.map(entry => entry.id)).toEqual([second.id]);
     });
 
     it('leaves out a villa that is no longer bookable', async () => {

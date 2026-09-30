@@ -1,5 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 
+/** One evidence rule for legal/commercial publication, never status alone. */
+export function isCredentialCurrentlyVerified(
+  credential: {
+    status: string;
+    verificationStatus: string;
+    evidenceMediaId: string | null;
+    effectiveDate: Date | null;
+    expiryDate: Date | null;
+  },
+  now = new Date(),
+): boolean {
+  return credential.status === 'active' &&
+    credential.verificationStatus === 'verified' &&
+    Boolean(credential.evidenceMediaId) &&
+    (!credential.effectiveDate || credential.effectiveDate <= now) &&
+    (!credential.expiryDate || credential.expiryDate > now);
+}
+
 export interface CommercialEligibilityQuery {
   unitId: string;
   offeringType: 'short_term_stay' | 'long_term_rental' | 'sale' | 'serviced_residence';
@@ -89,10 +107,10 @@ export async function evaluateCommercialEligibility(
     const allCredentials = [...projectCredentials, ...unitCredentials];
 
     const hasHotelLicence = allCredentials.some(
-      (c) => c.credentialType === 'hotel_business_license' && c.status === 'active'
+      (c) => c.credentialType === 'hotel_business_license' && isCredentialCurrentlyVerified(c)
     );
     const hasExemption = allCredentials.some(
-      (c) => c.credentialType === 'accommodation_exemption' && c.status === 'active'
+      (c) => c.credentialType === 'accommodation_exemption' && isCredentialCurrentlyVerified(c)
     );
 
     if (!hasHotelLicence && !hasExemption) {
@@ -104,11 +122,17 @@ export async function evaluateCommercialEligibility(
   if (offeringType === 'sale') {
     const allCredentials = [...unit.project.regulatoryCredentials, ...unit.regulatoryCredentials];
     const hasTitleVerification = allCredentials.some(
-      (c) => c.credentialType === 'title_legal_use' && c.status === 'active'
+      (c) => c.credentialType === 'title_legal_use' && isCredentialCurrentlyVerified(c)
     );
     if (!hasTitleVerification) {
       blockingReasons.push('REQUIRED_CREDENTIAL_MISSING');
       missingCredentials.push('title_legal_use');
+    }
+    // Ownership evidence is not a seller's permission to market the unit.
+    if (!unit.regulatoryCredentials.some(c =>
+      c.credentialType === 'sale_authority' && isCredentialCurrentlyVerified(c))) {
+      blockingReasons.push('SALE_AUTHORITY_MISSING');
+      missingCredentials.push('sale_authority');
     }
   }
 

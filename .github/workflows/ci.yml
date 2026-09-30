@@ -38,6 +38,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test platform inventory discovery
+        run: npm run audit:inventory:test
+
+      - name: Generate current platform inventory
+        run: npm run audit:inventory -- --out /tmp/myuno-platform-inventory.json
+
       - name: Run linter
         run: npm run lint
 
@@ -96,21 +102,11 @@ jobs:
         run: npm run db:verify
         timeout-minutes: 10
 
-      # next build must run as a production compile. Setting NODE_ENV=development
-      # here mixed Next's prod and dev runtimes and failed prerender of /404,
-      # /500, /_not-found, /legal and /design with
-      # "<Html> should not be imported outside of pages/_document".
-      # CONTENT_REVIEW_GATE_ENABLED=false is the CI-safe way to skip the
-      # founder-review gate without poisoning NODE_ENV.
-      - name: Build
+      - name: Focused unified-engine tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-          CONTENT_REVIEW_GATE_ENABLED: 'false'
-          NEXTAUTH_SECRET: test-secret
-          NEXTAUTH_URL: http://localhost:3000
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        run: npm run build
+        run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts
 
       - name: Run tests
         env:
@@ -123,3 +119,25 @@ jobs:
           set -o pipefail
           npx vitest run 2>&1 | tee test-output.log
         timeout-minutes: 10
+
+      # next build must run as a production compile. Setting NODE_ENV=development
+      # here mixed Next's prod and dev runtimes and failed prerender of /404,
+      # /500, /_not-found, /legal and /design with
+      # "<Html> should not be imported outside of pages/_document".
+      # CONTENT_REVIEW_GATE_ENABLED=false is the CI-safe way to skip the
+      # founder-review gate without poisoning NODE_ENV.
+      - name: Typecheck
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+        run: npx tsc --noEmit --project tsconfig.production.json
+
+      - name: Build
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          CONTENT_REVIEW_GATE_ENABLED: 'false'
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: npm run build
+

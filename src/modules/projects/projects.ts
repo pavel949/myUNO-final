@@ -3,6 +3,7 @@ import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
 import { ProjectStatus } from '@prisma/client';
 import { assertProjectReadyForActivation } from './property-readiness';
+import { amenitySlug } from './project-amenities.service';
 
 interface CreateProjectInput {
   slug: string;
@@ -32,6 +33,8 @@ interface CreateProjectInput {
   totalBuildings?: number;
   floors?: number;
   facilities?: string[];
+  landAreaSqm?: number | null;
+  commonAreaSqm?: number | null;
 }
 
 interface UpdateProjectInput {
@@ -63,6 +66,17 @@ interface UpdateProjectInput {
   totalBuildings?: number | null;
   floors?: number | null;
   facilities?: string[];
+  landAreaSqm?: number | null;
+  commonAreaSqm?: number | null;
+}
+
+function assertValidLocation(latitude: number, longitude: number, address: string): void {
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+      !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new Error('Project coordinates are outside the valid geographic range');
+  }
+  if (latitude === 0 && longitude === 0) throw new Error('Project coordinates must be verified; 0,0 is not a usable property location');
+  if (!address || !address.trim()) throw new Error('Project address is required');
 }
 
 /**
@@ -98,19 +112,32 @@ export async function createProject(input: CreateProjectInput) {
     totalBuildings,
     floors,
     facilities = [],
+    landAreaSqm,
+    commonAreaSqm,
   } = input;
 
+  assertValidLocation(latitude, longitude, address);
   // Check slug uniqueness
   const existing = await prisma.project.findUnique({ where: { slug } });
   if (existing) {
     throw new Error(`Project with slug "${slug}" already exists`);
   }
 
-  // Amenity keys must exist in the doc 04 §8 catalog (DM-3)
+  // Legacy create callers may still supply simple amenity/facility arrays.
+  // Validate known amenity keys, then canonicalize both arrays into
+  // ProjectAmenity rows. The Project string arrays are no longer written.
   await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  const legacyExperience = [
+    ...amenityKeys.map(value => ({ value, categoryKey: 'amenity' })),
+    ...facilities.map(value => ({ value, categoryKey: 'facility' })),
+  ].filter(item => Boolean(item.value?.trim()));
+  const dedupedExperience = Array.from(new Map(
+    legacyExperience.map(item => [amenitySlug(item.value), item])
+  ).entries()).filter(([slug]) => Boolean(slug));
 
-  const project = await prisma.project.create({
-    data: {
+  const project = await prisma.$transaction(async tx => {
+    const created = await tx.project.create({
+      data: {
       slug,
       name,
       areaLabelKey,
@@ -119,7 +146,7 @@ export async function createProject(input: CreateProjectInput) {
       longitude,
       address,
       timezone,
-      amenityKeys,
+      amenityKeys: [],
       // handbookKey is a required content-key column; default to the project's
       // conventional handbook key when the caller doesn't supply one (the
       // content itself can stay an unfilled draft).
@@ -139,8 +166,29 @@ export async function createProject(input: CreateProjectInput) {
       totalUnits: totalUnits ?? null,
       totalBuildings: totalBuildings ?? null,
       floors: floors ?? null,
-      facilities,
-    },
+      facilities: [],
+      landAreaSqm: landAreaSqm ?? null,
+      commonAreaSqm: commonAreaSqm ?? null,
+      },
+    });
+    if (dedupedExperience.length) {
+      await tx.projectAmenity.createMany({
+        data: dedupedExperience.map(([slug, item], index) => ({
+          projectId: created.id,
+          slug,
+          name: item.value.trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, char => char.toUpperCase()),
+          categoryKey: item.categoryKey,
+          accessType: 'open',
+          bookingRequired: false,
+          bookingMode: 'none',
+          pricingType: 'included',
+          published: status === 'live',
+          sort: index,
+        })),
+        skipDuplicates: true,
+      });
+    }
+    return created;
   });
 
   // Audit log
@@ -201,7 +249,6 @@ export async function updateProject(input: UpdateProjectInput) {
     longitude,
     address,
     timezone,
-    amenityKeys,
     handbookKey,
     status,
     coverMediaId,
@@ -220,7 +267,8 @@ export async function updateProject(input: UpdateProjectInput) {
     totalUnits,
     totalBuildings,
     floors,
-    facilities,
+    landAreaSqm,
+    commonAreaSqm,
   } = input;
 
   const project = await prisma.project.findUnique({
@@ -230,6 +278,8 @@ export async function updateProject(input: UpdateProjectInput) {
   if (!project) {
     throw new Error(`Project ${projectId} not found`);
   }
+
+  assertValidLocation(latitude ?? Number(project.latitude), longitude ?? Number(project.longitude), address ?? project.address);
 
   // Validate status transitions
   if (status && status !== project.status) {
@@ -246,8 +296,11 @@ export async function updateProject(input: UpdateProjectInput) {
     }
   }
 
-  // Amenity keys must exist in the doc 04 §8 catalog (DM-3)
-  await assertCatalogKeys(prisma, 'catalog.amenities', input.amenityKeys);
+  // Project-level amenities/facilities have one authority: ProjectAmenity.
+  // Reject legacy array writes so a second source of truth cannot reappear.
+  if (input.amenityKeys !== undefined || input.facilities !== undefined) {
+    throw new Error('Project amenities and facilities must be managed in Project Experience');
+  }
 
   const updated = await prisma.project.update({
     where: { id: projectId },
@@ -259,8 +312,7 @@ export async function updateProject(input: UpdateProjectInput) {
       ...(longitude !== undefined && { longitude }),
       ...(address !== undefined && { address }),
       ...(timezone !== undefined && { timezone }),
-      ...(amenityKeys !== undefined && { amenityKeys }),
-      ...(handbookKey !== undefined && { handbookKey: (handbookKey || null) as any }),
+       ...(handbookKey !== undefined && { handbookKey: (handbookKey || null) as any }),
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
       ...(areaId !== undefined && { areaId }),
@@ -277,7 +329,8 @@ export async function updateProject(input: UpdateProjectInput) {
       ...(totalUnits !== undefined && { totalUnits }),
       ...(totalBuildings !== undefined && { totalBuildings }),
       ...(floors !== undefined && { floors }),
-      ...(facilities !== undefined && { facilities }),
+       ...(landAreaSqm !== undefined && { landAreaSqm }),
+      ...(commonAreaSqm !== undefined && { commonAreaSqm }),
     } as any,
   });
 

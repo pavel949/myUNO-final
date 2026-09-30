@@ -7,7 +7,14 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { Locale } from './types';
 import { CANONICAL_ADMIN_360_KEYS } from './admin360.seed';
+import { UNIFIED_STAY_KEYS } from './unified-stay.seed';
+import { LAYANTARA_OPERATION_KEYS } from './layantara-operations.seed';
+import { GALLERY_EDITOR_KEYS } from './gallery-editor.seed';
+import { COMMERCE_STRUCTURE_KEYS } from './commerce-structure.seed';
+import { ROLE_DASHBOARD_KEYS } from './role-dashboards.seed';
 import { PROJECT_GALLERY_KEYS } from './project-gallery.seed';
+import { PROJECT_TEAM_KEYS } from './project-team.seed';
+import { CONSOLIDATED_RELEASE_KEYS } from './consolidated-release.seed';
 
 interface KeyDef {
   key: string;
@@ -4432,7 +4439,11 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const allKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...PROJECT_GALLERY_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS];
+  // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
+  // cannot update one key twice in a single multi-row statement. Last
+  // registry definition wins deterministically, without duplicate inserts.
+  const allKeys: KeyDef[] = [...new Map(registryKeys.map(entry => [entry.key, entry])).values()];
 
   // Batched, not per-key: at ~1,500 keys x up to 4 locales, the previous
   // one-row-per-await version (ensureContentKey + setTranslation's own

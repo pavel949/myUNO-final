@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createRegulatoryEvidence } from '@/test/util';
 import {
   createRegulatoryCredential,
   updateRegulatoryCredential,
@@ -48,6 +48,36 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
     expect(check.reason).toMatch(/active regulatory credential/);
   });
 
+  it('does not mark an unsupported declaration as verified without encrypted evidence', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    const project = await createProject({ status: 'draft' });
+    const unit = await createUnit({ projectId: project.id, status: 'draft' });
+    const unverified = await createRegulatoryCredential(db, {
+      credentialType: 'hotel_business_license', scopeLevel: 'unit',
+      unitId: unit.id, verifiedByIdentityId: admin.id,
+    });
+    expect(unverified.status).toBe('pending');
+    expect(unverified.verificationStatus).toBe('pending');
+    expect((await checkRegulatoryCredentialForGoLive(db, unit.id)).ok).toBe(false);
+    await expect(updateRegulatoryCredential(db, unverified.id, {
+      status: 'active', verifiedByIdentityId: admin.id,
+    })).rejects.toThrow(/without encrypted document evidence/);
+  });
+
+  it('rejects public marketing images as regulatory proof', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    const project = await createProject();
+    const unit = await createUnit({ projectId: project.id });
+    const image = await db.mediaAsset.create({ data: {
+      storageKey: 'public:test-licence', kind: 'photo', encrypted: false,
+      mimeType: 'image/png', sizeBytes: 12, uploadedByIdentityId: admin.id,
+    } });
+    await expect(createRegulatoryCredential(db, {
+      credentialType: 'hotel_business_license', scopeLevel: 'unit', unitId: unit.id,
+      evidenceMediaId: image.id, verifiedByIdentityId: admin.id,
+    })).rejects.toThrow(/encrypted document/);
+  });
+
   it('passes once an active hotel_business_license credential exists on the unit', async () => {
     const admin = await createIdentity({ isAdmin: true });
     const project = await createProject({ status: 'draft' });
@@ -58,6 +88,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       scopeLevel: 'unit',
       unitId: unit.id,
       issuingAuthority: 'Phuket Provincial Office',
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -75,6 +106,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       scopeLevel: 'project',
       projectId: project.id,
       exemptionBasis: 'Fewer than 4 rooms, hotel-exempt under the 2004 Act',
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -92,6 +124,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       scopeLevel: 'unit',
       unitId: unit.id,
       status: 'expired',
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -108,6 +141,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       credentialType: 'hotel_business_license',
       scopeLevel: 'unit',
       unitId: unit.id,
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -115,6 +149,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
 
     await updateRegulatoryCredential(db, credential.id, {
       status: 'revoked',
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -130,12 +165,14 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       credentialType: 'hotel_business_license',
       scopeLevel: 'unit',
       unitId: unit.id,
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
     await createRegulatoryCredential(db, {
       credentialType: 'accommodation_exemption',
       scopeLevel: 'project',
       projectId: project.id,
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 
@@ -163,6 +200,7 @@ describe('RegulatoryCredential writer and go-live gate (Q71)', () => {
       credentialType: 'hotel_business_license',
       scopeLevel: 'unit',
       unitId: unit.id,
+      evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
       verifiedByIdentityId: admin.id,
     });
 

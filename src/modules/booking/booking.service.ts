@@ -1,5 +1,6 @@
 import { PrismaClient, BookingStatus } from '@prisma/client';
 import { track } from '@/modules/analytics';
+import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
@@ -184,7 +185,7 @@ export async function findAvailableUnitsForCategory(
   const now = new Date();
   const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
 
-  return db.unit.findMany({
+  const candidates = await db.unit.findMany({
     where: {
       projectId,
       categoryKey,
@@ -193,6 +194,14 @@ export async function findAvailableUnitsForCategory(
       // unit status alone said it was, so archiving a project stopped its
       // pages without stopping its sales.
       project: { status: 'live' },
+      // Explicit commercial eligibility for typed projects. Untyped legacy
+      // supply keeps its original behavior until onboarding migration.
+      AND: [{ OR: [
+        { project: { projectType: null } },
+        { commercialOfferings: { some: {
+          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+        } } },
+      ] }],
       bookings: {
         none: {
           ...overlaps,
@@ -207,6 +216,8 @@ export async function findAvailableUnitsForCategory(
     orderBy: { name: 'asc' },
     select: { id: true, instantBook: true },
   });
+  const excluded = await excludedSourceControlledUnits(db,candidates.map(unit=>unit.id));
+  return candidates.filter(unit=>!excluded.includes(unit.id));
 }
 
 /**
@@ -255,6 +266,7 @@ export async function createBooking(
     guestNote,
   } = input;
 
+  await assertLayantaraBookingAuthority(db, unitId);
   const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
@@ -296,6 +308,7 @@ export async function createBooking(
     // that into an orderly queue; different units are unaffected. The lock is
     // released on commit or rollback, so no path can leak it.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+    await assertLayantaraBookingAuthority(tx, unitId);
 
     // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
     // immutable), so a lapsed hold still occupies the range until it is retired.
@@ -419,6 +432,7 @@ export async function approveBookingRequest(
   if (booking.status !== 'requested') {
     throw new Error(`Cannot approve booking with status ${booking.status}`);
   }
+  await assertLayantaraBookingAuthority(db,booking.unitId);
 
   // A request never blocked the calendar, so re-check the dates now —
   // another approval or an instant booking may have taken the villa since.
@@ -457,6 +471,8 @@ export async function approveBookingRequest(
   }
 
   const now = new Date();
+
+  await assertLayantaraBookingAuthority(db,unitId);
 
   // Reassignment can change unit-level dated overrides. Re-price before the
   // request becomes a payable hold so the stored snapshot always describes

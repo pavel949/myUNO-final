@@ -12,7 +12,7 @@ import { track } from '@/modules/analytics';
  * into the native CRM; the raw thread remains the operational evidence.
  */
 
-export const LEAD_AUDIENCES = ['owners', 'developers', 'buyers', 'mc'] as const;
+export const LEAD_AUDIENCES = ['owners', 'developers', 'buyers', 'renters', 'mc'] as const;
 export type LeadAudience = (typeof LEAD_AUDIENCES)[number];
 
 export interface SubmitLeadInput {

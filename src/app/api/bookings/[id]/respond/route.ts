@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
+import { hasProjectDepartmentAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
 import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
@@ -55,7 +56,8 @@ export async function POST(
       action: 'stays:approve_decline_booking_requests',
       resource: { projectId: booking.projectId, unitId: booking.unitId },
     });
-    if (!allowed) {
+    if (!allowed || (hasProjectStaffAccess(user,booking.projectId) && !user.isAdmin &&
+      !(await hasProjectDepartmentAccess(user,booking.projectId,'reservations')))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

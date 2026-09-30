@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
+import { listPublicProjectAmenities } from '@/modules/projects';
 import { InStayHomeSpaceClient } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,12 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'home.announcement.voice.management_company': 'Official · Management company',
     'home.announcement.voice.juristic_person': 'Official · Juristic person',
     'home.shuttle.title': 'Beach shuttle schedule',
+    'home.amenities.title': 'Amenities at your project',
+    'home.amenities.view_all': 'View all amenities →',
+    'home.amenities.kicker': 'Project amenities',
+    'home.amenities.included': 'Included',
+    'home.amenities.free': 'Free',
+    'home.amenities.booking_required': 'Booking required',
     'home.stay.kicker': 'Your stay',
     'home.stay.nights_count': '{count} nights',
     'home.stay.tm30_filed': 'TM30 filed',
@@ -105,11 +112,18 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     shuttleText = '';
   }
 
+  const projectAmenities = await listPublicProjectAmenities(
+    prisma,
+    data.booking.unit.project.id,
+    getRequestLocale()
+  ).catch(() => []);
+
   return (
     <InStayHomeSpaceClient
       {...data}
       guestFirstName={user.firstName}
       shuttleText={shuttleText}
+      projectAmenities={projectAmenities}
       labels={labels}
     />
   );

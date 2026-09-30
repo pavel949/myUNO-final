@@ -38,6 +38,7 @@ export {
   getServicesByProvider,
   listPublicServices,
   listPublicMarketplaceServices,
+  getPublicMarketplaceServiceDetail,
   approveService,
   rejectService,
   getServiceAverageRating,
@@ -45,4 +46,7 @@ export {
   type CreateServiceInput,
   type UpdateServiceInput,
   type PublicMarketplaceService,
+  type PublicMarketplaceServiceDetail,
 } from './service.service';
+
+export { resolveProjectServiceOffer, type ProjectServiceRow, type ResolvedProjectServiceOffer } from './project-service-offer';

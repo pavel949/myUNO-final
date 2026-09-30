@@ -112,6 +112,8 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.message_team': 'Message your property team',
     'booking.detail.timeline_title': 'Trip Timeline',
     'booking.detail.timeline_confirmed': 'Booking confirmed',
+    'booking.detail.timeline_requested': 'Request sent — awaiting confirmation',
+    'booking.detail.timeline_payment_pending': 'Reservation held — payment required',
     'booking.detail.timeline_passports': 'Passports submitted',
     'booking.detail.timeline_checkin': 'Check-in',
     'booking.detail.timeline_checkout': 'Check-out',

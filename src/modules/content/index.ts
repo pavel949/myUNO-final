@@ -18,3 +18,5 @@ export {
   exportToCSV,
   importFromCSV,
 } from './edit.service';
+
+export { seedLayantaraProjectEditorial } from './project-editorial.seed';

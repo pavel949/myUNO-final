@@ -7,11 +7,12 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+vi.mock('@/components/property/ScopedGalleryEditor', () => ({ default: () => null }));
 import PropertyOnboardingClient from './property-onboarding-client';
 
 const project = {
   id: 'project-1', name: 'Test Resort', status: 'draft', coverMediaId: null,
-  galleryMedia: [], inventoryCategories: [], ratePlans: [], units: [],
+  galleryMedia: [], inventoryCategories: [], ratePlans: [], structureNodes: [], units: [],
 };
 const readiness = {
   projectId: 'project-1', score: 20, readyForActivation: false,
@@ -24,9 +25,9 @@ describe('property onboarding form wiring', () => {
   it('submits an explicit base rate in baht, minimum nights, and the category key', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'category-1' }) });
     vi.stubGlobal('fetch', fetchMock);
-    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} />);
-    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
+    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
 
+    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
     const form = screen.getByLabelText('Base nightly rate (THB)').closest('form')!;
     fireEvent.change(screen.getByLabelText('Category key'), { target: { value: 'garden_2br' } });
     fireEvent.change(screen.getByLabelText('Category name'), { target: { value: 'Garden 2BR' } });
@@ -56,6 +57,7 @@ describe('property onboarding form wiring', () => {
         }],
       }}
       initialReadiness={readiness}
+      galleryLabels={{}}
     />);
     fireEvent.click(screen.getByRole('button', { name: /6\. Pricing/ }));
     const form = screen.getByRole('button', { name: 'Save BAR' }).closest('form')!;
@@ -68,18 +70,11 @@ describe('property onboarding form wiring', () => {
     });
   });
 
-  it('shows a failed gallery attach rather than silently claiming the photo saved', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ mediaAssetId: 'media-1' }) })
-      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Attachment denied' }) });
-    vi.stubGlobal('fetch', fetchMock);
-    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} />);
+  it('keeps categories and physical homes together in the canonical onboarding step', () => {
+    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
+    expect(screen.getByRole('heading', { name: '2. Categories and homes' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /7\. Content & photos/ }));
-    const input = screen.getByLabelText('Gallery image') as HTMLInputElement;
-    const image = new File(['image'], 'photo.png', { type: 'image/png' });
-    fireEvent.change(input, { target: { files: [image] } });
-    fireEvent.submit(input.closest('form')!);
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Attachment denied'));
-    expect(screen.queryByText('Photo saved to gallery.')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '7. Content and galleries' })).toBeInTheDocument();
   });
 });

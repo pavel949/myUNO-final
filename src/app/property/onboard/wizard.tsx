@@ -9,15 +9,15 @@ type Saved = { id: string; requirements: Draft };
 const empty: Draft = { kind: 'home', projectId: null, proposedProject: '', projectAddress: '', projectType: 'condominium', areaId: null, latitude: null, longitude: null, projectPhotos: [], unitName: '', unitType: 'condo', bedrooms: null, bathrooms: null, sizeSqm: null, maxGuests: null, floor: '', description: '', offers: [], contact: '', photos: [], status: 'draft' };
 const steps = ['Your property', 'Residence', 'Details', 'Photos', 'How to offer', 'Review'];
 const field = 'mt-2 block h-12 w-full rounded-lg border border-border-line bg-surface-paper px-4 text-text-ink';
-export default function PropertySubmissionWizard({ projects, areas }: { projects: { id: string; name: string; address: string }[]; areas: { id: string; slug: string }[] }) {
-  const [draft, setDraft] = useState<Draft>(empty);
+export default function PropertySubmissionWizard({ projects, areas, initialProjectId }: { projects: { id: string; name: string; address: string }[]; areas: { id: string; slug: string }[]; initialProjectId?: string }) {
+  const [draft, setDraft] = useState<Draft>({ ...empty, projectId: initialProjectId || null });
   const [saved, setSaved] = useState<Saved | null>(null);
   const [items, setItems] = useState<Saved[]>([]);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => projects.find(project => project.id === initialProjectId)?.name || '');
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   useEffect(() => {
     fetch('/api/property-submissions').then(r => r.ok ? r.json() : { items: [] })

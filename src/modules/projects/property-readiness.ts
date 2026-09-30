@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
 
 export type ReadinessSeverity = 'blocker' | 'warning';
 
@@ -38,22 +39,38 @@ export async function getPropertyReadiness(
       orgRoles: true,
       ratePlans: true,
       integrationAccounts: true,
+      regulatoryCredentials: true,
       units: {
         include: {
           media: true,
           sleepingSpaces: { include: { beds: true } },
           engagements: { where: { status: 'active' } },
           complianceRecords: true,
+          regulatoryCredentials: true,
           mobilizationChecklist: true,
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
           commercialOfferings: { include: { channelMappings: true } },
-          inventoryCategory: true,
+          inventoryCategory: { include: { galleryMedia: true } },
         },
       },
     },
   });
   if (!project) return null;
+
+  // One batch read for source-linked units. Being in the physical portfolio
+  // does not grant myUNO authority to sell a Layantara villa.
+  const sourceMappings = project.units.length
+    ? await db.externalMapping.findMany({
+        where: { entity_type: 'unit',
+          internal_id: { in: project.units.map(unit => unit.id) },
+          externalSystem: { system_key: 'layantara_os' } },
+        select: { internal_id: true, externalSystem: { select: { config: true } } },
+      })
+    : [];
+  const sourceConfigByUnit = new Map(sourceMappings.map(mapping =>
+    [mapping.internal_id, mapping.externalSystem.config] as const
+  ));
 
   const blockers: PropertyReadinessItem[] = [];
   const warnings: PropertyReadinessItem[] = [];
@@ -95,36 +112,88 @@ export async function getPropertyReadiness(
   for (const unit of project.units) {
     const href = `/app/admin/units/${unit.id}`;
     const options = { scope: 'unit' as const, unitId: unit.id, unitName: unit.name, href };
+    if (sourceConfigByUnit.has(unit.id)) {
+      const raw = sourceConfigByUnit.get(unit.id);
+      const config = typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+        ? raw as Record<string, unknown> : {};
+      if (config.bookingAuthority !== 'myuno' || config.cutoverVerified !== true) {
+        add('blocker', 'unit.source_authority',
+          'Layantara source calendar remains authoritative; signed cutover is required.', options);
+      }
+      const canonicalStay = unit.commercialOfferings.find(offering =>
+        offering.offeringType === 'short_term_stay');
+      const terms = canonicalStay?.pricingTerms;
+      const validated = typeof terms === 'object' && terms !== null &&
+        !Array.isArray(terms) &&
+        (terms as Record<string, unknown>).quoteEngine !== undefined &&
+        (terms as Record<string, unknown>).quoteEngine !== 'pending_validation';
+      if (unit.baseNightlyThb <= 0 || !validated) {
+        add('blocker', 'unit.source_pricing',
+          'Validate the source tariff grid and enable the canonical price engine before sale.', options);
+      }
+    }
+    // A property's physical facts and title are shared, but commercial
+    // activation is specific to the enabled offering. A sale-only or yearly
+    // rental must not be forced to turn on short-stay inventory to go live.
+    const activeOfferings = unit.commercialOfferings.filter(offering => offering.status === 'active');
+    const hasStayOffering = activeOfferings.some(offering =>
+      ['short_term_stay', 'short_stay', 'serviced_residence'].includes(offering.offeringType));
+    const hasLongTermOffering = activeOfferings.some(offering => offering.offeringType === 'long_term_rental');
+    const hasSaleOffering = activeOfferings.some(offering => offering.offeringType === 'sale');
+    if (project.projectType && activeOfferings.length === 0) {
+      // Keep the established resort-specific readiness key for existing
+      // onboarding links while allowing a condominium to begin with sale or
+      // long-term offers instead of fabricating a short-stay business model.
+      const expectsStay = ['resort', 'villa_estate'].includes(project.projectType);
+      add('blocker', expectsStay ? 'unit.stay_offering' : 'unit.offering',
+        expectsStay ? 'Activate a short-stay commercial offering before publication.' :
+          'Activate at least one commercial offering before publication.', options);
+    }
     if (!unit.ownerIdentityId) add('blocker', 'unit.owner', 'Assign or invite the owner.', options);
     if (!unit.inventoryCategoryId) add('blocker', 'unit.category', 'Assign an inventory category.', options);
     if (!unit.descriptionKey) add('blocker', 'unit.description', 'Add a unit description key.', options);
     if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
       add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);
     }
-    if (!unit.coverMediaId || unit.media.length < 3) {
-      add('blocker', 'unit.media', 'Upload at least three photos and choose a cover.', options);
+    // Hotel rooms may use representative category media; private condos and
+    // villas need genuine media of the exact physical unit.
+    const representativeRoom = project.projectType === 'hotel' || unit.accommodationType === 'hotel_room';
+    const ownMediaReady = Boolean(unit.coverMediaId) && unit.media.length >= 3;
+    const categoryMediaReady = Boolean(unit.inventoryCategory?.coverMediaId) &&
+      (unit.inventoryCategory?.galleryMedia.length ?? 0) >= 3;
+    if (!ownMediaReady && !(representativeRoom && categoryMediaReady)) {
+      add('blocker', 'unit.media', representativeRoom
+        ? 'Add three room-type photos with a cover or photograph this room individually.'
+        : 'Add at least three exact-unit photos and choose a cover.', options);
     }
-    if (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0)) {
+    if (hasStayOffering && (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0))) {
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);
     }
     if (unit.engagements.length === 0) add('blocker', 'unit.engagement', 'Record an active management engagement.', options);
-    if (project.projectType && !unit.commercialOfferings.some((offering) =>
-      offering.offeringType === 'short_stay' && offering.status === 'active'
-    )) {
-      add('blocker', 'unit.stay_offering', 'Activate a short-stay commercial offering before publication.', options);
-    }
-
-    if (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed')) {
+    if ((hasStayOffering || hasLongTermOffering) &&
+      (!unit.permittedUseConfirmedAt || !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed'))) {
       add('blocker', 'unit.permitted_use', 'Confirm a permitted-use compliance record.', options);
     }
+    if (hasSaleOffering && !unit.regulatoryCredentials.some(credential =>
+      credential.credentialType === 'title_legal_use' && isCredentialCurrentlyVerified(credential))) {
+      add('blocker', 'unit.sale_title',
+        'Attach and verify current title/legal-use evidence for this specific unit before publishing a sale offering.', options);
+    }
+    if (hasSaleOffering && !unit.regulatoryCredentials.some(credential =>
+      credential.credentialType === 'sale_authority' && isCredentialCurrentlyVerified(credential))) {
+      add('blocker', 'unit.sale_authority',
+        'Attach a current verified seller or marketing authority document for this unit.', options);
+    }
     const completed = new Set(unit.mobilizationChecklist.filter((item) => item.status === 'done' || item.status === 'skipped').map((item) => item.step));
-    if (completed.size < 7) add('blocker', 'unit.mobilization', 'Complete all seven mobilization steps.', options);
-    if (
+    if (hasStayOffering && completed.size < 7) {
+      add('blocker', 'unit.mobilization', 'Complete all seven hospitality mobilization steps.', options);
+    }
+    if (hasStayOffering && (
       !unit.inventoryCategory ||
       unit.inventoryCategory.status !== 'live' ||
       unit.inventoryCategory.baseNightlyThb <= 0 ||
       unit.inventoryCategory.minNights < 1
-    ) {
+    )) {
       add(
         'blocker',
         'unit.pricing',
@@ -137,7 +206,7 @@ export async function getPropertyReadiness(
     const mappings = unit.commercialOfferings.flatMap((offering) => offering.channelMappings);
     if (mappings.length === 0 && unit.integrationAccounts.length === 0) {
       add('warning', 'unit.channels', 'No OTA or calendar connection is configured.', options);
-    } else if (mappings.some((mapping) => mapping.syncState !== 'ari_push')) {
+    } else if (hasStayOffering && mappings.some((mapping) => mapping.syncState !== 'ari_push')) {
       add('warning', 'unit.ota_push', 'OTA connection has no ARI push. A direct booking may not close external availability immediately.', options);
     }
   }

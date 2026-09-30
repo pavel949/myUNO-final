@@ -8,6 +8,8 @@ import {
   DEFAULT_TIME_ZONE,
 } from '@/lib/date';
 import { getApplicableSeason, type PriceBreakdown } from './availability.service';
+import { quoteSeasonalTariffGrid, type TariffMode } from './seasonal-tariff';
+import { resolveSourceBookingTerms } from './commercial-booking-terms';
 
 function applyRatePlanAdjustment(
   amount: number,
@@ -86,7 +88,7 @@ export async function computeCanonicalPriceBreakdown(
   const unit = await db.unit.findUnique({
     where: { id: unitId },
     include: {
-      project: { select: { id: true, status: true, timezone: true } },
+      project: { select: { id: true, status: true, timezone: true, projectType: true } },
       inventoryCategory: true,
     },
   });
@@ -114,6 +116,102 @@ export async function computeCanonicalPriceBreakdown(
   const nights = daysBetween(checkInDate, checkOutDate);
   if (nights < 1) throw new Error('Stay must contain at least one night');
 
+  // A validated seasonal tariff is the canonical commercial rate source.
+  // Both /api/pricing/breakdown and /api/bookings call THIS function, so a
+  // source-resort's quote cannot diverge from the amount booked. Legacy rows
+  // remain drafts until the signed source-authority cutover; no source SQL RPC
+  // is invoked at runtime.
+  const stayOffers = await db.commercialOffering.findMany({
+    where: { unitId: unit.id,
+      offeringType: { in: ['short_term_stay', 'short_stay', 'long_term_rental'] } },
+    select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
+  });
+  // New canonical properties explicitly choose what can be sold. A sale-only
+  // or lease-only unit must never become a guest stay merely because its
+  // physical Unit is live. Untyped legacy projects retain compatibility.
+  if (unit.project.projectType && !stayOffers.some(offer =>
+    ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')) {
+    throw new Error('No active short-stay offering for this property');
+  }
+  const validatedGrid = (type: string) => {
+    const offer = stayOffers.find(o => o.offeringType === type);
+    if (!offer || offer.status !== 'active') return null;
+    const terms = offer.pricingTerms;
+    if (typeof terms !== 'object' || terms === null || Array.isArray(terms))
+      return null;
+    const settings = terms as Record<string, unknown>;
+    return settings.quoteEngine === 'canonical_tariff_grid_v1' &&
+      settings.taxPolicyVerified === true ? settings.tariffGrid : null;
+  };
+  const shortGrid = validatedGrid('short_term_stay');
+  const monthlyGrid = validatedGrid('long_term_rental');
+  const sourceOwnedTariff = stayOffers.some(offer => {
+    const terms = offer.pricingTerms;
+    return typeof terms === 'object' && terms !== null && !Array.isArray(terms) &&
+      (terms as Record<string, unknown>).sourceSystem === 'layantara_os';
+  });
+  // Never fall back to zero/placeholder category pricing for imported supply:
+  // even a mistakenly live unit must stay unquotable until tariff approval.
+  if (sourceOwnedTariff && shortGrid === null)
+    throw new Error('This stay is not available: source tariff has not been validated');
+  if (shortGrid !== null) {
+    // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
+    // discount. A draft/unverified monthly offer cannot be silently substituted
+    // by an arbitrary 20% nightly discount.
+    const mode: TariffMode = nights >= 30 ? 'monthly' : 'daily';
+    if (mode === 'monthly' && monthlyGrid === null)
+      throw new Error('Validated monthly tariff is required for this stay');
+    const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
+    const quoted = quoteSeasonalTariffGrid(
+      selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
+    );
+    const selectedOffer = stayOffers.find(o => o.offeringType ===
+      (mode === 'monthly' ? 'long_term_rental' : 'short_term_stay'))!;
+    const terms = selectedOffer.pricingTerms as Record<string, unknown>;
+    let commercialTerms: PriceBreakdown['commercialTerms'];
+    if (terms.sourceSystem === 'layantara_os') {
+      if (terms.policyEngineVerified !== true)
+        throw new Error('Source booking policy requires approval');
+      const gridRows = selectedGrid as Array<Record<string, unknown>>;
+      const arrivalRate = gridRows.find(row =>
+        row.sourceRateId === quoted.lines[0].sourceRateId);
+      if (!arrivalRate || typeof arrivalRate.seasonCode !== 'string')
+        throw new Error('Arrival tariff identity missing');
+      const policies = selectedOffer.rulesAndPolicies;
+      const rules = typeof policies === 'object' && policies !== null &&
+        !Array.isArray(policies)
+        ? (policies as Record<string, unknown>).bookingPolicies : null;
+      commercialTerms = resolveSourceBookingTerms(
+        rules, mode, arrivalRate.seasonCode,
+      );
+      if (nights < commercialTerms.minimumNights)
+        throw new Error('Stay length below booking-policy minimum of ' +
+          commercialTerms.minimumNights);
+    }
+    const cleaningFee = quoted.includesServiceCharge
+      ? 0 : ((await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0);
+    const servicePct = quoted.includesServiceCharge
+      ? 0 : ((await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0);
+    const serviceFee = Math.round(quoted.subtotalSatang * servicePct / 100);
+    const vatPct = quoted.includesTaxes
+      ? 0 : ((await getConfig(db, 'finance.vat_pct', scope)) ?? 0);
+    const tax = Math.round((quoted.subtotalSatang + cleaningFee + serviceFee) * vatPct / 100);
+    return {
+      lines: quoted.lines.map(line => ({
+        date: line.date, nightly_thb: line.nightlySatang,
+        applied_from: mode === 'monthly' ? 'category_monthly' as const : 'category_season' as const,
+      })),
+      subtotal_thb: quoted.subtotalSatang,
+      cleaning_fee_thb: cleaningFee,
+      los_discount_thb: 0,
+      early_bird_discount_thb: 0,
+      service_fee_thb: serviceFee,
+      occupancy_tax_thb: tax,
+      total_thb: quoted.subtotalSatang + cleaningFee + serviceFee + tax,
+      ...(commercialTerms ? { commercialTerms } : {}),
+    };
+  }
+
   const ratePlan = await resolveBarPlan(
     db,
     unit.id,
@@ -121,14 +219,20 @@ export async function computeCanonicalPriceBreakdown(
     unit.projectId
   );
 
-  const arrivalRule = await db.pricingRule.findFirst({
+  // Fetch all dated overrides once per quote, not once per night. Search can
+  // calculate dozens of units over long stays, so per-night SQL would grow
+  // with (units × nights). Same half-open interval semantics as booking.
+  const datedRules = await db.pricingRule.findMany({
     where: {
       unitId: unit.id,
-      startDate: { lte: checkInDate },
+      startDate: { lt: checkOutDate },
       endDate: { gt: checkInDate },
     },
-    select: { minNightsOverride: true },
+    orderBy: [{ startDate: 'desc' }, { endDate: 'asc' }, { id: 'asc' }],
   });
+  const ruleFor = (day: Date) => datedRules.find(rule =>
+    rule.startDate <= day && rule.endDate > day);
+  const arrivalRule = ruleFor(checkInDate);
 
   const canonicalMinNights =
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
@@ -149,13 +253,7 @@ export async function computeCanonicalPriceBreakdown(
   let currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const rule = await db.pricingRule.findFirst({
-      where: {
-        unitId: unit.id,
-        startDate: { lte: currentDate },
-        endDate: { gt: currentDate },
-      },
-    });
+    const rule = ruleFor(currentDate);
     const season = await getApplicableSeason(db, currentDate, scope);
     const categoryEntry = categoryKey && categoryRates ? categoryRates[categoryKey] : undefined;
     const monthlyRate = (season && categoryEntry?.monthly?.[season.name]) ?? null;

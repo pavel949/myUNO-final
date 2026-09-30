@@ -1,4 +1,24 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { categoryEditorialKeys } from './project-editorial';
+import { tMany, type Locale } from '@/modules/content';
+import { listPublicProjectAmenities } from './project-amenities.service';
+
+/** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
+function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
+  return {
+    status: 'live',
+    assetStatus: { not: 'suspended' },
+    inventoryCategory: { status: 'live' },
+    ...(excludedIds.length ? { id: { notIn: excludedIds } } : {}),
+    OR: [
+      { project: { projectType: null } }, // Legacy untyped projects retain compatibility until migrated.
+      { commercialOfferings: { some: { offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active' } } },
+    ],
+  };
+}
+
 
 /**
  * Public (unauthenticated) read seam for project discovery pages.
@@ -7,7 +27,11 @@ import { prisma } from '@/lib/prisma';
  */
 
 export interface PublicProjectCategory {
+  id: string;
   key: string;
+  name: string;
+  titleKey: string;
+  descriptionKey: string;
   styleKey: string | null;
   bedrooms: number | null;
   unitCount: number;
@@ -15,6 +39,8 @@ export interface PublicProjectCategory {
   fromNightlyThb: number | null;
   /** Lowest flat month price (satang) when the category sells long stays. */
   monthlyFromThb: number | null;
+  coverUrl: string | null;
+  galleryUrls: string[];
 }
 
 export interface PublicProjectReview {
@@ -40,6 +66,7 @@ export interface PublicProjectCard {
   coverUrl: string | null;
   liveUnitCount: number;
   fromNightlyThb: number | null;
+  featuredAmenities: Array<{ id: string; slug: string; name: string; iconKey: string | null }>;
 }
 
 export interface PublicProjectUnit {
@@ -55,10 +82,12 @@ export interface PublicProjectUnit {
   baseNightlyThb: number;
   instantBook: boolean;
   coverUrl: string | null;
+  galleryUrls: string[];
 }
 
 export interface PublicProjectDetail {
   id: string;
+  projectType: string | null;
   slug: string;
   name: string;
   areaLabelKey: string;
@@ -68,22 +97,32 @@ export interface PublicProjectDetail {
   latitude: number;
   longitude: number;
   amenityKeys: string[];
+  areaNameKey: string | null;
+  areaDescriptionKey: string | null;
   coverUrl: string | null;
   galleryUrls: string[];
   units: PublicProjectUnit[];
   categories: PublicProjectCategory[];
   reviews: PublicProjectReviews;
+  amenities: Awaited<ReturnType<typeof listPublicProjectAmenities>>;
 }
 
 /** All live projects, for the /projects hub and the sitemap. */
-export async function listPublicProjects(): Promise<PublicProjectCard[]> {
+export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicProjectCard[]> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const projects = await prisma.project.findMany({
     where: { status: 'live' },
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },
+      amenities: {
+        where: { published: true, isFeatured: true },
+        select: { id: true, slug: true, name: true, iconKey: true },
+        orderBy: [{ sort: 'asc' }, { name: 'asc' }],
+        take: 4,
+      },
       units: {
-        where: { status: 'live', inventoryCategory: { status: 'live' } },
+        where: publicStayUnitWhere(excludedIds),
         select: {
           baseNightlyThb: true,
           inventoryCategory: { select: { baseNightlyThb: true } },
@@ -91,6 +130,13 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
       },
     },
   });
+
+  const amenityNameKeys = projects.flatMap(project =>
+    project.amenities.map(amenity => `project_amenity.${amenity.id}.name`)
+  );
+  const amenityNames = amenityNameKeys.length
+    ? await tMany(prisma, amenityNameKeys, locale)
+    : {};
 
   return projects.map((p) => ({
     id: p.id,
@@ -105,25 +151,33 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
           ...p.units.map((u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb)
         )
       : null,
+    featuredAmenities: p.amenities.map(amenity => ({
+      ...amenity,
+      name: amenityNames[`project_amenity.${amenity.id}.name`] || amenity.name,
+    })),
   }));
 }
 
 export async function getPublicProjectBySlug(
-  slug: string
+  slug: string,
+  locale: Locale = 'en'
 ): Promise<PublicProjectDetail | null> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const project = await prisma.project.findUnique({
     where: { slug },
     include: {
+      area: { select: { nameKey: true, descriptionKey: true } },
       coverMedia: { select: { storageKey: true } },
       galleryMedia: {
         orderBy: { sort: 'asc' },
         include: { media: { select: { storageKey: true } } },
       },
       units: {
-        where: { status: 'live', inventoryCategory: { status: 'live' } },
+        where: publicStayUnitWhere(excludedIds),
         orderBy: { baseNightlyThb: 'asc' },
         include: {
           coverMedia: { select: { storageKey: true } },
+          media: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
           inventoryCategory: {
             select: {
               id: true,
@@ -131,6 +185,8 @@ export async function getPublicProjectBySlug(
               baseNightlyThb: true,
               minNights: true,
               status: true,
+              coverMedia: { select: { storageKey: true } },
+              galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
             },
           },
         },
@@ -140,13 +196,15 @@ export async function getPublicProjectBySlug(
 
   if (!project || project.status !== 'live') return null;
 
-  const [categories, reviews] = await Promise.all([
-    buildPublicCategories(project.id, project.units),
+  const [categories, reviews, amenities] = await Promise.all([
+    buildPublicCategories(project.id, project.slug, project.units),
     buildPublicReviews(project.id),
+    listPublicProjectAmenities(prisma, project.id, locale),
   ]);
 
   return {
     id: project.id,
+    projectType: project.projectType,
     slug: project.slug,
     name: project.name,
     areaLabelKey: project.areaLabelKey,
@@ -156,6 +214,8 @@ export async function getPublicProjectBySlug(
     latitude: Number(project.latitude),
     longitude: Number(project.longitude),
     amenityKeys: project.amenityKeys,
+    areaNameKey: project.area?.nameKey ?? null,
+    areaDescriptionKey: project.area?.descriptionKey ?? null,
     coverUrl: project.coverMedia?.storageKey ?? null,
     galleryUrls: project.galleryMedia.map((g) => g.media.storageKey),
     units: project.units.map((u) => ({
@@ -169,10 +229,12 @@ export async function getPublicProjectBySlug(
       sizeSqm: u.sizeSqm,
       baseNightlyThb: u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb,
       instantBook: u.instantBook,
-      coverUrl: u.coverMedia?.storageKey ?? null,
+      coverUrl: u.coverMedia?.storageKey ?? u.media[0]?.media.storageKey ?? u.inventoryCategory?.coverMedia?.storageKey ?? null,
+      galleryUrls: u.media.map(row => row.media.storageKey),
     })),
     categories,
     reviews,
+    amenities,
   };
 }
 
@@ -184,6 +246,7 @@ export async function getPublicProjectBySlug(
  */
 async function buildPublicCategories(
   projectId: string,
+  projectSlug: string,
   liveUnits: {
     categoryKey: string | null;
     baseNightlyThb: number;
@@ -200,10 +263,13 @@ async function buildPublicCategories(
     where: { projectId, status: 'live' },
     orderBy: { createdAt: 'asc' },
     select: {
+      id: true,
       categoryKey: true,
       name: true,
       bedrooms: true,
       baseNightlyThb: true,
+      coverMedia: { select: { storageKey: true } },
+      galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
     },
   });
 
@@ -213,12 +279,17 @@ async function buildPublicCategories(
         (unit) => (unit.inventoryCategory?.categoryKey ?? unit.categoryKey) === category.categoryKey
       );
       return {
+        id: category.id,
         key: category.categoryKey,
+        name: category.name,
+        ...categoryEditorialKeys(projectSlug, category.id, category.categoryKey),
         styleKey: null,
         bedrooms: category.bedrooms,
         unitCount: units.length,
         fromNightlyThb: category.baseNightlyThb,
         monthlyFromThb: null,
+        coverUrl: category.coverMedia?.storageKey ?? category.galleryMedia[0]?.media.storageKey ?? null,
+        galleryUrls: category.galleryMedia.map(row => row.media.storageKey),
       };
     })
     .filter((category) => category.unitCount > 0);
@@ -267,6 +338,7 @@ async function buildPublicReviews(projectId: string): Promise<PublicProjectRevie
 export interface PublicUnitDetail extends PublicProjectUnit {
   descriptionKey: string | null;
   minNights: number;
+  galleryUrls: string[];
   amenityKeys: string[];
   project: {
     slug: string;
@@ -278,16 +350,20 @@ export interface PublicUnitDetail extends PublicProjectUnit {
 }
 
 export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
-  const unit = await prisma.unit.findUnique({
-    where: { id },
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const unit = await prisma.unit.findFirst({
+    where: { id, ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
     include: {
       coverMedia: { select: { storageKey: true } },
+      media: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
       inventoryCategory: {
         select: {
           categoryKey: true,
           baseNightlyThb: true,
           minNights: true,
           status: true,
+          coverMedia: { select: { storageKey: true } },
+          galleryMedia: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
         },
       },
       project: {
@@ -316,7 +392,8 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     sizeSqm: unit.sizeSqm,
     baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
     instantBook: unit.instantBook,
-    coverUrl: unit.coverMedia?.storageKey ?? null,
+    coverUrl: unit.coverMedia?.storageKey ?? unit.media[0]?.media.storageKey ?? unit.inventoryCategory?.coverMedia?.storageKey ?? null,
+    galleryUrls: unit.media.map(row => row.media.storageKey),
     descriptionKey: unit.descriptionKey,
     minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
     amenityKeys: unit.amenityKeys,
@@ -332,8 +409,9 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
 
 /** Live units (id only) for the sitemap. */
 export async function listPublicUnitIds(): Promise<string[]> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const units = await prisma.unit.findMany({
-    where: { status: 'live', project: { status: 'live' }, inventoryCategory: { status: 'live' } },
+    where: { ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
     select: { id: true },
   });
   return units.map((u) => u.id);

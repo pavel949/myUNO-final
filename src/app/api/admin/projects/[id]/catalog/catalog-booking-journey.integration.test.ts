@@ -19,6 +19,7 @@ import { getPropertyReadiness } from '@/modules/projects/property-readiness';
 import { POST as pricingPost } from '@/app/api/pricing/breakdown/route';
 import { POST as bookingPost } from '@/app/api/bookings/route';
 import { GET as searchGet } from '@/app/api/search/units/route';
+import { GET as unitDetailGet } from '@/app/api/units/[unitId]/route';
 
 function request(url: string, body: unknown): NextRequest {
   return new NextRequest(`http://localhost${url}`, {
@@ -231,6 +232,169 @@ describe('canonical onboarding → pricing → search → booking route journey'
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
     }));
     expect(booking.status).toBe(404);
+  });
+
+  it('never sells a sale-only unit as an accommodation until an active stay offering exists', async () => {
+    const c = await category('sale_only_2br');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
+    });
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'condominium' } });
+    await db.commercialOffering.create({
+      data: { projectId, unitId: unit.id, offeringType: 'sale', status: 'active' },
+    });
+    const dates = { startDate: '2026-11-10', endDate: '2026-11-14' };
+    const find = () => searchGet(new NextRequest(
+      'http://localhost/api/search/units?projectId=' + projectId +
+      '&adultsCount=2&startDate=' + dates.startDate + '&endDate=' + dates.endDate
+    ));
+
+    expect((await (await find()).json()).units).toHaveLength(0);
+    const detail = await unitDetailGet(
+      new NextRequest('http://localhost/api/units/' + unit.id),
+      { params: { unitId: unit.id } }
+    );
+    expect(detail.status).toBe(404);
+    const quote = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: unit.id, ...dates, guestCount: 2,
+    }));
+    expect(quote.status).toBe(404);
+    session.identityId = guestId;
+    const attempted = await bookingPost(request('/api/bookings', {
+      inventoryCategoryId: c.id, projectId, ...dates,
+      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
+    }));
+    expect(attempted.status).toBe(409);
+    expect(await db.booking.count({ where: { unitId: unit.id } })).toBe(0);
+  });
+
+  it('recognizes the canonical short_term_stay offer during readiness', async () => {
+    const c = await category('canonical_2br', '3500');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'draft', baseNightlyThb: 350_000,
+    });
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
+    await db.commercialOffering.create({
+      data: { projectId, unitId: unit.id, offeringType: 'short_term_stay', status: 'active' },
+    });
+    const readiness = await getPropertyReadiness(db, projectId);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.stay_offering' && b.unitId === unit.id
+    )).toBe(false);
+  });
+
+  it('uses one validated seasonal tariff for public quote and server booking, not the category base', async () => {
+    const cat = await category('priced_2br', '3500', 1);
+    const unit = await createUnit({
+      projectId, categoryKey: cat.categoryKey, status: 'live',
+      baseNightlyThb: 350_000, instantBook: true,
+    });
+    await db.commercialOffering.create({ data: {
+      projectId, unitId: unit.id, offeringType: 'short_term_stay', status: 'active',
+      pricingTerms: { quoteEngine: 'canonical_tariff_grid_v1', taxPolicyVerified: true,
+        tariffGrid: [{
+          sourceRateId: 'canonical-high', seasonCode: 'HIGH',
+          dateWindows: [{ start: '01-01', end: '12-31' }],
+          rateMode: 'daily', pricingUnit: 'night', amountSatang: 560_000,
+          currency: 'THB', minimumNights: 1,
+          includesTaxes: true, includesServiceCharge: true,
+          includesBreakfast: true, sourceSellable: true,
+        }] },
+    } });
+    const dates = { startDate: '2026-11-10', endDate: '2026-11-12' };
+    const quoted = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: unit.id, ...dates, guestCount: 2,
+    }));
+    expect(quoted.status).toBe(200);
+    expect((await quoted.json()).total).toBe(11_200);
+    session.identityId = guestId;
+    const booked = await bookingPost(request('/api/bookings', {
+      inventoryCategoryId: cat.id, projectId, ...dates,
+      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', totalThb: 1,
+    }));
+    expect(booked.status).toBe(201);
+    const result = await booked.json();
+    expect(result.booking.unitId).toBe(unit.id);
+    expect(result.booking.totalThb).toBe(1_120_000);
+    expect(result.booking.priceBreakdown.subtotal_thb).toBe(1_120_000);
+  });
+
+  it('uses the published monthly grid without stacking the default LOS discount', async () => {
+    const cat = await category('long_stay_2br', '3500');
+    const unit = await createUnit({ projectId, categoryKey: cat.categoryKey,
+      status: 'live', baseNightlyThb: 350_000 });
+    const canonicalTerms = (mode: string, value: number) => ({
+      quoteEngine: 'canonical_tariff_grid_v1', taxPolicyVerified: true,
+      tariffGrid: [{ sourceRateId: mode, seasonCode: 'ALL_YEAR',
+        dateWindows: [{ start: '01-01', end: '12-31' }],
+        rateMode: mode, pricingUnit: mode === 'daily' ? 'night' : '30_nights',
+        amountSatang: value, currency: 'THB', minimumNights: mode === 'daily' ? 1 : 30,
+        includesTaxes: mode === 'daily', includesServiceCharge: mode === 'daily',
+        includesBreakfast: mode === 'daily', sourceSellable: true }],
+    });
+    await db.commercialOffering.create({ data: {
+      projectId, unitId: unit.id, offeringType: 'short_term_stay',
+      status: 'active', pricingTerms: canonicalTerms('daily', 350_000),
+    } });
+    await db.commercialOffering.create({ data: {
+      projectId, unitId: unit.id, offeringType: 'long_term_rental',
+      status: 'active', pricingTerms: canonicalTerms('monthly', 9_000_001),
+    } });
+    const response = await pricingPost(request('/api/pricing/breakdown', {
+      unitId: unit.id, startDate: '2026-06-01', endDate: '2026-07-01', guestCount: 2,
+    }));
+    expect(response.status).toBe(200);
+    const quoted = await response.json();
+    expect(quoted.nights).toBe(30);
+    expect(quoted.subtotal).toBe(90000.01);
+    expect(quoted.lengthOfStayDiscount).toBe(0);
+    expect(quoted.earlyBirdDiscount).toBe(0);
+  });
+
+  it('keeps a source-linked Layantara offer draft even when an admin maps a channel', async () => {
+    const c = await category('source_villa', '3500');
+    const unit = await createUnit({
+      projectId, categoryKey: c.categoryKey, status: 'draft', baseNightlyThb: 350_000,
+    });
+    const system = await db.externalSystem.create({ data: {
+      system_key: 'layantara_os', environment: 'source-live',
+      display_name: 'Layantara source', status: 'staging',
+      config: { bookingAuthority: 'source', cutoverVerified: false },
+    } });
+    await db.externalMapping.create({ data: {
+      external_system_id: system.id, entity_type: 'unit',
+      external_id: 'villa-source-villa', internal_id: unit.id,
+      metadata: { verified: true },
+    } });
+    const offer = () => propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'stay_offering', status: 'draft' }),
+      { params: { id: unit.id } }
+    );
+    expect((await offer()).status).toBe(201);
+    expect((await offer()).status).toBe(200);
+    expect((await propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'stay_offering', status: 'active' }),
+      { params: { id: unit.id } }
+    )).status).toBe(409);
+    expect((await propertyDetailsPost(
+      request('/api/admin/units/x/property-details',
+        { action: 'channel_mapping', channel: 'airbnb', syncState: 'ical_only' }),
+      { params: { id: unit.id } }
+    )).status).toBe(201);
+    const offers = await db.commercialOffering.findMany({ where: { unitId: unit.id } });
+    expect(offers).toHaveLength(1);
+    expect(offers[0]).toMatchObject({ offeringType: 'short_term_stay', status: 'draft' });
+    expect(await db.channelMapping.count({ where: { offeringId: offers[0].id } })).toBe(1);
+    await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
+    const readiness = await getPropertyReadiness(db, projectId);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.source_authority' && b.unitId === unit.id
+    )).toBe(true);
+    expect(readiness?.blockers.some(
+      b => b.key === 'unit.source_pricing' && b.unitId === unit.id
+    )).toBe(true);
   });
 
   it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {

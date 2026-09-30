@@ -34,7 +34,19 @@ export default async function AdminDashboardPage() {
   );
 
   const labels = await getLabels({
-    'admin.dashboard.title': 'Dashboard',
+    'admin.dashboard.title': 'Portfolio overview',
+    'admin.dashboard.attention_title': 'Needs attention',
+    'admin.dashboard.attention_hint': 'Open the source workspace to resolve each item. Counts are platform-wide.',
+    'admin.dashboard.pending_payment_action': 'Bookings awaiting payment',
+    'admin.dashboard.open_tickets_action': 'Active guest and property tickets',
+    'admin.dashboard.unpublished_units_action': 'Units not live',
+    'admin.dashboard.no_attention': 'No items in these queues.',
+    'admin.dashboard.as_of': 'As of {time} ICT',
+    'admin.dashboard.add_property': 'Add property',
+    'admin.dashboard.live_calendar': 'Live calendar',
+    'admin.dashboard.process_title': 'Work by process',
+    'admin.dashboard.process_hint': 'Start with a task, then follow its connected workflow across myUNO.',
+    'admin.dashboard.process_action': 'Open operations map →',
     'admin.dashboard.setup_title': 'Add to the portfolio',
     'admin.dashboard.setup_intro':
       'A project is the development; a unit is a home inside it. Create the project first, then add its units.',
@@ -87,8 +99,26 @@ export default async function AdminDashboardPage() {
       label: labels['admin.dashboard.bookings'],
       value: `${pendingPayment} / ${bookings}`,
     },
-    { href: '/ops', label: labels['admin.dashboard.tickets'], value: String(openTickets) },
+    { href: '/app/admin/tickets?filter=active', label: labels['admin.dashboard.tickets'], value: String(openTickets) },
     { href: '/app/admin/people', label: labels['admin.dashboard.people'], value: String(identities) },
+  ];
+
+  const attention = [
+    {
+      label: labels['admin.dashboard.pending_payment_action'],
+      count: pendingPayment,
+      href: '/app/admin/bookings',
+    },
+    {
+      label: labels['admin.dashboard.open_tickets_action'],
+      count: openTickets,
+      href: '/app/admin/tickets?filter=active',
+    },
+    {
+      label: labels['admin.dashboard.unpublished_units_action'],
+      count: units - liveUnits,
+      href: '/app/admin/units',
+    },
   ];
 
   const kpiTiles = [
@@ -102,9 +132,59 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-        {labels['admin.dashboard.title']}
-      </h1>
+      <header className="mb-24 flex flex-col gap-12 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-display-xl font-semibold text-text-ink">
+            {labels['admin.dashboard.title']}
+          </h1>
+          <p className="text-small text-text-secondary mt-4">
+            {labels['admin.dashboard.as_of'].replace(
+              '{time}',
+              reportEnd.toLocaleString('en-GB', {
+                timeZone: 'Asia/Bangkok',
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-8">
+          <Link href="/app/admin/properties/new" className="rounded-md bg-brand-andaman px-16 py-12 text-small font-semibold text-on-dark-text hover:opacity-90">
+            {labels['admin.dashboard.add_property']} →
+          </Link>
+          <Link href="/ops/calendar/board" className="rounded-md border border-border-line px-16 py-12 text-small font-semibold text-text-ink hover:border-brand-andaman">
+            {labels['admin.dashboard.live_calendar']} →
+          </Link>
+        </div>
+      </header>
+      <section className="mb-24 rounded-lg border border-brand-andaman bg-surface-paper p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-16">
+        <div>
+          <h2 className="font-display text-title font-semibold text-text-ink mb-4">{labels['admin.dashboard.process_title']}</h2>
+          <p className="text-small text-text-secondary">{labels['admin.dashboard.process_hint']}</p>
+        </div>
+        <Link href="/app/admin/processes" className="shrink-0 rounded-md bg-brand-andaman text-on-dark-text px-16 py-12 text-small font-semibold hover:opacity-90 transition-opacity">{labels['admin.dashboard.process_action']}</Link>
+      </section>
+      <section aria-labelledby="admin-attention-title" className="mb-24 rounded-lg border border-border-line bg-surface-paper p-24">
+        <h2 id="admin-attention-title" className="font-display text-title font-semibold text-text-ink">
+          {labels['admin.dashboard.attention_title']}
+        </h2>
+        <p className="text-small text-text-secondary mt-4 mb-16">{labels['admin.dashboard.attention_hint']}</p>
+        {attention.every((item) => item.count === 0) ? (
+          <p className="text-small text-text-secondary">{labels['admin.dashboard.no_attention']}</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {attention.filter((item) => item.count > 0).map((item) => (
+              <Link key={item.href} href={item.href} className="flex items-center justify-between gap-12 rounded-md border border-border-line p-16 hover:border-brand-andaman focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman">
+                <span className="text-body font-medium text-text-ink">{item.label}</span>
+                <span className="font-display text-title font-semibold tabular-nums text-brand-andaman">{item.count} →</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Where things are entered. The admin surface opened straight onto
           analytics, so on a fresh portfolio it was a wall of zeroes with no
           visible way in — the create screens existed but nothing pointed at

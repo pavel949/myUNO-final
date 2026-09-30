@@ -21,6 +21,7 @@ const SURFACE_LABEL_KEYS = {
   owner: 'nav.owner_dashboard',
   resident: 'nav.residence',
   buyer: 'nav.buying',
+  guest: 'nav.my_trips',
   public: 'nav.find_stay',
 } as const satisfies Record<Landing['reason'], string>;
 
@@ -68,6 +69,7 @@ export default async function RootLayout({
   const navLabels = await getLabels({
     'nav.find_stay': 'Find a stay',
     'nav.residences': 'Residences',
+    'nav.homes': 'Buy / Rent',
     'nav.services': 'Services',
     'nav.owners': 'Owners',
     'nav.about': 'About',
@@ -109,7 +111,8 @@ export default async function RootLayout({
         isAdmin: user.isAdmin,
         roles: user.roles.map((r) => r.role as RoleType),
         activeBookingId,
-      }).map((surface) => ({
+      }).filter((surface) => surface.path !== '/trips') // universal account link already includes Trips
+        .map((surface) => ({
         href: surface.path,
         label: navLabels[SURFACE_LABEL_KEYS[surface.reason]],
       }))
@@ -161,6 +164,7 @@ export default async function RootLayout({
           labels={{
             findStay: navLabels['nav.find_stay'],
             residences: navLabels['nav.residences'],
+            homes: navLabels['nav.homes'],
             services: navLabels['nav.services'],
             owners: navLabels['nav.owners'],
             about: navLabels['nav.about'],

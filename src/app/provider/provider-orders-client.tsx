@@ -30,6 +30,26 @@ const STATUS_TONE: Record<string, string> = {
   closed: 'text-text-secondary',
 };
 
+function safeIso(value: unknown): string | null {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/** Service appointments use Phuket time, not the browser's local timezone. */
+function formatScheduledStart(value: string): string {
+  const parsed = safeIso(value);
+  if (!parsed) return '—';
+  return new Date(parsed).toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) + ' ICT';
+}
+
 function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
   const scheduledStart = raw.scheduledStart ?? raw.scheduled_start;
   const scheduledEnd = raw.scheduledEnd ?? raw.scheduled_end;
@@ -38,8 +58,8 @@ function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
   return {
     id: String(raw.id),
     status: String(raw.status),
-    scheduledStart: scheduledStart ? new Date(String(scheduledStart)).toISOString() : '',
-    scheduledEnd: scheduledEnd ? new Date(String(scheduledEnd)).toISOString() : null,
+    scheduledStart: safeIso(scheduledStart) ?? '',
+    scheduledEnd: safeIso(scheduledEnd),
     quantity: Number(raw.quantity ?? 1),
     totalThb: Number(raw.totalThb ?? raw.total_thb ?? 0),
     serviceTitle:
@@ -49,7 +69,7 @@ function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
       (raw.noteToProvider as string | null | undefined) ??
       (raw.note_to_provider as string | null | undefined) ??
       null,
-    acceptDeadline: acceptDeadline ? new Date(String(acceptDeadline)).toISOString() : null,
+    acceptDeadline: safeIso(acceptDeadline),
   };
 }
 
@@ -114,6 +134,29 @@ export default function ProviderOrdersClient({
     };
   }, [initialOrders, loadQueue, labels]);
 
+  const needsResponse = orders.filter((order) => order.status === 'placed' || order.status === 'paid');
+  const toFulfil = orders.filter((order) => order.status === 'accepted');
+  const prioritizedOrders = [...orders].sort((a, b) => {
+    const priority = (status: string) =>
+      status === 'placed' || status === 'paid' ? 0 : status === 'accepted' ? 1 : 2;
+    return priority(a.status) - priority(b.status) ||
+      (a.acceptDeadline || a.scheduledStart || '9999').localeCompare(
+        b.acceptDeadline || b.scheduledStart || '9999'
+      );
+  });
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loadQueue();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['provider.orders.error_generic']);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const act = async (orderId: string, action: string, body?: unknown) => {
     setBusyId(orderId);
     setError(null);
@@ -166,22 +209,33 @@ export default function ProviderOrdersClient({
       )}
 
       <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
-        <h2 className="font-display text-title font-semibold text-text-ink mb-8">
-          {labels['provider.orders.title']}
-          {providerName ? (
-            <span className="text-body font-normal text-text-secondary"> · {providerName}</span>
-          ) : null}
-        </h2>
+        <div className="flex flex-wrap items-start justify-between gap-12 mb-16">
+          <div>
+            <h2 className="font-display text-title font-semibold text-text-ink">
+              {labels['provider.orders.title']}
+              {providerName ? (
+                <span className="text-body font-normal text-text-secondary"> · {providerName}</span>
+              ) : null}
+            </h2>
+            <p className="text-small text-text-secondary mt-4" role="status" aria-live="polite">
+              {labels['provider.orders.needs_response']}: <strong>{needsResponse.length}</strong>
+              {' · '}{labels['provider.orders.to_fulfil']}: <strong>{toFulfil.length}</strong>
+            </p>
+          </div>
+          <Button size="sm" variant="secondary" onClick={refresh} isLoading={loading}>
+            {labels['provider.orders.refresh']}
+          </Button>
+        </div>
         {loading ? (
           <p className="text-body text-text-secondary py-8">
             {labels['provider.orders.loading']}
           </p>
-        ) : orders.length === 0 ? (
+        ) : error && orders.length === 0 ? null : orders.length === 0 ? (
           <p className="text-body text-text-secondary py-8">
             {labels['provider.orders.empty']}
           </p>
         ) : (
-          orders.map((order) => {
+          prioritizedOrders.map((order) => {
             const actionable = order.status === 'placed' || order.status === 'paid';
             return (
               <div
@@ -190,7 +244,7 @@ export default function ProviderOrdersClient({
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-body font-semibold text-text-ink">
-                    {order.serviceTitle}
+                    {order.serviceTitle || labels['provider.orders.untitled']}
                     <span
                       className={`font-normal ${STATUS_TONE[order.status] || 'text-text-secondary'}`}
                     >
@@ -199,7 +253,7 @@ export default function ProviderOrdersClient({
                     </span>
                   </p>
                   <p className="text-small text-text-secondary">
-                    {new Date(order.scheduledStart).toLocaleString()} · ×{order.quantity} · ฿
+                    {formatScheduledStart(order.scheduledStart)} · ×{order.quantity} · ฿
                     {(order.totalThb / 100).toLocaleString()}
                   </p>
                   {order.noteToProvider && (

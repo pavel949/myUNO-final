@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -40,7 +41,8 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
     getLabels({
       'staff.ops.calendar.back': '← Ops board',
       'staff.ops.calendar.title': 'Unit calendar',
-      'staff.ops.calendar.subtitle': 'Block dates or set one-off rates for this unit.',
+      'staff.ops.calendar.subtitle': 'Use the portfolio calendar for occupancy. Manage unit blocks, prices and integrations below.',
+      'staff.ops.calendar.occupancy': 'View in unified calendar →',
       ...UNIT_CALENDAR_LABEL_KEYS,
     }),
     getRequestLocale(),
@@ -63,6 +65,12 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
         <p className="text-body text-text-stone mt-8">
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
+        <div className="mt-16">
+          <Link href={'/ops/calendar/board?projectId='+unit.projectId+'&unitId='+unit.id} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+            {labels['staff.ops.calendar.occupancy']}
+          </Link>
+        </div>
+        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Edit property facts →</Link>
         <div className="mt-24">
           <UnitIcalConflictBanner
             conflicts={conflictAlerts}

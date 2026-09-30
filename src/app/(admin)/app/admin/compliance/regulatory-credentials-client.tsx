@@ -15,11 +15,13 @@ interface CredentialRow {
   issuingAuthority: string | null;
   expiryDate: string | null;
   status: string;
+  evidenceMediaId: string | null;
 }
 
 type Labels = Record<string, string>;
 
 const CREDENTIAL_TYPES = ['hotel_business_license', 'accommodation_exemption', 'title_legal_use'];
+const EVIDENCE_ACCEPT = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].join(',');
 
 export default function RegulatoryCredentialsClient({
   labels,
@@ -34,6 +36,7 @@ export default function RegulatoryCredentialsClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [draft, setDraft] = useState({
     scopeLevel: 'project',
     projectId: '',
@@ -69,6 +72,7 @@ export default function RegulatoryCredentialsClient({
           issuingAuthority: raw.issuingAuthority ? String(raw.issuingAuthority) : null,
           expiryDate: raw.expiryDate ? String(raw.expiryDate) : null,
           status: String(raw.status),
+          evidenceMediaId: raw.evidenceMediaId ? String(raw.evidenceMediaId) : null,
         }))
       );
     } catch (err) {
@@ -92,6 +96,14 @@ export default function RegulatoryCredentialsClient({
     setBusyId('create');
     setError(null);
     try {
+      let evidenceMediaId: string | undefined;
+      if (evidenceFile) {
+        const form = new FormData(); form.set('file', evidenceFile);
+        const upload = await fetch('/api/admin/regulatory-credentials/evidence', { method: 'POST', body: form });
+        const result = await upload.json().catch(() => null);
+        if (!upload.ok || !result?.mediaAssetId) throw new Error(result?.error || labels['admin.compliance.credentials.evidence_failed']);
+        evidenceMediaId = result.mediaAssetId;
+      }
       const response = await fetch('/api/admin/regulatory-credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,6 +112,7 @@ export default function RegulatoryCredentialsClient({
           projectId: draft.scopeLevel === 'project' ? draft.projectId : undefined,
           unitId: draft.scopeLevel === 'unit' ? draft.unitId : undefined,
           credentialType: draft.credentialType,
+          evidenceMediaId,
           issuingAuthority: draft.issuingAuthority || undefined,
           registrationNumber: draft.registrationNumber || undefined,
           expiryDate: draft.expiryDate || undefined,
@@ -115,6 +128,7 @@ export default function RegulatoryCredentialsClient({
         registrationNumber: '',
         expiryDate: '',
       }));
+      setEvidenceFile(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.compliance.credentials.error']);
@@ -230,6 +244,12 @@ export default function RegulatoryCredentialsClient({
         />
       </div>
 
+      <label className="mb-12 block text-small text-text-ink">
+        {labels['admin.compliance.credentials.evidence']}
+        <input className={fieldClass + ' mt-8'} type="file" accept={EVIDENCE_ACCEPT}
+          onChange={e => setEvidenceFile(e.currentTarget.files?.[0] || null)} />
+      </label>
+      <p className="mb-12 text-small text-text-secondary">{labels['admin.compliance.credentials.evidence_note']}</p>
       <Button size="sm" onClick={create} isLoading={busyId === 'create'}>
         {labels['admin.compliance.credentials.create_submit']}
       </Button>
@@ -266,7 +286,7 @@ export default function RegulatoryCredentialsClient({
                     <td className="p-12 text-text-secondary">
                       {row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : '—'}
                     </td>
-                    <td className="p-12 text-text-secondary">{statusLabel(row.status)}</td>
+                    <td className="p-12 text-text-secondary">{statusLabel(row.status)}{row.evidenceMediaId && <a className="ml-8 text-brand-andaman underline" href={'/api/admin/regulatory-credentials/evidence?id=' + encodeURIComponent(row.evidenceMediaId)}>{labels['admin.compliance.credentials.view_evidence']}</a>}</td>
                     <td className="p-12">
                       {row.status === 'active' ? (
                         <Button

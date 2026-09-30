@@ -109,6 +109,10 @@ export default async function AdminCompliancePage({
     'admin.compliance.credentials.subtitle':
       'Hotel business licences, accommodation exemptions, and title legal-use verifications — the licensing proof a unit needs before it can go live for short-term stay or sale (Q71).',
     'admin.compliance.credentials.loading': 'Loading credentials…',
+    'admin.compliance.credentials.evidence': 'Upload supporting document (PDF or photo)',
+    'admin.compliance.credentials.evidence_note': 'Without encrypted document evidence the credential remains pending and cannot authorize publication. Maximum 2 MB.',
+    'admin.compliance.credentials.evidence_failed': 'Could not protect the supporting document.',
+    'admin.compliance.credentials.view_evidence': 'View proof',
     'admin.compliance.credentials.empty': 'No regulatory credentials recorded yet.',
     'admin.compliance.credentials.error': 'That did not work.',
     'admin.compliance.credentials.scope.project': 'Project-wide',

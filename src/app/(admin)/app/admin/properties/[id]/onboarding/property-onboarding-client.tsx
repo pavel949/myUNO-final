@@ -5,18 +5,19 @@ import { FormEvent, createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import ScopedGalleryEditor from '@/components/property/ScopedGalleryEditor';
 import type { PropertyReadinessReport } from '@/modules/projects';
 
 type Category = { id: string; name: string; categoryKey: string; baseNightlyThb: number; minNights: number; status: string; ratePlans: Array<{ id: string; code: string; name: string; minNights: number | null }> };
 type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ offeringType: string; status: string; channelMappings: Array<{ channel: string; syncState: string }> }> };
-type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; units: Unit[] };
+type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; structureNodes: Array<{ id: string; name: string; kind: string }>; units: Unit[] };
 
 const StepContext = createContext(1);
 const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance', 'Stay offering', 'Pricing', 'Content & photos', 'Availability & channels', 'Team', 'Review & publish'];
 const input = 'h-40 rounded-sm border border-border-line bg-surface-paper px-12';
 function unitPropertyDetailsPath(unitId: string) { return `/api/admin/units/${unitId}/property-details`; }
 
-export default function PropertyOnboardingClient({ initialProject, initialReadiness }: { initialProject: Project; initialReadiness: PropertyReadinessReport }) {
+export default function PropertyOnboardingClient({ initialProject, initialReadiness, initialGallery, galleryLabels }: { initialProject: Project; initialReadiness: PropertyReadinessReport; initialGallery?: string; galleryLabels: Record<string,string> }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,7 +55,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
     <p className="mb-20 text-small text-text-secondary">Step {activeStep} of {steps.length}. Complete this step, then continue. Your changes are saved to the existing property record.</p>
     {message ? <p role="status" className="mb-16 rounded-md bg-surface-muted p-12">{message}</p> : null}
 
-    <Section id="step-1" title="1. Project and area"><p>Canonical area and location are set on the project record. Use Project 360 for detailed physical facts.</p><div className="mt-12 flex gap-12"><Link className="text-brand-andaman underline" href={`/app/admin/projects/${initialProject.id}`}>Open Project 360</Link><Link className="text-brand-andaman underline" href="/app/admin/areas">Manage areas</Link></div></Section>
+    <Section id="step-1" title="1. Project and area"><p>Canonical area and location are set on the project record. Use Project 360 for detailed physical facts.</p><div className="mt-12 flex gap-12"><Link className="text-brand-andaman underline" href={`/app/admin/projects/${initialProject.id}`}>Open Project 360</Link><Link className="text-brand-andaman underline" href="/app/admin/areas">Manage areas</Link><Link className="text-brand-andaman underline" href={'/app/admin/projects/'+initialProject.id+'/structure'}>Buildings, wings & floors</Link></div></Section>
 
     <Section id="step-2" title="2. Categories and homes">
       <form className="grid gap-8 md:grid-cols-4" onSubmit={form(async d => {
@@ -84,7 +85,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
           ? initialProject.inventoryCategories.map(c => <p key={c.id}>{c.name} ({c.categoryKey}) · ฿{(c.baseNightlyThb / 100).toLocaleString('en-US')}/night · {c.minNights} night minimum · {c.status}</p>)
           : <p>No categories yet.</p>}
       </div>
-      <form className="grid md:grid-cols-6 gap-8 mt-20" onSubmit={form(async d => { await submit('/api/admin/units', { projectId: initialProject.id, inventoryCategoryId: d.get('category'), name: d.get('name'), unitType: d.get('unitType'), bedrooms: Number(d.get('bedrooms')), bathrooms: Number(d.get('bathrooms')), maxGuests: Number(d.get('maxGuests')), addressSupplement: String(d.get('name')), descriptionKey: `unit.${String(d.get('name')).toLowerCase().replace(/ /g, '_')}.description`, baseNightlyThb: 0, status: 'draft' }); })}><input className={input} name="name" placeholder="Home name / number" required/><select className={input} name="category" required><option value="">Select category</option>{initialProject.inventoryCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select className={input} name="unitType" defaultValue="villa"><option value="villa">Villa</option><option value="apartment">Apartment</option><option value="condo">Condo</option><option value="house">House</option></select><input className={input} name="bedrooms" type="number" min="0" placeholder="Bedrooms" required/><input className={input} name="bathrooms" type="number" min="0" step="1" placeholder="Bathrooms" required/><input className={input} name="maxGuests" type="number" min="1" placeholder="Max guests" required/><Button type="submit" disabled={busy}>Add home</Button></form>
+      <form className="grid md:grid-cols-6 gap-8 mt-20" onSubmit={form(async d => { await submit('/api/admin/units', { projectId: initialProject.id, inventoryCategoryId: d.get('category'), structureNodeId: d.get('structureNode')||null, name: d.get('name'), unitType: d.get('unitType'), bedrooms: Number(d.get('bedrooms')), bathrooms: Number(d.get('bathrooms')), maxGuests: Number(d.get('maxGuests')), addressSupplement: String(d.get('name')), descriptionKey: `unit.${String(d.get('name')).toLowerCase().replace(/ /g, '_')}.description`, baseNightlyThb: 0, status: 'draft' }); })}><input className={input} name="name" placeholder="Home name / number" required/><select className={input} name="category" required><option value="">Select category</option>{initialProject.inventoryCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select className={input} name="unitType" defaultValue="villa"><option value="villa">Villa</option><option value="condo">Condo</option><option value="townhouse">Townhouse</option></select><select className={input} name="structureNode"><option value="">Location not assigned</option>{(initialProject.structureNodes ?? []).map(node => <option key={node.id} value={node.id}>{node.kind} · {node.name}</option>)}</select><input className={input} name="bedrooms" type="number" min="0" placeholder="Bedrooms" required/><input className={input} name="bathrooms" type="number" min="0" step="1" placeholder="Bathrooms" required/><input className={input} name="maxGuests" type="number" min="1" placeholder="Max guests" required/><Button type="submit" disabled={busy}>Add home</Button></form>
     </Section>
 
     <Section id="step-3" title="3. Owner, invitation and contract"><OwnerInvite units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Open owner and contract workspace"/></Section>
@@ -109,7 +110,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
         {initialProject.inventoryCategories.map(c => <p key={c.id}>{c.name}: {c.ratePlans.filter(plan => plan.code === 'BAR').map(plan => `${plan.name} · ${plan.minNights ?? c.minNights} night minimum`).join(' · ') || 'BAR not configured'}</p>)}
       </div>
     </Section>
-    <Section id="step-7" title="7. Content and galleries"><p>Project and unit media support ordered galleries and an explicit cover. Activation requires a project cover and at least three unit photos.</p><GalleryUpload projectId={initialProject.id} units={initialProject.units}/><UnitLinks units={initialProject.units} label="Open unit gallery"/></Section>
+    <Section id="step-7" title="7. Content and galleries"><p>Project and unit media support ordered galleries and an explicit cover. Activation requires a project cover and at least three unit photos.</p><ScopedGalleryEditor projectId={initialProject.id} projectName={initialProject.name} categories={initialProject.inventoryCategories} units={initialProject.units} initialSelection={initialGallery} labels={galleryLabels}/><UnitLinks units={initialProject.units} label="Open unit gallery"/></Section>
     <Section id="step-8" title="8. Availability and channels"><p className="mb-12">Availability is derived from Booking, active holds, BlockedDate and approved external blocks. This screen configures inputs to that engine; it never maintains a second availability truth.</p><div className="rounded-md bg-state-warning-soft p-12 mb-16"><strong>Manual-risk warning:</strong> iCal and manual mappings do not push ARI. After every direct booking, close inventory in the OTA extranets until an ARI-capable connection reports <code>ari_push</code>.</div><ChannelForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-9" title="9. Team"><p>Invite people from the owner form above, then grant project or unit roles in People & access.</p><Link className="text-brand-andaman underline" href="/app/admin/people">Open People & access</Link></Section>
     <Section id="step-10" title="10. Review and publish"><Readiness report={initialReadiness}/><Button disabled={busy || !initialReadiness.readyForActivation || initialProject.status === 'live'} onClick={() => submit(`/api/admin/projects/${initialProject.id}`, { status: 'live' }, 'PUT')}>{initialProject.status === 'live' ? 'Property is live' : 'Publish property'}</Button></Section>
@@ -118,12 +119,12 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
 }
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) { const activeStep = useContext(StepContext); const visible = Number(id.replace('step-', '')) === activeStep; return <section id={id} hidden={!visible} className="scroll-mt-24 mb-20 rounded-lg border border-border-line bg-surface-paper p-20"><h2 className="font-display text-heading-lg font-semibold mb-12">{title}</h2>{children}</section>; }
-function UnitLinks({ units, label }: { units: Unit[]; label: string }) { return <ul className="mt-12 space-y-8">{units.map(u => <li key={u.id}><Link className="text-brand-andaman underline" href={`/app/admin/units/${u.id}`}>{label}: {u.name}</Link></li>)}</ul>; }
+function UnitLinks({ units, label }: { units: Unit[]; label: string }) { return <ul className="mt-12 space-y-8">{units.map(u => <li key={u.id}><Link className="text-brand-andaman underline" href={`/app/admin/units/${u.id}`}>{label}: {u.name}</Link> · <Link className="text-brand-andaman underline" href={'/app/admin/units/'+u.id+'/structure'}>Building / floor</Link></li>)}</ul>; }
 function OwnerInvite({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); const invite = await submit('/api/admin/people/invite', { email: d.get('email'), firstName: d.get('firstName'), lastName: d.get('lastName'), preferredLocale: 'en' }); if (invite) await submit(`/api/admin/units/${d.get('unit')}/owner`, { ownerIdentityId: invite.identity.id }, 'PUT'); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="firstName" placeholder="First name" required/><input className={input} name="lastName" placeholder="Last name" required/><input className={input} name="email" type="email" placeholder="Owner email" required/><Button>Invite and assign owner</Button></form>; }
 function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) {
   return <div className="space-y-12">
     {units.map(unit => {
-      const offering = unit.commercialOfferings.find(row => row.offeringType === 'short_stay');
+      const offering = unit.commercialOfferings.find(row => row.offeringType === 'short_term_stay' || row.offeringType === 'short_stay');
       return <div key={unit.id} className="flex flex-wrap items-center gap-12 rounded-md border border-border-line p-12">
         <span className="flex-1 text-body font-semibold">{unit.name}</span>
         <span className="text-small">{offering?.status === 'active' ? 'Short stay active' : 'Short stay not active'}</span>
@@ -137,46 +138,4 @@ function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: stri
 }
 function ChannelForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'channel_mapping', channel: d.get('channel'), externalListingId: d.get('listing'), syncState: d.get('sync') }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="channel" placeholder="Channel" required/><input className={input} name="listing" placeholder="Listing ID"/><select className={input} name="sync"><option value="ical_only">iCal only</option><option value="manual">Manual</option></select><Button>Save mapping</Button></form>; }
 function SleepingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'sleeping_space', spaceType: d.get('spaceType'), name: d.get('name'), beds: [{ bedType: d.get('bedType'), count: Number(d.get('count')) }] }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><select className={input} name="spaceType"><option value="bedroom">Bedroom</option><option value="living_room">Living room</option></select><input className={input} name="name" placeholder="Room name"/><select className={input} name="bedType"><option value="king">King bed</option><option value="queen">Queen bed</option><option value="single">Single bed</option><option value="sofa_bed">Sofa bed</option></select><input className={input} name="count" type="number" min="1" defaultValue="1"/><Button>Save sleeping space</Button></form>; }
-function GalleryUpload({ projectId, units }: { projectId: string; units: Unit[] }) {
-  const router = useRouter();
-  const [target, setTarget] = useState('project');
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-
-  return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    setUploading(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const uploaded = await fetch('/api/media/upload', { method: 'POST', body: data });
-      const asset = await uploaded.json().catch(() => null);
-      if (!uploaded.ok || !asset?.mediaAssetId) {
-        throw new Error(asset?.error || 'Could not upload the photo.');
-      }
-      const attached = await fetch(
-        target === 'project' ? `/api/admin/projects/${projectId}/media` : `/api/admin/units/${target}/media`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mediaAssetId: asset.mediaAssetId, cover: true }) }
-      );
-      if (!attached.ok) {
-        const detail = await attached.json().catch(() => null);
-        throw new Error(detail?.error || 'Photo uploaded but could not be attached to the gallery. Retry or contact support.');
-      }
-      setSaved(true);
-      router.refresh();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not save the photo.');
-    } finally {
-      setUploading(false);
-    }
-  }}>
-    <select className={input} value={target} onChange={e => setTarget(e.target.value)} aria-label="Gallery target"><option value="project">Project gallery</option>{units.map(u => <option key={u.id} value={u.id}>{u.name} gallery</option>)}</select>
-    <input className={input} name="file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" required aria-label="Gallery image" />
-    <Button type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Upload and set cover'}</Button>
-    {error && <p role="alert" className="w-full text-state-error">{error}</p>}
-    {saved && <p role="status" className="w-full text-state-success">Photo saved to gallery.</p>}
-  </form>;
-}
 function Readiness({ report }: { report: PropertyReadinessReport }) { return <div className="mb-16"><p className="mb-8"><strong>{report.blockers.length}</strong> blockers · <strong>{report.warnings.length}</strong> warnings</p><ul className="space-y-6">{[...report.blockers, ...report.warnings].map(item => <li key={`${item.key}-${item.unitId || ''}`} className={item.severity === 'blocker' ? 'text-state-error' : 'text-state-warning'}>{item.severity === 'blocker' ? 'Blocker' : 'Warning'}: {item.unitName ? `${item.unitName} — ` : ''}{item.message}</li>)}</ul></div>; }

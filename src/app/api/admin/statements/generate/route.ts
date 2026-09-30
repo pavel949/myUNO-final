@@ -133,6 +133,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Period end is an inclusive calendar day for statements. A stay that
+    // crosses the boundary cannot be silently omitted: allocation must be
+    // explicitly defined before financial close for that period.
+    const nextPeriodDay = new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+    const crossingStay = await prisma.booking.findFirst({
+      where: {
+        unitId: body.unitId,
+        status: { in: REVENUE_BOOKING_STATUSES },
+        startDate: { lt: nextPeriodDay },
+        endDate: { gt: startDate },
+        OR: [
+          { startDate: { lt: startDate } },
+          { endDate: { gt: nextPeriodDay } },
+        ],
+      },
+      select: { id: true },
+    })
+    if (crossingStay) {
+      return NextResponse.json(
+        { error: 'A stay crosses this accounting period. Resolve the stay allocation policy before generating a statement.', bookingId: crossingStay.id },
+        { status: 409 }
+      )
+    }
+
     // --- Sources of the statement's figures -------------------------------
     // Every figure below is computed on the server from stored rows; nothing
     // is taken from the request body beyond the unit and the period.
@@ -141,7 +165,7 @@ export async function POST(req: NextRequest) {
       where: {
         unitId: body.unitId,
         startDate: { gte: startDate },
-        endDate: { lte: endDate },
+        endDate: { lte: nextPeriodDay },
         status: { in: REVENUE_BOOKING_STATUSES },
       },
       orderBy: { startDate: 'asc' },
@@ -166,6 +190,7 @@ export async function POST(req: NextRequest) {
           where: {
             bookingId: { in: bookingIds },
             status: 'succeeded',
+            purpose: { in: ['stay', 'stay_balance'] },
           },
           _sum: { amountThb: true },
         })
@@ -177,7 +202,7 @@ export async function POST(req: NextRequest) {
     const ledgerEntries = await prisma.ledgerEntry.findMany({
       where: {
         unitId: body.unitId,
-        occurredOn: { gte: startDate, lte: endDate },
+        occurredOn: { gte: startDate, lt: nextPeriodDay },
         entryType: {
           in: [
             'refund_out',

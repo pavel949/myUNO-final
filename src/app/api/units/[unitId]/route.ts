@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { resolveEffectiveStayOffer } from '@/modules/booking';
+import { computePriceBreakdown, checkAvailability } from '@/modules/core';
+import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 /**
@@ -11,7 +12,10 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
  * (no owner identity, no engagement economics, no internal status detail).
  *
  * When startDate + endDate are supplied, `pricing` is resolved through the
- * canonical InventoryCategory → RatePlan → PricingRule quotation engine.
+ * the same canonical calculator used by search, checkout and Booking.
+ * The inventory read additionally respects live bookings/holds, owner/OTA
+ * blocks and source-calendar cutover. It is advisory; booking commits still
+ * re-check availability transactionally.
  * Legacy baseNightlyThb/minNights remain in the response temporarily for old
  * clients, but new guest surfaces should prefer `pricing`.
  */
@@ -51,6 +55,7 @@ export async function GET(
         inventoryCategoryId: true,
         name: true,
         unitType: true,
+        accommodationType: true,
         bedrooms: true,
         bathrooms: true,
         maxGuests: true,
@@ -62,16 +67,23 @@ export async function GET(
         cancellationPolicyKey: true,
         status: true,
         assetStatus: true,
+        commercialOfferings: { select: { offeringType: true, status: true } },
         inventoryCategory: {
           select: {
             id: true,
             categoryKey: true,
             name: true,
             status: true,
+            minNights: true,
+            coverMedia: { select: { storageKey: true } },
+            galleryMedia: {
+              orderBy: { sort: 'asc' },
+              select: { media: { select: { storageKey: true } } },
+            },
           },
         },
         project: {
-          select: { id: true, name: true, status: true },
+          select: { id: true, name: true, status: true, projectType: true },
         },
         coverMedia: { select: { storageKey: true } },
         media: {
@@ -87,7 +99,10 @@ export async function GET(
       !unit ||
       unit.status !== 'live' ||
       unit.assetStatus === 'suspended' ||
-      unit.project.status !== 'live'
+      unit.project.status !== 'live' ||
+      unit.inventoryCategory?.status !== 'live' ||
+      (Boolean(unit.project.projectType) && !unit.commercialOfferings.some(offer =>
+        ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active'))
     ) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
@@ -106,26 +121,30 @@ export async function GET(
     } | null = null;
 
     if (startDate && endDate) {
-      const offer = await resolveEffectiveStayOffer(prisma, {
-        unitId: unit.id,
-        startDate,
-        endDate,
-        guests,
-        ratePlanCode: 'BAR',
-      });
+      // Never quote with the legacy effective-offer calculator: it has
+      // independent tax/discount semantics and does not inspect bookings.
+      // This is the exact price authority used by /api/pricing/breakdown and
+      // createBooking; the final capacity claim remains transactional there.
+      const [breakdown, calendarAvailable, sourceExcluded] = await Promise.all([
+        computePriceBreakdown(prisma, unit.id, startDate, endDate, guests),
+        checkAvailability(prisma, unit.id, startDate, endDate),
+        excludedSourceControlledUnits(prisma, [unit.id]),
+      ]);
+      const nights = breakdown.lines.length;
       const toBaht = (satang: number) => Math.round(satang / 100);
+      const isAvailable = calendarAvailable && sourceExcluded.length === 0;
       pricing = {
-        ratePlanCode: offer.ratePlanCode,
-        nights: offer.nightsCount,
-        averageNightly:
-          offer.nightsCount > 0 ? toBaht(Math.round(offer.subtotalThb / offer.nightsCount)) : 0,
-        subtotal: toBaht(offer.subtotalThb),
-        vatTax: toBaht(offer.vatTaxThb),
-        total: toBaht(offer.totalThb),
-        minNights: offer.minNights,
-        cancellationPolicyKey: offer.cancellationPolicyKey,
-        isAvailable: offer.isAvailable,
-        availableCapacity: offer.availableCapacity,
+        ratePlanCode: 'BAR',
+        nights,
+        averageNightly: nights > 0 ? toBaht(Math.round(breakdown.subtotal_thb / nights)) : 0,
+        subtotal: toBaht(breakdown.subtotal_thb),
+        vatTax: toBaht(breakdown.occupancy_tax_thb),
+        total: toBaht(breakdown.total_thb),
+        minNights: breakdown.commercialTerms?.minimumNights ??
+          unit.inventoryCategory?.minNights ?? unit.minNights,
+        cancellationPolicyKey: unit.cancellationPolicyKey ?? 'flexible',
+        isAvailable,
+        availableCapacity: isAvailable ? 1 : 0,
       };
     }
 
@@ -142,24 +161,42 @@ export async function GET(
       assetStatus: _assetStatus,
       coverMedia,
       media,
+      commercialOfferings: _commercialOfferings,
       project,
       ...rest
     } = unit;
     const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
     const gallery = media.map((m) => m.media.storageKey);
-    const cover = coverMedia?.storageKey || gallery[0] || null;
+    const exactCover = coverMedia?.storageKey || gallery[0] || null;
+    // Representative hotel-room photos may be used when the individual room
+    // has no exact-unit media. Private villas and condos never inherit another
+    // unit's photograph, even when they share the same inventory category.
+    const isRoomType = project.projectType === 'hotel' ||
+      unit.accommodationType === 'hotel_room';
+    const representative = isRoomType && gallery.length === 0 && !exactCover
+      ? unit.inventoryCategory?.galleryMedia.map(m => m.media.storageKey) ?? []
+      : [];
+    const representativeCover = isRoomType && gallery.length === 0 && !exactCover
+      ? unit.inventoryCategory?.coverMedia?.storageKey ?? representative[0] ?? null
+      : null;
+    const selected = representative.length ? representative : gallery;
+    const cover = exactCover || representativeCover;
     return NextResponse.json({
       ...publicUnit,
-      // Compatibility field for old clients. New date-aware surfaces use pricing.averageNightly.
-      baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
+      // Money boundary: all *Thb integer fields stay in satang until the final
+      // rendering component. Date-aware pricing below remains a legacy baht DTO.
+      baseNightlyThb: publicUnit.baseNightlyThb,
       pricing,
-      images: cover ? [cover, ...gallery.filter((g) => g !== cover)] : gallery,
+      photoScope: representativeCover ? 'room_type' : exactCover ? 'exact_unit' : 'none',
+      images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     if (message.includes('minimum') || message.includes('exceeds')) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Incomplete or unapproved source tariffs must fail closed without leaking
+    // internal pricing configuration through a public response.
+    return NextResponse.json({ error: 'Stay quote unavailable' }, { status: 503 });
   }
 }

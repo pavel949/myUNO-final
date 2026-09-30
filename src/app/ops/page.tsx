@@ -85,7 +85,11 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.costs_link': 'Record a cost',
     'staff.ops.claims_link': 'Damage claims',
     'staff.ops.mobilization_link': 'Mobilization →',
-    'staff.ops.calendar_link': 'Unit calendars →',
+    'staff.ops.portfolio_link': 'Managed portfolio →',
+    'staff.ops.add_unit_link': 'Add property →',
+    'staff.ops.team_link': 'Project team →',
+    'staff.ops.calendar_link': 'Unified calendar →',
+    'staff.ops.stays_link': 'Stay operations →',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
     'staff.ops.announcements_link': 'Post announcement →',
@@ -274,8 +278,20 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             <Link href={opsHref('/ops/mobilization', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.mobilization_link']}
             </Link>
-            <Link href={opsHref('/ops/calendar', validActiveProjectId)} className={navClass}>
+            <Link href="/mc/portfolio" className={navClass}>
+              {labels['staff.ops.portfolio_link']}
+            </Link>
+            <Link href="/ops/new-unit" className={navClass}>
+              {labels['staff.ops.add_unit_link']}
+            </Link>
+            <Link href="/ops/team" className={navClass}>
+              {labels['staff.ops.team_link']}
+            </Link>
+            <Link href={opsHref('/ops/calendar/board', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.calendar_link']}
+            </Link>
+            <Link href={opsHref('/ops/stays', validActiveProjectId)} className={navClass}>
+              {labels['staff.ops.stays_link']}
             </Link>
             <Link href={opsHref('/ops/tm30', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.tm30_link']}

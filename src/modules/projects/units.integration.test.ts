@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db as prisma, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db as prisma, resetDb, createIdentity, createProject, createUnit , createRegulatoryEvidence } from '@/test/util';
 import { createUnit as createUnitFn, updateUnit, confirmPermittedUse } from './units';
 import { UnitStatus } from '@prisma/client';
 import { ensureSeedInventoryCategory } from './inventory.seed';
@@ -184,6 +184,7 @@ describe('Units module', () => {
         credentialType: 'hotel_business_license',
         scopeLevel: 'unit',
         unitId: unit.id,
+        evidenceMediaId: (await createRegulatoryEvidence(admin.id)).id,
         verifiedByIdentityId: admin.id,
       });
 

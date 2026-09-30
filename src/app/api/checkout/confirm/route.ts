@@ -50,19 +50,9 @@ export async function POST(req: NextRequest) {
       throw createPublicError('sessionId is required', 400);
     }
 
-    // Mock-provider unhappy path (doc 07 F-GUEST-3): card declined, booking
-    // stays pending_payment and the guest retries from My trips.
-    if (body.simulateDecline === true) {
-      await markPaymentFailed(prisma, sessionId, 'card_declined');
-      throw createPublicError(
-        'Your card was declined. Nothing was charged — complete payment from My trips before your hold expires.',
-        400
-      );
-    }
-
     const payment = await prisma.payment.findUnique({
       where: { id: sessionId },
-      select: { payerIdentityId: true, bookingId: true, amountThb: true, method: true, provider: true },
+      select: { payerIdentityId: true, bookingId: true, amountThb: true, method: true, provider: true, status: true },
     });
 
     if (!payment) {
@@ -73,6 +63,22 @@ export async function POST(req: NextRequest) {
       throw createPublicError('Access denied.', 403);
     }
 
+    // Mock-provider unhappy path (doc 07 F-GUEST-3): card declined, booking
+    // stays pending_payment and the guest retries from My trips.
+    if (body.simulateDecline === true && payment.provider !== 'mock') {
+      throw createPublicError('Simulated decline is only supported for test payments', 400);
+    }
+    if (body.simulateDecline === true && payment.status !== 'pending') {
+      throw createPublicError('Only pending test payments can be declined', 400);
+    }
+    if (body.simulateDecline === true && payment.provider === 'mock') {
+      await markPaymentFailed(prisma, sessionId, 'card_declined');
+      throw createPublicError(
+        'Your card was declined. Nothing was charged — complete payment from My trips before your hold expires.',
+        400
+      );
+    }
+
     // **CRITICAL: Verify payment and transition booking to confirmed**
     const result = await financeService.verifyAndConfirm(prisma, sessionId);
 
@@ -80,7 +86,9 @@ export async function POST(req: NextRequest) {
     // Idempotent: if already confirmed, result.confirmed = false and notification is skipped
     if (result.confirmed && result.payment?.bookingId) {
       // Send in-app notifications to guest and owner, plus confirmation email to guest
-      await notifyBookingConfirmed(prisma, result.payment.bookingId);
+      await notifyBookingConfirmed(prisma, result.payment.bookingId).catch((error) => {
+        console.error('Booking confirmed but notification delivery failed:', error);
+      });
     }
 
     return NextResponse.json(result, { status: 200 });

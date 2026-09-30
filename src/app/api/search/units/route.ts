@@ -3,6 +3,7 @@ import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown } from '@/modules/core';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
 import {
@@ -157,12 +158,25 @@ export async function GET(req: NextRequest) {
       ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
     };
 
+    // Source-controlled units must be absent from *all* public search modes,
+    // including undated browsing and grouped category capacity. Exclusion is
+    // applied before pagination, counts and prices, never as a cosmetic filter.
+    const sourceExcludedUnitIds = await allExcludedSourceControlledUnitIds(prisma);
     const where: any = {
       status: 'live',
+      ...(sourceExcludedUnitIds.length > 0 && { id: { notIn: sourceExcludedUnitIds } }),
       assetStatus: { not: 'suspended' },
       inventoryCategory: { status: 'live' },
       project: projectFilter,
       ...projectScope,
+      // A sale-only or lease-only physical unit is not a guest stay. The
+      // legacy untyped portfolio remains readable during staged migration.
+      AND: [{ OR: [
+        { project: { projectType: null } },
+        { commercialOfferings: { some: {
+          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+        } } },
+      ] }],
       maxGuests: { gte: totalGuests },
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
@@ -202,7 +216,10 @@ export async function GET(req: NextRequest) {
       });
 
       const unavailableUnitIds = new Set(
-        conflictingUnits.map((b) => b.unitId).concat(blockedUnits.map((b) => b.unitId))
+        sourceExcludedUnitIds.concat(
+          conflictingUnits.map((b) => b.unitId),
+          blockedUnits.map((b) => b.unitId)
+        )
       );
 
       if (unavailableUnitIds.size > 0) {
@@ -210,8 +227,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const isMinimumStayError = (error: unknown) =>
-      error instanceof Error && error.message.includes('below minimum of');
+    // Commercially unapproved imported inventory is an unavailable search
+    // candidate, not a reason to fail the whole public discovery request.
+    // Unexpected calculator/database failures must still surface as errors.
+    const isUnavailablePriceError = (error: unknown) =>
+      error instanceof Error && [
+        'below minimum of',
+        'source tariff has not been validated',
+        'Validated monthly tariff is required',
+        'Source booking policy requires approval',
+        'Arrival tariff identity missing',
+        'No active short-stay offering',
+      ].some(reason => error.message.includes(reason));
 
     if (groupBy === 'category') {
       const categoryUnits = await prisma.unit.findMany({
@@ -313,7 +340,7 @@ export async function GET(req: NextRequest) {
                     : entry.minBase;
                   return { nightly, total: breakdown.total_thb };
                 } catch (error) {
-                  if (isMinimumStayError(error)) return null;
+                  if (isUnavailablePriceError(error)) return null;
                   throw error;
                 }
               })
@@ -371,7 +398,7 @@ export async function GET(req: NextRequest) {
 
     const listInclude = {
       project: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, projectType: true },
       },
       inventoryCategory: {
         select: {
@@ -381,6 +408,7 @@ export async function GET(req: NextRequest) {
           status: true,
           baseNightlyThb: true,
           minNights: true,
+          coverMedia: { select: { storageKey: true } },
         },
       },
       coverMedia: { select: { storageKey: true } },
@@ -422,7 +450,7 @@ export async function GET(req: NextRequest) {
         } catch (error) {
           // A unit whose min-stay rule rejects this range is not a search result,
           // not a server error. Other pricing failures remain visible as errors.
-          if (isMinimumStayError(error)) return null;
+          if (isUnavailablePriceError(error)) return null;
           throw error;
         }
       }
@@ -566,7 +594,9 @@ export async function GET(req: NextRequest) {
               ratePlanCode: priced.ratePlanCode,
               minNights: priced.minNights,
             },
-            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey || null,
+            coverUrl: coverMedia?.storageKey || media[0]?.media.storageKey ||
+              (priced.unit.project.projectType === 'hotel'
+                ? priced.unit.inventoryCategory?.coverMedia?.storageKey ?? null : null),
             averageRating: rating?.averageRating ?? null,
             reviewCount: rating?.reviewCount ?? 0,
           };

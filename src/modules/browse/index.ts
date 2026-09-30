@@ -14,6 +14,7 @@
 export {
   saveUnit,
   unsaveUnit,
+  removeSavedEntry,
   listSavedUnits,
   listSavedCollections,
   saveSearch,

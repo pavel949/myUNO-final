@@ -753,6 +753,8 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  teamPermissions ProjectStaffPermission[]
+  unitAccessUpdates UnitAccessInstruction[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -811,6 +813,7 @@ model Identity {
   ticketsAssigned               Ticket[]                      @relation("ticketAssignee")
   ticketEvents                  TicketEvent[]
   serviceOrdersPlaced           ServiceOrder[]                @relation("serviceOrderOrderer")
+  amenityReservations           ProjectAmenityReservation[]
   serviceOrdersCancelled        ServiceOrder[]                @relation("serviceOrderCancelledBy")
   serviceOrdersClosed           ServiceOrder[]                @relation("serviceOrderClosedBy")
   serviceQuoteRequests          ServiceQuoteRequest[]         @relation("serviceQuoteRequestOrderer")
@@ -925,6 +928,7 @@ model Area {
 }
 
 model Project {
+  teamPermissions ProjectStaffPermission[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -981,8 +985,10 @@ model Project {
   coverMedia            MediaAsset?               @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   masterplanMedia       MediaAsset?               @relation(name: "projectMasterplan", fields: [masterplanMediaId], references: [id], onDelete: SetNull)
   units                 Unit[]
+  structureNodes        ProjectStructureNode[]
   roleAssignments       RoleAssignment[]          @relation("projectScope")
   galleryMedia          ProjectMedia[]
+  amenities             ProjectAmenity[]
   organizations         Organization[]
   orgRoles              ProjectOrganizationRole[]
   commercialOfferings   CommercialOffering[]
@@ -1011,6 +1017,7 @@ model Project {
 }
 
 model Unit {
+  accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1026,6 +1033,7 @@ model Unit {
   maxGuests               Int         @map("max_guests")
   sizeSqm                 Int?        @map("size_sqm")
   floor                   String?
+  structureNodeId         String?     @map("structure_node_id")
   addressSupplement       String      @map("address_supplement")
   descriptionKey          String?     @map("description_key")
   amenityKeys             String[]    @default([]) @map("amenity_keys")
@@ -1062,6 +1070,7 @@ model Unit {
   // Relations
   project                      Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inventoryCategory            InventoryCategory?            @relation(fields: [inventoryCategoryId], references: [id], onDelete: SetNull)
+  structureNode                ProjectStructureNode?          @relation(fields: [structureNodeId], references: [id], onDelete: Restrict)
   owner                        Identity?                     @relation(name: "unitOwner", fields: [ownerIdentityId], references: [id])
   coverMedia                   MediaAsset?                   @relation(name: "unitCover", fields: [coverMediaId], references: [id])
   media                        UnitMedia[]
@@ -1077,6 +1086,7 @@ model Unit {
   ledgerEntries                LedgerEntry[]
   tickets                      Ticket[]
   serviceOrders                ServiceOrder[]
+  amenityReservations          ProjectAmenityReservation[]
   conditionReports             ConditionReport[]
   complianceRecords            ComplianceRecord[]
   mobilizationChecklist        MobilizationChecklistItem[]
@@ -1085,6 +1095,7 @@ model Unit {
   metricsDaily                 MetricDaily[]
   integrationAccounts          IntegrationAccount[]
   crmOpportunities             CrmOpportunity[]
+  propertyDeals                PropertyDeal[]
   operationalKpis              OperationalKpi[]
   incidentLogs                 IncidentLog[]
   complianceChecklistInstances ComplianceChecklistInstance[]
@@ -1094,6 +1105,7 @@ model Unit {
 
   @@unique([projectId, name])
   @@index([projectId, categoryKey])
+  @@index([structureNodeId])
   @@index([assetStatus])
   @@map("unit")
 }
@@ -1110,10 +1122,12 @@ model BlockedDate {
   note                String?
   createdByIdentityId String?           @map("created_by_identity_id")
   externalRef         String?           @map("external_ref")
+  propertyDealId      String?           @unique @map("property_deal_id")
 
   // Relations
   unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  propertyDeal PropertyDeal? @relation(fields: [propertyDealId], references: [id], onDelete: Restrict)
 
   @@index([unitId, startDate, endDate])
   @@map("blocked_date")
@@ -1184,6 +1198,7 @@ model Booking {
   payments         Payment[]
   ledgerEntries    LedgerEntry[]
   serviceOrders    ServiceOrder[]
+  amenityReservations ProjectAmenityReservation[]
   tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
   depositClaims    DepositClaim[]
@@ -1852,9 +1867,13 @@ model MediaAsset {
   uploadedBy               Identity               @relation(name: "uploadedBy", fields: [uploadedByIdentityId], references: [id])
   identityAvatars          Identity[]             @relation("identityAvatar")
   projectCovers            Project[]              @relation("projectCover")
+  categoryCovers           InventoryCategory[]    @relation("categoryCover")
+  categoryMedia            InventoryCategoryMedia[]
   unitCovers               Unit[]                 @relation("unitCover")
   unitMedia                UnitMedia[]
   projectMedia             ProjectMedia[]
+  amenityCovers            ProjectAmenity[]      @relation("projectAmenityCover")
+  amenityMedia             ProjectAmenityMedia[]
   engagementMandates       UnitEngagement[]       @relation("engagementMandate")
   bookingGuestPassports    BookingGuest[]
   paymentReceipts          Payment[]              @relation("paymentReceipt")
@@ -1870,6 +1889,8 @@ model MediaAsset {
   orgLogos                 Organization[]         @relation("orgLogo")
   projectMasterplans       Project[]              @relation("projectMasterplan")
   regulatoryCredentialDocs RegulatoryCredential[] @relation("regulatoryDoc")
+  dealContracts PropertyDeal[] @relation("propertyDealContract")
+  dealCompletionEvidence PropertyDeal[] @relation("propertyDealCompletion")
 
   @@index([deleteAfter])
   @@map("media_asset")
@@ -1908,6 +1929,18 @@ model UnitMedia {
   @@map("unit_media")
 }
 
+model InventoryCategoryMedia {
+  categoryId String @map("category_id")
+  mediaId String @map("media_id")
+  sort Int @default(0)
+  category InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, mediaId])
+  @@index([categoryId, sort], map: "inventory_category_media_sort_idx")
+  @@map("inventory_category_media")
+}
+
 model ProjectMedia {
   projectId String @map("project_id")
   mediaId   String @map("media_id")
@@ -1918,6 +1951,97 @@ model ProjectMedia {
 
   @@id([projectId, mediaId])
   @@map("project_media")
+}
+
+model ProjectAmenity {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId        String   @map("project_id")
+  slug             String
+  name             String
+  categoryKey      String?  @map("category_key")
+  shortDescription String?  @map("short_description")
+  description      String?
+  iconKey          String?  @map("icon_key")
+  locationLabel    String?  @map("location_label")
+  coverMediaId     String?  @map("cover_media_id")
+
+  // Guest access / use. Strings are intentionally open vocabularies: projects
+  // can add novel access or booking modes without a database migration.
+  accessType         String  @default("open") @map("access_type")
+  accessInstructions String? @map("access_instructions")
+  bookingRequired    Boolean @default(false) @map("booking_required")
+  bookingMode        String  @default("none") @map("booking_mode")
+  bookingUrl         String? @map("booking_url")
+  reservationConfig  Json?   @map("reservation_config") @db.JsonB
+
+  // Commercial/use policy. Monetary values are integer satang, matching the
+  // rest of myUNO money storage.
+  pricingType String  @default("included") @map("pricing_type")
+  priceThb    Int?    @map("price_thb")
+  capacity    Int?
+  minAge      Int?    @map("min_age")
+
+  // Flexible structured schedules/rules while keeping common fields queryable.
+  openingHours Json?  @map("opening_hours") @db.JsonB
+  rules        Json?  @db.JsonB
+  terms        String?
+
+  isFeatured Boolean @default(false) @map("is_featured")
+  published  Boolean @default(false)
+  sort       Int     @default(0)
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  coverMedia MediaAsset? @relation("projectAmenityCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  media        ProjectAmenityMedia[]
+  reservations ProjectAmenityReservation[]
+
+  @@unique([projectId, slug])
+  @@index([projectId, published, sort])
+  @@index([projectId, categoryKey])
+  @@map("project_amenity")
+}
+
+model ProjectAmenityMedia {
+  amenityId String @map("amenity_id")
+  mediaId   String @map("media_id")
+  sort      Int    @default(0)
+
+  amenity ProjectAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  media   MediaAsset     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([amenityId, mediaId])
+  @@index([amenityId, sort])
+  @@map("project_amenity_media")
+}
+
+model ProjectAmenityReservation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  amenityId  String @map("amenity_id")
+  identityId String @map("identity_id")
+  bookingId  String? @map("booking_id")
+  unitId     String? @map("unit_id")
+  startAt    DateTime @map("start_at")
+  endAt      DateTime @map("end_at")
+  partySize  Int @default(1) @map("party_size")
+  status     String @default("confirmed")
+  note       String?
+  source     String @default("guest")
+
+  amenity  ProjectAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  identity Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  booking  Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  unit     Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([amenityId, status, startAt, endAt])
+  @@index([identityId, startAt])
+  @@index([bookingId])
+  @@map("project_amenity_reservation")
 }
 
 // --- Configuration & content (minimal stubs for T-002, full schema in T-003/T-004) ---
@@ -2662,6 +2786,43 @@ model ProspectingAccount {
   @@map("prospecting_account")
 }
 
+/// One commercial agreement per canonical CRM opportunity; never a second
+/// lead, booking or ownership source of truth. All THB values are satang.
+model PropertyDeal {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  opportunityId String @unique @map("opportunity_id")
+  offeringId String @map("offering_id")
+  unitId String @map("unit_id")
+  kind String
+  status String @default("draft")
+  amountThb BigInt @map("amount_thb")
+  depositThb BigInt @default(0) @map("deposit_thb")
+  currency String @default("THB")
+  startsOn DateTime? @map("starts_on") @db.Date
+  endsOn DateTime? @map("ends_on") @db.Date
+  termsSnapshot Json @default("{}") @map("terms_snapshot") @db.JsonB
+  contractMediaId String? @map("contract_media_id")
+  completionMediaId String? @map("completion_media_id")
+  acceptedAt DateTime? @map("accepted_at")
+  signedAt DateTime? @map("signed_at")
+  closedAt DateTime? @map("closed_at")
+  settlementReference String? @map("settlement_reference")
+  handoverAt DateTime? @map("handover_at")
+
+  opportunity CrmOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  offering CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Restrict)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  contractMedia MediaAsset? @relation("propertyDealContract", fields: [contractMediaId], references: [id], onDelete: Restrict)
+  completionMedia MediaAsset? @relation("propertyDealCompletion", fields: [completionMediaId], references: [id], onDelete: Restrict)
+  calendarBlock BlockedDate?
+
+  @@index([unitId,status])
+  @@index([offeringId,status])
+  @@map("property_deal")
+}
+
 model CrmOpportunity {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -2692,6 +2853,7 @@ model CrmOpportunity {
   project    Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   unit       Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   activities CrmActivity[]
+  propertyDeal PropertyDeal?
 
   @@index([stage, nextActionAt])
   @@index([identityId, createdAt])
@@ -3027,7 +3189,9 @@ model CommercialOffering {
   project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
+  propertyDeals PropertyDeal[]
 
+  @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
   @@index([unitId, offeringType])
   @@index([projectId, offeringType])
   @@map("commercial_offering")
@@ -3095,6 +3259,33 @@ model RegulatoryCredential {
   @@map("regulatory_credential")
 }
 
+/// Optional physical hierarchy: phase/cluster → building/tower/wing → floor.
+/// InventoryCategory is commercial classification, never a physical location.
+/// A Unit belongs to one node, while its historical `floor` text is kept as a
+/// compatibility field until authoritative structure data is reconciled.
+model ProjectStructureNode {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  projectId   String   @map("project_id")
+  parentId    String?  @map("parent_id")
+  kind        String
+  code        String
+  name        String
+  floorNumber Int?     @map("floor_number")
+  sortOrder   Int      @default(0) @map("sort_order")
+  metadata    Json     @default("{}") @db.JsonB
+
+  project     Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent      ProjectStructureNode?  @relation("structureHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    ProjectStructureNode[] @relation("structureHierarchy")
+  units       Unit[]
+
+  @@unique([projectId, code])
+  @@index([projectId, parentId, sortOrder])
+  @@map("project_structure_node")
+}
+
 model InventoryCategory {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -3114,6 +3305,9 @@ model InventoryCategory {
   project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   units     Unit[]
   ratePlans RatePlan[]
+  galleryMedia InventoryCategoryMedia[]
+  coverMediaId String? @map("cover_media_id")
+  coverMedia MediaAsset? @relation("categoryCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
 
   @@unique([projectId, categoryKey])
   @@map("inventory_category")
@@ -3367,4 +3561,54 @@ model ProjectOnboardingDraft {
   updatedBy Identity?                   @relation(name: "projectOnboardingDraftUpdatedBy", fields: [updated_by_identity_id], references: [id], onUpdate: NoAction)
 
   @@map("project_onboarding_draft")
+}
+
+
+/// Durable transactionally emitted read model/outbox, not an independent booking.
+model UnifiedDomainEvent {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  project_id    String?
+  unit_id       String?
+  booking_id    String?
+  entity_type   String
+  entity_id     String
+  event_type    String
+  payload       Json      @default("{}") @db.JsonB
+  delivered_at  DateTime? @db.Timestamptz(6)
+  attempt_count Int       @default(0)
+
+  @@index([project_id, created_at, id], map: "unified_domain_event_project_cursor_idx")
+  @@index([booking_id, created_at], map: "unified_domain_event_booking_cursor_idx")
+  @@index([delivered_at, created_at], map: "unified_domain_event_pending_idx")
+  @@map("unified_domain_event")
+}
+
+
+/// Explicit per-property department scopes for myUNO staff.
+/// An active project-scoped RoleAssignment is mandatory.
+model ProjectStaffPermission {
+  projectId    String   @map("project_id")
+  identityId   String   @map("identity_id")
+  departments  String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  project Project @relation(fields:[projectId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  identity Identity @relation(fields:[identityId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+
+  @@id([projectId, identityId])
+  @@index([identityId], map:"project_staff_permission_identity_idx")
+  @@map("project_staff_permission")
+}
+
+
+/// Encrypted operational instructions. Never join into public listing DTOs.
+model UnitAccessInstruction {
+  unitId       String   @id @map("unit_id")
+  ciphertext   String
+  updatedById  String   @map("updated_by_identity_id")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+  updatedBy Identity @relation(fields:[updatedById], references:[id], onDelete:NoAction, onUpdate:NoAction)
+  @@map("unit_access_instruction")
 }

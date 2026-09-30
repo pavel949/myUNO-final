@@ -24,6 +24,7 @@ interface Unit {
   instantBook?: boolean;
   cancellationPolicyKey?: string;
   projectId: string;
+  inventoryCategory?: { id: string; categoryKey: string; name: string } | null;
   project?: { id: string; name: string };
 }
 
@@ -119,12 +120,18 @@ export default function UnitDetailClient({
   const endDate = searchParams?.get('endDate');
   const adults = parseInt(searchParams?.get('adults') || '1');
   const children = parseInt(searchParams?.get('children') || '0');
+  const projectId = searchParams?.get('projectId');
+  const areaSlug = searchParams?.get('areaSlug');
+  const stayMode = searchParams?.get('stayMode');
 
   const backToSearch = `/search?${new URLSearchParams({
     startDate: startDate || '',
     endDate: endDate || '',
     adults: String(adults),
     children: String(children),
+    ...(projectId ? { projectId } : {}),
+    ...(areaSlug ? { areaSlug } : {}),
+    ...(stayMode ? { stayMode } : {}),
   })}`;
 
   useEffect(() => {
@@ -243,6 +250,7 @@ export default function UnitDetailClient({
               </h1>
               {unit.project?.name && (
                 <p className="text-body text-text-stone mb-20">
+                  {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
                   {unit.project.name}{' '}
                   <span className="text-text-stone-2">· {labels.onMyUno}</span>
                 </p>

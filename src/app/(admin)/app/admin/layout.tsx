@@ -18,7 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const labels = await getLabels({
     'admin.nav.title': 'myUNO Admin',
+    'admin.nav.mobile_menu': 'Open admin navigation',
     'admin.nav.dashboard': 'Dashboard',
+    'admin.nav.processes': 'Operations map',
     'admin.nav.section.grow': 'Grow',
     'admin.nav.crm': 'CRM & Pipeline',
     'admin.nav.signals': 'Signals',
@@ -26,11 +28,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.prospecting': 'Prospecting',
     'admin.nav.section.inventory': 'Inventory',
     'admin.nav.projects': 'Projects',
+    'admin.nav.portfolio_os': 'Managed Portfolio OS',
     'admin.projects.manage_areas': 'Manage areas',
     'admin.nav.units': 'Units',
     'admin.nav.people': 'People & Roles',
     'admin.nav.organizations': 'Organizations',
     'admin.nav.bookings': 'Bookings',
+    'admin.nav.stay_calendar': 'Live stay calendar',
+    'admin.nav.layantara': 'Layan Tara Villas',
     'admin.nav.config': 'Pricing & Config',
     'admin.nav.kpis': 'Operational KPIs',
     'admin.nav.compliance': 'Compliance',
@@ -59,7 +64,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const sections: NavSection[] = [
     {
-      items: [{ href: '/app/admin', label: labels['admin.nav.dashboard'] }],
+      items: [
+        { href: '/app/admin', label: labels['admin.nav.dashboard'] },
+        { href: '/app/admin/processes', label: labels['admin.nav.processes'] },
+      ],
     },
     {
       title: labels['admin.nav.section.grow'],
@@ -73,6 +81,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       title: labels['admin.nav.section.inventory'],
       items: [
+        { href: '/mc/portfolio', label: labels['admin.nav.portfolio_os'] },
         { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
         { href: '/app/admin/property-submissions', label: 'Property applications' },
         { href: '/app/admin/areas', label: labels['admin.projects.manage_areas'] },
@@ -80,6 +89,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/app/admin/people', label: labels['admin.nav.people'] },
         { href: '/app/admin/organizations', label: labels['admin.nav.organizations'] },
         { href: '/app/admin/bookings', label: labels['admin.nav.bookings'] },
+        { href: '/ops/calendar/board', label: labels['admin.nav.stay_calendar'] },
+        { href: '/app/admin/layantara', label: labels['admin.nav.layantara'] },
         { href: '/app/admin/config', label: labels['admin.nav.config'] },
         { href: '/app/admin/operational-kpis', label: labels['admin.nav.kpis'] },
         { href: '/app/admin/compliance', label: labels['admin.nav.compliance'] },
@@ -117,10 +128,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface-ivory">
-      <aside className="md:w-56 shrink-0 bg-brand-deep text-on-dark-text p-16 md:min-h-screen" style={{ minWidth: '220px' }}>
-        <p className="font-display text-subtitle font-bold mb-20">{labels['admin.nav.title']}</p>
-        <AdminNavLinks sections={sections} />
-        <p className="mt-24">
+      <aside className="sticky top-0 z-30 shrink-0 bg-brand-deep text-on-dark-text p-16 md:static md:w-56 md:min-h-screen" style={{ minWidth: '220px' }}>
+        <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
+        <details className="md:hidden">
+          <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-10 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
+            {labels['admin.nav.mobile_menu']}
+          </summary>
+          <div className="mt-12 max-h-[65vh] overflow-y-auto overscroll-contain pb-12">
+            <AdminNavLinks sections={sections} />
+          </div>
+        </details>
+        <div className="hidden md:block">
+          <AdminNavLinks sections={sections} />
+        </div>
+        <p className="hidden md:block mt-24">
           <Link href="/" className="text-small text-on-dark-muted hover:underline">
             {labels['admin.nav.back_to_site']}
           </Link>

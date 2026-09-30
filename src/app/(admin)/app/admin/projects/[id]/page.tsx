@@ -5,12 +5,14 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getProjectFacts360 } from '@/modules/projects';
 import Project360Client from './Project360Client';
+import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Project360Page({ params }: { params: { id: string } }) {
   const data = await getProjectFacts360(prisma, params.id);
   if (!data) notFound();
+  const projectAmenityCount = await prisma.projectAmenity.count({ where: { projectId: params.id } });
 
   const labels = await getLabels({
     'admin.project360.home': 'Home',
@@ -60,8 +62,10 @@ export default async function Project360Page({ params }: { params: { id: string 
     'admin.project360.scope_category': 'Category scoped',
     'admin.project360.scope_project': 'Project scoped',
     'admin.project360.min_nights_inline': 'min {count} nights',
-    'admin.project360.facilities_title': 'Project Facilities',
-    'admin.project360.no_facilities': 'No project facilities configured.',
+    'admin.project360.facilities_title': 'Project Experience',
+    'admin.project360.facilities_count': '{count} project amenities / facilities',
+    'admin.project360.facilities_manage': 'Manage amenities, rules, access and booking →',
+    'admin.project360.no_facilities': 'No project amenities configured yet.',
   });
 
   const breadcrumbs = [
@@ -80,6 +84,7 @@ export default async function Project360Page({ params }: { params: { id: string 
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {data.project.name}
       </h1>
+      <ProjectWorkspaceNav projectId={data.project.id} active={'overview'} />
       <Project360Client
         project={{
           id: data.project.id,
@@ -99,8 +104,9 @@ export default async function Project360Page({ params }: { params: { id: string 
           landAreaSqm: data.project.landAreaSqm ? Number(data.project.landAreaSqm) : null,
           completionYear: data.project.completionYear,
           expectedCompletion: data.project.expectedCompletion?.toISOString() ?? null,
-          facilities: data.project.facilities,
+          facilities: [],
         }}
+        projectAmenityCount={projectAmenityCount}
         developerOrg={
           data.developerOrg
             ? {

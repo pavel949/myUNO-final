@@ -10,6 +10,7 @@ const ROLES = [
 
 /** Platform scope is for the roles that genuinely span everything. */
 const PLATFORM_SCOPED_ROLES = new Set(['staff_ops', 'onsite_host']);
+const DEPARTMENTS = ['reservations','front_desk','housekeeping','maintenance','guest_care','finance','pricing','content','channels','owner_relations'] as const;
 
 interface Person { id: string; firstName: string; lastName: string; email: string | null; status: string }
 interface InviteResult {
@@ -42,6 +43,9 @@ export default function PeopleAdminClient({
   const [scopeType, setScopeType] = useState('project');
   const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
+  const [teamProjectId, setTeamProjectId] = useState(projects[0]?.id ?? '');
+  const [teamMembers, setTeamMembers] = useState<Array<{ identityId:string;name:string;email:string|null;role:string;departments:string[] }>>([]);
+  const [teamLoaded, setTeamLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '' });
@@ -150,6 +154,22 @@ export default function PeopleAdminClient({
     setBusy(false);
   }, [inviteForm, labels, open]);
 
+  const loadProjectTeam = async (id:string) => {
+    setTeamProjectId(id);setTeamLoaded(false);setError(null);
+    const response=await fetch('/api/admin/project-team?projectId='+encodeURIComponent(id));
+    const data=await response.json().catch(()=>null);
+    if(!response.ok){setError(data?.error||labels['admin.people.error']);return;}
+    setTeamMembers(data.items||[]);setTeamLoaded(true);
+  };
+  const saveTeam = async (identityId:string,departments:string[]) => {
+    setBusy(true);setError(null);
+    const response=await fetch('/api/admin/project-team',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:teamProjectId,identityId,departments})});
+    const data=await response.json().catch(()=>null);
+    if(!response.ok)setError(data?.error||labels['admin.people.error']);
+    else setTeamMembers(current=>current.map(member=>member.identityId===identityId?{...member,departments:data.departments}:member));
+    setBusy(false);
+  };
+
   const canInvite =
     inviteForm.firstName.trim() !== '' &&
     inviteForm.lastName.trim() !== '' &&
@@ -159,6 +179,31 @@ export default function PeopleAdminClient({
   return (
     <div>
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">{labels['admin.people.title']}</h1>
+
+      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <h2 className="text-heading-3 font-semibold text-text-ink mb-8">{labels['admin.people.project_teams']}</h2>
+        <p className="text-small text-text-secondary mb-12">{labels['admin.people.project_teams_hint']}</p>
+        <div className="flex flex-wrap gap-8">
+          <select className="h-40 rounded-sm border border-border-line px-12" value={teamProjectId} onChange={e=>{setTeamProjectId(e.target.value);setTeamLoaded(false);}}>
+            {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <button type="button" disabled={!teamProjectId||busy} onClick={()=>loadProjectTeam(teamProjectId)} className="rounded-md bg-brand-deep px-16 py-8 text-small text-white">{labels['admin.people.load_team']}</button>
+        </div>
+        {teamLoaded && <div className="mt-12 space-y-12">
+          {teamMembers.length===0 && <p className="text-small text-text-secondary">{labels['admin.people.no_project_team']}</p>}
+          {teamMembers.map(member=><div key={member.identityId} className="rounded-md border border-border-line p-12">
+            <p className="font-semibold text-text-ink">{member.name} · {member.role}</p>
+            <p className="mb-8 text-small text-text-secondary">{member.email}</p>
+            <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
+              {DEPARTMENTS.map(dept=><label key={dept} className="flex items-center gap-4 text-small">
+                <input type="checkbox" disabled={busy} checked={member.departments.includes(dept)}
+                  onChange={e=>saveTeam(member.identityId,e.target.checked?[...member.departments,dept]:member.departments.filter(d=>d!==dept))}/>
+                {dept.replace(/_/g,' ')}
+              </label>)}
+            </div>
+          </div>)}
+        </div>}
+      </section>
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 max-w-2xl">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-8">

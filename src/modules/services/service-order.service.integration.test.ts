@@ -62,11 +62,66 @@ describe('service-order.service — integration tests', () => {
       expect(order?.note_to_provider).toBe('Please bring supplies');
     });
 
-    it('rejects a service restricted to another project', async () => {
+    it('snapshots project-specific service price and take rate instead of caller totals', async () => {
       const orderer = await createIdentity();
       const admin = await createIdentity();
       const provider = await createProvider();
-      const allowedProject = await createProject();
+      const project = await createProject();
+
+      await db.provider.update({
+        where: { id: provider.id },
+        data: { status: 'active', vetted_at: new Date(), vetted_by_identity_id: admin.id },
+      });
+      const service = await createService({
+        providerId: provider.id,
+        categoryKey: 'cleaning',
+        status: 'active',
+        basePriceThb: 100_000,
+      });
+      await db.serviceProject.create({
+        data: {
+          service_id: service.id,
+          project_id: project.id,
+          price_override_thb: 150_000,
+          take_rate_pct: 12,
+          lead_time_hours: 0,
+          terms_version: 3,
+          enabled: true,
+          public: true,
+        },
+      });
+
+      const result = await serviceOrderService.createServiceOrder(db, {
+        serviceId: service.id,
+        projectId: project.id,
+        ordererIdentityId: orderer.id,
+        ordererRole: 'owner',
+        scheduledStart: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        scheduledEnd: new Date(Date.now() + 50 * 60 * 60 * 1000),
+        quantity: 2,
+        // Deliberately wrong caller money: the domain must ignore it.
+        totalThb: 1,
+        tookRatePctSnapshot: 99,
+        priceBreakdown: { tampered: true },
+      });
+
+      const order = await db.serviceOrder.findUniqueOrThrow({ where: { id: result.id } });
+      expect(order.total_thb).toBe(300_000);
+      expect(Number(order.take_rate_pct_snapshot)).toBe(12);
+      expect(order.price_breakdown).toMatchObject({
+        unit_price_thb: 150_000,
+        quantity: 2,
+        total_thb: 300_000,
+        offer_source: 'project',
+        terms_version: 3,
+      });
+    });
+
+    it('keeps the base marketplace service available when another project has an override', async () => {
+      const orderer = await createIdentity();
+      const admin = await createIdentity();
+      const provider = await createProvider();
+      const customizedProject = await createProject();
       const requestedProject = await createProject();
 
       await db.provider.update({
@@ -76,25 +131,27 @@ describe('service-order.service — integration tests', () => {
       const service = await createService({
         providerId: provider.id,
         status: 'active',
+        basePriceThb: 100_000,
       });
       await db.serviceProject.create({
-        data: { service_id: service.id, project_id: allowedProject.id },
+        data: { service_id: service.id, project_id: customizedProject.id, price_override_thb: 150_000 },
       });
 
-      await expect(
-        serviceOrderService.createServiceOrder(db, {
-          serviceId: service.id,
-          projectId: requestedProject.id,
-          ordererIdentityId: orderer.id,
-          ordererRole: 'owner',
-          scheduledStart: new Date('2026-08-01'),
-          scheduledEnd: new Date('2026-08-02'),
-          quantity: 1,
-          priceBreakdown: { base: 1000 },
-          totalThb: 1000,
-          tookRatePctSnapshot: 15,
-        })
-      ).rejects.toThrow('not available in this project');
+      const created = await serviceOrderService.createServiceOrder(db, {
+        serviceId: service.id,
+        projectId: requestedProject.id,
+        ordererIdentityId: orderer.id,
+        ordererRole: 'owner',
+        scheduledStart: new Date('2026-08-01'),
+        scheduledEnd: new Date('2026-08-02'),
+        quantity: 1,
+        priceBreakdown: { ignored: true },
+        totalThb: 1,
+        tookRatePctSnapshot: 99,
+      });
+      const order = await db.serviceOrder.findUniqueOrThrow({ where: { id: created.id } });
+      expect(order.total_thb).toBe(100_000);
+      expect(order.price_breakdown).toMatchObject({ offer_source: 'global' });
     });
 
     it('rejects order for inactive service', async () => {

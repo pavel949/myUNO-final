@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 interface SessionInfo {
   sessionId: string;
   amountThb: number;
+  provider: string;
   status: string;
   booking: {
     id: string;
@@ -92,7 +93,7 @@ export default function CheckoutClient({
             // SA-2: land on the order's confirmation view, not the catalog
             router.push(`/services/orders/${serviceOrderId}?paid=1`);
           } else {
-            router.push(bookingId ? `/trips/${bookingId}` : '/trips');
+            router.push(bookingId ? `/bookings/${bookingId}/home-space` : '/trips');
           }
         }, 1500);
       } else {
@@ -106,7 +107,9 @@ export default function CheckoutClient({
     }
   };
 
-  const tripUrl = session?.booking?.id ? `/trips/${session.booking.id}` : '/trips';
+  const tripUrl = session?.booking?.id
+    ? `/bookings/${session.booking.id}/home-space`
+    : '/trips';
 
   if (loading) {
     return (
@@ -141,14 +144,12 @@ export default function CheckoutClient({
           {labels['payments.checkout.title']}
         </h1>
 
-        <div className="mb-24 p-16 bg-state-info-soft rounded-lg border border-border-line">
-          <p className="text-small font-semibold text-text-ink">
-            {labels['payments.checkout.mock_title']}
-          </p>
-          <p className="text-small text-text-secondary mt-4">
-            {labels['payments.checkout.mock_note']}
-          </p>
-        </div>
+        {session?.provider === 'mock' && (
+          <div className="mb-24 p-16 bg-state-info-soft rounded-lg border border-border-line">
+            <p className="text-small font-semibold text-text-ink">{labels['payments.checkout.mock_title']}</p>
+            <p className="text-small text-text-secondary mt-4">{labels['payments.checkout.mock_note']}</p>
+          </div>
+        )}
 
         {session && (
           <div className="mb-24 p-16 bg-surface-ivory rounded-lg border border-border-line space-y-8">
@@ -194,7 +195,7 @@ export default function CheckoutClient({
             <div className="flex justify-between text-body font-semibold pt-8 border-t border-border-line">
               <span className="text-text-ink">{labels['payments.checkout.amount_label']}</span>
               <span className="font-display text-title text-brand-andaman tabular-nums">
-                ฿{session.amountThb.toLocaleString()}
+                ฿{session.amountThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -213,24 +214,24 @@ export default function CheckoutClient({
           </div>
         )}
 
-        <Button onClick={() => handlePayment(false)} isLoading={paying} fullWidth disabled={!session || declining}>
-          {labels['payments.checkout.pay_now']}
-        </Button>
-
-        <Button
-          onClick={() => handlePayment(true)}
-          variant="ghost"
-          isLoading={declining}
-          fullWidth
-          disabled={!session || paying}
-          className="mt-12"
-        >
-          {labels['payments.checkout.decline_simulate']}
-        </Button>
-
-        <p className="text-small text-text-stone text-center mt-16">
-          {labels['payments.checkout.test_note']}
-        </p>
+        {session?.provider === 'mock' ? (
+          <>
+            <Button onClick={() => handlePayment(false)} isLoading={paying} fullWidth disabled={!session || declining}>
+              {labels['payments.checkout.pay_now']}
+            </Button>
+            <Button onClick={() => handlePayment(true)} variant="ghost" isLoading={declining} fullWidth disabled={!session || paying} className="mt-12">
+              {labels['payments.checkout.decline_simulate']}
+            </Button>
+            <p className="text-small text-text-stone text-center mt-16">{labels['payments.checkout.test_note']}</p>
+          </>
+        ) : (
+          <div className="text-small text-text-secondary mt-16" role="status">
+            {labels['payments.checkout.provider_pending']}
+            <Link href={tripUrl} className="block mt-12 text-brand-andaman underline">
+              {labels['payments.checkout.back_to_trip']}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createRegulatoryEvidence } from '@/test/util';
 
 const session = { identityId: '' };
 
@@ -362,6 +362,7 @@ describe('property onboarding routes', () => {
         credentialType: 'hotel_business_license',
         scopeLevel: 'unit',
         unitId,
+        evidenceMediaId: (await createRegulatoryEvidence(adminId)).id,
         verifiedByIdentityId: adminId,
       });
 

@@ -57,6 +57,31 @@ describe('getPublicUnitById — what the public may see (T-035)', () => {
     expect(await getPublicUnitById('00000000-0000-0000-0000-000000000000')).toBeNull();
   });
 
+  it('does not expose a sale-only or lease-only unit through the Stay detail URL', async () => {
+    const project = await liveProject();
+    await db.project.update({ where: { id: project.id }, data: { projectType: 'condominium' } });
+    const sale = await createUnit({ projectId: project.id, status: 'live' });
+    await db.commercialOffering.create({ data: { unitId: sale.id, offeringType: 'sale', status: 'active' } });
+    expect(await getPublicUnitById(sale.id)).toBeNull();
+    await db.commercialOffering.create({ data: { unitId: sale.id, offeringType: 'long_term_rental', status: 'active' } });
+    expect(await getPublicUnitById(sale.id)).toBeNull();
+    await db.commercialOffering.create({ data: { unitId: sale.id, offeringType: 'short_term_stay', status: 'active' } });
+    expect((await getPublicUnitById(sale.id))?.id).toBe(sale.id);
+  });
+
+  it('does not expose a source-controlled unit even when its project and unit are live', async () => {
+    const project = await liveProject();
+    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    const source = await db.externalSystem.create({ data: {
+      system_key: 'layantara_os', environment: 'test', display_name: 'Source',
+      config: { bookingAuthority: 'layantara_os', cutoverVerified: false },
+    } });
+    await db.externalMapping.create({ data: {
+      external_system_id: source.id, entity_type: 'unit', internal_id: unit.id, external_id: 'source-unit',
+    } });
+    expect(await getPublicUnitById(unit.id)).toBeNull();
+  });
+
   it('never exposes the owner identity to the public shape', async () => {
     const project = await liveProject();
     const owner = await db.identity.create({

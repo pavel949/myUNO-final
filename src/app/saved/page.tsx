@@ -1,10 +1,9 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { listSavedUnits } from '@/modules/browse';
 import { getLabels } from '@/lib/i18n';
-import { MoneyAmount } from '@/components/MoneyAmount';
+import SavedList from './saved-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +17,10 @@ export default async function SavedPage() {
     'saved.empty_hint': 'Save villas while exploring to compare and plan your trip.',
     'saved.search_button': 'Search Villas',
     'saved.per_night': '/ night',
+    'saved.remove': 'Remove from saved',
+    'saved.removing': 'Removing…',
+    'saved.remove_failed': 'Could not remove this home. Please try again.',
+    'saved.default_list': 'Saved homes',
   });
 
   if (!user) {
@@ -50,58 +53,16 @@ export default async function SavedPage() {
           {labels['saved.title']}
         </h1>
 
-        {savedEntries.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-            <p className="text-body text-text-ink mb-16">{labels['saved.empty_title']}</p>
-            <p className="text-small text-text-secondary mb-24">
-              {labels['saved.empty_hint']}
-            </p>
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center h-48 px-24 bg-brand-andaman text-surface-ivory rounded-sm font-semibold hover:opacity-90 transition"
-            >
-              {labels['saved.search_button']}
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
-            {savedEntries.map((entry) => {
-              const canonicalNightly =
-                entry.unit.inventoryCategory?.baseNightlyThb ?? entry.unit.baseNightlyThb;
-              return (
-                <Link
-                  key={entry.id}
-                  href={`/units/${entry.unit.id}`}
-                  className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow"
-                >
-                  {entry.unit.coverMedia ? (
-                    <Image
-                      src={entry.unit.coverMedia.storageKey}
-                      alt={entry.unit.name}
-                      width={640}
-                      height={360}
-                      className="aspect-video w-full object-cover"
-                    />
-                  ) : (
-                    <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                  )}
-                  <div className="p-16">
-                    <h3 className="text-subtitle font-semibold text-text-ink mb-8">
-                      {entry.unit.name}
-                    </h3>
-                    <p className="text-title text-brand-andaman">
-                      <MoneyAmount satang={canonicalNightly} className="font-semibold" />{' '}
-                      {labels['saved.per_night']}
-                    </p>
-                    {entry.note && (
-                      <p className="text-small text-text-secondary mt-8 italic">{entry.note}</p>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <SavedList entries={savedEntries} labels={{
+          emptyTitle: labels['saved.empty_title'],
+          emptyHint: labels['saved.empty_hint'],
+          searchButton: labels['saved.search_button'],
+          perNight: labels['saved.per_night'],
+          remove: labels['saved.remove'],
+          removing: labels['saved.removing'],
+          removeFailed: labels['saved.remove_failed'],
+          defaultList: labels['saved.default_list'],
+        }} />
       </div>
     </div>
   );

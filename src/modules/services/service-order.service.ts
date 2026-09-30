@@ -4,6 +4,7 @@ import { createNotification, raiseTicket } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
+import { resolveProjectServiceOffer } from './project-service-offer';
 
 export interface CreateServiceOrderInput {
   serviceId: string;
@@ -185,12 +186,21 @@ export async function createServiceOrder(
 
   const serviceProjects = await db.serviceProject.findMany({
     where: { service_id: serviceId },
-    select: { project_id: true },
+    select: {
+      project_id: true, enabled: true, public: true, price_override_thb: true,
+      take_rate_pct: true, lead_time_hours: true, terms_version: true,
+      effective_from: true, effective_to: true,
+    },
   });
-  if (
-    serviceProjects.length > 0 &&
-    !serviceProjects.some((available) => available.project_id === projectId)
-  ) {
+  const offer = resolveProjectServiceOffer({
+    rows: serviceProjects,
+    projectId,
+    basePriceThb: service.basePriceThb,
+    baseLeadTimeHours: service.advanceNoticeHours,
+    at: scheduledStart,
+  });
+  const internalOrderRole = ['staff_ops', 'onsite_host', 'mc_member'].includes(ordererRole);
+  if (!offer.available || (!offer.publiclyVisible && !internalOrderRole)) {
     throw new Error('Service is not available in this project');
   }
 
@@ -225,23 +235,34 @@ export async function createServiceOrder(
   if (!Number.isFinite(scheduledStart.getTime()) || !Number.isFinite(scheduledEnd.getTime()) || scheduledEnd <= scheduledStart) {
     throw new Error('Service schedule is invalid');
   }
-  if (service.priceModel === 'quote' || !service.basePriceThb || service.basePriceThb <= 0) {
+  const unitPriceThb = offer.unitPriceThb;
+  if (service.priceModel === 'quote' || !unitPriceThb || unitPriceThb <= 0) {
     throw new Error('Service requires a quote and cannot be ordered at a fixed price');
   }
 
-  // The domain owns the commercial snapshot. Callers cannot supply an
-  // authoritative total: every API/worker gets the same price calculation.
-  const totalThb = service.basePriceThb * quantity;
-  const tookRatePctSnapshot =
+  const noticeDeadline = Date.now() + offer.leadTimeHours * 60 * 60 * 1000;
+  if (offer.leadTimeHours > 0 && scheduledStart.getTime() < noticeDeadline) {
+    throw new Error(`Service requires ${offer.leadTimeHours}h advance notice`);
+  }
+
+  // The domain owns the commercial snapshot. Project-specific price/take-rate
+  // terms are resolved here, so public cards, checkout and the immutable order
+  // snapshot all use the same money source.
+  const totalThb = unitPriceThb * quantity;
+  const configuredTakeRate =
     ((await getConfig(db, 'services.take_rate_pct', { projectId })) as number | undefined) ?? 15;
+  const tookRatePctSnapshot = offer.takeRatePct ?? configuredTakeRate;
   if (!Number.isFinite(tookRatePctSnapshot) || tookRatePctSnapshot < 0 || tookRatePctSnapshot > 100) {
     throw new Error('Configured service take rate is invalid');
   }
   const priceBreakdown = {
     price_model: service.priceModel,
-    unit_price_thb: service.basePriceThb,
+    unit_price_thb: unitPriceThb,
     quantity,
     total_thb: totalThb,
+    offer_source: offer.source,
+    terms_version: offer.termsVersion,
+    lead_time_hours: offer.leadTimeHours,
   };
 
   // Create order in placed status

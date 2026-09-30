@@ -22,6 +22,15 @@ export default async function TripsPage() {
     'booking.trips.ready_checkin': 'Ready for check-in',
     'booking.trips.note_label': 'Guest Note:',
     'booking.trips.fetch_error': 'Failed to fetch trips',
+    'booking.trips.retry': 'Try again',
+    'booking.trips.status.pending_payment': 'Awaiting payment',
+    'booking.trips.status.confirmed': 'Confirmed',
+    'booking.trips.status.requested': 'Requested',
+    'booking.trips.status.checked_in': 'Checked in',
+    'booking.trips.status.checked_out': 'Checked out',
+    'booking.trips.status.cancelled': 'Cancelled',
+    'booking.trips.status.declined': 'Declined',
+    'booking.trips.status.expired': 'Expired',
   });
 
   return (

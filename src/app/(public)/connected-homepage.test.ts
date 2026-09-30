@@ -22,7 +22,8 @@ describe('connected public homepage', () => {
   });
   it('keeps date-aware stays on canonical search and makes other modes navigational', () => {
     expect(discovery).toContain("router.push('/search?' + params.toString())");
-    expect(discovery).toContain("router.push('/projects')");
+    expect(discovery).toContain("router.push('/homes?intent=buy')");
+    expect(discovery).toContain("router.push('/homes?intent=rent')");
     expect(discovery).toContain("router.push('/buyers')");
     expect(discovery).toContain("mode === 'monthly'");
   });

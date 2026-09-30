@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
+import ProjectAmenitiesSection, { type PublicProjectAmenity } from '@/components/projects/ProjectAmenitiesSection';
 import {
   StayCard,
   QuickActionsRow,
@@ -22,6 +23,7 @@ interface Unit {
   project: {
     id: string;
     name: string;
+    slug: string;
   };
 }
 
@@ -69,6 +71,7 @@ interface InStayHomeSpaceClientProps {
   secondaryRoles: string[];
   conciergeWhatsappUrl?: string | null;
   shuttleText?: string;
+  projectAmenities: PublicProjectAmenity[];
   labels: Record<string, string>;
 }
 
@@ -88,6 +91,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   secondaryRoles,
   conciergeWhatsappUrl,
   shuttleText,
+  projectAmenities,
   labels,
 }) => {
   const router = useRouter();
@@ -113,11 +117,18 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     if (response.ok) {
       const data = await response.json();
       router.push(`/messages/${data.threadId}`);
+    } else {
+      router.push(`/messages?projectId=${booking.unit.project.id}&bookingId=${booking.id}`);
     }
   };
 
   const handleOrderService = () => {
-    router.push(`/services?bookingId=${booking.id}`);
+    const context = new URLSearchParams({
+      bookingId: booking.id,
+      projectId: booking.unit.project.id,
+      unitId: booking.unit.id,
+    });
+    router.push(`/services?${context.toString()}`);
   };
 
   const handleRaiseIssue = () => {
@@ -271,7 +282,27 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             <ServicesRail
               services={services}
               labels={labels}
-              hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
+              hrefForService={(serviceId) => `/services/${serviceId}?${new URLSearchParams({
+                bookingId: booking.id,
+                projectId: booking.unit.project.id,
+                unitId: booking.unit.id,
+              }).toString()}`}
+            />
+
+            <ProjectAmenitiesSection
+              projectSlug={booking.unit.project.slug}
+              amenities={projectAmenities}
+              title={labels['home.amenities.title']}
+              viewAllLabel={labels['home.amenities.view_all']}
+              viewAllHref={`/projects/${booking.unit.project.slug}/amenities`}
+              detailHrefFor={(amenity) => `/projects/${booking.unit.project.slug}/amenities/${amenity.slug}?bookingId=${encodeURIComponent(booking.id)}`}
+              bookingId={booking.id}
+              labels={{
+                kicker: labels['home.amenities.kicker'],
+                included: labels['home.amenities.included'],
+                free: labels['home.amenities.free'],
+                bookingRequired: labels['home.amenities.booking_required'],
+              }}
             />
 
             <div className="lg:hidden">{conciergeCard}</div>

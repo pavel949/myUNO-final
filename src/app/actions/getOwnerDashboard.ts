@@ -15,6 +15,8 @@ export interface OwnerTrends {
   prevMonth: { nights: number; revenueThb: number } | null;
   /** Per-unit last-30-nights occupancy dots (1 = occupied). */
   sparklines: Record<string, number[]>;
+  /** Scoped rollups for each owned project; never show portfolio figures as project figures. */
+  byProject: Record<string, { monthly: MetricsPoint[]; prevMonth: { nights: number; revenueThb: number } | null }>;
 }
 
 interface OwnerDashboardData {
@@ -54,7 +56,7 @@ export async function fetchOwnerDashboard(): Promise<OwnerDashboardData> {
 
     // Historical trends from the analytics read seam (MetricDaily).
     const unitIds = dashboard.units.map((u: { id: string }) => u.id);
-    const trends: OwnerTrends = { monthly: [], prevMonth: null, sparklines: {} };
+    const trends: OwnerTrends = { monthly: [], prevMonth: null, sparklines: {}, byProject: {} };
     if (unitIds.length > 0) {
       const now = new Date();
       const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
@@ -71,6 +73,30 @@ export async function fetchOwnerDashboard(): Promise<OwnerDashboardData> {
       trends.prevMonth = prev
         ? { nights: prev.nightsOccupied, revenueThb: prev.rentalRevenueThb }
         : null;
+
+      if (shape.isPortfolio) {
+        const projectUnits = new Map<string, string[]>();
+        for (const unit of dashboard.units as Array<{ id: string; projectId: string }>) {
+          const ids = projectUnits.get(unit.projectId) ?? [];
+          ids.push(unit.id);
+          projectUnits.set(unit.projectId, ids);
+        }
+        const scopedSeries = await Promise.all(
+          Array.from(projectUnits, async ([projectId, scopedIds]) => ({
+            projectId,
+            monthly: await getMetricsSeries(prisma, { unitIds: scopedIds, from, to: now, groupBy: 'month' }),
+          }))
+        );
+        for (const { projectId, monthly: projectMonthly } of scopedSeries) {
+          const previous = projectMonthly.find((point) => point.period === prevPeriod);
+          trends.byProject[projectId] = {
+            monthly: projectMonthly,
+            prevMonth: previous
+              ? { nights: previous.nightsOccupied, revenueThb: previous.rentalRevenueThb }
+              : null,
+          };
+        }
+      }
 
       for (const [unitId, dots] of Object.entries(sparkDots)) {
         trends.sparklines[unitId] = dots.map((d) => (d.occupied ? 1 : 0));

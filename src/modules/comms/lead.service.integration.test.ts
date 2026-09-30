@@ -71,6 +71,16 @@ describe('Lead capture (doc 08 §3, N-29)', () => {
     expect(a.threadId).not.toBe(b.threadId);
   });
 
+  it('accepts a long-term rental enquiry as a distinct audience', async () => {
+    await createIdentity({ isAdmin: true });
+    const { threadId } = await submitLead(db, {
+      audience: 'renters', name: 'Prospective tenant', contact: 'tenant@example.com',
+      message: 'Looking for a long-term villa', consent: true,
+    });
+    const thread = await db.thread.findUnique({ where: { id: threadId }, include: { messages: true } });
+    expect(thread?.messages[0].body).toContain('Lead · renters');
+  });
+
   it('rejects a lead without consent', async () => {
     await createIdentity({ isAdmin: true });
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 
 export interface Project360ClientProps {
+  projectAmenityCount: number;
   project: {
     id: string;
     slug: string;
@@ -81,6 +82,7 @@ function text(value: React.ReactNode) {
 }
 
 export default function Project360Client({
+  projectAmenityCount,
   project,
   developerOrg,
   orgRoles,
@@ -283,17 +285,14 @@ export default function Project360Client({
         <h2 className="font-semibold text-subtitle text-text-ink">
           {labels['admin.project360.facilities_title']}
         </h2>
-        {project.facilities.length > 0 ? (
-          <div className="flex flex-wrap gap-8">
-            {project.facilities.map((facility) => (
-              <span key={facility} className="px-12 py-6 bg-surface-ivory border border-border-line text-small text-text-ink rounded">
-                {facility}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-small text-text-muted">{labels['admin.project360.no_facilities']}</p>
-        )}
+        <p className="text-small text-text-secondary">
+          {projectAmenityCount > 0
+            ? labels['admin.project360.facilities_count'].replace('{count}', String(projectAmenityCount))
+            : labels['admin.project360.no_facilities']}
+        </p>
+        <Link href={`/app/admin/projects/${project.id}/experience`} className="inline-flex text-small font-semibold text-brand-andaman hover:underline">
+          {labels['admin.project360.facilities_manage']}
+        </Link>
       </section>
     </div>
   );

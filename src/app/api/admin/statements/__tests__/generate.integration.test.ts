@@ -125,6 +125,15 @@ describe('Owner Statement Generation', () => {
       },
     })
 
+    // A deposit payment attached to the same reservation is not rental cash.
+    await db.payment.create({
+      data: {
+        purpose: 'deposit_preauth', bookingId: testBooking.id,
+        payerIdentityId: owner.id, method: 'cash', provider: 'cash',
+        amountThb: 2_000, status: 'succeeded', succeededAt: new Date(),
+      },
+    })
+
     mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
   })
 
@@ -506,4 +515,41 @@ describe('Owner Statement Generation — golden numbers', () => {
     expect(statement!.estateShareTh).toBe(900)
     expect(statement!.capApplied).toBe(false)
   })
+  it('refuses to silently omit a stay crossing the statement period', async () => {
+    await resetDb()
+    const { owner, project, unit } = await setUp('owner_direct')
+    await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: owner.id,
+      startDate: new Date('2026-06-29'), endDate: new Date('2026-07-04'),
+      status: 'confirmed', totalThb: 12_000,
+    })
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(409)
+    expect(body.error).toMatch(/crosses this accounting period/i)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(0)
+  })
+
+  it('includes expenses occurring during the final calendar day', async () => {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    await setGlobalConfig('engagement.owner_direct.booking_fee_pct', 0)
+    const { owner, project, unit } = await setUp('owner_direct')
+    const staff = await createIdentity()
+    await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: owner.id,
+      startDate: new Date('2026-07-01'), endDate: new Date('2026-07-05'),
+      status: 'confirmed', totalThb: 10_000,
+    })
+    await db.ledgerEntry.create({
+      data: {
+        unitId: unit.id, entryType: 'cleaning_cost', amountThb: -1_000,
+        occurredOn: new Date('2026-07-31T16:30:00.000Z'),
+        description: 'End-of-period clean', createdByIdentityId: staff.id,
+      },
+    })
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(200)
+    expect(body.statement.operatingExpensesAmountThb).toBe(1_000)
+  })
+
 })

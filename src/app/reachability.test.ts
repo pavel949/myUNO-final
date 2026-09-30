@@ -191,6 +191,9 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/run-frequent',
   '/api/cron/sync-ical-imports',
   '/api/webhooks/opn',
+  // Invoked by the separate LayantaraOS server's HMAC-signed service-role
+  // occupancy relay (pavel949/layan-tara-os PR #115), not by a browser.
+  '/api/integrations/layantara/events',
   '/api/health',
   '/llms.txt',
   // Handed to an external calendar app as a secret-token URL (doc: admin
@@ -222,6 +225,11 @@ const API_DEBT = new Set([
   //     no less often than the 30s poll it would replace.
   '/api/notifications/stream',
   '/api/threads/[threadId]/stream',
+
+  // Layantara private access-instruction endpoint is intentionally staged before
+  // its staff editor UI. Keep it unreachable from generic surfaces until the
+  // role-scoped access editor ships; direct DB reads remain forbidden.
+  '/api/ops/units/[id]/access',
 
   // The API half of the dead CRM island. These five were called only by the
   // eleven unreachable components under `src/app/components/crm/`, deleted in

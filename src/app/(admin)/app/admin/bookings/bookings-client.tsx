@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import BookingRequestRespondActions, {
@@ -13,6 +14,7 @@ interface AdminBooking {
   startDate: string;
   endDate: string;
   totalThb: number;
+  balanceDueSatang: number;
   unitName: string | null;
   guestName: string;
   paid: boolean;
@@ -100,14 +102,6 @@ export default function BookingsAdminClient({
     );
   }
 
-  if (bookings.length === 0) {
-    return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
-        <p className="text-body text-text-secondary">{labels['admin.bookings.empty']}</p>
-      </div>
-    );
-  }
-
   const channels = [...new Set(bookings.map((b) => b.channel))].sort();
   const visible = channelFilter
     ? bookings.filter((b) => b.channel === channelFilter)
@@ -126,6 +120,7 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
@@ -171,6 +166,7 @@ export default function BookingsAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.bookings.error_generic']);
       }
+      await fetchBookings(0);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.bookings.error_generic']);
@@ -226,6 +222,7 @@ export default function BookingsAdminClient({
                 {booking.channel.replace(/_/g, ' ')}
               </span>
             </p>
+            <Link href={`/app/admin/bookings/${booking.id}/journey`} className="inline-block mt-4 text-small text-brand-andaman underline underline-offset-4">{labels['admin.bookings.journey']}</Link>
             {booking.guestNote ? (
               <p className="text-small text-text-secondary italic">
                 {labels['admin.bookings.guest_note']}: {booking.guestNote}
@@ -256,7 +253,7 @@ export default function BookingsAdminClient({
             <p className="text-small text-text-secondary">
               {new Date(booking.startDate).toLocaleDateString()} —{' '}
               {new Date(booking.endDate).toLocaleDateString()} · ฿
-              {booking.totalThb.toLocaleString()}
+              {booking.totalThb.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               {booking.paid && (
                 <span className="text-state-success font-semibold">
                   {' '}
@@ -329,7 +326,7 @@ export default function BookingsAdminClient({
                   variant="secondary"
                   onClick={() =>
                     act(booking.id, 'record-transfer', {
-                      amountThb: Math.round(booking.totalThb * 100),
+                      amountThb: booking.balanceDueSatang,
                       bankReference: (bankRefs[booking.id] || '').trim(),
                     })
                   }
@@ -339,6 +336,17 @@ export default function BookingsAdminClient({
                   {labels['admin.bookings.record_transfer']}
                 </Button>
               </>
+            )}
+            {booking.status === 'checked_out' && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => act(booking.id, 'complete')}
+                isLoading={busyId === booking.id}
+                disabled={busyId === booking.id}
+              >
+                {labels['admin.bookings.complete_stay']}
+              </Button>
             )}
             {['requested', 'pending_payment', 'confirmed'].includes(booking.status) && (
               <Button

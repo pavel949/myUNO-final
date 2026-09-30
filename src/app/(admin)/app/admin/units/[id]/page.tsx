@@ -6,6 +6,7 @@ import { getLabels } from '@/lib/i18n';
 import { MOBILIZATION_STEPS } from '@/modules/core';
 import OnboardingClient from './onboarding-client';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import TariffPreviewClient from './tariff-preview-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +49,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'admin.units.breadcrumb_units': 'Units',
     'admin.units.breadcrumb_detail': 'Unit Details',
     'admin.onboarding.title': 'Onboarding',
+    'admin.gallery.manage': 'Manage photos and galleries',
     'admin.onboarding.back': 'All units',
     'admin.onboarding.step': 'Step',
     'admin.onboarding.done': 'Done',
@@ -114,6 +116,22 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'staff.calendar.nightly_rate': 'Nightly rate (THB)',
     'staff.calendar.label': 'Label (optional)',
     'staff.calendar.add_rule': 'Add rate',
+    'admin.tariff_preview.title': 'Seasonal tariff and booking-policy preview',
+    'admin.tariff_preview.mode': 'Tariff mode',
+    'admin.tariff_preview.daily': 'Daily',
+    'admin.tariff_preview.monthly': 'Monthly',
+    'admin.tariff_preview.yearly': '12-month lease',
+    'admin.tariff_preview.arrival': 'Check-in',
+    'admin.tariff_preview.departure': 'Check-out',
+    'admin.tariff_preview.preview': 'Preview quote',
+    'admin.tariff_preview.draft': 'Preview only. Draft tariffs do not create bookings or authorize channel activation.',
+    'admin.tariff_preview.total': 'Illustrative total',
+    'admin.tariff_preview.minimum': 'Minimum stay',
+    'admin.tariff_preview.failure': 'Unable to calculate the tariff.',
+    'admin.tariff_preview.terms': 'Cancellation terms',
+    'admin.tariff_preview.deposit': 'Refundable security deposit',
+    'admin.tariff_preview.confirmation': 'Confirmation payment',
+
   });
 
   const checklistByStep = Object.fromEntries(
@@ -142,6 +160,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {unit.name} · {labels['admin.onboarding.title']}
       </h1>
+      <Link href={`/app/admin/properties/${unit.project.id}/onboarding?gallery=unit:${unit.id}#step-7`}
+        className="inline-block mb-24 rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+        {labels['admin.gallery.manage']} →
+      </Link>
 
       <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">
@@ -231,6 +253,23 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
 
       <div className="mt-32">
         <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
+        <TariffPreviewClient unitId={unit.id} labels={{
+          title: labels['admin.tariff_preview.title'],
+          mode: labels['admin.tariff_preview.mode'],
+          daily: labels['admin.tariff_preview.daily'],
+          monthly: labels['admin.tariff_preview.monthly'],
+          yearly: labels['admin.tariff_preview.yearly'],
+          arrival: labels['admin.tariff_preview.arrival'],
+          departure: labels['admin.tariff_preview.departure'],
+          preview: labels['admin.tariff_preview.preview'],
+          draft: labels['admin.tariff_preview.draft'],
+          total: labels['admin.tariff_preview.total'],
+          minimum: labels['admin.tariff_preview.minimum'],
+          failure: labels['admin.tariff_preview.failure'],
+          terms: labels['admin.tariff_preview.terms'],
+          deposit: labels['admin.tariff_preview.deposit'],
+          confirmation: labels['admin.tariff_preview.confirmation'],
+        }} />
       </div>
     </div>
   );

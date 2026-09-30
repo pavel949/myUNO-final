@@ -26,3 +26,7 @@ It is vendor-neutral and may be used by ChatGPT/Codex, Claude Code, Cursor, Gemi
 Existing repository instructions (`CLAUDE.md`, `AGENTS.md`, Cursor rules, etc.) must point to this hierarchy and must not compete with it.
 
 The pack intentionally separates product intent, design, architecture, data, marketplace, CRM, processes, roles, migration, agent behavior and acceptance evidence. This reduces implementation drift while keeping `PROJECT.md` readable enough to remain the top-level canonical document.
+
+## Current-state AI audit companion
+
+For whole-platform assessments or release claims, also read [the full audit contract](../audits/AI_FULL_PLATFORM_AUDIT.md) and [the CO01–CO30 route/domain crosswalk](../audits/AI_FLOW_SURFACE_MATRIX.md). They are subordinate to this canonical specification and must not substitute a static inventory for runtime proof. Generate current file discovery via `npm run audit:inventory`.

@@ -358,6 +358,22 @@ const MATRIX_CAPABILITIES = [
       buyer: false,
     },
   },
+  {
+    capability: 'Manage project service catalogue and project overrides',
+    action: 'services:manage_project_catalog',
+    expected: {
+      admin: true,
+      staff_ops: false,
+      onsite_host: false,
+      owner: false,
+      guest: false,
+      resident: false,
+      mc_member: false,
+      juristic_member: false,
+      provider_member: false,
+      buyer: false,
+    },
+  },
 
   // Money — 5 capabilities
   {

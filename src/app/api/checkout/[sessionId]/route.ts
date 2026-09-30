@@ -51,7 +51,8 @@ export async function GET(
     // never from what this endpoint returns.
     return NextResponse.json({
       sessionId: payment.id,
-      amountThb: Math.round(payment.amountThb / 100),
+      amountThb: payment.amountThb / 100,
+      provider: payment.provider,
       status: payment.status,
       booking: payment.booking
         ? {

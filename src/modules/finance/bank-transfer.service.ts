@@ -140,6 +140,43 @@ export async function recordBankTransfer(
   const now = new Date();
 
   const result = await db.$transaction(async (tx) => {
+    let booking: {
+      unitId: string; projectId: string; guestIdentityId: string;
+      status: string; totalThb: number; balanceDueThb: number;
+    } | null = null;
+
+    if (input.purpose === 'stay' || input.purpose === 'stay_balance') {
+      if (!input.bookingId) throw new Error('Stay transfer requires a booking');
+      // Lock the canonical booking before comparing its payment state. Two staff
+      // clicks cannot record the same initial charge or balance simultaneously.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.bookingId}))`;
+      booking = await tx.booking.findUnique({
+        where: { id: input.bookingId },
+        select: {
+          unitId: true, projectId: true, guestIdentityId: true, status: true,
+          totalThb: true, balanceDueThb: true,
+        },
+      });
+      if (!booking) throw new Error('Booking not found');
+      if (booking.guestIdentityId !== input.payerIdentityId) throw new Error('Payer does not match booking');
+
+      if (input.purpose === 'stay') {
+        if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
+        const existing = await tx.payment.count({
+          where: { bookingId: input.bookingId, purpose: 'stay', status: 'succeeded' },
+        });
+        if (existing) throw new Error('Initial stay payment is already recorded');
+        if (input.amountThb !== booking.totalThb) throw new Error('Transfer amount does not match booking total');
+      } else {
+        if (!['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) {
+          throw new Error('Booking is not eligible for a balance payment');
+        }
+        if (booking.balanceDueThb <= 0 || input.amountThb !== booking.balanceDueThb) {
+          throw new Error('Transfer amount does not match outstanding balance');
+        }
+      }
+    }
+
     const payment = await tx.payment.create({
       data: {
         purpose: input.purpose,
@@ -157,44 +194,34 @@ export async function recordBankTransfer(
       },
     });
 
-    // The ledger entry belongs in the same transaction as the payment. Money
-    // recorded as received with no ledger row is money missing from the owner's
-    // statement, and the ledger is append-only so it cannot be patched later.
-    if (input.bookingId && input.purpose === 'stay') {
-      const booking = await tx.booking.findUnique({
-        where: { id: input.bookingId },
-        select: { unitId: true, projectId: true, guestIdentityId: true, status: true },
+    if (booking && input.bookingId) {
+      await tx.ledgerEntry.create({
+        data: {
+          entryType: 'rental_revenue',
+          amountThb: input.amountThb,
+          unitId: booking.unitId,
+          projectId: booking.projectId,
+          bookingId: input.bookingId,
+          paymentId: payment.id,
+          description: `Bank ${input.purpose === 'stay_balance' ? 'balance ' : ''}transfer received (ref ${input.bankReference.trim()})`,
+          occurredOn: now,
+        },
       });
 
-      if (booking) {
-        await tx.ledgerEntry.create({
-          data: {
-            entryType: 'rental_revenue',
-            amountThb: input.amountThb,
-            unitId: booking.unitId,
-            projectId: booking.projectId,
-            bookingId: input.bookingId,
-            paymentId: payment.id,
-            description: `Bank transfer received (ref ${input.bankReference.trim()})`,
-            occurredOn: now,
-          },
+      if (input.purpose === 'stay') {
+        await tx.booking.update({
+          where: { id: input.bookingId },
+          data: { status: 'confirmed', holdExpiresAt: null },
         });
-
-        if (booking.status === 'pending_payment') {
-          await tx.booking.update({
-            where: { id: input.bookingId },
-            data: {
-              status: 'confirmed',
-              holdExpiresAt: null,
-            },
-          });
-        }
+      } else {
+        await tx.booking.update({
+          where: { id: input.bookingId },
+          data: { balanceDueThb: { decrement: input.amountThb } },
+        });
       }
-
-      return { payment, tracking: booking };
     }
 
-    return { payment, tracking: null };
+    return { payment, tracking: booking };
   });
 
   if (result.tracking) {

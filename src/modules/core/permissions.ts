@@ -59,6 +59,7 @@ const ACTION_ALIASES: Record<string, string> = {
 const ADMIN_ONLY_ACTIONS = new Set([
   'projects:edit_and_set_live',
   'services:vet_activate_suspend_providers',
+  'services:manage_project_catalog',
   'money:generate_publish_owner_statements',
   'money:record_payouts_and_reconcile',
   'money:issue_refunds_outside_policy',

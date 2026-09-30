@@ -39,6 +39,7 @@ export interface CreateRegulatoryCredentialInput {
   status?: string;
   exemptionBasis?: string;
   notes?: string;
+  evidenceMediaId?: string;
   verifiedByIdentityId: string;
 }
 
@@ -95,6 +96,16 @@ export async function createRegulatoryCredential(
     if (!organization) throw new Error(`Organization ${input.organizationId} not found`);
   }
 
+  // An attestation without private supporting evidence is only pending, never verified.
+  const evidence = input.evidenceMediaId
+    ? await db.mediaAsset.findUnique({ where: { id: input.evidenceMediaId },
+        select: { id: true, kind: true, encrypted: true, uploadedByIdentityId: true } })
+    : null;
+  if (input.evidenceMediaId && (!evidence || evidence.kind !== 'document' || !evidence.encrypted ||
+      evidence.uploadedByIdentityId !== input.verifiedByIdentityId)) {
+    throw new Error('Verified credential evidence must be an encrypted document uploaded by the verifier');
+  }
+
   return db.regulatoryCredential.create({
     data: {
       requirementKey: input.requirementKey || input.credentialType,
@@ -112,7 +123,8 @@ export async function createRegulatoryCredential(
       expiryDate: input.expiryDate || null,
       status: input.status || 'active',
       exemptionBasis: input.exemptionBasis || null,
-      verificationStatus: 'verified',
+      evidenceMediaId: evidence?.id ?? null,
+      verificationStatus: evidence ? 'verified' : 'pending',
       verifiedByIdentityId: input.verifiedByIdentityId,
       verifiedAt: new Date(),
       notes: input.notes || null,
@@ -130,6 +142,7 @@ export interface UpdateRegulatoryCredentialInput {
   expiryDate?: Date;
   exemptionBasis?: string;
   notes?: string;
+  evidenceMediaId?: string;
   verifiedByIdentityId: string;
 }
 
@@ -147,6 +160,17 @@ export async function updateRegulatoryCredential(
   const existing = await db.regulatoryCredential.findUnique({ where: { id } });
   if (!existing) throw new Error(`RegulatoryCredential ${id} not found`);
   if (input.status) assertStatus(input.status);
+  const evidence = input.evidenceMediaId
+    ? await db.mediaAsset.findUnique({ where: { id: input.evidenceMediaId },
+        select: { id: true, kind: true, encrypted: true, uploadedByIdentityId: true } })
+    : null;
+  if (input.evidenceMediaId && (!evidence || evidence.kind !== 'document' || !evidence.encrypted ||
+      evidence.uploadedByIdentityId !== input.verifiedByIdentityId)) {
+    throw new Error('Verified credential evidence must be an encrypted document uploaded by the verifier');
+  }
+  if (input.status === 'active' && !evidence && !existing.evidenceMediaId) {
+    throw new Error('Cannot activate a credential without encrypted document evidence');
+  }
 
   return db.regulatoryCredential.update({
     where: { id },
@@ -160,6 +184,7 @@ export async function updateRegulatoryCredential(
       ...(input.expiryDate !== undefined ? { expiryDate: input.expiryDate } : {}),
       ...(input.exemptionBasis !== undefined ? { exemptionBasis: input.exemptionBasis } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      ...(evidence ? { evidenceMediaId: evidence.id, verificationStatus: 'verified' } : {}),
       verifiedByIdentityId: input.verifiedByIdentityId,
       verifiedAt: new Date(),
     },

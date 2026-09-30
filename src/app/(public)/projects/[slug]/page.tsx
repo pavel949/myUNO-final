@@ -81,6 +81,9 @@ export default async function ProjectLandingPage({
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
     'project_page.units.empty': 'No accommodation is currently available for online booking.',
+    'project_page.owner_intake.title': 'Own or manage a home here?',
+    'project_page.owner_intake.body': 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
+    'project_page.owner_intake.cta': 'Add your home →',
     'project_page.story.title': 'About the residence',
     'project_page.amenities.title': 'Residence amenities',
     'project_page.services.title': 'Services available here',
@@ -386,6 +389,16 @@ export default async function ProjectLandingPage({
             ))}
           </div>
         )}
+        <div className="mt-40 flex flex-wrap items-center justify-between gap-16 rounded-xl border border-border-line bg-surface-ivory p-24">
+          <div>
+            <h3 className="font-display text-heading-3 font-semibold text-text-ink">{labels['project_page.owner_intake.title']}</h3>
+            <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
+          </div>
+          <Link href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
+            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-10 text-small font-semibold text-white hover:opacity-90">
+            {labels['project_page.owner_intake.cta']}
+          </Link>
+        </div>
       </section>
 
       {/* Project story */}

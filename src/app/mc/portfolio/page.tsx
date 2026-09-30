@@ -245,7 +245,8 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
               return <tr key={unit.id} className={i % 2 ? 'bg-surface-ivory/50' : ''}>
                 <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper px-12 py-8 text-left">
                   <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} className="font-semibold text-brand-andaman hover:underline">{unit.name}</Link>
-                  <span className="block text-text-secondary">{unit.project.name} · {unit.inventoryCategory?.name || unit.status}</span>
+                  <span className="block text-text-secondary">{unit.project.name}</span>
+                  <span className="block text-brand-andaman">Category: {unit.inventoryCategory?.name || 'Uncategorized'} · {unit.status}</span>
                 </th>
                 {days.map((day) => {
                   const activeBookings = unitBookings.filter((b) => inNight(day, b.startDate, b.endDate));

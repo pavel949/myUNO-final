@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { ensureContentKey, updateTranslation } from '@/modules/content';
 import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '@/modules/projects/project-experience';
 
@@ -8,8 +8,8 @@ const supported = new Set(PROJECT_EXPERIENCE_CONTENT_FIELDS.map(field => field.k
 const locales = new Set(['en', 'ru', 'th']);
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     contentKeyId: contentKey.id,
     locale,
     value,
-    identityId: guard.actorIdentityId,
+    identityId: guard.user.identityId,
   });
 
   return NextResponse.json({ ok: true, key });

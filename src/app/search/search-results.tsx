@@ -226,7 +226,7 @@ export default function SearchResults({
     .filter((unit) => unit.project)
     .map((unit) => ({
       id: unit.id,
-      kind: 'unit',
+      kind: 'unit' as const,
       title: unit.name,
       subtitle: unit.project?.name || null,
       latitude: Number(unit.project?.latitude),

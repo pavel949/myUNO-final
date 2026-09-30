@@ -81,7 +81,7 @@ export default async function Project360Page({ params }: { params: { id: string 
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {data.project.name}
       </h1>
-      <ProjectWorkspaceNav projectId={data.project.id} active="overview" />
+      <ProjectWorkspaceNav projectId={data.project.id} active={'overview'} />
       <Project360Client
         project={{
           id: data.project.id,

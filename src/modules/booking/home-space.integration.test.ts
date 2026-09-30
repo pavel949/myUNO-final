@@ -99,7 +99,7 @@ describe('In-stay home space — stay project scope (T-034)', () => {
   });
 
   describe('services rail', () => {
-    it('carries services offered at this project, not another project-s', async () => {
+    it('carries the global marketplace plus project-specific overrides', async () => {
       const { project, guest, booking } = await stayIn();
       const elsewhere = await createProject();
       const provider = await vettedProvider();
@@ -118,7 +118,7 @@ describe('In-stay home space — stay project scope (T-034)', () => {
       const ids = data.services.map((s) => s.id);
 
       expect(ids).toContain(here.id);
-      expect(ids).not.toContain(overThere.id);
+      expect(ids).toContain(overThere.id);
     });
 
     it('carries an unrestricted service, which is offered everywhere', async () => {

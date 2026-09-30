@@ -942,7 +942,7 @@ model Project {
   longitude      Decimal       @db.Decimal(9, 6)
   address        String
   mapVisibility  Boolean       @default(true) @map("map_visibility")
-  googlePlaceId  String?       @map("google_place_id")
+  googlePlaceId  String?       @unique @map("google_place_id")
   timezone       String        @default("Asia/Bangkok")
   coverMediaId   String?       @map("cover_media_id")
   amenityKeys    String[]      @default([]) @map("amenity_keys")

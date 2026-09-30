@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
 import ProjectExperienceClient from './project-experience-client';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
@@ -13,7 +14,8 @@ export const dynamic = 'force-dynamic';
 export default async function ProjectExperiencePage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/experience'));
-  if (!user.isAdmin) redirect('/');
+  const actor = await getProjectExperienceActor(params.id);
+  if (!actor) redirect('/');
 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -47,7 +49,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   }));
 
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
-    <ProjectWorkspaceNav projectId={project.id} active="experience" />
+    <ProjectWorkspaceNav projectId={project.id} active={'experience'} contentOnly={!actor.isAdmin} />
     <div className="mb-24 flex flex-wrap items-start justify-between gap-16">
       <div>
         <Link href={`/app/admin/projects/${project.id}`} className="text-small font-semibold text-brand-andaman hover:underline">← Project 360</Link>

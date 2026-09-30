@@ -212,3 +212,9 @@ export async function findSearchesMatching(
     matchesSavedSearch(search.criteria as unknown as SearchCriteria, unit)
   );
 }
+
+/** Entry-ID removal prevents a named-list operation from deleting other copies of a home. */
+export async function removeSavedEntry(db: PrismaClient, identityId: string, savedEntryId: string): Promise<{ removed: number }> {
+  const result = await db.savedUnit.deleteMany({ where: { id: savedEntryId, identityId } });
+  return { removed: result.count };
+}

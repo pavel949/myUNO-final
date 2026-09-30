@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS "project_amenity" (
   "booking_required" BOOLEAN NOT NULL DEFAULT false,
   "booking_mode" TEXT NOT NULL DEFAULT 'none',
   "booking_url" TEXT,
+  "reservation_config" JSONB,
   "pricing_type" TEXT NOT NULL DEFAULT 'included',
   "price_thb" INTEGER,
   "capacity" INTEGER,
@@ -60,3 +61,38 @@ CREATE TABLE IF NOT EXISTS "project_amenity_media" (
 
 CREATE INDEX IF NOT EXISTS "project_amenity_media_amenity_id_sort_idx"
   ON "project_amenity_media"("amenity_id", "sort");
+
+
+CREATE TABLE IF NOT EXISTS "project_amenity_reservation" (
+  "id" TEXT NOT NULL,
+  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP(3) NOT NULL,
+  "amenity_id" TEXT NOT NULL,
+  "identity_id" TEXT NOT NULL,
+  "booking_id" TEXT,
+  "unit_id" TEXT,
+  "start_at" TIMESTAMP(3) NOT NULL,
+  "end_at" TIMESTAMP(3) NOT NULL,
+  "party_size" INTEGER NOT NULL DEFAULT 1,
+  "status" TEXT NOT NULL DEFAULT 'confirmed',
+  "note" TEXT,
+  "source" TEXT NOT NULL DEFAULT 'guest',
+  CONSTRAINT "project_amenity_reservation_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "project_amenity_reservation_amenity_id_fkey"
+    FOREIGN KEY ("amenity_id") REFERENCES "project_amenity"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "project_amenity_reservation_identity_id_fkey"
+    FOREIGN KEY ("identity_id") REFERENCES "identity"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "project_amenity_reservation_booking_id_fkey"
+    FOREIGN KEY ("booking_id") REFERENCES "booking"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "project_amenity_reservation_unit_id_fkey"
+    FOREIGN KEY ("unit_id") REFERENCES "unit"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "project_amenity_reservation_time_valid" CHECK ("end_at" > "start_at"),
+  CONSTRAINT "project_amenity_reservation_party_positive" CHECK ("party_size" > 0)
+);
+
+CREATE INDEX IF NOT EXISTS "project_amenity_reservation_amenity_status_time_idx"
+  ON "project_amenity_reservation"("amenity_id", "status", "start_at", "end_at");
+CREATE INDEX IF NOT EXISTS "project_amenity_reservation_identity_start_idx"
+  ON "project_amenity_reservation"("identity_id", "start_at");
+CREATE INDEX IF NOT EXISTS "project_amenity_reservation_booking_id_idx"
+  ON "project_amenity_reservation"("booking_id");

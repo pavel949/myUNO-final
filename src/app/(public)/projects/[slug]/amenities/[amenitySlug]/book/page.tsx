@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectAmenityBySlug } from '@/modules/projects';
 import AmenityBookingClient from '@/components/projects/AmenityBookingClient';
 
@@ -19,7 +19,7 @@ export default async function AmenityBookingPage({
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(next));
 
-  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug);
+  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
   if (!data) notFound();
   if (!data.amenity.bookingRequired || !['time_slot','request','reception'].includes(data.amenity.bookingMode)) notFound();
 

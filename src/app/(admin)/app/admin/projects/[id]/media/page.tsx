@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';

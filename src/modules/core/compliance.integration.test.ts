@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createProject, createUnit, createIdentity } from '@/test/util';
+import { db, resetDb, createProject, createUnit, createIdentity , createRegulatoryEvidence } from '@/test/util';
 import {
   createComplianceRecord,
   updateComplianceRecord,
@@ -204,6 +204,7 @@ describe('Compliance & Mobilization', () => {
         credentialType: 'hotel_business_license',
         scopeLevel: 'unit',
         unitId: unit.id,
+        evidenceMediaId: (await createRegulatoryEvidence(staff.id)).id,
         verifiedByIdentityId: staff.id,
       });
 

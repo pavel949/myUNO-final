@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { categoryEditorialKeys } from './project-editorial';
+import type { Locale } from '@/modules/content';
 import { listPublicProjectAmenities } from './project-amenities.service';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
@@ -147,7 +148,8 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
 }
 
 export async function getPublicProjectBySlug(
-  slug: string
+  slug: string,
+  locale: Locale = 'en'
 ): Promise<PublicProjectDetail | null> {
   const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const project = await prisma.project.findUnique({
@@ -186,7 +188,7 @@ export async function getPublicProjectBySlug(
   const [categories, reviews, amenities] = await Promise.all([
     buildPublicCategories(project.id, project.slug, project.units),
     buildPublicReviews(project.id),
-    listPublicProjectAmenities(prisma, project.id),
+    listPublicProjectAmenities(prisma, project.id, locale),
   ]);
 
   return {

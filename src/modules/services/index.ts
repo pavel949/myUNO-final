@@ -46,3 +46,5 @@ export {
   type UpdateServiceInput,
   type PublicMarketplaceService,
 } from './service.service';
+
+export { resolveProjectServiceOffer, type ProjectServiceRow, type ResolvedProjectServiceOffer } from './project-service-offer';

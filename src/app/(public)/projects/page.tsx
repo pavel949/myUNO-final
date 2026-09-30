@@ -114,6 +114,15 @@ export default async function ProjectsHubPage() {
                       String(project.liveUnitCount)
                     )}
                   </p>
+                  {project.featuredAmenities.length > 0 ? (
+                    <div className="mb-12 flex flex-wrap gap-8">
+                      {project.featuredAmenities.map((amenity) => (
+                        <span key={amenity.id} className="rounded-full bg-surface-ivory px-10 py-6 text-small text-text-secondary">
+                          {amenity.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   {project.fromNightlyThb !== null ? (
                     <p className="text-body text-text-ink font-semibold mb-16">
                       {labels['projects.hub.from_price'].replace(

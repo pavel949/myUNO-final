@@ -21,7 +21,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   });
   if (!service) return NextResponse.json({ error: 'Service not found' }, { status: 404 });
 
-  if (action === 'add') {
+  if (action === 'restrict_here') {
+    if (service.availableProjects.length !== 0) {
+      return NextResponse.json({ error: 'Service is already project-restricted' }, { status: 409 });
+    }
+    await prisma.serviceProject.create({
+      data: { service_id: serviceId, project_id: project.id, enabled: true, public: true },
+    });
+  } else if (action === 'add') {
     await prisma.serviceProject.upsert({
       where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
       create: { service_id: serviceId, project_id: project.id, enabled: true, public: true },

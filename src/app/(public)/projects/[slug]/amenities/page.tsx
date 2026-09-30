@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { listPublicProjectAmenities } from '@/modules/projects';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +27,7 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
     'project_amenities.booking_required': 'Booking required',
     'project_amenities.empty': 'No published amenities yet.',
   });
-  const amenities = await listPublicProjectAmenities(prisma, project.id);
+  const amenities = await listPublicProjectAmenities(prisma, project.id, getRequestLocale());
   const groups = new Map<string, typeof amenities>();
   for (const amenity of amenities) {
     const key = amenity.categoryKey || 'other';

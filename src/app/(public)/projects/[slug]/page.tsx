@@ -511,6 +511,7 @@ export default async function ProjectLandingPage({
             free: labels['project_page.amenities.free'],
             bookingRequired: labels['project_page.amenities.booking_required'],
           }}
+          bookingId={activeStay?.id}
         />
       ) : project.amenityKeys.length > 0 ? (
         <section className="max-w-6xl mx-auto py-64 px-24">

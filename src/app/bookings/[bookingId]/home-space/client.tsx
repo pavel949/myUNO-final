@@ -23,6 +23,7 @@ interface Unit {
   project: {
     id: string;
     name: string;
+    slug: string;
   };
 }
 
@@ -280,12 +281,12 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             />
 
             <ProjectAmenitiesSection
-              projectSlug={booking.unit.project.id}
+              projectSlug={booking.unit.project.slug}
               amenities={projectAmenities}
               title={labels['home.amenities.title']}
               viewAllLabel={labels['home.amenities.view_all']}
-              viewAllHref={`/projects/${booking.unit.project.id}/amenities`}
-              detailHrefFor={(amenity) => `/projects/${booking.unit.project.id}/amenities/${amenity.slug}?bookingId=${encodeURIComponent(booking.id)}`}
+              viewAllHref={`/projects/${booking.unit.project.slug}/amenities`}
+              detailHrefFor={(amenity) => `/projects/${booking.unit.project.slug}/amenities/${amenity.slug}?bookingId=${encodeURIComponent(booking.id)}`}
               bookingId={booking.id}
               labels={{
                 kicker: labels['home.amenities.kicker'],

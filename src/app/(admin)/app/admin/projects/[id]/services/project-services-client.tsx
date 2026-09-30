@@ -79,6 +79,15 @@ export default function ProjectServicesClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-8">
+            {service.scope === 'global' && (
+              <Button size="sm" variant="secondary" onClick={() => {
+                if (window.confirm(labels['admin.project_services.restrict_confirm'])) {
+                  act(service.id, 'restrict_here');
+                }
+              }} isLoading={busy === service.id}>
+                {labels['admin.project_services.restrict_here']}
+              </Button>
+            )}
             {service.scope === 'restricted_elsewhere' && (
               <Button size="sm" onClick={() => act(service.id, 'add')} isLoading={busy === service.id}>
                 {labels['admin.project_services.add']}

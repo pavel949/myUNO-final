@@ -70,9 +70,11 @@ function configBool(value: unknown, key: string, fallback: boolean): boolean {
 export default function ProjectExperienceClient({
   projectId,
   initialAmenities,
+  canOperateReservations,
 }: {
   projectId: string;
   initialAmenities: AmenityRow[];
+  canOperateReservations: boolean;
 }) {
   const router = useRouter();
   const [amenities, setAmenities] = useState(initialAmenities);
@@ -248,7 +250,7 @@ export default function ProjectExperienceClient({
         <form key={selected.id} onSubmit={saveAmenity} className="space-y-20">
           <div className="rounded-xl border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12">
-              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p>{selected.bookingRequired ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
+              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p>{selected.bookingRequired && canOperateReservations ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
               <div className="flex gap-8">
                 <label className="flex items-center gap-6 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> Featured</label>
                 <label className="flex items-center gap-6 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> Published</label>

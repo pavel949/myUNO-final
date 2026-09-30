@@ -83,11 +83,6 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
     })),
     ...(user.isAdmin ? [{ engagements: { some: { status: 'active' as const } }, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }] : []),
   ];
-  const availableProjects = await prisma.project.findMany({
-    where: user.isAdmin ? {} : { id: { in: projectScopeIds } },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  });
   const units = await prisma.unit.findMany({
     where: {
       status: { not: 'offboarded' },
@@ -140,14 +135,38 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
   const blocksByUnit = byUnit(blocks);
   const rulesByUnit = byUnit(rules);
   const ticketsByUnit = new Map(tickets.map((ticket) => [ticket.unitId, ticket._count._all]));
-  const occupiedNights = units.reduce((count, unit) =>
-    count + days.filter((day) => (bookingsByUnit.get(unit.id) || []).some((b) =>
-      (b.status === 'confirmed' || b.status === 'checked_in' || b.status === 'checked_out' || b.status === 'completed') &&
-      inNight(day, b.startDate, b.endDate))).length, 0);
+  // Use the same precedence as the visible calendar. A blocked date is not a
+  // sellable night; a pending payment hold is temporarily unavailable, not sold.
+  // The categories are mutually exclusive even when bad upstream data overlaps.
+  let occupiedNights = 0;
+  let blockedNights = 0;
+  let heldNights = 0;
+  let conflictedNights = 0;
+  for (const unit of units) {
+    const unitBookings = bookingsByUnit.get(unit.id) || [];
+    const unitBlocks = blocksByUnit.get(unit.id) || [];
+    for (const day of days) {
+      const active = unitBookings.filter(booking => inNight(day, booking.startDate, booking.endDate));
+      const occupied = active.some(booking =>
+        ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(booking.status));
+      const blocked = unitBlocks.filter(block => inNight(day, block.startDate, block.endDate));
+      const held = active.some(booking =>
+        booking.status === 'pending_payment' && booking.holdExpiresAt && booking.holdExpiresAt > now);
+      if ((occupied && (held || blocked.length > 0)) || blocked.length > 1) conflictedNights++;
+      if (occupied) occupiedNights++;
+      else if (blocked.length) blockedNights++;
+      else if (held) heldNights++;
+    }
+  }
+  const totalNights = units.length * days.length;
+  const sellableNights = totalNights - blockedNights;
+  const availableNights = totalNights - occupiedNights - blockedNights - heldNights;
   const openTasks = tickets.reduce((sum, ticket) => sum + ticket._count._all, 0);
   const query = (date: Date, projectId?: string) =>
     `/mc/portfolio?month=${monthKey(date)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}`;
-  const projectOptions = availableProjects.map((project) => [project.id, project.name] as const);
+  // Offer only projects actually represented by an authorized managed unit.
+  const projectOptions = [...new Map(units.map(unit => [unit.projectId, unit.project.name] as const))]
+    .sort((a, b) => a[1].localeCompare(b[1]));
   const label = month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   return (
@@ -169,7 +188,11 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
           {[
             ['Managed homes', units.length.toString()],
             ['Occupied nights', occupiedNights.toString()],
-            ['Occupancy', units.length ? `${Math.round(100 * occupiedNights / (units.length * days.length))}%` : '—'],
+            ['Occupancy · sellable nights', sellableNights ? `${Math.round(100 * occupiedNights / sellableNights)}%` : '—'],
+            ['Available nights', availableNights.toString()],
+            ['Blocked nights', blockedNights.toString()],
+            ['Payment-hold nights', heldNights.toString()],
+            ['Calendar conflicts', conflictedNights.toString()],
             ['Open maintenance / service tickets', openTasks.toString()],
           ].map(([name, value]) => <div key={name} className="rounded-lg border border-border-line bg-surface-paper p-16"><p className="text-small text-text-secondary">{name}</p><p className="mt-8 font-display text-heading-2 text-text-ink">{value}</p></div>)}
         </div>
@@ -224,6 +247,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
           </table>
           {!units.length && <p className="p-24 text-text-secondary">No active management engagements in this scope.</p>}
         </div>
+        <p className="mt-12 text-small text-text-secondary">Occupancy denominator excludes blocked nights; live payment holds reduce availability but do not count as occupied. Overlaps are shown separately for reconciliation.</p>
         <p className="mt-12 text-small text-text-secondary">A visual projection of canonical Booking, BlockedDate and PricingRule records, not a second availability store. Open a unit to make changes. Base rates are indicative; quotes remain authoritative for tax, seasonality and discounts.</p>
       </div>
     </main>

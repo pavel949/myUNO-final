@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import maplibregl, { LngLatBounds, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import type { MapEntity } from '@/modules/map';
-import { PHUKET_MAP_CENTER, PHUKET_MAP_ZOOM, getPublicMapStyleUrl } from '@/modules/map';
+import { PHUKET_MAP_CENTER, PHUKET_MAP_ZOOM } from '@/modules/map';
 
 export function MyUNOMap({
   entities,
@@ -23,21 +23,44 @@ export function MyUNOMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: getPublicMapStyleUrl(),
-      center: [PHUKET_MAP_CENTER.longitude, PHUKET_MAP_CENTER.latitude],
-      zoom: PHUKET_MAP_ZOOM,
-      attributionControl: true,
-    });
+    let cancelled = false;
+    let map: MapLibreMap | null = null;
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
-    mapRef.current = map;
+    const initialise = async () => {
+      let styleUrl = 'https://tiles.openfreemap.org/styles/liberty';
+      try {
+        const response = await fetch('/api/map/config', { cache: 'no-store' });
+        if (response.ok) {
+          const config = await response.json();
+          if (typeof config.styleUrl === 'string' && config.styleUrl.trim()) {
+            styleUrl = config.styleUrl.trim();
+          }
+        }
+      } catch {
+        // Safe fallback keeps the map available if integration settings are temporarily unavailable.
+      }
+
+      if (cancelled || !containerRef.current || mapRef.current) return;
+
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: styleUrl,
+        center: [PHUKET_MAP_CENTER.longitude, PHUKET_MAP_CENTER.latitude],
+        zoom: PHUKET_MAP_ZOOM,
+        attributionControl: true,
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+      mapRef.current = map;
+    };
+
+    void initialise();
 
     return () => {
+      cancelled = true;
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      map.remove();
+      map?.remove();
       mapRef.current = null;
     };
   }, []);

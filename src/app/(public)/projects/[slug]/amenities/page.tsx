@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { listPublicProjectAmenities } from '@/modules/projects';
+import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,15 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
   });
   if (!project || project.status !== 'live') notFound();
 
+  const labels = await getLabels({
+    'project_amenities.back': 'Back to project',
+    'project_amenities.title': 'Amenities & facilities',
+    'project_amenities.body': 'Everything available inside {project}, including access, opening hours, booking requirements and usage rules.',
+    'project_amenities.free': 'Free',
+    'project_amenities.included': 'Included',
+    'project_amenities.booking_required': 'Booking required',
+    'project_amenities.empty': 'No published amenities yet.',
+  });
   const amenities = await listPublicProjectAmenities(prisma, project.id);
   const groups = new Map<string, typeof amenities>();
   for (const amenity of amenities) {
@@ -27,10 +37,10 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
   return <main className="min-h-screen bg-surface-ivory">
     <header className="border-b border-border-line bg-surface-paper px-24 py-32">
       <div className="mx-auto max-w-6xl">
-        <Link href={`/projects/${project.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">← {project.name}</Link>
-        <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">Amenities & facilities</h1>
+        <Link href={`/projects/${project.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['project_amenities.back']} · {project.name}</Link>
+        <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['project_amenities.title']}</h1>
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
-          Everything available inside {project.name}, including access, opening hours, booking requirements and usage rules.
+          {labels['project_amenities.body'].replace('{project}', project.name)}
         </p>
       </div>
     </header>
@@ -49,8 +59,8 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
                   <h3 className="font-semibold text-text-ink">{amenity.name}</h3>
                   {amenity.shortDescription ? <p className="mt-8 text-small text-text-secondary">{amenity.shortDescription}</p> : null}
                   <div className="mt-12 flex flex-wrap gap-6 text-micro text-text-secondary">
-                    <span className="rounded-full bg-surface-ivory px-8 py-4">{amenity.pricingType === 'free' ? 'Free' : amenity.pricingType === 'included' ? 'Included' : human(amenity.pricingType)}</span>
-                    {amenity.bookingRequired ? <span className="rounded-full bg-surface-ivory px-8 py-4">Booking required</span> : null}
+                    <span className="rounded-full bg-surface-ivory px-8 py-4">{amenity.pricingType === 'free' ? labels['project_amenities.free'] : amenity.pricingType === 'included' ? labels['project_amenities.included'] : human(amenity.pricingType)}</span>
+                    {amenity.bookingRequired ? <span className="rounded-full bg-surface-ivory px-8 py-4">{labels['project_amenities.booking_required']}</span> : null}
                     {amenity.accessType !== 'open' ? <span className="rounded-full bg-surface-ivory px-8 py-4">{human(amenity.accessType)}</span> : null}
                   </div>
                 </div>
@@ -59,7 +69,7 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
           </div>
         </section>
       ))}
-      {!amenities.length ? <p className="text-body text-text-secondary">No published amenities yet.</p> : null}
+      {!amenities.length ? <p className="text-body text-text-secondary">{labels['project_amenities.empty']}</p> : null}
     </div>
   </main>;
 }

@@ -10,14 +10,24 @@ export default function ProjectServiceMarketplace({
   projectName,
   services,
   labels,
+  bookingId,
+  unitId,
 }: {
   projectId: string;
   projectName: string;
   services: PublicMarketplaceService[];
   labels: Labels;
+  bookingId?: string | null;
+  unitId?: string | null;
 }) {
   if (!services.length) return null;
   const categories = [...new Set(services.map(service => service.categoryKey))];
+  const serviceParams = (extra: Record<string, string> = {}) => new URLSearchParams({
+    projectId,
+    ...(bookingId ? { bookingId } : {}),
+    ...(unitId ? { unitId } : {}),
+    ...extra,
+  }).toString();
   return (
     <section className="bg-surface-ivory px-24 py-48 md:py-64" id="services">
       <div className="mx-auto max-w-6xl">
@@ -34,7 +44,7 @@ export default function ProjectServiceMarketplace({
             </p>
           </div>
           <Link
-            href={`/services?projectId=${encodeURIComponent(projectId)}`}
+            href={`/services?${serviceParams()}`}
             className="font-semibold text-brand-andaman hover:underline"
           >
             {labels['project.services.view_all']}
@@ -45,7 +55,7 @@ export default function ProjectServiceMarketplace({
           {categories.slice(0, 10).map(category => (
             <Link
               key={category}
-              href={`/services?projectId=${encodeURIComponent(projectId)}&category=${encodeURIComponent(category)}`}
+              href={`/services?${serviceParams({ category })}`}
               className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small text-text-ink hover:border-brand-andaman"
             >
               {labels[`services.category.${category}`] || category.replace(/_/g, ' ')}
@@ -57,7 +67,7 @@ export default function ProjectServiceMarketplace({
           {services.slice(0, 8).map(service => (
             <Link
               key={service.id}
-              href={`/services/${service.id}?projectId=${encodeURIComponent(projectId)}`}
+              href={`/services/${service.id}?${serviceParams()}`}
               className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
             >
               {service.coverUrl ? (

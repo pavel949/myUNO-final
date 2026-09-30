@@ -51,7 +51,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       action: 'project_amenity:update',
       entityType: 'ProjectAmenity',
       entityId: amenity.id,
-      data: { projectId: params.id, before: current, after: amenity },
+      data: {
+        projectId: params.id,
+        before: JSON.parse(JSON.stringify(current)),
+        after: JSON.parse(JSON.stringify(amenity)),
+      },
     });
     return NextResponse.json({ amenity });
   } catch (error) {

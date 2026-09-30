@@ -123,7 +123,12 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   };
 
   const handleOrderService = () => {
-    router.push(`/services?bookingId=${booking.id}`);
+    const context = new URLSearchParams({
+      bookingId: booking.id,
+      projectId: booking.unit.project.id,
+      unitId: booking.unit.id,
+    });
+    router.push(`/services?${context.toString()}`);
   };
 
   const handleRaiseIssue = () => {

@@ -94,7 +94,11 @@ export default function ServicesClient({
   const load = useCallback(async () => {
     const [servicesRes, ordersRes] = await Promise.all([
       fetch(`/api/services${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`),
-      fetch('/api/service-orders'),
+      fetch(`/api/service-orders?${new URLSearchParams({
+        ...(bookingId ? { bookingId } : {}),
+        ...(projectId ? { projectId } : {}),
+        ...(unitId ? { unitId } : {}),
+      }).toString()}`),
     ]);
     if (servicesRes.ok) {
       const data = await servicesRes.json();
@@ -106,7 +110,7 @@ export default function ServicesClient({
       const data = await ordersRes.json();
       setOrders(data.orders || []);
     }
-  }, [projectId]);
+  }, [bookingId, projectId, unitId]);
 
   useEffect(() => {
     load();

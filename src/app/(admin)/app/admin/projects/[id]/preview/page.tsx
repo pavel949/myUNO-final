@@ -70,7 +70,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     <section className="relative bg-brand-deep px-24 py-64 text-white">
       {project.coverMedia && <Image src={project.coverMedia.storageKey} alt={project.name} fill className="object-cover opacity-30" />}
       <div className="relative mx-auto max-w-6xl">
-        <p className="text-small uppercase">{editorial.eyebrow || project.area?.slug || 'Residence'}</p>
+        <p className="text-small uppercase">{editorial.eyebrow || editorial.areaName || 'Residence'}</p>
         <h2 className="mt-12 font-display text-display-xl font-semibold">{project.name}</h2>
         <p className="mt-12">{content[descriptionKey] || project.address}</p>
       </div>

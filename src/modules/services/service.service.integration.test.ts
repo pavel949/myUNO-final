@@ -486,7 +486,7 @@ describe('service.service — integration tests', () => {
       expect(inProject1[0]?.title).toBe('Universal Tour');
     });
 
-    it('shows services only in their scoped projects', async () => {
+    it('keeps the base myUNO service available outside a project preference', async () => {
       const admin = await createIdentity();
       const project1 = await createProject({ name: 'Project 1' });
       const project2 = await createProject({ name: 'Project 2' });
@@ -503,7 +503,8 @@ describe('service.service — integration tests', () => {
       await providerService.approveProvider(db, provider.id, admin.id);
       await setGlobalConfig('services.require_admin_approval', false);
 
-      // Create service available only in project1
+      // Project1 gets an explicit preference row; the underlying myUNO service
+      // remains available platform-wide and falls back to its base terms elsewhere.
       await serviceService.createService(db, {
         providerId: provider.id,
         categoryKey: 'cleaning',
@@ -518,7 +519,9 @@ describe('service.service — integration tests', () => {
       const inProject2 = await serviceService.listPublicServices(db, project2.id);
 
       expect(inProject1).toHaveLength(1);
-      expect(inProject2).toHaveLength(0);
+      expect(inProject2).toHaveLength(1);
+      expect(inProject1[0]?.projectOfferSource).toBe('project');
+      expect(inProject2[0]?.projectOfferSource).toBe('global');
     });
 
     it('requires provider to be active and vetted', async () => {

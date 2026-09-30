@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { categoryEditorialKeys } from './project-editorial';
+import { listPublicProjectAmenities } from './project-amenities.service';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
 function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
@@ -63,6 +64,7 @@ export interface PublicProjectCard {
   coverUrl: string | null;
   liveUnitCount: number;
   fromNightlyThb: number | null;
+  featuredAmenities: Array<{ id: string; slug: string; name: string; iconKey: string | null }>;
 }
 
 export interface PublicProjectUnit {
@@ -100,6 +102,7 @@ export interface PublicProjectDetail {
   units: PublicProjectUnit[];
   categories: PublicProjectCategory[];
   reviews: PublicProjectReviews;
+  amenities: Awaited<ReturnType<typeof listPublicProjectAmenities>>;
 }
 
 /** All live projects, for the /projects hub and the sitemap. */
@@ -110,6 +113,12 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },
+      amenities: {
+        where: { published: true, isFeatured: true },
+        select: { id: true, slug: true, name: true, iconKey: true },
+        orderBy: [{ sort: 'asc' }, { name: 'asc' }],
+        take: 4,
+      },
       units: {
         where: publicStayUnitWhere(excludedIds),
         select: {
@@ -133,6 +142,7 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
           ...p.units.map((u) => u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb)
         )
       : null,
+    featuredAmenities: p.amenities,
   }));
 }
 
@@ -173,9 +183,10 @@ export async function getPublicProjectBySlug(
 
   if (!project || project.status !== 'live') return null;
 
-  const [categories, reviews] = await Promise.all([
+  const [categories, reviews, amenities] = await Promise.all([
     buildPublicCategories(project.id, project.slug, project.units),
     buildPublicReviews(project.id),
+    listPublicProjectAmenities(prisma, project.id),
   ]);
 
   return {
@@ -210,6 +221,7 @@ export async function getPublicProjectBySlug(
     })),
     categories,
     reviews,
+    amenities,
   };
 }
 

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { logAudit } from '@/modules/audit';
 import { projectAmenityData } from '@/modules/projects';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
   const project = await prisma.project.findUnique({ where: { id: params.id }, select: { id: true } });
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
@@ -25,8 +25,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
 
   const project = await prisma.project.findUnique({ where: { id: params.id }, select: { id: true } });
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       data: { ...data, projectId: project.id },
     });
     await logAudit({
-      actorIdentityId: guard.actorIdentityId,
+      actorIdentityId: guard.user.identityId,
       action: 'project_amenity:create',
       entityType: 'ProjectAmenity',
       entityId: amenity.id,

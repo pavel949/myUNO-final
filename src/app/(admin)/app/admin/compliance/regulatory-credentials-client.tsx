@@ -21,6 +21,7 @@ interface CredentialRow {
 type Labels = Record<string, string>;
 
 const CREDENTIAL_TYPES = ['hotel_business_license', 'accommodation_exemption', 'title_legal_use'];
+const EVIDENCE_ACCEPT = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].join(',');
 
 export default function RegulatoryCredentialsClient({
   labels,
@@ -245,7 +246,7 @@ export default function RegulatoryCredentialsClient({
 
       <label className="mb-12 block text-small text-text-ink">
         {labels['admin.compliance.credentials.evidence']}
-        <input className={fieldClass + ' mt-8'} type="file" accept="application/pdf,image/jpeg,image/png,image/webp"
+        <input className={fieldClass + ' mt-8'} type="file" accept={EVIDENCE_ACCEPT}
           onChange={e => setEvidenceFile(e.currentTarget.files?.[0] || null)} />
       </label>
       <p className="mb-12 text-small text-text-secondary">{labels['admin.compliance.credentials.evidence_note']}</p>

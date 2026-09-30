@@ -114,6 +114,10 @@ export default async function ProjectLandingPage({
     'project_page.story.title': 'About the residence',
     'project_page.amenities.title': 'Residence amenities',
     'project_page.amenities.view_all': 'View all amenities →',
+    'project_page.amenities.kicker': 'Project amenities',
+    'project_page.amenities.included': 'Included',
+    'project_page.amenities.free': 'Free',
+    'project_page.amenities.booking_required': 'Booking required',
     'project_page.services.title': 'Services available here',
     'project_page.services.view_all': 'Browse all services →',
     'project.services.eyebrow': 'myUNO services',
@@ -501,6 +505,12 @@ export default async function ProjectLandingPage({
           amenities={project.amenities}
           title={labels['project_page.amenities.title']}
           viewAllLabel={labels['project_page.amenities.view_all']}
+          labels={{
+            kicker: labels['project_page.amenities.kicker'],
+            included: labels['project_page.amenities.included'],
+            free: labels['project_page.amenities.free'],
+            bookingRequired: labels['project_page.amenities.booking_required'],
+          }}
         />
       ) : project.amenityKeys.length > 0 ? (
         <section className="max-w-6xl mx-auto py-64 px-24">

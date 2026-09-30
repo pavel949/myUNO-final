@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Manrope, Noto_Sans_Thai, Outfit } from 'next/font/google';
 import './globals.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';

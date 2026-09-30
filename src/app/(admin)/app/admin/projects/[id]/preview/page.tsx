@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
@@ -14,9 +15,10 @@ export const dynamic = 'force-dynamic';
 
 /** Private project-space preview. Does not make draft units discoverable/bookable. */
 export default async function ProjectSpacePreview({ params }: { params: { id: string } }) {
-  const actor = await getCurrentUser();
-  if (!actor) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/preview'));
-  if (!actor.isAdmin) notFound();
+  const viewer = await getCurrentUser();
+  if (!viewer) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/preview'));
+  const actor = await getProjectExperienceActor(params.id);
+  if (!actor) notFound();
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     include: {
@@ -92,7 +94,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     galleryUrls: row.media.map(item => item.media.storageKey),
   }));
   return <main className="min-h-screen bg-surface-ivory pb-64">
-    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active={'preview'} /></div>
+    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active={'preview'} contentOnly={!actor.isAdmin} /></div>
     <header className="border-b border-border-line bg-surface-paper px-24 py-16">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-12">
         <div><p className="text-kicker text-brand-andaman">{labels['admin.project_preview.private']}</p>

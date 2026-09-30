@@ -62,6 +62,17 @@ export default async function ProjectLandingPage({
     projectId: project.id,
   }).catch(() => null);
 
+  const serviceCategoryCatalog = await getConfig(prisma, 'catalog.service_categories')
+    .catch(() => []) as Array<{ key?: string }>;
+  const serviceCategoryLabels = Object.fromEntries(
+    (Array.isArray(serviceCategoryCatalog) ? serviceCategoryCatalog : [])
+      .filter(item => typeof item?.key === 'string')
+      .map(item => [
+        `services.category.${item.key}`,
+        String(item.key).replace(/_/g, ' ').replace(/^./, char => char.toUpperCase()),
+      ])
+  );
+
   const labels = await getLabels({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
@@ -123,6 +134,7 @@ export default async function ProjectLandingPage({
     'catalog.amenities.kids_friendly.label': 'Kids friendly',
     'catalog.amenities.pets_allowed.label': 'Pets allowed',
     'catalog.amenities.security_24h.label': '24h security',
+    ...serviceCategoryLabels,
   });
 
   const [areaLabel, story, handbookTeaser, services, licenceLine] = await Promise.all([

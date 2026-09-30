@@ -4,14 +4,18 @@ import { prisma } from '@/lib/prisma';
 import PropertySubmissionWizard from './wizard';
 
 export const dynamic = 'force-dynamic';
-export default async function PropertyOnboardPage() {
+export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string } }) {
   const user = await getCurrentUser();
-  if (!user) redirect('/login?next=/property/onboard');
+  if (!user) {
+    const query = typeof searchParams?.projectId === 'string' ? `?projectId=${encodeURIComponent(searchParams.projectId)}` : '';
+    redirect(`/login?next=${encodeURIComponent('/property/onboard' + query)}`);
+  }
   const scopedIds = user.roles.map(role => role.projectId).filter((id): id is string => Boolean(id));
   const [projects, areas] = await Promise.all([prisma.project.findMany({
     where: user.isAdmin ? { status: { not: 'archived' } } : { OR: [{ status: 'live' }, { id: { in: scopedIds }, status: 'draft' }] }, orderBy: { name: 'asc' },
     select: { id: true, name: true, address: true },
     take: 500,
   }), prisma.area.findMany({ where: { status: 'live' }, select: { id: true, slug: true }, orderBy: { sort: 'asc' } })]);
-  return <PropertySubmissionWizard projects={projects} areas={areas} />;
+  const initialProjectId = projects.some(project => project.id === searchParams?.projectId) ? searchParams?.projectId : undefined;
+  return <PropertySubmissionWizard projects={projects} areas={areas} initialProjectId={initialProjectId} />;
 }

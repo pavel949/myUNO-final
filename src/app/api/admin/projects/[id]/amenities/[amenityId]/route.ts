@@ -29,6 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       bookingRequired: current.bookingRequired,
       bookingMode: current.bookingMode,
       bookingUrl: current.bookingUrl,
+      reservationConfig: current.reservationConfig,
       pricingType: current.pricingType,
       priceBaht: current.priceThb == null ? null : current.priceThb / 100,
       capacity: current.capacity,

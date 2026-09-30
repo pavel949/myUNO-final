@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import ProjectServicesClient from './project-services-client';
+import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,7 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
   });
 
   return <main className="mx-auto max-w-5xl p-24 md:p-32">
+    <ProjectWorkspaceNav projectId={project.id} active="concierge" />
     <Link href={`/app/admin/projects/${project.id}`} className="text-small font-semibold text-brand-andaman hover:underline">
       ← {labels['admin.project_services.back']}
     </Link>

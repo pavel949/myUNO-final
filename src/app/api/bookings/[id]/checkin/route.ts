@@ -7,12 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createTm30Filing, createConditionReport } from '@/modules/ops';
 import {
+  createTm30Filing,
+  createConditionReport,
   CHECK_IN_CHECKLIST_ITEMS,
   formatCheckInChecklistNotes,
   type CheckInChecklistItem,
-} from '@/modules/ops/check-in-checklist';
+} from '@/modules/ops';
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';

@@ -56,10 +56,10 @@ export function resolveProjectServiceOffer(input: {
   const row = input.rows.find(item => item.project_id === input.projectId);
   if (!row) {
     return {
-      available: false,
-      publiclyVisible: false,
-      source: 'unavailable',
-      unitPriceThb: null,
+      available: true,
+      publiclyVisible: true,
+      source: 'global',
+      unitPriceThb: input.basePriceThb,
       leadTimeHours: input.baseLeadTimeHours,
       takeRatePct: null,
       termsVersion: null,
@@ -71,13 +71,13 @@ export function resolveProjectServiceOffer(input: {
     (!row.effective_to || at < row.effective_to);
   if (!row.enabled || !row.public || !effective) {
     return {
-      available: false,
-      publiclyVisible: false,
-      source: 'unavailable',
-      unitPriceThb: null,
-      leadTimeHours: row.lead_time_hours ?? input.baseLeadTimeHours,
-      takeRatePct: decimalNumber(row.take_rate_pct),
-      termsVersion: row.terms_version,
+      available: true,
+      publiclyVisible: true,
+      source: 'global',
+      unitPriceThb: input.basePriceThb,
+      leadTimeHours: input.baseLeadTimeHours,
+      takeRatePct: null,
+      termsVersion: null,
     };
   }
 

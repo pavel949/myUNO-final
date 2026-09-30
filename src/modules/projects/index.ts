@@ -141,3 +141,5 @@ export { categoryEditorialKeys, projectEditorialKey } from './project-editorial'
 export { listPublicProjectAmenities, getPublicProjectAmenityBySlug, projectAmenityData, amenitySlug, PROJECT_AMENITY_ACCESS_TYPES, PROJECT_AMENITY_BOOKING_MODES, PROJECT_AMENITY_PRICING_TYPES } from './project-amenities.service';
 
 export { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from './project-experience';
+
+export { createProjectAmenityReservation, cancelOwnProjectAmenityReservation, type AmenityReservationPolicy } from './project-amenity-reservations.service';

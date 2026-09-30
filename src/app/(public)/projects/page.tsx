@@ -38,7 +38,7 @@ export default async function ProjectsHubPage() {
     'projects.hub.search_cta': 'Search stays',
   });
 
-  const projects = await listPublicProjects();
+  const projects = await listPublicProjects(getRequestLocale());
   const locale = getRequestLocale();
 
   // Resolve each project's area label (a content key on the project row).

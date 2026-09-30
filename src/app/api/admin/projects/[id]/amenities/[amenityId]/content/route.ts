@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { ensureContentKey, updateTranslation } from '@/modules/content';
 import {
   PROJECT_AMENITY_CONTENT_FIELDS,
@@ -22,8 +22,8 @@ async function getAmenity(projectId: string, amenityId: string) {
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
   const amenity = await getAmenity(params.id, params.amenityId);
   if (!amenity) return NextResponse.json({ error: 'Amenity not found' }, { status: 404 });
 
@@ -53,8 +53,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string;
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
   const amenity = await getAmenity(params.id, params.amenityId);
   if (!amenity) return NextResponse.json({ error: 'Amenity not found' }, { status: 404 });
 
@@ -75,7 +75,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string; 
     contentKeyId: contentKey.id,
     locale,
     value,
-    identityId: guard.actorIdentityId,
+    identityId: guard.user.identityId,
   });
   return NextResponse.json({ ok: true });
 }

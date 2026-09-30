@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
+import ProjectAmenitiesSection, { type PublicProjectAmenity } from '@/components/projects/ProjectAmenitiesSection';
 import {
   StayCard,
   QuickActionsRow,
@@ -69,6 +70,7 @@ interface InStayHomeSpaceClientProps {
   secondaryRoles: string[];
   conciergeWhatsappUrl?: string | null;
   shuttleText?: string;
+  projectAmenities: PublicProjectAmenity[];
   labels: Record<string, string>;
 }
 
@@ -88,6 +90,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   secondaryRoles,
   conciergeWhatsappUrl,
   shuttleText,
+  projectAmenities,
   labels,
 }) => {
   const router = useRouter();
@@ -274,6 +277,22 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
               services={services}
               labels={labels}
               hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
+            />
+
+            <ProjectAmenitiesSection
+              projectSlug={booking.unit.project.id}
+              amenities={projectAmenities}
+              title={labels['home.amenities.title']}
+              viewAllLabel={labels['home.amenities.view_all']}
+              viewAllHref={`/projects/${booking.unit.project.id}/amenities`}
+              detailHrefFor={(amenity) => `/projects/${booking.unit.project.id}/amenities/${amenity.slug}?bookingId=${encodeURIComponent(booking.id)}`}
+              bookingId={booking.id}
+              labels={{
+                kicker: labels['home.amenities.kicker'],
+                included: labels['home.amenities.included'],
+                free: labels['home.amenities.free'],
+                bookingRequired: labels['home.amenities.booking_required'],
+              }}
             />
 
             <div className="lg:hidden">{conciergeCard}</div>

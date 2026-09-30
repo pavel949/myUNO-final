@@ -413,6 +413,20 @@ export default function BookingDetailClient({
                 </Button>
               </Link>
             )}
+            {booking.viewer.isGuest && stayStartedOrConfirmed && (
+              <>
+                <Link href={`/services?bookingId=${encodeURIComponent(booking.id)}`}>
+                  <Button variant="secondary" size="sm">
+                    {labels['booking.detail.services'] || 'Services for this stay'}
+                  </Button>
+                </Link>
+                <Link href="/services/orders">
+                  <Button variant="ghost" size="sm">
+                    {labels['booking.detail.service_orders'] || 'My service orders'}
+                  </Button>
+                </Link>
+              </>
+            )}
             {booking.viewer.isGuest && booking.project?.id && (
               <Link href={`/messages?projectId=${booking.project.id}&bookingId=${booking.id}`}>
                 <Button variant="secondary" size="sm">

@@ -12,7 +12,7 @@ import PropertyOnboardingClient from './property-onboarding-client';
 
 const project = {
   id: 'project-1', name: 'Test Resort', status: 'draft', coverMediaId: null,
-  galleryMedia: [], inventoryCategories: [], ratePlans: [], units: [],
+  galleryMedia: [], inventoryCategories: [], ratePlans: [], structureNodes: [], units: [],
 };
 const readiness = {
   projectId: 'project-1', score: 20, readyForActivation: false,
@@ -27,6 +27,7 @@ describe('property onboarding form wiring', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
 
+    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
     const form = screen.getByLabelText('Base nightly rate (THB)').closest('form')!;
     fireEvent.change(screen.getByLabelText('Category key'), { target: { value: 'garden_2br' } });
     fireEvent.change(screen.getByLabelText('Category name'), { target: { value: 'Garden 2BR' } });
@@ -58,6 +59,7 @@ describe('property onboarding form wiring', () => {
       initialReadiness={readiness}
       galleryLabels={{}}
     />);
+    fireEvent.click(screen.getByRole('button', { name: /6\. Pricing/ }));
     const form = screen.getByRole('button', { name: 'Save BAR' }).closest('form')!;
     const category = form.querySelector('select[name="category"]')!;
     fireEvent.change(category, { target: { value: 'category-1' } });
@@ -70,7 +72,9 @@ describe('property onboarding form wiring', () => {
 
   it('keeps categories and physical homes together in the canonical onboarding step', () => {
     render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: /2\. Categories & homes/ }));
     expect(screen.getByRole('heading', { name: '2. Categories and homes' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /7\. Content & photos/ }));
     expect(screen.getByRole('heading', { name: '7. Content and galleries' })).toBeInTheDocument();
   });
 });

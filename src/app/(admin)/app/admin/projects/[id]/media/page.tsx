@@ -1,6 +1,7 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import ScopedGalleryEditor from '@/components/property/ScopedGalleryEditor';
@@ -11,7 +12,8 @@ export const dynamic = 'force-dynamic';
 export default async function ProjectMediaPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/media'));
-  if (!user.isAdmin) redirect('/');
+  const actor = await getProjectExperienceActor(params.id);
+  if (!actor) redirect('/');
 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -45,7 +47,7 @@ export default async function ProjectMediaPage({ params }: { params: { id: strin
   });
 
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
-    <ProjectWorkspaceNav projectId={project.id} active="media" />
+    <ProjectWorkspaceNav projectId={project.id} active={'media'} contentOnly={!actor.isAdmin} />
     <div className="mb-24">
       <p className="text-kicker uppercase text-brand-andaman">Project Media</p>
       <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>

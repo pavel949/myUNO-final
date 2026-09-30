@@ -1,6 +1,7 @@
 import { PrismaClient, ServiceStatus } from '@prisma/client';
 import { getConfig, assertCatalogKeys } from '@/modules/config';
 import type { Locale } from '@/modules/content';
+import { resolveProjectServiceOffer } from './project-service-offer';
 
 /**
  * A service's title/description are per-service data, not content keys
@@ -280,14 +281,34 @@ export async function listPublicServices(
           vetted_at: true,
         },
       },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
     },
     orderBy: [{ createdAt: 'desc' }],
   });
 
-  return services.map((s) => ({
-    ...s,
-    isVetted: s.provider.vetted_at !== null,
-  }));
+  return services.flatMap((service) => {
+    const offer = resolveProjectServiceOffer({
+      rows: service.availableProjects,
+      projectId,
+      basePriceThb: service.basePriceThb,
+      baseLeadTimeHours: service.advanceNoticeHours,
+    });
+    if (!offer.publiclyVisible) return [];
+    return [{
+      ...service,
+      basePriceThb: offer.unitPriceThb,
+      advanceNoticeHours: offer.leadTimeHours,
+      isVetted: service.provider.vetted_at !== null,
+      projectOfferSource: offer.source,
+      projectTermsVersion: offer.termsVersion,
+    }];
+  });
 }
 
 export interface PublicMarketplaceService {
@@ -331,26 +352,42 @@ export async function listPublicMarketplaceServices(
     include: {
       provider: { select: { name: true, vetted_at: true } },
       coverMedia: { select: { storageKey: true } },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit ?? 100,
   });
 
-  return services.map((service) => {
+  return services.flatMap((service) => {
+    const offer = options.projectId
+      ? resolveProjectServiceOffer({
+          rows: service.availableProjects,
+          projectId: options.projectId,
+          basePriceThb: service.basePriceThb,
+          baseLeadTimeHours: service.advanceNoticeHours,
+        })
+      : null;
+    if (offer && !offer.publiclyVisible) return [];
     const copy = pickLocalizedServiceCopy(service, locale);
-    return {
+    return [{
       id: service.id,
       title: copy.title,
       description: copy.description,
       categoryKey: service.categoryKey,
       priceModel: service.priceModel,
-      basePriceThb: service.basePriceThb,
+      basePriceThb: offer?.unitPriceThb ?? service.basePriceThb,
       durationMin: service.durationMin,
-      advanceNoticeHours: service.advanceNoticeHours,
+      advanceNoticeHours: offer?.leadTimeHours ?? service.advanceNoticeHours,
       providerName: service.provider?.name ?? null,
       providerVetted: Boolean(service.provider?.vetted_at),
       coverUrl: service.coverMedia?.storageKey ?? null,
-    };
+    }];
   });
 }
 

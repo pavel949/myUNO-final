@@ -93,7 +93,7 @@ export default function CheckoutClient({
             // SA-2: land on the order's confirmation view, not the catalog
             router.push(`/services/orders/${serviceOrderId}?paid=1`);
           } else {
-            router.push(bookingId ? `/trips/${bookingId}` : '/trips');
+            router.push(bookingId ? `/bookings/${bookingId}/home-space` : '/trips');
           }
         }, 1500);
       } else {
@@ -107,7 +107,9 @@ export default function CheckoutClient({
     }
   };
 
-  const tripUrl = session?.booking?.id ? `/trips/${session.booking.id}` : '/trips';
+  const tripUrl = session?.booking?.id
+    ? `/bookings/${session.booking.id}/home-space`
+    : '/trips';
 
   if (loading) {
     return (

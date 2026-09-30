@@ -3,6 +3,11 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/modules/auth';
 
+/** A signed token never overrides the current lifecycle state of an identity. */
+export function mayHoldSession(status: string): boolean {
+  return status === 'active';
+}
+
 export interface CurrentUser {
   identityId: string;
   email: string | null;
@@ -61,7 +66,7 @@ export const getSessionUser = cache(async (): Promise<CurrentUser | null> => {
 
     // Only activated accounts can hold a session. Invited, merged and deletion-requested
     // identities must not retain a session or role access.
-    if (!identity || identity.status !== 'active') {
+    if (!identity || !mayHoldSession(identity.status)) {
       return null;
     }
 

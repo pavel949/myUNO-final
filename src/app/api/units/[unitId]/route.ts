@@ -183,8 +183,9 @@ export async function GET(
     const cover = exactCover || representativeCover;
     return NextResponse.json({
       ...publicUnit,
-      // Compatibility field for old clients. New date-aware surfaces use pricing.averageNightly.
-      baseNightlyThb: Math.round(publicUnit.baseNightlyThb / 100),
+      // Money boundary: all *Thb integer fields stay in satang until the final
+      // rendering component. Date-aware pricing below remains a legacy baht DTO.
+      baseNightlyThb: publicUnit.baseNightlyThb,
       pricing,
       photoScope: representativeCover ? 'room_type' : exactCover ? 'exact_unit' : 'none',
       images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,

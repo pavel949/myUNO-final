@@ -199,7 +199,8 @@ export async function createServiceOrder(
     baseLeadTimeHours: service.advanceNoticeHours,
     at: scheduledStart,
   });
-  if (!offer.available) {
+  const internalOrderRole = ['staff_ops', 'onsite_host', 'mc_member'].includes(ordererRole);
+  if (!offer.available || (!offer.publiclyVisible && !internalOrderRole)) {
     throw new Error('Service is not available in this project');
   }
 
@@ -240,7 +241,7 @@ export async function createServiceOrder(
   }
 
   const noticeDeadline = Date.now() + offer.leadTimeHours * 60 * 60 * 1000;
-  if (scheduledStart.getTime() < noticeDeadline) {
+  if (offer.leadTimeHours > 0 && scheduledStart.getTime() < noticeDeadline) {
     throw new Error(`Service requires ${offer.leadTimeHours}h advance notice`);
   }
 

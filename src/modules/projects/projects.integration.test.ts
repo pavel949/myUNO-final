@@ -28,6 +28,32 @@ describe('Projects module', () => {
       expect(project.status).toBe('draft');
     });
 
+    it('canonicalizes legacy project facilities into ProjectAmenity instead of a second string-array authority', async () => {
+      const admin = await createIdentity({ isAdmin: true });
+      const project = await createProjectFn({
+        slug: 'experience-project',
+        name: 'Experience Project',
+        areaLabelKey: 'project.area.default',
+        descriptionKey: 'project.description.default',
+        latitude: 13.7563,
+        longitude: 100.5018,
+        address: '123 Experience St',
+        facilities: ['Cinema Room', 'Fitness Center'],
+        actorIdentityId: admin.id,
+      });
+
+      const stored = await prisma.project.findUniqueOrThrow({ where: { id: project.id } });
+      expect(stored.facilities).toEqual([]);
+      expect(stored.amenityKeys).toEqual([]);
+
+      const amenities = await prisma.projectAmenity.findMany({
+        where: { projectId: project.id },
+        orderBy: { name: 'asc' },
+      });
+      expect(amenities.map(row => row.name)).toEqual(['Cinema Room', 'Fitness Center']);
+      expect(amenities.every(row => row.published === false)).toBe(true);
+    });
+
     it('rejects duplicate slug', async () => {
       const admin = await createIdentity({ isAdmin: true });
 
@@ -94,6 +120,14 @@ describe('Projects module', () => {
 
       expect(updated.name).toBe('Updated Name');
       expect(updated.slug).toBe(project.slug); // unchanged
+    });
+
+    it('rejects legacy project amenity/facility array writes', async () => {
+      const project = await createProject();
+      await expect(updateProject({
+        projectId: project.id,
+        facilities: ['Cinema Room'],
+      })).rejects.toThrow('Project Experience');
     });
 
     it('allows draft to live transition', async () => {

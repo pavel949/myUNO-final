@@ -121,7 +121,7 @@ export async function createRegulatoryCredential(
       issueDate: input.issueDate || null,
       effectiveDate: input.effectiveDate || null,
       expiryDate: input.expiryDate || null,
-      status: input.status || 'active',
+      status: evidence ? (input.status || 'active') : 'pending',
       exemptionBasis: input.exemptionBasis || null,
       evidenceMediaId: evidence?.id ?? null,
       verificationStatus: evidence ? 'verified' : 'pending',

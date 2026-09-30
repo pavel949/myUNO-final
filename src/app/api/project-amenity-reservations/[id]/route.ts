@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { cancelOwnProjectAmenityReservation } from '@/modules/projects';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { logAudit } from '@/modules/audit';
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -30,6 +31,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     const reservation = await prisma.projectAmenityReservation.update({
       where: { id: params.id },
+      data: { status },
+    });
+    await logAudit({
+      actorIdentityId: user.identityId,
+      action: 'project_amenity_reservation:status',
+      entityType: 'ProjectAmenityReservation',
+      entityId: reservation.id,
       data: { status },
     });
     return NextResponse.json({ reservation });

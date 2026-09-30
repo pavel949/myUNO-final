@@ -113,3 +113,26 @@ export async function listPublicProjectAmenities(db: PrismaClient, projectId: st
     galleryUrls: row.media.map(item => item.media.storageKey),
   }));
 }
+
+
+export async function getPublicProjectAmenityBySlug(
+  db: PrismaClient,
+  projectSlug: string,
+  amenitySlugValue: string
+) {
+  const project = await db.project.findUnique({
+    where: { slug: projectSlug },
+    select: { id: true, slug: true, name: true, status: true, address: true },
+  });
+  if (!project || project.status !== 'live') return null;
+
+  const row = await db.projectAmenity.findFirst({
+    where: { projectId: project.id, slug: amenitySlugValue, published: true },
+    include: publicAmenityInclude,
+  });
+  if (!row) return null;
+
+  const amenity = (await listPublicProjectAmenities(db, project.id))
+    .find(item => item.id === row.id) ?? null;
+  return amenity ? { project, amenity } : null;
+}

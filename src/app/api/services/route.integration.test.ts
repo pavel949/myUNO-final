@@ -61,7 +61,7 @@ describe('GET /api/services', () => {
     expect(body.services[0].providerVetted).toBe(true);
   });
 
-  it('respects optional projectId scope for restricted services', async () => {
+  it('keeps the global marketplace while applying optional project overrides', async () => {
     const p1 = await createProject({ status: 'live' });
     const p2 = await createProject({ status: 'live' });
     const provider = await createProvider({ status: 'active' });
@@ -93,7 +93,9 @@ describe('GET /api/services', () => {
     );
     const p1Body = await forP1.json();
     expect(forP1.status).toBe(200);
-    expect(p1Body.services.map((s: { id: string }) => s.id)).toEqual([global.id]);
+    expect(p1Body.services.map((s: { id: string }) => s.id).sort()).toEqual(
+      [global.id, scoped.id].sort()
+    );
 
     const forP2 = await GET(
       makeRequest(`http://localhost/api/services?projectId=${encodeURIComponent(p2.id)}`)

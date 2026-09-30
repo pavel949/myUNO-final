@@ -40,6 +40,8 @@ export default async function ProjectServicesPage({ params }: { params: { id: st
     'admin.project_services.body': 'Choose which restricted myUNO services are available in this Project Space. Services with no project restrictions are available platform-wide.',
     'admin.project_services.back': 'Back to Project 360',
     'admin.project_services.global': 'Global myUNO service · available in every project',
+    'admin.project_services.restrict_here': 'Restrict to this project',
+    'admin.project_services.restrict_confirm': 'Restrict this global service to this project only? It will stop being available in other projects until they are explicitly added.',
     'admin.project_services.restricted_here': 'Restricted service · available in {count} project(s), including this one',
     'admin.project_services.restricted_elsewhere': 'Restricted service · currently assigned to {count} other project(s)',
     'admin.project_services.add': 'Add to this project',

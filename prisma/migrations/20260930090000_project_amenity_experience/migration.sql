@@ -48,6 +48,65 @@ CREATE INDEX IF NOT EXISTS "project_amenity_project_id_published_sort_idx"
 CREATE INDEX IF NOT EXISTS "project_amenity_project_id_category_key_idx"
   ON "project_amenity"("project_id", "category_key");
 
+
+-- One-time canonicalization of the two legacy Project string arrays. They are
+-- retained in the schema for compatibility, but ProjectAmenity is the only
+-- project-level amenity authority after this migration. Live projects keep
+-- the same public visibility they had before this conversion.
+WITH legacy AS (
+  SELECT p.id AS project_id, raw_name, source_kind
+  FROM public.project p
+  CROSS JOIN LATERAL (
+    SELECT key AS raw_name, 'amenity'::text AS source_kind
+    FROM unnest(COALESCE(p.amenity_keys, ARRAY[]::text[])) AS key
+    UNION ALL
+    SELECT facility AS raw_name, 'facility'::text AS source_kind
+    FROM unnest(COALESCE(p.facilities, ARRAY[]::text[])) AS facility
+  ) source
+  WHERE btrim(raw_name) <> ''
+),
+normalized AS (
+  SELECT DISTINCT ON (
+    project_id,
+    regexp_replace(lower(btrim(raw_name)), '[^a-z0-9]+', '-', 'g')
+  )
+    project_id,
+    raw_name,
+    source_kind,
+    regexp_replace(
+      regexp_replace(lower(btrim(raw_name)), '[^a-z0-9]+', '-', 'g'),
+      '(^-+|-+$)', '', 'g'
+    ) AS slug
+  FROM legacy
+  ORDER BY project_id,
+    regexp_replace(lower(btrim(raw_name)), '[^a-z0-9]+', '-', 'g'),
+    CASE source_kind WHEN 'amenity' THEN 0 ELSE 1 END
+)
+INSERT INTO public.project_amenity (
+  id, created_at, updated_at, project_id, slug, name, category_key,
+  access_type, booking_required, booking_mode, pricing_type,
+  is_featured, published, sort
+)
+SELECT
+  gen_random_uuid()::text,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  n.project_id,
+  n.slug,
+  initcap(replace(replace(n.raw_name, '_', ' '), '-', ' ')),
+  n.source_kind,
+  'open',
+  false,
+  'none',
+  'included',
+  false,
+  (p.status::text = 'live'),
+  row_number() OVER (PARTITION BY n.project_id ORDER BY n.source_kind, n.raw_name)::integer
+FROM normalized n
+JOIN public.project p ON p.id = n.project_id
+WHERE n.slug <> ''
+ON CONFLICT ("project_id", "slug") DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS "project_amenity_media" (
   "amenity_id" TEXT NOT NULL,
   "media_id" TEXT NOT NULL,

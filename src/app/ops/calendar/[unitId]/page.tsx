@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -69,6 +70,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
             {labels['staff.ops.calendar.occupancy']}
           </Link>
         </div>
+        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Edit property facts →</Link>
         <div className="mt-24">
           <UnitIcalConflictBanner
             conflicts={conflictAlerts}

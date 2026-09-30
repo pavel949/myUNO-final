@@ -96,3 +96,13 @@ CREATE INDEX IF NOT EXISTS "project_amenity_reservation_identity_start_idx"
   ON "project_amenity_reservation"("identity_id", "start_at");
 CREATE INDEX IF NOT EXISTS "project_amenity_reservation_booking_id_idx"
   ON "project_amenity_reservation"("booking_id");
+
+
+-- New project-experience tables stay server-authorized like the rest of the
+-- operational domain; do not expose them directly through Supabase Data API.
+ALTER TABLE public.project_amenity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_amenity_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_amenity_reservation ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.project_amenity FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.project_amenity_media FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.project_amenity_reservation FROM PUBLIC, anon, authenticated;

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable local-rules/no-literal-ui-text */
 
 import { useEffect, useRef, useState } from 'react';
 

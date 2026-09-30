@@ -31,9 +31,9 @@ function human(value: string) {
   return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
 
-function priceLabel(amenity: PublicProjectAmenity) {
-  if (amenity.pricingType === 'included') return 'Included';
-  if (amenity.pricingType === 'free') return 'Free';
+function priceLabel(amenity: PublicProjectAmenity, labels: { included: string; free: string }) {
+  if (amenity.pricingType === 'included') return labels.included;
+  if (amenity.pricingType === 'free') return labels.free;
   if (amenity.priceThb !== null) return `฿${Math.round(amenity.priceThb / 100).toLocaleString()}`;
   return human(amenity.pricingType);
 }
@@ -45,6 +45,7 @@ export default function ProjectAmenitiesSection({
   viewAllLabel,
   viewAllHref,
   detailHrefFor,
+  labels,
 }: {
   projectSlug: string;
   amenities: PublicProjectAmenity[];
@@ -52,6 +53,12 @@ export default function ProjectAmenitiesSection({
   viewAllLabel: string;
   viewAllHref?: string;
   detailHrefFor?: (amenity: PublicProjectAmenity) => string;
+  labels: {
+    kicker: string;
+    included: string;
+    free: string;
+    bookingRequired: string;
+  };
 }) {
   if (!amenities.length) return null;
   const featured = amenities.filter(item => item.isFeatured);
@@ -61,7 +68,7 @@ export default function ProjectAmenitiesSection({
     <section className="mx-auto max-w-6xl px-24 py-48 md:py-64" id="amenities">
       <div className="mb-24 flex flex-wrap items-end justify-between gap-12">
         <div>
-          <p className="text-kicker font-semibold uppercase text-brand-andaman">Project amenities</p>
+          <p className="text-kicker font-semibold uppercase text-brand-andaman">{labels.kicker}</p>
           <h2 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{title}</h2>
         </div>
         <Link
@@ -99,9 +106,9 @@ export default function ProjectAmenitiesSection({
                 <p className="mt-8 line-clamp-3 text-small text-text-secondary">{amenity.shortDescription}</p>
               ) : null}
               <div className="mt-12 flex flex-wrap gap-6 text-micro text-text-secondary">
-                <span className="rounded-full bg-surface-ivory px-8 py-4">{priceLabel(amenity)}</span>
+                <span className="rounded-full bg-surface-ivory px-8 py-4">{priceLabel(amenity, labels)}</span>
                 {amenity.bookingRequired ? (
-                  <span className="rounded-full bg-surface-ivory px-8 py-4">Booking required</span>
+                  <span className="rounded-full bg-surface-ivory px-8 py-4">{labels.bookingRequired}</span>
                 ) : null}
                 {amenity.accessType !== 'open' ? (
                   <span className="rounded-full bg-surface-ivory px-8 py-4">{human(amenity.accessType)}</span>

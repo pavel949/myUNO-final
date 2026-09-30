@@ -58,16 +58,14 @@ export async function GET(req: NextRequest) {
         longitude: true,
         area: { select: { nameKey: true } },
         coverMedia: { select: { storageKey: true } },
-        units: kinds.has('unit')
-          ? {
-              where: { status: 'live', assetStatus: { not: 'suspended' } },
-              select: {
-                id: true,
-                name: true,
-                coverMedia: { select: { storageKey: true } },
-              },
-            }
-          : false,
+        units: {
+          where: { status: 'live', assetStatus: { not: 'suspended' } },
+          select: {
+            id: true,
+            name: true,
+            coverMedia: { select: { storageKey: true } },
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -129,20 +127,18 @@ export async function GET(req: NextRequest) {
         latitude: true,
         longitude: true,
         logoMedia: { select: { storageKey: true } },
-        services: kinds.has('service')
-          ? {
-              where: { status: 'active' },
-              select: {
-                id: true,
-                categoryKey: true,
-                title: true,
-                titleRu: true,
-                titleEn: true,
-                titleTh: true,
-                coverMedia: { select: { storageKey: true } },
-              },
-            }
-          : false,
+        services: {
+          where: { status: 'active' },
+          select: {
+            id: true,
+            categoryKey: true,
+            title: true,
+            titleRu: true,
+            titleEn: true,
+            titleTh: true,
+            coverMedia: { select: { storageKey: true } },
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });

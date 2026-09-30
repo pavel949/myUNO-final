@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { ProjectPlaceAutocomplete } from '@/components/ProjectPlaceAutocomplete';
 import { MyUNOMap } from '@/components/MyUNOMap';
 import type { MapEntity } from '@/modules/map';
 
@@ -19,6 +20,14 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [googlePlaceId, setGooglePlaceId] = useState('');
+  const [country, setCountry] = useState('TH');
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');

@@ -90,9 +90,9 @@ CREATE TABLE IF NOT EXISTS "project_amenity_reservation" (
   CONSTRAINT "project_amenity_reservation_party_positive" CHECK ("party_size" > 0)
 );
 
-CREATE INDEX IF NOT EXISTS "project_amenity_reservation_amenity_status_time_idx"
+CREATE INDEX IF NOT EXISTS "project_amenity_reservation_amenity_id_status_start_at_end__idx"
   ON "project_amenity_reservation"("amenity_id", "status", "start_at", "end_at");
-CREATE INDEX IF NOT EXISTS "project_amenity_reservation_identity_start_idx"
+CREATE INDEX IF NOT EXISTS "project_amenity_reservation_identity_id_start_at_idx"
   ON "project_amenity_reservation"("identity_id", "start_at");
 CREATE INDEX IF NOT EXISTS "project_amenity_reservation_booking_id_idx"
   ON "project_amenity_reservation"("booking_id");

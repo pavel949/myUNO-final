@@ -340,9 +340,10 @@ export default async function ProjectLandingPage({
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.categories.map((category) => (
-              <div
+              <Link
                 key={category.key}
-                className="bg-surface-paper border border-border-line rounded-lg p-24"
+                href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}`}
+                className="block bg-surface-paper border border-border-line rounded-lg p-24 transition hover:shadow-card"
               >
                 {category.coverUrl ? (
                   <Image src={category.coverUrl}
@@ -378,7 +379,7 @@ export default async function ProjectLandingPage({
                     )}
                   </p>
                 ) : null}
-              </div>
+              </Link>
             ))}
           </div>
         </section>

@@ -45,6 +45,13 @@ export {
 } from './ical-fetch';
 
 export {
+  icalFeedToken,
+  verifyIcalFeedToken,
+  icalEventUid,
+  icalFeedPath,
+} from './ical-token';
+
+export {
   registerWhatsAppAccount,
   registerTelegramAccount,
   sendMessengerMessage,

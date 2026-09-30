@@ -4,7 +4,7 @@ import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getRequestLocale } from '@/lib/i18n';
-import { pickLocalizedServiceCopy } from '@/modules/services';
+import { pickLocalizedServiceCopy, resolveProjectServiceOffer } from '@/modules/services';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +35,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
           select: { media_id: true, media: { select: { storageKey: true } } },
           orderBy: { position: 'asc' },
         },
-        availableProjects: { select: { project_id: true } },
+        availableProjects: { select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        } },
       },
     });
 
@@ -51,8 +55,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Project context is part of the marketplace contract. If a service has
     // explicit project restrictions, a portal must not deep-link around them.
     const projectId = req.nextUrl.searchParams.get('projectId');
-    if (projectId && service.availableProjects.length > 0 &&
-        !service.availableProjects.some(row => row.project_id === projectId)) {
+    const projectOffer = projectId ? resolveProjectServiceOffer({
+      rows: service.availableProjects,
+      projectId,
+      basePriceThb: service.basePriceThb,
+      baseLeadTimeHours: service.advanceNoticeHours,
+    }) : null;
+    if (projectOffer && !projectOffer.publiclyVisible) {
       return NextResponse.json({ error: 'Service not available in this project' }, { status: 404 });
     }
 
@@ -77,10 +86,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       descriptionTh: service.descriptionTh,
       categoryKey: service.categoryKey,
       priceModel: service.priceModel,
-      basePriceThb: service.basePriceThb,
+      basePriceThb: projectOffer?.unitPriceThb ?? service.basePriceThb,
       durationMin: service.durationMin,
       fulfilmentMode: service.fulfilmentMode,
-      advanceNoticeHours: service.advanceNoticeHours,
+      advanceNoticeHours: projectOffer?.leadTimeHours ?? service.advanceNoticeHours,
       coverUrl: service.coverMedia?.storageKey || null,
       mediaUrls: service.media.map((m) => m.media.storageKey),
       provider: {

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getPublicProjectAmenityBySlug } from '@/modules/projects';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ export default async function AmenityDetailPage({
   params: { slug: string; amenitySlug: string };
   searchParams?: { bookingId?: string };
 }) {
-  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug);
+  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
   if (!data) notFound();
   const { project, amenity } = data;
   const labels = await getLabels({

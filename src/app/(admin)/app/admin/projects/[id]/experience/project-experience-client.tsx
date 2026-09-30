@@ -3,6 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import AmenityTranslationsEditor from '@/components/projects/AmenityTranslationsEditor';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -265,6 +266,8 @@ export default function ProjectExperienceClient({
               <label className="text-small">Display order<input type="number" min="0" name="sort" defaultValue={selected.sort} className={input}/></label>
             </div>
           </div>
+
+          <AmenityTranslationsEditor projectId={projectId} amenityId={selected.id} />
 
           <div className="rounded-xl border border-border-line bg-surface-paper p-20">
             <h3 className="font-semibold">Access, use and booking</h3>

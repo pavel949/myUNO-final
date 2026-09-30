@@ -11,6 +11,12 @@ type Row = {
   categoryKey: string;
   scope: 'global' | 'restricted_here' | 'restricted_elsewhere';
   projectCount: number;
+  basePriceThb: number | null;
+  baseLeadTimeHours: number;
+  priceOverrideThb: number | null;
+  leadTimeHours: number | null;
+  takeRatePct: string | null;
+  termsVersion: number | null;
   enabledHere: boolean | null;
   publicHere: boolean | null;
 };
@@ -27,6 +33,13 @@ export default function ProjectServicesClient({
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [terms, setTerms] = useState<Record<string, { price: string; lead: string; take: string }>>(
+    Object.fromEntries(services.map(service => [service.id, {
+      price: service.priceOverrideThb === null ? '' : String(service.priceOverrideThb / 100),
+      lead: service.leadTimeHours === null ? '' : String(service.leadTimeHours),
+      take: service.takeRatePct ?? '',
+    }]))
+  );
 
   const act = async (serviceId: string, action: string, extra: Record<string, unknown> = {}) => {
     setBusy(serviceId);
@@ -73,6 +86,47 @@ export default function ProjectServicesClient({
             )}
             {service.scope === 'restricted_here' && (
               <>
+                <div className="w-full rounded-lg bg-surface-ivory p-12">
+                  <p className="text-small text-text-secondary">
+                    {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? '—' : `฿${(service.basePriceThb / 100).toLocaleString()}`}
+                    {' · '}
+                    {labels['admin.project_services.lead_time']}: {service.baseLeadTimeHours}h
+                    {service.termsVersion !== null ? ` · v${service.termsVersion}` : ''}
+                  </p>
+                  <div className="mt-8 grid gap-8 sm:grid-cols-3">
+                    <label className="text-small text-text-secondary">
+                      {labels['admin.project_services.price_override']}
+                      <input type="number" min="0.01" step="0.01"
+                        value={terms[service.id]?.price ?? ''}
+                        placeholder={labels['admin.project_services.inherit']}
+                        onChange={e => setTerms(prev => ({ ...prev, [service.id]: { ...prev[service.id], price: e.target.value } }))}
+                        className="mt-4 h-40 w-full rounded-sm border border-border-line bg-surface-paper px-8 text-text-ink" />
+                    </label>
+                    <label className="text-small text-text-secondary">
+                      {labels['admin.project_services.lead_time']}
+                      <input type="number" min="0" max="720" step="1"
+                        value={terms[service.id]?.lead ?? ''}
+                        placeholder={labels['admin.project_services.inherit']}
+                        onChange={e => setTerms(prev => ({ ...prev, [service.id]: { ...prev[service.id], lead: e.target.value } }))}
+                        className="mt-4 h-40 w-full rounded-sm border border-border-line bg-surface-paper px-8 text-text-ink" />
+                    </label>
+                    <label className="text-small text-text-secondary">
+                      {labels['admin.project_services.take_rate']}
+                      <input type="number" min="0" max="100" step="0.01"
+                        value={terms[service.id]?.take ?? ''}
+                        placeholder={labels['admin.project_services.inherit']}
+                        onChange={e => setTerms(prev => ({ ...prev, [service.id]: { ...prev[service.id], take: e.target.value } }))}
+                        className="mt-4 h-40 w-full rounded-sm border border-border-line bg-surface-paper px-8 text-text-ink" />
+                    </label>
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => act(service.id, 'update_terms', {
+                    priceOverrideBaht: terms[service.id]?.price ?? '',
+                    leadTimeHours: terms[service.id]?.lead ?? '',
+                    takeRatePct: terms[service.id]?.take ?? '',
+                  })} isLoading={busy === service.id}>
+                    {labels['admin.project_services.save_terms']}
+                  </Button>
+                </div>
                 <Button
                   size="sm"
                   variant="secondary"

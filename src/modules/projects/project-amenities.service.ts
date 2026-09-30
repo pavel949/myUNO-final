@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { tMany, type Locale } from '@/modules/content';
 
 export const PROJECT_AMENITY_ACCESS_TYPES = [
   'open', 'room_key', 'key_card', 'wristband', 'staff_assisted',
@@ -10,6 +11,15 @@ export const PROJECT_AMENITY_BOOKING_MODES = [
 export const PROJECT_AMENITY_PRICING_TYPES = [
   'included', 'free', 'paid', 'deposit', 'mixed',
 ] as const;
+
+export const PROJECT_AMENITY_CONTENT_FIELDS = [
+  'name', 'shortDescription', 'description', 'accessInstructions', 'terms',
+] as const;
+export type ProjectAmenityContentField = typeof PROJECT_AMENITY_CONTENT_FIELDS[number];
+
+export function projectAmenityContentKey(amenityId: string, field: ProjectAmenityContentField) {
+  return `project_amenity.${amenityId}.${field}`;
+}
 
 export function amenitySlug(value: string): string {
   return value.trim().toLowerCase()
@@ -82,23 +92,30 @@ export const publicAmenityInclude = {
   },
 } satisfies Prisma.ProjectAmenityInclude;
 
-export async function listPublicProjectAmenities(db: PrismaClient, projectId: string) {
+export async function listPublicProjectAmenities(db: PrismaClient, projectId: string, locale: Locale = 'en') {
   const rows = await db.projectAmenity.findMany({
     where: { projectId, published: true },
     include: publicAmenityInclude,
     orderBy: [{ isFeatured: 'desc' }, { sort: 'asc' }, { name: 'asc' }],
   });
+  const contentKeys = rows.flatMap(row =>
+    PROJECT_AMENITY_CONTENT_FIELDS.map(field => projectAmenityContentKey(row.id, field))
+  );
+  const localized = contentKeys.length ? await tMany(db, contentKeys, locale) : {};
+  const copy = (id: string, field: ProjectAmenityContentField, fallback: string | null) =>
+    localized[projectAmenityContentKey(id, field)] || fallback;
+
   return rows.map(row => ({
     id: row.id,
     slug: row.slug,
-    name: row.name,
+    name: copy(row.id, 'name', row.name) || row.name,
     categoryKey: row.categoryKey,
-    shortDescription: row.shortDescription,
-    description: row.description,
+    shortDescription: copy(row.id, 'shortDescription', row.shortDescription),
+    description: copy(row.id, 'description', row.description),
     iconKey: row.iconKey,
     locationLabel: row.locationLabel,
     accessType: row.accessType,
-    accessInstructions: row.accessInstructions,
+    accessInstructions: copy(row.id, 'accessInstructions', row.accessInstructions),
     bookingRequired: row.bookingRequired,
     bookingMode: row.bookingMode,
     bookingUrl: row.bookingUrl,
@@ -109,7 +126,7 @@ export async function listPublicProjectAmenities(db: PrismaClient, projectId: st
     minAge: row.minAge,
     openingHours: row.openingHours,
     rules: row.rules,
-    terms: row.terms,
+    terms: copy(row.id, 'terms', row.terms),
     isFeatured: row.isFeatured,
     coverUrl: row.coverMedia?.storageKey ?? row.media[0]?.media.storageKey ?? null,
     galleryUrls: row.media.map(item => item.media.storageKey),
@@ -120,7 +137,8 @@ export async function listPublicProjectAmenities(db: PrismaClient, projectId: st
 export async function getPublicProjectAmenityBySlug(
   db: PrismaClient,
   projectSlug: string,
-  amenitySlugValue: string
+  amenitySlugValue: string,
+  locale: Locale = 'en'
 ) {
   const project = await db.project.findUnique({
     where: { slug: projectSlug },
@@ -134,7 +152,7 @@ export async function getPublicProjectAmenityBySlug(
   });
   if (!row) return null;
 
-  const amenity = (await listPublicProjectAmenities(db, project.id))
+  const amenity = (await listPublicProjectAmenities(db, project.id, locale))
     .find(item => item.id === row.id) ?? null;
   return amenity ? { project, amenity } : null;
 }

@@ -12,7 +12,7 @@ export function getStaffProjectIds(user: CurrentUser): string[] {
   return Array.from(
     new Set(
       user.roles
-        .filter((assignment) => STAFF_ROLES.has(assignment.role))
+        .filter((assignment) => STAFF_ROLES.has(assignment.role) && !assignment.unitId)
         .map((assignment) => assignment.projectId)
         .filter((projectId): projectId is string => Boolean(projectId))
     )
@@ -102,7 +102,7 @@ export function hasProjectStaffAccess(user: CurrentUser, projectId: string | nul
   }
 
   return user.roles.some(
-    (assignment) => STAFF_ROLES.has(assignment.role) && assignment.projectId === projectId
+    (assignment) => STAFF_ROLES.has(assignment.role) && !assignment.unitId && assignment.projectId === projectId
   );
 }
 

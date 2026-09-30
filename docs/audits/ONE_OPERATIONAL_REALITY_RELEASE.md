@@ -60,3 +60,11 @@ For each path record exact commit, environment, sanitized record IDs, screenshot
 - No confirmed end-to-end browser pass, production data access, live card payment, OTA ARI acknowledgement or restore proof on this exact head.
 - Vercel build-rate limit is a deployment blocker; it must not be confused with a local code-test result.
 - Layantara live preflight on 2026-09-29 found 31 unverified unit specs, only five units with source photos, and unapproved tariff terms; source booking authority remains external.
+
+## 2026-09-30 follow-up: saved, portfolio, project intake
+
+- Saved homes: the authenticated `DELETE /api/saved/[id]` uses the existing `SavedUnit` record and identity-scoped deletion; `/saved` offers per-entry removal (including duplicate units in different collections) without a shadow favourites store. An integration regression covers foreign-user denial and exact-entry isolation.
+- Managed portfolio: `/mc/portfolio` distinguishes occupied, unavailable blocked, active payment hold and currently available nights. Occupancy uses sellable nights (total less independently blocked nights) as its denominator; overlapping records receive a conflict count. The project selector is populated from units within actual authorized engagements, independent of the currently selected project.
+- Public project portal: `/projects/[slug]` includes a factual owner/manager submission entry pointing at `/property/onboard?projectId=...`. The existing live project is preselected, and the selection survives the sign-in redirect. Submissions remain private drafts pending authority/compliance/readiness approval.
+- No additional Project, Unit, Booking, occupancy, pricing or media authority was created. No production data migration, activation, OTA writer switch or deploy was performed.
+- Evidence status on the latest head: connector write succeeded; runtime/typecheck, integration test, browser journeys, financial reconciliation and live deployment **NOT CHECKED**. Do not treat commits or this ledger as acceptance.

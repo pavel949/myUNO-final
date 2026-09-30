@@ -151,6 +151,8 @@ export async function rotateIntegrationSecret(
     });
   } catch (error) {
     const account = await platformAccount(db, input.integrationKey);
+    let rollbackSucceeded = true;
+    let rollbackMessage = '';
 
     try {
       if (account) {
@@ -164,10 +166,14 @@ export async function rotateIntegrationSecret(
         }
       }
     } catch (rollbackError) {
+      rollbackSucceeded = false;
+      rollbackMessage =
+        rollbackError instanceof Error ? rollbackError.message : 'Automatic rollback failed.';
       reportError(rollbackError, {
         route: 'integration-secret-rotation',
         integrationKey: input.integrationKey,
         phase: 'automatic_rollback',
+        severity: 'critical',
       });
     }
 
@@ -176,8 +182,12 @@ export async function rotateIntegrationSecret(
       where: { id: rotation.id },
       data: {
         status: 'failed',
-        errorMessage: message.slice(0, 500),
-        rolledBackAt: new Date(),
+        errorMessage: (
+          rollbackSucceeded
+            ? `${message} Previous configuration restored automatically.`
+            : `${message} CRITICAL: automatic rollback also failed: ${rollbackMessage}`
+        ).slice(0, 500),
+        rolledBackAt: rollbackSucceeded ? new Date() : null,
       },
     });
 
@@ -186,8 +196,15 @@ export async function rotateIntegrationSecret(
       integrationKey: input.integrationKey,
       fieldKey: input.fieldKey,
       phase: 'apply',
+      rollbackSucceeded,
       expected: false,
     });
+
+    if (!rollbackSucceeded) {
+      throw new Error(
+        `CRITICAL: rotation failed and automatic rollback also failed. The integration requires manual recovery: ${message}`
+      );
+    }
 
     throw new Error(`Rotation failed and the previous configuration was restored: ${message}`);
   }

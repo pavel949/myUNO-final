@@ -4,7 +4,7 @@ import { handleError } from '@/app/libs/errorHandler';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getRequestLocale } from '@/lib/i18n';
-import { pickLocalizedServiceCopy, resolveProjectServiceOffer } from '@/modules/services';
+import { getPublicMarketplaceServiceDetail } from '@/modules/services';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,90 +16,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const { id } = params;
 
-    const service = await prisma.service.findUnique({
-      where: { id },
-      include: {
-        provider: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            status: true,
-            vetted_at: true,
-          },
-        },
-        coverMedia: {
-          select: { id: true, storageKey: true },
-        },
-        media: {
-          select: { media_id: true, media: { select: { storageKey: true } } },
-          orderBy: { position: 'asc' },
-        },
-        availableProjects: { select: {
-          project_id: true, enabled: true, public: true, price_override_thb: true,
-          take_rate_pct: true, lead_time_hours: true, terms_version: true,
-          effective_from: true, effective_to: true,
-        } },
-      },
-    });
+    const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
+    return NextResponse.json(service);
 
-    if (!service || service.status !== 'active') {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
-    }
-
-    // Verify provider is active and vetted
-    if (!service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
-      return NextResponse.json({ error: 'Service not available' }, { status: 404 });
-    }
-
-    // Project context is part of the marketplace contract. If a service has
-    // explicit project restrictions, a portal must not deep-link around them.
-    const projectId = req.nextUrl.searchParams.get('projectId');
-    const projectOffer = projectId ? resolveProjectServiceOffer({
-      rows: service.availableProjects,
-      projectId,
-      basePriceThb: service.basePriceThb,
-      baseLeadTimeHours: service.advanceNoticeHours,
-    }) : null;
-    if (projectOffer && !projectOffer.publiclyVisible) {
-      return NextResponse.json({ error: 'Service not available in this project' }, { status: 404 });
-    }
-
-    // Track analytics event
-    const viewer = await getCurrentUser().catch(() => null);
-    await track(prisma, 'service_service_viewed', {
-      serviceId: service.id,
-      identityId: viewer?.identityId,
-      categoryKey: service.categoryKey,
-    }).catch(() => null);
-
-    const locale = getRequestLocale();
-
-    return NextResponse.json({
-      id: service.id,
-      ...pickLocalizedServiceCopy(service, locale),
-      titleRu: service.titleRu,
-      titleEn: service.titleEn,
-      titleTh: service.titleTh,
-      descriptionRu: service.descriptionRu,
-      descriptionEn: service.descriptionEn,
-      descriptionTh: service.descriptionTh,
-      categoryKey: service.categoryKey,
-      priceModel: service.priceModel,
-      basePriceThb: projectOffer?.unitPriceThb ?? service.basePriceThb,
-      durationMin: service.durationMin,
-      fulfilmentMode: service.fulfilmentMode,
-      advanceNoticeHours: projectOffer?.leadTimeHours ?? service.advanceNoticeHours,
-      coverUrl: service.coverMedia?.storageKey || null,
-      mediaUrls: service.media.map((m) => m.media.storageKey),
-      provider: {
-        id: service.provider.id,
-        name: service.provider.name,
-        description: service.provider.description,
-        vetted: Boolean(service.provider.vetted_at),
-        vettedAt: service.provider.vetted_at?.toISOString() || null,
-      },
-    });
   } catch (error) {
     return handleError(error);
   }

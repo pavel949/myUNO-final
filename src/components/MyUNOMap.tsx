@@ -47,7 +47,7 @@ export function MyUNOMap({
         style: styleUrl,
         center: [PHUKET_MAP_CENTER.longitude, PHUKET_MAP_CENTER.latitude],
         zoom: PHUKET_MAP_ZOOM,
-        attributionControl: true,
+        attributionControl: { compact: true },
       });
 
       map.addControl(new NavigationControl({ showCompass: true }), 'top-right');

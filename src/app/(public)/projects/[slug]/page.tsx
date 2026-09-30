@@ -221,10 +221,6 @@ export default async function ProjectLandingPage({
     ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
     : '/guests';
 
-  const amenityLabel = (key: string): string => {
-    const contentKey = `catalog.amenities.${key}.label` as keyof typeof labels;
-    return (labels as Record<string, string>)[contentKey] ?? key;
-  };
 
   const hasVerifiedPin = Number.isFinite(project.latitude) && Number.isFinite(project.longitude) &&
     !(project.latitude === 0 && project.longitude === 0);
@@ -500,34 +496,19 @@ export default async function ProjectLandingPage({
         </section>
       ) : null}
 
-      {project.amenities.length > 0 ? (
-        <ProjectAmenitiesSection
-          projectSlug={project.slug}
-          amenities={project.amenities}
-          title={labels['project_page.amenities.title']}
-          viewAllLabel={labels['project_page.amenities.view_all']}
-          labels={{
-            kicker: labels['project_page.amenities.kicker'],
-            included: labels['project_page.amenities.included'],
-            free: labels['project_page.amenities.free'],
-            bookingRequired: labels['project_page.amenities.booking_required'],
-          }}
-          bookingId={activeStay?.id}
-        />
-      ) : project.amenityKeys.length > 0 ? (
-        <section className="max-w-6xl mx-auto py-64 px-24">
-          <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-            {labels['project_page.amenities.title']}
-          </h2>
-          <div className="flex flex-wrap gap-16">
-            {project.amenityKeys.map((key) => (
-              <span key={key} className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink">
-                {amenityLabel(key)}
-              </span>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <ProjectAmenitiesSection
+        projectSlug={project.slug}
+        amenities={project.amenities}
+        title={labels['project_page.amenities.title']}
+        viewAllLabel={labels['project_page.amenities.view_all']}
+        labels={{
+          kicker: labels['project_page.amenities.kicker'],
+          included: labels['project_page.amenities.included'],
+          free: labels['project_page.amenities.free'],
+          bookingRequired: labels['project_page.amenities.booking_required'],
+        }}
+        bookingId={activeStay?.id}
+      />
 
       <ProjectServiceMarketplace
         projectId={project.id}

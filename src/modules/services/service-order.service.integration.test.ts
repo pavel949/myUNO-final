@@ -117,11 +117,11 @@ describe('service-order.service — integration tests', () => {
       });
     });
 
-    it('rejects a service restricted to another project', async () => {
+    it('keeps the base marketplace service available when another project has an override', async () => {
       const orderer = await createIdentity();
       const admin = await createIdentity();
       const provider = await createProvider();
-      const allowedProject = await createProject();
+      const customizedProject = await createProject();
       const requestedProject = await createProject();
 
       await db.provider.update({
@@ -131,25 +131,27 @@ describe('service-order.service — integration tests', () => {
       const service = await createService({
         providerId: provider.id,
         status: 'active',
+        basePriceThb: 100_000,
       });
       await db.serviceProject.create({
-        data: { service_id: service.id, project_id: allowedProject.id },
+        data: { service_id: service.id, project_id: customizedProject.id, price_override_thb: 150_000 },
       });
 
-      await expect(
-        serviceOrderService.createServiceOrder(db, {
-          serviceId: service.id,
-          projectId: requestedProject.id,
-          ordererIdentityId: orderer.id,
-          ordererRole: 'owner',
-          scheduledStart: new Date('2026-08-01'),
-          scheduledEnd: new Date('2026-08-02'),
-          quantity: 1,
-          priceBreakdown: { base: 1000 },
-          totalThb: 1000,
-          tookRatePctSnapshot: 15,
-        })
-      ).rejects.toThrow('not available in this project');
+      const created = await serviceOrderService.createServiceOrder(db, {
+        serviceId: service.id,
+        projectId: requestedProject.id,
+        ordererIdentityId: orderer.id,
+        ordererRole: 'owner',
+        scheduledStart: new Date('2026-08-01'),
+        scheduledEnd: new Date('2026-08-02'),
+        quantity: 1,
+        priceBreakdown: { ignored: true },
+        totalThb: 1,
+        tookRatePctSnapshot: 99,
+      });
+      const order = await db.serviceOrder.findUniqueOrThrow({ where: { id: created.id } });
+      expect(order.total_thb).toBe(100_000);
+      expect(order.price_breakdown).toMatchObject({ offer_source: 'global' });
     });
 
     it('rejects order for inactive service', async () => {

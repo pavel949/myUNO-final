@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { categoryEditorialKeys } from './project-editorial';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
 function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
@@ -255,14 +256,7 @@ async function buildPublicCategories(
       return {
         key: category.categoryKey,
         name: category.name,
-        // Imported Layantara rows retain their verified, translated source content.
-        // Every other project uses the same stable project/category editorial key contract.
-        titleKey: category.id.startsWith('layantara-category-')
-          ? `layantara.category.${category.id.slice('layantara-category-'.length)}.title`
-          : `project.${projectSlug}.category.${category.categoryKey}.title`,
-        descriptionKey: category.id.startsWith('layantara-category-')
-          ? `layantara.category.${category.id.slice('layantara-category-'.length)}.description`
-          : `project.${projectSlug}.category.${category.categoryKey}.description`,
+        ...categoryEditorialKeys(projectSlug, category.id, category.categoryKey),
         styleKey: null,
         bedrooms: category.bedrooms,
         unitCount: units.length,

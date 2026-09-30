@@ -371,7 +371,13 @@ export async function GET(req: NextRequest) {
 
     const listInclude = {
       project: {
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          latitude: true,
+          longitude: true,
+        },
       },
       inventoryCategory: {
         select: {

@@ -48,6 +48,12 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     'admin.project_preview.categories': 'Accommodation categories and exact units',
     'admin.project_preview.unit_stats': '{bedrooms} bedrooms · {units} villas · {status}',
     'admin.project_preview.photos': '{count} exact-unit photos · {status}',
+    'admin.project_preview.amenities_title': 'Project amenities',
+    'admin.project_preview.amenities_manage': 'Manage amenities →',
+    'project_page.amenities.kicker': 'Project amenities',
+    'project_page.amenities.included': 'Included',
+    'project_page.amenities.free': 'Free',
+    'project_page.amenities.booking_required': 'Booking required',
   });
   const prefix = `project.${project.slug}.editorial.`;
   const fields = ['eyebrow', 'headline', 'lead', 'benefits.title',
@@ -86,7 +92,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     galleryUrls: row.media.map(item => item.media.storageKey),
   }));
   return <main className="min-h-screen bg-surface-ivory pb-64">
-    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active="preview" /></div>
+    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active={'preview'} /></div>
     <header className="border-b border-border-line bg-surface-paper px-24 py-16">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-12">
         <div><p className="text-kicker text-brand-andaman">{labels['admin.project_preview.private']}</p>
@@ -121,10 +127,16 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     <ProjectAmenitiesSection
       projectSlug={project.slug}
       amenities={amenities}
-      title="Project amenities"
-      viewAllLabel="Manage amenities →"
+      title={labels['admin.project_preview.amenities_title']}
+      viewAllLabel={labels['admin.project_preview.amenities_manage']}
       viewAllHref={`/app/admin/projects/${project.id}/experience`}
       detailHrefFor={() => `/app/admin/projects/${project.id}/experience`}
+      labels={{
+        kicker: labels['project_page.amenities.kicker'],
+        included: labels['project_page.amenities.included'],
+        free: labels['project_page.amenities.free'],
+        bookingRequired: labels['project_page.amenities.booking_required'],
+      }}
     />
     <section className="mx-auto max-w-6xl px-24 py-48">
       <h2 className="mb-24 font-display text-heading-2 font-semibold">{labels['admin.project_preview.categories']}</h2>

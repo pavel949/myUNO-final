@@ -45,10 +45,14 @@ export async function GET() {
     });
   }
 
-  const bootstrap = BOOTSTRAP_VARIABLES.map((item) => ({
-    ...item,
-    configured: Boolean(process.env[item.env]?.trim()),
-  }));
+  const bootstrap = BOOTSTRAP_VARIABLES.map((item) => {
+    const externalStore = item.group === 'Backups';
+    return {
+      ...item,
+      configured: externalStore ? null : Boolean(process.env[item.env]?.trim()),
+      source: externalStore ? 'github-actions' : 'deployment-environment',
+    };
+  });
 
   return NextResponse.json({ integrations, bootstrap });
 }

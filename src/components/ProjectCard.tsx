@@ -44,6 +44,11 @@ export function ProjectCard({
         <h3 className={`font-display font-semibold mt-4 ${featured ? 'text-display' : 'text-heading-2'}`}>
           {project.name}
         </h3>
+        {project.featuredAmenities.length > 0 ? (
+          <p className="mt-8 line-clamp-1 text-small text-white/80">
+            {project.featuredAmenities.map(item => item.name).join(' · ')}
+          </p>
+        ) : null}
         {labels.fromPrice && project.fromNightlyThb !== null ? (
           <p className="mt-8 text-small text-white/80">
             {labels.fromPrice.replace('{price}', Math.round(project.fromNightlyThb / 100).toLocaleString())}

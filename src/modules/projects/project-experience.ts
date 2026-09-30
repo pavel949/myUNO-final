@@ -1,6 +1,8 @@
 export const PROJECT_EXPERIENCE_CONTENT_FIELDS = [
   { key: 'description', label: 'Project description', kind: 'project_description' },
-  { key: 'handbook', label: 'Guest rules / handbook teaser', kind: 'project_handbook' },
+  { key: 'handbook', label: 'Guest handbook teaser', kind: 'project_handbook' },
+  { key: 'house_rules', label: 'House rules', kind: 'project_rules' },
+  { key: 'shuttle_schedule', label: 'Shuttle / transport schedule', kind: 'project_transport' },
   { key: 'editorial.eyebrow', label: 'Positioning kicker', kind: 'editorial' },
   { key: 'editorial.headline', label: 'Main positioning headline', kind: 'editorial' },
   { key: 'editorial.lead', label: 'Positioning summary', kind: 'editorial' },
@@ -28,6 +30,8 @@ export function projectExperienceContentKey(
 ) {
   if (field === 'description') return project.descriptionKey;
   if (field === 'handbook') return project.handbookKey;
+  if (field === 'house_rules') return `project.${project.slug}.house_rules`;
+  if (field === 'shuttle_schedule') return `project.${project.slug}.shuttle_schedule`;
   if (field.startsWith('editorial.')) return `project.${project.slug}.${field}`;
   throw new Error('Unsupported project experience content field');
 }

@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
+import { MyUNOMap } from '@/components/MyUNOMap';
+import type { MapEntity } from '@/modules/map';
 
 /** One screenful. Beyond this the guest asks for more rather than waiting for it. */
 const PAGE_SIZE = 24;
@@ -16,6 +18,13 @@ interface Unit {
   baseNightlyThb: number;
   description?: string;
   projectId?: string;
+  project?: {
+    id: string;
+    name: string;
+    slug: string;
+    latitude: number | string;
+    longitude: number | string;
+  };
   coverUrl?: string | null;
   /** Null when nobody has reviewed it — unknown, not zero. */
   averageRating?: number | null;
@@ -59,6 +68,8 @@ export interface SearchResultsLabels {
   filterMin: string;
   filterMax: string;
   filterClear: string;
+  viewMap: string;
+  viewList: string;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -92,6 +103,7 @@ export default function SearchResults({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [view, setView] = useState<'list' | 'map'>('list');
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -210,6 +222,22 @@ export default function SearchResults({
     });
   };
 
+  const mapEntities: MapEntity[] = units
+    .filter((unit) => unit.project)
+    .map((unit) => ({
+      id: unit.id,
+      kind: 'unit',
+      title: unit.name,
+      subtitle: unit.project?.name || null,
+      latitude: Number(unit.project?.latitude),
+      longitude: Number(unit.project?.longitude),
+      href: `/units/${unit.id}?startDate=${startDate}&endDate=${endDate}&adults=${adults}&children=${children}`,
+      coverUrl: unit.coverUrl || null,
+      badge: labels.filterType,
+      projectId: unit.project?.id || null,
+    }))
+    .filter((entity) => Number.isFinite(entity.latitude) && Number.isFinite(entity.longitude));
+
   const handleBookCategory = (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;
     const next = new URLSearchParams({
@@ -255,6 +283,22 @@ export default function SearchResults({
                 guests: Number(adults) + Number(children),
               })}
             </p>
+            <div className="flex items-center gap-8">
+              <button
+                type="button"
+                onClick={() => setView('list')}
+                className={view === 'list' ? 'font-semibold text-brand-andaman' : 'text-text-secondary'}
+              >
+                {labels.viewList}
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('map')}
+                className={view === 'map' ? 'font-semibold text-brand-andaman' : 'text-text-secondary'}
+              >
+                {labels.viewMap}
+              </button>
+            </div>
             {sortOptions.length > 0 && (
               <label className="flex items-center gap-8 text-small text-text-secondary">
                 {labels.sortLabel}
@@ -398,7 +442,11 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && units.length > 0 && (
+        {!loading && units.length > 0 && view === 'map' && (
+          <MyUNOMap entities={mapEntities} className="h-[68vh] min-h-[520px]" />
+        )}
+
+        {!loading && units.length > 0 && view === 'list' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
             {units.map((unit) => (
               <Link

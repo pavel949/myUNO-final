@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
       effectiveDate: c.effectiveDate?.toISOString() ?? null,
       expiryDate: c.expiryDate?.toISOString() ?? null,
       status: c.status,
+      evidenceMediaId: c.evidenceMediaId,
       exemptionBasis: c.exemptionBasis,
       notes: c.notes,
       verifiedAt: c.verifiedAt?.toISOString() ?? null,
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       status: body.status || undefined,
       exemptionBasis: body.exemptionBasis || undefined,
       notes: body.notes || undefined,
+      evidenceMediaId: body.evidenceMediaId || undefined,
       verifiedByIdentityId: guard.actorIdentityId,
     });
 

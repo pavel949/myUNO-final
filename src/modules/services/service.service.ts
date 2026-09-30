@@ -325,6 +325,82 @@ export interface PublicMarketplaceService {
   coverUrl: string | null;
 }
 
+export interface PublicMarketplaceServiceDetail extends PublicMarketplaceService {
+  fulfilmentMode: string;
+  mediaUrls: string[];
+  provider: {
+    id: string;
+    name: string;
+    description: string | null;
+    vetted: boolean;
+    vettedAt: string | null;
+  };
+}
+
+/** One public service-detail projection shared by the page and API. */
+export async function getPublicMarketplaceServiceDetail(
+  db: PrismaClient,
+  serviceId: string,
+  locale: Locale,
+  projectId?: string
+): Promise<PublicMarketplaceServiceDetail | null> {
+  const service = await db.service.findUnique({
+    where: { id: serviceId },
+    include: {
+      provider: {
+        select: { id: true, name: true, description: true, status: true, vetted_at: true },
+      },
+      coverMedia: { select: { storageKey: true } },
+      media: {
+        select: { media_id: true, media: { select: { storageKey: true } } },
+        orderBy: { position: 'asc' },
+      },
+      availableProjects: {
+        select: {
+          project_id: true, enabled: true, public: true, price_override_thb: true,
+          take_rate_pct: true, lead_time_hours: true, terms_version: true,
+          effective_from: true, effective_to: true,
+        },
+      },
+    },
+  });
+  if (!service || service.status !== 'active' ||
+      !service.provider || service.provider.status !== 'active' || !service.provider.vetted_at) {
+    return null;
+  }
+  const offer = projectId ? resolveProjectServiceOffer({
+    rows: service.availableProjects,
+    projectId,
+    basePriceThb: service.basePriceThb,
+    baseLeadTimeHours: service.advanceNoticeHours,
+  }) : null;
+  if (offer && !offer.publiclyVisible) return null;
+
+  const copy = pickLocalizedServiceCopy(service, locale);
+  return {
+    id: service.id,
+    title: copy.title,
+    description: copy.description,
+    categoryKey: service.categoryKey,
+    priceModel: service.priceModel,
+    basePriceThb: offer?.unitPriceThb ?? service.basePriceThb,
+    durationMin: service.durationMin,
+    advanceNoticeHours: offer?.leadTimeHours ?? service.advanceNoticeHours,
+    providerName: service.provider.name,
+    providerVetted: true,
+    coverUrl: service.coverMedia?.storageKey ?? null,
+    fulfilmentMode: service.fulfilmentMode,
+    mediaUrls: service.media.map(row => row.media.storageKey),
+    provider: {
+      id: service.provider.id,
+      name: service.provider.name,
+      description: service.provider.description,
+      vetted: true,
+      vettedAt: service.provider.vetted_at.toISOString(),
+    },
+  };
+}
+
 /**
  * Public marketplace cards for discovery surfaces such as the homepage.
  * Reads the same Service/Provider/MediaAsset graph as /services; project

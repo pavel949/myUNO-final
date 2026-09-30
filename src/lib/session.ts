@@ -59,7 +59,9 @@ export const getSessionUser = cache(async (): Promise<CurrentUser | null> => {
       },
     });
 
-    if (!identity || identity.status === 'blocked') {
+    // Only activated accounts can hold a session. Invited, merged and deletion-requested
+    // identities must not retain a session or role access.
+    if (!identity || identity.status !== 'active') {
       return null;
     }
 

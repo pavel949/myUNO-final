@@ -1,5 +1,5 @@
 import type { IntegrationKey, PrismaClient } from '@prisma/client';
-import { getDecryptedConfig, registerIntegrationAccount } from '@/modules/integrations';
+import { getDecryptedConfig, registerIntegrationAccount } from './integrations';
 
 export type IntegrationField = {
   key: string;

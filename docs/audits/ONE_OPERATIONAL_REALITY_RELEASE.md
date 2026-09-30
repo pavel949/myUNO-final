@@ -68,3 +68,11 @@ For each path record exact commit, environment, sanitized record IDs, screenshot
 - Public project portal: `/projects/[slug]` includes a factual owner/manager submission entry pointing at `/property/onboard?projectId=...`. The existing live project is preselected, and the selection survives the sign-in redirect. Submissions remain private drafts pending authority/compliance/readiness approval.
 - No additional Project, Unit, Booking, occupancy, pricing or media authority was created. No production data migration, activation, OTA writer switch or deploy was performed.
 - Evidence status on the latest head: connector write succeeded; runtime/typecheck, integration test, browser journeys, financial reconciliation and live deployment **NOT CHECKED**. Do not treat commits or this ledger as acceptance.
+
+## 2026-09-30 Layantara takeover execution
+
+Live source and target connected independently; see `docs/audits/LAYANTARA_LIVE_PREFLIGHT_2026-09-30.md`. The 39 mapped physical villas, 8 categories and 84/84 source-active protective occupancy intervals remain coherent in a fresh read-only cross-database comparison, but 31 physical specifications are pending, 34 villas lack exact-unit source photographs, rate/tax terms remain unapproved, 78 offerings are drafts, 0 target canonical bookings exist, and target live schema lacks advanced category/gallery/structure migrations.
+
+New `scripts/layantara-cutover-gate.mjs` is a read-only mandatory additional gate. `npm run layantara:cutover:test` covers missing evidence, wrong release SHA, incomplete specs, occupancy mismatch, and OTA acknowledgement. It cannot independently certify evidence: operator approval and live proof remain required.
+
+Current result: **NO-GO**, no production writes, no authority switch, no imported protection removed. LayantaraOS remains independent and sole booking writer while the canonical myUNO mirrored inventory is completed and verified. Vercel reports build-rate-limit failure on the new head; test/CI/deployment status remains unverified.

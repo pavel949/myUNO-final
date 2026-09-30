@@ -33,25 +33,29 @@ describe('resolveProjectServiceOffer', () => {
     });
   });
 
-  it('does not leak a restricted service into another project', () => {
+  it('keeps the base marketplace offer available in projects without an override', () => {
     expect(resolveProjectServiceOffer({
       rows: [row()], projectId: 'p2', basePriceThb: 100_000, baseLeadTimeHours: 2,
-    }).available).toBe(false);
+    })).toMatchObject({
+      available: true, publiclyVisible: true, source: 'global',
+      unitPriceThb: 100_000, leadTimeHours: 2,
+    });
   });
 
-  it('respects private, disabled and effective-window gates', () => {
+  it('falls back to the global offer when a project override is disabled, private or outside its window', () => {
     const at = new Date('2026-10-01T00:00:00Z');
-    expect(resolveProjectServiceOffer({
-      rows: [row({ public: false })], projectId: 'p1',
-      basePriceThb: 100_000, baseLeadTimeHours: 2, at,
-    }).publiclyVisible).toBe(false);
-    expect(resolveProjectServiceOffer({
-      rows: [row({ enabled: false })], projectId: 'p1',
-      basePriceThb: 100_000, baseLeadTimeHours: 2, at,
-    }).available).toBe(false);
-    expect(resolveProjectServiceOffer({
-      rows: [row({ effective_from: new Date('2026-10-02T00:00:00Z') })], projectId: 'p1',
-      basePriceThb: 100_000, baseLeadTimeHours: 2, at,
-    }).available).toBe(false);
+    for (const override of [
+      { public: false },
+      { enabled: false },
+      { effective_from: new Date('2026-10-02T00:00:00Z') },
+    ]) {
+      expect(resolveProjectServiceOffer({
+        rows: [row(override)], projectId: 'p1',
+        basePriceThb: 100_000, baseLeadTimeHours: 2, at,
+      })).toMatchObject({
+        available: true, publiclyVisible: true, source: 'global',
+        unitPriceThb: 100_000, leadTimeHours: 2,
+      });
+    }
   });
 });

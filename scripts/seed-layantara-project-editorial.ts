@@ -4,7 +4,7 @@
  * Usage: npx tsx scripts/seed-layantara-project-editorial.ts
  */
 import { PrismaClient } from '@prisma/client';
-import { seedLayantaraProjectEditorial } from '../src/modules/content/project-editorial.seed';
+import { seedLayantaraProjectEditorial } from '@/modules/content';
 
 const db = new PrismaClient();
 seedLayantaraProjectEditorial(db)

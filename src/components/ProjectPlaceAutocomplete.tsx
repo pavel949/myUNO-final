@@ -153,7 +153,7 @@ export function ProjectPlaceAutocomplete({
             </button>
           ))}
           <div className="px-14 py-8 text-right text-[11px] text-text-secondary">
-            Powered by Google
+            Google Maps
           </div>
         </div>
       )}

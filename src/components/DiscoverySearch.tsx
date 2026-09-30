@@ -25,7 +25,8 @@ export function DiscoverySearch({ labels }: { labels: {
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
-    if (mode === 'buy') { router.push('/projects'); return; }
+    if (mode === 'buy') { router.push('/homes?intent=buy'); return; }
+    if (mode === 'monthly') { router.push('/homes?intent=rent'); return; }
     if (mode === 'invest') { router.push('/buyers'); return; }
     if (!startDate || !endDate || endDate <= startDate || (mode === 'monthly' && (Date.parse(endDate) - Date.parse(startDate)) / 86400000 < 28)) { setError(labels.error); return; }
     const params = new URLSearchParams({ startDate, endDate, adults: String(adults), children: String(children) });
@@ -39,7 +40,7 @@ export function DiscoverySearch({ labels }: { labels: {
           aria-pressed={mode === item.id}
           className={`shrink-0 rounded-full px-16 py-10 text-small font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${mode === item.id ? 'bg-brand-andaman text-white' : 'bg-surface-ivory text-text-ink hover:bg-brand-andaman/10'}`}>{item.title}</button>)}
       </div>
-      {(mode === 'stay' || mode === 'monthly') ? (
+      {mode === 'stay' ? (
         <div className="grid grid-cols-2 md:grid-cols-[1fr_1fr_0.65fr_0.65fr_auto] gap-10 items-end">
           <label className="grid gap-6 text-small text-text-secondary">{labels.checkIn}<input className="min-w-0 w-full h-48 rounded-lg border border-border-line bg-white px-8 text-text-ink" type="date" required min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></label>
           <label className="grid gap-6 text-small text-text-secondary">{labels.checkOut}<input className="min-w-0 w-full h-48 rounded-lg border border-border-line bg-white px-8 text-text-ink" type="date" required min={startDate || today} value={endDate} onChange={e=>setEndDate(e.target.value)}/></label>

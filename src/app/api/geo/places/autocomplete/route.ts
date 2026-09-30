@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { prisma } from '@/lib/prisma';
+import { resolveIntegrationValue } from '@/modules/integrations/admin-registry';
 
 const GOOGLE_AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
 
@@ -7,7 +9,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const key = process.env.GOOGLE_PLACES_API_KEY;
+  const key = await resolveIntegrationValue(prisma, 'google_places', 'apiKey', 'GOOGLE_PLACES_API_KEY');
   if (!key) {
     return NextResponse.json({ error: 'Place suggestions are not configured' }, { status: 503 });
   }

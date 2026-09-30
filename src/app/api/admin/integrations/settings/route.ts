@@ -74,27 +74,15 @@ export async function PUT(req: NextRequest) {
       body.values && typeof body.values === 'object'
         ? (body.values as Record<string, unknown>)
         : {};
-    const clearSecrets = Array.isArray(body.clearSecrets)
-      ? new Set(body.clearSecrets.filter((value: unknown): value is string => typeof value === 'string'))
-      : new Set<string>();
-
     const next: Record<string, unknown> = { ...current };
     const changed: string[] = [];
 
     for (const field of definition.fields) {
-      if (clearSecrets.has(field.key)) {
-        delete next[field.key];
-        changed.push(field.key);
-        continue;
-      }
-
+      if (field.secret) continue;
       if (!(field.key in incoming)) continue;
       const raw = incoming[field.key];
       if (typeof raw !== 'string') continue;
       const value = raw.trim();
-
-      // Empty secret input means "leave unchanged"; secrets are never round-tripped to the browser.
-      if (field.secret && value === '') continue;
 
       if (value === '') delete next[field.key];
       else next[field.key] = value;

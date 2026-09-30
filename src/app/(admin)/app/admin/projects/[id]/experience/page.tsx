@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import ProjectExperienceClient from './project-experience-client';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
+import ProjectStoryEditor from '@/components/projects/ProjectStoryEditor';
+import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +17,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     select: {
-      id: true, name: true, slug: true,
+      id: true, name: true, slug: true, descriptionKey: true, handbookKey: true,
       amenities: {
         include: {
           coverMedia: { select: { storageKey: true } },
@@ -30,6 +32,19 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   });
   if (!project) notFound();
 
+  const contentRows = await Promise.all(PROJECT_EXPERIENCE_CONTENT_FIELDS.map(async field => {
+    const key = projectExperienceContentKey(project, field.key);
+    const row = await prisma.contentKey.findUnique({
+      where: { key },
+      select: { translations: { select: { locale: true, value: true } } },
+    });
+    return {
+      key: field.key,
+      label: field.label,
+      translations: Object.fromEntries((row?.translations ?? []).map(item => [item.locale, item.value])),
+    };
+  }));
+
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
     <ProjectWorkspaceNav projectId={project.id} active="experience" />
     <div className="mb-24 flex flex-wrap items-start justify-between gap-16">
@@ -43,6 +58,9 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
       </div>
       <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-14 py-10 font-semibold text-brand-andaman">Preview portal</Link>
     </div>
-    <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} />
+    <div className="space-y-24">
+      <ProjectStoryEditor projectId={project.id} fields={contentRows} />
+      <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} />
+    </div>
   </main>;
 }

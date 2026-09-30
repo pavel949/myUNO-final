@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getPublicProjectAmenityBySlug } from '@/modules/projects';
+import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +21,26 @@ export default async function AmenityDetailPage({ params }: { params: { slug: st
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug);
   if (!data) notFound();
   const { project, amenity } = data;
+  const labels = await getLabels({
+    'project_amenity.back': 'All amenities',
+    'project_amenity.terms': 'Terms of use',
+    'project_amenity.rules': 'Rules',
+    'project_amenity.location': 'Location',
+    'project_amenity.access': 'Access',
+    'project_amenity.how_access': 'How to access',
+    'project_amenity.cost': 'Cost',
+    'project_amenity.capacity': 'Capacity',
+    'project_amenity.min_age': 'Minimum age',
+    'project_amenity.booking': 'Booking',
+    'project_amenity.book': 'Book this amenity',
+    'project_amenity.free': 'Free',
+    'project_amenity.included': 'Included',
+  });
 
   return <main className="min-h-screen bg-surface-ivory">
     <header className="border-b border-border-line bg-surface-paper px-24 py-24">
       <div className="mx-auto max-w-5xl">
-        <Link href={`/projects/${project.slug}/amenities`} className="text-small font-semibold text-brand-andaman hover:underline">← All amenities</Link>
+        <Link href={`/projects/${project.slug}/amenities`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['project_amenity.back']}</Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{amenity.name}</h1>
         {amenity.shortDescription ? <p className="mt-8 text-body text-text-secondary">{amenity.shortDescription}</p> : null}
       </div>
@@ -40,20 +56,20 @@ export default async function AmenityDetailPage({ params }: { params: { slug: st
       <div className="mt-32 grid gap-24 lg:grid-cols-[1fr_320px]">
         <article>
           {amenity.description ? <p className="whitespace-pre-line text-body leading-relaxed text-text-secondary">{amenity.description}</p> : null}
-          {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">Terms of use</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
-          {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">Rules</h2><ul className="mt-8 list-disc space-y-6 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
+          {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.terms']}</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
+          {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-6 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
         </article>
         <aside className="rounded-xl border border-border-line bg-surface-paper p-20">
           <dl className="space-y-12 text-small">
-            {amenity.locationLabel ? <div><dt className="text-text-secondary">Location</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
-            <div><dt className="text-text-secondary">Access</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>
-            {amenity.accessInstructions ? <div><dt className="text-text-secondary">How to access</dt><dd className="font-medium">{amenity.accessInstructions}</dd></div> : null}
-            <div><dt className="text-text-secondary">Cost</dt><dd className="font-medium">{amenity.pricingType === 'included' ? 'Included' : amenity.pricingType === 'free' ? 'Free' : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString()}` : human(amenity.pricingType)}</dd></div>
-            {amenity.capacity ? <div><dt className="text-text-secondary">Capacity</dt><dd className="font-medium">{amenity.capacity}</dd></div> : null}
-            {amenity.minAge !== null ? <div><dt className="text-text-secondary">Minimum age</dt><dd className="font-medium">{amenity.minAge}</dd></div> : null}
-            {amenity.bookingRequired ? <div><dt className="text-text-secondary">Booking</dt><dd className="font-medium">{human(amenity.bookingMode)}</dd></div> : null}
+            {amenity.locationLabel ? <div><dt className="text-text-secondary">{labels['project_amenity.location']}</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
+            <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>
+            {amenity.accessInstructions ? <div><dt className="text-text-secondary">{labels['project_amenity.how_access']}</dt><dd className="font-medium">{amenity.accessInstructions}</dd></div> : null}
+            <div><dt className="text-text-secondary">{labels['project_amenity.cost']}</dt><dd className="font-medium">{amenity.pricingType === 'included' ? labels['project_amenity.included'] : amenity.pricingType === 'free' ? labels['project_amenity.free'] : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString()}` : human(amenity.pricingType)}</dd></div>
+            {amenity.capacity ? <div><dt className="text-text-secondary">{labels['project_amenity.capacity']}</dt><dd className="font-medium">{amenity.capacity}</dd></div> : null}
+            {amenity.minAge !== null ? <div><dt className="text-text-secondary">{labels['project_amenity.min_age']}</dt><dd className="font-medium">{amenity.minAge}</dd></div> : null}
+            {amenity.bookingRequired ? <div><dt className="text-text-secondary">{labels['project_amenity.booking']}</dt><dd className="font-medium">{human(amenity.bookingMode)}</dd></div> : null}
           </dl>
-          {amenity.bookingRequired && amenity.bookingUrl ? <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white">Book this amenity</a> : null}
+          {amenity.bookingRequired && amenity.bookingUrl ? <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white">{labels['project_amenity.book']}</a> : null}
         </aside>
       </div>
     </div>

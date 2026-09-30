@@ -33,6 +33,7 @@ describe('property readiness respects commercial offering type', () => {
     expect(keys).not.toContain('unit.mobilization');
     expect(keys).not.toContain('unit.permitted_use');
     expect(keys).toContain('unit.sale_title');
+    expect(keys).toContain('unit.sale_authority');
   });
 
   it('does not require short-stay facilities for a yearly rental-only unit', async () => {

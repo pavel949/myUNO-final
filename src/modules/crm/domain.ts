@@ -33,10 +33,11 @@ export function lifecycleAfterWinForExisting(
 }
 
 export function opportunityTypeForAudience(
-  audience: 'owners' | 'developers' | 'buyers' | 'mc'
+  audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc'
 ): CrmOpportunityType {
   if (audience === 'developers') return 'developer_advisory';
   if (audience === 'buyers') return 'purchase';
+  if (audience === 'renters') return 'rental';
   return 'management';
 }
 

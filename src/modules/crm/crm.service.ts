@@ -42,7 +42,7 @@ export interface ActivityInput {
 }
 
 export interface PublicLeadInput {
-  audience: 'owners' | 'developers' | 'buyers' | 'mc';
+  audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   name: string;
   contact: string;
   message?: string;

@@ -30,6 +30,7 @@ describe('CRM domain rules', () => {
     expect(opportunityTypeForAudience('owners')).toBe('management');
     expect(opportunityTypeForAudience('developers')).toBe('developer_advisory');
     expect(opportunityTypeForAudience('buyers')).toBe('purchase');
+    expect(opportunityTypeForAudience('renters')).toBe('rental');
     expect(opportunityTypeForAudience('mc')).toBe('management');
   });
 

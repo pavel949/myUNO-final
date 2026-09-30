@@ -201,6 +201,47 @@ describe('Projects public read seam (discovery pages)', () => {
     });
   });
 
+  describe('commercial and source-authority visibility across public surfaces', () => {
+    it('does not count sale-only and lease-only units as bookable stays', async () => {
+      const project = await createProject({ slug: 'mixed-commercial', status: 'live' });
+      await prisma.project.update({ where: { id: project.id }, data: { projectType: 'condominium' } });
+      const sale = await createUnit({ projectId: project.id, status: 'live', name: 'Sale only' });
+      const lease = await createUnit({ projectId: project.id, status: 'live', name: 'Lease only' });
+      const stay = await createUnit({ projectId: project.id, status: 'live', name: 'Stay' });
+      await prisma.commercialOffering.createMany({ data: [
+        { unitId: sale.id, offeringType: 'sale', status: 'active' },
+        { unitId: lease.id, offeringType: 'long_term_rental', status: 'active' },
+        { unitId: stay.id, offeringType: 'short_term_stay', status: 'active' },
+      ] });
+      const [card] = await listPublicProjects();
+      const detail = await getPublicProjectBySlug(project.slug);
+      expect(card.liveUnitCount).toBe(1);
+      expect(detail?.units.map(u => u.id)).toEqual([stay.id]);
+      expect(detail?.categories.reduce((sum, c) => sum + c.unitCount, 0)).toBe(1);
+      expect(await listPublicUnitIds()).toEqual([stay.id]);
+    });
+
+    it('excludes source-owned inventory from the project page and sitemap until signed cutover', async () => {
+      const project = await createProject({ slug: 'source-project', status: 'live' });
+      const sourceUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Protected source' });
+      const localUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Local unit' });
+      const source = await prisma.externalSystem.create({ data: {
+        system_key: 'layantara_os', environment: 'test', display_name: 'Source',
+        config: { bookingAuthority: 'layantara_os', cutoverVerified: false },
+      } });
+      await prisma.externalMapping.create({ data: {
+        external_system_id: source.id, entity_type: 'unit',
+        internal_id: sourceUnit.id, external_id: 'source-villa',
+      } });
+      expect((await getPublicProjectBySlug(project.slug))?.units.map(u => u.id)).toEqual([localUnit.id]);
+      expect((await listPublicProjects())[0].liveUnitCount).toBe(1);
+      expect(await listPublicUnitIds()).toEqual([localUnit.id]);
+      await prisma.externalSystem.update({ where: { id: source.id },
+        data: { config: { bookingAuthority: 'myuno', cutoverVerified: true } } });
+      expect((await getPublicProjectBySlug(project.slug))?.units).toHaveLength(2);
+    });
+  });
+
   describe('listPublicUnitIds', () => {
     it('lists only live units inside live projects', async () => {
       const live = await createProject({ slug: 'live-p', status: 'live' });

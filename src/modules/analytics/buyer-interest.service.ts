@@ -39,8 +39,15 @@ export async function registerPurchaseInterest(
   let unit: { id: string; name: string; projectId: string } | null = null;
   let saleOffering: { id: string; pricingTerms: unknown; ownershipTenure: unknown } | null = null;
   if (input.unitId) {
-    unit = await db.unit.findUnique({
-      where: { id: input.unitId },
+    // A guessed or stale ID must not disclose draft/paused property facts or
+    // private sale terms through a buyer enquiry. Keep the general enquiry.
+    unit = await db.unit.findFirst({
+      where: {
+        id: input.unitId,
+        status: 'live',
+        assetStatus: { not: 'suspended' },
+        project: { status: 'live' },
+      },
       select: { id: true, name: true, projectId: true },
     });
     // A stale or hand-edited unit id should not lose the enquiry — the person

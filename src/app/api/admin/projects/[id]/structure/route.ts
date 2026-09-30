@@ -43,15 +43,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (floorNumber !== null && (!Number.isSafeInteger(floorNumber) || kind !== 'floor')) {
       throw new Error('Floor number must be an integer on a floor node');
     }
-    if (parentId) {
-      const parent = await prisma.projectStructureNode.findFirst({
-        where: { id: parentId, projectId: params.id },
-        select: { id: true },
+    const node = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${params.id}))`;
+      if (parentId) {
+        const parent = await tx.projectStructureNode.findFirst({
+          where: { id: parentId, projectId: params.id },
+          select: { id: true },
+        });
+        if (!parent) throw new Error('Parent structure belongs to another project');
+      }
+      return tx.projectStructureNode.create({
+        data: { projectId: params.id, parentId, kind, code, name, sortOrder, floorNumber },
       });
-      if (!parent) throw new Error('Parent structure belongs to another project');
-    }
-    const node = await prisma.projectStructureNode.create({
-      data: { projectId: params.id, parentId, kind, code, name, sortOrder, floorNumber },
     });
     return NextResponse.json(node, { status: 201 });
   } catch (error) {

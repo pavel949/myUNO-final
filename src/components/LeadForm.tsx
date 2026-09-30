@@ -19,7 +19,8 @@ export interface LeadFormLabels {
 }
 
 interface LeadFormProps {
-  audience: 'owners' | 'developers' | 'buyers' | 'mc';
+  audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
+  initialMessage?: string;
   labels: LeadFormLabels;
 }
 
@@ -27,10 +28,10 @@ interface LeadFormProps {
  * Public lead form (doc 08 §3): name, contact, free-text context, consent.
  * Posts to /api/leads; includes an invisible honeypot field for bots.
  */
-export function LeadForm({ audience, labels }: LeadFormProps) {
+export function LeadForm({ audience, labels, initialMessage = '' }: LeadFormProps) {
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
   const [consent, setConsent] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
   const [state, setState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');

@@ -1,4 +1,21 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+
+/** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
+function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
+  return {
+    status: 'live',
+    assetStatus: { not: 'suspended' },
+    inventoryCategory: { status: 'live' },
+    ...(excludedIds.length ? { id: { notIn: excludedIds } } : {}),
+    OR: [
+      { project: { projectType: null } }, // Legacy untyped projects retain compatibility until migrated.
+      { commercialOfferings: { some: { offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active' } } },
+    ],
+  };
+}
+
 
 /**
  * Public (unauthenticated) read seam for project discovery pages.
@@ -62,6 +79,7 @@ export interface PublicProjectUnit {
 
 export interface PublicProjectDetail {
   id: string;
+  projectType: string | null;
   slug: string;
   name: string;
   areaLabelKey: string;
@@ -80,13 +98,14 @@ export interface PublicProjectDetail {
 
 /** All live projects, for the /projects hub and the sitemap. */
 export async function listPublicProjects(): Promise<PublicProjectCard[]> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const projects = await prisma.project.findMany({
     where: { status: 'live' },
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },
       units: {
-        where: { status: 'live', inventoryCategory: { status: 'live' } },
+        where: publicStayUnitWhere(excludedIds),
         select: {
           baseNightlyThb: true,
           inventoryCategory: { select: { baseNightlyThb: true } },
@@ -114,6 +133,7 @@ export async function listPublicProjects(): Promise<PublicProjectCard[]> {
 export async function getPublicProjectBySlug(
   slug: string
 ): Promise<PublicProjectDetail | null> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const project = await prisma.project.findUnique({
     where: { slug },
     include: {
@@ -123,7 +143,7 @@ export async function getPublicProjectBySlug(
         include: { media: { select: { storageKey: true } } },
       },
       units: {
-        where: { status: 'live', inventoryCategory: { status: 'live' } },
+        where: publicStayUnitWhere(excludedIds),
         orderBy: { baseNightlyThb: 'asc' },
         include: {
           coverMedia: { select: { storageKey: true } },
@@ -153,6 +173,7 @@ export async function getPublicProjectBySlug(
 
   return {
     id: project.id,
+    projectType: project.projectType,
     slug: project.slug,
     name: project.name,
     areaLabelKey: project.areaLabelKey,
@@ -290,8 +311,9 @@ export interface PublicUnitDetail extends PublicProjectUnit {
 }
 
 export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
-  const unit = await prisma.unit.findUnique({
-    where: { id },
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const unit = await prisma.unit.findFirst({
+    where: { id, ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
     include: {
       coverMedia: { select: { storageKey: true } },
       media: { orderBy: { sort: 'asc' }, include: { media: { select: { storageKey: true } } } },
@@ -348,8 +370,9 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
 
 /** Live units (id only) for the sitemap. */
 export async function listPublicUnitIds(): Promise<string[]> {
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const units = await prisma.unit.findMany({
-    where: { status: 'live', project: { status: 'live' }, inventoryCategory: { status: 'live' } },
+    where: { ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
     select: { id: true },
   });
   return units.map((u) => u.id);

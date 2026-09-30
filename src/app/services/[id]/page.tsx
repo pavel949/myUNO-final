@@ -48,7 +48,8 @@ export default async function ServiceDetailPage({
 
   let service: ServiceDetail | null = null;
   try {
-    const res = await fetch(`/api/services/${id}`, {
+    const detailQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
+    const res = await fetch(`/api/services/${id}${detailQuery}`, {
       cache: 'no-store',
     });
     if (res.ok) {
@@ -106,15 +107,16 @@ export default async function ServiceDetailPage({
   // the guest arrives from a stay, resolve it through their booking's project.
   let whatsappNumber: string | null = null;
   try {
-    let projectId: string | undefined;
+    let scopedProjectId: string | undefined = projectId ?? undefined;
     if (bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         select: { projectId: true },
       });
-      projectId = booking?.projectId ?? undefined;
+      scopedProjectId = booking?.projectId ?? scopedProjectId;
     }
-    const value = await getConfig(prisma, 'comms.whatsapp_number', projectId ? { projectId } : undefined);
+    const value = await getConfig(prisma, 'comms.whatsapp_number',
+      scopedProjectId ? { projectId: scopedProjectId } : undefined);
     whatsappNumber = typeof value === 'string' && value.trim() ? value.trim() : null;
   } catch {
     whatsappNumber = null;
@@ -254,7 +256,11 @@ export default async function ServiceDetailPage({
           />
           <div className="mt-16">
             <Link
-              href={bookingId ? `/services?bookingId=${bookingId}` : '/services'}
+              href={`/services?${new URLSearchParams({
+                ...(bookingId ? { bookingId } : {}),
+                ...(projectId ? { projectId } : {}),
+                ...(unitId ? { unitId } : {}),
+              }).toString()}`}
               className="text-small font-semibold text-brand-andaman hover:underline"
             >
               ← {labels['services.detail.back']}

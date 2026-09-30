@@ -570,6 +570,12 @@ enum IntegrationKey {
   whatsapp
   telegram
   crm_hubspot
+  google_places
+  map_tiles
+  email_resend
+  google_oauth
+  media_storage
+  ops_alerting
 }
 
 enum IntegrationScopeType {

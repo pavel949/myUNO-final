@@ -47,6 +47,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
       data: { enabled, public: isPublic, updated_at: new Date() },
     });
+  } else if (action === 'update_terms') {
+    const existing = service.availableProjects.some(row => row.project_id === project.id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Service is not explicitly scoped to this project' }, { status: 409 });
+    }
+    const priceOverrideBaht = body.priceOverrideBaht === '' || body.priceOverrideBaht == null
+      ? null : Number(body.priceOverrideBaht);
+    const leadTimeHours = body.leadTimeHours === '' || body.leadTimeHours == null
+      ? null : Number(body.leadTimeHours);
+    const takeRatePct = body.takeRatePct === '' || body.takeRatePct == null
+      ? null : Number(body.takeRatePct);
+    if (priceOverrideBaht !== null && (!Number.isFinite(priceOverrideBaht) || priceOverrideBaht <= 0)) {
+      return NextResponse.json({ error: 'Project price override must be a positive THB amount' }, { status: 400 });
+    }
+    if (leadTimeHours !== null && (!Number.isInteger(leadTimeHours) || leadTimeHours < 0 || leadTimeHours > 720)) {
+      return NextResponse.json({ error: 'Lead time must be an integer from 0 to 720 hours' }, { status: 400 });
+    }
+    if (takeRatePct !== null && (!Number.isFinite(takeRatePct) || takeRatePct < 0 || takeRatePct > 100)) {
+      return NextResponse.json({ error: 'Take rate must be between 0 and 100 percent' }, { status: 400 });
+    }
+    await prisma.serviceProject.update({
+      where: { service_id_project_id: { service_id: serviceId, project_id: project.id } },
+      data: {
+        price_override_thb: priceOverrideBaht === null ? null : Math.round(priceOverrideBaht * 100),
+        lead_time_hours: leadTimeHours,
+        take_rate_pct: takeRatePct,
+        terms_version: { increment: 1 },
+        updated_at: new Date(),
+      },
+    });
   } else if (action === 'make_global') {
     await prisma.serviceProject.deleteMany({ where: { service_id: serviceId } });
   } else {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { logAudit } from '@/modules/audit';
 import { projectAmenityData } from '@/modules/projects';
 
@@ -9,8 +9,8 @@ async function ownedAmenity(projectId: string, amenityId: string) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);
   if (!current) return NextResponse.json({ error: 'Amenity not found' }, { status: 404 });
 
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: merged,
     });
     await logAudit({
-      actorIdentityId: guard.actorIdentityId,
+      actorIdentityId: guard.user.identityId,
       action: 'project_amenity:update',
       entityType: 'ProjectAmenity',
       entityId: amenity.id,
@@ -60,14 +60,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
-  const guard = await requireAdmin();
-  if (!guard.ok) return guard.error;
+  const guard = await projectExperienceAccess(params.id);
+  if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);
   if (!current) return NextResponse.json({ error: 'Amenity not found' }, { status: 404 });
 
   await prisma.projectAmenity.delete({ where: { id: current.id } });
   await logAudit({
-    actorIdentityId: guard.actorIdentityId,
+    actorIdentityId: guard.user.identityId,
     action: 'project_amenity:delete',
     entityType: 'ProjectAmenity',
     entityId: current.id,

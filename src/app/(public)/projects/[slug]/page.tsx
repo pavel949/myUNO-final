@@ -6,7 +6,8 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
 import { listPublicServices } from '@/modules/services';
 import { getConfig } from '@/modules/config';
-import { t } from '@/modules/content';
+import { t, tMany } from '@/modules/content';
+import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
@@ -126,6 +127,41 @@ export default async function ProjectLandingPage({
     resolveKey(`project.${project.slug}.licence`),
   ]);
 
+  // Project editorial and locality are editable ContentKey records, not a
+  // resort-specific React page. The same component works for condos and hotels.
+  const editorialFields = [
+    'eyebrow', 'headline', 'lead', 'benefits.title',
+    'benefit.1.title', 'benefit.1.body',
+    'benefit.2.title', 'benefit.2.body',
+    'benefit.3.title', 'benefit.3.body',
+    'benefit.4.title', 'benefit.4.body',
+    'location.title', 'location.body', 'groups.title', 'groups.body', 'groups.cta',
+  ] as const;
+  const editorialPrefix = `project.${project.slug}.editorial.`;
+  const locale = getRequestLocale();
+  const editorialKeys = editorialFields.map(field => editorialPrefix + field);
+  const categoryDescriptionKeys = project.categories.map(category => category.descriptionKey);
+  const editorialCopy = await tMany(prisma, [
+    ...editorialKeys,
+    ...categoryDescriptionKeys,
+    ...(project.areaNameKey ? [project.areaNameKey] : []),
+    ...(project.areaDescriptionKey ? [project.areaDescriptionKey] : []),
+  ], locale);
+  const copy = (field: string) => editorialCopy[editorialPrefix + field] || '';
+  const editorial = {
+    eyebrow: copy('eyebrow'), headline: copy('headline'), lead: copy('lead'),
+    benefitsTitle: copy('benefits.title'),
+    benefits: [1, 2, 3, 4].map(index => ({
+      title: copy(`benefit.${index}.title`),
+      body: copy(`benefit.${index}.body`),
+    })),
+    locationTitle: copy('location.title'), locationBody: copy('location.body'),
+    areaName: project.areaNameKey ? editorialCopy[project.areaNameKey] || '' : '',
+    areaDescription: project.areaDescriptionKey ? editorialCopy[project.areaDescriptionKey] || '' : '',
+    groupsTitle: copy('groups.title'), groupsBody: copy('groups.body'),
+    groupsCta: copy('groups.cta'),
+  };
+
   // Category & style labels resolve from the content layer (doc 05 §4)
   const categoryLabels: Record<string, string> = {};
   const styleLabels: Record<string, string> = {};
@@ -153,7 +189,11 @@ export default async function ProjectLandingPage({
     return (labels as Record<string, string>)[contentKey] ?? key;
   };
 
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${project.latitude},${project.longitude}`;
+  const hasVerifiedPin = Number.isFinite(project.latitude) && Number.isFinite(project.longitude) &&
+    !(project.latitude === 0 && project.longitude === 0);
+  const mapsUrl = hasVerifiedPin
+    ? `https://www.google.com/maps/search/?api=1&query=${project.latitude},${project.longitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`;
 
   const trustPoints = [
     { title: labels['project_page.trust.property'], body: labels['project_page.trust.property_body'] },
@@ -167,11 +207,11 @@ export default async function ProjectLandingPage({
       project.projectType === 'hotel' ? 'Hotel' : 'LodgingBusiness',
     name: project.name,
     address: project.address,
-    geo: {
+    ...(hasVerifiedPin ? { geo: {
       '@type': 'GeoCoordinates',
       latitude: project.latitude,
       longitude: project.longitude,
-    },
+    } } : {}),
     ...(project.coverUrl ? { image: project.coverUrl } : {}),
     ...(story ? { description: story.slice(0, 300) } : {}),
   };
@@ -197,6 +237,7 @@ export default async function ProjectLandingPage({
         <div className="relative max-w-4xl mx-auto text-center py-64 px-24">
           {areaLabel ? <p className="text-small mb-16">{areaLabel}</p> : null}
           <h1 className="font-display text-display-xl font-semibold mb-16">{project.name}</h1>
+          {editorial.headline && <p className="mb-12 text-body text-surface-ivory/90">{editorial.headline}</p>}
           <p className="text-body text-surface-ivory/90">{project.address}</p>
         </div>
       </section>
@@ -214,6 +255,8 @@ export default async function ProjectLandingPage({
           {project.galleryUrls.length > 5 ? <details className="mt-16 rounded-lg border border-border-line p-16"><summary className="cursor-pointer font-semibold text-brand-andaman">{labels['project_page.gallery.view_all']} · {labels['project_page.gallery.count'].replace('{count}', String(project.galleryUrls.length))}</summary><div className="mt-16 grid grid-cols-2 gap-12 md:grid-cols-3">{project.galleryUrls.map((url, index) => <div key={url + index} className="overflow-hidden rounded-lg"><Image src={url} alt={`${project.name} — photo ${index + 1}`} width={640} height={400} className="h-44 w-full object-cover" /></div>)}</div></details> : null}
         </section>
       ) : null}
+
+      <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
       {project.units.length > 0 && <section className="bg-surface-ivory py-40 px-24">
@@ -271,8 +314,11 @@ export default async function ProjectLandingPage({
                     className="mb-16 aspect-video w-full rounded-md object-cover" />
                 ) : null}
                 <h3 className="text-heading-3 font-bold text-text-ink mb-8">
-                  {categoryLabels[category.key] || category.key}
+                  {category.name}
                 </h3>
+                {editorialCopy[category.descriptionKey] && (
+                  <p className="mb-12 text-small leading-relaxed text-text-secondary">{editorialCopy[category.descriptionKey]}</p>
+                )}
                 {category.styleKey ? (
                   <p className="text-small text-text-secondary mb-8">
                     {styleLabels[category.styleKey] || category.styleKey}

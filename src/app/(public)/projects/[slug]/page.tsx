@@ -12,6 +12,7 @@ import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarke
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,18 @@ export default async function ProjectLandingPage({
 }) {
   const project = await getPublicProjectBySlug(params.slug);
   if (!project) notFound();
+
+  const viewer = await getCurrentUser().catch(() => null);
+  const activeStay = viewer ? await prisma.booking.findFirst({
+    where: {
+      guestIdentityId: viewer.identityId,
+      projectId: project.id,
+      status: { in: ['confirmed', 'checked_in'] },
+      endDate: { gt: new Date() },
+    },
+    select: { id: true, unitId: true },
+    orderBy: { startDate: 'asc' },
+  }) : null;
 
   // Track analytics event
   await track(prisma, 'page_project_viewed', {
@@ -504,6 +517,8 @@ export default async function ProjectLandingPage({
         projectName={project.name}
         services={services}
         labels={labels}
+        bookingId={activeStay?.id}
+        unitId={activeStay?.unitId}
       />
 
       {/* Location */}

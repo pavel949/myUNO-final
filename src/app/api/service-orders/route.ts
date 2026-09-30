@@ -7,14 +7,22 @@ import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 import type { RoleType } from '@prisma/client';
 
 /** GET /api/service-orders — the caller's orders, newest first. */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       throw createPublicError('unauthorized', 401);
     }
+    const bookingId = req.nextUrl.searchParams.get('bookingId') || undefined;
+    const projectId = req.nextUrl.searchParams.get('projectId') || undefined;
+    const unitId = req.nextUrl.searchParams.get('unitId') || undefined;
     const orders = await prisma.serviceOrder.findMany({
-      where: { orderer_identity_id: user.identityId },
+      where: {
+        orderer_identity_id: user.identityId,
+        ...(bookingId ? { booking_id: bookingId } : {}),
+        ...(projectId ? { project_id: projectId } : {}),
+        ...(unitId ? { unit_id: unitId } : {}),
+      },
       include: { service: { select: { title: true } } },
       orderBy: { createdAt: 'desc' },
       take: 50,

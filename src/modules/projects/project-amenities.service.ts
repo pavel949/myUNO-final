@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 
 export const PROJECT_AMENITY_ACCESS_TYPES = [
   'open', 'room_key', 'key_card', 'wristband', 'staff_assisted',

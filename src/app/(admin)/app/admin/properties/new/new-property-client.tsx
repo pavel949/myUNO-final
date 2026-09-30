@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { ProjectPlaceAutocomplete } from '@/components/ProjectPlaceAutocomplete';
 import { MyUNOMap } from '@/components/MyUNOMap';
+import { MyUNOMap } from '@/components/MyUNOMap';
 import type { MapEntity } from '@/modules/map';
 
 type PlaceSuggestion = {

@@ -34,7 +34,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const project = await getPublicProjectBySlug(params.slug);
+  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
   // notFound() here (not only in the page body) so the response carries a
   // real 404 status — thrown during page streaming it would soft-404 as 200.
   if (!project) notFound();
@@ -56,7 +56,7 @@ export default async function ProjectLandingPage({
 }: {
   params: { slug: string };
 }) {
-  const project = await getPublicProjectBySlug(params.slug);
+  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
   if (!project) notFound();
 
   const viewer = await getCurrentUser().catch(() => null);

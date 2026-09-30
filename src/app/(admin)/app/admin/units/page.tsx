@@ -77,6 +77,7 @@ export default async function AdminUnitsPage() {
         units={units.map((unit) => ({
           id: unit.id,
           name: unit.name,
+          categoryName: unit.inventoryCategory?.name ?? null,
           projectName: unit.project?.name || '—',
           status: unit.status,
           assetStatus: unit.assetStatus,

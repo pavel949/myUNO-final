@@ -4,10 +4,11 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
-import { listPublicServices } from '@/modules/services';
+import { listPublicMarketplaceServices } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 import { t, tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
+import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarketplace';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
@@ -89,6 +90,11 @@ export default async function ProjectLandingPage({
     'project_page.amenities.title': 'Residence amenities',
     'project_page.services.title': 'Services available here',
     'project_page.services.view_all': 'Browse all services →',
+    'project.services.eyebrow': 'myUNO services',
+    'project.services.title': 'Everything around your stay',
+    'project.services.body': 'Transfers, flowers, wellness, dining and other vetted services available for {project}.',
+    'project.services.view_all': 'Explore all services →',
+    'project.services.from': 'from ฿{price}',
     'project_page.location.title': 'Location',
     'project_page.location.open_map': 'Open in maps →',
     'project_page.handbook.title': 'Living here',
@@ -123,7 +129,7 @@ export default async function ProjectLandingPage({
     resolveKey(project.areaLabelKey),
     resolveKey(project.descriptionKey),
     resolveKey(project.handbookKey),
-    listPublicServices(prisma, project.id).catch(() => []),
+    listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
     resolveKey(`project.${project.slug}.licence`),
   ]);
 
@@ -481,30 +487,12 @@ export default async function ProjectLandingPage({
         </section>
       ) : null}
 
-      {/* Services available here */}
-      {services.length > 0 ? (
-        <section className="bg-surface-ivory py-64 px-24">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-              {labels['project_page.services.title']}
-            </h2>
-            <div className="flex flex-wrap gap-16 mb-24">
-              {services.slice(0, 8).map((service: { id: string; title: string }) => (
-                <Link
-                  key={service.id}
-                  href={`/services/${service.id}`}
-                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-12 text-body text-text-ink hover:shadow-md transition"
-                >
-                  {service.title}
-                </Link>
-              ))}
-            </div>
-            <Link href="/services" className="text-brand-andaman font-semibold">
-              {labels['project_page.services.view_all']}
-            </Link>
-          </div>
-        </section>
-      ) : null}
+      <ProjectServiceMarketplace
+        projectId={project.id}
+        projectName={project.name}
+        services={services}
+        labels={labels}
+      />
 
       {/* Location */}
       <section className="max-w-4xl mx-auto py-64 px-24">

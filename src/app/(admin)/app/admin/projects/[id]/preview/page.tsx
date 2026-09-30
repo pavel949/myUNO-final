@@ -46,10 +46,12 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
   const descriptionKey = project.descriptionKey;
   const keys = [
     descriptionKey, ...fields.map(field => prefix + field),
-    ...project.inventoryCategories.map(category =>
-      category.id.startsWith('layantara-category-')
-        ? `layantara.category.${category.id.slice('layantara-category-'.length)}.description`
-        : `project.${project.slug}.category.${category.categoryKey}.description`),
+    ...project.inventoryCategories.flatMap(category => {
+      const root = category.id.startsWith('layantara-category-')
+        ? `layantara.category.${category.id.slice('layantara-category-'.length)}`
+        : `project.${project.slug}.category.${category.categoryKey}`;
+      return [root + '.title', root + '.description'];
+    }),
     ...(project.area ? [project.area.nameKey, project.area.descriptionKey].filter((key): key is string => Boolean(key)) : []),
   ];
   const content = await tMany(prisma, keys, getRequestLocale());
@@ -101,12 +103,15 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
       <h2 className="mb-24 font-display text-heading-2 font-semibold">{labels['admin.project_preview.categories']}</h2>
       <div className="grid gap-16 md:grid-cols-2">
         {project.inventoryCategories.map(category => {
-          const descriptionKey = category.id.startsWith('layantara-category-')
-            ? `layantara.category.${category.id.slice('layantara-category-'.length)}.description`
-            : `project.${project.slug}.category.${category.categoryKey}.description`;
+          const editorialRoot = category.id.startsWith('layantara-category-')
+            ? `layantara.category.${category.id.slice('layantara-category-'.length)}`
+            : `project.${project.slug}.category.${category.categoryKey}`;
+          const descriptionKey = editorialRoot + '.description';
+          const titleKey = editorialRoot + '.title';
           return <article key={category.id} className="rounded-xl border border-border-line bg-surface-paper p-24">
             <h3 className="font-display text-heading-3 font-semibold">{category.name}</h3>
             <p className="mt-4 text-small text-text-secondary">{labels['admin.project_preview.unit_stats'].replace('{bedrooms}', String(category.bedrooms)).replace('{units}', String(category.units.length)).replace('{status}', category.status)}</p>
+            {content[titleKey] && <p className="mt-8 font-medium text-brand-andaman">{content[titleKey]}</p>}
             {content[descriptionKey] && <p className="mt-12 text-small leading-relaxed text-text-secondary">{content[descriptionKey]}</p>}
             <div className="mt-16 grid grid-cols-2 gap-12">
               {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="rounded-lg border border-border-line p-8 hover:border-brand-andaman">

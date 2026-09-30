@@ -1,6 +1,6 @@
 # One Operational Reality — integrated release acceptance
 
-Status: implementation branch, **not** production acceptance. Baseline: main 559fdc90; managed-portfolio #158 + owner intake #157 + guest-continuity #155; extended #144 is **not integrated** and remains a separate release dependency.
+Status: integrated release candidate, **not** production acceptance. Includes #139 + #144 (Layantara, calendar, pricing, category gallery and lease/sale), #148 (MLS/public integrity), #159 (managed portfolio, owner intake, guest continuity and delegated team), reconciled with current main #157. Code integration does not imply database/data/runtime acceptance.
 
 ## Four systems, one authority
 
@@ -23,7 +23,7 @@ For each path record exact commit, environment, sanitized record IDs, screenshot
 | UOR-04 | manager views managed units across projects → edits permitted data → pricing/block → calendar | active UnitEngagement and project/organization RoleAssignment; only assigned units; one calendar writer | scoped read-only portfolio exists; full mutation/browser NOT CHECKED |
 | UOR-05 | project manager assigns existing onsite host → host performs assigned work → manager revokes | scoped RoleAssignment enforced on every request, no platform/staff_ops escalation | API integration test added; CI/runtime NOT CHECKED |
 | UOR-06 | standalone or in-stay service order → provider accepts → fulfills or declines → settlement | one order with independent payment/fulfillment/settlement states | NOT CHECKED; exception and settlement gates remain |
-| UOR-07 | owner or buyer enquiry → CRM opportunity → viewing/proposal → lease/sale handover | one Unit and Identity, transaction distinct from booking, correct authority | extended #144 deal workflow NOT INTEGRATED |
+| UOR-07 | owner or buyer enquiry → CRM opportunity → viewing/proposal → lease/sale handover | one Unit and Identity, transaction distinct from booking, correct authority | extended #144 deal workflow integrated in code; runtime NOT CHECKED |
 
 ## Release-blocking negative tests
 
@@ -40,7 +40,7 @@ For each path record exact commit, environment, sanitized record IDs, screenshot
 
 ## Release sequence
 
-1. Preserve #159 as integration base. Reconcile #144 **including its ancestor #139**; do not cherry-pick only the visible #144 file list (it is a stacked release). Resolve overlapping onboarding/gallery/nav/MC files semantically; no wholesale overwrite.
+1. Integrated #139 + #144 + #148 + #159 on release/myuno-integrated-139-144-159; common files reconciled (scope-aware media with ordering/cover, guided onboarding with structure and category gallery, truthful public project and all role navigation). Maintain the exact integrated HEAD; do not merge superseded branches independently.
 2. Run isolated npm ci, lint, tests, build, Prisma migration replay/drift, and a clean test DB. No production migration from install/build.
 3. Verify UOR-01–07 in an authenticated browser with at least guest, owner, two disjoint managers, staff, provider and finance accounts; record negative cases.
 4. Confirm deployment commit/health, backup+restore, payment sandbox and ARI acknowledgement separately.
@@ -56,7 +56,7 @@ For each path record exact commit, environment, sanitized record IDs, screenshot
 
 ## Known blockers, not euphemisms
 
-- #144 advanced galleries/calendar/rates/physical structure/lease-sale and Layantara migration are not reconciled into #159.
+- The #144 galleries/calendar/rates/physical structure/lease-sale and Layantara code now share the integrated branch, but migrations, production data and operational flows are NOT accepted merely because code is merged.
 - No confirmed end-to-end browser pass, production data access, live card payment, OTA ARI acknowledgement or restore proof on this exact head.
 - Vercel build-rate limit is a deployment blocker; it must not be confused with a local code-test result.
 - Layantara live preflight on 2026-09-29 found 31 unverified unit specs, only five units with source photos, and unapproved tariff terms; source booking authority remains external.

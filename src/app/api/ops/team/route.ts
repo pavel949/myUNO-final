@@ -43,7 +43,10 @@ export async function GET(req: NextRequest) {
       identity: { select: { firstName: true, lastName: true, email: true, status: true } } },
     orderBy: { createdAt: 'desc' },
   });
-  return NextResponse.json({ assignments });
+  return NextResponse.json({ assignments: assignments.map(a => ({
+    ...a,
+    canRevoke: Boolean(auth.identity!.isAdmin || a.grantedByIdentityId === auth.identity!.id),
+  })) });
 }
 
 export async function POST(req: NextRequest) {

@@ -25,7 +25,8 @@ type Bootstrap = {
   group: string;
   env: string;
   description: string;
-  configured: boolean;
+  configured: boolean | null;
+  source: 'github-actions' | 'deployment-environment';
 };
 
 export default function IntegrationSettingsClient() {
@@ -218,8 +219,8 @@ export default function IntegrationSettingsClient() {
               <span className="text-text-secondary">{item.group}</span>
               <code className="break-all text-text-ink">{item.env}</code>
               <span className="hidden text-text-secondary md:block">{item.description}</span>
-              <span className={item.configured ? 'text-state-success' : 'text-state-error'}>
-                {item.configured ? 'Configured' : 'Missing'}
+              <span className={item.configured === null ? 'text-text-secondary' : item.configured ? 'text-state-success' : 'text-state-error'}>
+                {item.configured === null ? 'External store' : item.configured ? 'Configured' : 'Missing'}
               </span>
             </div>
           ))}

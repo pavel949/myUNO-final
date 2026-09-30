@@ -17,14 +17,14 @@ function makeRequest(): NextRequest {
   return new NextRequest('http://localhost/api/units/x');
 }
 
-describe('GET /api/units/[unitId] — satang-to-baht display boundary (Q47)', () => {
+describe('GET /api/units/[unitId] — canonical satang display boundary', () => {
   beforeEach(async () => {
     await resetDb();
   });
 
-  it('converts baseNightlyThb to baht for the guest-facing unit page', async () => {
+  it('keeps baseNightlyThb in satang for MoneyAmount', async () => {
     const project = await createProject({ status: 'live' });
-    // 500000 satang stored — the guest must see ฿5,000/night, not ฿500,000.
+    // 500000 satang stored = ฿5,000. MoneyAmount performs the only /100.
     const unit = await createUnit({
       projectId: project.id,
       status: 'live',
@@ -34,7 +34,7 @@ describe('GET /api/units/[unitId] — satang-to-baht display boundary (Q47)', ()
     const response = await GET(makeRequest(), { params: { unitId: unit.id } });
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data.baseNightlyThb).toBe(5000);
+    expect(data.baseNightlyThb).toBe(500000);
   });
 });
 

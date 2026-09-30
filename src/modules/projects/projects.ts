@@ -65,6 +65,7 @@ interface UpdateProjectInput {
   totalBuildings?: number | null;
   floors?: number | null;
   facilities?: string[];
+  googlePlaceId?: string | null;
 }
 
 /**
@@ -227,6 +228,7 @@ export async function updateProject(input: UpdateProjectInput) {
     totalBuildings,
     floors,
     facilities,
+    googlePlaceId,
   } = input;
 
   const project = await prisma.project.findUnique({
@@ -284,6 +286,7 @@ export async function updateProject(input: UpdateProjectInput) {
       ...(totalBuildings !== undefined && { totalBuildings }),
       ...(floors !== undefined && { floors }),
       ...(facilities !== undefined && { facilities }),
+      ...(googlePlaceId !== undefined && { googlePlaceId }),
     } as any,
   });
 

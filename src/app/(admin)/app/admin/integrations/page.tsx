@@ -29,7 +29,7 @@ export default async function IntegrationsPage() {
   const labels = await getLabels({
     'admin.integrations.title': 'Integrations & Secrets',
     'admin.integrations.subtitle':
-      'Manage external providers, encrypted credentials, environment-variable readiness and channel synchronization health.'
+      'Manage external providers, encrypted credentials, environment-variable readiness and channel synchronization health.',
     'admin.integrations.empty': 'No integration accounts configured',
     'admin.integrations.health_title': 'Integration health',
     'admin.integrations.table_title': 'Integration health ({total})',

@@ -33,7 +33,10 @@ export default function IntegrationSettingsClient() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [bootstrap, setBootstrap] = useState<Bootstrap[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
-  const [clearSecrets, setClearSecrets] = useState<Record<string, Set<string>>>({});
+  const [rotationNotes, setRotationNotes] = useState<Record<string, string>>({});
+  const [rotationConfirmed, setRotationConfirmed] = useState<Record<string, boolean>>({});
+  const [rotationPhrases, setRotationPhrases] = useState<Record<string, string>>({});
+  const [rotations, setRotations] = useState<any[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -46,6 +49,9 @@ export default function IntegrationSettingsClient() {
       if (!response.ok) throw new Error(payload.error || 'Could not load integration settings.');
       setIntegrations(payload.integrations || []);
       setBootstrap(payload.bootstrap || []);
+      const historyResponse = await fetch('/api/admin/integrations/rotation', { cache: 'no-store' });
+      const historyPayload = historyResponse.ok ? await historyResponse.json() : { rotations: [] };
+      setRotations(historyPayload.rotations || []);
       const initial: Record<string, Record<string, string>> = {};
       for (const integration of payload.integrations || []) {
         initial[integration.key] = {};
@@ -73,19 +79,95 @@ export default function IntegrationSettingsClient() {
         body: JSON.stringify({
           key: integration.key,
           values: drafts[integration.key] || {},
-          clearSecrets: Array.from(clearSecrets[integration.key] || []),
         }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Save failed.');
       setMessage((old) => ({ ...old, [integration.key]: 'Saved.' }));
-      setClearSecrets((old) => ({ ...old, [integration.key]: new Set() }));
       await load();
     } catch (error) {
       setMessage((old) => ({
         ...old,
         [integration.key]: error instanceof Error ? error.message : 'Save failed.',
       }));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const validateSecret = async (integration: Integration, field: Field) => {
+    const id = integration.key + ':' + field.key;
+    const candidate = drafts[integration.key]?.[field.key] || '';
+    setBusy(id);
+    setMessage((old) => ({ ...old, [id]: '' }));
+    try {
+      const response = await fetch('/api/admin/integrations/rotation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate', key: integration.key, fieldKey: field.key, candidate }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Validation failed.');
+      setRotationNotes((old) => ({ ...old, [id]: payload.note || 'Validated.' }));
+      setRotationPhrases((old) => ({ ...old, [id]: payload.confirmationPhrase || '' }));
+      setRotationConfirmed((old) => ({ ...old, [id]: false }));
+    } catch (error) {
+      setRotationNotes((old) => ({ ...old, [id]: '' }));
+      setMessage((old) => ({ ...old, [id]: error instanceof Error ? error.message : 'Validation failed.' }));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const applyRotation = async (integration: Integration, field: Field) => {
+    const id = integration.key + ':' + field.key;
+    const candidate = drafts[integration.key]?.[field.key] || '';
+    setBusy(id);
+    setMessage((old) => ({ ...old, [id]: '' }));
+    try {
+      const response = await fetch('/api/admin/integrations/rotation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'apply',
+          key: integration.key,
+          fieldKey: field.key,
+          candidate,
+          confirmation: rotationPhrases[id],
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Rotation failed.');
+      setMessage((old) => ({ ...old, [id]: 'Rotated successfully.' }));
+      setDrafts((old) => ({
+        ...old,
+        [integration.key]: { ...(old[integration.key] || {}), [field.key]: '' },
+      }));
+      setRotationNotes((old) => ({ ...old, [id]: '' }));
+      setRotationPhrases((old) => ({ ...old, [id]: '' }));
+      setRotationConfirmed((old) => ({ ...old, [id]: false }));
+      await load();
+    } catch (error) {
+      setMessage((old) => ({ ...old, [id]: error instanceof Error ? error.message : 'Rotation failed.' }));
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const rollbackRotation = async (rotationId: string) => {
+    setBusy(rotationId);
+    try {
+      const response = await fetch('/api/admin/integrations/rotation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rollback', rotationId }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Rollback failed.');
+      await load();
+    } catch (error) {
+      setMessage((old) => ({ ...old, [rotationId]: error instanceof Error ? error.message : 'Rollback failed.' }));
     } finally {
       setBusy(null);
     }
@@ -115,7 +197,7 @@ export default function IntegrationSettingsClient() {
 
               <div className="space-y-14">
                 {integration.fields.map((field) => {
-                  const clearSet = clearSecrets[integration.key] || new Set<string>();
+                  const rotationId = integration.key + ':' + field.key;
                   return (
                     <div key={field.key}>
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-8">
@@ -154,32 +236,60 @@ export default function IntegrationSettingsClient() {
                         className="h-42 w-full rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                       />
 
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-8 text-[11px] text-text-secondary">
+                      <div className="mt-4 text-[11px] text-text-secondary">
                         <span>{field.env ? 'Environment fallback: ' + field.env : 'Stored only in integration vault'}</span>
-                        {field.secret && field.configured ? (
-                          <label className="flex items-center gap-6">
-                            <input
-                              type="checkbox"
-                              checked={clearSet.has(field.key)}
-                              onChange={(event) => {
-                                setClearSecrets((old) => {
-                                  const next = new Set(old[integration.key] || []);
-                                  if (event.target.checked) next.add(field.key);
-                                  else next.delete(field.key);
-                                  return { ...old, [integration.key]: next };
-                                });
-                              }}
-                            />
-                            Clear saved secret
-                          </label>
-                        ) : null}
                       </div>
+
+                      {field.secret ? (
+                        <div className="mt-10 rounded-md border border-border-line bg-surface-muted p-12">
+                          <div className="flex flex-wrap gap-8">
+                            <button
+                              type="button"
+                              disabled={busy === rotationId || !(drafts[integration.key]?.[field.key] || '').trim()}
+                              onClick={() => validateSecret(integration, field)}
+                              className="rounded-sm border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-text-ink disabled:opacity-50"
+                            >
+                              {busy === rotationId ? 'Checking…' : 'Validate new key'}
+                            </button>
+                          </div>
+                          {rotationNotes[rotationId] ? (
+                            <div className="mt-10 space-y-8">
+                              <p className="text-small text-state-success">{rotationNotes[rotationId]}</p>
+                              <label className="flex items-start gap-8 text-small text-text-ink">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(rotationConfirmed[rotationId])}
+                                  onChange={(event) =>
+                                    setRotationConfirmed((old) => ({ ...old, [rotationId]: event.target.checked }))
+                                  }
+                                />
+                                <span>
+                                  I confirm that this will replace the active secret for {integration.title}. Automatic rollback will run if the post-write health check fails.
+                                </span>
+                              </label>
+                              <button
+                                type="button"
+                                disabled={!rotationConfirmed[rotationId] || busy === rotationId}
+                                onClick={() => applyRotation(integration, field)}
+                                className="rounded-sm bg-brand-andaman px-12 py-8 text-small font-semibold text-on-dark-text disabled:opacity-50"
+                              >
+                                Rotate key
+                              </button>
+                            </div>
+                          ) : null}
+                          {message[rotationId] ? (
+                            <p className={message[rotationId] === 'Rotated successfully.' ? 'mt-8 text-small text-state-success' : 'mt-8 text-small text-state-error'}>
+                              {message[rotationId]}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
 
-              <div className="mt-18 flex items-center gap-12">
+              {integration.fields.some((field) => !field.secret) ? <div className="mt-18 flex items-center gap-12">
                 <button
                   type="button"
                   disabled={busy === integration.key}
@@ -193,7 +303,41 @@ export default function IntegrationSettingsClient() {
                     {message[integration.key]}
                   </span>
                 ) : null}
-              </div>
+              </div> : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink">Secret rotation journal</h2>
+          <p className="mt-4 text-body text-text-secondary">
+            Validation, apply, rollback and failures are journaled without storing plaintext secrets.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+          {rotations.length === 0 ? (
+            <p className="p-16 text-small text-text-secondary">No secret rotations yet.</p>
+          ) : rotations.map((rotation) => (
+            <div key={rotation.id} className="grid gap-8 border-b border-border-line px-16 py-12 text-small last:border-b-0 md:grid-cols-[160px_160px_120px_1fr_auto]">
+              <span className="text-text-ink">{rotation.integrationKey}</span>
+              <span className="text-text-secondary">{rotation.fieldKey}</span>
+              <span className={rotation.status === 'applied' ? 'text-state-success' : rotation.status === 'failed' ? 'text-state-error' : 'text-text-secondary'}>
+                {rotation.status}
+              </span>
+              <span className="text-text-secondary">{rotation.errorMessage || rotation.validationNote || new Date(rotation.createdAt).toLocaleString()}</span>
+              {rotation.status === 'applied' ? (
+                <button
+                  type="button"
+                  disabled={busy === rotation.id}
+                  onClick={() => rollbackRotation(rotation.id)}
+                  className="rounded-sm border border-border-line px-10 py-6 font-semibold text-text-ink disabled:opacity-50"
+                >
+                  Roll back
+                </button>
+              ) : <span />}
+              {message[rotation.id] ? <span className="md:col-span-5 text-state-error">{message[rotation.id]}</span> : null}
             </div>
           ))}
         </div>

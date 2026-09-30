@@ -127,6 +127,8 @@ export default async function ProjectLandingPage({
     'project.services.from': 'from ฿{price}',
     'project_page.location.title': 'Location',
     'project_page.location.open_map': 'Open in maps →',
+    'project_page.rules.title': 'House rules',
+    'project_page.shuttle.title': 'Shuttle & transport',
     'project_page.handbook.title': 'Living here',
     'project_page.trust.title': 'Trust, made visible',
     'project_page.trust.property': 'Property details',
@@ -156,10 +158,12 @@ export default async function ProjectLandingPage({
     ...serviceCategoryLabels,
   });
 
-  const [areaLabel, story, handbookTeaser, services, licenceLine] = await Promise.all([
+  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine] = await Promise.all([
     resolveKey(project.areaLabelKey),
     resolveKey(project.descriptionKey),
     resolveKey(project.handbookKey),
+    resolveKey(`project.${project.slug}.house_rules`),
+    resolveKey(`project.${project.slug}.shuttle_schedule`),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
     resolveKey(`project.${project.slug}.licence`),
   ]);
@@ -518,6 +522,28 @@ export default async function ProjectLandingPage({
         bookingId={activeStay?.id}
         unitId={activeStay?.unitId}
       />
+
+
+      {(houseRules || shuttleSchedule) ? (
+        <section className="mx-auto grid max-w-6xl gap-16 px-24 py-48 md:grid-cols-2 md:py-64">
+          {houseRules ? (
+            <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink">
+                {labels['project_page.rules.title']}
+              </h2>
+              <p className="mt-12 whitespace-pre-line text-body text-text-secondary">{houseRules}</p>
+            </article>
+          ) : null}
+          {shuttleSchedule ? (
+            <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink">
+                {labels['project_page.shuttle.title']}
+              </h2>
+              <p className="mt-12 whitespace-pre-line text-body text-text-secondary">{shuttleSchedule}</p>
+            </article>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Location */}
       <section className="max-w-4xl mx-auto py-64 px-24">

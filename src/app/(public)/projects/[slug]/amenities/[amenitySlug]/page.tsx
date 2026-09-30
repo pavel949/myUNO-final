@@ -38,6 +38,7 @@ export default async function AmenityDetailPage({
     'project_amenity.capacity': 'Capacity',
     'project_amenity.min_age': 'Minimum age',
     'project_amenity.booking': 'Booking',
+    'project_amenity.hours': 'Opening hours',
     'project_amenity.book': 'Book this amenity',
     'project_amenity.free': 'Free',
     'project_amenity.included': 'Included',
@@ -62,6 +63,7 @@ export default async function AmenityDetailPage({
       <div className="mt-32 grid gap-24 lg:grid-cols-[1fr_320px]">
         <article>
           {amenity.description ? <p className="whitespace-pre-line text-body leading-relaxed text-text-secondary">{amenity.description}</p> : null}
+          {amenity.openingHours ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.hours']}</h2><ul className="mt-8 list-disc space-y-6 pl-20 text-body text-text-secondary">{renderJson(amenity.openingHours)}</ul></section> : null}
           {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.terms']}</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
           {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-6 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
         </article>

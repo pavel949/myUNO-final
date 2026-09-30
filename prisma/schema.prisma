@@ -1003,7 +1003,6 @@ model Project {
   providerServiceAreas  ProviderProject[]
   serviceProjects       ServiceProject[]
   serviceOrders         ServiceOrder[]
-  amenityReservations   ProjectAmenityReservation[]
   analyticsEvents       AnalyticsEvent[]
   metricsDaily          MetricDaily[]
   integrationAccounts   IntegrationAccount[]
@@ -2023,7 +2022,6 @@ model ProjectAmenityReservation {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId  String @map("project_id")
   amenityId  String @map("amenity_id")
   identityId String @map("identity_id")
   bookingId  String? @map("booking_id")
@@ -2035,7 +2033,6 @@ model ProjectAmenityReservation {
   note       String?
   source     String @default("guest")
 
-  project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   amenity  ProjectAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
   identity Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
   booking  Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)

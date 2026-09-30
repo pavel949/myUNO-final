@@ -135,3 +135,5 @@ export {
   BLOCKING_REASONS,
   getLabel,
 } from './taxonomies';
+
+export { categoryEditorialKeys, projectEditorialKey } from './project-editorial';

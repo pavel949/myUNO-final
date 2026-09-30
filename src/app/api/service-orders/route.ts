@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       unitId,
       bookingId,
       ordererIdentityId: user.identityId,
-      ordererRole: (user.roles[0]?.role || 'guest') as RoleType,
+      ordererRole: (user.isAdmin ? 'staff_ops' : (user.roles[0]?.role || 'guest')) as RoleType,
       scheduledStart: start,
       scheduledEnd: end,
       quantity: qty,

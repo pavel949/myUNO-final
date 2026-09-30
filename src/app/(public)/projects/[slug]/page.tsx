@@ -80,7 +80,7 @@ export default async function ProjectLandingPage({
     'project_page.units.guests': 'up to {count} guests',
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
-    'project_page.units.empty': 'Homes here are being prepared for booking.',
+    'project_page.units.empty': 'No accommodation is currently available for online booking.',
     'project_page.story.title': 'About the residence',
     'project_page.amenities.title': 'Residence amenities',
     'project_page.services.title': 'Services available here',
@@ -89,12 +89,12 @@ export default async function ProjectLandingPage({
     'project_page.location.open_map': 'Open in maps →',
     'project_page.handbook.title': 'Living here',
     'project_page.trust.title': 'Trust, made visible',
-    'landing.trust.verified': 'Guests verified',
-    'landing.trust.verified_body': 'Passports, backgrounds, proof of funds.',
-    'landing.trust.handled': 'Compliance handled',
-    'landing.trust.handled_body': 'TM30, taxes, PDPA — we file it all.',
-    'landing.trust.protected': 'Data protected',
-    'landing.trust.protected_body': 'Encrypted fields, access logs, retention policies.',
+    'project_page.trust.property': 'Property details',
+    'project_page.trust.property_body': 'Discover the published property facts, accommodation category and unit details.',
+    'project_page.trust.terms': 'Check booking terms',
+    'project_page.trust.terms_body': 'Availability and the applicable price are checked before a booking is accepted.',
+    'project_page.trust.responsibility': 'Know who operates it',
+    'project_page.trust.responsibility_body': 'Management is property-specific; a listing on myUNO does not itself mean direct management.',
     'landing.trust.cta': 'Learn how →',
     'landing.search.check_in': 'Check-in',
     'landing.search.check_out': 'Check-out',
@@ -153,16 +153,15 @@ export default async function ProjectLandingPage({
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${project.latitude},${project.longitude}`;
 
   const trustPoints = [
-    { title: labels['landing.trust.verified'], body: labels['landing.trust.verified_body'] },
-    { title: labels['landing.trust.handled'], body: labels['landing.trust.handled_body'] },
-    { title: labels['landing.trust.protected'], body: labels['landing.trust.protected_body'] },
+    { title: labels['project_page.trust.property'], body: labels['project_page.trust.property_body'] },
+    { title: labels['project_page.trust.terms'], body: labels['project_page.trust.terms_body'] },
+    { title: labels['project_page.trust.responsibility'], body: labels['project_page.trust.responsibility_body'] },
   ];
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    // A project selling villa categories is a Resort; a plain building stays
-    // the generic LodgingBusiness (Resort is its subtype).
-    '@type': project.categories.length > 0 ? 'Resort' : 'LodgingBusiness',
+    '@type': project.projectType === 'resort' || project.projectType === 'villa_estate' ? 'Resort' :
+      project.projectType === 'hotel' ? 'Hotel' : 'LodgingBusiness',
     name: project.name,
     address: project.address,
     geo: {
@@ -213,8 +212,8 @@ export default async function ProjectLandingPage({
         </section>
       ) : null}
 
-      {/* Availability bar */}
-      <section className="bg-surface-ivory py-40 px-24">
+      {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
+      {project.units.length > 0 && <section className="bg-surface-ivory py-40 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}
@@ -230,7 +229,7 @@ export default async function ProjectLandingPage({
             }}
           />
         </div>
-      </section>
+      </section>}
 
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}
@@ -530,7 +529,7 @@ export default async function ProjectLandingPage({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-40 mb-40">
           {trustPoints.map((point) => (
             <div key={point.title} className="text-center">
-              <div className="text-heading-2 mb-16">✓</div>
+              <div className="text-heading-2 mb-16" aria-hidden="true">·</div>
               <h3 className="text-heading-2 font-bold text-text-ink mb-12">{point.title}</h3>
               <p className="text-body text-text-secondary">{point.body}</p>
             </div>

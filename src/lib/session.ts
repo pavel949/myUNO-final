@@ -3,10 +3,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/modules/auth';
 
-/** A signed token never overrides the current lifecycle state of an identity. */
-export function mayHoldSession(status: string): boolean {
-  return status === 'active';
-}
+import { mayHoldSession } from './session-policy';
 
 export interface CurrentUser {
   identityId: string;

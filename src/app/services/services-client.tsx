@@ -93,7 +93,7 @@ export default function ServicesClient({
 
   const load = useCallback(async () => {
     const [servicesRes, ordersRes] = await Promise.all([
-      fetch('/api/services'),
+      fetch(`/api/services${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`),
       fetch('/api/service-orders'),
     ]);
     if (servicesRes.ok) {
@@ -106,7 +106,7 @@ export default function ServicesClient({
       const data = await ordersRes.json();
       setOrders(data.orders || []);
     }
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     load();
@@ -219,7 +219,7 @@ export default function ServicesClient({
 
   const placeOrder = async (service: MarketService) => {
     if (!loggedIn) {
-      router.push('/login?next=/services');
+      router.push('/login?next=' + encodeURIComponent(`/services${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`));
       return;
     }
     setBusy(true);
@@ -240,7 +240,7 @@ export default function ServicesClient({
       });
       const data = await response.json().catch(() => null);
       if (response.status === 401) {
-        router.push('/login?next=/services');
+        router.push('/login?next=' + encodeURIComponent(`/services${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`));
         return;
       }
       if (!response.ok) {
@@ -386,7 +386,11 @@ export default function ServicesClient({
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-subtitle font-semibold text-text-ink">
                       <Link
-                        href={`/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`}
+                        href={`/services/${service.id}?${new URLSearchParams({
+                          ...(bookingId ? { bookingId } : {}),
+                          ...(projectId ? { projectId } : {}),
+                          ...(unitId ? { unitId } : {}),
+                        }).toString()}`}
                         className="hover:text-brand-andaman hover:underline"
                       >
                         {service.title}

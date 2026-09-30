@@ -4,16 +4,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 export default function ConvertPropertySubmission({
-  id, status, existingProjectId, projects, organizations, applicantKind, canonicalProjectId, canonicalUnitId,
+  id, status, existingProjectId, projects, organizations, areas, proposedAddress, proposedAreaId, proposedLatitude, proposedLongitude, applicantKind, canonicalProjectId, canonicalUnitId,
 }: {
   id: string; status: string; existingProjectId: string | null;
   projects: { id: string; name: string }[];
   organizations: { id: string; name: string; projectId: string | null }[];
   applicantKind: string;
+  areas: { id: string; slug: string }[];
+  proposedAddress: string; proposedAreaId: string | null;
+  proposedLatitude: number | null; proposedLongitude: number | null;
   canonicalProjectId?: string | null; canonicalUnitId?: string | null;
 }) {
   const [projectId, setProjectId] = useState(existingProjectId || '');
   const [organizationId, setOrganizationId] = useState('');
+  const [address, setAddress] = useState(proposedAddress);
+  const [areaId, setAreaId] = useState(proposedAreaId || '');
+  const [latitude, setLatitude] = useState(proposedLatitude == null ? '' : String(proposedLatitude));
+  const [longitude, setLongitude] = useState(proposedLongitude == null ? '' : String(proposedLongitude));
   const [authority, setAuthority] = useState(false);
   const [duplicates, setDuplicates] = useState(false);
   const [media, setMedia] = useState(false);
@@ -29,7 +36,7 @@ export default function ConvertPropertySubmission({
     try {
       const response = await fetch(`/api/admin/property-submissions/${id}/convert`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: projectId || null, verifiedAuthority: authority, checkedDuplicates: duplicates, checkedMedia: media, verifiedOwner: owner, organizationId: organizationId || null }),
+        body: JSON.stringify({ projectId: projectId || null, verifiedAuthority: authority, checkedDuplicates: duplicates, checkedMedia: media, verifiedOwner: owner, organizationId: organizationId || null, projectAddress: address, areaId: areaId || null, latitude, longitude }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Conversion failed');
@@ -44,7 +51,8 @@ export default function ConvertPropertySubmission({
         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
     </label>
-    {applicantKind === 'management' && <label className="block text-small">Verified management company (requires signed authority)<select className="mt-4 block w-full rounded-lg border border-border-line p-12" value={organizationId} onChange={e => setOrganizationId(e.target.value)}><option value="">No verified company yet — leave access ungranted</option>{organizations.filter(o => !o.projectId || o.projectId === projectId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></label>}
+    {!projectId && <div className="space-y-12 rounded-lg border border-border-line p-16"><p className="font-semibold">New complex: verify location before creation</p><label className="block text-small">Full address<input className="mt-4 block w-full rounded-lg border border-border-line p-12" value={address} onChange={e => setAddress(e.target.value)} /></label><label className="block text-small">Canonical area<select className="mt-4 block w-full rounded-lg border border-border-line p-12" value={areaId} onChange={e => setAreaId(e.target.value)}><option value="">Select an area</option>{areas.map(a => <option key={a.id} value={a.id}>{a.slug}</option>)}</select></label><div className="grid grid-cols-2 gap-12"><label className="text-small">Latitude<input className="mt-4 block w-full rounded-lg border border-border-line p-12" type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)}/></label><label className="text-small">Longitude<input className="mt-4 block w-full rounded-lg border border-border-line p-12" type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)}/></label></div></div>}
+        {applicantKind === 'management' && <label className="block text-small">Verified management company (requires signed authority)<select className="mt-4 block w-full rounded-lg border border-border-line p-12" value={organizationId} onChange={e => setOrganizationId(e.target.value)}><option value="">No verified company yet — leave access ungranted</option>{organizations.filter(o => !o.projectId || o.projectId === projectId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></label>}
         <label className="flex items-start gap-8 text-small"><input type="checkbox" checked={authority} onChange={e => setAuthority(e.target.checked)}/>I checked the applicant's identity, mandate or ownership evidence.</label>
     <label className="flex items-start gap-8 text-small"><input type="checkbox" checked={duplicates} onChange={e => setDuplicates(e.target.checked)}/>I checked project and unit duplicates and selected the correct canonical complex.</label>
     <label className="flex items-start gap-8 text-small"><input type="checkbox" checked={media} onChange={e => setMedia(e.target.checked)}/>I checked submitted project and unit photos are appropriate for their distinct scopes.</label>

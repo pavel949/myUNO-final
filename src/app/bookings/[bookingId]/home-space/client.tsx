@@ -282,7 +282,11 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             <ServicesRail
               services={services}
               labels={labels}
-              hrefForService={(serviceId) => `/services/${serviceId}?bookingId=${booking.id}`}
+              hrefForService={(serviceId) => `/services/${serviceId}?${new URLSearchParams({
+                bookingId: booking.id,
+                projectId: booking.unit.project.id,
+                unitId: booking.unit.id,
+              }).toString()}`}
             />
 
             <ProjectAmenitiesSection

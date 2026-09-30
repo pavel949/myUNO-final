@@ -252,22 +252,8 @@ export async function listPublicServices(
         status: 'active',
         vetted_at: { not: null },
       },
-      OR: [
-        // No project restrictions
-        {
-          availableProjects: {
-            none: {},
-          },
-        },
-        // Project is in available projects
-        {
-          availableProjects: {
-            some: {
-              project_id: projectId,
-            },
-          },
-        },
-      ],
+      // Marketplace services are platform-wide. ServiceProject customizes
+      // commercial terms for this Project but does not remove the base service.
       ...(filters?.categoryKey && { categoryKey: filters.categoryKey }),
     },
     include: {
@@ -415,14 +401,8 @@ export async function listPublicMarketplaceServices(
     where: {
       status: 'active',
       provider: { status: 'active', vetted_at: { not: null } },
-      ...(options.projectId
-        ? {
-            OR: [
-              { availableProjects: { none: {} } },
-              { availableProjects: { some: { project_id: options.projectId } } },
-            ],
-          }
-        : {}),
+      // Project context applies optional overrides after retrieval; the
+      // marketplace catalogue itself remains platform-wide.
       ...(options.categoryKey ? { categoryKey: options.categoryKey } : {}),
     },
     include: {

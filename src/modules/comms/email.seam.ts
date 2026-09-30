@@ -12,6 +12,8 @@ import { PrismaClient } from '@prisma/client';
 // barrel in through this file would make that unrelated client bundle fail.
 import { t } from '@/modules/content/content.service';
 import type { Locale } from '@/modules/content/types';
+import { prisma } from '@/lib/prisma';
+import { resolveIntegrationValue } from '@/modules/integrations/admin-registry';
 
 export interface SendEmailInput {
   to: string;
@@ -41,7 +43,7 @@ export async function sendEmail(
 ): Promise<string | null> {
   const { to, subject, body, htmlBody } = input;
 
-  const resendKey = process.env.RESEND_API_KEY;
+  const resendKey = await resolveIntegrationValue(prisma, 'email_resend', 'apiKey', 'RESEND_API_KEY');
 
   if (!resendKey) {
     // Development fallback: record that an email would have gone out, without
@@ -67,7 +69,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'noreply@myuno.io',
+        from: (await resolveIntegrationValue(prisma, 'email_resend', 'from', 'EMAIL_FROM')) || 'noreply@myuno.io',
         to,
         subject,
         text: body,

@@ -80,7 +80,14 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
   });
   const now = new Date();
   return rows.flatMap(row => {
-    const intents = eligiblePublicHomeIntents({ ...row, sourceBookingOwned: sourceExcluded.has(row.id) }, now);
+    const intents = eligiblePublicHomeIntents({
+      credentials: row.regulatoryCredentials,
+      permittedUseConfirmedAt: row.permittedUseConfirmedAt,
+      complianceRecords: row.complianceRecords,
+      engagements: row.engagements,
+      commercialOfferings: row.commercialOfferings,
+      sourceBookingOwned: sourceExcluded.has(row.id),
+    }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
     return [{
       id: row.id, name: row.name, project: row.project,

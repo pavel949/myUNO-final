@@ -26,6 +26,7 @@ function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
 export interface PublicProjectCategory {
   key: string;
   name: string;
+  titleKey: string;
   descriptionKey: string;
   styleKey: string | null;
   bedrooms: number | null;
@@ -256,6 +257,9 @@ async function buildPublicCategories(
         name: category.name,
         // Imported Layantara rows retain their verified, translated source content.
         // Every other project uses the same stable project/category editorial key contract.
+        titleKey: category.id.startsWith('layantara-category-')
+          ? `layantara.category.${category.id.slice('layantara-category-'.length)}.title`
+          : `project.${projectSlug}.category.${category.categoryKey}.title`,
         descriptionKey: category.id.startsWith('layantara-category-')
           ? `layantara.category.${category.id.slice('layantara-category-'.length)}.description`
           : `project.${projectSlug}.category.${category.categoryKey}.description`,

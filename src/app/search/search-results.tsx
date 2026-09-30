@@ -409,7 +409,15 @@ export default function SearchResults({
             {units.map((unit) => (
               <Link
                 key={unit.id}
-                href={`/units/${unit.id}?${new URLSearchParams({ startDate: startDate || '', endDate: endDate || '', adults, children, ...(areaSlug ? { areaSlug } : {}), ...(stayMode ? { stayMode } : {}) }).toString()}`}
+                href={`/units/${unit.id}?${new URLSearchParams({
+                  startDate: startDate || '',
+                  endDate: endDate || '',
+                  adults,
+                  children,
+                  ...(projectId ? { projectId } : {}),
+                  ...(areaSlug ? { areaSlug } : {}),
+                  ...(stayMode ? { stayMode } : {}),
+                }).toString()}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow duration-micro"
               >
                 {unit.coverUrl ? (

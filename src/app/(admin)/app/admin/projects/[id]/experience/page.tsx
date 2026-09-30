@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
+import { getProjectAmenityOpsActor, getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
 import ProjectExperienceClient from './project-experience-client';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
@@ -16,6 +16,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/experience'));
   const actor = await getProjectExperienceActor(params.id);
   if (!actor) redirect('/');
+  const amenityOpsActor = await getProjectAmenityOpsActor(params.id);
 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -63,7 +64,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
     </div>
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />
-      <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} />
+      <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
     </div>
   </main>;
 }

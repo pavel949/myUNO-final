@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { managedMediaAccess, assertPublicPhoto } from '@/app/libs/managedMediaGuard';
+import { assertPublicPhoto } from '@/app/libs/managedMediaGuard';
+import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { validateGalleryOrder, nextCover } from '@/modules/media/gallery-policy';
 
@@ -10,7 +11,7 @@ async function guard(projectId: string, amenityId: string) {
     select: { id: true },
   });
   if (!amenity) return { error: NextResponse.json({ error: 'Amenity not found' }, { status: 404 }) } as const;
-  return managedMediaAccess({ projectId });
+  return projectExperienceAccess(projectId);
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {

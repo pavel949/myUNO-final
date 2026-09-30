@@ -17,7 +17,13 @@ function renderJson(value: unknown) {
   return <li>{String(value)}</li>;
 }
 
-export default async function AmenityDetailPage({ params }: { params: { slug: string; amenitySlug: string } }) {
+export default async function AmenityDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string; amenitySlug: string };
+  searchParams?: { bookingId?: string };
+}) {
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug);
   if (!data) notFound();
   const { project, amenity } = data;
@@ -69,7 +75,20 @@ export default async function AmenityDetailPage({ params }: { params: { slug: st
             {amenity.minAge !== null ? <div><dt className="text-text-secondary">{labels['project_amenity.min_age']}</dt><dd className="font-medium">{amenity.minAge}</dd></div> : null}
             {amenity.bookingRequired ? <div><dt className="text-text-secondary">{labels['project_amenity.booking']}</dt><dd className="font-medium">{human(amenity.bookingMode)}</dd></div> : null}
           </dl>
-          {amenity.bookingRequired && amenity.bookingUrl ? <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white">{labels['project_amenity.book']}</a> : null}
+          {amenity.bookingRequired ? (
+            ['time_slot','request','reception'].includes(amenity.bookingMode) ? (
+              <Link
+                href={`/projects/${project.slug}/amenities/${amenity.slug}/book${searchParams?.bookingId ? `?bookingId=${encodeURIComponent(searchParams.bookingId)}` : ''}`}
+                className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white"
+              >
+                {labels['project_amenity.book']}
+              </Link>
+            ) : amenity.bookingUrl ? (
+              <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white">
+                {labels['project_amenity.book']}
+              </a>
+            ) : null
+          ) : null}
         </aside>
       </div>
     </div>

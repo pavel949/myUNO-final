@@ -4,6 +4,7 @@ import { getIntegrationHealth } from '@/app/actions/getIntegrationHealth';
 import { IntegrationHealthPanel } from '@/app/components/admin/IntegrationHealthPanel';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import IntegrationSettingsClient from './integration-settings-client';
 
 export default async function IntegrationsPage() {
   const user = await getCurrentUser();
@@ -26,9 +27,9 @@ export default async function IntegrationsPage() {
   const locale = getRequestLocale();
 
   const labels = await getLabels({
-    'admin.integrations.title': 'Integration Health',
+    'admin.integrations.title': 'Integrations & Secrets',
     'admin.integrations.subtitle':
-      'Monitor all OTA channel synchronizations (iCal exports, imports, conflict status)',
+      'Manage external providers, encrypted credentials, environment-variable readiness and channel synchronization health.'
     'admin.integrations.empty': 'No integration accounts configured',
     'admin.integrations.table_title': 'Integration health ({total})',
     'admin.integrations.col_integration': 'Integration',
@@ -71,7 +72,14 @@ export default async function IntegrationsPage() {
         </p>
       </div>
 
-      <IntegrationHealthPanel accounts={accounts} total={total} labels={labels} locale={locale} />
+      <IntegrationSettingsClient />
+
+      <div>
+        <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-12">
+          Integration health
+        </h2>
+        <IntegrationHealthPanel accounts={accounts} total={total} labels={labels} locale={locale} />
+      </div>
 
       <div className="bg-state-info-soft border border-border-line rounded-lg p-16 text-small text-text-ink">
         <p className="font-semibold mb-8">{labels['admin.integrations.about']}</p>

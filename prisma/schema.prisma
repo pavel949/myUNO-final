@@ -590,6 +590,13 @@ enum IntegrationStatus {
   disabled
 }
 
+enum IntegrationRotationStatus {
+  validated
+  applied
+  rolled_back
+  failed
+}
+
 enum CrmLifecycleStage {
   contact
   guest
@@ -2871,6 +2878,7 @@ model IntegrationAccount {
   // Relations
   project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit    Unit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  secretRotations IntegrationSecretRotation[]
 
   @@unique([integrationKey, scopeType, projectId, unitId])
   @@index([scopeType, projectId])
@@ -2885,6 +2893,31 @@ model IntegrationAccount {
 /// use; this is the record of fact behind it. Both are written in one
 /// transaction by `setUnitOwner`, and a database exclusion constraint stops one
 /// unit having two owners on the same day.
+model IntegrationSecretRotation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  integrationKey   IntegrationKey            @map("integration_key")
+  fieldKey         String                    @map("field_key")
+  status           IntegrationRotationStatus
+  actorIdentityId  String                    @map("actor_identity_id")
+  accountId        String?                   @map("account_id")
+  previousConfig   Json?                     @map("previous_config")
+  appliedConfigHash String?                  @map("applied_config_hash")
+  validationNote   String?                   @map("validation_note")
+  errorMessage     String?                   @map("error_message")
+  validatedAt      DateTime?                 @map("validated_at")
+  appliedAt        DateTime?                 @map("applied_at")
+  rolledBackAt     DateTime?                 @map("rolled_back_at")
+
+  account IntegrationAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([integrationKey, createdAt])
+  @@index([status, createdAt])
+  @@map("integration_secret_rotation")
+}
+
 model OwnershipPeriod {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")

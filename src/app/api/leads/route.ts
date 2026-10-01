@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
       sourceMedium?: string;
       sourceCampaign?: string;
       referrerIdentityId?: string;
+      projectId?: string;
+      unitId?: string;
     };
 
     // Honeypot filled → pretend success, store nothing.
@@ -71,6 +73,45 @@ export async function POST(req: NextRequest) {
     }
     if (consent !== true) {
       throw createPublicError('consent_required', 400);
+    }
+
+    let canonicalProjectId: string | undefined;
+    let canonicalUnitId: string | undefined;
+    if (typeof unitId === 'string' && unitId) {
+      const unit = await prisma.unit.findUnique({
+        where: { id: unitId },
+        select: {
+          id: true,
+          projectId: true,
+          status: true,
+          project: { select: { status: true } },
+          commercialOfferings: {
+            where: { status: 'active' },
+            select: { offeringType: true },
+          },
+        },
+      });
+      const requiredOffering =
+        audience === 'buyers' ? 'sale' : audience === 'renters' ? 'long_term_rental' : null;
+      if (
+        !unit ||
+        unit.status !== 'live' ||
+        unit.project.status !== 'live' ||
+        (typeof projectId === 'string' && projectId && projectId !== unit.projectId) ||
+        (requiredOffering &&
+          !unit.commercialOfferings.some((offering) => offering.offeringType === requiredOffering))
+      ) {
+        throw createPublicError('invalid_property_context', 400);
+      }
+      canonicalUnitId = unit.id;
+      canonicalProjectId = unit.projectId;
+    } else if (typeof projectId === 'string' && projectId) {
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, status: 'live' },
+        select: { id: true },
+      });
+      if (!project) throw createPublicError('invalid_property_context', 400);
+      canonicalProjectId = project.id;
     }
 
     await submitLead(prisma, {
@@ -93,6 +134,8 @@ export async function POST(req: NextRequest) {
       sourceMedium: typeof sourceMedium === 'string' ? sourceMedium : undefined,
       sourceCampaign: typeof sourceCampaign === 'string' ? sourceCampaign : undefined,
       referrerIdentityId: typeof referrerIdentityId === 'string' ? referrerIdentityId : undefined,
+      projectId: canonicalProjectId,
+      unitId: canonicalUnitId,
     }).catch((error) => console.error('[CRM lead enrichment]', error));
 
     return NextResponse.json({ ok: true });

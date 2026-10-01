@@ -251,8 +251,8 @@ describe('Compliance & Mobilization', () => {
   describe('UnitEngagement', () => {
     it('requires noiCapAnnualThb for direct-managed engagement', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id);
       const owner = await createIdentity();
+      const unit = await createUnit(project.id, { ownerIdentityId: owner.id });
 
       await expect(
         createUnitEngagement(db, {
@@ -266,8 +266,8 @@ describe('Compliance & Mobilization', () => {
 
     it('allows noiCapAnnualThb to be optional for owner_direct engagement', async () => {
       const project = await createProject();
-      const unit = await createUnit(project.id);
       const owner = await createIdentity();
+      const unit = await createUnit(project.id, { ownerIdentityId: owner.id });
 
       const { id } = await createUnitEngagement(db, {
         unitId: unit.id,

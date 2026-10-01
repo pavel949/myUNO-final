@@ -40,7 +40,11 @@ export interface NavbarLabels {
   register: string;
   logout: string;
   myTrips: string;
-  saved?: string;
+  saved: string;
+  addProperty: string;
+  developers: string;
+  buyers: string;
+  management: string;
   messages: string;
   tickets: string;
   orders: string;
@@ -87,8 +91,8 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const userLinks = user
     ? [
         { href: '/trips', label: labels.myTrips },
-        { href: '/saved', label: labels.saved || 'Saved' },
-        { href: '/property/onboard', label: 'Add a property' },
+        { href: '/saved', label: labels.saved },
+        { href: '/property/onboard', label: labels.addProperty },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },
@@ -136,9 +140,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
               <Link href="/help" className={navLinkClass(pathname, '/help')}>{labels.help}</Link>
               <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
-              <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
-              <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management</Link>
+              <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
+              <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>{labels.buyers}</Link>
+              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
             </div>
           </details>
 

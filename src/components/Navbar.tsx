@@ -159,10 +159,10 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           {user ? (
             <>
               <details className="relative">
-                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-10 text-small font-semibold text-brand-andaman hover:border-border-line-2">
+                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
                   {user.firstName} · My UNO
                 </summary>
-                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-10 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
                     <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                       {link.label}
@@ -212,7 +212,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link
                 key={link.href}
                 href={link.href}
-                className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-14')}
+                className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-12')}
                 onClick={closeMenu}
               >
                 {link.label}
@@ -226,16 +226,16 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link
                 key={link.href}
                 href={link.href}
-                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-14')}
+                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
                 onClick={closeMenu}
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-14')} onClick={closeMenu}>
+            <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-12')} onClick={closeMenu}>
               Developers
             </Link>
-            <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-14')} onClick={closeMenu}>
+            <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-12')} onClick={closeMenu}>
               Management companies
             </Link>
           </div>
@@ -248,7 +248,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={navLinkClass(pathname, link.href, 'border-b border-border-line py-14')}
+                    className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
                     onClick={closeMenu}
                   >
                     {link.label}

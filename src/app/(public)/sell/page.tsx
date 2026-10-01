@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+const SELL_AUDIENCE = 'owners' as const;
+
 export default async function SellPage() {
   const labels = await getLabels({
     'sell.kicker': 'SELL WITH MYUNO',
@@ -81,7 +83,7 @@ export default async function SellPage() {
         </div>
       </section>
 
-      <LeadFormSection audience="owners" initialMessage={labels['sell.lead.prefill']} />
+      <LeadFormSection audience={SELL_AUDIENCE} initialMessage={labels['sell.lead.prefill']} />
     </main>
   );
 }

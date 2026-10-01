@@ -24,3 +24,5 @@ export {
   getConsentSummary,
 } from './consent.service';
 export type { ConsentDecisionInput } from './consent.service';
+
+export { listScopedPropertyEnquiries } from './scoped-enquiries';

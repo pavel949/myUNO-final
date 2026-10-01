@@ -39,7 +39,7 @@ Adopted rules:
 | Developer entry | Present `/developers` |
 | Management-company entry | Present `/management-companies` |
 | Trust / method | Present `/trust` |
-| Help / support | Covered by tickets, messages and guest surfaces; no separate public Help Center yet |
+| Help / support | Present `/help`; routes users into canonical stay, property, owner, service, trust, account and request flows |
 
 ### Client / account modes
 
@@ -145,7 +145,7 @@ Current `MediaAssetKind` has no video type. A real video library requires:
 myUNO has booking channel `agent`, CRM, organizations and attribution foundations but no first-class scoped `agent_member` / developer-partner role and no organization-scoped commission pipeline. Building only a dashboard shell would create false capability. This remains a product/data-model gap, not a visual one.
 
 ### Public map discovery — closed
-Public stay search now uses the existing canonical viewport contract (`parseMapBounds` + `boundsWhere`) and Project latitude/longitude. Map movement updates the same search query used by the list; list focus highlights the corresponding project marker. If the external map renderer cannot load, the result list remains authoritative.
+Public stay search now uses the existing canonical viewport contract (`parseMapBounds` + `boundsWhere`) and Project latitude/longitude. Map movement updates the same search query used by the list; list focus highlights the corresponding project marker. The production CSP explicitly permits the pinned MapLibre runtime, OpenStreetMap tile requests and blob-backed rendering worker. If the external map renderer cannot load, the result list remains authoritative.
 
 ## Remaining gaps by priority
 

@@ -51,6 +51,28 @@ describe('unit ownership history', () => {
       expect(history[1].endsOn).toBeNull();
     });
 
+    it('synchronizes owner access and revokes the outgoing owner access', async () => {
+      await db.roleAssignment.create({
+        data: {
+          identityId: alice,
+          role: 'owner',
+          scopeType: 'unit',
+          projectId: (await db.unit.findUniqueOrThrow({ where: { id: unitId } })).projectId,
+          unitId,
+          status: 'active',
+        },
+      });
+
+      await setUnitOwner(db, { unitId, ownerIdentityId: bob });
+
+      expect(await db.roleAssignment.count({
+        where: { identityId: alice, role: 'owner', unitId, status: 'active' },
+      })).toBe(0);
+      expect(await db.roleAssignment.count({
+        where: { identityId: bob, role: 'owner', unitId, status: 'active' },
+      })).toBe(1);
+    });
+
     it('moves the unit scalar in the same breath', async () => {
       await setUnitOwner(db, { unitId, ownerIdentityId: bob });
 

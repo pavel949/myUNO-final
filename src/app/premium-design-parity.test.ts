@@ -45,7 +45,10 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicCommercialHomes(prisma)');
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).toContain("landing.start.title");
-    expect(home).toContain("href: '/sell'");
+    const discovery = source('src/components/DiscoverySearch.tsx');
+    expect(discovery).toContain("router.push('/sell')");
+    expect(discovery).toContain("router.push('/owners')");
+    expect(discovery).toContain("router.push('/homes?intent=buy')");
     expect(home).toContain("landing.units.title");
     expect(home).toContain("landing.areas.title");
     expect(home).not.toContain('bg-white');

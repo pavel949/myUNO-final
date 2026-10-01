@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { assertCommercialOfferingReadyForActivation } from '@/modules/onboarding';
 
 /**
  * A mapped Layantara home remains source-owned until independently verified
@@ -79,6 +80,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // Read the canonical offer first on source-linked units; historical
       // short_stay offers remain accessible for legacy non-Layantara units.
       const existing = await findExistingStayOffering(params.id, authority.linked);
+      if (status === 'active') {
+        await assertCommercialOfferingReadyForActivation(
+          prisma,
+          params.id,
+          authority.linked ? 'short_term_stay' : 'short_stay',
+        );
+      }
       if (status === 'active' && authority.linked) {
         if (!authority.verified) return NextResponse.json(
           { error: 'source_calendar_cutover_required' }, { status: 409 });

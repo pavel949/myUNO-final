@@ -55,6 +55,8 @@ describe('premium design-system surface parity', () => {
     expect(results).toContain('<SearchResultsMap');
     expect(route).toContain('parseMapBounds');
     expect(route).toContain('latitude: Number(rest.project.latitude)');
+    expect(route).toContain('mapProjects');
+    expect(route).toContain('mapCandidates');
     expect(map).toContain('onBoundsChange');
     expect(map).toContain('tile.openstreetmap.org');
   });

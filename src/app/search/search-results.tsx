@@ -295,7 +295,7 @@ export default function SearchResults({
 
   return (
     <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto max-w-content">
         <div className="mb-24">
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>
           <SearchBar
@@ -433,7 +433,7 @@ export default function SearchResults({
         )}
 
         {error && (
-          <div className="bg-state-error/10 border border-state-error rounded-lg p-16 mb-24">
+          <div className="bg-state-error/10 border border-state-error rounded-xl p-16 mb-24">
             <p className="text-body text-state-error">{error}</p>
           </div>
         )}
@@ -447,7 +447,7 @@ export default function SearchResults({
               {categories.map((category) => (
                 <div
                   key={category.category_key}
-                  className="bg-surface-paper border border-border-line rounded-lg p-16"
+                  className="bg-surface-paper border border-border-line rounded-xl p-16"
                 >
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {category.label}
@@ -495,7 +495,7 @@ export default function SearchResults({
               </div>
 
               {units.length === 0 ? (
-                <div className="rounded-lg border border-border-line bg-surface-paper p-32 text-center">
+                <div className="rounded-xl border border-border-line bg-surface-paper p-32 text-center">
                   <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
                   <p className="text-small text-text-secondary">{labels.emptyHint}</p>
                 </div>
@@ -520,7 +520,7 @@ export default function SearchResults({
                         className={
                           selectedProjectId && selectedProjectId === unit.project?.id
                             ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
-                            : 'overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
+                            : 'overflow-hidden rounded-xl border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
                         }
                       >
                         {unit.coverUrl ? (
@@ -529,17 +529,17 @@ export default function SearchResults({
                             alt={unit.name}
                             width={640}
                             height={360}
-                            className="aspect-video w-full object-cover"
+                            className="aspect-[4/3] w-full object-cover transition-transform duration-structural group-hover:scale-[1.02]"
                           />
                         ) : (
-                          <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                          <div className="aspect-[4/3] bg-gradient-to-br from-surface-paper to-border-line" />
                         )}
                         <div className="p-16">
                           {unit.project?.name ? (
                             <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>
                           ) : null}
                           <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
-                          <p className="mb-4 font-display text-title font-semibold tabular-nums text-brand-andaman">
+                          <p className="mb-4 font-display text-title font-semibold tabular-nums text-text-ink">
                             {formatBaht(unit.baseNightlyThb ?? 0)}
                           </p>
                           <p className="text-small text-text-secondary">{labels.perNight}</p>

@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { updateUnit, getUnitDetail } from '@/modules/projects';
-import { can } from '@/modules/core';
+import { can, canWriteUnitListing } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { NextRequest, NextResponse } from 'next/server';
@@ -23,18 +23,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 
-  const allowed = await can({
-    identity: context.identity,
-    action: 'units:edit_listing',
-    requiredAccess: 'allow',
-    resource: { projectId: context.unit.projectId, unitId: context.unit.id },
-  });
+  const allowed = await canWriteUnitListing(
+    prisma,
+    context.identity,
+    context.unit.id,
+    context.unit.projectId
+  );
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const isMc = context.user.roles.some((role) => role.role === 'mc_member');
-  const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId && (!role.unitId || role.unitId === params.id));
-  if (!context.identity.isAdmin && !hasStaff && (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   try {
     const body = await req.json();

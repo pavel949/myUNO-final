@@ -163,7 +163,7 @@ export function SearchResultsMap({
       validProjects.forEach((project) => bounds.extend([project.longitude, project.latitude]));
       if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 56, maxZoom: 13, duration: 0 });
     }
-  }, [ready, validProjects, onSelectProject, fitToProjects]);
+  }, [ready, validProjects, onSelectProject, fitToProjects, labels.homes]);
 
   useEffect(() => {
     for (const [projectId, entry] of markerRefs.current.entries()) {

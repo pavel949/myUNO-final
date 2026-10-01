@@ -1,3 +1,9 @@
+:root {
+  --font-outfit: "Avenir Next", "Segoe UI", Arial;
+  --font-manrope: "Segoe UI", "Helvetica Neue", Arial;
+  --font-noto-thai: "Noto Sans Thai", Tahoma, sans-serif;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

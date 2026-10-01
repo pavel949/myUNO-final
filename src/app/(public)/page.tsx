@@ -210,26 +210,26 @@ export default async function LandingPage() {
           sizes={["100", "vw"].join("")}
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/62 to-brand-deep/18" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/60 to-brand-deep/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/75 via-transparent to-brand-deep/10" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
+            <p className="text-kicker uppercase text-brand-sun-soft">
               {labels['landing.hero.kicker']}
             </p>
             <h1
               id="home-title"
-              className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.75rem)] font-semibold leading-[0.96] tracking-[-0.04em]"
+              className="mt-12 max-w-4xl font-display text-display-hero font-semibold text-surface-ivory md:text-display-hero-lg"
             >
               {labels['landing.hero.title']}
             </h1>
-            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/88 md:text-xl">
+            <p className="mt-20 max-w-2xl text-body text-surface-ivory/90 md:text-subtitle">
               {labels['landing.hero.subtitle']}
             </p>
           </div>
 
-          <div className="mt-32 max-w-[1180px]">
+          <div className="mt-32 max-w-content">
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               labels={{
@@ -254,11 +254,11 @@ export default async function LandingPage() {
       </section>
 
       <section className="bg-surface-ivory py-40 md:py-56" aria-labelledby="start-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <p className="text-kicker uppercase text-brand-andaman">
             {labels['landing.start.kicker']}
           </p>
-          <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
+          <h2 id="start-heading" className="mt-8 font-display text-display font-semibold text-text-ink">
             {labels['landing.start.title']}
           </h2>
           <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
@@ -287,13 +287,13 @@ export default async function LandingPage() {
       </section>
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
-              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+              <p className="text-kicker uppercase text-brand-andaman">
                 {labels['landing.collection.kicker']}
               </p>
-              <h2 id="collection-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink md:text-[52px] md:leading-[58px]">
+              <h2 id="collection-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                 {labels['landing.collection.title']}
               </h2>
               <p className="mt-12 max-w-xl text-body text-text-secondary">
@@ -341,13 +341,13 @@ export default async function LandingPage() {
 
       {featuredHomes.length ? (
         <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
-          <div className="mx-auto max-w-7xl px-20 md:px-32">
+          <div className="mx-auto max-w-content px-20 md:px-32">
             <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
               <div className="max-w-2xl">
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+                <p className="text-kicker uppercase text-brand-andaman">
                   {labels['landing.homes.kicker']}
                 </p>
-                <h2 id="available-homes-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+                <h2 id="available-homes-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                   {labels['landing.homes.title']}
                 </h2>
                 <p className="mt-12 text-body text-text-secondary">
@@ -400,12 +400,12 @@ export default async function LandingPage() {
       ) : null}
 
       <section className="bg-brand-deep py-56 text-surface-ivory md:py-96" aria-labelledby="value-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="max-w-3xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
+            <p className="text-kicker uppercase text-brand-sun-soft">
               {labels['landing.value.kicker']}
             </p>
-            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em]">
+            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold">
               {labels['landing.value.title']}
             </h2>
             <p className="mt-12 max-w-2xl text-body text-surface-ivory/70">
@@ -418,11 +418,11 @@ export default async function LandingPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group rounded-2xl border border-white/15 bg-surface-ivory/[0.04] p-20 transition-colors duration-structural hover:bg-surface-ivory/[0.08] md:p-24"
+                className="group rounded-2xl border border-white/20 bg-surface-ivory/[0.04] p-20 transition-colors duration-structural hover:bg-surface-ivory/[0.08] md:p-24"
               >
                 <TrustMark size={20} filled className="text-brand-sun-soft" />
                 <h3 className="mt-24 font-display text-title font-semibold">{item.title}</h3>
-                <p className="mt-8 text-small leading-relaxed text-surface-ivory/68">{item.body}</p>
+                <p className="mt-8 text-small leading-relaxed text-surface-ivory/70">{item.body}</p>
                 <span className="mt-20 inline-block text-small font-semibold text-surface-ivory">{labels['landing.start.explore']} →</span>
               </Link>
             ))}
@@ -435,13 +435,13 @@ export default async function LandingPage() {
       </section>
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
-              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+              <p className="text-kicker uppercase text-brand-andaman">
                 {labels['landing.services.kicker']}
               </p>
-              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                 {labels['landing.services.title']}
               </h2>
               <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
@@ -475,11 +475,11 @@ export default async function LandingPage() {
       </section>
 
       <section className="py-56 md:py-96" aria-labelledby="audience-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <p className="text-kicker uppercase text-brand-andaman">
             {labels['landing.audience.kicker']}
           </p>
-          <h2 id="audience-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+          <h2 id="audience-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['landing.audience.title']}
           </h2>
 
@@ -489,7 +489,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
+                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold text-text-ink">
                   {labels['landing.audience.owners']}
                 </h3>
@@ -507,7 +507,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
+                <p className="text-kicker uppercase text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold">
                   {labels['landing.audience.developers']}
                 </h3>
@@ -524,11 +524,11 @@ export default async function LandingPage() {
       </section>
 
       <section className="border-y border-border-line bg-surface-paper py-56 md:py-80" aria-labelledby="trust-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <p className="text-kicker uppercase text-brand-andaman">
             {labels['landing.trust.kicker']}
           </p>
-          <h2 id="trust-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+          <h2 id="trust-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['landing.trust.title']}
           </h2>
 
@@ -559,7 +559,7 @@ export default async function LandingPage() {
 
       <section className="bg-brand-andaman py-56 text-surface-ivory md:py-80">
         <div className="mx-auto max-w-4xl px-20 text-center md:px-32">
-          <h2 className="font-display text-display-xl font-semibold tracking-[-0.02em]">
+          <h2 className="font-display text-display-xl font-semibold">
             {labels['home.final.title']}
           </h2>
           <p className="mx-auto mt-12 max-w-2xl text-body text-surface-ivory/75">

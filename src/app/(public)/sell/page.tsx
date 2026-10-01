@@ -27,6 +27,9 @@ export default async function SellPage() {
     'sell.process.settle': 'Settlement',
     'sell.evidence.title': 'What the review uses',
     'sell.evidence.body': 'Where evidence is available, the advisor can use the canonical unit record, project facts, current offering context and documented transaction evidence. Formal legal and valuation advice remains separate.',
+    'sell.evidence.property': 'Canonical property facts',
+    'sell.evidence.offering': 'Commercial offering record',
+    'sell.evidence.mandate': 'Mandate evidence',
     'sell.lead.prefill': 'I would like a valuation and resale review for my Phuket property.',
   });
 
@@ -71,9 +74,9 @@ export default async function SellPage() {
           <h2 className="font-display text-display font-semibold text-text-ink">{labels['sell.evidence.title']}</h2>
           <p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['sell.evidence.body']}</p>
           <div className="mt-20 flex flex-wrap gap-8">
-            <SourceChip source="Canonical property facts" />
-            <SourceChip source="Commercial offering record" />
-            <SourceChip source="Mandate evidence" />
+            <SourceChip source={labels['sell.evidence.property']} />
+            <SourceChip source={labels['sell.evidence.offering']} />
+            <SourceChip source={labels['sell.evidence.mandate']} />
           </div>
         </div>
       </section>

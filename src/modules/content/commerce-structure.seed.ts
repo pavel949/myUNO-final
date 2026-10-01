@@ -379,4 +379,8 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'manage.portfolio.body', namespace: 'manage', description: 'Manage portfolio body', en: 'Connect a project or portfolio through scoped organization roles while preserving the same Project → Category → Unit hierarchy.', ru: 'Подключите проект или портфель через ограниченные роли организаций, сохраняя ту же иерархию Project → Category → Unit.', th: 'เชื่อม Project หรือพอร์ตผ่านบทบาทองค์กรที่มีขอบเขต โดยคงโครงสร้าง Project → Category → Unit เดิม', status: 'needs_review' as const },
   { key: 'manage.portfolio.cta', namespace: 'manage', description: 'Manage portfolio CTA', en: 'Management company pathway', ru: 'Для управляющей компании', th: 'เส้นทางบริษัทบริหาร', status: 'needs_review' as const },
   { key: 'manage.lead', namespace: 'manage', description: 'Manage lead message', en: 'I would like to discuss professional management for my Phuket property or portfolio.', ru: 'Хочу обсудить профессиональное управление моей недвижимостью или портфелем на Пхукете.', th: 'ฉันต้องการหารือเรื่องการบริหารแบบมืออาชีพสำหรับทรัพย์สินหรือพอร์ตในภูเก็ต', status: 'needs_review' as const },
+
+  { key: 'homes.type.condo', namespace: 'homes', description: 'Homes condo type', en: 'Condo', ru: 'Кондоминиум', th: 'คอนโด', status: 'needs_review' as const },
+  { key: 'homes.type.villa', namespace: 'homes', description: 'Homes villa type', en: 'Villa', ru: 'Вилла', th: 'วิลล่า', status: 'needs_review' as const },
+  { key: 'homes.type.townhouse', namespace: 'homes', description: 'Homes townhouse type', en: 'Townhouse', ru: 'Таунхаус', th: 'ทาวน์เฮาส์', status: 'needs_review' as const },
 ];

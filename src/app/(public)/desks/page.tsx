@@ -36,7 +36,7 @@ export default async function GlobalDesksPage() {
       <section className="border-b border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-ivory px-20 py-64 md:px-32 md:py-96">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['desks.index.kicker']}</p>
-          <h1 className="mt-10 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
+          <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
             {labels['desks.index.title']}
           </h1>
           <p className="mt-20 max-w-3xl text-lg leading-relaxed text-text-secondary">{labels['desks.index.body']}</p>
@@ -44,12 +44,12 @@ export default async function GlobalDesksPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
-        <div className="grid gap-14 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
           {GLOBAL_DESKS.map((desk) => (
             <Link
               key={desk.slug}
               href={`/desks/${desk.slug}`}
-              className="group flex min-h-[250px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
+              className="group flex min-h-[250px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
                 <div className="flex h-44 w-44 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
@@ -58,10 +58,10 @@ export default async function GlobalDesksPage() {
                 <h2 className="mt-20 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
                   {labels[desk.titleKey]}
                 </h2>
-                <p className="mt-10 text-body text-text-secondary">{labels[desk.bodyKey]}</p>
+                <p className="mt-12 text-body text-text-secondary">{labels[desk.bodyKey]}</p>
                 <p className="mt-16 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
               </div>
-              <span className="mt-24 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+              <span className="mt-24 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-[1px]">
                 {labels['desks.index.cta']} →
               </span>
             </Link>

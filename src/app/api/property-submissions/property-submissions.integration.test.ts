@@ -49,7 +49,7 @@ describe('one property intake and verified canonical conversion', () => {
   it('restricts draft reads and writes to the applicant', async () => {
     const created = await (await POST(req('POST', application()))).json();
     session.identityId = otherId;
-    expect((await (await GET()).json()).items).toHaveLength(0);
+    expect((await (await GET(req('GET'))).json()).items).toHaveLength(0);
     expect((await PATCH(req('PATCH', { id: created.id, unitName: 'Hijacked' }))).status).toBe(404);
     expect((await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } })).title).toBe('F705');
   });
@@ -122,7 +122,7 @@ describe('one property intake and verified canonical conversion', () => {
     expect(await db.unit.count({ where: { projectId: project.id } })).toBe(0);
   });
 
-  it('grants a verified manager only the approved project and company scope', async () => {
+  it('records the management relationship without granting company membership to the owner', async () => {
     const org = await createOrganization('Approved MC', projectId);
     const created = await (await POST(req('POST', { ...application(), kind: 'management', operatingModel: 'via_management_company', unitName: 'F706', status: 'submitted' }))).json();
     session.identityId = adminId;
@@ -132,14 +132,48 @@ describe('one property intake and verified canonical conversion', () => {
     expect(response.status).toBe(200);
     const { unitId } = await response.json();
     expect((await db.unit.findUniqueOrThrow({ where: { id: unitId } })).ownerIdentityId).toBe(applicantId);
-    const role = await db.roleAssignment.findFirstOrThrow({ where: { identityId: applicantId, role: 'mc_member' } });
-    expect(role.projectId).toBe(projectId);
-    expect(role.organizationId).toBe(org.id);
-    expect(role.unitId).toBeNull();
+    expect(await db.roleAssignment.count({ where: { identityId: applicantId, role: 'mc_member' } })).toBe(0);
     const engagement = await db.unitEngagement.findFirstOrThrow({ where: { unitId } });
     expect(engagement.engagementType).toBe('via_management_company');
     expect(engagement.managementOrgId).toBe(org.id);
     expect(engagement.status).toBe('draft');
+  });
+
+
+  it('reuses an explicitly selected existing Unit instead of creating a duplicate', async () => {
+    const existing = await db.unit.create({
+      data: {
+        projectId,
+        name: 'F705',
+        unitType: 'condo',
+        bedrooms: 1,
+        bathrooms: 1,
+        maxGuests: 2,
+        addressSupplement: 'F705',
+        baseNightlyThb: 0,
+        minNights: 1,
+        status: 'draft',
+      },
+    });
+    const created = await (await POST(req('POST', {
+      ...application(),
+      existingUnitId: existing.id,
+      status: 'submitted',
+    }))).json();
+
+    session.identityId = adminId;
+    const response = await convert(req('POST', {
+      verifiedAuthority: true,
+      checkedDuplicates: true,
+      checkedMedia: true,
+      verifiedOwner: true,
+    }), { params: { id: created.id } });
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.unitId).toBe(existing.id);
+    expect(await db.unit.count({ where: { projectId } })).toBe(1);
+    expect((await db.unit.findUniqueOrThrow({ where: { id: existing.id } })).ownerIdentityId).toBe(applicantId);
+    expect(await db.ownershipPeriod.count({ where: { unitId: existing.id } })).toBe(1);
   });
 
   it('does not create duplicate physical units in the same complex', async () => {

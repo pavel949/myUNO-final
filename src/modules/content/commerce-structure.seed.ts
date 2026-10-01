@@ -137,4 +137,11 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'sell.evidence.property', namespace: 'sell', description: 'Sell evidence property facts', en: 'Canonical property facts', ru: 'Канонические данные объекта', th: 'ข้อมูลทรัพย์สินหลัก', status: 'needs_review' as const },
   { key: 'sell.evidence.offering', namespace: 'sell', description: 'Sell evidence commercial offering', en: 'Commercial offering record', ru: 'Коммерческое предложение', th: 'ข้อมูลข้อเสนอเชิงพาณิชย์', status: 'needs_review' as const },
   { key: 'sell.evidence.mandate', namespace: 'sell', description: 'Sell evidence mandate', en: 'Mandate evidence', ru: 'Подтверждение мандата', th: 'หลักฐานอำนาจดำเนินการ', status: 'needs_review' as const },
+
+  { key: 'home.pass.title', namespace: 'home', description: 'Stay pass title', en: 'Stay pass', ru: 'Паспорт проживания', th: 'Stay pass', status: 'needs_review' as const },
+  { key: 'home.pass.booked', namespace: 'home', description: 'Stay pass booked step', en: 'Booked', ru: 'Забронировано', th: 'จองแล้ว', status: 'needs_review' as const },
+  { key: 'home.pass.prepare', namespace: 'home', description: 'Stay pass prepare step', en: 'Prepare', ru: 'Подготовка', th: 'เตรียมตัว', status: 'needs_review' as const },
+  { key: 'home.pass.arrival', namespace: 'home', description: 'Stay pass arrival step', en: 'Arrival', ru: 'Заезд', th: 'วันเข้าพัก', status: 'needs_review' as const },
+  { key: 'home.pass.stay', namespace: 'home', description: 'Stay pass in-stay step', en: 'Your stay', ru: 'Проживание', th: 'ระหว่างเข้าพัก', status: 'needs_review' as const },
+  { key: 'home.pass.checkout', namespace: 'home', description: 'Stay pass checkout step', en: 'Check-out', ru: 'Выезд', th: 'เช็คเอาท์', status: 'needs_review' as const },
 ];

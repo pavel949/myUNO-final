@@ -134,6 +134,9 @@ export async function deriveUnitOnboardingState(
       commercialOfferings: { select: { offeringType: true, status: true } },
       engagements: { select: { engagementType: true, status: true, mandateMediaId: true, noiCapAnnualThb: true, managementOrgId: true } },
       ratePlans: { select: { id: true, status: true } },
+      inventoryCategory: {
+        select: { ratePlans: { where: { status: 'active' }, select: { id: true, status: true } } },
+      },
       media: { select: { mediaId: true }, take: 1 },
     },
   });
@@ -146,16 +149,21 @@ export async function deriveUnitOnboardingState(
   const shortStay = requested.some((o) => o.offeringType === 'short_term_stay');
   if (shortStay) {
     if (!unit.permittedUseConfirmedAt) blockers.push('PERMITTED_USE_NOT_VERIFIED');
-    if (!unit.ratePlans.some((plan) => plan.status === 'active')) blockers.push('SHORT_STAY_RATE_PLAN_MISSING');
+    if (
+      !unit.ratePlans.some((plan) => plan.status === 'active') &&
+      !unit.inventoryCategory?.ratePlans.some((plan) => plan.status === 'active')
+    ) blockers.push('SHORT_STAY_RATE_PLAN_MISSING');
     if (!unit.media.length) blockers.push('PUBLIC_MEDIA_MISSING');
   }
 
-  const draftEngagement = unit.engagements.find((e) => e.status === 'draft');
-  if (draftEngagement?.engagementType === 'direct_managed') {
-    if (!draftEngagement.mandateMediaId) blockers.push('MANAGEMENT_MANDATE_MISSING');
-    if (!draftEngagement.noiCapAnnualThb) blockers.push('DIRECT_MANAGED_ECONOMICS_MISSING');
+  const managedEngagement = unit.engagements.find(
+    (e) => e.status === 'draft' || e.status === 'active',
+  );
+  if (managedEngagement?.engagementType === 'direct_managed') {
+    if (!managedEngagement.mandateMediaId) blockers.push('MANAGEMENT_MANDATE_MISSING');
+    if (!managedEngagement.noiCapAnnualThb) blockers.push('DIRECT_MANAGED_ECONOMICS_MISSING');
   }
-  if (draftEngagement?.engagementType === 'via_management_company' && !draftEngagement.managementOrgId) {
+  if (managedEngagement?.engagementType === 'via_management_company' && !managedEngagement.managementOrgId) {
     blockers.push('MANAGEMENT_ORGANIZATION_MISSING');
   }
 

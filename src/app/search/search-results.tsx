@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -99,6 +99,7 @@ export default function SearchResults({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [mapProjects, setMapProjects] = useState<SearchMapProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const startDate = searchParams?.get('startDate');
@@ -166,6 +167,7 @@ export default function SearchResults({
         if (generation !== requestRef.current) return;
 
         setUnits((previous) => (offset === 0 ? data.units : [...previous, ...data.units]));
+        setMapProjects(Array.isArray(data.mapProjects) ? data.mapProjects : []);
         setTotal(data.total);
         setSearched(true);
 
@@ -200,6 +202,7 @@ export default function SearchResults({
     if (!hasDates) {
       requestRef.current++;
       setUnits([]);
+      setMapProjects([]);
       setTotal(0);
       setSearched(false);
       setError(null);
@@ -232,37 +235,6 @@ export default function SearchResults({
       else next.set('unitTypes', Array.from(current).join(','));
     });
   };
-
-  const mapProjects: SearchMapProject[] = useMemo(
-    () =>
-      Array.from(
-        units.reduce((projects, unit) => {
-          if (
-            !unit.project ||
-            !Number.isFinite(unit.project.latitude) ||
-            !Number.isFinite(unit.project.longitude)
-          ) {
-            return projects;
-          }
-          const current = projects.get(unit.project.id);
-          if (current) {
-            current.unitCount += 1;
-            current.fromNightlyThb = Math.min(current.fromNightlyThb, unit.baseNightlyThb);
-          } else {
-            projects.set(unit.project.id, {
-              id: unit.project.id,
-              name: unit.project.name,
-              latitude: unit.project.latitude,
-              longitude: unit.project.longitude,
-              unitCount: 1,
-              fromNightlyThb: unit.baseNightlyThb,
-            });
-          }
-          return projects;
-        }, new Map<string, SearchMapProject>()).values()
-      ),
-    [units]
-  );
 
   const handleMapBoundsChange = useCallback(
     (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => {

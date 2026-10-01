@@ -41,6 +41,10 @@ export default async function SearchPage() {
     'search.filters.min_price': 'Min nightly THB',
     'search.filters.max_price': 'Max nightly THB',
     'search.filters.clear': 'Clear filters',
+    'search.map.loading': 'Loading map…',
+    'search.map.unavailable': 'Map is unavailable right now. The result list remains authoritative.',
+    'search.map.reset': 'Reset map area',
+    'search.map.results': 'Showing {shown} of {total} homes in this view',
     'catalog.unit_types.villa.label': 'Villa',
     'catalog.unit_types.condo.label': 'Apartment',
     'catalog.unit_types.townhouse.label': 'Townhouse',
@@ -85,6 +89,10 @@ export default async function SearchPage() {
           filterMin: labels['search.filters.min_price'],
           filterMax: labels['search.filters.max_price'],
           filterClear: labels['search.filters.clear'],
+          mapLoading: labels['search.map.loading'],
+          mapUnavailable: labels['search.map.unavailable'],
+          mapReset: labels['search.map.reset'],
+          mapResults: labels['search.map.results'],
         }}
         typeOptions={[
           { key: 'villa', label: labels['catalog.unit_types.villa.label'] },

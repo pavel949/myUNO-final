@@ -126,7 +126,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const requestedType = body.offeringType || 'short_term_stay';
       const stayType = requestedType === 'short_stay' || requestedType === 'short_term_stay';
       const offeringType = stayType ? 'short_term_stay' : requestedType;
-      const existingOffering = body.offeringId
+      let existingOffering = body.offeringId
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
         : stayType
           ? await findExistingStayOffering(params.id)
@@ -135,6 +135,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
               orderBy: { createdAt: 'asc' },
             });
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
+      if (existingOffering?.offeringType === 'short_stay') {
+        existingOffering = await findExistingStayOffering(params.id);
+      }
       // Mapping a channel must not activate a source-owned Layantara offer.
       const offering = existingOffering || await prisma.commercialOffering.create({
         data: { unitId: params.id, offeringType,

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -19,7 +19,7 @@ function normalize(body: Record<string, unknown>): Submission {
     ? String(body.operatingModel) as Submission['operatingModel']
     : null;
   return {
-    kind, operatingModel, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
+    kind, existingUnitId: typeof body.existingUnitId === 'string' && body.existingUnitId ? body.existingUnitId : null, operatingModel, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
     proposedProject: String(body.proposedProject || '').trim().slice(0, 160),
     projectAddress: String(body.projectAddress || '').trim().slice(0, 500),
     projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(body.projectType)) ? String(body.projectType) : 'condominium',
@@ -51,9 +51,25 @@ async function authorized() {
   return { user } as const;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const access = await authorized();
   if ('error' in access) return access.error;
+  const projectId = req.nextUrl.searchParams.get('projectId');
+  if (projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
+    const scoped = access.user.roles.some(role => role.projectId === projectId && (role.role === 'owner' || role.role === 'mc_member'));
+    if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) {
+      return NextResponse.json({ error: 'Project not available.' }, { status: 404 });
+    }
+    const units = await prisma.unit.findMany({
+      where: { projectId, status: { not: 'archived' } },
+      select: { id: true, name: true, floor: true, bedrooms: true, bathrooms: true, sizeSqm: true },
+      orderBy: { name: 'asc' },
+      take: 500,
+    });
+    return NextResponse.json({ units });
+  }
+
   const rows = await prisma.crmOpportunity.findMany({
     where: { identityId: access.user.identityId, source: MARKER },
     select: { id: true, createdAt: true, updatedAt: true, requirements: true },

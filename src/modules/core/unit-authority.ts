@@ -13,6 +13,7 @@ export interface UnitCommercialAuthority {
   engagementType: UnitEngagementType | null;
   ownerIdentityId: string | null;
   managementOrgId: string | null;
+  unitStatus: string;
 }
 
 function assignmentMatchesUnit(
@@ -43,6 +44,7 @@ export async function resolveUnitCommercialAuthority(
     where: { id: unitId },
     select: {
       ownerIdentityId: true,
+      status: true,
       engagements: {
         where: { status: 'active' },
         orderBy: { createdAt: 'desc' },
@@ -66,6 +68,7 @@ export async function resolveUnitCommercialAuthority(
       engagementType: null,
       ownerIdentityId: unit.ownerIdentityId,
       managementOrgId: null,
+      unitStatus: unit.status,
     };
   }
 
@@ -82,6 +85,7 @@ export async function resolveUnitCommercialAuthority(
     engagementType: engagement.engagementType,
     ownerIdentityId: engagement.ownerIdentityId || unit.ownerIdentityId,
     managementOrgId: engagement.managementOrgId,
+    unitStatus: unit.status,
   };
 }
 
@@ -112,6 +116,18 @@ export async function canWriteUnitCommercial(
   // Self-managed inventory: the verified owner is the commercial operator.
   if (
     authority.mode === 'owner' &&
+    authority.ownerIdentityId === identity.id &&
+    scoped.some((assignment) => assignment.role === 'owner')
+  ) {
+    return true;
+  }
+
+  // During canonical onboarding there may not be an active engagement yet.
+  // The verified owner may complete a non-live unit's setup; the readiness
+  // gate still prevents publication until an engagement is active.
+  if (
+    authority.mode === 'unassigned' &&
+    authority.unitStatus !== 'live' &&
     authority.ownerIdentityId === identity.id &&
     scoped.some((assignment) => assignment.role === 'owner')
   ) {
@@ -183,6 +199,15 @@ export async function canWriteUnitListing(
 
   if (
     authority.mode === 'owner' &&
+    authority.ownerIdentityId === identity.id &&
+    scoped.some((assignment) => assignment.role === 'owner')
+  ) {
+    return true;
+  }
+
+  if (
+    authority.mode === 'unassigned' &&
+    authority.unitStatus !== 'live' &&
     authority.ownerIdentityId === identity.id &&
     scoped.some((assignment) => assignment.role === 'owner')
   ) {

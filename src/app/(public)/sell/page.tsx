@@ -45,7 +45,7 @@ export default async function SellPage() {
             {labels['sell.title']}
           </h1>
           <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/75">{labels['sell.body']}</p>
-          <div className="mt-28 flex flex-col gap-10 sm:flex-row">
+          <div className="mt-32 flex flex-col gap-12 sm:flex-row">
             <Link href="/property/onboard?offers=sale" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
               {labels['sell.cta']} →
             </Link>

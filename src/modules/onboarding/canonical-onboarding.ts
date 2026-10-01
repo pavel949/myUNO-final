@@ -82,7 +82,7 @@ export async function ensureDraftCommercialOfferingsTx(
   const types = canonicalOfferings(requestedOffers);
   for (const offeringType of types) {
     await tx.commercialOffering.upsert({
-      where: { commercial_offering_unit_type_unique: { unitId, offeringType } },
+      where: { unitId_offeringType: { unitId, offeringType } },
       create: { unitId, offeringType, status: 'draft' },
       update: {},
     });
@@ -191,7 +191,7 @@ export async function assertCommercialOfferingReadyForActivation(
     where: { id: unitId },
     include: {
       project: { select: { projectType: true } },
-      inventoryCategory: true,
+      inventoryCategory: { include: { ratePlans: { where: { status: 'active' } } } },
       media: true,
       sleepingSpaces: { include: { beds: true } },
       engagements: { where: { status: 'active' } },
@@ -223,7 +223,7 @@ export async function assertCommercialOfferingReadyForActivation(
     if (!unit.inventoryCategory || unit.inventoryCategory.baseNightlyThb <= 0 || unit.inventoryCategory.minNights < 1) {
       blockers.push('valid_stay_pricing_required');
     }
-    if (!unit.ratePlans.length) blockers.push('active_rate_plan_required');
+    if (!unit.ratePlans.length && !(unit.inventoryCategory?.ratePlans.length)) blockers.push('active_rate_plan_required');
     if (!unit.coverMediaId || unit.media.length < 3) blockers.push('exact_unit_media_required');
     if (!unit.sleepingSpaces.some((space) => space.beds.length > 0)) blockers.push('sleeping_spaces_required');
     const completed = new Set(

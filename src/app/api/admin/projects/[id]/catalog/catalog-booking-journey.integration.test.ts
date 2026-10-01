@@ -420,25 +420,104 @@ describe('canonical onboarding → pricing → search → booking route journey'
     )).toBe(true);
   });
 
-  it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {
+  it('activates one reusable canonical short-stay offering only after readiness and reuses it for multiple channels', async () => {
     const c = await category('garden_2br');
     const unit = await createUnit({
-      projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
+      projectId,
+      categoryKey: c.categoryKey,
+      status: 'live',
+      baseNightlyThb: 350_000,
+      ownerIdentityId: adminId,
     });
     await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });
 
     const before = await getPropertyReadiness(db, projectId);
     expect(before?.blockers.some(b => b.key === 'unit.stay_offering' && b.unitId === unit.id)).toBe(true);
 
-    const offer = () => propertyDetailsPost(
+    // Creating commercial intent is allowed before go-live readiness, but it
+    // must remain draft. Channel mapping must never activate it implicitly.
+    const draft = await propertyDetailsPost(
+      request('/api/admin/units/x/property-details', { action: 'stay_offering', status: 'draft' }),
+      { params: { id: unit.id } }
+    );
+    expect(draft.status).toBe(201);
+    const blockedActivation = await propertyDetailsPost(
       request('/api/admin/units/x/property-details', { action: 'stay_offering', status: 'active' }),
       { params: { id: unit.id } }
     );
-    const first = await offer();
-    const second = await offer();
-    expect(first.status).toBe(201);
-    expect(second.status).toBe(200);
-    expect(await db.commercialOffering.count({ where: { unitId: unit.id, offeringType: 'short_stay' } })).toBe(1);
+    expect(blockedActivation.status).toBe(400);
+
+    await db.unitEngagement.create({
+      data: {
+        unitId: unit.id,
+        ownerIdentityId: adminId,
+        engagementType: 'owner_direct',
+        status: 'active',
+      },
+    });
+    await db.complianceRecord.create({
+      data: {
+        unitId: unit.id,
+        recordType: 'permitted_use',
+        status: 'confirmed',
+        verifiedAt: new Date(),
+        verifiedByIdentityId: adminId,
+      },
+    });
+    const media = await Promise.all([0, 1, 2].map((n) => db.mediaAsset.create({
+      data: {
+        storageKey: `test:stay-ready:${unit.id}:${n}`,
+        kind: 'photo',
+        mimeType: 'image/jpeg',
+        sizeBytes: 100,
+        uploadedByIdentityId: adminId,
+        encrypted: false,
+      },
+    })));
+    await db.unitMedia.createMany({
+      data: media.map((item, sort) => ({ unitId: unit.id, mediaId: item.id, sort })),
+    });
+    await db.unit.update({
+      where: { id: unit.id },
+      data: { coverMediaId: media[0].id, permittedUseConfirmedAt: new Date() },
+    });
+    await db.sleepingSpace.create({
+      data: {
+        unitId: unit.id,
+        spaceType: 'bedroom',
+        name: 'Bedroom 1',
+        beds: { create: [{ bedType: 'king', count: 1 }] },
+      },
+    });
+    await db.mobilizationChecklistItem.createMany({
+      data: [
+        'qualify',
+        'mandate',
+        'legal_audit',
+        'condition_survey',
+        'standards_uplift',
+        'pricing_setup',
+        'golive_checklist',
+      ].map(step => ({
+        unitId: unit.id,
+        step: step as 'qualify' | 'mandate' | 'legal_audit' | 'condition_survey' | 'standards_uplift' | 'pricing_setup' | 'golive_checklist',
+        status: 'done' as const,
+        completedAt: new Date(),
+        completedByIdentityId: adminId,
+      })),
+    });
+
+    const activated = await propertyDetailsPost(
+      request('/api/admin/units/x/property-details', { action: 'stay_offering', status: 'active' }),
+      { params: { id: unit.id } }
+    );
+    expect(activated.status).toBe(200);
+    expect(await db.commercialOffering.count({
+      where: { unitId: unit.id, offeringType: 'short_term_stay' },
+    })).toBe(1);
+    expect(await db.commercialOffering.count({
+      where: { unitId: unit.id, offeringType: 'short_stay' },
+    })).toBe(0);
 
     for (const channel of ['airbnb', 'booking_com']) {
       const result = await propertyDetailsPost(
@@ -450,7 +529,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
       expect(result.status).toBe(201);
     }
     const [offering] = await db.commercialOffering.findMany({
-      where: { unitId: unit.id, offeringType: 'short_stay' },
+      where: { unitId: unit.id, offeringType: 'short_term_stay' },
       include: { channelMappings: true },
     });
     expect(offering.channelMappings).toHaveLength(2);

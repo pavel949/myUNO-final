@@ -33,7 +33,7 @@ export default async function GlobalDesksPage() {
 
   return (
     <main className="min-h-screen bg-surface-ivory">
-      <section className="border-b border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-[#EAF4F1] px-20 py-64 md:px-32 md:py-96">
+      <section className="border-b border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-ivory px-20 py-64 md:px-32 md:py-96">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['desks.index.kicker']}</p>
           <h1 className="mt-10 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
@@ -52,7 +52,7 @@ export default async function GlobalDesksPage() {
               className="group flex min-h-[250px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
-                <div className="flex h-44 w-44 items-center justify-center rounded-full bg-[#E7F2EF] font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
+                <div className="flex h-44 w-44 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
                   {desk.code}
                 </div>
                 <h2 className="mt-20 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">

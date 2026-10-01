@@ -41,18 +41,18 @@ export default async function SellPage() {
       <section className="bg-brand-deep px-20 py-64 text-surface-ivory md:px-32 md:py-96">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['sell.kicker']}</p>
-          <h1 className="mt-10 max-w-4xl font-display text-[clamp(3rem,6vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
+          <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
             {labels['sell.title']}
           </h1>
           <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/75">{labels['sell.body']}</p>
           <div className="mt-28 flex flex-col gap-10 sm:flex-row">
-            <Link href="/property/onboard?offers=sale" className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
+            <Link href="/property/onboard?offers=sale" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
               {labels['sell.cta']} →
             </Link>
-            <a href="#lead-form" className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
+            <a href="#lead-form" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
               {labels['sell.advisor_cta']}
             </a>
-            <Link href="/owner" className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
+            <Link href="/owner" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
               {labels['sell.owner_cta']}
             </Link>
           </div>
@@ -61,7 +61,7 @@ export default async function SellPage() {
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
         <h2 className="font-display text-display font-semibold text-text-ink">{labels['sell.process.title']}</h2>
-        <div className="mt-28">
+        <div className="mt-32">
           <ProcessStepper
             steps={[
               { label: labels['sell.process.intake'], state: 'active' },
@@ -76,7 +76,7 @@ export default async function SellPage() {
       </section>
 
       <section className="border-y border-border-line bg-surface-paper">
-        <div className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-72">
+        <div className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
           <h2 className="font-display text-display font-semibold text-text-ink">{labels['sell.evidence.title']}</h2>
           <p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['sell.evidence.body']}</p>
           <div className="mt-20 flex flex-wrap gap-8">

@@ -7,6 +7,7 @@ import { createDraftUnitEngagementTx } from '@/modules/core/engagement.service';
 import {
   ensureDraftCommercialOfferingsTx,
   resolveCanonicalUnitTx,
+  deriveUnitOnboardingState,
 } from '@/modules/onboarding/canonical-onboarding';
 
 /**
@@ -198,7 +199,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         }
       }
 
-      const result = { ...data, status: 'converted', canonicalProjectId: projectId, canonicalUnitId: unitId, convertedAt: new Date().toISOString(), reviewedByIdentityId: guard.actorIdentityId };
+      const readiness = unitId
+        ? await deriveUnitOnboardingState(tx, unitId)
+        : { state: 'draft' as const, blockers: [] as string[] };
+      const result = {
+        ...data,
+        status: 'converted',
+        canonicalProjectId: projectId,
+        canonicalUnitId: unitId,
+        onboardingState: readiness.state,
+        onboardingBlockers: readiness.blockers,
+        convertedAt: new Date().toISOString(),
+        reviewedByIdentityId: guard.actorIdentityId,
+      };
       await tx.crmOpportunity.update({ where: { id: application.id }, data: { projectId, unitId, requirements: result as Prisma.InputJsonValue } });
       await tx.auditLog.create({
         data: { actorIdentityId: guard.actorIdentityId, action: 'property_submission:convert', entityType: 'CrmOpportunity', entityId: application.id,

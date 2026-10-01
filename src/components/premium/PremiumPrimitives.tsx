@@ -5,7 +5,7 @@ export type PremiumStatusTone = 'done' | 'active' | 'waiting' | 'blocked' | 'neu
 
 const statusTone: Record<PremiumStatusTone, string> = {
   done: 'border-state-success/25 bg-state-success-soft text-state-success',
-  active: 'border-brand-andaman/25 bg-brand-andaman/8 text-brand-andaman',
+  active: 'border-brand-andaman/25 bg-brand-andaman/10 text-brand-andaman',
   waiting: 'border-brand-sun/30 bg-brand-sun/10 text-text-ink',
   blocked: 'border-state-error/30 bg-state-error-soft text-state-error',
   neutral: 'border-border-line bg-surface-ivory text-text-secondary',

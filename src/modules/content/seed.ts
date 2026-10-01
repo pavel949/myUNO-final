@@ -4414,6 +4414,16 @@ const SCHEDULER_KEYS: KeyDef[] = [
 ];
 
 
+// Audit 2026-10-01 fixes (check-in gate, category booking, sales authority,
+// pricing display, PMS localization) — EN/RU/TH drafts pending founder review.
+const AUDIT_FIX_KEYS: KeyDef[] = [
+  { key: 'booking.checkin.blocked.not_confirmed', namespace: 'booking', description: 'Check-in refused: booking not confirmed', en: 'Only a confirmed booking can be checked in.', ru: 'Заселить можно только подтверждённое бронирование.', th: 'เช็คอินได้เฉพาะการจองที่ยืนยันแล้วเท่านั้น', status: NR },
+  { key: 'booking.checkin.blocked.before_arrival', namespace: 'booking', description: 'Check-in refused: before arrival date', en: 'Check-in opens on the arrival date.', ru: 'Заселение доступно с даты заезда.', th: 'เช็คอินได้ตั้งแต่วันที่เข้าพัก', status: NR },
+  { key: 'booking.checkin.blocked.after_departure', namespace: 'booking', description: 'Check-in refused: stay already ended', en: 'The stay has ended; this booking can no longer be checked in.', ru: 'Срок проживания истёк — заселить по этому бронированию уже нельзя.', th: 'การเข้าพักสิ้นสุดแล้ว ไม่สามารถเช็คอินการจองนี้ได้', status: NR },
+  { key: 'booking.checkin.blocked.guests_incomplete', namespace: 'booking', description: 'Check-in refused: party not fully registered', en: 'Register every guest in the party (adults, children and infants) before check-in.', ru: 'Перед заселением зарегистрируйте всех гостей — взрослых, детей и младенцев.', th: 'ลงทะเบียนผู้เข้าพักทุกคน (ผู้ใหญ่ เด็ก และทารก) ก่อนเช็คอิน', status: NR },
+  { key: 'booking.checkin.blocked.passport_missing', namespace: 'booking', description: 'Check-in refused: foreign guest without passport (TM30)', en: 'Every foreign guest needs a passport number on file before check-in (TM30).', ru: 'Для заселения нужны паспортные данные каждого иностранного гостя (TM30).', th: 'ผู้เข้าพักชาวต่างชาติทุกคนต้องมีหมายเลขหนังสือเดินทางก่อนเช็คอิน (TM30)', status: NR },
+];
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
@@ -4439,7 +4449,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...AUDIT_FIX_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.

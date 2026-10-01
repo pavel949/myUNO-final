@@ -5,6 +5,7 @@ import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
+import { calendarDayIn, toCalendarDay, DEFAULT_TIME_ZONE } from '@/lib/date';
 import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
@@ -666,18 +667,91 @@ export async function cancelBooking(
 /**
  * Check in a guest (confirmed → checked_in).
  */
+/**
+ * Why a check-in is refused. Each code maps to a content key
+ * (`booking.checkin.blocked.<code>`) so the operator sees the reason in their
+ * own language.
+ */
+export type CheckInBlockCode =
+  | 'not_confirmed'
+  | 'before_arrival'
+  | 'after_departure'
+  | 'guests_incomplete'
+  | 'passport_missing';
+
+export class CheckInBlockedError extends Error {
+  constructor(public readonly code: CheckInBlockCode, message: string) {
+    super(message);
+    this.name = 'CheckInBlockedError';
+  }
+}
+
+export interface CheckInCandidate {
+  status: BookingStatus;
+  startDate: Date;
+  endDate: Date;
+  adults: number;
+  children: number;
+  infants: number;
+  guests: Array<{ nationality: string | null; passportNumber: string | null }>;
+}
+
+/**
+ * The check-in rule, as one pure decision (null = allowed).
+ *
+ * Check-in starts the TM30 clock — immigration must be notified within 24h of
+ * a foreign guest's arrival (CLAUDE.md legal non-negotiables, doc 07 F-OPS-2) —
+ * and the filings are created from the registered party. So a check-in is only
+ * real when:
+ *  - it happens inside the stay, judged on the property's calendar day: never
+ *    weeks ahead of arrival, never after the departure day;
+ *  - every person in the party (adults, children and infants: TM30 covers all
+ *    foreigners) is registered with a nationality;
+ *  - every non-Thai guest has a passport number on file.
+ * Before this rule, a confirmed booking could be checked in 40 days early with
+ * nobody registered, and no TM30 obligation was ever created.
+ */
+export function assessCheckIn(booking: CheckInCandidate, today: string): CheckInBlockCode | null {
+  if (booking.status !== 'confirmed') return 'not_confirmed';
+  if (today < toCalendarDay(booking.startDate)) return 'before_arrival';
+  if (today >= toCalendarDay(booking.endDate)) return 'after_departure';
+  const partySize = booking.adults + booking.children + booking.infants;
+  const registered = booking.guests.filter(guest => guest.nationality?.trim());
+  if (registered.length < partySize) return 'guests_incomplete';
+  const foreignWithoutPassport = registered.some(
+    guest => guest.nationality!.trim().toUpperCase() !== 'TH' && !guest.passportNumber?.trim(),
+  );
+  if (foreignWithoutPassport) return 'passport_missing';
+  return null;
+}
+
 export async function checkInBooking(
   db: PrismaClient,
   bookingId: string,
   checkedInAt: Date = new Date()
 ) {
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      guests: { select: { nationality: true, passportNumber: true } },
+      project: { select: { timezone: true } },
+    },
+  });
   if (!booking) {
     throw new Error(`Booking ${bookingId} not found`);
   }
 
-  if (booking.status !== 'confirmed') {
-    throw new Error(`Cannot check in booking with status ${booking.status}`);
+  const blocked = assessCheckIn(
+    booking,
+    calendarDayIn(checkedInAt, booking.project.timezone ?? DEFAULT_TIME_ZONE),
+  );
+  if (blocked) {
+    throw new CheckInBlockedError(
+      blocked,
+      blocked === 'not_confirmed'
+        ? `Cannot check in booking with status ${booking.status}`
+        : `Cannot check in booking ${bookingId}: ${blocked}`,
+    );
   }
 
   const checkedIn = await db.booking.update({

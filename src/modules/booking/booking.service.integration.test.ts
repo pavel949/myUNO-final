@@ -871,10 +871,53 @@ describe('booking.service — integration tests', () => {
         data: { status: 'confirmed' },
       });
 
-      const checkedIn = await bookingService.checkInBooking(db, booking.id);
+      // The party is registered (one foreign guest with a passport, one Thai
+      // national) and the check-in happens on the arrival day — the TM30 rule
+      // (assessCheckIn) refuses anything else.
+      await db.bookingGuest.createMany({
+        data: [
+          { bookingId: booking.id, fullName: 'enc:Lead', nationality: 'RU', passportNumber: 'enc:P1', isLead: true },
+          { bookingId: booking.id, fullName: 'enc:Second', nationality: 'TH', passportNumber: '' },
+        ],
+      });
+
+      const checkedIn = await bookingService.checkInBooking(
+        db,
+        booking.id,
+        new Date('2026-08-01T08:00:00.000Z')
+      );
 
       expect(checkedIn.status).toBe('checked_in');
       expect(checkedIn.checkedInAt).toBeDefined();
+    });
+
+    it('refuses check-in before arrival and with an unregistered party (TM30)', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2026-08-05'),
+        adults: 2,
+        children: 0,
+        totalThb: 8000,
+        instantBook: true,
+      });
+      await db.booking.update({ where: { id: booking.id }, data: { status: 'confirmed' } });
+
+      await expect(
+        bookingService.checkInBooking(db, booking.id, new Date('2026-07-01T08:00:00.000Z'))
+      ).rejects.toMatchObject({ code: 'before_arrival' });
+      await expect(
+        bookingService.checkInBooking(db, booking.id, new Date('2026-08-01T08:00:00.000Z'))
+      ).rejects.toMatchObject({ code: 'guests_incomplete' });
+      const unchanged = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+      expect(unchanged.status).toBe('confirmed');
     });
 
     it('rejects check-in when not confirmed', async () => {

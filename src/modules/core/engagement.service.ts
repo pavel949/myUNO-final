@@ -1,4 +1,4 @@
-import { PrismaClient, UnitEngagementType, UnitEngagementStatus } from '@prisma/client';
+import { PrismaClient, UnitEngagementType, UnitEngagementStatus, type Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface CreateUnitEngagementInput {
@@ -27,112 +27,103 @@ export interface UpdateUnitEngagementInput {
  * For direct-managed units, noiCapAnnualThb is REQUIRED (no default).
  * Validates that the owner identity exists.
  */
-export async function createUnitEngagement(
-  db: PrismaClient,
-  input: CreateUnitEngagementInput
+export async function createDraftUnitEngagementTx(
+  tx: Prisma.TransactionClient,
+  input: CreateUnitEngagementInput,
 ): Promise<{ id: string }> {
   const { unitId, engagementType, ownerIdentityId, noiCapAnnualThb, feeOverridePct, setupFeeThb, mandateMediaId, managementOrgId } = input;
 
-  // Verify unit exists
-  const unit = await db.unit.findUnique({
-    where: { id: unitId },
-  });
+  const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true } });
+  if (!unit) throw new Error(`Unit ${unitId} not found`);
 
-  if (!unit) {
-    throw new Error(`Unit ${unitId} not found`);
-  }
+  const owner = await tx.identity.findUnique({ where: { id: ownerIdentityId }, select: { id: true } });
+  if (!owner) throw new Error(`Owner identity ${ownerIdentityId} not found`);
 
-  // Verify owner identity exists
-  const owner = await db.identity.findUnique({
-    where: { id: ownerIdentityId },
-  });
-
-  if (!owner) {
-    throw new Error(`Owner identity ${ownerIdentityId} not found`);
-  }
-
-  // Validate: direct-managed requires noiCapAnnualThb
-  if (engagementType === 'direct_managed' && !noiCapAnnualThb) {
-    throw new Error('NOI cap is required for direct-managed engagement');
-  }
-
-  // If via_management_company, verify management org exists
-  if (engagementType === 'via_management_company' && managementOrgId) {
-    const org = await db.organization.findUnique({
-      where: { id: managementOrgId },
-    });
-
-    if (!org) {
-      throw new Error(`Management organization ${managementOrgId} not found`);
+  if (engagementType === 'via_management_company') {
+    if (!managementOrgId) {
+      throw new Error('Management organization is required for via-management-company engagement');
     }
+    const org = await tx.organization.findFirst({
+      where: { id: managementOrgId, status: 'active', orgType: 'management_company' },
+      select: { id: true },
+    });
+    if (!org) throw new Error(`Management organization ${managementOrgId} not found or not active`);
   }
 
-  const engagement = await db.unitEngagement.create({
+  const engagement = await tx.unitEngagement.create({
     data: {
       unitId,
       engagementType,
       ownerIdentityId,
       noiCapAnnualThb,
-      feeOverridePct: feeOverridePct ? new Decimal(feeOverridePct) : undefined,
+      feeOverridePct: feeOverridePct !== undefined ? new Decimal(feeOverridePct) : undefined,
       setupFeeThb,
       mandateMediaId,
       managementOrgId,
       status: 'draft',
     },
   });
-
   return { id: engagement.id };
 }
 
-/**
- * Update a unit engagement.
- * If transitioning to active, validates that mandateMediaId is present.
- */
-export async function updateUnitEngagement(
+export async function createUnitEngagement(
   db: PrismaClient,
+  input: CreateUnitEngagementInput
+): Promise<{ id: string }> {
+  return db.$transaction((tx) => createDraftUnitEngagementTx(tx, input));
+}
+
+export async function updateUnitEngagementTx(
+  tx: Prisma.TransactionClient,
   engagementId: string,
-  input: UpdateUnitEngagementInput
+  input: UpdateUnitEngagementInput,
 ): Promise<void> {
   const { status, noiCapAnnualThb, feeOverridePct, setupFeeThb, mandateMediaId, startsOn, endsOn } = input;
 
-  const engagement = await db.unitEngagement.findUnique({
-    where: { id: engagementId },
-  });
+  const engagement = await tx.unitEngagement.findUnique({ where: { id: engagementId } });
+  if (!engagement) throw new Error(`UnitEngagement ${engagementId} not found`);
 
-  if (!engagement) {
-    throw new Error(`UnitEngagement ${engagementId} not found`);
-  }
+  const nextMandateMediaId = mandateMediaId ?? engagement.mandateMediaId;
+  const nextNoiCap = noiCapAnnualThb ?? engagement.noiCapAnnualThb;
 
-  // If transitioning to active, ensure mandate media is present
-  if (status === 'active' && !engagement.mandateMediaId && !mandateMediaId) {
-    throw new Error('Mandate document is required to activate engagement');
-  }
+  if (status === 'active') {
+    if (!nextMandateMediaId && engagement.engagementType !== 'owner_direct') {
+      throw new Error('Mandate document is required to activate managed engagement');
+    }
+    if (engagement.engagementType === 'direct_managed' && !nextNoiCap) {
+      throw new Error('NOI cap is required to activate direct-managed engagement');
+    }
+    if (engagement.engagementType === 'via_management_company' && !engagement.managementOrgId) {
+      throw new Error('Management organization is required to activate via-management-company engagement');
+    }
 
-  // Exactly one active engagement per unit (doc 02 §2.6) — a second active
-  // engagement makes the unit's economics ambiguous. Belt: this check;
-  // braces: the partial unique index in migration 6.
-  if (status === 'active' && engagement.status !== 'active') {
-    const competing = await db.unitEngagement.findFirst({
-      where: {
-        unitId: engagement.unitId,
-        status: 'active',
-        id: { not: engagementId },
-      },
-      select: { id: true },
-    });
-    if (competing) {
-      throw new Error(
-        `Unit ${engagement.unitId} already has an active engagement (${competing.id}); end it before activating another`
-      );
+    if (engagement.status !== 'active') {
+      const competing = await tx.unitEngagement.findFirst({
+        where: {
+          unitId: engagement.unitId,
+          status: 'active',
+          id: { not: engagementId },
+        },
+        select: { id: true },
+      });
+      if (competing) {
+        throw new Error(
+          `Unit ${engagement.unitId} already has an active engagement (${competing.id}); end it before activating another`
+        );
+      }
     }
   }
 
-  // If engagement is direct-managed and noiCapAnnualThb is being set, validate it
-  if (engagement.engagementType === 'direct_managed' && noiCapAnnualThb !== undefined && !noiCapAnnualThb) {
-    throw new Error('NOI cap cannot be removed from direct-managed engagement');
+  if (
+    engagement.engagementType === 'direct_managed' &&
+    noiCapAnnualThb !== undefined &&
+    !noiCapAnnualThb &&
+    status === 'active'
+  ) {
+    throw new Error('NOI cap cannot be removed from active direct-managed engagement');
   }
 
-  await db.unitEngagement.update({
+  await tx.unitEngagement.update({
     where: { id: engagementId },
     data: {
       status,
@@ -144,6 +135,14 @@ export async function updateUnitEngagement(
       endsOn,
     },
   });
+}
+
+export async function updateUnitEngagement(
+  db: PrismaClient,
+  engagementId: string,
+  input: UpdateUnitEngagementInput
+): Promise<void> {
+  return db.$transaction((tx) => updateUnitEngagementTx(tx, engagementId, input));
 }
 
 /**

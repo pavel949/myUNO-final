@@ -6,6 +6,7 @@ import { hasProjectStaffAccess } from '@/app/libs/projectScope';
 import { opsHref } from '@/app/libs/opsProjectContext';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import UnitAccessEditor from '@/components/units/UnitAccessEditor';
 import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
 import UnitIcalConflictBanner, { UNIT_ICAL_CALENDAR_SURFACES } from '@/components/units/UnitIcalConflictBanner';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -88,6 +89,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
             locale={locale}
           />
           <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
+          <UnitAccessEditor unitId={unit.id} />
         </div>
       </section>
     </main>

@@ -63,7 +63,7 @@ Benchmark before-arrival / check-in / during-stay / after-checkout states map to
 - handbook / requests / services / tickets
 - `/trips/[id]`
 
-The data model and operational flows exist; visual convergence to one shared Stay Pass shell remains a later component-level polish item.
+The data model and operational flows exist. The active Home Space now uses the shared premium record header, status chips and booking→prepare→arrival→stay→checkout stepper while retaining the existing guest actions and permissions.
 
 ### Operations
 
@@ -161,7 +161,7 @@ Area hierarchy and coordinates exist. A reusable public map/list discovery surfa
 1. First-class partner/agent organization role and scoped partner pipeline.
 2. Public list/map search tied to canonical Area, Project and Unit records.
 3. Public verification aggregate if “Passport”-style trust is desired.
-4. Unified Stay Pass visual shell across pre-arrival, in-stay and post-stay.
+4. Extend the new Stay Pass visual shell from active Home Space into the pre-arrival and post-stay detail screens.
 
 ### P1
 1. Dedicated seller dashboard projection from Owner + CRM opportunity.

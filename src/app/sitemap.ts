@@ -31,6 +31,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/providers`, priority: 0.6 },
     { url: `${base}/trust`, priority: 0.5 },
     { url: `${base}/help`, priority: 0.5 },
+    { url: `${base}/desks`, priority: 0.6 },
+    { url: `${base}/desks/thailand`, priority: 0.5 },
+    { url: `${base}/desks/russian-speaking`, priority: 0.5 },
+    { url: `${base}/desks/greater-china`, priority: 0.5 },
+    { url: `${base}/desks/middle-east`, priority: 0.5 },
+    { url: `${base}/desks/europe`, priority: 0.5 },
     { url: `${base}/legal/terms`, priority: 0.3 },
     { url: `${base}/legal/privacy`, priority: 0.3 },
   ];

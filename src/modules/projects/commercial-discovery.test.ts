@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eligiblePublicHomeIntents } from './commercial-discovery';
+import { eligiblePublicHomeIntents, publicOfferingPriceThb } from './commercial-discovery';
 
 const now = new Date('2026-09-29T00:00:00Z');
 const credential = (credentialType: string, overrides: Partial<{
@@ -59,5 +59,25 @@ describe('public sale and long-lease publication evidence', () => {
     const input = base();
     input.commercialOfferings.forEach(o => o.status = 'draft');
     expect(eligiblePublicHomeIntents(input, now)).toEqual([]);
+  });
+});
+
+
+describe('public commercial price normalization', () => {
+  it('publishes only supported structured prices', () => {
+    expect(publicOfferingPriceThb('sale', { askingPriceThb: 12500000 }))
+      .toEqual({ intent: 'buy', amountThb: 12500000 });
+    expect(publicOfferingPriceThb('long_term_rental', { monthlyRentThb: 65000 }))
+      .toEqual({ intent: 'rent', amountThb: 65000 });
+    expect(publicOfferingPriceThb('long_term_rental', { monthlyThb: 72000 }))
+      .toEqual({ intent: 'rent', amountThb: 72000 });
+  });
+
+  it('fails closed for unsupported, malformed or non-positive prices', () => {
+    expect(publicOfferingPriceThb('sale', { price: 12500000 })).toBeNull();
+    expect(publicOfferingPriceThb('sale', { askingPriceThb: '12500000' })).toBeNull();
+    expect(publicOfferingPriceThb('sale', { askingPriceThb: 0 })).toBeNull();
+    expect(publicOfferingPriceThb('short_term_stay', { nightlyThb: 9000 })).toBeNull();
+    expect(publicOfferingPriceThb('sale', null)).toBeNull();
   });
 });

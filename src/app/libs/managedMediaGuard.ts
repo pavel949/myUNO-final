@@ -1,26 +1,43 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
+import { canWriteUnitListing } from '@/modules/core';
 
 /** Authorization for writes to existing canonical gallery relations. */
 export async function managedMediaAccess(scope: { projectId: string; unitId?: string }) {
   const user = await getCurrentUser();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) } as const;
+
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) return { error: NextResponse.json({ error: 'Identity not found' }, { status: 404 }) } as const;
+
+  if (scope.unitId) {
+    const allowed = await canWriteUnitListing(
+      prisma,
+      identity,
+      scope.unitId,
+      scope.projectId
+    );
+    if (!allowed) {
+      return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;
+    }
+    return { user } as const;
+  }
+
+  // Shared project media remains an operator/admin responsibility. A direct
+  // owner may edit their exact Unit gallery without changing common project
+  // photography used by other owners.
   const staff = await prisma.roleAssignment.findFirst({
     where: {
-      identityId: user.identityId, status: 'active', role: 'staff_ops',
+      identityId: user.identityId,
+      status: 'active',
+      role: 'staff_ops',
       projectId: scope.projectId,
-      OR: [{ scopeType: 'project' as const }, ...(scope.unitId ? [{ scopeType: 'unit' as const, unitId: scope.unitId }] : [])],
+      scopeType: 'project',
     },
     select: { id: true },
   });
-  // A condominium project is shared: MC members can edit a mandated UNIT gallery,
-  // never a whole project gallery or unrelated condominium units.
-  const mc = scope.unitId ? await hasManagedUnitMcAccess(user, {
-    projectId: scope.projectId, unitId: scope.unitId,
-  }) : false;
-  if (!user.isAdmin && !staff && !mc) {
+  if (!user.isAdmin && !staff) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;
   }
   return { user } as const;

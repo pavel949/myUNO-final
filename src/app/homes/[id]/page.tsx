@@ -61,6 +61,6 @@ export default async function CommercialHomePage({ params, searchParams }: {
         </Link>)}
       </div>
     </div>
-    <LeadFormSection audience={intent==='buy'?'buyers':'renters'} initialMessage={inquiry}/>
+    <LeadFormSection audience={intent==='buy'?'buyers':'renters'} initialMessage={inquiry} projectId={home.project.id} unitId={home.id}/>
   </main>;
 }

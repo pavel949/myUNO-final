@@ -7,13 +7,31 @@ import {
   createIdentity,
   createBooking,
 } from '@/test/util';
-import {
-  getApplicableSeasonMarkup,
-  getApplicableNightlyPrice,
-  computePriceBreakdown,
-  isActiveHold,
-  checkAvailability,
-} from './availability.service';
+import { getApplicableSeason, isActiveHold, checkAvailability } from './availability.service';
+import { computeCanonicalPriceBreakdown as computePriceBreakdown } from './canonical-pricing.service';
+
+// The legacy calculator these tests were written against is deleted (audit
+// P2 #13: it was exported and tested but no caller used it). They now pin
+// the CANONICAL engine every quote and booking goes through.
+async function getApplicableNightlyPrice(db: typeof prisma, date: Date, unitId: string): Promise<number> {
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: { minNights: true, inventoryCategory: { select: { minNights: true } } },
+  });
+  if (!unit) throw new Error(`Unit ${unitId} not found`);
+  const nights = Math.max(1, unit.inventoryCategory?.minNights ?? unit.minNights ?? 1);
+  const end = new Date(date.getTime() + nights * 86_400_000);
+  const quote = await computePriceBreakdown(db, unitId, date, end, 1);
+  return quote.lines[0].nightly_thb;
+}
+
+async function getApplicableSeasonMarkup(
+  db: typeof prisma,
+  date: Date,
+  scope?: { projectId?: string; unitId?: string }
+): Promise<number> {
+  return (await getApplicableSeason(db, date, scope))?.markup_pct ?? 0;
+}
 
 describe('Availability & Pricing Service', () => {
   beforeEach(async () => {

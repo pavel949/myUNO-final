@@ -1,17 +1,7 @@
-import { PrismaClient, Unit, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
+import { PrismaClient, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
 import type { SourceBookingTerms } from './commercial-booking-terms';
-import {
-  getConfig,
-  type SeasonPeriod,
-  type CategoryRates,
-} from '@/modules/config';
-import {
-  addDays,
-  daysBetween,
-  daysUntil,
-  toCalendarDay,
-  DEFAULT_TIME_ZONE,
-} from '@/lib/date';
+import { getConfig, type SeasonPeriod } from '@/modules/config';
+import { daysBetween, toCalendarDay } from '@/lib/date';
 
 /**
  * Scope for pricing config resolution. Every pricing read goes through
@@ -123,296 +113,6 @@ export async function getApplicableSeason(
   }
 
   return bestMatch;
-}
-
-/**
- * Season markup percentage for a given night (0 when no season matches).
- */
-export async function getApplicableSeasonMarkup(
-  db: PrismaClient,
-  date: Date,
-  scope?: PricingScope
-): Promise<number> {
-  const season = await getApplicableSeason(db, date, scope);
-  return season ? season.markup_pct : 0;
-}
-
-interface NightResolution {
-  price: number;
-  appliedFrom: PriceBreakdownLine['applied_from'];
-  /** Flat month price (satang) for this night's season, when the unit's
-   *  category defines one — the long-stay path (≥ 28 nights) uses it. */
-  monthlyRate: number | null;
-}
-
-/**
- * Internal single-night resolver over a pre-loaded unit.
- * Resolution order: PricingRule → category seasonal rate → base × season
- * markup → base (doc 04 §4). Category rates are absolute satang amounts
- * keyed by the season *name* from the same project's calendar.
- */
-async function resolveNightlyPrice(
-  db: PrismaClient,
-  date: Date,
-  unit: Unit,
-  categoryRates: CategoryRates | undefined
-): Promise<NightResolution> {
-  // Check for PricingRule covering this night
-  const rule = await db.pricingRule.findFirst({
-    where: {
-      unitId: unit.id,
-      startDate: { lte: date },
-      endDate: { gt: date }, // end is exclusive
-    },
-  });
-
-  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
-  const season = await getApplicableSeason(db, date, scope);
-
-  const categoryEntry =
-    unit.categoryKey && categoryRates ? categoryRates[unit.categoryKey] : undefined;
-  const monthlyRate =
-    (season && categoryEntry?.monthly?.[season.name]) ?? null;
-
-  if (rule) {
-    return { price: rule.nightlyThb, appliedFrom: 'rule', monthlyRate };
-  }
-
-  const categoryNightly = season && categoryEntry?.nightly?.[season.name];
-  if (typeof categoryNightly === 'number') {
-    return { price: categoryNightly, appliedFrom: 'category_season', monthlyRate };
-  }
-
-  if (season && season.markup_pct !== 0) {
-    return {
-      price: Math.round(unit.baseNightlyThb * (1 + season.markup_pct / 100)),
-      appliedFrom: 'season',
-      monthlyRate,
-    };
-  }
-
-  return { price: unit.baseNightlyThb, appliedFrom: 'base', monthlyRate };
-}
-
-async function getCategoryRatesForUnit(
-  db: PrismaClient,
-  unit: Unit
-): Promise<CategoryRates | undefined> {
-  if (!unit.categoryKey) return undefined;
-  return await getConfig(db, 'pricing.category_rates', {
-    unitId: unit.id,
-    projectId: unit.projectId,
-  });
-}
-
-/**
- * Resolve the per-night price for a single night.
- * Resolution order: PricingRule → category seasonal rate → base × season
- * markup → base
- */
-export async function getApplicableNightlyPrice(
-  db: PrismaClient,
-  date: Date,
-  unitId: string
-): Promise<number> {
-  const unit = await db.unit.findUnique({ where: { id: unitId } });
-  if (!unit) {
-    throw new Error(`Unit ${unitId} not found`);
-  }
-
-  const categoryRates = await getCategoryRatesForUnit(db, unit);
-  const { price } = await resolveNightlyPrice(db, date, unit, categoryRates);
-  return price;
-}
-
-/**
- * Compute the full price breakdown for a booking.
- * Every rate/fee/discount is read through config.get() with the unit's scope,
- * so per-project and per-unit overrides apply (doc 04).
- */
-export async function computePriceBreakdown(
-  db: PrismaClient,
-  unitId: string,
-  checkInDate: Date,
-  checkOutDate: Date,
-  guestCount: number,
-  bookingDate: Date = new Date(),
-  pets: number = 0
-): Promise<PriceBreakdown> {
-  // The project's timezone rides along on the lookup that was already
-  // happening: `bookingDate` is an instant, and turning it into "today" needs
-  // a zone (see the early-bird comparison below).
-  const unit = await db.unit.findUnique({
-    where: { id: unitId },
-    include: { project: { select: { timezone: true } } },
-  });
-  if (!unit) {
-    throw new Error(`Unit ${unitId} not found`);
-  }
-
-  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
-
-  // Validate party size. Occupancy is adults + children — the convention every
-  // OTA uses — so infants are excluded here and checked against the unit's pet
-  // and cot policy instead. Counting an infant against the bed count turns a
-  // family of four into a party the villa refuses.
-  if (guestCount > unit.maxGuests) {
-    throw new Error(`Party size ${guestCount} exceeds unit max of ${unit.maxGuests}`);
-  }
-
-  // Pets are a house rule, not a headcount. A unit that has not answered the
-  // question is not the same as one that said no, so an unanswered policy
-  // refuses rather than assumes — the operator sets it during mobilization.
-  if (pets > 0) {
-    if (unit.petsAllowed !== true) {
-      throw new Error('This unit does not accept pets');
-    }
-    if (unit.maxPets !== null && unit.maxPets !== undefined && pets > unit.maxPets) {
-      throw new Error(`This unit accepts up to ${unit.maxPets} pet(s), not ${pets}`);
-    }
-  }
-
-  const nights = daysBetween(checkInDate, checkOutDate);
-
-  // The minimum stay is the arrival night's, not the unit's flat default.
-  //
-  // `PricingRule.minNightsOverride` was stored, validated on write, returned by
-  // the API and rendered in the admin panel — and read by nothing, so setting a
-  // seasonal minimum stay silently did nothing (T-054).
-  //
-  // The arrival night decides, which is how every OTA expresses a minimum stay
-  // and the only reading that stays unambiguous: `createPricingRule` refuses
-  // overlapping rules for a unit, so exactly one rule can cover a given night.
-  // It is a genuine override rather than a floor — relaxing the minimum in low
-  // season is as much a revenue lever as raising it over peak, and a rule that
-  // could only tighten would not be one.
-  const arrivalRule = await db.pricingRule.findFirst({
-    where: {
-      unitId: unit.id,
-      startDate: { lte: checkInDate },
-      endDate: { gt: checkInDate },
-    },
-    select: { minNightsOverride: true, label: true },
-  });
-  const minNights = arrivalRule?.minNightsOverride ?? unit.minNights;
-  if (nights < minNights) {
-    throw new Error(
-      `Stay length ${nights} nights is below minimum of ${minNights}`
-    );
-  }
-
-  // Generate nightly breakdown
-  const categoryRates = await getCategoryRatesForUnit(db, unit);
-  const lines: PriceBreakdownLine[] = [];
-  const nightMonthlyRates: (number | null)[] = [];
-  let subtotal = 0;
-  let currentDate = new Date(checkInDate);
-
-  while (currentDate < checkOutDate) {
-    const { price, appliedFrom, monthlyRate } = await resolveNightlyPrice(
-      db,
-      currentDate,
-      unit,
-      categoryRates
-    );
-    lines.push({
-      date: toCalendarDay(currentDate),
-      nightly_thb: price,
-      applied_from: appliedFrom,
-    });
-    nightMonthlyRates.push(monthlyRate);
-    subtotal += price;
-    currentDate = addDays(currentDate, 1);
-  }
-
-  // Long-stay monthly path: for ≥ 28 nights, when the unit's category
-  // defines a flat month price for EVERY covered season, each night becomes
-  // round(monthly/30) and REPLACES the LOS discount (no stacking — provisional
-  // rule, open_questions). Any season without a monthly rate falls the whole
-  // stay back to the nightly + LOS-discount path.
-  let monthlyApplied = false;
-  if (nights >= 28 && nightMonthlyRates.every((m) => typeof m === 'number')) {
-    monthlyApplied = true;
-    subtotal = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const nightly = Math.round((nightMonthlyRates[i] as number) / 30);
-      lines[i] = {
-        ...lines[i],
-        nightly_thb: nightly,
-        applied_from: 'category_monthly',
-      };
-      subtotal += nightly;
-    }
-  }
-
-  // Length-of-stay discount (monthly beats weekly); replaced by the
-  // category monthly rate when that path applied.
-  let losDiscountPct = 0;
-  if (!monthlyApplied) {
-    if (nights >= 28) {
-      losDiscountPct =
-        (await getConfig(db, 'pricing.los_discount.monthly_pct', scope)) ?? 20;
-    } else if (nights >= 7) {
-      losDiscountPct =
-        (await getConfig(db, 'pricing.los_discount.weekly_pct', scope)) ?? 5;
-    }
-  }
-
-  const losDiscount = Math.round(subtotal * (losDiscountPct / 100));
-
-  // Early-bird discount: pct off the nightly subtotal (after LOS) when the
-  // booking is made far enough ahead. Never stacks with the monthly path
-  // (provisional rule, open_questions).
-  let earlyBirdDiscount = 0;
-  if (!monthlyApplied) {
-    const earlyBird = await getConfig(db, 'pricing.early_bird', scope);
-    if (
-      earlyBird &&
-      earlyBird.min_days_before !== null &&
-      earlyBird.pct > 0 &&
-      // `bookingDate` is an instant; `checkInDate` is a stored calendar day.
-      // Normalising the instant in UTC (what the old local-midnight helper did
-      // on a UTC server) put "today" a day early for the seven hours between
-      // 00:00 and 07:00 ICT — long enough to hand out, or refuse, an
-      // early-bird discount the guest had not earned. `daysUntil` resolves the
-      // instant to a day in the project's own zone first.
-      daysUntil(bookingDate, checkInDate, unit.project?.timezone ?? DEFAULT_TIME_ZONE) >=
-        earlyBird.min_days_before
-    ) {
-      earlyBirdDiscount = Math.round(
-        (subtotal - losDiscount) * (earlyBird.pct / 100)
-      );
-    }
-  }
-
-  const cleaningFee =
-    (await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0;
-
-  const serviceFeePercent =
-    (await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0;
-
-  const subtotalAfterDiscount = subtotal - losDiscount - earlyBirdDiscount;
-  const serviceFee = Math.round(subtotalAfterDiscount * (serviceFeePercent / 100));
-
-  const taxPercent =
-    (await getConfig(db, 'finance.occupancy_tax_pct', scope)) ?? 0;
-
-  const occupancyTax = Math.round(
-    (subtotalAfterDiscount + cleaningFee + serviceFee) * (taxPercent / 100)
-  );
-
-  const total = subtotalAfterDiscount + cleaningFee + serviceFee + occupancyTax;
-
-  return {
-    lines,
-    subtotal_thb: subtotal,
-    cleaning_fee_thb: cleaningFee,
-    los_discount_thb: losDiscount,
-    early_bird_discount_thb: earlyBirdDiscount,
-    service_fee_thb: serviceFee,
-    occupancy_tax_thb: occupancyTax,
-    total_thb: total,
-  };
 }
 
 /**
@@ -632,6 +332,9 @@ export async function getUnitPricingRules(
  * first — an ambiguity worth refusing at write time rather than leaving as a
  * silent race for guests to hit.
  */
+/** An override beyond this ratio of the base rate is treated as a units error. */
+const OVERRIDE_RATIO_LIMIT = 10;
+
 export async function createPricingRule(
   db: PrismaClient,
   input: CreatePricingRuleInput
@@ -648,9 +351,25 @@ export async function createPricingRule(
     throw new Error('minNightsOverride must be a positive integer');
   }
 
-  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { id: true } });
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, baseNightlyThb: true, inventoryCategory: { select: { baseNightlyThb: true } } },
+  });
   if (!unit) {
     throw new Error(`Unit ${unitId} not found`);
+  }
+
+  // Units-error guard, not a commercial rule: an override outside 1/10 .. 10x
+  // of the canonical base is almost certainly baht typed as satang (100x too
+  // low) or the reverse. The audit reproduced ฿120/night accepted on a
+  // ฿13,006 villa. A genuine 10x promotion or surge is still possible by
+  // changing the base rate itself, which is reviewed and audit-logged.
+  const base = unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb;
+  if (base > 0 && (nightlyThb * OVERRIDE_RATIO_LIMIT < base || nightlyThb > base * OVERRIDE_RATIO_LIMIT)) {
+    throw new Error(
+      `nightlyThb ${nightlyThb} satang is outside 1/${OVERRIDE_RATIO_LIMIT}..${OVERRIDE_RATIO_LIMIT}x of the base rate ` +
+        `(${base} satang) — check the amount is in satang (THB × 100)`
+    );
   }
 
   const overlapping = await db.pricingRule.findFirst({

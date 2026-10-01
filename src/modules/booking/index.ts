@@ -55,6 +55,7 @@ export {
   computeRefundAmount,
   DEFAULT_POLICIES,
   resolveCancellationPolicy,
+  resolveStayCancellationPolicy,
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';
@@ -98,3 +99,16 @@ export {
   type EffectiveStayOffer,
   type PricingTraceNight,
 } from './revenue-tariff-engine';
+
+export {
+  projectCalendar,
+  projectCalendarCell,
+  calendarDays,
+  shiftCalendarDay,
+  validCalendarDay,
+  bangkokCalendarDay,
+  coversCalendarDay,
+  type CalendarCell,
+  type CalendarEntry,
+  type CalendarState,
+} from './calendar-projection';

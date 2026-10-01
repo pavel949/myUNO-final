@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
   createBooking,
-  resolveCancellationPolicy,
+  resolveStayCancellationPolicy,
   findAvailableUnitsForCategory,
 } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
@@ -244,10 +244,9 @@ export async function POST(req: NextRequest) {
         throw createPublicError('assigned unit does not belong to the requested inventory category', 409);
       }
 
-      const policy = await resolveCancellationPolicy(prisma, unit.cancellationPolicyKey, {
-        projectId: bookingProjectId,
-        unitId: candidate.id,
-      });
+      // The same resolver the unit and review pages show the guest: the
+      // snapshot is the policy they consented to (BAR plan > category > unit).
+      const policy = await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
 
       try {
         booking = await createBooking(prisma, {

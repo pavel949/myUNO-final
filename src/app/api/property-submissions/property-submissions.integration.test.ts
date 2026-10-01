@@ -71,7 +71,7 @@ describe('one property intake and verified canonical conversion', () => {
     expect(unit.projectId).toBe(projectId);
     expect(unit.status).toBe('draft');
     expect(unit.ownerIdentityId).toBe(applicantId);
-    expect(unit.commercialOfferings.map(o => [o.offeringType, o.status])).toEqual(expect.arrayContaining([['short_stay', 'draft'], ['monthly', 'draft'], ['sale', 'draft']]));
+    expect(unit.commercialOfferings.map(o => [o.offeringType, o.status])).toEqual(expect.arrayContaining([['short_stay', 'draft'], ['long_term_rental', 'draft'], ['sale', 'draft']]));
     expect(await db.ownershipPeriod.count({ where: { unitId: unit.id } })).toBe(1);
     expect(await db.roleAssignment.count({ where: { identityId: applicantId, role: 'owner', unitId: unit.id } })).toBe(1);
     const retry = await (await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } })).json();

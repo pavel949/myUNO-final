@@ -60,7 +60,7 @@ describe('getPublicUnitById — what the public may see (T-035)', () => {
   it('does not expose a sale-only or lease-only unit through the Stay detail URL', async () => {
     const project = await liveProject();
     await db.project.update({ where: { id: project.id }, data: { projectType: 'condominium' } });
-    const sale = await createUnit({ projectId: project.id, status: 'live' });
+    const sale = await createUnit({ withoutStayOffering: true, projectId: project.id, status: 'live' });
     await db.commercialOffering.create({ data: { unitId: sale.id, offeringType: 'sale', status: 'active' } });
     expect(await getPublicUnitById(sale.id)).toBeNull();
     await db.commercialOffering.create({ data: { unitId: sale.id, offeringType: 'long_term_rental', status: 'active' } });

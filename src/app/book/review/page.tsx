@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getConfig } from '@/modules/config';
+import { resolveStayCancellationPolicy } from '@/modules/booking';
 import BookingReviewClient from './review-client';
 
 export const dynamic = 'force-dynamic';
@@ -77,8 +78,21 @@ export default async function BookingReviewPage({
       'bank_transfer',
     ];
 
+  // The exact policy the booking will snapshot (BAR plan > category > unit >
+  // configured default). The guest consents to these terms, so the page shows
+  // its name and every refund step instead of a generic sentence.
+  const policy = await resolveStayCancellationPolicy(
+    prisma,
+    searchParams.unitId ? { unitId: searchParams.unitId } : { inventoryCategoryId: inventoryCategoryId! }
+  ).catch(() => null);
+
   const labels = await getLabels({
     'booking.review.title': 'Review and confirm',
+    'booking.review.policy_step': '{pct}% refund when cancelled at least {days} days before check-in',
+    'booking.review.policy_step_last': '{pct}% refund for later cancellations',
+    'catalog.cancellation_policies.flexible.label': 'Flexible',
+    'catalog.cancellation_policies.moderate.label': 'Moderate',
+    'catalog.cancellation_policies.strict.label': 'Strict',
     'booking.review.recap': 'Your stay',
     'booking.review.check_in': 'Check-in',
     'booking.review.check_out': 'Check-out',
@@ -115,7 +129,23 @@ export default async function BookingReviewPage({
       <BookingReviewClient
         projectId={projectId}
         methods={enabled}
-        defaultPolicy={labels['listing.cancellation_default']}
+        defaultPolicy={
+          policy
+            ? [
+                (labels as Record<string, string>)[`catalog.cancellation_policies.${policy.name}.label`] || policy.name,
+                ...[...policy.steps]
+                  .sort((a, b) => b.days_before_checkin - a.days_before_checkin)
+                  .map(step =>
+                    (step.days_before_checkin > 0
+                      ? labels['booking.review.policy_step']
+                      : labels['booking.review.policy_step_last']
+                    )
+                      .replace('{pct}', String(step.refund_pct))
+                      .replace('{days}', String(step.days_before_checkin))
+                  ),
+              ].join(' · ')
+            : labels['listing.cancellation_default']
+        }
         labels={{
           title: labels['booking.review.title'],
           recap: labels['booking.review.recap'],

@@ -213,7 +213,7 @@ describe('source-controlled inventory is excluded before public search and categ
 
   it('omits a source-controlled villa from undated/dated results and capacity until cutover', async () => {
     const project = await createProject({ status: 'live' });
-    const sourceUnit = await createUnit({
+    const sourceUnit = await createUnit({ withoutStayOffering: true,
       projectId: project.id, name: 'Real-source-01', status: 'live',
       categoryKey: 'source_2br', baseNightlyThb: 500000,
     });
@@ -271,9 +271,6 @@ describe('source-controlled inventory is excluded before public search and categ
         status: 'active',
         pricingTerms: { sourceSystem: 'layantara_os', quoteEngine: 'pending_validation' },
       },
-    });
-    await db.commercialOffering.create({
-      data: { unitId: sellableUnit.id, offeringType: 'short_stay', status: 'active' },
     });
     const dated = await GET(makeRequest({
       projectId: project.id, adultsCount: '2',

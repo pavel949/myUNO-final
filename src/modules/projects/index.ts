@@ -145,3 +145,4 @@ export { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '
 export { createProjectAmenityReservation, cancelOwnProjectAmenityReservation, type AmenityReservationPolicy } from './project-amenity-reservations.service';
 
 export { getPublicProjectPassport, type PublicProjectPassport, type PassportEvidenceStatus } from './passport.service';
+export { ensureStayOfferingsForLiveUnits } from './stay-offering-backfill';

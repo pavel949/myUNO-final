@@ -256,7 +256,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
 
   it('never sells a sale-only unit as an accommodation until an active stay offering exists', async () => {
     const c = await category('sale_only_2br');
-    const unit = await createUnit({
+    const unit = await createUnit({ withoutStayOffering: true,
       projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
     });
     await db.project.update({ where: { id: projectId }, data: { projectType: 'condominium' } });
@@ -422,7 +422,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
 
   it('activates one reusable short-stay offering and reuses it for multiple channels', async () => {
     const c = await category('garden_2br');
-    const unit = await createUnit({
+    const unit = await createUnit({ withoutStayOffering: true,
       projectId, categoryKey: c.categoryKey, status: 'live', baseNightlyThb: 350_000,
     });
     await db.project.update({ where: { id: projectId }, data: { projectType: 'resort' } });

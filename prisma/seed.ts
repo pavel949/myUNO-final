@@ -6,6 +6,7 @@ import { seedLegalPages } from '../src/modules/content/legal-pages.seed';
 import { seedDemoData } from '../src/modules/core/seed';
 import { seedLayantara } from '../src/modules/core/layantara.seed';
 import { seedWalkthroughState } from '../src/modules/core/walkthrough.seed';
+import { ensureStayOfferingsForLiveUnits } from '../src/modules/projects/stay-offering-backfill';
 
 const db = new PrismaClient();
 
@@ -23,6 +24,8 @@ async function main() {
     await seedDemoData(db);
     console.log('✓ Demo data seeded');
     await seedLayantara(db);
+    // Live units are sellable only through an active stay offering.
+    console.log(`✓ Stay offerings ensured (${await ensureStayOfferingsForLiveUnits(db)} created)`);
     // Last: the walkthrough state reads the cast the steps above created.
     await seedWalkthroughState(db);
     console.log('✓ Seed completed successfully');

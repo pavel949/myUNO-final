@@ -91,6 +91,35 @@ async function resolveCanonicalInventoryCategory(projectId: string, categoryKey?
  * Create a new unit.
  * Admin/staff-only action.
  */
+
+/**
+ * The legacy unit forms (admin Units, ops New unit) create stay inventory in
+ * untyped projects: going live there has always meant "bookable". Now that
+ * CommercialOffering is the sellability gate for every live unit, keep that
+ * meaning explicit by ensuring an active stay offering when such a unit goes
+ * live. Typed (canonical onboarding) projects choose their offerings
+ * explicitly in onboarding step 5 and are left alone; an existing stay
+ * offering in any status is never touched.
+ */
+async function ensureLegacyStayOffering(unitId: string): Promise<void> {
+  const unit = await prisma.unit.findUnique({
+    where: { id: unitId },
+    select: {
+      status: true,
+      project: { select: { projectType: true } },
+      commercialOfferings: {
+        where: { offeringType: { in: ['short_stay', 'short_term_stay'] } },
+        select: { id: true },
+      },
+    },
+  });
+  if (!unit || unit.status !== 'live' || unit.project.projectType) return;
+  if (unit.commercialOfferings.length > 0) return;
+  await prisma.commercialOffering.create({
+    data: { unitId, offeringType: 'short_stay', status: 'active' },
+  });
+}
+
 export async function createUnit(input: CreateUnitInput) {
   const {
     projectId,
@@ -188,6 +217,7 @@ export async function createUnit(input: CreateUnitInput) {
   });
 
   await ensureOwnershipRecorded(prisma, unit.id);
+  await ensureLegacyStayOffering(unit.id);
 
   await logAudit({
     actorIdentityId,
@@ -368,6 +398,8 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(coverMediaId !== undefined && { coverMediaId }),
     } as any,
   });
+
+  if (status === 'live') await ensureLegacyStayOffering(unitId);
 
   await logAudit({
     actorIdentityId,

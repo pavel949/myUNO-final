@@ -29,7 +29,7 @@ describe('canonical property → booking → operations → financial close', ()
       firstName: admin.firstName, lastName: admin.lastName, roles: [],
     });
     const project = await createProject({ status: 'live' });
-    const unit = await createUnit({
+    const unit = await createUnit({ withoutStayOffering: true,
       projectId: project.id, ownerIdentityId: owner.id,
       categoryKey: 'two_bedroom', name: 'Villa G6', status: 'live',
       baseNightlyThb: 200_00, instantBook: true,

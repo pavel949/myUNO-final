@@ -218,7 +218,7 @@ describe('GET /api/units/[unitId] — truthful gallery scope', () => {
     const actor = await createIdentity();
     const project = await createProject({ status: 'live' });
     await db.project.update({ where: { id: project.id }, data: { projectType } });
-    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live', withoutStayOffering: true });
     await db.commercialOffering.create({ data: {
       projectId: project.id, unitId: unit.id,
       offeringType: 'short_stay', status: 'active',

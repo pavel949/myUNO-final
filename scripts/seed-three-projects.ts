@@ -7,6 +7,7 @@
  * 3. The Title Heritage - boutique collection
  */
 
+import { ensureStayOfferingsForLiveUnits } from '../src/modules/projects/stay-offering-backfill';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { bahtToSatang } from '../src/lib/money';
 
@@ -450,6 +451,7 @@ async function seedThreeProjects() {
     console.error('❌ Seed error:', error);
     throw error;
   } finally {
+    await ensureStayOfferingsForLiveUnits(prisma);
     await prisma.$disconnect();
   }
 }

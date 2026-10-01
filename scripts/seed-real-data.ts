@@ -10,6 +10,7 @@
  * - Unit engagements
  */
 
+import { ensureStayOfferingsForLiveUnits } from '../src/modules/projects/stay-offering-backfill';
 import { PrismaClient } from '@prisma/client';
 import { bahtToSatang } from '../src/lib/money';
 
@@ -336,6 +337,7 @@ async function seedRealData() {
     console.error('❌ Seed error:', error);
     throw error;
   } finally {
+    await ensureStayOfferingsForLiveUnits(prisma);
     await prisma.$disconnect();
   }
 }

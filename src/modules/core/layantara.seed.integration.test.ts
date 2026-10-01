@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db as prisma, resetDb, createIdentity } from '@/test/util';
 import { seedLayantara, LAYANTARA_CATEGORIES } from './layantara.seed';
-import { computePriceBreakdown } from './availability.service';
+import { computeCanonicalPriceBreakdown as computePriceBreakdown } from './canonical-pricing.service';
 
 describe('seedLayantara (LY-4)', () => {
   beforeEach(async () => {
@@ -94,6 +94,12 @@ describe('seedLayantara (LY-4)', () => {
     const project = await prisma.project.findUnique({ where: { slug: 'layantara' } });
     const unit = await prisma.unit.findFirst({
       where: { projectId: project!.id, categoryKey: 'superior_2br' },
+    });
+    // Seeded villas are not sellable until an offering is activated at
+    // cutover (CommercialOffering is the sellability gate); activate one to
+    // check the grid itself.
+    await prisma.commercialOffering.create({
+      data: { unitId: unit!.id, offeringType: 'short_stay', status: 'active' },
     });
 
     const breakdown = await computePriceBreakdown(

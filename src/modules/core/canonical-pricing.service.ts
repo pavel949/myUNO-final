@@ -126,10 +126,14 @@ export async function computeCanonicalPriceBreakdown(
       offeringType: { in: ['short_term_stay', 'short_stay', 'long_term_rental'] } },
     select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
   });
-  // New canonical properties explicitly choose what can be sold. A sale-only
-  // or lease-only unit must never become a guest stay merely because its
-  // physical Unit is live. Untyped legacy projects retain compatibility.
-  if (unit.project.projectType && !stayOffers.some(offer =>
+  // CommercialOffering decides what can be sold (canonical contract,
+  // invariant 3): a live unit with no active stay offering is not bookable,
+  // whatever its project's type. This used to apply only to typed projects,
+  // so every live unit of an untyped (legacy) project was bookable with no
+  // offering at all — 5 of 5 live production units on 2026-10-01, backfilled
+  // by migration 20261001120000_backfill_stay_offerings. Draft units stay
+  // quotable for admin previews.
+  if ((unit.status === 'live' || unit.project.projectType) && !stayOffers.some(offer =>
     ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')) {
     throw new Error('No active short-stay offering for this property');
   }

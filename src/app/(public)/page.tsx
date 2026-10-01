@@ -221,8 +221,8 @@ export default async function LandingPage() {
           sizes={["100", "vw"].join("")}
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/60 to-brand-deep/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/75 via-transparent to-brand-deep/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/75 via-brand-deep/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/50 via-transparent to-transparent" />
 
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
@@ -441,7 +441,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-      <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="services-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">

@@ -142,8 +142,42 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           await tx.unitMedia.createMany({ data: photos.map((mediaId, sort) => ({ unitId: unit.id, mediaId, sort })), skipDuplicates: true });
           await tx.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0] } });
         }
-        const offers = Array.isArray(data.offers) ? data.offers.filter((v): v is string => typeof v === 'string' && ['short_stay','monthly','yearly','sale'].includes(v)) : [];
-        if (offers.length) await tx.commercialOffering.createMany({ data: offers.map(offeringType => ({ unitId: unit.id, offeringType, status: 'draft' })) });
+        const requestedOffers = Array.isArray(data.offers) ? data.offers.filter((v): v is string => typeof v === 'string' && ['short_stay','monthly','yearly','sale'].includes(v)) : [];
+        const canonicalOffers = [...new Set(requestedOffers.map((offer) =>
+          offer === 'short_stay' ? 'short_term_stay' :
+          offer === 'monthly' || offer === 'yearly' ? 'long_term_rental' :
+          'sale'
+        ))];
+        if (canonicalOffers.length) {
+          await tx.commercialOffering.createMany({
+            data: canonicalOffers.map((offeringType) => ({ unitId: unit.id, offeringType, status: 'draft' })),
+          });
+        }
+
+        const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(data.operatingModel))
+          ? String(data.operatingModel)
+          : null;
+        if (ownerIdentityId && operatingModel && operatingModel !== 'via_management_company') {
+          await tx.unitEngagement.create({
+            data: {
+              unitId: unit.id,
+              ownerIdentityId,
+              engagementType: operatingModel === 'direct_managed' ? 'direct_managed' : 'owner_direct',
+              status: 'draft',
+            },
+          });
+        }
+        if (ownerIdentityId && operatingModel === 'via_management_company' && requestedOrgId) {
+          await tx.unitEngagement.create({
+            data: {
+              unitId: unit.id,
+              ownerIdentityId,
+              managementOrgId: requestedOrgId,
+              engagementType: 'via_management_company',
+              status: 'draft',
+            },
+          });
+        }
       }
 
       const result = { ...data, status: 'converted', canonicalProjectId: projectId, canonicalUnitId: unitId, convertedAt: new Date().toISOString(), reviewedByIdentityId: guard.actorIdentityId };

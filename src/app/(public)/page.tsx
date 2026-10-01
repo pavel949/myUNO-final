@@ -224,7 +224,7 @@ export default async function LandingPage() {
 
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase text-brand-sun-soft">
+            <p className="text-kicker uppercase text-brand-andaman">
               {labels['landing.hero.kicker']}
             </p>
             <h1
@@ -529,16 +529,16 @@ export default async function LandingPage() {
         </section>
       ) : null}
 
-      <section className="bg-brand-deep py-56 text-surface-ivory md:py-96" aria-labelledby="value-heading">
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="value-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="max-w-3xl">
             <p className="text-kicker uppercase text-brand-sun-soft">
               {labels['landing.value.kicker']}
             </p>
-            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold">
+            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
               {labels['landing.value.title']}
             </h2>
-            <p className="mt-12 max-w-2xl text-body text-surface-ivory/70">
+            <p className="mt-12 max-w-2xl text-body text-text-secondary">
               {labels['landing.value.body']}
             </p>
           </div>
@@ -548,12 +548,12 @@ export default async function LandingPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group rounded-2xl border border-white/20 bg-surface-ivory/[0.04] p-20 transition-colors duration-structural hover:bg-surface-ivory/[0.08] md:p-24"
+                className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
               >
                 <TrustMark size={20} filled className="text-brand-sun-soft" />
-                <h3 className="mt-24 font-display text-title font-semibold">{item.title}</h3>
-                <p className="mt-8 text-small leading-relaxed text-surface-ivory/70">{item.body}</p>
-                <span className="mt-20 inline-block text-small font-semibold text-surface-ivory">{labels['landing.start.explore']} →</span>
+                <h3 className="mt-24 font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
+                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
               </Link>
             ))}
           </div>

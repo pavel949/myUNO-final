@@ -48,15 +48,15 @@ export default async function RentOutPage() {
     <section className="border-b border-border-line bg-surface-paper px-20 py-56 md:px-32 md:py-80">
       <div className="mx-auto max-w-7xl">
         <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['rentout.kicker']}</p>
-        <h1 className="mt-10 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
+        <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
           {labels['rentout.title']}
         </h1>
         <p className="mt-20 max-w-3xl text-lg leading-relaxed text-text-secondary">{labels['rentout.body']}</p>
-        <div className="mt-28 flex flex-col gap-10 sm:flex-row">
-          <Link href="/property/onboard" className="inline-flex min-h-52 items-center justify-center rounded-lg bg-brand-andaman px-24 font-semibold text-white hover:bg-brand-deep">
+        <div className="mt-32 flex flex-col gap-12 sm:flex-row">
+          <Link href="/property/onboard" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-24 font-semibold text-white hover:bg-brand-deep">
             {labels['rentout.primary']} →
           </Link>
-          <Link href="/manage" className="inline-flex min-h-52 items-center justify-center rounded-lg border border-border-line bg-surface-paper px-24 font-semibold text-text-ink hover:border-border-line-2">
+          <Link href="/manage" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-border-line bg-surface-paper px-24 font-semibold text-text-ink hover:border-border-line-2">
             {labels['rentout.manage']} →
           </Link>
         </div>
@@ -65,7 +65,7 @@ export default async function RentOutPage() {
 
     <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
       <h2 className="font-display text-display font-semibold text-text-ink">{labels['rentout.strategy.title']}</h2>
-      <div className="mt-28 grid gap-16 md:grid-cols-3">
+      <div className="mt-32 grid gap-16 md:grid-cols-3">
         {[
           { title: labels['rentout.short.title'], body: labels['rentout.short.body'], cta: labels['rentout.short.cta'], href: '/property/onboard?offers=short_stay' },
           { title: labels['rentout.monthly.title'], body: labels['rentout.monthly.body'], cta: labels['rentout.monthly.cta'], href: '/property/onboard?offers=monthly,yearly' },
@@ -74,14 +74,14 @@ export default async function RentOutPage() {
           className="group flex min-h-[260px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <div>
             <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
-            <p className="mt-10 text-body text-text-secondary">{item.body}</p>
+            <p className="mt-12 text-body text-text-secondary">{item.body}</p>
           </div>
           <span className="mt-24 text-small font-semibold text-brand-andaman">{item.cta} →</span>
         </Link>)}
       </div>
     </section>
 
-    <section className="border-y border-border-line bg-surface-paper py-56 md:py-72">
+    <section className="border-y border-border-line bg-surface-paper py-56 md:py-64">
       <div className="mx-auto max-w-7xl px-20 md:px-32">
         <ProcessStepper steps={[
           { label: labels['rentout.steps.property'], state: 'active' },
@@ -95,20 +95,20 @@ export default async function RentOutPage() {
 
     <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
       <h2 className="font-display text-display font-semibold text-text-ink">{labels['rentout.operation.title']}</h2>
-      <div className="mt-28 grid gap-16 md:grid-cols-3">
+      <div className="mt-32 grid gap-16 md:grid-cols-3">
         <Link href="/property/onboard?operatingModel=owner_direct" className="group rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold text-text-ink">{labels['rentout.operation.owner.title']}</h3>
-          <p className="mt-10 text-body text-text-secondary">{labels['rentout.operation.owner.body']}</p>
+          <p className="mt-12 text-body text-text-secondary">{labels['rentout.operation.owner.body']}</p>
           <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['rentout.primary']} →</span>
         </Link>
         <Link href="/property/onboard?operatingModel=via_management_company" className="group rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold text-text-ink">{labels['rentout.operation.manager.title']}</h3>
-          <p className="mt-10 text-body text-text-secondary">{labels['rentout.operation.manager.body']}</p>
+          <p className="mt-12 text-body text-text-secondary">{labels['rentout.operation.manager.body']}</p>
           <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['rentout.primary']} →</span>
         </Link>
         <Link href="/manage" className="group rounded-2xl bg-brand-andaman p-24 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold">{labels['rentout.operation.myuno.title']}</h3>
-          <p className="mt-10 text-body text-white/80">{labels['rentout.operation.myuno.body']}</p>
+          <p className="mt-12 text-body text-white/80">{labels['rentout.operation.myuno.body']}</p>
           <span className="mt-24 inline-block text-small font-semibold">{labels['rentout.operation.manage_cta']} →</span>
         </Link>
       </div>

@@ -134,7 +134,7 @@ export async function deriveUnitOnboardingState(
       commercialOfferings: { select: { offeringType: true, status: true } },
       engagements: { select: { engagementType: true, status: true, mandateMediaId: true, noiCapAnnualThb: true, managementOrgId: true } },
       ratePlans: { select: { id: true, status: true } },
-      media: { select: { id: true }, take: 1 },
+      media: { select: { mediaId: true }, take: 1 },
     },
   });
   if (!unit) return { state: 'blocked', blockers: ['UNIT_NOT_FOUND'] };

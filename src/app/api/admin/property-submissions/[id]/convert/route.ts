@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
-import { setUnitOwnerTx } from '@/modules/projects/ownership.service';
-import { createDraftUnitEngagementTx } from '@/modules/core/engagement.service';
+import { setUnitOwnerTx } from '@/modules/projects';
+import { createDraftUnitEngagementTx } from '@/modules/core';
 import {
   ensureDraftCommercialOfferingsTx,
   resolveCanonicalUnitTx,
   deriveUnitOnboardingState,
-} from '@/modules/onboarding/canonical-onboarding';
+} from '@/modules/onboarding';
 
 /**
  * Converts a verified intake into canonical DRAFT records. This endpoint does

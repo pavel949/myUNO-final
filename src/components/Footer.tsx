@@ -16,6 +16,7 @@ export interface FooterLabels {
   trust: string;
   about: string;
   help: string;
+  global: string;
   ombudsman: string;
   audienceColumn: string;
   owners: string;
@@ -64,6 +65,7 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/trust', label: labels.trust },
         { href: '/about', label: labels.about },
         { href: '/help', label: labels.help },
+        { href: '/desks', label: labels.global },
       ],
     },
     {

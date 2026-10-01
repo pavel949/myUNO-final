@@ -94,14 +94,16 @@ export default async function RentOutPage() {
     <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
       <h2 className="font-display text-display font-semibold text-text-ink">{labels['rentout.operation.title']}</h2>
       <div className="mt-28 grid gap-16 md:grid-cols-3">
-        <article className="rounded-2xl border border-border-line bg-surface-paper p-24">
+        <Link href="/property/onboard?operatingModel=owner_direct" className="group rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold text-text-ink">{labels['rentout.operation.owner.title']}</h3>
           <p className="mt-10 text-body text-text-secondary">{labels['rentout.operation.owner.body']}</p>
-        </article>
-        <article className="rounded-2xl border border-border-line bg-surface-paper p-24">
+          <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['rentout.primary']} →</span>
+        </Link>
+        <Link href="/property/onboard?operatingModel=via_management_company" className="group rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold text-text-ink">{labels['rentout.operation.manager.title']}</h3>
           <p className="mt-10 text-body text-text-secondary">{labels['rentout.operation.manager.body']}</p>
-        </article>
+          <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['rentout.primary']} →</span>
+        </Link>
         <Link href="/manage" className="group rounded-2xl bg-brand-andaman p-24 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
           <h3 className="font-display text-title font-semibold">{labels['rentout.operation.myuno.title']}</h3>
           <p className="mt-10 text-body text-white/80">{labels['rentout.operation.myuno.body']}</p>

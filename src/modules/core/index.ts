@@ -67,7 +67,9 @@ export {
 
 export {
   createUnitEngagement,
+  createDraftUnitEngagementTx,
   updateUnitEngagement,
+  updateUnitEngagementTx,
   getUnitEngagement,
   getActiveEngagement,
   getUnitEngagements,

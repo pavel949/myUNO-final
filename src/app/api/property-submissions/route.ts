@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import { classifyPropertySubmission } from '@/modules/onboarding/canonical-onboarding';
+import { classifyPropertySubmission } from '@/modules/onboarding';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);

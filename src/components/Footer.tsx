@@ -113,7 +113,7 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
           {columns.map((column) => (
             <div key={column.title}>
               <p className="mb-16 text-small font-semibold text-surface-ivory">{column.title}</p>
-              <ul className="space-y-10 text-small text-surface-ivory/70">
+              <ul className="space-y-12 text-small text-surface-ivory/70">
                 {column.links.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="transition-colors duration-micro hover:text-surface-ivory">

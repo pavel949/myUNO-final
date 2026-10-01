@@ -6,7 +6,7 @@ import { classifyPropertySubmission } from '@/modules/onboarding/canonical-onboa
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -20,7 +20,7 @@ function normalize(body: Record<string, unknown>): Submission {
     ? String(body.operatingModel) as Submission['operatingModel']
     : null;
   return {
-    kind, existingUnitId: typeof body.existingUnitId === 'string' && body.existingUnitId ? body.existingUnitId : null, operatingModel, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
+    kind, existingUnitId: typeof body.existingUnitId === 'string' && body.existingUnitId ? body.existingUnitId : null, operatingModel, requestedManagementCompanyName: String(body.requestedManagementCompanyName || '').trim().slice(0, 160), projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
     proposedProject: String(body.proposedProject || '').trim().slice(0, 160),
     projectAddress: String(body.projectAddress || '').trim().slice(0, 500),
     projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(body.projectType)) ? String(body.projectType) : 'condominium',

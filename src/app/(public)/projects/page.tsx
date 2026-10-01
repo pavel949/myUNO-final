@@ -117,7 +117,7 @@ export default async function ProjectsHubPage() {
                   {project.featuredAmenities.length > 0 ? (
                     <div className="mb-12 flex flex-wrap gap-8">
                       {project.featuredAmenities.map((amenity) => (
-                        <span key={amenity.id} className="rounded-full bg-surface-ivory px-10 py-6 text-small text-text-secondary">
+                        <span key={amenity.id} className="rounded-full bg-surface-ivory px-12 py-4 text-small text-text-secondary">
                           {amenity.name}
                         </span>
                       ))}

@@ -21,7 +21,7 @@ const req = (method: string, body?: object) => new NextRequest('http://localhost
 
 async function expectHttpStatus(response: Response, expected: number) {
   const body = await response.clone().json().catch(() => null);
-  expect({ status: response.status, body }).toMatchObject({ status: expected });
+  expect(response.status, JSON.stringify(body)).toBe(expected);
 }
 
 describe('one property intake and verified canonical conversion', () => {
@@ -173,7 +173,7 @@ describe('one property intake and verified canonical conversion', () => {
       checkedMedia: true,
       verifiedOwner: true,
     }), { params: { id: created.id } });
-    expect(response.status).toBe(200);
+    await expectHttpStatus(response, 200);
     const result = await response.json();
     expect(result.unitId).toBe(existing.id);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);

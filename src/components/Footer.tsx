@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 export interface FooterLabels {
+  brandName: string;
+  brandTagline: string;
   brandColumn: string;
   home: string;
   stay: string;
@@ -88,9 +90,9 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
       <div className="mx-auto max-w-7xl">
         <div className="mb-48 flex flex-col justify-between gap-24 border-b border-surface-ivory/15 pb-32 md:flex-row md:items-end">
           <div>
-            <p className="font-display text-display font-semibold tracking-[-0.02em]">myUNO</p>
+            <p className="font-display text-display font-semibold tracking-[-0.02em]">{labels.brandName}</p>
             <p className="mt-8 max-w-md text-small text-surface-ivory/60">
-              Property, stays and services connected around one Phuket home.
+              {labels.brandTagline}
             </p>
           </div>
           <LocaleSwitcher

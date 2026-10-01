@@ -35,6 +35,7 @@ export interface NavbarLabels {
   about: string;
   trust: string;
   help: string;
+  global: string;
   language: string;
   login: string;
   register: string;
@@ -135,6 +136,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
               <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
               <Link href="/help" className={navLinkClass(pathname, '/help')}>{labels.help}</Link>
+              <Link href="/desks" className={navLinkClass(pathname, '/desks')}>{labels.global}</Link>
               <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
               <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
               <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
@@ -234,6 +236,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             </Link>
             <Link href="/help" className={navLinkClass(pathname, '/help', 'border-b border-border-line py-14')} onClick={closeMenu}>
               {labels.help}
+            </Link>
+            <Link href="/desks" className={navLinkClass(pathname, '/desks', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.global}
             </Link>
           </div>
 

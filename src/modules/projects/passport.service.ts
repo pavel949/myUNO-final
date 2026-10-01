@@ -119,6 +119,7 @@ export async function getPublicProjectPassport(
   const organizations = project.orgRoles
     .filter(
       (role) =>
+        ['developer', 'co_developer'].includes(role.roleKey) &&
         role.provenance === 'verified' &&
         role.organization.status === 'active' &&
         (!role.effectiveFrom || role.effectiveFrom <= now) &&

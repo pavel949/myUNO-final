@@ -28,6 +28,9 @@ export interface NavbarLabels {
   monthly: string;
   buy: string;
   sell: string;
+  rentOut: string;
+  manage: string;
+  explore: string;
   areas: string;
   projects: string;
   services: string;
@@ -77,12 +80,22 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const closeMenu = () => setMenuOpen(false);
 
   const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
-    { href: '/search', label: labels.stay },
-    { href: '/homes?intent=rent', label: labels.monthly, activeBase: '/homes' },
     { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/search', label: labels.stay },
     { href: '/sell', label: labels.sell },
+    { href: '/rent-out', label: labels.rentOut },
+    { href: '/manage', label: labels.manage },
+  ];
+
+  const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [
+    { href: '/homes?intent=rent', label: labels.monthly },
     { href: '/projects', label: labels.projects },
+    { href: '/areas', label: labels.areas },
     { href: '/services', label: labels.services },
+    { href: '/desks', label: labels.global },
+    { href: '/trust', label: labels.trust },
+    { href: '/help', label: labels.help },
+    { href: '/about', label: labels.about },
   ];
 
   const userLinks = user
@@ -124,23 +137,20 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         </div>
 
         <div className="hidden items-center justify-end gap-x-12 lg:flex">
-          <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
-            {labels.owners}
-          </Link>
-
           <details className="relative">
-            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body text-text-ink hover:text-brand-andaman">
-              {labels.about}
+            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+              {labels.explore}
             </summary>
-            <div className="absolute right-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
-              <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
-              <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
-              <Link href="/help" className={navLinkClass(pathname, '/help')}>{labels.help}</Link>
-              <Link href="/desks" className={navLinkClass(pathname, '/desks')}>{labels.global}</Link>
-              <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
-              <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
-              <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management</Link>
+            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-10 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+              {exploreLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                  {link.label}
+                </Link>
+              ))}
+              <div className="mt-4 border-t border-border-line pt-12">
+                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
+              </div>
+              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management companies</Link>
             </div>
           </details>
 
@@ -196,7 +206,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
       {menuOpen ? (
         <div className="max-h-[calc(100vh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 lg:hidden">
-          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Explore</p>
+          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Start</p>
           <div className="flex flex-col">
             {publicLinks.map((link) => (
               <Link
@@ -210,35 +220,23 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             ))}
           </div>
 
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">Property</p>
+          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.explore}</p>
           <div className="flex flex-col">
-            <Link href="/owners" className={navLinkClass(pathname, '/owners', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.owners}
-            </Link>
-            <Link href="/areas" className={navLinkClass(pathname, '/areas', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.areas}
-            </Link>
+            {exploreLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-14')}
+                onClick={closeMenu}
+              >
+                {link.label}
+              </Link>
+            ))}
             <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-14')} onClick={closeMenu}>
               Developers
             </Link>
             <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              Management
-            </Link>
-          </div>
-
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">myUNO</p>
-          <div className="flex flex-col">
-            <Link href="/about" className={navLinkClass(pathname, '/about', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.about}
-            </Link>
-            <Link href="/trust" className={navLinkClass(pathname, '/trust', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.trust}
-            </Link>
-            <Link href="/help" className={navLinkClass(pathname, '/help', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.help}
-            </Link>
-            <Link href="/desks" className={navLinkClass(pathname, '/desks', 'border-b border-border-line py-14')} onClick={closeMenu}>
-              {labels.global}
+              Management companies
             </Link>
           </div>
 

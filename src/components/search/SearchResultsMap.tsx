@@ -17,12 +17,14 @@ export function SearchResultsMap({
   onSelectProject,
   onBoundsChange,
   labels,
+  fitToProjects = false,
 }: {
   projects: SearchMapProject[];
   selectedProjectId: string | null;
   onSelectProject: (projectId: string) => void;
   onBoundsChange: (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => void;
   labels: { loading: string; unavailable: string };
+  fitToProjects?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -158,12 +160,12 @@ export function SearchResultsMap({
       markerRefs.current.set(project.id, { marker, element: button });
     }
 
-    if (validProjects.length > 0) {
+    if (fitToProjects && validProjects.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
       validProjects.forEach((project) => bounds.extend([project.longitude, project.latitude]));
       if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 56, maxZoom: 13, duration: 0 });
     }
-  }, [ready, validProjects, onSelectProject]);
+  }, [ready, validProjects, onSelectProject, fitToProjects]);
 
   useEffect(() => {
     for (const [projectId, entry] of markerRefs.current.entries()) {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ONBOARDING_TRANSITIONS,
+  canOnboardingTransition,
   canonicalOfferings,
   classifyPropertySubmission,
   normalizeUnitIdentifier,
@@ -21,6 +23,13 @@ describe('canonical onboarding domain contracts', () => {
     expect(classifyPropertySubmission({ kind: 'home', offers: ['short_stay'], operatingModel: 'via_management_company' })).toBe('rental');
     expect(classifyPropertySubmission({ kind: 'home', offers: ['monthly'], operatingModel: 'direct_managed' })).toBe('management');
     expect(classifyPropertySubmission({ kind: 'management', offers: ['monthly'], operatingModel: 'via_management_company' })).toBe('management');
+  });
+
+  it('publishes the legal onboarding transition graph', () => {
+    expect(canOnboardingTransition('draft', 'unit_matched')).toBe(true);
+    expect(canOnboardingTransition('draft', 'active')).toBe(false);
+    expect(canOnboardingTransition('ready_for_activation', 'active')).toBe(true);
+    expect(ONBOARDING_TRANSITIONS.active).toContain('blocked');
   });
 
   it('normalizes common Unit labels for duplicate detection', () => {

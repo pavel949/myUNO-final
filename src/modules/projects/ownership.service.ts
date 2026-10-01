@@ -49,14 +49,51 @@ export async function setUnitOwnerTx(
   });
   if (!unit) throw new Error('Unit not found');
 
-  if (unit.ownerIdentityId === ownerIdentityId) {
-    return { changed: false as const };
-  }
-
   const open = await tx.ownershipPeriod.findFirst({
     where: { unitId, endsOn: null },
     orderBy: { startsOn: 'desc' },
   });
+
+  if (unit.ownerIdentityId === ownerIdentityId) {
+    let period = open;
+    if (ownerIdentityId && !period) {
+      period = await tx.ownershipPeriod.create({
+        data: {
+          unitId,
+          ownerIdentityId,
+          startsOn: effectiveFrom,
+          note: note ?? 'Ownership history reconciled from current owner projection.',
+          recordedByIdentityId,
+        },
+      });
+    }
+    if (ownerIdentityId) {
+      const existingRole = await tx.roleAssignment.findFirst({
+        where: {
+          identityId: ownerIdentityId,
+          role: 'owner',
+          scopeType: 'unit',
+          unitId,
+          status: 'active',
+        },
+        select: { id: true },
+      });
+      if (!existingRole) {
+        await tx.roleAssignment.create({
+          data: {
+            identityId: ownerIdentityId,
+            role: 'owner',
+            scopeType: 'unit',
+            projectId: unit.projectId,
+            unitId,
+            status: 'active',
+            grantedByIdentityId: recordedByIdentityId,
+          },
+        });
+      }
+    }
+    return { changed: false as const, reconciled: true as const, period };
+  }
 
   if (open) {
     if (effectiveFrom < open.startsOn) {
@@ -86,6 +123,19 @@ export async function setUnitOwnerTx(
     where: { id: unitId },
     data: { ownerIdentityId },
   });
+
+  if (unit.ownerIdentityId && unit.ownerIdentityId !== ownerIdentityId) {
+    await tx.roleAssignment.updateMany({
+      where: {
+        identityId: unit.ownerIdentityId,
+        role: 'owner',
+        scopeType: 'unit',
+        unitId,
+        status: 'active',
+      },
+      data: { status: 'revoked', revokedAt: new Date() },
+    });
+  }
 
   if (ownerIdentityId) {
     const existingRole = await tx.roleAssignment.findFirst({

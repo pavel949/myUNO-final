@@ -70,6 +70,9 @@ export async function createUnitEngagement(
   db: PrismaClient,
   input: CreateUnitEngagementInput
 ): Promise<{ id: string }> {
+  if (input.engagementType === 'direct_managed' && !input.noiCapAnnualThb) {
+    throw new Error('NOI cap is required for direct-managed engagement');
+  }
   return db.$transaction((tx) => createDraftUnitEngagementTx(tx, input));
 }
 

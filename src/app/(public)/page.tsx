@@ -57,10 +57,11 @@ export default async function LandingPage() {
 
       'landing.start.kicker': 'START HERE',
       'landing.start.title': 'What brings you to Phuket?',
-      'landing.start.stay_body': 'Find a verified stay for your next trip.',
-      'landing.start.monthly_body': 'Find a home for a month or longer.',
-      'landing.start.buy_body': 'Explore homes with an active sale offering.',
+      'landing.start.buy_body': 'Explore homes with an active, evidenced sale offering.',
+      'landing.start.stay_body': 'Search verified availability for your next stay.',
       'landing.start.sell_body': 'Start a documented resale and valuation review.',
+      'landing.start.rentout_body': 'Activate short-stay, monthly or long-term rental paths on one property record.',
+      'landing.start.manage_body': 'Move from listing into professional operations, PMS and owner reporting.',
       'landing.start.explore': 'Explore',
 
       'landing.desks.kicker': 'GLOBAL DESKS',
@@ -132,10 +133,10 @@ export default async function LandingPage() {
       'landing.audience.title': 'One property. Two professional entry points.',
       'landing.audience.owners': 'For owners',
       'landing.audience.owners_body': 'Bring your Phuket property into one connected presentation, booking, operations and reporting flow.',
-      'landing.audience.developers': 'For developers & managers',
-      'landing.audience.developers_body': 'Connect an entire project without creating a second property or inventory model.',
-      'landing.audience.owner_cta': 'Manage my property',
-      'landing.audience.developer_cta': 'Partner with myUNO',
+      'landing.audience.developers': 'Professional management',
+      'landing.audience.developers_body': 'Move a property or portfolio from commercial activation into connected operations without creating a second inventory model.',
+      'landing.audience.owner_cta': 'Rent out my property',
+      'landing.audience.developer_cta': 'Explore professional management',
 
       'landing.trust.kicker': 'TRUST IS IN THE DETAILS',
       'landing.trust.title': 'Designed for real stays and real property operations.',
@@ -152,6 +153,8 @@ export default async function LandingPage() {
       'home.discovery.buy': 'Buy',
       'home.discovery.invest': 'Invest',
       'home.discovery.sell': 'Sell',
+      'home.discovery.rent_out': 'Rent Out',
+      'home.discovery.manage': 'Manage',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
@@ -297,12 +300,13 @@ export default async function LandingPage() {
           <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
             {labels['landing.start.title']}
           </h2>
-          <div className="mt-24 grid grid-cols-2 gap-10 lg:grid-cols-4">
+          <div className="mt-24 grid grid-cols-2 gap-10 lg:grid-cols-5">
             {[
-              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
-              { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
               { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
+              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
               { title: labels['home.discovery.sell'], body: labels['landing.start.sell_body'], href: '/sell' },
+              { title: labels['home.discovery.rent_out'], body: labels['landing.start.rentout_body'], href: '/rent-out' },
+              { title: labels['home.discovery.manage'], body: labels['landing.start.manage_body'], href: '/manage' },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -558,7 +562,7 @@ export default async function LandingPage() {
 
           <div className="mt-32 grid gap-16 md:grid-cols-2">
             <Link
-              href="/owners"
+              href="/rent-out"
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
@@ -576,7 +580,7 @@ export default async function LandingPage() {
             </Link>
 
             <Link
-              href="/developers"
+              href="/manage"
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-28 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>

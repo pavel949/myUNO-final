@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/management-companies`, priority: 0.6 },
     { url: `${base}/providers`, priority: 0.6 },
     { url: `${base}/trust`, priority: 0.5 },
+    { url: `${base}/help`, priority: 0.5 },
     { url: `${base}/legal/terms`, priority: 0.3 },
     { url: `${base}/legal/privacy`, priority: 0.3 },
   ];
@@ -43,10 +44,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
       ...staticPages,
-      ...projects.map((p) => ({
-        url: `${base}/projects/${p.slug}`,
-        priority: 0.8,
-      })),
+      ...projects.flatMap((p) => [
+        {
+          url: `${base}/projects/${p.slug}`,
+          priority: 0.8,
+        },
+        {
+          url: `${base}/projects/${p.slug}/passport`,
+          priority: 0.6,
+        },
+      ]),
       ...unitIds.map((id) => ({
         url: `${base}/units/${id}`,
         priority: 0.7,

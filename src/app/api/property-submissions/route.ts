@@ -84,7 +84,15 @@ export async function POST(req: NextRequest) {
     }
     const row = await prisma.crmOpportunity.create({
       data: {
-        identityId: access.user.identityId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management',
+        identityId: access.user.identityId,
+        type:
+          data.offers.includes('sale') && data.offers.length === 1
+            ? 'sale'
+            : data.kind === 'management' || data.operatingModel === 'direct_managed'
+              ? 'management'
+              : data.offers.some((offer) => ['short_stay', 'monthly', 'yearly'].includes(offer))
+                ? 'rental'
+                : 'management',
         stage: 'new', title: data.unitName || 'New property draft', source: MARKER,
         projectId: data.projectId, requirements: data,
       },

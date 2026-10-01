@@ -66,6 +66,7 @@ export interface SearchResultsLabels {
   mapReset: string;
   mapResults: string;
   mapAria: string;
+  mapHomes: string;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -559,7 +560,7 @@ export default function SearchResults({
               selectedProjectId={selectedProjectId}
               onSelectProject={handleMapProjectSelect}
               onBoundsChange={handleMapBoundsChange}
-              labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable, perNight: labels.perNight, aria: labels.mapAria }}
+              labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable, homes: labels.mapHomes, aria: labels.mapAria }}
               fitToProjects={!hasMapBounds}
             />
           </section>

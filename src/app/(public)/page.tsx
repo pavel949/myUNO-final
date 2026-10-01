@@ -51,6 +51,14 @@ export default async function LandingPage() {
       'landing.search.children': 'Children',
       'landing.search.submit': 'Search homes',
 
+      'landing.start.kicker': 'START HERE',
+      'landing.start.title': 'What brings you to Phuket?',
+      'landing.start.stay_body': 'Find a verified stay for your next trip.',
+      'landing.start.monthly_body': 'Find a home for a month or longer.',
+      'landing.start.buy_body': 'Explore homes with an active sale offering.',
+      'landing.start.sell_body': 'Start a documented resale and valuation review.',
+      'landing.start.explore': 'Explore',
+
       'landing.collection.kicker': 'THE MYUNO COLLECTION',
       'landing.collection.title': 'Explore our Phuket collection.',
       'landing.collection.body': 'Real projects, real homes and one connected property record behind every public surface.',
@@ -238,6 +246,39 @@ export default async function LandingPage() {
                 error: labels['home.discovery.error'],
               }}
             />
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-surface-ivory py-40 md:py-56" aria-labelledby="start-heading">
+        <div className="mx-auto max-w-7xl px-20 md:px-32">
+          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+            {labels['landing.start.kicker']}
+          </p>
+          <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
+            {labels['landing.start.title']}
+          </h2>
+          <div className="mt-24 grid grid-cols-2 gap-10 lg:grid-cols-4">
+            {[
+              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
+              { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
+              { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
+              { title: 'Sell', body: labels['landing.start.sell_body'], href: '/sell' },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group flex min-h-[170px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:min-h-[190px] md:p-24"
+              >
+                <div>
+                  <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                  <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
+                </div>
+                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                  {labels['landing.start.explore']} →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

@@ -3,6 +3,7 @@ import { getConfig } from '@/modules/config';
 import { listPublicServices, pickLocalizedServiceCopy } from '@/modules/services';
 import { getProjectAnnouncements } from '@/modules/comms';
 import { getRequestLocale } from '@/lib/i18n';
+import { decrypt } from '@/lib/encryption';
 
 export interface InStayHomeSpaceData {
   booking: {
@@ -70,6 +71,22 @@ export interface InStayHomeSpaceData {
    * other hat legible instead of silently swapping their view.
    */
   secondaryRoles: string[];
+  /**
+   * Private arrival details. Null until the booking is eligible for release.
+   * Secrets are decrypted only after guest ownership + verification + time
+   * checks have passed.
+   */
+  arrivalGuide: {
+    checkInMethod: string;
+    entryCode: string;
+    lockboxLocation: string;
+    lockboxCode: string;
+    wifiSsid: string;
+    wifiPassword: string;
+    parkingInstructions: string;
+    arrivalNotes: string;
+    emergencyContact: string;
+  } | null;
 }
 
 /**
@@ -109,6 +126,9 @@ export async function getInStayHomeSpace(
       },
       tm30Filings: {
         select: { status: true },
+      },
+      accessInstruction: {
+        select: { ciphertext: true },
       },
     },
   });
@@ -229,9 +249,53 @@ export async function getInStayHomeSpace(
     ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
     : null;
 
+  // Arrival secrets are intentionally not part of the public unit/listing
+  // projection. Release them only to the booking guest, after verification,
+  // inside the configured pre-arrival window (or once checked in).
+  const verificationComplete =
+    booking.verificationStatus === 'passports_received' ||
+    booking.verificationStatus === 'not_required';
+  const releaseHours =
+    (await getConfig(db, 'compliance.passport_required_hours_before_checkin', {
+      projectId: booking.unit.projectId,
+    })) ?? 24;
+  const releaseAt = new Date(
+    booking.startDate.getTime() - Number(releaseHours) * 60 * 60 * 1000
+  );
+  const canReleaseArrivalGuide =
+    booking.status === 'checked_in' ||
+    (booking.status === 'confirmed' && verificationComplete && new Date() >= releaseAt);
+
+  let arrivalGuide: InStayHomeSpaceData['arrivalGuide'] = null;
+  if (canReleaseArrivalGuide && booking.accessInstruction?.ciphertext) {
+    try {
+      const decoded = JSON.parse(decrypt(booking.accessInstruction.ciphertext)) as Record<string, unknown>;
+      const text = (key: string, legacyKey?: string) => {
+        const value = decoded[key] ?? (legacyKey ? decoded[legacyKey] : undefined);
+        return typeof value === 'string' ? value : '';
+      };
+      arrivalGuide = {
+        checkInMethod: text('checkInMethod'),
+        entryCode: text('entryCode'),
+        lockboxLocation: text('lockboxLocation'),
+        lockboxCode: text('lockboxCode'),
+        wifiSsid: text('wifiSsid'),
+        wifiPassword: text('wifiPassword'),
+        parkingInstructions: text('parkingInstructions'),
+        arrivalNotes: text('arrivalNotes', 'handoverNotes'),
+        emergencyContact: text('emergencyContact'),
+      };
+    } catch {
+      // Never log decrypted arrival secrets or the ciphertext. A malformed
+      // legacy record simply remains unavailable until an operator resaves it.
+      arrivalGuide = null;
+    }
+  }
+
   return {
     conciergeWhatsappUrl,
     secondaryRoles,
+    arrivalGuide,
     services: services.map((s) => ({
       id: s.id,
       title: pickLocalizedServiceCopy(s, locale).title,

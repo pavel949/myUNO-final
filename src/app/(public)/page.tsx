@@ -12,6 +12,7 @@ import { listPublicProjects } from '@/modules/projects';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { listPublicMarketplaceServices } from '@/modules/services';
 import { projectPresentationImage } from '@/lib/presentation-media';
+import { GLOBAL_DESKS } from '@/modules/global-desks';
 
 export const metadata: Metadata = {
   title: 'myUNO | Stay. Live. Own Phuket.',
@@ -40,9 +41,12 @@ export default async function LandingPage() {
 
   const [labels, rawProjects, commercialHomes, services] = await Promise.all([
     getLabels({
-      'landing.hero.kicker': 'PHUKET · ONE CONNECTED EXPERIENCE',
-      'landing.hero.title': 'Stay. Live. Own Phuket.',
-      'landing.hero.subtitle': 'Handpicked homes, managed residences and everything around them — connected by myUNO.',
+      'landing.hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
+      'landing.hero.title': 'Phuket homes. Global discovery. One platform.',
+      'landing.hero.subtitle': 'Stay, rent, buy, sell and manage Phuket property through one connected experience.',
+      'landing.hero.global': 'Explore global desks',
+      'landing.hero.areas': 'Explore Phuket areas',
+      'landing.hero.trust': 'How trust works',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
       'landing.search.check_in': 'Check-in',
@@ -58,6 +62,27 @@ export default async function LandingPage() {
       'landing.start.buy_body': 'Explore homes with an active sale offering.',
       'landing.start.sell_body': 'Start a documented resale and valuation review.',
       'landing.start.explore': 'Explore',
+
+      'landing.desks.kicker': 'GLOBAL DESKS',
+      'landing.desks.title': 'A more global front door to Phuket.',
+      'landing.desks.body': 'Market and language liaison routes into the same canonical myUNO property, booking and service platform. No duplicate inventory, pricing or property records.',
+      'landing.desks.cta': 'Explore all desks',
+      'landing.desks.open': 'Open desk',
+      'desks.thailand.title': 'Thailand desk',
+      'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners.',
+      'desks.thailand.languages': 'Thai · English',
+      'desks.russian.title': 'Russian-speaking desk',
+      'desks.russian.body': 'For Russian-speaking buyers, owners, guests and partners.',
+      'desks.russian.languages': 'Russian · English',
+      'desks.china.title': 'Greater China desk',
+      'desks.china.body': 'For Chinese-speaking and Greater China audiences exploring Phuket.',
+      'desks.china.languages': 'Chinese · English',
+      'desks.middle_east.title': 'Middle East desk',
+      'desks.middle_east.body': 'For Middle East buyers, families and investors exploring Phuket.',
+      'desks.middle_east.languages': 'English',
+      'desks.europe.title': 'Europe desk',
+      'desks.europe.body': 'For European buyers, residents and owners exploring Phuket.',
+      'desks.europe.languages': 'English',
 
       'landing.collection.kicker': 'THE MYUNO COLLECTION',
       'landing.collection.title': 'Explore our Phuket collection.',
@@ -199,7 +224,7 @@ export default async function LandingPage() {
       />
 
       <section
-        className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-brand-deep text-surface-ivory md:min-h-[720px] md:max-h-[860px]"
+        className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px] md:max-h-[860px]"
         aria-labelledby="home-title"
       >
         <Image
@@ -208,14 +233,14 @@ export default async function LandingPage() {
           fill
           priority
           sizes={["100", "vw"].join("")}
-          className="object-cover"
+          className="object-cover brightness-[1.08] saturate-[0.92]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/62 to-brand-deep/18" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/75 via-transparent to-brand-deep/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/95 via-surface-paper/76 to-surface-paper/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-paper/55 via-transparent to-surface-paper/10" />
 
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-28 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
+            <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
               {labels['landing.hero.kicker']}
             </p>
             <h1
@@ -224,9 +249,20 @@ export default async function LandingPage() {
             >
               {labels['landing.hero.title']}
             </h1>
-            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/88 md:text-xl">
+            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-text-secondary md:text-xl">
               {labels['landing.hero.subtitle']}
             </p>
+            <div className="mt-20 flex flex-wrap gap-8">
+              <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-14 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
+                {labels['landing.hero.global']} →
+              </Link>
+              <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+                {labels['landing.hero.areas']} →
+              </Link>
+              <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+                {labels['landing.hero.trust']} →
+              </Link>
+            </div>
           </div>
 
           <div className="mt-28 max-w-[1180px]">
@@ -279,6 +315,43 @@ export default async function LandingPage() {
                 </div>
                 <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
                   {labels['landing.start.explore']} →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border-line bg-gradient-to-r from-[#EDF7F4] via-surface-paper to-[#F8F1E5] py-44 md:py-56" aria-labelledby="global-desks-heading">
+        <div className="mx-auto max-w-7xl px-20 md:px-32">
+          <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
+              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
+                {labels['landing.desks.title']}
+              </h2>
+              <p className="mt-10 text-body text-text-secondary">{labels['landing.desks.body']}</p>
+            </div>
+            <Link href="/desks" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+              {labels['landing.desks.cta']} →
+            </Link>
+          </div>
+
+          <div className="-mx-20 mt-24 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
+            {GLOBAL_DESKS.map((desk) => (
+              <Link
+                key={desk.slug}
+                href={`/desks/${desk.slug}`}
+                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-18 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+              >
+                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#E7F2EF] font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
+                  {desk.code}
+                </div>
+                <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
+                <p className="mt-6 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
+                <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
+                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                  {labels['landing.desks.open']} →
                 </span>
               </Link>
             ))}

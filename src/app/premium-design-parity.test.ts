@@ -47,6 +47,27 @@ describe('premium design-system surface parity', () => {
     expect(home).not.toContain('bg-white');
   });
 
+  it('keeps the homepage on the canonical typography, width and colour system', () => {
+    const home = source('src/app/(public)/page.tsx');
+    const search = source('src/components/DiscoverySearch.tsx');
+    const footer = source('src/components/Footer.tsx');
+    const globals = source('src/app/globals.css');
+    const tailwind = source('tailwind.config.ts');
+
+    expect(home).toContain('max-w-content');
+    expect(home).toContain('text-display-hero');
+    expect(home).toContain('md:text-display-hero-lg');
+    expect(home).not.toContain('max-w-7xl');
+    expect(home).not.toContain('text-[clamp(');
+    expect(home).not.toMatch(/\/(?:15|18|62|68|88)(?=[\"'\s])/);
+    expect(search).not.toContain('bg-white');
+    expect(footer).toContain('bg-brand-deep');
+    expect(footer).not.toContain('bg-text-ink');
+    expect(globals).toContain("html[lang='ru']");
+    expect(globals).toContain("html[lang='th']");
+    expect(tailwind).toContain("'var(--font-display-active)'");
+  });
+
   it('keeps list and map search on one canonical search contract', () => {
     const results = source('src/app/search/search-results.tsx');
     const route = source('src/app/api/search/units/route.ts');

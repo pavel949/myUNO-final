@@ -256,13 +256,13 @@ export default async function LandingPage() {
               {labels['landing.global_hero.subtitle']}
             </p>
             <div className="mt-20 flex flex-wrap gap-8">
-              <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-14 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
+              <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-12 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
                 {labels['landing.global_hero.global']} →
               </Link>
-              <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+              <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-12 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
                 {labels['landing.global_hero.areas']} →
               </Link>
-              <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+              <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-12 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
                 {labels['landing.global_hero.trust']} →
               </Link>
             </div>
@@ -334,7 +334,7 @@ export default async function LandingPage() {
               <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
                 {labels['landing.desks.title']}
               </h2>
-              <p className="mt-10 text-body text-text-secondary">{labels['landing.desks.body']}</p>
+              <p className="mt-12 text-body text-text-secondary">{labels['landing.desks.body']}</p>
             </div>
             <Link href="/desks" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
               {labels['landing.desks.cta']} →
@@ -346,15 +346,15 @@ export default async function LandingPage() {
               <Link
                 key={desk.slug}
                 href={`/desks/${desk.slug}`}
-                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
               >
                 <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
                   {desk.code}
                 </div>
                 <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
-                <p className="mt-6 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
+                <p className="mt-8 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
                 <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
-                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-[1px]">
                   {labels['landing.desks.open']} →
                 </span>
               </Link>
@@ -625,7 +625,7 @@ export default async function LandingPage() {
                 <p className="mt-8 text-body text-text-secondary">
                   {labels[`landing.trust.${key}_body`]}
                 </p>
-                <span className="mt-14 inline-block text-small font-semibold text-brand-andaman group-hover:underline">
+                <span className="mt-12 inline-block text-small font-semibold text-brand-andaman group-hover:underline">
                   {labels['landing.trust.cta']} →
                 </span>
               </Link>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { siteUrl } from '@/lib/seo';
-import { listPublicProjects, listPublicUnitIds } from '@/modules/projects';
+import { listBrowsableAreas, listPublicProjects, listPublicUnitIds } from '@/modules/projects';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, priority: 1.0 },
     { url: `${base}/projects`, priority: 0.9 },
     { url: `${base}/search`, priority: 0.8 },
+    { url: `${base}/homes?intent=buy`, priority: 0.8 },
+    { url: `${base}/homes?intent=rent`, priority: 0.8 },
+    { url: `${base}/sell`, priority: 0.7 },
+    { url: `${base}/areas`, priority: 0.7 },
     { url: `${base}/services`, priority: 0.7 },
     { url: `${base}/owners`, priority: 0.6 },
     { url: `${base}/guests`, priority: 0.6 },
@@ -30,9 +35,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [projects, unitIds] = await Promise.all([
+    const [projects, unitIds, areas] = await Promise.all([
       listPublicProjects(),
       listPublicUnitIds(),
+      listBrowsableAreas(prisma),
     ]);
 
     return [
@@ -44,6 +50,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...unitIds.map((id) => ({
         url: `${base}/units/${id}`,
         priority: 0.7,
+      })),
+      ...areas.map((area) => ({
+        url: `${base}/areas/${area.slug}`,
+        priority: 0.6,
       })),
     ];
   } catch {

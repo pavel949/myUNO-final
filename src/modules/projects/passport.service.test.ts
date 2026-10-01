@@ -89,30 +89,27 @@ describe('public Project Passport', () => {
       { type: 'permitted_use', confirmedUnits: 2, totalUnits: 2 },
     ]);
   });
-});
-
 
   it('does not promote a verified operator into developer evidence', async () => {
-    const db = makeDb({
-      project: {
-        ...liveProject(),
-        orgRoles: [
-          {
-            roleKey: 'operator',
-            provenance: 'verified',
-            effectiveFrom: null,
-            effectiveTo: null,
-            organization: {
-              name: 'Operations Co',
-              status: 'active',
-              developerVerification: 'verified',
-            },
+    const project = {
+      ...baseProject(),
+      orgRoles: [
+        {
+          roleKey: 'operator',
+          provenance: 'verified',
+          effectiveFrom: null,
+          effectiveTo: null,
+          organization: {
+            name: 'Operations Co',
+            status: 'active',
+            developerVerification: 'verified',
           },
-        ],
-      },
-    });
+        },
+      ],
+    };
 
-    const passport = await getPublicProjectPassport(db as never, 'sample-project');
+    const passport = await getPublicProjectPassport(asDb(project), 'project-one');
     expect(passport?.developer.status).toBe('not_evidenced');
     expect(passport?.developer.organizations).toEqual([]);
   });
+});

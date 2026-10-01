@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
+import { SearchResultsMap, type SearchMapProject } from '@/components/search/SearchResultsMap';
 
 /** One screenful. Beyond this the guest asks for more rather than waiting for it. */
 const PAGE_SIZE = 24;
@@ -16,6 +17,7 @@ interface Unit {
   baseNightlyThb: number;
   description?: string;
   projectId?: string;
+  project?: { id: string; name: string; slug: string; latitude: number; longitude: number } | null;
   coverUrl?: string | null;
   /** Null when nobody has reviewed it — unknown, not zero. */
   averageRating?: number | null;
@@ -59,6 +61,10 @@ export interface SearchResultsLabels {
   filterMin: string;
   filterMax: string;
   filterClear: string;
+  mapLoading: string;
+  mapUnavailable: string;
+  mapReset: string;
+  mapResults: string;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -92,6 +98,7 @@ export default function SearchResults({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -104,6 +111,11 @@ export default function SearchResults({
   const unitTypes = searchParams?.get('unitTypes') || '';
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
+  const swLat = searchParams?.get('swLat') || '';
+  const swLng = searchParams?.get('swLng') || '';
+  const neLat = searchParams?.get('neLat') || '';
+  const neLng = searchParams?.get('neLng') || '';
+  const hasMapBounds = Boolean(swLat && swLng && neLat && neLng);
   const hasDates = Boolean(startDate && endDate);
   const selectedTypes = new Set(unitTypes.split(',').filter(Boolean));
 
@@ -137,6 +149,12 @@ export default function SearchResults({
         if (unitTypes) params.set('unitTypes', unitTypes);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
+        if (hasMapBounds) {
+          params.set('swLat', swLat);
+          params.set('swLng', swLng);
+          params.set('neLat', neLat);
+          params.set('neLng', neLng);
+        }
 
         const response = await fetch(`/api/search/units?${params}`);
         if (!response.ok) {
@@ -174,7 +192,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -213,6 +231,52 @@ export default function SearchResults({
       else next.set('unitTypes', Array.from(current).join(','));
     });
   };
+
+  const mapProjects: SearchMapProject[] = Array.from(
+    units.reduce((projects, unit) => {
+      if (!unit.project || !Number.isFinite(unit.project.latitude) || !Number.isFinite(unit.project.longitude)) {
+        return projects;
+      }
+      const current = projects.get(unit.project.id);
+      if (current) {
+        current.unitCount += 1;
+        current.fromNightlyThb = Math.min(current.fromNightlyThb, unit.baseNightlyThb);
+      } else {
+        projects.set(unit.project.id, {
+          id: unit.project.id,
+          name: unit.project.name,
+          latitude: unit.project.latitude,
+          longitude: unit.project.longitude,
+          unitCount: 1,
+          fromNightlyThb: unit.baseNightlyThb,
+        });
+      }
+      return projects;
+    }, new Map<string, SearchMapProject>()).values()
+  );
+
+  const handleMapBoundsChange = useCallback(
+    (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => {
+      const next = new URLSearchParams(searchParams?.toString() || '');
+      const incoming = [bounds.swLat, bounds.swLng, bounds.neLat, bounds.neLng].map(String);
+      const current = [next.get('swLat'), next.get('swLng'), next.get('neLat'), next.get('neLng')];
+      if (incoming.every((value, index) => value === current[index])) return;
+      next.set('swLat', incoming[0]);
+      next.set('swLng', incoming[1]);
+      next.set('neLat', incoming[2]);
+      next.set('neLng', incoming[3]);
+      router.replace(`/search?${next.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  const resetMapBounds = () =>
+    replaceFilters((next) => {
+      next.delete('swLat');
+      next.delete('swLng');
+      next.delete('neLat');
+      next.delete('neLng');
+    });
 
   const handleBookCategory = (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;

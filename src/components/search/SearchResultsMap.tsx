@@ -23,7 +23,7 @@ export function SearchResultsMap({
   selectedProjectId: string | null;
   onSelectProject: (projectId: string) => void;
   onBoundsChange: (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => void;
-  labels: { loading: string; unavailable: string };
+  labels: { loading: string; unavailable: string; perNight: string; aria: string };
   fitToProjects?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -153,7 +153,7 @@ export function SearchResultsMap({
               ) +
               '</strong><br/>฿' +
               Math.round(project.fromNightlyThb / 100).toLocaleString() +
-              ' / night'
+              ' ' + labels.perNight
           )
         )
         .addTo(map);
@@ -191,7 +191,7 @@ export function SearchResultsMap({
           {labels.loading}
         </div>
       ) : null}
-      <div ref={containerRef} className="h-full min-h-[420px] w-full" aria-label="Search map" />
+      <div ref={containerRef} className="h-full min-h-[420px] w-full" aria-label={labels.aria} />
     </div>
   );
 }

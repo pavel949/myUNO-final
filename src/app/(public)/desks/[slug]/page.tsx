@@ -74,13 +74,13 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
             {labels[desk.titleKey]}
           </h1>
           <p className="mt-12 max-w-2xl text-lg leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
-          <p className="mt-14 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
+          <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
           <p className="mt-20 max-w-3xl text-small leading-relaxed text-text-secondary">{labels['desks.detail.body']}</p>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
-        <div className="grid gap-14 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
           {actions.map((action) => (
             <Link
               key={action.href}
@@ -89,7 +89,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
             >
               <div>
                 <h2 className="font-display text-title font-semibold text-text-ink">{action.title}</h2>
-                <p className="mt-10 text-body text-text-secondary">{action.body}</p>
+                <p className="mt-12 text-body text-text-secondary">{action.body}</p>
               </div>
               <span className="mt-20 text-small font-semibold text-brand-andaman">{labels['desks.detail.open']} →</span>
             </Link>

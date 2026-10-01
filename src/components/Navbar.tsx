@@ -75,14 +75,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   const closeMenu = () => setMenuOpen(false);
 
-  const publicLinks = [
+  const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
     { href: '/search', label: labels.stay },
     { href: '/homes?intent=rent', label: labels.monthly, activeBase: '/homes' },
     { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
     { href: '/sell', label: labels.sell },
     { href: '/projects', label: labels.projects },
     { href: '/services', label: labels.services },
-  ] as const;
+  ];
 
   const userLinks = user
     ? [

@@ -46,9 +46,11 @@ const currentCredential = (credential: {
   status: string;
   verificationStatus: string;
   expiryDate: Date | null;
+  verifiedAt: Date | null;
 }) =>
   credential.status === 'active' &&
   credential.verificationStatus === 'verified' &&
+  credential.verifiedAt !== null &&
   (!credential.expiryDate || credential.expiryDate.getTime() >= Date.now());
 
 export async function getPublicProjectPassport(

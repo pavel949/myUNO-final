@@ -21,6 +21,8 @@ export interface LeadFormLabels {
 interface LeadFormProps {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   initialMessage?: string;
+  projectId?: string;
+  unitId?: string;
   labels: LeadFormLabels;
 }
 
@@ -28,7 +30,7 @@ interface LeadFormProps {
  * Public lead form (doc 08 §3): name, contact, free-text context, consent.
  * Posts to /api/leads; includes an invisible honeypot field for bots.
  */
-export function LeadForm({ audience, labels, initialMessage = '' }: LeadFormProps) {
+export function LeadForm({ audience, labels, initialMessage = '', projectId, unitId }: LeadFormProps) {
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [message, setMessage] = useState(initialMessage);
@@ -49,7 +51,7 @@ export function LeadForm({ audience, labels, initialMessage = '' }: LeadFormProp
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audience, name, contact, message, consent, website }),
+        body: JSON.stringify({ audience, name, contact, message, consent, website, projectId, unitId }),
       });
       if (!res.ok) throw new Error('failed');
       setState('success');

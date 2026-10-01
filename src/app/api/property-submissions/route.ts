@@ -62,8 +62,17 @@ export async function GET(req: NextRequest) {
     if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) {
       return NextResponse.json({ error: 'Project not available.' }, { status: 404 });
     }
+    const scopedUnitIds = access.user.roles
+      .filter((role) => role.projectId === projectId && role.unitId)
+      .map((role) => role.unitId as string);
     const units = await prisma.unit.findMany({
-      where: { projectId, status: { not: 'archived' } },
+      where: access.user.isAdmin || scoped
+        ? { projectId, status: { not: 'archived' } }
+        : {
+            projectId,
+            status: { not: 'archived' },
+            OR: [{ status: 'live' }, ...(scopedUnitIds.length ? [{ id: { in: scopedUnitIds } }] : [])],
+          },
       select: { id: true, name: true, floor: true, bedrooms: true, bathrooms: true, sizeSqm: true },
       orderBy: { name: 'asc' },
       take: 500,

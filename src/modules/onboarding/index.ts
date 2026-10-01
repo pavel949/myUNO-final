@@ -1,5 +1,7 @@
 export {
   assertCommercialOfferingReadyForActivation,
+  ONBOARDING_TRANSITIONS,
+  canOnboardingTransition,
   canonicalOfferings,
   classifyPropertySubmission,
   deriveUnitOnboardingState,

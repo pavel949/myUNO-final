@@ -8,6 +8,7 @@ import {
 } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
 import { computePriceBreakdown } from '@/modules/core';
+import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
       petsCount = 0,
       guestNote,
       paymentMethod = 'cash',
+      categoryQuoteToken,
+      acceptedTotalSatang,
     } = body;
 
     const inventoryCategoryId = requestedInventoryCategoryId || categoryId;
@@ -97,9 +100,19 @@ export async function POST(req: NextRequest) {
     let resolvedCategoryKey = categoryKey as string | undefined;
     let resolvedInventoryCategoryId = inventoryCategoryId as string | undefined;
 
-    if (!requestedUnitId && inventoryCategoryId) {
+    if (!requestedUnitId && !inventoryCategoryId && categoryKey && projectId) {
+      const legacyCategory = await prisma.inventoryCategory.findUnique({
+        where: { projectId_categoryKey: { projectId, categoryKey } },
+        select: { id: true },
+      });
+      if (legacyCategory) {
+        resolvedInventoryCategoryId = legacyCategory.id;
+      }
+    }
+
+    if (!requestedUnitId && resolvedInventoryCategoryId) {
       const category = await prisma.inventoryCategory.findUnique({
-        where: { id: inventoryCategoryId },
+        where: { id: resolvedInventoryCategoryId },
         select: {
           id: true,
           projectId: true,
@@ -121,6 +134,39 @@ export async function POST(req: NextRequest) {
       resolvedProjectId = category.projectId;
       resolvedCategoryKey = category.categoryKey;
       resolvedInventoryCategoryId = category.id;
+    }
+
+    let acceptedCategoryTotal: number | undefined;
+    if (!requestedUnitId) {
+      if (
+        !resolvedInventoryCategoryId ||
+        typeof categoryQuoteToken !== 'string' ||
+        !Number.isInteger(acceptedTotalSatang)
+      ) {
+        throw createPublicError('A current category quote and accepted total are required', 409);
+      }
+
+      const quote = verifyCategoryStayQuoteToken(categoryQuoteToken);
+      if (
+        !quote ||
+        quote.inventoryCategoryId !== resolvedInventoryCategoryId ||
+        quote.projectId !== resolvedProjectId ||
+        quote.startDate !== startDateStr ||
+        quote.endDate !== endDateStr ||
+        quote.adultsCount !== Number(adultsCount) ||
+        quote.childrenCount !== Number(childrenCount) ||
+        quote.petsCount !== Number(petsCount) ||
+        quote.acceptedTotalSatang !== acceptedTotalSatang
+      ) {
+        return NextResponse.json(
+          {
+            error: 'The category quote expired or no longer matches this stay.',
+            code: 'REQUOTE_REQUIRED',
+          },
+          { status: 409 }
+        );
+      }
+      acceptedCategoryTotal = quote.acceptedTotalSatang;
     }
 
     const candidates = requestedUnitId
@@ -155,6 +201,22 @@ export async function POST(req: NextRequest) {
         undefined,
         Number(petsCount)
       );
+
+      if (
+        acceptedCategoryTotal !== undefined &&
+        candidateBreakdown.total_thb > acceptedCategoryTotal
+      ) {
+        if (isLastCandidate) {
+          return NextResponse.json(
+            {
+              error: 'Available homes now cost more than the amount you accepted.',
+              code: 'REQUOTE_REQUIRED',
+            },
+            { status: 409 }
+          );
+        }
+        continue;
+      }
 
       const unit = await prisma.unit.findUnique({
         where: { id: candidate.id },
@@ -201,6 +263,9 @@ export async function POST(req: NextRequest) {
           infants: Number(infantsCount),
           pets: Number(petsCount),
           totalThb: candidateBreakdown.total_thb,
+          ...(acceptedCategoryTotal !== undefined && {
+            acceptedMaxTotalThb: acceptedCategoryTotal,
+          }),
           instantBook: candidate.instantBook,
           guestNote,
           priceBreakdown: {
@@ -266,6 +331,12 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof Error && (error as { code?: string }).code === 'REQUOTE_REQUIRED') {
+      return NextResponse.json(
+        { error: error.message, code: 'REQUOTE_REQUIRED' },
+        { status: 409 }
+      );
+    }
     if (error instanceof Error && (error as { code?: string }).code === 'DOUBLE_BOOK') {
       return NextResponse.json(
         { error: error.message, code: 'DOUBLE_BOOK' },

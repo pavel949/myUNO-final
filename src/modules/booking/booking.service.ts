@@ -26,6 +26,12 @@ export interface CreateBookingInput {
   /** Checked against the unit's pet policy, not against its bed count. */
   pets?: number;
   totalThb: number;
+  /**
+   * Maximum authoritative total the guest explicitly accepted on review.
+   * Used for category allocation, where a race may move the stay to a sibling
+   * unit. The booking service recomputes money and refuses any higher total.
+   */
+  acceptedMaxTotalThb?: number;
   priceBreakdown?: Record<string, unknown>;
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
@@ -258,6 +264,7 @@ export async function createBooking(
     infants = 0,
     pets = 0,
     totalThb: suppliedTotalThb,
+    acceptedMaxTotalThb,
     priceBreakdown: suppliedPriceBreakdown,
     cancellationPolicySnapshot,
     instantBook,
@@ -285,6 +292,16 @@ export async function createBooking(
       now,
       pets
     );
+    if (
+      acceptedMaxTotalThb !== undefined &&
+      (!Number.isInteger(acceptedMaxTotalThb) ||
+        acceptedMaxTotalThb < 0 ||
+        authoritative.total_thb > acceptedMaxTotalThb)
+    ) {
+      const err = new Error('The stay price changed after review. A new quote and consent are required.');
+      (err as { code?: string }).code = 'REQUOTE_REQUIRED';
+      throw err;
+    }
     totalThb = authoritative.total_thb;
     priceBreakdown = {
       ...authoritative,

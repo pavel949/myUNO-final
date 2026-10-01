@@ -75,6 +75,8 @@ export default function BookingReviewClient({
   const [headline, setHeadline] = useState(categoryKey || '');
   const [policyText] = useState(defaultPolicy);
   const [breakdown, setBreakdown] = useState<Breakdown | null>(null);
+  const [categoryQuoteToken, setCategoryQuoteToken] = useState<string | null>(null);
+  const [acceptedTotalSatang, setAcceptedTotalSatang] = useState<number | null>(null);
   const [consented, setConsented] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0] || 'cash');
   const [submitting, setSubmitting] = useState(false);
@@ -99,25 +101,32 @@ export default function BookingReviewClient({
       })}`;
 
   useEffect(() => {
-    if (inventoryCategoryId && !unitId) {
-      const loadCategory = async () => {
-        const response = await fetch(
-          `/api/search/units?${new URLSearchParams({
-            projectId,
+    if (inventoryCategoryId && !unitId && startDate && endDate) {
+      const loadCategoryQuote = async () => {
+        setBreakdown(null);
+        setCategoryQuoteToken(null);
+        setAcceptedTotalSatang(null);
+        const response = await fetch('/api/pricing/category-quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             inventoryCategoryId,
-            adultsCount: String(Math.max(1, adults)),
-            childrenCount: String(Math.max(0, children)),
-            limit: '1',
-          })}`
-        );
+            startDate,
+            endDate,
+            adultsCount: Math.max(1, adults),
+            childrenCount: Math.max(0, children),
+          }),
+        });
         if (!response.ok) return;
         const data = await response.json();
-        const categoryName = data.units?.[0]?.inventoryCategory?.name;
-        if (categoryName) setHeadline(categoryName);
+        if (data.categoryName) setHeadline(data.categoryName);
+        setBreakdown(data.breakdown);
+        setCategoryQuoteToken(data.quoteToken);
+        setAcceptedTotalSatang(data.acceptedTotalSatang);
       };
-      loadCategory();
+      loadCategoryQuote();
     }
-  }, [inventoryCategoryId, unitId, projectId, adults, children]);
+  }, [inventoryCategoryId, unitId, startDate, endDate, adults, children]);
 
   useEffect(() => {
     if (!unitId || !startDate || !endDate) return;
@@ -147,7 +156,9 @@ export default function BookingReviewClient({
   const categorySelected = Boolean(inventoryCategoryId || categoryKey);
   const canSubmit =
     Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
-    (categorySelected || Boolean(breakdown));
+    Boolean(breakdown) &&
+    (Boolean(unitId) ||
+      Boolean(inventoryCategoryId && categoryQuoteToken && acceptedTotalSatang !== null));
 
   const handleConfirm = async () => {
     if (!canSubmit) return;
@@ -169,6 +180,12 @@ export default function BookingReviewClient({
           childrenCount: children,
           instantBook,
           paymentMethod,
+          ...(inventoryCategoryId && !unitId
+            ? {
+                categoryQuoteToken,
+                acceptedTotalSatang,
+              }
+            : {}),
         }),
       });
       if (response.status === 401) {
@@ -177,6 +194,31 @@ export default function BookingReviewClient({
         return;
       }
       if (response.status === 409) {
+        const body = await response.json().catch(() => null);
+        if (body?.code === 'REQUOTE_REQUIRED' && inventoryCategoryId && !unitId) {
+          setConsented(false);
+          setBreakdown(null);
+          setCategoryQuoteToken(null);
+          setAcceptedTotalSatang(null);
+          const quoteResponse = await fetch('/api/pricing/category-quote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inventoryCategoryId,
+              startDate,
+              endDate,
+              adultsCount: Math.max(1, adults),
+              childrenCount: Math.max(0, children),
+            }),
+          });
+          if (quoteResponse.ok) {
+            const quote = await quoteResponse.json();
+            setBreakdown(quote.breakdown);
+            setCategoryQuoteToken(quote.quoteToken);
+            setAcceptedTotalSatang(quote.acceptedTotalSatang);
+            if (quote.categoryName) setHeadline(quote.categoryName);
+          }
+        }
         setConflict(true);
         return;
       }

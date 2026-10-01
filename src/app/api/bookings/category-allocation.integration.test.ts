@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { seedConfig } from '@/modules/config';
+import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
+import { computePriceBreakdown } from '@/modules/core';
 
 const mockGetCurrentUser = vi.fn();
 vi.mock('@/app/actions/getCurrentUser', () => ({
@@ -58,15 +60,40 @@ describe('category booking falls through to the next villa', () => {
     });
   }
 
-  function categoryBooking() {
+  async function categoryBooking(acceptedTotalSatang = 100_000_000) {
+    const category = await db.inventoryCategory.findUniqueOrThrow({
+      where: {
+        projectId_categoryKey: {
+          projectId,
+          categoryKey: 'garden_villa',
+        },
+      },
+    });
+    const quotedUnit = await db.unit.findFirstOrThrow({
+      where: { projectId, inventoryCategoryId: category.id },
+      orderBy: { name: 'asc' },
+    });
+    const { token } = createCategoryStayQuoteToken({
+      inventoryCategoryId: category.id,
+      projectId,
+      startDate: START,
+      endDate: END,
+      adultsCount: 2,
+      childrenCount: 0,
+      petsCount: 0,
+      acceptedTotalSatang,
+      quotedUnitId: quotedUnit.id,
+    });
     return request({
-      categoryKey: 'garden_villa',
+      inventoryCategoryId: category.id,
       projectId,
       startDate: START,
       endDate: END,
       adultsCount: 2,
       childrenCount: 0,
       paymentMethod: 'cash',
+      categoryQuoteToken: token,
+      acceptedTotalSatang,
     });
   }
 
@@ -82,11 +109,11 @@ describe('category booking falls through to the next villa', () => {
     const [first, second] = await Promise.all([
       (async () => {
         mockGetCurrentUser.mockReturnValue({ identityId: guestOne.id, isAdmin: false });
-        return POST(categoryBooking());
+        return POST(await categoryBooking());
       })(),
       (async () => {
         mockGetCurrentUser.mockReturnValue({ identityId: guestTwo.id, isAdmin: false });
-        return POST(categoryBooking());
+        return POST(await categoryBooking());
       })(),
     ]);
 
@@ -108,12 +135,12 @@ describe('category booking falls through to the next villa', () => {
 
     const guestOne = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guestOne.id, isAdmin: false });
-    const taken = await POST(categoryBooking());
+    const taken = await POST(await categoryBooking());
     expect(taken.status).toBe(201);
 
     const guestTwo = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guestTwo.id, isAdmin: false });
-    const refused = await POST(categoryBooking());
+    const refused = await POST(await categoryBooking());
 
     expect(refused.status).toBe(409);
     expect(await db.booking.count({ where: { projectId } })).toBe(1);
@@ -122,6 +149,15 @@ describe('category booking falls through to the next villa', () => {
   it('skips a villa held by an owner block and books the free one', async () => {
     const a = await villa('Villa A');
     const b = await villa('Villa B');
+
+    await db.pricingRule.create({
+      data: {
+        unitId: b.id,
+        startDate: new Date(START),
+        endDate: new Date(END),
+        nightlyThb: 900_000,
+      },
+    });
 
     await db.blockedDate.create({
       data: {
@@ -135,11 +171,70 @@ describe('category booking falls through to the next villa', () => {
     const guest = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
 
-    const res = await POST(categoryBooking());
+    const res = await POST(await categoryBooking());
     expect(res.status).toBe(201);
 
     const booking = await db.booking.findFirst({ where: { projectId } });
     expect(booking?.unitId).toBe(b.id);
+  });
+
+  it('requires re-consent when fallback inventory costs more than the accepted quote', async () => {
+    const a = await villa('Villa A');
+    const b = await villa('Villa B');
+
+    const quoted = await computePriceBreakdown(
+      db,
+      a.id,
+      new Date(START),
+      new Date(END),
+      2
+    );
+
+    await db.commercialOffering.create({
+      data: {
+        projectId,
+        unitId: b.id,
+        offeringType: 'short_term_stay',
+        status: 'active',
+        pricingTerms: {
+          quoteEngine: 'canonical_tariff_grid_v1',
+          taxPolicyVerified: true,
+          tariffGrid: [
+            {
+              sourceRateId: 'fallback-higher',
+              seasonCode: 'ALL_YEAR',
+              dateWindows: [{ start: '01-01', end: '12-31' }],
+              rateMode: 'daily',
+              pricingUnit: 'night',
+              amountSatang: 900_000,
+              currency: 'THB',
+              minimumNights: 1,
+              includesTaxes: true,
+              includesServiceCharge: true,
+              includesBreakfast: false,
+              sourceSellable: true,
+            },
+          ],
+        },
+      },
+    });
+
+    await db.blockedDate.create({
+      data: {
+        unitId: a.id,
+        startDate: new Date(START),
+        endDate: new Date(END),
+        reason: 'maintenance',
+      },
+    });
+
+    const guest = await createIdentity();
+    mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
+
+    const res = await POST(await categoryBooking(quoted.total_thb));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: 'REQUOTE_REQUIRED' });
+    expect(await db.booking.count({ where: { projectId } })).toBe(0);
   });
 
   it('prices the villa it actually books, not the one it first considered', async () => {
@@ -163,7 +258,7 @@ describe('category booking falls through to the next villa', () => {
     const guest = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
 
-    const res = await POST(categoryBooking());
+    const res = await POST(await categoryBooking());
     expect(res.status).toBe(201);
 
     const booking = await db.booking.findFirst({ where: { projectId } });

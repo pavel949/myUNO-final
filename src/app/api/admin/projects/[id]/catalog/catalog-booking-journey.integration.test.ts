@@ -17,6 +17,7 @@ import { POST as adminUnitPost } from '@/app/api/admin/units/route';
 import { POST as propertyDetailsPost } from '@/app/api/admin/units/[id]/property-details/route';
 import { getPropertyReadiness } from '@/modules/projects/property-readiness';
 import { POST as pricingPost } from '@/app/api/pricing/breakdown/route';
+import { POST as categoryQuotePost } from '@/app/api/pricing/category-quote/route';
 import { POST as bookingPost } from '@/app/api/bookings/route';
 import { GET as searchGet } from '@/app/api/search/units/route';
 import { GET as unitDetailGet } from '@/app/api/units/[unitId]/route';
@@ -56,6 +57,22 @@ describe('canonical onboarding → pricing → search → booking route journey'
     baseNightlyThb,
     minNights,
   });
+
+  async function categoryQuote(
+    inventoryCategoryId: string,
+    dates: { startDate: string; endDate: string },
+    adultsCount = 2,
+    childrenCount = 0
+  ) {
+    const res = await categoryQuotePost(request('/api/pricing/category-quote', {
+      inventoryCategoryId,
+      ...dates,
+      adultsCount,
+      childrenCount,
+    }));
+    expect(res.status).toBe(200);
+    return res.json() as Promise<{ quoteToken: string; acceptedTotalSatang: number }>;
+  }
 
   async function category(key: string, rate: unknown = '3500', minNights = 1) {
     const res = await catalogPost(
@@ -173,9 +190,12 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(quote.total).toBeGreaterThan(0);
 
     session.identityId = guestId;
+    const acceptedQuote = await categoryQuote(c.id, dates);
     const payload = {
       inventoryCategoryId: c.id, projectId, ...dates, adultsCount: 2, childrenCount: 0,
       paymentMethod: 'cash', totalThb: 1, // client-supplied total cannot override the server quote
+      categoryQuoteToken: acceptedQuote.quoteToken,
+      acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
     };
     const created = await bookingPost(request('/api/bookings', payload));
     expect(created.status).toBe(201);
@@ -308,9 +328,12 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(quoted.status).toBe(200);
     expect((await quoted.json()).total).toBe(11_200);
     session.identityId = guestId;
+    const acceptedQuote = await categoryQuote(cat.id, dates);
     const booked = await bookingPost(request('/api/bookings', {
       inventoryCategoryId: cat.id, projectId, ...dates,
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', totalThb: 1,
+      categoryQuoteToken: acceptedQuote.quoteToken,
+      acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
     }));
     expect(booked.status).toBe(201);
     const result = await booked.json();

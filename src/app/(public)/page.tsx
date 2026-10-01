@@ -322,7 +322,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-border-line bg-gradient-to-r from-[#EDF7F4] via-surface-paper to-[#F8F1E5] py-44 md:py-56" aria-labelledby="global-desks-heading">
+      <section className="border-y border-border-line bg-gradient-to-r from-surface-ivory via-surface-paper to-surface-ivory py-44 md:py-56" aria-labelledby="global-desks-heading">
         <div className="mx-auto max-w-7xl px-20 md:px-32">
           <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
             <div className="max-w-2xl">
@@ -344,7 +344,7 @@ export default async function LandingPage() {
                 href={`/desks/${desk.slug}`}
                 className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
               >
-                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#E7F2EF] font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
+                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
                   {desk.code}
                 </div>
                 <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>

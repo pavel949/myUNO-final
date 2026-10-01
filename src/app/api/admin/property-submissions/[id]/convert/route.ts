@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
+import { setUnitOwnerTx } from '@/modules/projects/ownership.service';
+import { createDraftUnitEngagementTx } from '@/modules/core/engagement.service';
+import {
+  ensureDraftCommercialOfferingsTx,
+  resolveCanonicalUnitTx,
+} from '@/modules/onboarding/canonical-onboarding';
 
 /**
  * Converts a verified intake into canonical DRAFT records. This endpoint does
@@ -88,95 +94,107 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const project = await tx.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
       if (!project || project.status === 'archived') throw new Error('Selected project cannot accept submissions.');
       const requestedOrgId = typeof review.organizationId === 'string' && review.organizationId ? review.organizationId : null;
-      if (requestedOrgId) {
-        if (data.kind !== 'management') throw new Error('An organization may only be linked to a management-company application.');
-        const org = await tx.organization.findFirst({ where: { id: requestedOrgId, status: 'active', orgType: 'management_company', OR: [{ projectId: null }, { projectId }] }, select: { id: true } });
-        if (!org) throw new Error('Management organization is not approved for this project.');
-        await tx.roleAssignment.create({ data: { identityId: applicant.id, role: 'mc_member', scopeType: 'project', projectId, organizationId: org.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
-      }
-
-      let unitId: string | null = null;
-      // A complex can be registered independently of its future inventory.
-      if (unitName) {
-        const duplicateUnit = await tx.unit.findFirst({
-          where: { projectId, name: { equals: unitName, mode: 'insensitive' } },
-          select: { id: true },
-        });
-        if (duplicateUnit) throw new Error('An object with that name already exists in this complex. Review its ownership instead of creating another.');
-        const bedrooms = Number(data.bedrooms ?? 0);
-        const bathrooms = Number(data.bathrooms ?? 0);
-        const maxGuests = Number(data.maxGuests ?? Math.max(1, bedrooms * 2));
-        if (![bedrooms, bathrooms, maxGuests].every(Number.isSafeInteger) || bedrooms < 0 || bathrooms < 0 || maxGuests < 1) {
-          throw new Error('Bedrooms, bathrooms and capacity must be valid.');
-        }
-        const categoryKey = 'unit_' + application.id.replace(/-/g, '').slice(0, 24);
-        const category = await tx.inventoryCategory.create({
-          data: { projectId, categoryKey, name: unitName + ' category', bedrooms, bathrooms, maxGuests, baseNightlyThb: 0, minNights: 1, status: 'draft' },
-          select: { id: true },
-        });
-        const ownerIdentityId = review.verifiedOwner === true ? applicant.id : null;
-        const unit = await tx.unit.create({
-          data: {
-            projectId, inventoryCategoryId: category.id, categoryKey,
-            name: unitName, unitType: String(data.unitType) === 'villa' ? 'villa' : String(data.unitType) === 'house' ? 'townhouse' : 'condo',
-            accommodationType: String(data.unitType || 'condo'),
-            bedrooms, bathrooms, maxGuests,
-            sizeSqm: data.sizeSqm == null ? null : Number(data.sizeSqm),
-            floor: String(data.floor || '') || null, addressSupplement: unitName,
-            descriptionKey: `unit.${application.id.replace(/-/g, '')}.description`,
-            baseNightlyThb: 0, minNights: 1, status: 'draft', instantBook: false, ownerIdentityId,
+      const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(data.operatingModel))
+        ? String(data.operatingModel)
+        : null;
+      if (operatingModel === 'via_management_company') {
+        if (!requestedOrgId) throw new Error('Choose the verified management company before conversion.');
+        const org = await tx.organization.findFirst({
+          where: {
+            id: requestedOrgId,
+            status: 'active',
+            orgType: 'management_company',
+            OR: [{ projectId: null }, { projectId }],
           },
           select: { id: true },
         });
-        unitId = unit.id;
-        if (ownerIdentityId) {
-          await tx.roleAssignment.create({ data: { identityId: ownerIdentityId, role: 'owner', scopeType: 'unit', projectId, unitId: unit.id, status: 'active', grantedByIdentityId: guard.actorIdentityId } });
-          await tx.ownershipPeriod.create({
-            data: { unitId, ownerIdentityId, startsOn: new Date(new Date().toISOString().slice(0, 10)), recordedByIdentityId: guard.actorIdentityId, note: 'Verified during property submission conversion' },
+        if (!org) throw new Error('Management organization is not approved for this project.');
+      }
+
+      let unitId: string | null = null;
+      if (unitName) {
+        const existingUnitId = typeof data.existingUnitId === 'string' && data.existingUnitId ? data.existingUnitId : null;
+        const resolved = await resolveCanonicalUnitTx(tx, { projectId, existingUnitId, unitName });
+        if (resolved.duplicateCandidateId && !existingUnitId) {
+          throw new Error('Possible existing property found. Select the existing Unit instead of creating another.');
+        }
+
+        if (resolved.unitId) {
+          unitId = resolved.unitId;
+        } else {
+          const bedrooms = Number(data.bedrooms ?? 0);
+          const bathrooms = Number(data.bathrooms ?? 0);
+          const maxGuests = Number(data.maxGuests ?? Math.max(1, bedrooms * 2));
+          if (![bedrooms, bathrooms, maxGuests].every(Number.isSafeInteger) || bedrooms < 0 || bathrooms < 0 || maxGuests < 1) {
+            throw new Error('Bedrooms, bathrooms and capacity must be valid.');
+          }
+
+          const unit = await tx.unit.create({
+            data: {
+              projectId,
+              inventoryCategoryId: null,
+              categoryKey: null,
+              name: unitName,
+              unitType: String(data.unitType) === 'villa' ? 'villa' : String(data.unitType) === 'house' ? 'townhouse' : 'condo',
+              accommodationType: String(data.unitType || 'condo'),
+              bedrooms,
+              bathrooms,
+              maxGuests,
+              sizeSqm: data.sizeSqm == null ? null : Number(data.sizeSqm),
+              floor: String(data.floor || '') || null,
+              addressSupplement: unitName,
+              descriptionKey: `unit.${application.id.replace(/-/g, '')}.description`,
+              baseNightlyThb: 0,
+              minNights: 1,
+              status: 'draft',
+              instantBook: false,
+            },
+            select: { id: true },
           });
+          unitId = unit.id;
         }
-        const photos = Array.isArray(data.photos) ? data.photos.filter((id): id is string => typeof id === 'string') : [];
-        if (photos.length) {
-          const count = await tx.mediaAsset.count({ where: { id: { in: photos }, uploadedByIdentityId: applicant.id, kind: 'photo', encrypted: false } });
-          if (count !== new Set(photos).size) throw new Error('Unit photographs are not verified applicant media.');
-          await tx.unitMedia.createMany({ data: photos.map((mediaId, sort) => ({ unitId: unit.id, mediaId, sort })), skipDuplicates: true });
-          await tx.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0] } });
-        }
-        const requestedOffers = Array.isArray(data.offers) ? data.offers.filter((v): v is string => typeof v === 'string' && ['short_stay','monthly','yearly','sale'].includes(v)) : [];
-        const canonicalOffers = [...new Set(requestedOffers.map((offer) =>
-          offer === 'short_stay' ? 'short_term_stay' :
-          offer === 'monthly' || offer === 'yearly' ? 'long_term_rental' :
-          'sale'
-        ))];
-        if (canonicalOffers.length) {
-          await tx.commercialOffering.createMany({
-            data: canonicalOffers.map((offeringType) => ({ unitId: unit.id, offeringType, status: 'draft' })),
+
+        const ownerIdentityId = review.verifiedOwner === true ? applicant.id : null;
+        if (ownerIdentityId) {
+          await setUnitOwnerTx(tx, {
+            unitId,
+            ownerIdentityId,
+            recordedByIdentityId: guard.actorIdentityId,
+            note: 'Verified during property submission conversion',
           });
         }
 
-        const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(data.operatingModel))
-          ? String(data.operatingModel)
-          : null;
-        if (ownerIdentityId && operatingModel && operatingModel !== 'via_management_company') {
-          await tx.unitEngagement.create({
-            data: {
-              unitId: unit.id,
-              ownerIdentityId,
-              engagementType: operatingModel === 'direct_managed' ? 'direct_managed' : 'owner_direct',
-              status: 'draft',
-            },
+        const photos = Array.isArray(data.photos) ? data.photos.filter((id): id is string => typeof id === 'string') : [];
+        if (photos.length) {
+          const count = await tx.mediaAsset.count({
+            where: { id: { in: photos }, uploadedByIdentityId: applicant.id, kind: 'photo', encrypted: false },
           });
+          if (count !== new Set(photos).size) throw new Error('Unit photographs are not verified applicant media.');
+          await tx.unitMedia.createMany({
+            data: photos.map((mediaId, sort) => ({ unitId, mediaId, sort })),
+            skipDuplicates: true,
+          });
+          const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { coverMediaId: true } });
+          if (!unit?.coverMediaId) {
+            await tx.unit.update({ where: { id: unitId }, data: { coverMediaId: photos[0] } });
+          }
         }
-        if (ownerIdentityId && operatingModel === 'via_management_company' && requestedOrgId) {
-          await tx.unitEngagement.create({
-            data: {
-              unitId: unit.id,
-              ownerIdentityId,
-              managementOrgId: requestedOrgId,
-              engagementType: 'via_management_company',
-              status: 'draft',
-            },
+
+        await ensureDraftCommercialOfferingsTx(tx, unitId, data.offers);
+
+        if (ownerIdentityId && operatingModel) {
+          const existingDraft = await tx.unitEngagement.findFirst({
+            where: { unitId, status: 'draft', engagementType: operatingModel as 'owner_direct' | 'via_management_company' | 'direct_managed' },
+            select: { id: true },
           });
+          if (!existingDraft) {
+            await createDraftUnitEngagementTx(tx, {
+              unitId,
+              ownerIdentityId,
+              engagementType: operatingModel as 'owner_direct' | 'via_management_company' | 'direct_managed',
+              managementOrgId: operatingModel === 'via_management_company' ? requestedOrgId ?? undefined : undefined,
+            });
+          }
         }
       }
 

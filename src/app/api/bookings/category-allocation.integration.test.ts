@@ -150,6 +150,15 @@ describe('category booking falls through to the next villa', () => {
     const a = await villa('Villa A');
     const b = await villa('Villa B');
 
+    await db.pricingRule.create({
+      data: {
+        unitId: b.id,
+        startDate: new Date(START),
+        endDate: new Date(END),
+        nightlyThb: 900_000,
+      },
+    });
+
     await db.blockedDate.create({
       data: {
         unitId: a.id,
@@ -172,7 +181,6 @@ describe('category booking falls through to the next villa', () => {
   it('requires re-consent when fallback inventory costs more than the accepted quote', async () => {
     const a = await villa('Villa A');
     const b = await villa('Villa B');
-    await db.unit.update({ where: { id: b.id }, data: { baseNightlyThb: 900_000 } });
 
     const quoted = await computePriceBreakdown(
       db,

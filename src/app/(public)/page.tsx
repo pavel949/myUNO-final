@@ -124,6 +124,7 @@ export default async function LandingPage() {
       'home.discovery.monthly': 'Monthly',
       'home.discovery.buy': 'Buy',
       'home.discovery.invest': 'Invest',
+      'home.discovery.sell': 'Sell',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
@@ -263,7 +264,7 @@ export default async function LandingPage() {
               { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
               { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
               { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
-              { title: 'Sell', body: labels['landing.start.sell_body'], href: '/sell' },
+              { title: labels['home.discovery.sell'], body: labels['landing.start.sell_body'], href: '/sell' },
             ].map((item) => (
               <Link
                 key={item.href}

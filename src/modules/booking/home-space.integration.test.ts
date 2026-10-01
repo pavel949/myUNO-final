@@ -10,6 +10,7 @@ import {
   createService,
 } from '@/test/util';
 import { getInStayHomeSpace } from './home-space.service';
+import { encrypt } from '@/lib/encryption';
 
 /**
  * T-034 DoD: the guest sees exactly their stay's project scope.
@@ -185,6 +186,91 @@ describe('In-stay home space — stay project scope (T-034)', () => {
       await expect(getInStayHomeSpace(db, otherBooking.id, neighbourGuest.id)).rejects.toThrow(
         'Access denied'
       );
+    });
+  });
+
+  describe('private arrival guide', () => {
+    it('releases encrypted arrival details to the checked-in booking guest', async () => {
+      const { unit, guest, booking } = await stayIn();
+      await db.unitAccessInstruction.create({
+        data: {
+          unitId: unit.id,
+          ciphertext: encrypt(JSON.stringify({
+            checkInMethod: 'lockbox',
+            entryCode: '2468',
+            lockboxLocation: 'Left side of the gate',
+            lockboxCode: '1357',
+            wifiSsid: 'Villa WiFi',
+            wifiPassword: 'private-password',
+            parkingInstructions: 'Park in bay 7',
+            arrivalNotes: 'Use the side entrance after 22:00.',
+            emergencyContact: '+66 80 000 0000',
+          })),
+          updatedById: guest.id,
+        },
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.arrivalGuide).toMatchObject({
+        checkInMethod: 'lockbox',
+        entryCode: '2468',
+        lockboxCode: '1357',
+        wifiSsid: 'Villa WiFi',
+        wifiPassword: 'private-password',
+      });
+    });
+
+    it('does not release arrival secrets before the configured window', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        status: 'confirmed',
+        verificationStatus: 'not_required',
+        startDate: new Date('2027-01-15T08:00:00Z'),
+        endDate: new Date('2027-01-18T08:00:00Z'),
+      });
+      await db.unitAccessInstruction.create({
+        data: {
+          unitId: unit.id,
+          ciphertext: encrypt(JSON.stringify({ entryCode: '9999' })),
+          updatedById: guest.id,
+        },
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.arrivalGuide).toBeNull();
+    });
+
+    it('keeps arrival secrets hidden when guest verification is incomplete', async () => {
+      const project = await createProject();
+      const unit = await createUnit(project.id);
+      const guest = await createIdentity();
+      const booking = await createBooking({
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        status: 'confirmed',
+        verificationStatus: 'pending',
+        startDate: new Date(Date.now() + 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 48 * 60 * 60 * 1000),
+      });
+      await db.unitAccessInstruction.create({
+        data: {
+          unitId: unit.id,
+          ciphertext: encrypt(JSON.stringify({ entryCode: '1111' })),
+          updatedById: guest.id,
+        },
+      });
+
+      const data = await getInStayHomeSpace(db, booking.id, guest.id);
+
+      expect(data.arrivalGuide).toBeNull();
     });
   });
 

@@ -218,7 +218,7 @@ export default function BookingsAdminClient({
             <p className="text-body font-semibold text-text-ink">
               {booking.guestName}
               <span className="text-text-secondary font-normal"> · {booking.unitName}</span>
-              <span className="ml-8 px-8 py-2 rounded-full text-small bg-surface-ivory text-text-secondary align-middle">
+              <span className="ml-8 px-8 py-8 rounded-full text-small bg-surface-ivory text-text-secondary align-middle">
                 {booking.channel.replace(/_/g, ' ')}
               </span>
             </p>

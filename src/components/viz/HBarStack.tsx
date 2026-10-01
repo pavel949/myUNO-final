@@ -56,7 +56,7 @@ export default function HBarStack({
       {multiSegment && legendLabels && legendLabels.length > 0 ? (
         <div className="flex flex-wrap gap-16 mb-8">
           {legendLabels.map((item) => (
-            <span key={item.label} className="inline-flex items-center gap-6 text-small text-text-secondary">
+            <span key={item.label} className="inline-flex items-center gap-8 text-small text-text-secondary">
               <span
                 className="inline-block w-12 h-12 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}

@@ -123,7 +123,7 @@ export default async function McMobilizationPage({ searchParams }: McMobilizatio
                 <Link
                   key={context.key}
                   href={context.href}
-                  className={`inline-flex items-center rounded-full px-12 py-6 text-small border transition-colors ${
+                  className={`inline-flex items-center rounded-full px-12 py-4 text-small border transition-colors ${
                     context.key === activeContextKey
                       ? 'bg-brand-andaman-soft text-brand-andaman border-brand-andaman'
                       : 'bg-surface-paper text-text-secondary border-border-line hover:text-text-ink'

@@ -41,7 +41,7 @@ export default function StayActions({
     {message&&<p role={failed?'alert':'status'} className={'mb-12 rounded-md p-12 text-small '+(failed?'bg-red-50 text-red-800':'bg-emerald-50 text-emerald-800')}>{message}</p>}
     <div className="flex flex-col gap-12">
       {canApprove&&<button type="button" disabled={busy} onClick={()=>run('respond',{action:'approve'})}
-        className="rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">
+        className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
         {labels['staff.stay_360.request']}
       </button>}
       {canCash&&<div className="space-y-8">
@@ -52,16 +52,16 @@ export default function StayActions({
           className="h-40 w-full rounded-md border border-border-line px-12 text-text-ink" maxLength={120}/>
         <button type="button" disabled={busy||!receipt.trim()||balanceSatang<0}
           onClick={()=>run('record-cash-payment',{receiptRef:receipt.trim()})}
-          className="w-full rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">
+          className="w-full rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
           {labels['staff.stay_360.cash']}
         </button>
       </div>}
       {canCheckIn&&<button type="button" disabled={busy} onClick={()=>run('checkin')}
-        className="rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">
+        className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
         {labels['staff.stay_360.check_in']}
       </button>}
       {canCheckOut&&<button type="button" disabled={busy} onClick={()=>run('check-out')}
-        className="rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">
+        className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
         {labels['staff.stay_360.check_out']}
       </button>}
       {!canApprove&&!canCash&&!canCheckIn&&!canCheckOut&&

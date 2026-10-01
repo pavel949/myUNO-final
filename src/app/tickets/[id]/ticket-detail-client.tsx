@@ -269,7 +269,7 @@ export default function TicketDetailClient({
         {ticket.events.length === 0 ? (
           <p className="text-small text-text-secondary">{labels['tickets.detail.empty_history']}</p>
         ) : (
-          <ul className="space-y-10">
+          <ul className="space-y-12">
             {ticket.events.map((event) => (
               <li key={event.id} className="border-l-2 border-border-line pl-12">
                 <p className="text-body text-text-ink">

@@ -20,9 +20,21 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 const pathways = [
-  { href: '/search', number: '01', title: 'Stay', detail: 'Find a home for your next Phuket stay.' },
-  { href: '/projects', number: '02', title: 'Own', detail: 'Explore residences and property opportunities.' },
-  { href: '/services', number: '03', title: 'Experience', detail: 'Everything around your time on the island.' },
+  { href: '/search', number: '01', key: 'stay' },
+  { href: '/projects', number: '02', key: 'own' },
+  { href: '/services', number: '03', key: 'experience' },
+] as const;
+const ecosystem = [
+  { href: '/search', key: 'stay' },
+  { href: '/services', key: 'experience' },
+  { href: '/owners', key: 'own' },
+  { href: '/developers', key: 'connect' },
+] as const;
+const destinations = [
+  { key: 'bang_tao', href: '/search?areaSlug=bang-tao' },
+  { key: 'layan', href: '/search?areaSlug=layan' },
+  { key: 'cherng_talay', href: '/search?areaSlug=cherng-talay' },
+  { key: 'nai_yang', href: '/search?areaSlug=nai-yang' },
 ] as const;
 
 export default async function LandingPage() {
@@ -100,6 +112,28 @@ export default async function LandingPage() {
       'home.audience.cta': 'Discover the property ecosystem',
       'home.final.title': 'Your place in Phuket starts here.',
       'home.final.cta': 'Explore the collection',
+      'home.pathways.stay.title': 'Stay',
+      'home.pathways.stay.detail': 'Find a home for your next Phuket stay.',
+      'home.pathways.own.title': 'Own',
+      'home.pathways.own.detail': 'Explore residences and property opportunities.',
+      'home.pathways.experience.title': 'Experience',
+      'home.pathways.experience.detail': 'Everything around your time on the island.',
+      'home.destinations.bang_tao.name': 'Bang Tao',
+      'home.destinations.bang_tao.subtitle': 'Coastal living',
+      'home.destinations.layan.name': 'Layan',
+      'home.destinations.layan.subtitle': 'Privacy & nature',
+      'home.destinations.cherng_talay.name': 'Cherng Talay',
+      'home.destinations.cherng_talay.subtitle': 'Connected island life',
+      'home.destinations.nai_yang.name': 'Nai Yang',
+      'home.destinations.nai_yang.subtitle': 'A slower pace',
+      'home.ecosystem.stay.title': 'Stay',
+      'home.ecosystem.stay.body': 'Discover and reserve.',
+      'home.ecosystem.experience.title': 'Experience',
+      'home.ecosystem.experience.body': 'Services around your stay.',
+      'home.ecosystem.own.title': 'Own',
+      'home.ecosystem.own.body': 'Your property and visibility.',
+      'home.ecosystem.connect.title': 'Connect',
+      'home.ecosystem.connect.body': 'Projects and partners.',
     }),
     listPublicProjects(),
     listPublicMarketplaceServices(prisma, locale, { limit: 3 }).catch(() => []),
@@ -107,12 +141,6 @@ export default async function LandingPage() {
   const heroProject = projects.find(p => !!p.coverUrl) ?? projects[0] ?? null;
   const heroImage = heroProject ? projectPresentationImage(heroProject.id, heroProject.coverUrl) : projectPresentationImage('homepage', null);
   const organizationJsonLd = { '@context': 'https://schema.org', '@type': 'Organization', name: 'myUNO', legalName: 'Ignatev Estate Co., Ltd', url: siteUrl(), areaServed: 'Phuket, Thailand' };
-  const destinations = [
-    { name: 'Bang Tao', subtitle: 'Coastal living', href: '/search?areaSlug=bang-tao' },
-    { name: 'Layan', subtitle: 'Privacy & nature', href: '/search?areaSlug=layan' },
-    { name: 'Cherng Talay', subtitle: 'Connected island life', href: '/search?areaSlug=cherng-talay' },
-    { name: 'Nai Yang', subtitle: 'A slower pace', href: '/search?areaSlug=nai-yang' },
-  ];
   return (
     <main className="min-h-screen bg-surface-ivory">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }} />
@@ -142,10 +170,10 @@ export default async function LandingPage() {
         <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['home.pathways.kicker']}</p>
         <h2 id="pathways-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.pathways.title']}</h2>
         <div className="mt-32 grid gap-12 md:grid-cols-3">
-          {pathways.map(item => <Link key={item.href} href={item.href} className="group rounded-2xl border border-border-line bg-surface-paper p-24 transition hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-brand-andaman">
+          {pathways.map(item => <Link key={item.href} href={item.href} className="group rounded-2xl border border-border-line bg-surface-paper p-24 transition hover:-translate-y-4 hover:shadow-card focus-visible:outline-2 focus-visible:outline-brand-andaman">
             <span className="text-small text-brand-andaman">{item.number}</span>
-            <div className="mt-32 flex items-center justify-between"><h3 className="font-display text-display font-semibold text-text-ink">{item.title}</h3><span aria-hidden="true" className="text-xl text-brand-andaman transition group-hover:translate-x-1">↗</span></div>
-            <p className="mt-8 text-body text-text-secondary">{item.detail}</p>
+            <div className="mt-32 flex items-center justify-between"><h3 className="font-display text-display font-semibold text-text-ink">{labels[`home.pathways.${item.key}.title`]}</h3><span aria-hidden="true" className="text-xl text-brand-andaman transition group-hover:translate-x-4">↗</span></div>
+            <p className="mt-8 text-body text-text-secondary">{labels[`home.pathways.${item.key}.detail`]}</p>
           </Link>)}
         </div>
       </section>
@@ -165,11 +193,11 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80" aria-labelledby="destination-heading">
         <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['home.destinations.kicker']}</p><h2 id="destination-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.destinations.title']}</h2>
         <p className="mt-12 text-body text-text-secondary">{labels['home.destinations.subtitle']}</p>
-        <div className="mt-28 grid grid-cols-2 gap-12 md:grid-cols-4">
-          {destinations.map((area) => <Link key={area.name} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
+        <div className="mt-32 grid grid-cols-2 gap-12 md:grid-cols-4">
+          {destinations.map((area) => <Link key={area.key} href={area.href} className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-brand-andaman p-20 text-white md:min-h-[290px]">
             <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-brand-andaman via-brand-deep to-brand-andaman-dark transition duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-            <div className="relative"><h3 className="font-display text-heading-2 font-semibold">{area.name}</h3><p className="mt-4 text-small text-white/80">{area.subtitle}</p></div>
+            <div className="relative"><h3 className="font-display text-heading-2 font-semibold">{labels[`home.destinations.${area.key}.name`]}</h3><p className="mt-4 text-small text-white/80">{labels[`home.destinations.${area.key}.subtitle`]}</p></div>
           </Link>)}
         </div>
         <p className="mt-12 text-small text-text-secondary">{labels['home.destinations.note']}</p>
@@ -177,7 +205,7 @@ export default async function LandingPage() {
 
       <section className="bg-brand-deep py-56 text-surface-ivory md:py-80" aria-labelledby="guided-heading">
         <div className="mx-auto grid max-w-7xl gap-32 px-20 md:grid-cols-2 md:items-center md:px-32">
-          <div><p className="text-kicker tracking-[0.18em] text-brand-sun-soft">{labels['home.guided.kicker']}</p><h2 id="guided-heading" className="mt-8 font-display text-display-xl font-semibold">{labels['home.guided.title']}</h2><p className="mt-16 max-w-xl text-body text-surface-ivory/75">{labels['home.guided.body']}</p><Link href="/guests" className="mt-24 inline-flex rounded-lg bg-surface-paper px-24 py-14 font-semibold text-brand-deep hover:opacity-90">{labels['home.guided.cta']} →</Link></div>
+          <div><p className="text-kicker tracking-[0.18em] text-brand-sun-soft">{labels['home.guided.kicker']}</p><h2 id="guided-heading" className="mt-8 font-display text-display-xl font-semibold">{labels['home.guided.title']}</h2><p className="mt-16 max-w-xl text-body text-surface-ivory/75">{labels['home.guided.body']}</p><Link href="/guests" className="mt-24 inline-flex rounded-lg bg-surface-paper px-24 py-12 font-semibold text-brand-deep hover:opacity-90">{labels['home.guided.cta']} →</Link></div>
           <div className="rounded-2xl border border-white/20 bg-surface-paper/10 p-24 backdrop-blur-sm"><p className="text-small text-brand-sun-soft">{labels['home.guided.prompt']}</p><div className="mt-20 space-y-12">
             <Link href="/search" className="block rounded-xl bg-surface-paper/10 p-16 hover:bg-surface-paper/20">{labels['home.guided.stay']} ↗</Link>
             <Link href="/projects" className="block rounded-xl bg-surface-paper/10 p-16 hover:bg-surface-paper/20">{labels['home.guided.projects']} ↗</Link>
@@ -189,7 +217,7 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80" aria-labelledby="ecosystem-heading">
         <p className="text-kicker tracking-[0.18em] text-brand-andaman">{labels['home.ecosystem.kicker']}</p><h2 id="ecosystem-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['home.ecosystem.title']}</h2><p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['home.ecosystem.body']}</p>
         <div className="mt-32 grid gap-12 md:grid-cols-4">
-          {([{href:'/search', title:'Stay', body:'Discover and reserve.'},{href:'/services',title:'Experience',body:'Services around your stay.'},{href:'/owners',title:'Own',body:'Your property and visibility.'},{href:'/developers',title:'Connect',body:'Projects and partners.'}] as const).map(item=><Link key={item.title} href={item.href} className="rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card"><TrustMark size={20} filled className="text-brand-andaman"/><h3 className="mt-24 font-display text-heading-2 font-semibold text-text-ink">{item.title}</h3><p className="mt-8 text-small text-text-secondary">{item.body}</p><span className="mt-20 inline-block font-semibold text-brand-andaman">{labels['home.common.explore']} →</span></Link>)}
+          {ecosystem.map(item=><Link key={item.key} href={item.href} className="rounded-2xl border border-border-line bg-surface-paper p-24 hover:shadow-card"><TrustMark size={20} filled className="text-brand-andaman"/><h3 className="mt-24 font-display text-heading-2 font-semibold text-text-ink">{labels[`home.ecosystem.${item.key}.title`]}</h3><p className="mt-8 text-small text-text-secondary">{labels[`home.ecosystem.${item.key}.body`]}</p><span className="mt-20 inline-block font-semibold text-brand-andaman">{labels['home.common.explore']} →</span></Link>)}
         </div>
         <Link href="/about" className="mt-24 inline-block font-semibold text-brand-andaman hover:underline">{labels['home.ecosystem.cta']} →</Link>
       </section>
@@ -198,7 +226,7 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-7xl px-20 md:px-32">
           <p className="text-kicker tracking-[0.18em] text-brand-andaman">{labels['landing.audience.kicker']}</p><h2 id="audience-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">{labels['landing.audience.title']}</h2><p className="mt-12 max-w-3xl text-body text-text-secondary">{labels['landing.audience.body']}</p>
           <div className="mt-32 grid gap-16 md:grid-cols-2">
-            {([{href:'/owners',title:labels['landing.audience.owners'],body:labels['landing.audience.owners_body'],cta:labels['landing.audience.owner_cta']},{href:'/developers',title:labels['landing.audience.developers'],body:labels['landing.audience.developers_body'],cta:labels['landing.audience.developer_cta']}] as const).map(item=><Link href={item.href} key={item.href} className="group rounded-2xl border border-border-line bg-surface-ivory p-28 transition hover:shadow-card"><h3 className="font-display text-display font-semibold text-text-ink">{item.title}</h3><p className="mt-12 max-w-md text-body text-text-secondary">{item.body}</p><p className="mt-32 font-semibold text-brand-andaman">{item.cta} ↗</p></Link>)}
+            {([{href:'/owners',title:labels['landing.audience.owners'],body:labels['landing.audience.owners_body'],cta:labels['landing.audience.owner_cta']},{href:'/developers',title:labels['landing.audience.developers'],body:labels['landing.audience.developers_body'],cta:labels['landing.audience.developer_cta']}] as const).map(item=><Link href={item.href} key={item.href} className="group rounded-2xl border border-border-line bg-surface-ivory p-24 transition hover:shadow-card"><h3 className="font-display text-display font-semibold text-text-ink">{item.title}</h3><p className="mt-12 max-w-md text-body text-text-secondary">{item.body}</p><p className="mt-32 font-semibold text-brand-andaman">{item.cta} ↗</p></Link>)}
           </div>
         </div>
       </section>
@@ -208,9 +236,9 @@ export default async function LandingPage() {
         {services.length ? <div className="grid grid-cols-1 gap-20 md:grid-cols-3">{services.map(service=><ServiceCard key={service.id} service={service} href={`/services/${service.id}`} labels={{vetted:labels['landing.services.vetted'],from:labels['landing.services.from'],noPhoto:labels['landing.services.no_photo']}} />)}</div> : <div className="rounded-2xl border border-border-line p-32 text-text-secondary">{labels['landing.services.empty']}</div>}
       </section>
 
-      <section className="border-y border-border-line bg-surface-paper py-56 md:py-80" aria-labelledby="trust-heading"><div className="mx-auto max-w-7xl px-20 md:px-32"><p className="text-kicker tracking-[0.18em] text-brand-andaman">{labels['landing.trust.kicker']}</p><h2 id="trust-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['landing.trust.title']}</h2><div className="mt-32 grid gap-28 md:grid-cols-3">{(['verified','handled','protected'] as const).map(key=><div key={key} className="border-t border-border-line pt-20"><TrustMark size={22} filled className="text-brand-andaman"/><h3 className="mt-12 font-display text-title font-semibold text-text-ink">{labels[`landing.trust.${key}`]}</h3><p className="mt-8 text-body text-text-secondary">{labels[`landing.trust.${key}_body`]}</p></div>)}</div><Link href="/trust" className="mt-28 inline-block font-semibold text-brand-andaman">{labels['landing.trust.cta']} →</Link></div></section>
+      <section className="border-y border-border-line bg-surface-paper py-56 md:py-80" aria-labelledby="trust-heading"><div className="mx-auto max-w-7xl px-20 md:px-32"><p className="text-kicker tracking-[0.18em] text-brand-andaman">{labels['landing.trust.kicker']}</p><h2 id="trust-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['landing.trust.title']}</h2><div className="mt-32 grid gap-24 md:grid-cols-3">{(['verified','handled','protected'] as const).map(key=><div key={key} className="border-t border-border-line pt-20"><TrustMark size={22} filled className="text-brand-andaman"/><h3 className="mt-12 font-display text-title font-semibold text-text-ink">{labels[`landing.trust.${key}`]}</h3><p className="mt-8 text-body text-text-secondary">{labels[`landing.trust.${key}_body`]}</p></div>)}</div><Link href="/trust" className="mt-32 inline-block font-semibold text-brand-andaman">{labels['landing.trust.cta']} →</Link></div></section>
 
-      <section className="bg-brand-andaman py-56 text-center text-surface-ivory md:py-72"><div className="mx-auto max-w-3xl px-20"><h2 className="font-display text-display-xl font-semibold">{labels['home.final.title']}</h2><Link href="/projects" className="mt-24 inline-block rounded-lg bg-surface-paper px-28 py-14 font-semibold text-brand-deep">{labels['home.final.cta']} →</Link></div></section>
+      <section className="bg-brand-andaman py-56 text-center text-surface-ivory md:py-80"><div className="mx-auto max-w-3xl px-20"><h2 className="font-display text-display-xl font-semibold">{labels['home.final.title']}</h2><Link href="/projects" className="mt-24 inline-block rounded-lg bg-surface-paper px-24 py-12 font-semibold text-brand-deep">{labels['home.final.cta']} →</Link></div></section>
     </main>
   );
 }

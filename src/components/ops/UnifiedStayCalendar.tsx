@@ -125,7 +125,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <p className="max-w-2xl text-body text-text-secondary">{props.labels['staff.unified_calendar.subtitle']}</p>
         </div>
         <div className="flex flex-col items-end gap-8">
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-12 py-6 text-small font-semibold text-emerald-900">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-12 py-4 text-small font-semibold text-emerald-900">
             {props.labels['staff.unified_calendar.source']}
           </span>
           {props.mode!=='mc' && <Link href="/ops/stays" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
@@ -229,7 +229,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       aria-label={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
                       title={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
                       onClick={()=>setSelected({unitId:unit.id,date:props.days[index],cell})}
-                      className={'h-36 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                      className={'h-40 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
                       {!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}
                     </button>
                   </td>)}

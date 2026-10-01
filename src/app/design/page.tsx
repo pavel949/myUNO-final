@@ -103,7 +103,7 @@ export default function DesignPage() {
                   <ColorBox key={token.name} name={token.name} color={token.color} />
                 ))}
               </div>
-              <p className="font-display text-kicker uppercase text-brand-sun mt-28 mb-12">
+              <p className="font-display text-kicker uppercase text-brand-sun mt-32 mb-12">
                 Functional states
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-16">
@@ -118,7 +118,7 @@ export default function DesignPage() {
                   </div>
                 ))}
               </div>
-              <p className="font-display text-kicker uppercase text-brand-sun mt-28 mb-12">
+              <p className="font-display text-kicker uppercase text-brand-sun mt-32 mb-12">
                 Chart series · fixed order, never cycled
               </p>
               <div className="flex gap-8 mb-16">
@@ -171,7 +171,7 @@ export default function DesignPage() {
                   />
                 ))}
               </div>
-              <p className="text-small text-text-stone mb-28">
+              <p className="text-small text-text-stone mb-32">
                 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 56 · 80
               </p>
               <div className="flex gap-16 mb-8">
@@ -188,15 +188,15 @@ export default function DesignPage() {
                   r.full
                 </div>
               </div>
-              <p className="text-small text-text-stone mb-28">
+              <p className="text-small text-text-stone mb-32">
                 Inputs and chips 8 · buttons 12 · cards and modals 16 · pills and
                 avatars full.
               </p>
               <div className="flex gap-24">
-                <div className="flex-1 h-72 bg-surface-paper border border-border-line rounded-lg shadow-card flex items-center justify-center text-small text-text-stone">
+                <div className="flex-1 h-96 bg-surface-paper border border-border-line rounded-lg shadow-card flex items-center justify-center text-small text-text-stone">
                   shadow.card
                 </div>
-                <div className="flex-1 h-72 bg-surface-paper border border-border-line rounded-lg shadow-float flex items-center justify-center text-small text-text-stone">
+                <div className="flex-1 h-96 bg-surface-paper border border-border-line rounded-lg shadow-float flex items-center justify-center text-small text-text-stone">
                   shadow.float
                 </div>
               </div>

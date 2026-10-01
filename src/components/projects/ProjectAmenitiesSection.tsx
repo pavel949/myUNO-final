@@ -107,7 +107,7 @@ export default function ProjectAmenitiesSection({
               {amenity.shortDescription ? (
                 <p className="mt-8 line-clamp-3 text-small text-text-secondary">{amenity.shortDescription}</p>
               ) : null}
-              <div className="mt-12 flex flex-wrap gap-6 text-micro text-text-secondary">
+              <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
                 <span className="rounded-full bg-surface-ivory px-8 py-4">{priceLabel(amenity, labels)}</span>
                 {amenity.bookingRequired ? (
                   <span className="rounded-full bg-surface-ivory px-8 py-4">{labels.bookingRequired}</span>

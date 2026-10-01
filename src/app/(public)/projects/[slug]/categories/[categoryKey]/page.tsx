@@ -44,9 +44,9 @@ export default async function ProjectCategoryPage({
         {copy[category.titleKey] ? <p className="mt-8 text-heading-3 text-brand-andaman">{copy[category.titleKey]}</p> : null}
         {copy[category.descriptionKey] ? <p className="mt-12 max-w-3xl text-body text-text-secondary">{copy[category.descriptionKey]}</p> : null}
         <div className="mt-16 flex flex-wrap gap-8 text-small text-text-secondary">
-          {category.bedrooms !== null ? <span className="rounded-full bg-surface-ivory px-10 py-6">{labels['project_category.bedrooms'].replace('{count}', String(category.bedrooms))}</span> : null}
-          <span className="rounded-full bg-surface-ivory px-10 py-6">{labels['project_category.available'].replace('{count}', String(category.unitCount))}</span>
-          {category.fromNightlyThb !== null ? <span className="rounded-full bg-surface-ivory px-10 py-6 font-semibold text-text-ink">{labels['project_category.from'].replace('{price}', Math.round(category.fromNightlyThb / 100).toLocaleString())}</span> : null}
+          {category.bedrooms !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.bedrooms'].replace('{count}', String(category.bedrooms))}</span> : null}
+          <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.available'].replace('{count}', String(category.unitCount))}</span>
+          {category.fromNightlyThb !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4 font-semibold text-text-ink">{labels['project_category.from'].replace('{price}', Math.round(category.fromNightlyThb / 100).toLocaleString())}</span> : null}
         </div>
         <Link
           href={`/search?projectId=${encodeURIComponent(project.id)}&inventoryCategoryId=${encodeURIComponent(category.id)}`}
@@ -72,7 +72,7 @@ export default async function ProjectCategoryPage({
           <div className="p-16">
             <p className="text-small text-brand-andaman">{category.name}</p>
             <h3 className="mt-4 font-semibold text-text-ink">{unit.name}</h3>
-            <div className="mt-8 flex flex-wrap gap-6 text-small text-text-secondary">
+            <div className="mt-8 flex flex-wrap gap-8 text-small text-text-secondary">
               <span>{labels['project_category.guests'].replace('{count}',String(unit.maxGuests))}</span>
               {unit.sizeSqm ? <span>{labels['project_category.size'].replace('{count}',String(unit.sizeSqm))}</span> : null}
             </div>

@@ -29,8 +29,8 @@ export const ProjectSwitcher = React.forwardRef<HTMLDivElement, ProjectSwitcherP
 
     const chip = (active: boolean) =>
       active
-        ? 'px-16 py-8 rounded-full bg-brand-andaman text-surface-ivory text-small font-medium'
-        : 'px-16 py-8 rounded-full bg-surface-paper border border-border-line text-small font-medium text-text-ink hover:border-border-line-2';
+        ? 'inline-flex items-center min-h-44 px-16 rounded-full bg-brand-andaman text-surface-ivory text-small font-medium'
+        : 'inline-flex items-center min-h-44 px-16 rounded-full bg-surface-paper border border-border-line text-small font-medium text-text-ink hover:border-border-line-2';
 
     return (
       <div ref={ref} className="flex flex-wrap gap-12 mb-32">

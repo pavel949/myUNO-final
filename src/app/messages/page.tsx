@@ -70,12 +70,12 @@ export default async function MessagesInboxPage() {
                         {thread.others.map((o) => o.name).join(', ') || 'myUNO'}
                       </p>
                       {thread.lastMessage && (
-                        <p className="mt-1 truncate text-small text-text-secondary">
+                        <p className="mt-4 truncate text-small text-text-secondary">
                           {thread.lastMessage}
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
+                    <div className="flex shrink-0 flex-col items-end gap-8">
                       {thread.unreadCount > 0 && (
                         <span className="flex h-24 min-w-24 items-center justify-center rounded-full bg-brand-andaman px-8 text-small font-medium text-surface-ivory">
                           {thread.unreadCount}

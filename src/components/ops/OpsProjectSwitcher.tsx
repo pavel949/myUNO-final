@@ -17,7 +17,7 @@ export default function OpsProjectSwitcher({
   }
 
   const pillClass = (active: boolean) =>
-    `inline-flex items-center rounded-full px-12 py-6 text-small border transition-colors ${
+    `inline-flex items-center rounded-full px-12 py-4 text-small border transition-colors ${
       active
         ? 'bg-brand-andaman-soft text-brand-andaman border-brand-andaman'
         : 'bg-surface-paper text-text-secondary border-border-line hover:text-text-ink'

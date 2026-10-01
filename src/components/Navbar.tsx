@@ -143,8 +143,8 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           {user ? (
             <>
               <details className="relative">
-                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-10 font-semibold text-brand-andaman">{user.firstName} · My UNO ▾</summary>
-                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[240px] flex-col gap-10 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
+                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 font-semibold text-brand-andaman">{user.firstName} · My UNO ▾</summary>
+                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[240px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
                   {userLinks.map(link => <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>{link.label}</Link>)}
                 </div>
               </details>

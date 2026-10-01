@@ -132,7 +132,7 @@ export default function LineChart({
         </svg>
         {hovered !== null ? (
           <div
-            className="absolute -top-2 pointer-events-none bg-brand-deep text-on-dark-text text-small rounded-sm px-8 py-4 shadow-float whitespace-nowrap"
+            className="absolute -top-8 pointer-events-none bg-brand-deep text-on-dark-text text-small rounded-sm px-8 py-4 shadow-float whitespace-nowrap"
             style={{
               left: `${(px(hovered) / width) * 100}%`,
               transform: 'translateX(-50%)',

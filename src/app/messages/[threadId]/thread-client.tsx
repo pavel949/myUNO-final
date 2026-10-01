@@ -174,7 +174,7 @@ export default function ThreadClient({
           if (message.messageKind === 'system') {
             return (
               <div key={message.id} className="flex justify-center">
-                <p className="max-w-md rounded-full bg-state-info-soft px-16 py-6 text-center text-small text-state-info">
+                <p className="max-w-md rounded-full bg-state-info-soft px-16 py-4 text-center text-small text-state-info">
                   {message.body}
                 </p>
               </div>

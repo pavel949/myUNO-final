@@ -9,6 +9,29 @@ const config: Config = {
     './src/modules/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    // Spacing is set at theme level, not under `extend`, so off-scale values
+    // (e.g. `py-10`) do not exist at all — under `extend` Tailwind's rem
+    // defaults leaked through and `py-10` rendered 40px instead of 10px
+    // (doc 06 §2.3: out-of-system values are physically unavailable).
+    spacing: {
+      // 4-based scale (doc 06 §2.3)
+      0: '0px',
+      px: '1px',
+      4: '4px',
+      8: '8px',
+      12: '12px',
+      16: '16px',
+      20: '20px',
+      24: '24px',
+      32: '32px',
+      40: '40px',
+      44: '44px',
+      48: '48px',
+      56: '56px',
+      64: '64px',
+      80: '80px',
+      96: '96px',
+    },
     extend: {
       colors: tailwindColors,
       fontFamily: {
@@ -43,23 +66,6 @@ const config: Config = {
         subtitle: '500',
         body: '400',
         'body-strong': '600',
-      },
-      spacing: {
-        // 4-based scale (doc 06 §2.3)
-        4: '4px',
-        8: '8px',
-        12: '12px',
-        16: '16px',
-        20: '20px',
-        24: '24px',
-        32: '32px',
-        40: '40px',
-        44: '44px',
-        48: '48px',
-        56: '56px',
-        64: '64px',
-        80: '80px',
-        96: '96px',
       },
       borderRadius: {
         sm: '8px',

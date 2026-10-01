@@ -58,7 +58,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               type="button"
               onClick={togglePassword}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-2 flex items-center justify-center w-44 h-44 text-text-stone hover:text-text-ink transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman rounded-sm"
+              className="absolute right-8 flex items-center justify-center w-44 h-44 text-text-stone hover:text-text-ink transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman rounded-sm"
             >
               {showPassword ? (
                 /* Eye Off Icon */

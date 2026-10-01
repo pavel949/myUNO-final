@@ -268,7 +268,7 @@ export default async function ServiceOrderDetailPage({
               </p>
               <div className="flex items-center gap-8">
                 <span
-                  className={`px-12 py-6 rounded-full text-small font-semibold ${
+                  className={`px-12 py-4 rounded-full text-small font-semibold ${
                     order.status === 'fulfilled'
                       ? 'bg-status-good bg-opacity-10 text-status-good'
                       : order.status === 'cancelled'
@@ -292,7 +292,7 @@ export default async function ServiceOrderDetailPage({
               <li key={step.key} className="flex items-center gap-8">
                 {i > 0 && <span className="w-16 h-px bg-border-line" aria-hidden="true" />}
                 <span
-                  className={`inline-flex items-center gap-6 px-12 py-6 rounded-full text-small font-medium ${
+                  className={`inline-flex items-center gap-8 px-12 py-4 rounded-full text-small font-medium ${
                     step.current
                       ? 'bg-brand-andaman text-surface-ivory'
                       : step.done
@@ -373,7 +373,7 @@ export default async function ServiceOrderDetailPage({
           </p>
           <div className="flex items-center gap-12 mb-16">
             <span
-              className={`px-12 py-6 rounded-full text-small font-semibold ${
+              className={`px-12 py-4 rounded-full text-small font-semibold ${
                 isPaid
                   ? 'bg-status-good bg-opacity-10 text-status-good'
                   : 'bg-status-warning bg-opacity-10 text-status-warning'

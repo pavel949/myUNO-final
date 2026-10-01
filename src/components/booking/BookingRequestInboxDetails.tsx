@@ -39,7 +39,7 @@ export default function BookingRequestInboxDetails({
     <div className="mt-8 space-y-8">
       <div className="flex flex-wrap items-center gap-8">
         <span
-          className={`inline-flex items-center rounded-full px-10 py-4 text-small font-semibold border ${historyTone}`}
+          className={`inline-flex items-center rounded-full px-12 py-4 text-small font-semibold border ${historyTone}`}
         >
           {historyLabel}
         </span>

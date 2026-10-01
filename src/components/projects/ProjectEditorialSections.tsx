@@ -52,7 +52,7 @@ export default function ProjectEditorialSections({ editorial, projectId }: {
       <div className="mx-auto max-w-5xl rounded-2xl border border-border-line bg-surface-paper p-24 md:p-40">
         {editorial.groupsTitle && <h2 className="font-display text-heading-2 font-semibold text-text-ink">{editorial.groupsTitle}</h2>}
         {editorial.groupsBody && <p className="mt-12 text-body text-text-secondary">{editorial.groupsBody}</p>}
-        {editorial.groupsCta && <Link href={`/search?projectId=${encodeURIComponent(projectId)}`} className="mt-24 inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-10 font-semibold text-white">{editorial.groupsCta}</Link>}
+        {editorial.groupsCta && <Link href={`/search?projectId=${encodeURIComponent(projectId)}`} className="mt-24 inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-12 font-semibold text-white">{editorial.groupsCta}</Link>}
       </div>
     </section>}
   </>;

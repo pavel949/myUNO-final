@@ -139,7 +139,7 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
                     <td className="p-12">{profile.leadScore ?? '—'}</td>
                     <td className="p-12">
                       <select
-                        className="h-36 px-8 rounded-sm border border-border-line text-small"
+                        className="h-40 px-8 rounded-sm border border-border-line text-small"
                         defaultValue=""
                         disabled={busyId === profile.id}
                         onChange={(e) => {

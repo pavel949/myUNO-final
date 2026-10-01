@@ -131,7 +131,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="sticky top-0 z-30 shrink-0 bg-brand-deep text-on-dark-text p-16 md:static md:w-56 md:min-h-screen" style={{ minWidth: '220px' }}>
         <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
         <details className="md:hidden">
-          <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-10 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
+          <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-12 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
             {labels['admin.nav.mobile_menu']}
           </summary>
           <div className="mt-12 max-h-[65vh] overflow-y-auto overscroll-contain pb-12">

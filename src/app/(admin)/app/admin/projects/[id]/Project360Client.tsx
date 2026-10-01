@@ -107,7 +107,7 @@ export default function Project360Client({
         <div>
           <p className="text-small text-text-secondary">{labels['admin.project360.score_label']}</p>
           <div className="flex items-center gap-8 mt-4">
-            <div className="w-128 bg-surface-ivory h-8 rounded-full overflow-hidden">
+            <div className="w-[128px] bg-surface-ivory h-8 rounded-full overflow-hidden">
               <div
                 className="bg-brand-andaman h-full rounded-full"
                 style={{ width: `${completenessScore}%` }}
@@ -132,12 +132,12 @@ export default function Project360Client({
             {labels['admin.project360.development_facts_title']}
           </h2>
           <dl className="space-y-8 text-small">
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.status']}</dt><dd className="font-medium">{text(project.developmentLifecycleStatus)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.construction']}</dt><dd className="font-medium">{text(project.constructionStatus)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.location']}</dt><dd className="font-medium">{text([project.city, project.region, project.country].filter(Boolean).join(', '))}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.total_units']}</dt><dd className="font-medium">{text(project.totalUnits)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.buildings']}</dt><dd className="font-medium">{text(project.totalBuildings)}</dd></div>
-            <div className="border-b border-border-line pb-6"><dt className="text-text-secondary">{labels['admin.project360.floors']}</dt><dd className="font-medium">{text(project.floors)}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.status']}</dt><dd className="font-medium">{text(project.developmentLifecycleStatus)}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.construction']}</dt><dd className="font-medium">{text(project.constructionStatus)}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.location']}</dt><dd className="font-medium">{text([project.city, project.region, project.country].filter(Boolean).join(', '))}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.total_units']}</dt><dd className="font-medium">{text(project.totalUnits)}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.buildings']}</dt><dd className="font-medium">{text(project.totalBuildings)}</dd></div>
+            <div className="border-b border-border-line pb-8"><dt className="text-text-secondary">{labels['admin.project360.floors']}</dt><dd className="font-medium">{text(project.floors)}</dd></div>
             <div><dt className="text-text-secondary">{labels['admin.project360.completion']}</dt><dd className="font-medium">{text(project.completionYear || project.expectedCompletion)}</dd></div>
           </dl>
         </section>
@@ -153,7 +153,7 @@ export default function Project360Client({
             >
               <p className="font-medium text-text-ink">{developerOrg.tradingName || developerOrg.name}</p>
               {developerOrg.website ? <p className="text-micro text-text-secondary break-all">{developerOrg.website}</p> : null}
-              <p className="text-small text-brand-andaman mt-6">{labels['admin.project360.open_developer']} →</p>
+              <p className="text-small text-brand-andaman mt-8">{labels['admin.project360.open_developer']} →</p>
             </Link>
           ) : (
             <p className="text-small text-text-muted">{labels['admin.project360.no_developer']}</p>
@@ -170,8 +170,8 @@ export default function Project360Client({
                   {role.provenance ? <p className="text-micro text-text-secondary">{role.provenance}</p> : null}
                 </div>
                 <div className="flex gap-4 items-center">
-                  {role.isPrimary ? <span className="text-micro px-6 py-2 bg-brand-andaman text-on-dark-text rounded">{labels['admin.project360.primary']}</span> : null}
-                  <span className="text-micro px-8 py-2 bg-brand-sand text-text-ink rounded">
+                  {role.isPrimary ? <span className="text-micro px-8 py-8 bg-brand-andaman text-on-dark-text rounded">{labels['admin.project360.primary']}</span> : null}
+                  <span className="text-micro px-8 py-8 bg-brand-sand text-text-ink rounded">
                     {role.roleKey.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -239,12 +239,12 @@ export default function Project360Client({
               <tbody>
                 {canonicalInventory.categories.map((category) => (
                   <tr key={category.id} className="border-b border-border-line last:border-0">
-                    <td className="py-10 pr-12"><p className="font-medium text-text-ink">{category.name}</p><p className="text-micro text-text-secondary">{category.categoryKey}</p></td>
-                    <td className="py-10 pr-12">{category.unitCount}</td>
-                    <td className="py-10 pr-12">{category.bedrooms} / {category.bathrooms}</td>
-                    <td className="py-10 pr-12">{category.maxGuests}</td>
-                    <td className="py-10 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
-                    <td className="py-10">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
+                    <td className="py-12 pr-12"><p className="font-medium text-text-ink">{category.name}</p><p className="text-micro text-text-secondary">{category.categoryKey}</p></td>
+                    <td className="py-12 pr-12">{category.unitCount}</td>
+                    <td className="py-12 pr-12">{category.bedrooms} / {category.bathrooms}</td>
+                    <td className="py-12 pr-12">{category.maxGuests}</td>
+                    <td className="py-12 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
+                    <td className="py-12">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -265,7 +265,7 @@ export default function Project360Client({
             {canonicalInventory.ratePlans.map((plan) => (
               <div key={plan.id} className="p-12 bg-surface-ivory border border-border-line rounded-md">
                 <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-micro text-text-secondary">{plan.status}</span></div>
-                <p className="text-micro text-text-secondary mt-2">{plan.code}</p>
+                <p className="text-micro text-text-secondary mt-8">{plan.code}</p>
                 <p className="text-small mt-8 text-text-ink">
                   {plan.unitId
                     ? labels['admin.project360.scope_unit']

@@ -452,7 +452,7 @@ export default function BookingDetailClient({
           </h2>
           <div className="space-y-16 pl-16 border-l-2 border-brand-andaman">
             <div className="relative">
-              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+              <div className="absolute -left-[21px] top-4 w-12 h-12 rounded-full bg-brand-andaman" />
               <p className="text-body font-semibold text-text-ink">
                 {booking.status === 'requested'
                   ? labels['booking.detail.timeline_requested']
@@ -470,14 +470,14 @@ export default function BookingDetailClient({
             </div>
             {booking.verificationStatus === 'passports_received' && (
               <div className="relative">
-                <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+                <div className="absolute -left-[21px] top-4 w-12 h-12 rounded-full bg-brand-andaman" />
                 <p className="text-body font-semibold text-text-ink">
                   {labels['booking.detail.timeline_passports'] || 'Passports submitted'}
                 </p>
               </div>
             )}
             {stayStartedOrConfirmed && <div className="relative">
-              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-brand-andaman" />
+              <div className="absolute -left-[21px] top-4 w-12 h-12 rounded-full bg-brand-andaman" />
               <p className="text-body font-semibold text-text-ink">
                 {labels['booking.detail.timeline_checkin'] || 'Check-in'}
               </p>
@@ -486,7 +486,7 @@ export default function BookingDetailClient({
               </p>
             </div>}
             {stayStartedOrConfirmed && <div className="relative">
-              <div className="absolute -left-[21px] top-1 w-10 h-10 rounded-full bg-border-line" />
+              <div className="absolute -left-[21px] top-4 w-12 h-12 rounded-full bg-border-line" />
               <p className="text-body font-semibold text-text-ink">
                 {labels['booking.detail.timeline_checkout'] || 'Check-out'}
               </p>

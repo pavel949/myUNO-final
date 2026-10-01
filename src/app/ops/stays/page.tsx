@@ -138,7 +138,7 @@ export default async function StayOperationsPage({
               {' · '}{labels['staff.stay_queue.due']} {item.dueDate}
             </p>
           </div>
-          {item.severity==='attention'&&<span className="rounded-full bg-amber-100 px-12 py-6 text-small font-semibold text-amber-900">
+          {item.severity==='attention'&&<span className="rounded-full bg-amber-100 px-12 py-4 text-small font-semibold text-amber-900">
             {labels['staff.stay_queue.attention']}
           </span>}
           <Link href={'/ops/stays/'+item.bookingId} className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">

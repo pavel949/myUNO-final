@@ -32,7 +32,7 @@ export function ProjectCard({
         className="object-cover transition duration-700 group-hover:scale-[1.03]"
       />
       {image.illustrative ? (
-        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/35 px-10 py-6 text-small text-white/80 backdrop-blur">
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/35 px-12 py-4 text-small text-white/80 backdrop-blur">
           {labels.noPhoto}
         </span>
       ) : null}

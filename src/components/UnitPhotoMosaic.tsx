@@ -103,7 +103,7 @@ export function UnitPhotoMosaic({
                 than being a number only a sighted guest benefits from. */}
             <span
               aria-live="polite"
-              className="px-12 py-6 rounded-full bg-[rgba(22,33,31,0.6)] text-surface-ivory text-small"
+              className="px-12 py-4 rounded-full bg-[rgba(22,33,31,0.6)] text-surface-ivory text-small"
             >
               {current + 1} / {images.length}
             </span>

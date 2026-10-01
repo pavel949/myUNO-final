@@ -24,7 +24,7 @@ export function StatusTimeline({ events }: { events: StatusTimelineEvent[] }) {
         return (
           <li key={event.id} className="flex gap-12">
             <div className="flex flex-col items-center">
-              <span className={`w-10 h-10 rounded-full mt-6 ${dotClass[tone]}`} />
+              <span className={`w-12 h-12 rounded-full mt-8 ${dotClass[tone]}`} />
               {!last && <span className="flex-1 w-px bg-border-line" />}
             </div>
             <div className={last ? '' : 'pb-20'}>

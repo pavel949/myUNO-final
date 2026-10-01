@@ -79,7 +79,7 @@ export default function Developer360Client({
         <div>
           <p className="text-small text-text-secondary">{labels['admin.dev360.score_label']}</p>
           <div className="flex items-center gap-8 mt-4">
-            <div className="w-128 bg-surface-ivory h-8 rounded-full overflow-hidden">
+            <div className="w-[128px] bg-surface-ivory h-8 rounded-full overflow-hidden">
               <div
                 className="bg-brand-andaman h-full rounded-full"
                 style={{ width: `${completeness}%` }}
@@ -107,19 +107,19 @@ export default function Developer360Client({
             {labels['admin.dev360.identity_title']}
           </h2>
           <dl className="space-y-8 text-small">
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.legal_name']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.legalName || organization.name)}</dd>
             </div>
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.trading_name']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.tradingName)}</dd>
             </div>
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.registration_no']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.registrationNumber)}</dd>
             </div>
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.established']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.yearEstablished)}</dd>
             </div>
@@ -135,15 +135,15 @@ export default function Developer360Client({
         <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.dev360.contact_title']}</h2>
           <dl className="space-y-8 text-small">
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.email']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.contactEmail)}</dd>
             </div>
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.phone']}</dt>
               <dd className="font-medium text-text-ink">{valueOrDash(organization.contactPhone)}</dd>
             </div>
-            <div className="border-b border-border-line pb-6">
+            <div className="border-b border-border-line pb-8">
               <dt className="text-text-secondary">{labels['admin.dev360.website']}</dt>
               <dd className="font-medium text-text-ink break-all">{valueOrDash(organization.website)}</dd>
             </div>
@@ -201,13 +201,13 @@ export default function Developer360Client({
                         .join(' · ') || relationship.project.slug}
                     </p>
                   </div>
-                  <div className="flex gap-6 flex-wrap justify-end">
+                  <div className="flex gap-8 flex-wrap justify-end">
                     {relationship.isPrimary ? (
-                      <span className="text-micro px-8 py-2 bg-brand-andaman text-on-dark-text rounded-full">
+                      <span className="text-micro px-8 py-8 bg-brand-andaman text-on-dark-text rounded-full">
                         {labels['admin.dev360.primary']}
                       </span>
                     ) : null}
-                    <span className="text-micro px-8 py-2 bg-brand-sand text-text-ink rounded-full">
+                    <span className="text-micro px-8 py-8 bg-brand-sand text-text-ink rounded-full">
                       {relationship.roleKey.replace(/_/g, ' ')}
                     </span>
                   </div>

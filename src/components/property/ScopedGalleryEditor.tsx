@@ -139,7 +139,7 @@ export default function ScopedGalleryEditor({
       <div className="grid gap-12 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item, index) => <article key={item.mediaId} className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="h-192 w-full object-cover" src={item.media.storageKey} alt={`Photo ${index + 1} of ${target.name}`}/>
+          <img className="h-[192px] w-full object-cover" src={item.media.storageKey} alt={`Photo ${index + 1} of ${target.name}`}/>
           <div className="p-12 space-y-8">
             <div className="flex items-center justify-between">
               <span className="text-small">{index + 1} / {items.length}</span>

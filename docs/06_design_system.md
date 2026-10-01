@@ -65,7 +65,8 @@ Display **Outfit**, body **Manrope** (self-hosted, `font-display: swap`; both co
 
 ### 2.3 Spacing, radius, elevation, motion
 
-- **Spacing scale:** 4-based — `4, 8, 12, 16, 20, 24, 32, 40, 56, 80`. Screen gutter: 16 (mobile) / 24 (desktop). Card padding: 16–24.
+- **Spacing scale:** 4-based — `4, 8, 12, 16, 20, 24, 32, 40, 56, 80`, plus the component sizes `44` (touch target), `48` (md button), `64` and `96` (media/avatars), and `0`/`px` (1px hairlines). Screen gutter: 16 (mobile) / 24 (desktop). Card padding: 16–24.
+  - **Enforced, not advisory (2026-09-30):** the scale is defined at Tailwind's theme level (not `extend`), so any other numeric spacing class generates no CSS; `src/lib/spacing-scale.test.ts` fails on any off-scale class in source. The scale previously sat under `extend`, so off-scale classes silently fell back to Tailwind's rem defaults (`py-10` rendered 40px, not the intended 10px) — ~190 usages across 78 files were rewritten to the nearest on-scale token. A genuinely one-off size uses an arbitrary value (`w-[240px]`), which stays visible in review.
 - **Radius:** `r.sm 8` (inputs, chips), `r.md 12` (buttons), `r.lg 16` (cards, modals — the brand's card radius), `r.full` (pills, avatars, the mark).
 - **Elevation:** flat-by-default. `shadow.card` `0 1px 2px rgba(22,33,31,.06)` + 1px `border.line`; `shadow.float` `0 8px 24px rgba(14,79,75,.16)` for modals/popovers only. Depth comes from warm borders, not heavy shadows.
 - **Motion:** 150ms ease-out micro (hover, press), 250ms ease-in-out structural (modals, drawers, accordion). Skeletons pulse at 1.2s. Nothing bounces; calm confidence.

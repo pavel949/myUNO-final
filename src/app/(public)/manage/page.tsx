@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: 'Professional property and portfolio management connected to the same canonical myUNO property, booking, operations and owner-finance records.',
 };
 
+const leadAudience = 'owners' as const;
+
 export default async function ManagePage() {
   const labels = await getLabels({
     'manage.kicker': 'PROFESSIONAL MANAGEMENT',
@@ -112,6 +114,6 @@ export default async function ManagePage() {
       </Link>
     </section>
 
-    <LeadFormSection audience="owners" initialMessage={labels['manage.lead']} />
+    <LeadFormSection audience={leadAudience} initialMessage={labels['manage.lead']} />
   </main>;
 }

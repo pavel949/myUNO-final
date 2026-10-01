@@ -21,6 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/homes?intent=buy`, priority: 0.8 },
     { url: `${base}/homes?intent=rent`, priority: 0.8 },
     { url: `${base}/sell`, priority: 0.7 },
+    { url: `${base}/rent-out`, priority: 0.7 },
+    { url: `${base}/manage`, priority: 0.7 },
     { url: `${base}/areas`, priority: 0.7 },
     { url: `${base}/services`, priority: 0.7 },
     { url: `${base}/owners`, priority: 0.6 },

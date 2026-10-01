@@ -102,6 +102,26 @@ export type DerivedOnboardingState =
   | 'active'
   | 'blocked';
 
+export const ONBOARDING_TRANSITIONS: Record<DerivedOnboardingState, readonly DerivedOnboardingState[]> = {
+  draft: ['unit_matched', 'authority_pending', 'blocked'],
+  unit_matched: ['authority_pending', 'authority_verified', 'blocked'],
+  authority_pending: ['authority_verified', 'blocked'],
+  authority_verified: ['commercial_configured', 'engagement_configured', 'readiness_pending', 'blocked'],
+  commercial_configured: ['engagement_configured', 'readiness_pending', 'ready_for_activation', 'blocked'],
+  engagement_configured: ['readiness_pending', 'ready_for_activation', 'blocked'],
+  readiness_pending: ['ready_for_activation', 'blocked'],
+  ready_for_activation: ['active', 'readiness_pending', 'blocked'],
+  active: ['readiness_pending', 'blocked'],
+  blocked: ['unit_matched', 'authority_pending', 'authority_verified', 'commercial_configured', 'engagement_configured', 'readiness_pending', 'ready_for_activation'],
+};
+
+export function canOnboardingTransition(
+  from: DerivedOnboardingState,
+  to: DerivedOnboardingState,
+): boolean {
+  return from === to || ONBOARDING_TRANSITIONS[from].includes(to);
+}
+
 export async function deriveUnitOnboardingState(
   tx: Prisma.TransactionClient,
   unitId: string,

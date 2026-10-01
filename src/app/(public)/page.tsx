@@ -348,6 +348,127 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {stayUnits.length ? (
+        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="units-heading">
+          <div className="mx-auto max-w-content px-20 md:px-32">
+            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+              <div className="max-w-2xl">
+                <p className="text-kicker uppercase text-brand-andaman">
+                  {labels['landing.units.kicker']}
+                </p>
+                <h2 id="units-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                  {labels['landing.units.title']}
+                </h2>
+                <p className="mt-12 max-w-xl text-body text-text-secondary">
+                  {labels['landing.units.body']}
+                </p>
+              </div>
+              <Link href="/search" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+                {labels['landing.units.cta']} →
+              </Link>
+            </div>
+
+            <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
+              {stayUnits.slice(0, 4).map((unit) => {
+                const media = projectPresentationImage(unit.id, unit.coverUrl);
+                return (
+                  <Link
+                    key={unit.id}
+                    href={`/units/${unit.id}`}
+                    className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-surface-paper">
+                      <Image
+                        src={media.src}
+                        alt={media.illustrative ? '' : unit.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
+                      />
+                    </div>
+                    <div className="p-20">
+                      <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
+                      <h3 className="mt-4 font-display text-title font-semibold text-text-ink">{unit.name}</h3>
+                      {unit.categoryName ? (
+                        <p className="mt-4 text-small text-text-secondary">{unit.categoryName}</p>
+                      ) : null}
+                      <p className="mt-12 text-small text-text-secondary">
+                        {unit.bedrooms} {labels['landing.homes.bedrooms']} · {unit.bathrooms} {labels['landing.homes.bathrooms']} · {labels['landing.units.guests'].replace('{count}', String(unit.maxGuests))}
+                      </p>
+                      <div className="mt-16 flex items-end justify-between gap-12">
+                        <p className="font-display text-body-strong tabular-nums text-text-ink">
+                          {labels['landing.units.from'].replace('{price}', Math.round(unit.baseNightlyThb / 100).toLocaleString())}
+                        </p>
+                        <span className="shrink-0 text-small font-semibold text-brand-andaman">
+                          {labels['landing.units.open']} →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {areas.length ? (
+        <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="areas-heading">
+          <div className="mx-auto max-w-content px-20 md:px-32">
+            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+              <div className="max-w-2xl">
+                <p className="text-kicker uppercase text-brand-andaman">
+                  {labels['landing.areas.kicker']}
+                </p>
+                <h2 id="areas-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                  {labels['landing.areas.title']}
+                </h2>
+                <p className="mt-12 max-w-xl text-body text-text-secondary">
+                  {labels['landing.areas.body']}
+                </p>
+              </div>
+              <Link href="/areas" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+                {labels['landing.areas.cta']} →
+              </Link>
+            </div>
+
+            <div className="grid gap-16 md:grid-cols-3">
+              {areas.slice(0, 3).map((area) => {
+                const media = projectPresentationImage(area.id, area.coverUrl);
+                return (
+                  <Link
+                    key={area.id}
+                    href={`/areas/${area.slug}`}
+                    className="group relative isolate min-h-[320px] overflow-hidden rounded-2xl bg-brand-deep"
+                  >
+                    <Image
+                      src={media.src}
+                      alt={media.illustrative ? '' : area.displayName}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/90 via-brand-deep/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-24 text-surface-ivory">
+                      <p className="text-small text-surface-ivory/80">
+                        {labels['landing.areas.projects'].replace('{count}', String(area.projectCount))}
+                      </p>
+                      <h3 className="mt-4 font-display text-display font-semibold">{area.displayName}</h3>
+                      {area.description ? (
+                        <p className="mt-8 line-clamp-2 text-small text-surface-ivory/80">{area.description}</p>
+                      ) : null}
+                      <span className="mt-16 inline-block text-small font-semibold">
+                        {labels['landing.areas.open']} →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {featuredHomes.length ? (
         <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">

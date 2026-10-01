@@ -49,6 +49,6 @@ describe('premium design-system surface parity', () => {
     const sell = source('src/app/(public)/sell/page.tsx');
     expect(sell).toContain('<LeadFormSection audience="owners"');
     expect(sell).toContain('<ProcessStepper');
-    expect(sell).not.toContain('create');
+    expect(sell).not.toContain('prisma.');
   });
 });

@@ -567,6 +567,7 @@ export default function SearchResults({
               }}
               onBoundsChange={handleMapBoundsChange}
               labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable }}
+              fitToProjects={!hasMapBounds}
             />
           </section>
         )}

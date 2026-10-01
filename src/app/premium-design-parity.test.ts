@@ -26,14 +26,28 @@ describe('premium design-system surface parity', () => {
   it('exposes the benchmark-aligned public discovery surfaces', () => {
     const navbar = source('src/components/Navbar.tsx');
     const footer = source('src/components/Footer.tsx');
-    for (const route of ['/search', '/homes?intent=rent', '/homes?intent=buy', '/sell', '/projects', '/services']) {
+    for (const route of ['/homes?intent=buy', '/search', '/sell', '/rent-out', '/manage']) {
       expect(navbar).toContain(route);
     }
+    expect(navbar).toContain('/homes?intent=rent');
+    expect(navbar).toContain('/projects');
+    expect(navbar).toContain('/services');
     expect(navbar).toContain('/areas');
     expect(footer).toContain('/areas');
+    expect(navbar).toContain('/desks');
+    expect(footer).toContain('/desks');
+    expect(source('src/app/(public)/desks/page.tsx')).toContain('GLOBAL_DESKS');
+    expect(source('src/app/(public)/desks/[slug]/page.tsx')).toContain('getGlobalDesk');
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');
     expect(source('src/app/areas/[slug]/page.tsx')).toContain('getAreaForBrowse(prisma');
     expect(source('src/app/(public)/help/page.tsx')).toContain("'/tickets'");
+    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('/property/onboard?offers=short_stay');
+    expect(source('src/app/(public)/sell/page.tsx')).toContain('/property/onboard?offers=sale');
+    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('href="/manage"');
+    expect(source('src/app/(public)/manage/page.tsx')).toContain('/property/onboard?kind=home&operatingModel=direct_managed');
+    const onboardPage = source('src/app/property/onboard/page.tsx');
+    expect(onboardPage).toContain("params.set('offers'");
+    expect(onboardPage).toContain("params.set('operatingModel'");
     expect(source('src/app/(public)/projects/[slug]/passport/page.tsx')).toContain('getPublicProjectPassport(prisma');
   });
 
@@ -44,6 +58,11 @@ describe('premium design-system surface parity', () => {
     expect(home).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).toContain("landing.start.title");
     expect(home).toContain("href: '/sell'");
+    expect(home).toContain("href: '/rent-out'");
+    expect(home).toContain("href: '/manage'");
+    expect(home).toContain('GLOBAL_DESKS.map');
+    expect(home).toContain('listPublicProjects().catch(() => [])');
+    expect(home).toContain('listPublicCommercialHomes(prisma).catch(() => [])');
     expect(home).not.toContain('bg-white');
   });
 
@@ -78,6 +97,9 @@ describe('premium design-system surface parity', () => {
     const sitemap = source('src/app/sitemap.ts');
     expect(sitemap).toContain('${base}/help');
     expect(sitemap).toContain('/passport');
+    expect(sitemap).toContain('${base}/desks');
+    expect(sitemap).toContain('${base}/rent-out');
+    expect(sitemap).toContain('${base}/manage');
   });
 
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {

@@ -19,6 +19,11 @@ const req = (method: string, body?: object) => new NextRequest('http://localhost
   method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
 });
 
+async function expectHttpStatus(response: Response, expected: number) {
+  const body = await response.clone().json().catch(() => null);
+  expect({ status: response.status, body }).toMatchObject({ status: expected });
+}
+
 describe('one property intake and verified canonical conversion', () => {
   let applicantId: string, otherId: string, adminId: string, projectId: string;
   const application = () => ({
@@ -85,7 +90,7 @@ describe('one property intake and verified canonical conversion', () => {
     session.identityId = adminId;
     expect((await convert(req('POST', { verifiedAuthority: false, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } })).status).toBe(400);
     const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, verifiedOwner: true }), { params: { id: created.id } });
-    expect(response.status).toBe(200);
+    await expectHttpStatus(response, 200);
     const result = await response.json();
     const unit = await db.unit.findUniqueOrThrow({ where: { id: result.unitId }, include: { commercialOfferings: true } });
     expect(unit.projectId).toBe(projectId);
@@ -129,7 +134,7 @@ describe('one property intake and verified canonical conversion', () => {
     const response = await convert(req('POST', {
       verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, verifiedOwner: true, organizationId: org.id,
     }), { params: { id: created.id } });
-    expect(response.status).toBe(200);
+    await expectHttpStatus(response, 200);
     const { unitId } = await response.json();
     expect((await db.unit.findUniqueOrThrow({ where: { id: unitId } })).ownerIdentityId).toBe(applicantId);
     expect(await db.roleAssignment.count({ where: { identityId: applicantId, role: 'mc_member' } })).toBe(0);

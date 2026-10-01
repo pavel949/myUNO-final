@@ -41,12 +41,12 @@ export default async function LandingPage() {
 
   const [labels, rawProjects, commercialHomes, services] = await Promise.all([
     getLabels({
-      'landing.hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
-      'landing.hero.title': 'Phuket homes. Global discovery. One platform.',
-      'landing.hero.subtitle': 'Stay, rent, buy, sell and manage Phuket property through one connected experience.',
-      'landing.hero.global': 'Explore global desks',
-      'landing.hero.areas': 'Explore Phuket areas',
-      'landing.hero.trust': 'How trust works',
+      'landing.global_hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
+      'landing.global_hero.title': 'Phuket homes. Global discovery. One platform.',
+      'landing.global_hero.subtitle': 'Stay, rent, buy, sell and manage Phuket property through one connected experience.',
+      'landing.global_hero.global': 'Explore global desks',
+      'landing.global_hero.areas': 'Explore Phuket areas',
+      'landing.global_hero.trust': 'How trust works',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
       'landing.search.check_in': 'Check-in',
@@ -241,26 +241,26 @@ export default async function LandingPage() {
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-28 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
             <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
-              {labels['landing.hero.kicker']}
+              {labels['landing.global_hero.kicker']}
             </p>
             <h1
               id="home-title"
               className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.75rem)] font-semibold leading-[0.96] tracking-[-0.04em]"
             >
-              {labels['landing.hero.title']}
+              {labels['landing.global_hero.title']}
             </h1>
             <p className="mt-20 max-w-2xl text-lg leading-relaxed text-text-secondary md:text-xl">
-              {labels['landing.hero.subtitle']}
+              {labels['landing.global_hero.subtitle']}
             </p>
             <div className="mt-20 flex flex-wrap gap-8">
               <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-14 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
-                {labels['landing.hero.global']} →
+                {labels['landing.global_hero.global']} →
               </Link>
               <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
-                {labels['landing.hero.areas']} →
+                {labels['landing.global_hero.areas']} →
               </Link>
               <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
-                {labels['landing.hero.trust']} →
+                {labels['landing.global_hero.trust']} →
               </Link>
             </div>
           </div>

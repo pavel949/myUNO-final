@@ -112,7 +112,7 @@ export function DiscoverySearch({
           <label className="col-span-2 grid gap-8 text-small text-text-secondary md:col-span-1">
             {labels.where}
             <select
-              className="h-48 min-w-0 rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
@@ -126,7 +126,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkIn}
             <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="date"
               required
               min={today}
@@ -138,7 +138,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkOut}
             <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="date"
               required
               min={startDate || today}
@@ -150,7 +150,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.adults}
             <input
-              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
               min="1"
               max="20"
@@ -162,7 +162,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.children}
             <input
-              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
               min="0"
               max="20"

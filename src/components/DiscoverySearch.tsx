@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Mode = 'stay' | 'monthly' | 'buy' | 'invest';
+type Mode = 'rent' | 'buy' | 'manage' | 'sell';
 
 export interface DiscoveryProjectOption {
   id: string;
@@ -15,10 +15,10 @@ export function DiscoverySearch({
   projects = [],
 }: {
   labels: {
-    stay: string;
-    monthly: string;
+    rent: string;
     buy: string;
-    invest: string;
+    manage: string;
+    sell: string;
     where: string;
     allPhuket: string;
     checkIn: string;
@@ -33,7 +33,7 @@ export function DiscoverySearch({
   projects?: DiscoveryProjectOption[];
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>('stay');
+  const [mode, setMode] = useState<Mode>('rent');
   const [projectId, setProjectId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,10 +43,10 @@ export function DiscoverySearch({
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
   const options: { id: Mode; title: string }[] = [
-    { id: 'stay', title: labels.stay },
-    { id: 'monthly', title: labels.monthly },
+    { id: 'rent', title: labels.rent },
     { id: 'buy', title: labels.buy },
-    { id: 'invest', title: labels.invest },
+    { id: 'manage', title: labels.manage },
+    { id: 'sell', title: labels.sell },
   ];
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -57,12 +57,12 @@ export function DiscoverySearch({
       router.push('/homes?intent=buy');
       return;
     }
-    if (mode === 'monthly') {
-      router.push('/homes?intent=rent');
+    if (mode === 'manage') {
+      router.push('/owners');
       return;
     }
-    if (mode === 'invest') {
-      router.push('/buyers');
+    if (mode === 'sell') {
+      router.push('/sell');
       return;
     }
     if (!startDate || !endDate || endDate <= startDate) {
@@ -107,7 +107,7 @@ export function DiscoverySearch({
         ))}
       </div>
 
-      {mode === 'stay' ? (
+      {mode === 'rent' ? (
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] md:items-end">
           <label className="col-span-2 grid gap-8 text-small text-text-secondary md:col-span-1">
             {labels.where}

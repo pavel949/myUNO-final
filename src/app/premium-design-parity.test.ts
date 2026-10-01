@@ -78,7 +78,8 @@ describe('premium design-system surface parity', () => {
 
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {
     const sell = source('src/app/(public)/sell/page.tsx');
-    expect(sell).toContain('<LeadFormSection audience="owners"');
+    expect(sell).toContain("const SELL_AUDIENCE = 'owners' as const");
+    expect(sell).toContain('audience={SELL_AUDIENCE}');
     expect(sell).toContain('<ProcessStepper');
     expect(sell).not.toContain('prisma.');
   });

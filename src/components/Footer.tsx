@@ -7,6 +7,8 @@ export interface FooterLabels {
   stay: string;
   monthly: string;
   buy: string;
+  sell: string;
+  areas: string;
   projects: string;
   services: string;
   trust: string;
@@ -44,6 +46,8 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/search', label: labels.stay },
         { href: '/homes?intent=rent', label: labels.monthly },
         { href: '/homes?intent=buy', label: labels.buy },
+        { href: '/sell', label: labels.sell },
+        { href: '/areas', label: labels.areas },
         { href: '/projects', label: labels.projects },
         { href: '/services', label: labels.services },
       ],

@@ -398,7 +398,7 @@ export async function GET(req: NextRequest) {
 
     const listInclude = {
       project: {
-        select: { id: true, name: true, projectType: true },
+        select: { id: true, name: true, slug: true, projectType: true, latitude: true, longitude: true },
       },
       inventoryCategory: {
         select: {
@@ -584,6 +584,13 @@ export async function GET(req: NextRequest) {
           const rating = ratings.get(priced.unit.id);
           return {
             ...rest,
+            project: rest.project
+              ? {
+                  ...rest.project,
+                  latitude: Number(rest.project.latitude),
+                  longitude: Number(rest.project.longitude),
+                }
+              : null,
             // Compatibility field consumed by current search cards. For dated
             // searches it now carries the canonical effective nightly amount
             // from the same calculator used by booking creation.

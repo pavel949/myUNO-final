@@ -130,4 +130,11 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'landing.start.buy_body', namespace: 'landing', description: 'Homepage buy intent body', en: 'Explore homes with an active sale offering.', ru: 'Изучайте объекты с активным предложением о продаже.', th: 'ดูบ้านที่มีข้อเสนอขายที่ใช้งานอยู่', status: 'needs_review' as const },
   { key: 'landing.start.sell_body', namespace: 'landing', description: 'Homepage sell intent body', en: 'Start a documented resale and valuation review.', ru: 'Начните документированный разбор продажи и оценки.', th: 'เริ่มการประเมินและขายต่อโดยมีหลักฐาน', status: 'needs_review' as const },
   { key: 'landing.start.explore', namespace: 'landing', description: 'Homepage intent card CTA', en: 'Explore', ru: 'Открыть', th: 'ดู', status: 'needs_review' as const },
+
+  { key: 'landing.collection.view', namespace: 'landing', description: 'Homepage project card CTA', en: 'Explore', ru: 'Открыть', th: 'ดู', status: 'needs_review' as const },
+  { key: 'home.discovery.sell', namespace: 'home', description: 'Homepage sell intent label', en: 'Sell', ru: 'Продать', th: 'ขาย', status: 'needs_review' as const },
+  { key: 'area.back', namespace: 'area', description: 'Area detail back link', en: 'Phuket areas', ru: 'Районы Пхукета', th: 'พื้นที่ภูเก็ต', status: 'needs_review' as const },
+  { key: 'sell.evidence.property', namespace: 'sell', description: 'Sell evidence property facts', en: 'Canonical property facts', ru: 'Канонические данные объекта', th: 'ข้อมูลทรัพย์สินหลัก', status: 'needs_review' as const },
+  { key: 'sell.evidence.offering', namespace: 'sell', description: 'Sell evidence commercial offering', en: 'Commercial offering record', ru: 'Коммерческое предложение', th: 'ข้อมูลข้อเสนอเชิงพาณิชย์', status: 'needs_review' as const },
+  { key: 'sell.evidence.mandate', namespace: 'sell', description: 'Sell evidence mandate', en: 'Mandate evidence', ru: 'Подтверждение мандата', th: 'หลักฐานอำนาจดำเนินการ', status: 'needs_review' as const },
 ];

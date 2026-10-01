@@ -116,6 +116,8 @@ export default async function RootLayout({
     : [];
 
   const footerLabels = await getLabels({
+    'nav.footer.brand_name': 'myUNO',
+    'nav.footer.brand_tagline': 'Property, stays and services connected around one Phuket home.',
     'nav.footer.brand_column': 'Explore',
     'nav.footer.home': 'Home',
     'nav.footer.stay': 'Stay',
@@ -206,6 +208,8 @@ export default async function RootLayout({
         <Footer
           locale={locale}
           labels={{
+            brandName: footerLabels['nav.footer.brand_name'],
+            brandTagline: footerLabels['nav.footer.brand_tagline'],
             brandColumn: footerLabels['nav.footer.brand_column'],
             home: footerLabels['nav.footer.home'],
             stay: footerLabels['nav.footer.stay'],

@@ -66,6 +66,14 @@ export {
 } from './compliance.service';
 
 export {
+  resolveUnitCommercialAuthority,
+  canWriteUnitCommercial,
+  canWriteUnitListing,
+  type UnitCommercialAuthority,
+  type UnitCommercialAuthorityMode,
+} from './unit-authority';
+
+export {
   createUnitEngagement,
   updateUnitEngagement,
   getUnitEngagement,

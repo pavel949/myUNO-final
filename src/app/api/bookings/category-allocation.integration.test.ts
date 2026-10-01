@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { seedConfig } from '@/modules/config';
+import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 
 const mockGetCurrentUser = vi.fn();
 vi.mock('@/app/actions/getCurrentUser', () => ({
@@ -58,15 +59,40 @@ describe('category booking falls through to the next villa', () => {
     });
   }
 
-  function categoryBooking() {
+  async function categoryBooking(acceptedTotalSatang = 100_000_000) {
+    const category = await db.inventoryCategory.findUniqueOrThrow({
+      where: {
+        projectId_categoryKey: {
+          projectId,
+          categoryKey: 'garden_villa',
+        },
+      },
+    });
+    const quotedUnit = await db.unit.findFirstOrThrow({
+      where: { projectId, inventoryCategoryId: category.id },
+      orderBy: { name: 'asc' },
+    });
+    const { token } = createCategoryStayQuoteToken({
+      inventoryCategoryId: category.id,
+      projectId,
+      startDate: START,
+      endDate: END,
+      adultsCount: 2,
+      childrenCount: 0,
+      petsCount: 0,
+      acceptedTotalSatang,
+      quotedUnitId: quotedUnit.id,
+    });
     return request({
-      categoryKey: 'garden_villa',
+      inventoryCategoryId: category.id,
       projectId,
       startDate: START,
       endDate: END,
       adultsCount: 2,
       childrenCount: 0,
       paymentMethod: 'cash',
+      categoryQuoteToken: token,
+      acceptedTotalSatang,
     });
   }
 
@@ -82,11 +108,11 @@ describe('category booking falls through to the next villa', () => {
     const [first, second] = await Promise.all([
       (async () => {
         mockGetCurrentUser.mockReturnValue({ identityId: guestOne.id, isAdmin: false });
-        return POST(categoryBooking());
+        return POST(await categoryBooking());
       })(),
       (async () => {
         mockGetCurrentUser.mockReturnValue({ identityId: guestTwo.id, isAdmin: false });
-        return POST(categoryBooking());
+        return POST(await categoryBooking());
       })(),
     ]);
 
@@ -108,12 +134,12 @@ describe('category booking falls through to the next villa', () => {
 
     const guestOne = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guestOne.id, isAdmin: false });
-    const taken = await POST(categoryBooking());
+    const taken = await POST(await categoryBooking());
     expect(taken.status).toBe(201);
 
     const guestTwo = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guestTwo.id, isAdmin: false });
-    const refused = await POST(categoryBooking());
+    const refused = await POST(await categoryBooking());
 
     expect(refused.status).toBe(409);
     expect(await db.booking.count({ where: { projectId } })).toBe(1);
@@ -135,7 +161,7 @@ describe('category booking falls through to the next villa', () => {
     const guest = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
 
-    const res = await POST(categoryBooking());
+    const res = await POST(await categoryBooking());
     expect(res.status).toBe(201);
 
     const booking = await db.booking.findFirst({ where: { projectId } });
@@ -163,7 +189,7 @@ describe('category booking falls through to the next villa', () => {
     const guest = await createIdentity();
     mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
 
-    const res = await POST(categoryBooking());
+    const res = await POST(await categoryBooking());
     expect(res.status).toBe(201);
 
     const booking = await db.booking.findFirst({ where: { projectId } });

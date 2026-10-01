@@ -44,7 +44,7 @@ describe('premium design-system surface parity', () => {
     expect(source('src/app/(public)/rent-out/page.tsx')).toContain('/property/onboard?offers=short_stay');
     expect(source('src/app/(public)/sell/page.tsx')).toContain('/property/onboard?offers=sale');
     expect(source('src/app/(public)/rent-out/page.tsx')).toContain('href="/manage"');
-    expect(source('src/app/(public)/manage/page.tsx')).toContain('/property/onboard?kind=management&operatingModel=direct_managed');
+    expect(source('src/app/(public)/manage/page.tsx')).toContain('/property/onboard?kind=home&operatingModel=direct_managed');
     const onboardPage = source('src/app/property/onboard/page.tsx');
     expect(onboardPage).toContain("params.set('offers'");
     expect(onboardPage).toContain("params.set('operatingModel'");

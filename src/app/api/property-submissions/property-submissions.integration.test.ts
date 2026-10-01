@@ -24,7 +24,7 @@ describe('one property intake and verified canonical conversion', () => {
   const application = () => ({
     kind: 'home', projectId, proposedProject: '', unitName: 'F705',
     bedrooms: 1, bathrooms: 1, maxGuests: 2, sizeSqm: 40, floor: '7',
-    offers: ['short_stay', 'monthly', 'sale'], photos: [], status: 'draft',
+    offers: ['short_stay', 'monthly', 'sale'], operatingModel: 'direct_managed', photos: [], status: 'draft',
   });
 
   beforeEach(async () => {
@@ -71,7 +71,12 @@ describe('one property intake and verified canonical conversion', () => {
     expect(unit.projectId).toBe(projectId);
     expect(unit.status).toBe('draft');
     expect(unit.ownerIdentityId).toBe(applicantId);
-    expect(unit.commercialOfferings.map(o => [o.offeringType, o.status])).toEqual(expect.arrayContaining([['short_stay', 'draft'], ['monthly', 'draft'], ['sale', 'draft']]));
+    expect(unit.commercialOfferings.map(o => [o.offeringType, o.status])).toEqual(expect.arrayContaining([['short_term_stay', 'draft'], ['long_term_rental', 'draft'], ['sale', 'draft']]));
+    expect(unit.commercialOfferings).toHaveLength(3);
+    const engagement = await db.unitEngagement.findFirstOrThrow({ where: { unitId: unit.id } });
+    expect(engagement.engagementType).toBe('direct_managed');
+    expect(engagement.status).toBe('draft');
+    expect(engagement.ownerIdentityId).toBe(applicantId);
     expect(await db.ownershipPeriod.count({ where: { unitId: unit.id } })).toBe(1);
     expect(await db.roleAssignment.count({ where: { identityId: applicantId, role: 'owner', unitId: unit.id } })).toBe(1);
     const retry = await (await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } })).json();
@@ -99,19 +104,22 @@ describe('one property intake and verified canonical conversion', () => {
 
   it('grants a verified manager only the approved project and company scope', async () => {
     const org = await createOrganization('Approved MC', projectId);
-    const created = await (await POST(req('POST', { ...application(), kind: 'management', unitName: 'F706', status: 'submitted' }))).json();
+    const created = await (await POST(req('POST', { ...application(), kind: 'management', operatingModel: 'via_management_company', unitName: 'F706', status: 'submitted' }))).json();
     session.identityId = adminId;
     const response = await convert(req('POST', {
-      verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, organizationId: org.id,
+      verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, verifiedOwner: true, organizationId: org.id,
     }), { params: { id: created.id } });
     expect(response.status).toBe(200);
     const { unitId } = await response.json();
-    expect((await db.unit.findUniqueOrThrow({ where: { id: unitId } })).ownerIdentityId).toBeNull();
+    expect((await db.unit.findUniqueOrThrow({ where: { id: unitId } })).ownerIdentityId).toBe(applicantId);
     const role = await db.roleAssignment.findFirstOrThrow({ where: { identityId: applicantId, role: 'mc_member' } });
     expect(role.projectId).toBe(projectId);
     expect(role.organizationId).toBe(org.id);
     expect(role.unitId).toBeNull();
-    expect(await db.unitEngagement.count({ where: { unitId } })).toBe(0);
+    const engagement = await db.unitEngagement.findFirstOrThrow({ where: { unitId } });
+    expect(engagement.engagementType).toBe('via_management_company');
+    expect(engagement.managementOrgId).toBe(org.id);
+    expect(engagement.status).toBe('draft');
   });
 
   it('does not create duplicate physical units in the same complex', async () => {

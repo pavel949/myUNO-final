@@ -59,6 +59,10 @@ describe('premium design-system surface parity', () => {
     expect(route).toContain('mapCandidates');
     expect(map).toContain('onBoundsChange');
     expect(map).toContain('tile.openstreetmap.org');
+    const middleware = source('src/middleware.ts');
+    expect(middleware).toContain('https://unpkg.com');
+    expect(middleware).toContain('https://tile.openstreetmap.org');
+    expect(middleware).toContain("worker-src 'self' blob:");
   });
 
   it('keeps Project Passport fail-closed over canonical evidence records', () => {

@@ -10,9 +10,15 @@ export interface DiscoveryProjectOption {
   name: string;
 }
 
+export interface DiscoveryAreaOption {
+  slug: string;
+  name: string;
+}
+
 export function DiscoverySearch({
   labels,
   projects = [],
+  areas = [],
 }: {
   labels: {
     rent: string;
@@ -21,6 +27,8 @@ export function DiscoverySearch({
     sell: string;
     where: string;
     allPhuket: string;
+    locations: string;
+    projects: string;
     checkIn: string;
     checkOut: string;
     adults: string;
@@ -31,10 +39,11 @@ export function DiscoverySearch({
     error: string;
   };
   projects?: DiscoveryProjectOption[];
+  areas?: DiscoveryAreaOption[];
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('rent');
-  const [projectId, setProjectId] = useState('');
+  const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [adults, setAdults] = useState(2);
@@ -70,12 +79,18 @@ export function DiscoverySearch({
       return;
     }
 
+    const destinationParams =
+      destination.startsWith('project:')
+        ? { projectId: destination.slice('project:'.length) }
+        : destination.startsWith('area:')
+          ? { areaSlug: destination.slice('area:'.length) }
+          : {};
     const params = new URLSearchParams({
       startDate,
       endDate,
       adults: String(adults),
       children: String(children),
-      ...(projectId ? { projectId } : {}),
+      ...destinationParams,
     });
     router.push('/search?' + params.toString());
   }
@@ -86,7 +101,7 @@ export function DiscoverySearch({
       className="rounded-2xl border border-white/10 bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
       aria-label={labels.explore}
     >
-      <div className="mb-12 flex gap-4 overflow-x-auto" role="group" aria-label={labels.explore}>
+      <div className="mb-12 grid grid-cols-4 gap-4" role="group" aria-label={labels.explore}>
         {options.map((item) => (
           <button
             key={item.id}
@@ -96,7 +111,7 @@ export function DiscoverySearch({
               setError('');
             }}
             aria-pressed={mode === item.id}
-            className={`shrink-0 rounded-full px-16 py-12 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+            className={`min-h-44 rounded-full px-8 py-8 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
               mode === item.id
                 ? 'bg-brand-andaman text-white'
                 : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
@@ -113,13 +128,24 @@ export function DiscoverySearch({
             {labels.where}
             <select
               className="h-48 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
             >
               <option value="">{labels.allPhuket}</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
+              {areas.length ? (
+                <optgroup label={labels.locations}>
+                  {areas.map((area) => (
+                    <option key={area.slug} value={`area:${area.slug}`}>{area.name}</option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {projects.length ? (
+                <optgroup label={labels.projects}>
+                  {projects.map((project) => (
+                    <option key={project.id} value={`project:${project.id}`}>{project.name}</option>
+                  ))}
+                </optgroup>
+              ) : null}
             </select>
           </label>
 

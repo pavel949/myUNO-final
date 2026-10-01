@@ -44,6 +44,15 @@ export default async function ManagePage() {
     'manage.lead': 'I would like to discuss professional management for my Phuket property or portfolio.',
   });
 
+  const scopeCards = [
+    { key: 'revenue', title: labels['manage.scope.revenue'], body: labels['manage.scope.revenue_body'] },
+    { key: 'guest', title: labels['manage.scope.guest'], body: labels['manage.scope.guest_body'] },
+    { key: 'asset', title: labels['manage.scope.asset'], body: labels['manage.scope.asset_body'] },
+    { key: 'owner', title: labels['manage.scope.owner'], body: labels['manage.scope.owner_body'] },
+    { key: 'team', title: labels['manage.scope.team'], body: labels['manage.scope.team_body'] },
+    { key: 'services', title: labels['manage.scope.services'], body: labels['manage.scope.services_body'] },
+  ];
+
   return <main className="min-h-screen bg-surface-ivory">
     <section className="bg-brand-deep px-20 py-64 text-surface-ivory md:px-32 md:py-96">
       <div className="mx-auto max-w-7xl">
@@ -66,16 +75,9 @@ export default async function ManagePage() {
     <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
       <h2 className="font-display text-display font-semibold text-text-ink">{labels['manage.scope.title']}</h2>
       <div className="mt-28 grid gap-14 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          ['revenue','manage.scope.revenue','manage.scope.revenue_body'],
-          ['guest','manage.scope.guest','manage.scope.guest_body'],
-          ['asset','manage.scope.asset','manage.scope.asset_body'],
-          ['owner','manage.scope.owner','manage.scope.owner_body'],
-          ['team','manage.scope.team','manage.scope.team_body'],
-          ['services','manage.scope.services','manage.scope.services_body'],
-        ].map(([key,titleKey,bodyKey]) => <article key={key} className="rounded-2xl border border-border-line bg-surface-paper p-24">
-          <h3 className="font-display text-title font-semibold text-text-ink">{labels[titleKey]}</h3>
-          <p className="mt-10 text-body text-text-secondary">{labels[bodyKey]}</p>
+        {scopeCards.map((card) => <article key={card.key} className="rounded-2xl border border-border-line bg-surface-paper p-24">
+          <h3 className="font-display text-title font-semibold text-text-ink">{card.title}</h3>
+          <p className="mt-10 text-body text-text-secondary">{card.body}</p>
         </article>)}
       </div>
     </section>

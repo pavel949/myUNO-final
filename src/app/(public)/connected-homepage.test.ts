@@ -15,8 +15,8 @@ describe('connected public homepage', () => {
     expect(landing).toContain('<ProjectCard');
     expect(landing).toContain('<ServiceCard');
   });
-  it('provides connected entry points to stays, projects, owners and developers', () => {
-    for (const route of ['/search', '/projects', '/owners', '/developers', '/services']) {
+  it('provides connected entry points to the five primary intents and discovery', () => {
+    for (const route of ['/search', '/projects', '/homes?intent=buy', '/sell', '/rent-out', '/manage', '/services']) {
       expect(landing).toContain(route);
     }
   });

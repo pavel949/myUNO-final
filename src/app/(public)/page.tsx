@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+const HOME_UNIT_IMAGE_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
+const HOME_AREA_IMAGE_SIZES = '(max-width: 768px) 100vw, 33vw';
+
 const PROJECT_PRIORITY = [
   'Layan Tara Villas',
   'Layantara Villa Resort',
@@ -355,7 +358,7 @@ export default async function LandingPage() {
                         src={media.src}
                         alt={media.illustrative ? '' : unit.name}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        sizes={HOME_UNIT_IMAGE_SIZES}
                         className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
                       />
                     </div>
@@ -418,7 +421,7 @@ export default async function LandingPage() {
                       src={media.src}
                       alt={media.illustrative ? '' : area.displayName}
                       fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
+                      sizes={HOME_AREA_IMAGE_SIZES}
                       className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/90 via-brand-deep/20 to-transparent" />

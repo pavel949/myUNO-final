@@ -12,7 +12,7 @@ export default async function HomesPage({ searchParams }: {
 }) {
   const intent: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const [homes, labels] = await Promise.all([
-    listPublicCommercialHomes(prisma, intent),
+    listPublicCommercialHomes(prisma, intent).catch(() => []),
     getLabels({
       'homes.kicker': 'myUNO · REAL ESTATE',
       'homes.inquiry.buy': 'I am looking to purchase a property in Phuket.',

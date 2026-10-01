@@ -27,6 +27,8 @@ export interface NavbarLabels {
   stay: string;
   monthly: string;
   buy: string;
+  sell: string;
+  areas: string;
   projects: string;
   services: string;
   owners: string;
@@ -76,6 +78,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     { href: '/search', label: labels.stay },
     { href: '/homes?intent=rent', label: labels.monthly, activeBase: '/homes' },
     { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/sell', label: labels.sell },
     { href: '/projects', label: labels.projects },
     { href: '/services', label: labels.services },
   ] as const;
@@ -130,6 +133,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <div className="absolute right-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
               <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
               <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
+              <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
               <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
               <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
               <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management</Link>
@@ -206,6 +210,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           <div className="flex flex-col">
             <Link href="/owners" className={navLinkClass(pathname, '/owners', 'border-b border-border-line py-14')} onClick={closeMenu}>
               {labels.owners}
+            </Link>
+            <Link href="/areas" className={navLinkClass(pathname, '/areas', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.areas}
             </Link>
             <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-14')} onClick={closeMenu}>
               Developers

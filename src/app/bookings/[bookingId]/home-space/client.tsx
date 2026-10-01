@@ -17,6 +17,8 @@ import {
   type RailService,
 } from '@/components';
 
+const DONE_STATUS_TONE = 'done' as const;
+
 interface Unit {
   id: string;
   name: string;
@@ -247,7 +249,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             <StatusChip tone={inStay ? 'active' : booking.status === 'checked_out' ? 'done' : 'neutral'}>
               {labels[`home.stay_status.${booking.status}`] ?? booking.status}
             </StatusChip>
-            {paidInFull ? <StatusChip tone="done">{labels['home.stay.paid_in_full']}</StatusChip> : null}
+            {paidInFull ? <StatusChip tone={DONE_STATUS_TONE}>{labels['home.stay.paid_in_full']}</StatusChip> : null}
             {tm30Filed ? <StatusChip tone="done">{labels['home.stay.tm30_filed']}</StatusChip> : null}
           </>
         }

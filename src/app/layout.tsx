@@ -10,7 +10,6 @@ import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
 
-/** One content key per kind of surface, so the menu names match the landing. */
 const SURFACE_LABEL_KEYS = {
   active_stay: 'nav.stay',
   admin: 'nav.admin',
@@ -26,8 +25,6 @@ const SURFACE_LABEL_KEYS = {
 } as const satisfies Record<Landing['reason'], string>;
 
 const outfit = Outfit({
-  // Google does not ship a Cyrillic cut of Outfit. Asking for one fails
-  // `next build`. Russian display type falls through to Manrope (below).
   subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-outfit',
@@ -51,11 +48,9 @@ const notoSansThai = Noto_Sans_Thai({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: 'myUNO',
-  description: 'Operating platform for serviced living in Phuket',
+  description: 'Property, stays and services connected around one Phuket home.',
 };
 
-// Root layout reads per-request cookies/session-derived navigation state.
-// Mark dynamic to avoid static prerender trying to evaluate request-bound hooks.
 export const dynamic = 'force-dynamic';
 
 export default async function RootLayout({
@@ -67,9 +62,10 @@ export default async function RootLayout({
   const locale = getRequestLocale();
 
   const navLabels = await getLabels({
-    'nav.find_stay': 'Find a stay',
-    'nav.residences': 'Residences',
-    'nav.homes': 'Buy / Rent',
+    'nav.find_stay': 'Stay',
+    'nav.monthly': 'Monthly',
+    'nav.buy': 'Buy',
+    'nav.projects': 'Projects',
     'nav.services': 'Services',
     'nav.owners': 'Owners',
     'nav.about': 'About',
@@ -102,34 +98,34 @@ export default async function RootLayout({
     'nav.menu': 'Menu',
   });
 
-  // The surfaces this person's roles give them, from the same policy the `/app`
-  // landing redirects on — so the menu can never offer a different set of hats
-  // than the landing picks between.
   const activeBookingId = user ? await getActiveStayId() : null;
   const roleLinks = user
     ? availableSurfaces({
         isAdmin: user.isAdmin,
         roles: user.roles.map((r) => r.role as RoleType),
         activeBookingId,
-      }).filter((surface) => surface.path !== '/trips') // universal account link already includes Trips
+      })
+        .filter((surface) => surface.path !== '/trips')
         .map((surface) => ({
-        href: surface.path,
-        label: navLabels[SURFACE_LABEL_KEYS[surface.reason]],
-      }))
+          href: surface.path,
+          label: navLabels[SURFACE_LABEL_KEYS[surface.reason]],
+        }))
     : [];
 
   const footerLabels = await getLabels({
-    'nav.footer.brand_column': 'myUNO',
+    'nav.footer.brand_column': 'Explore',
     'nav.footer.home': 'Home',
-    'nav.footer.residences': 'Residences',
+    'nav.footer.stay': 'Stay',
+    'nav.footer.monthly': 'Monthly',
+    'nav.footer.buy': 'Buy',
+    'nav.footer.projects': 'Projects',
+    'nav.footer.services': 'Services',
     'nav.footer.trust': 'Trust',
     'nav.footer.about': 'About',
-    'nav.footer.search': 'Find a stay',
-    'nav.footer.services': 'Services',
     'nav.footer.ombudsman': 'Ombudsman',
     'nav.footer.legal_index': 'Legal',
     'nav.language': 'Language',
-    'nav.footer.audience_column': 'For Everyone',
+    'nav.footer.audience_column': 'Property',
     'nav.footer.owners': 'Owners',
     'nav.footer.guests': 'Guests',
     'nav.footer.providers': 'Providers',
@@ -150,7 +146,7 @@ export default async function RootLayout({
       lang={locale}
       className={`${outfit.variable} ${manrope.variable} ${notoSansThai.variable}`}
     >
-      <body className="min-h-screen flex flex-col">
+      <body className="flex min-h-screen flex-col">
         <Navbar
           user={
             user
@@ -162,9 +158,10 @@ export default async function RootLayout({
               : null
           }
           labels={{
-            findStay: navLabels['nav.find_stay'],
-            residences: navLabels['nav.residences'],
-            homes: navLabels['nav.homes'],
+            stay: navLabels['nav.find_stay'],
+            monthly: navLabels['nav.monthly'],
+            buy: navLabels['nav.buy'],
+            projects: navLabels['nav.projects'],
             services: navLabels['nav.services'],
             owners: navLabels['nav.owners'],
             about: navLabels['nav.about'],
@@ -194,15 +191,19 @@ export default async function RootLayout({
             zh: navLabels['nav.locale.zh'],
           }}
         />
+
         <div className="flex-1">{children}</div>
+
         <Footer
           locale={locale}
           labels={{
             brandColumn: footerLabels['nav.footer.brand_column'],
             home: footerLabels['nav.footer.home'],
-            residences: footerLabels['nav.footer.residences'],
+            stay: footerLabels['nav.footer.stay'],
+            monthly: footerLabels['nav.footer.monthly'],
+            buy: footerLabels['nav.footer.buy'],
+            projects: footerLabels['nav.footer.projects'],
             services: footerLabels['nav.footer.services'],
-            search: footerLabels['nav.footer.search'],
             trust: footerLabels['nav.footer.trust'],
             about: footerLabels['nav.footer.about'],
             ombudsman: footerLabels['nav.footer.ombudsman'],

@@ -59,15 +59,15 @@ export default async function ManagePage() {
     <section className="bg-brand-deep px-20 py-64 text-surface-ivory md:px-32 md:py-96">
       <div className="mx-auto max-w-7xl">
         <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['manage.kicker']}</p>
-        <h1 className="mt-10 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
+        <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
           {labels['manage.title']}
         </h1>
         <p className="mt-20 max-w-3xl text-lg leading-relaxed text-surface-ivory/75">{labels['manage.body']}</p>
-        <div className="mt-28 flex flex-col gap-10 sm:flex-row">
-          <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
+        <div className="mt-32 flex flex-col gap-12 sm:flex-row">
+          <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
             {labels['manage.primary']} →
           </Link>
-          <Link href="/rent-out" className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-white hover:bg-white/10">
+          <Link href="/rent-out" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-white hover:bg-white/10">
             {labels['manage.rentout']} →
           </Link>
         </div>
@@ -76,17 +76,17 @@ export default async function ManagePage() {
 
     <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
       <h2 className="font-display text-display font-semibold text-text-ink">{labels['manage.scope.title']}</h2>
-      <div className="mt-28 grid gap-14 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-32 grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
         {scopeCards.map((card) => <article key={card.key} className="rounded-2xl border border-border-line bg-surface-paper p-24">
           <h3 className="font-display text-title font-semibold text-text-ink">{card.title}</h3>
-          <p className="mt-10 text-body text-text-secondary">{card.body}</p>
+          <p className="mt-12 text-body text-text-secondary">{card.body}</p>
         </article>)}
       </div>
     </section>
 
-    <section className="border-y border-border-line bg-surface-paper py-56 md:py-72">
+    <section className="border-y border-border-line bg-surface-paper py-56 md:py-64">
       <div className="mx-auto max-w-7xl px-20 md:px-32">
-        <h2 className="mb-28 font-display text-display font-semibold text-text-ink">{labels['manage.path.title']}</h2>
+        <h2 className="mb-32 font-display text-display font-semibold text-text-ink">{labels['manage.path.title']}</h2>
         <ProcessStepper steps={[
           { label: labels['manage.path.property'], state: 'active' },
           { label: labels['manage.path.authority'], state: 'neutral' },
@@ -98,14 +98,14 @@ export default async function ManagePage() {
     </section>
 
     <section className="mx-auto grid max-w-7xl gap-16 px-20 py-56 md:grid-cols-2 md:px-32 md:py-80">
-      <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="group flex min-h-[280px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
+      <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="group flex min-h-[280px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-32 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
         <div>
           <h2 className="font-display text-display font-semibold text-text-ink">{labels['manage.owner.title']}</h2>
           <p className="mt-12 max-w-xl text-body text-text-secondary">{labels['manage.owner.body']}</p>
         </div>
         <span className="mt-24 text-small font-semibold text-brand-andaman">{labels['manage.owner.cta']} →</span>
       </Link>
-      <Link href="/management-companies" className="group flex min-h-[280px] flex-col justify-between rounded-2xl bg-brand-andaman p-28 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
+      <Link href="/management-companies" className="group flex min-h-[280px] flex-col justify-between rounded-2xl bg-brand-andaman p-32 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
         <div>
           <h2 className="font-display text-display font-semibold">{labels['manage.portfolio.title']}</h2>
           <p className="mt-12 max-w-xl text-body text-white/80">{labels['manage.portfolio.body']}</p>

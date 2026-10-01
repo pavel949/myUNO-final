@@ -161,8 +161,8 @@ export default async function LandingPage() {
       'home.final.primary': 'Explore properties',
       'home.final.secondary': 'Browse services',
     }),
-    listPublicProjects(),
-    listPublicCommercialHomes(prisma),
+    listPublicProjects().catch(() => []),
+    listPublicCommercialHomes(prisma).catch(() => []),
     listPublicMarketplaceServices(prisma, locale, { limit: 6 }).catch(() => []),
   ]);
 

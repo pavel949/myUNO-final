@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const humanize = (value: string) =>
   value
     .replace(/[_-]+/g, ' ')
-    .replace(/w/g, (letter) => letter.toUpperCase());
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 function tone(status: PassportEvidenceStatus) {
   if (status === 'documented') return 'done' as const;
@@ -41,9 +41,9 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
     'passport.facts.total_units': 'Declared total units',
     'passport.facts.live_units': 'Live public units',
     'passport.facts.location': 'Canonical coordinates',
-    'passport.developer.title': 'Developer & organization provenance',
+    'passport.developer.title': 'Developer provenance',
     'passport.developer.empty':
-      'No currently active organization role with verified provenance is available for public display.',
+      'No currently active developer or co-developer role with verified provenance is available for public display.',
     'passport.regulatory.title': 'Regulatory evidence',
     'passport.regulatory.empty':
       'No project-level regulatory credential is currently available for public display.',

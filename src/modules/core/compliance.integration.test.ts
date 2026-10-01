@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, resetDb, createProject, createUnit, createIdentity , createRegulatoryEvidence } from '@/test/util';
+import { db, resetDb, createProject, createUnit, createIdentity, createRegulatoryEvidence } from '@/test/util';
 import {
   createComplianceRecord,
   updateComplianceRecord,
@@ -15,7 +15,6 @@ import {
 import {
   createBooking,
   createBookingGuest,
-  createIdentity,
 } from '@/test/util';
 import { createTm30Filing } from '@/modules/ops';
 import { createRegulatoryCredential } from '@/modules/compliance';
@@ -267,7 +266,7 @@ describe('Compliance & Mobilization', () => {
     it('allows noiCapAnnualThb to be optional for owner_direct engagement', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id, { ownerIdentityId: owner.id });
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       const { id } = await createUnitEngagement(db, {
         unitId: unit.id,

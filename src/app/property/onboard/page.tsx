@@ -7,7 +7,12 @@ export const dynamic = 'force-dynamic';
 export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string } }) {
   const user = await getCurrentUser();
   if (!user) {
-    const query = typeof searchParams?.projectId === 'string' ? `?projectId=${encodeURIComponent(searchParams.projectId)}` : '';
+    const params = new URLSearchParams();
+    if (typeof searchParams?.projectId === 'string') params.set('projectId', searchParams.projectId);
+    if (typeof searchParams?.offers === 'string') params.set('offers', searchParams.offers);
+    if (typeof searchParams?.kind === 'string') params.set('kind', searchParams.kind);
+    if (typeof searchParams?.operatingModel === 'string') params.set('operatingModel', searchParams.operatingModel);
+    const query = params.toString() ? `?${params.toString()}` : '';
     redirect(`/login?next=${encodeURIComponent('/property/onboard' + query)}`);
   }
   const scopedIds = user.roles.map(role => role.projectId).filter((id): id is string => Boolean(id));

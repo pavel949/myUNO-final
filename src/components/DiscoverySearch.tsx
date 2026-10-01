@@ -79,19 +79,17 @@ export function DiscoverySearch({
       return;
     }
 
-    const destinationParams =
-      destination.startsWith('project:')
-        ? { projectId: destination.slice('project:'.length) }
-        : destination.startsWith('area:')
-          ? { areaSlug: destination.slice('area:'.length) }
-          : {};
     const params = new URLSearchParams({
       startDate,
       endDate,
       adults: String(adults),
       children: String(children),
-      ...destinationParams,
     });
+    if (destination.startsWith('project:')) {
+      params.set('projectId', destination.slice('project:'.length));
+    } else if (destination.startsWith('area:')) {
+      params.set('areaSlug', destination.slice('area:'.length));
+    }
     router.push('/search?' + params.toString());
   }
 

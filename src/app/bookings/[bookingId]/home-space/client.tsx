@@ -250,7 +250,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
               {labels[`home.stay_status.${booking.status}`] ?? booking.status}
             </StatusChip>
             {paidInFull ? <StatusChip tone={DONE_STATUS_TONE}>{labels['home.stay.paid_in_full']}</StatusChip> : null}
-            {tm30Filed ? <StatusChip tone="done">{labels['home.stay.tm30_filed']}</StatusChip> : null}
+            {tm30Filed ? <StatusChip tone={DONE_STATUS_TONE}>{labels['home.stay.tm30_filed']}</StatusChip> : null}
           </>
         }
         actions={

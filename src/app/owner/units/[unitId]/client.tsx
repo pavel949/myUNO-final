@@ -16,6 +16,7 @@ import {
 import { DeltaChip, Sparkline } from '@/components/viz';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import UnitAccessEditor from '@/components/units/UnitAccessEditor';
 import type { UnitCommercialAuthorityMode } from '@/modules/core';
 
 function fill(template: string, params?: Record<string, string>): string {
@@ -408,6 +409,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
                 {labels['owner.sections.rates']}
               </h2>
               <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
+              <UnitAccessEditor unitId={unit.id} />
             </div>
           ) : null}
 

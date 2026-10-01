@@ -190,6 +190,35 @@ describe('category booking falls through to the next villa', () => {
       2
     );
 
+    await db.commercialOffering.create({
+      data: {
+        projectId,
+        unitId: b.id,
+        offeringType: 'short_term_stay',
+        status: 'active',
+        pricingTerms: {
+          quoteEngine: 'canonical_tariff_grid_v1',
+          taxPolicyVerified: true,
+          tariffGrid: [
+            {
+              sourceRateId: 'fallback-higher',
+              seasonCode: 'ALL_YEAR',
+              dateWindows: [{ start: '01-01', end: '12-31' }],
+              rateMode: 'daily',
+              pricingUnit: 'night',
+              amountSatang: 900_000,
+              currency: 'THB',
+              minimumNights: 1,
+              includesTaxes: true,
+              includesServiceCharge: true,
+              includesBreakfast: false,
+              sourceSellable: true,
+            },
+          ],
+        },
+      },
+    });
+
     await db.blockedDate.create({
       data: {
         unitId: a.id,

@@ -252,7 +252,7 @@ describe('Compliance & Mobilization', () => {
     it('requires noiCapAnnualThb for direct-managed engagement', async () => {
       const project = await createProject();
       const owner = await createIdentity();
-      const unit = await createUnit(project.id, { ownerIdentityId: owner.id });
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
 
       await expect(
         createUnitEngagement(db, {

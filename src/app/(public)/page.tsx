@@ -267,38 +267,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-surface-ivory py-40 md:py-56" aria-labelledby="start-heading">
-        <div className="mx-auto max-w-content px-20 md:px-32">
-          <p className="text-kicker uppercase text-brand-andaman">
-            {labels['landing.start.kicker']}
-          </p>
-          <h2 id="start-heading" className="mt-8 font-display text-display font-semibold text-text-ink">
-            {labels['landing.start.title']}
-          </h2>
-          <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
-            {[
-              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
-              { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
-              { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
-              { title: labels['home.discovery.sell'], body: labels['landing.start.sell_body'], href: '/sell' },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group flex min-h-[170px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:min-h-[190px] md:p-24"
-              >
-                <div>
-                  <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
-                  <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
-                </div>
-                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
-                  {labels['landing.start.explore']} →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
@@ -472,6 +440,46 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+
+      <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase text-brand-andaman">
+                {labels['landing.services.kicker']}
+              </p>
+              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                {labels['landing.services.title']}
+              </h2>
+              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
+            </div>
+            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
+              {labels['landing.services.cta']} →
+            </Link>
+          </div>
+
+          {services.length ? (
+            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:gap-20">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  href={`/services/${service.id}`}
+                  labels={{
+                    vetted: labels['landing.services.vetted'],
+                    from: labels['landing.services.from'],
+                    noPhoto: labels['landing.services.no_photo'],
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+              {labels['landing.services.empty']}
+            </div>
+          )}
+        </div>
+      </section>
       ) : null}
 
       {featuredHomes.length ? (
@@ -569,45 +577,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
-        <div className="mx-auto max-w-content px-20 md:px-32">
-          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
-            <div className="max-w-2xl">
-              <p className="text-kicker uppercase text-brand-andaman">
-                {labels['landing.services.kicker']}
-              </p>
-              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
-                {labels['landing.services.title']}
-              </h2>
-              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
-            </div>
-            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
-              {labels['landing.services.cta']} →
-            </Link>
-          </div>
-
-          {services.length ? (
-            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:gap-20">
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  href={`/services/${service.id}`}
-                  labels={{
-                    vetted: labels['landing.services.vetted'],
-                    from: labels['landing.services.from'],
-                    noPhoto: labels['landing.services.no_photo'],
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
-              {labels['landing.services.empty']}
-            </div>
-          )}
-        </div>
-      </section>
 
       <section className="py-56 md:py-96" aria-labelledby="audience-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">

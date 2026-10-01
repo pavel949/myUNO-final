@@ -54,6 +54,23 @@ export default async function BookingReviewPage({
   // is unique only inside a project. Canonical InventoryCategory ids do not.
   if (!projectId) redirect('/search');
 
+  // A legacy categoryKey link (older bookmarks, emails, external links) is
+  // translated to the canonical id and redirected, so it gets the same signed
+  // quote as every other category booking instead of a dead review page.
+  if (!searchParams.unitId && !inventoryCategoryId && searchParams.categoryKey) {
+    const category = await prisma.inventoryCategory.findUnique({
+      where: { projectId_categoryKey: { projectId, categoryKey: searchParams.categoryKey } },
+      select: { id: true, status: true },
+    });
+    if (!category || category.status !== 'live') redirect('/search');
+    const canonical = new URLSearchParams();
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (key !== 'categoryKey' && typeof value === 'string') canonical.set(key, value);
+    }
+    canonical.set('inventoryCategoryId', category.id);
+    redirect(`/book/review?${canonical.toString()}`);
+  }
+
   const enabled =
     (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId })) ?? [
       'cash',

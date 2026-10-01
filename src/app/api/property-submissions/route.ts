@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' | 'changes_requested' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -29,7 +30,7 @@ function normalize(body: Record<string, unknown>): Submission {
     description: String(body.description || '').trim().slice(0, 3000),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
     photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
-    status: body.status === 'submitted' ? 'submitted' : 'draft',
+    status: body.status === 'submitted' ? 'submitted' : body.status === 'changes_requested' ? 'changes_requested' : 'draft',
   };
 }
 
@@ -83,7 +84,12 @@ export async function POST(req: NextRequest) {
       data: {
         identityId: access.user.identityId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management',
         stage: 'new', title: data.unitName || 'New property draft', source: MARKER,
-        projectId: data.projectId, requirements: data,
+        projectId: data.projectId,
+        requirements: {
+          ...data,
+          ...(data.status === 'submitted' ? { submittedAt: new Date().toISOString() } : {}),
+          reviewHistory: [],
+        } as Prisma.InputJsonValue,
       },
       select: { id: true, requirements: true },
     });
@@ -100,8 +106,13 @@ export async function PATCH(req: NextRequest) {
     const existing = await prisma.crmOpportunity.findFirst({ where: { id, identityId: access.user.identityId, source: MARKER }, select: { id: true, requirements: true } });
     if (!existing) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
     const previous = existing.requirements as Record<string, unknown>;
-    if (previous.status !== 'draft') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
+    if (previous.status !== 'draft' && previous.status !== 'changes_requested') {
+      return NextResponse.json({ error: 'This application is currently locked for review.' }, { status: 409 });
+    }
     const data = normalize({ ...previous, ...body });
+    if (previous.status === 'changes_requested' && data.status === 'draft') {
+      data.status = 'changes_requested';
+    }
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
@@ -109,7 +120,25 @@ export async function PATCH(req: NextRequest) {
       if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
-    const row = await prisma.crmOpportunity.update({ where: { id }, data: { title: data.unitName || 'New property draft', projectId: data.projectId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management', requirements: data }, select: { id: true, requirements: true } });
+    const requirements = {
+      ...data,
+      reviewNote: typeof previous.reviewNote === 'string' ? previous.reviewNote : null,
+      reviewHistory: Array.isArray(previous.reviewHistory) ? previous.reviewHistory : [],
+      ...(typeof previous.submittedAt === 'string' ? { submittedAt: previous.submittedAt } : {}),
+      ...(data.status === 'submitted' && previous.status === 'changes_requested'
+        ? { resubmittedAt: new Date().toISOString() }
+        : {}),
+    };
+    const row = await prisma.crmOpportunity.update({
+      where: { id },
+      data: {
+        title: data.unitName || 'New property draft',
+        projectId: data.projectId,
+        type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management',
+        requirements: requirements as Prisma.InputJsonValue,
+      },
+      select: { id: true, requirements: true },
+    });
     return NextResponse.json(row);
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid submission' }, { status: 400 }); }
 }

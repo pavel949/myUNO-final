@@ -39,11 +39,15 @@ describe('premium design-system surface parity', () => {
 
   it('keeps the homepage conversion sequence grounded in canonical data', () => {
     const home = source('src/app/(public)/page.tsx');
-    expect(home).toContain('listPublicProjects()');
-    expect(home).toContain('listPublicCommercialHomes(prisma)');
-    expect(home).toContain('listPublicMarketplaceServices(prisma, locale');
+    expect(home).toContain('getPublicHomepageData(locale)');
+    const readModel = source('src/modules/home/public-homepage.service.ts');
+    expect(readModel).toContain('listPublicProjects(locale)');
+    expect(readModel).toContain('listPublicCommercialHomes(prisma)');
+    expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).toContain("landing.start.title");
     expect(home).toContain("href: '/sell'");
+    expect(home).toContain("landing.units.title");
+    expect(home).toContain("landing.areas.title");
     expect(home).not.toContain('bg-white');
   });
 

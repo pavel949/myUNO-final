@@ -15,6 +15,8 @@ import {
 } from '@/components';
 import { DeltaChip, Sparkline } from '@/components/viz';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
+import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import type { UnitCommercialAuthorityMode } from '@/modules/core';
 
 function fill(template: string, params?: Record<string, string>): string {
   if (!params) return template;
@@ -76,6 +78,7 @@ interface OwnerUnitDashboardClientProps {
   labels: Record<string, string>;
   locale: string;
   activeStay?: { bookingId: string; unitName: string } | null;
+  authorityMode: UnitCommercialAuthorityMode;
 }
 
 interface OwnerContractView {
@@ -101,6 +104,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
   labels,
   locale,
   activeStay,
+  authorityMode,
 }) => {
   const [showOwnerStayModal, setShowOwnerStayModal] = useState(false);
   const [ownerStayLoading, setOwnerStayLoading] = useState(false);
@@ -200,6 +204,26 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
             }}
           />
         ) : null}
+
+        <section className="mb-32 rounded-lg border border-border-line bg-surface-paper p-20">
+          <div className="flex flex-col gap-12 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-body font-semibold text-text-ink">
+                {labels[`owner.authority.${authorityMode === 'owner' ? 'self' : authorityMode === 'management_company' ? 'mc' : authorityMode}.title`]}
+              </p>
+              <p className="mt-4 text-small text-text-secondary">
+                {labels[`owner.authority.${authorityMode === 'owner' ? 'self' : authorityMode === 'management_company' ? 'mc' : authorityMode}.body`]}
+              </p>
+            </div>
+            {authorityMode === 'owner' ? (
+              <Link href={`/ops/units/${unit.id}/edit`}>
+                <Button variant="secondary" size="sm">
+                  {labels['owner.actions.edit_listing']}
+                </Button>
+              </Link>
+            ) : null}
+          </div>
+        </section>
 
         {alerts.length > 0 && (
           <div className="mb-40">
@@ -375,6 +399,15 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
                   </div>
                 ) : null}
               </dl>
+            </div>
+          ) : null}
+
+          {authorityMode === 'owner' ? (
+            <div>
+              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                {labels['owner.sections.rates']}
+              </h2>
+              <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
             </div>
           ) : null}
 

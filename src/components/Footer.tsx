@@ -10,6 +10,8 @@ export interface FooterLabels {
   monthly: string;
   buy: string;
   sell: string;
+  rentOut: string;
+  manage: string;
   areas: string;
   projects: string;
   services: string;
@@ -51,6 +53,8 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/homes?intent=rent', label: labels.monthly },
         { href: '/homes?intent=buy', label: labels.buy },
         { href: '/sell', label: labels.sell },
+        { href: '/rent-out', label: labels.rentOut },
+        { href: '/manage', label: labels.manage },
         { href: '/areas', label: labels.areas },
         { href: '/projects', label: labels.projects },
         { href: '/services', label: labels.services },

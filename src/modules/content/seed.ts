@@ -4422,6 +4422,7 @@ const AUDIT_FIX_KEYS: KeyDef[] = [
   { key: 'booking.checkin.blocked.after_departure', namespace: 'booking', description: 'Check-in refused: stay already ended', en: 'The stay has ended; this booking can no longer be checked in.', ru: 'Срок проживания истёк — заселить по этому бронированию уже нельзя.', th: 'การเข้าพักสิ้นสุดแล้ว ไม่สามารถเช็คอินการจองนี้ได้', status: NR },
   { key: 'booking.checkin.blocked.guests_incomplete', namespace: 'booking', description: 'Check-in refused: party not fully registered', en: 'Register every guest in the party (adults, children and infants) before check-in.', ru: 'Перед заселением зарегистрируйте всех гостей — взрослых, детей и младенцев.', th: 'ลงทะเบียนผู้เข้าพักทุกคน (ผู้ใหญ่ เด็ก และทารก) ก่อนเช็คอิน', status: NR },
   { key: 'booking.checkin.blocked.passport_missing', namespace: 'booking', description: 'Check-in refused: foreign guest without passport (TM30)', en: 'Every foreign guest needs a passport number on file before check-in (TM30).', ru: 'Для заселения нужны паспортные данные каждого иностранного гостя (TM30).', th: 'ผู้เข้าพักชาวต่างชาติทุกคนต้องมีหมายเลขหนังสือเดินทางก่อนเช็คอิน (TM30)', status: NR },
+  { key: 'admin.compliance.credentials.type.sale_authority', namespace: 'admin', description: 'Admin compliance: credential type — owner\'s sale mandate', en: 'Sale authority (owner mandate)', ru: 'Полномочия на продажу (мандат собственника)', th: 'อำนาจในการขาย (หนังสือมอบอำนาจจากเจ้าของ)', status: NR },
 ];
 
 export async function seedContent(

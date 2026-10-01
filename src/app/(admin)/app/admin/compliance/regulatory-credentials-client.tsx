@@ -20,7 +20,10 @@ interface CredentialRow {
 
 type Labels = Record<string, string>;
 
-const CREDENTIAL_TYPES = ['hotel_business_license', 'accommodation_exemption', 'title_legal_use'];
+// Mirrors REGULATORY_CREDENTIAL_TYPES (compliance module); the barrel is not
+// imported here because it carries server-only code into the client bundle.
+const CREDENTIAL_TYPES = ['hotel_business_license', 'accommodation_exemption', 'title_legal_use', 'sale_authority'];
+const UNIT_ONLY_TYPES = new Set(['sale_authority']);
 const EVIDENCE_ACCEPT = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].join(',');
 
 export default function RegulatoryCredentialsClient({
@@ -177,7 +180,9 @@ export default function RegulatoryCredentialsClient({
           }
           className={fieldClass}
         >
-          <option value="project">{labels['admin.compliance.credentials.scope.project']}</option>
+          <option value="project" disabled={UNIT_ONLY_TYPES.has(draft.credentialType)}>
+            {labels['admin.compliance.credentials.scope.project']}
+          </option>
           <option value="unit">{labels['admin.compliance.credentials.scope.unit']}</option>
         </select>
 
@@ -213,7 +218,14 @@ export default function RegulatoryCredentialsClient({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <select
           value={draft.credentialType}
-          onChange={(e) => setDraft((prev) => ({ ...prev, credentialType: e.target.value }))}
+          onChange={(e) => {
+            const credentialType = e.target.value;
+            setDraft((prev) =>
+              UNIT_ONLY_TYPES.has(credentialType) && prev.scopeLevel !== 'unit'
+                ? { ...prev, credentialType, scopeLevel: 'unit', unitId: '' }
+                : { ...prev, credentialType }
+            );
+          }}
           className={fieldClass}
         >
           {CREDENTIAL_TYPES.map((type) => (

@@ -142,8 +142,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           await tx.unitMedia.createMany({ data: photos.map((mediaId, sort) => ({ unitId: unit.id, mediaId, sort })), skipDuplicates: true });
           await tx.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0] } });
         }
-        const offers = Array.isArray(data.offers) ? data.offers.filter((v): v is string => typeof v === 'string' && ['short_stay','monthly','yearly','sale'].includes(v)) : [];
-        if (offers.length) await tx.commercialOffering.createMany({ data: offers.map(offeringType => ({ unitId: unit.id, offeringType, status: 'draft' })) });
+        // The intake form speaks the owner's words (short stay / monthly /
+        // yearly / sale); the canonical offering taxonomy has one lease type.
+        // Writing "monthly"/"yearly" created offerings no listing ever reads.
+        const canonicalOffer: Record<string, string> = {
+          short_stay: 'short_stay', monthly: 'long_term_rental', yearly: 'long_term_rental', sale: 'sale',
+        };
+        const offers = Array.from(new Set(
+          (Array.isArray(data.offers) ? data.offers : [])
+            .filter((v): v is string => typeof v === 'string' && v in canonicalOffer)
+            .map(v => canonicalOffer[v])
+        ));
+        if (offers.length) await tx.commercialOffering.createMany({ data: offers.map(offeringType => ({ unitId: unit.id, offeringType, status: 'draft' })), skipDuplicates: true });
       }
 
       const result = { ...data, status: 'converted', canonicalProjectId: projectId, canonicalUnitId: unitId, convertedAt: new Date().toISOString(), reviewedByIdentityId: guard.actorIdentityId };

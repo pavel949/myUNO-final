@@ -132,6 +132,7 @@ export default async function AdminCompliancePage({
     'admin.compliance.credentials.type.hotel_business_license': 'Hotel business licence',
     'admin.compliance.credentials.type.accommodation_exemption': 'Accommodation exemption',
     'admin.compliance.credentials.type.title_legal_use': 'Title legal-use verification',
+    'admin.compliance.credentials.type.sale_authority': 'Sale authority (owner mandate)',
     'admin.compliance.credentials.status.active': 'Active',
     'admin.compliance.credentials.status.expired': 'Expired',
     'admin.compliance.credentials.status.revoked': 'Revoked',

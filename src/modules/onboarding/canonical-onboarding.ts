@@ -148,3 +148,85 @@ export async function deriveUnitOnboardingState(
   if (unit.engagements.length) return { state: blockers.length ? 'readiness_pending' : 'ready_for_activation', blockers };
   return { state: 'unit_matched', blockers };
 }
+
+
+type ActivationDb = Prisma.TransactionClient | import('@prisma/client').PrismaClient;
+
+function credentialCurrent(
+  credential: { status: string; verificationStatus: string; effectiveDate: Date | null; expiryDate: Date | null },
+  now: Date,
+) {
+  return credential.status === 'active' &&
+    credential.verificationStatus === 'verified' &&
+    (!credential.effectiveDate || credential.effectiveDate <= now) &&
+    (!credential.expiryDate || credential.expiryDate >= now);
+}
+
+export async function assertCommercialOfferingReadyForActivation(
+  db: ActivationDb,
+  unitId: string,
+  offeringType: string,
+) {
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    include: {
+      project: { select: { projectType: true } },
+      inventoryCategory: true,
+      media: true,
+      sleepingSpaces: { include: { beds: true } },
+      engagements: { where: { status: 'active' } },
+      complianceRecords: true,
+      regulatoryCredentials: true,
+      ratePlans: { where: { status: 'active' } },
+      mobilizationChecklist: true,
+    },
+  });
+  if (!unit) throw new Error('Unit not found');
+
+  const type = offeringType === 'short_stay' ? 'short_term_stay' : offeringType;
+  const blockers: string[] = [];
+
+  if (!unit.ownerIdentityId) blockers.push('verified_owner_required');
+
+  if (type === 'short_term_stay' || type === 'long_term_rental') {
+    if (!unit.engagements.length) blockers.push('active_operating_engagement_required');
+    if (
+      !unit.permittedUseConfirmedAt ||
+      !unit.complianceRecords.some((record) => record.recordType === 'permitted_use' && record.status === 'confirmed')
+    ) {
+      blockers.push('permitted_use_confirmation_required');
+    }
+  }
+
+  if (type === 'short_term_stay') {
+    if (!unit.inventoryCategory || unit.inventoryCategory.status !== 'live') blockers.push('live_inventory_category_required');
+    if (!unit.inventoryCategory || unit.inventoryCategory.baseNightlyThb <= 0 || unit.inventoryCategory.minNights < 1) {
+      blockers.push('valid_stay_pricing_required');
+    }
+    if (!unit.ratePlans.length) blockers.push('active_rate_plan_required');
+    if (!unit.coverMediaId || unit.media.length < 3) blockers.push('exact_unit_media_required');
+    if (!unit.sleepingSpaces.some((space) => space.beds.length > 0)) blockers.push('sleeping_spaces_required');
+    const completed = new Set(
+      unit.mobilizationChecklist
+        .filter((item) => item.status === 'done' || item.status === 'skipped')
+        .map((item) => item.step),
+    );
+    if (completed.size < 7) blockers.push('hospitality_mobilization_required');
+  }
+
+  if (type === 'sale') {
+    const now = new Date();
+    const title = unit.regulatoryCredentials.some(
+      (credential) => credential.credentialType === 'title_legal_use' && credentialCurrent(credential, now),
+    );
+    const authority = unit.regulatoryCredentials.some(
+      (credential) => credential.credentialType === 'sale_authority' && credentialCurrent(credential, now),
+    );
+    if (!title) blockers.push('verified_title_legal_use_required');
+    if (!authority) blockers.push('verified_sale_authority_required');
+  }
+
+  if (blockers.length) {
+    throw new Error(`offering_activation_blocked:${blockers.join(',')}`);
+  }
+}

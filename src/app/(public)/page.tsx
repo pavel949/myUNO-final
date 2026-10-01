@@ -42,6 +42,8 @@ export default async function LandingPage() {
       'landing.hero.subtitle': 'Handpicked homes, managed residences and everything around them — connected by myUNO.',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
+      'landing.search.locations': 'Locations',
+      'landing.search.projects': 'Projects',
       'landing.search.check_in': 'Check-in',
       'landing.search.check_out': 'Check-out',
       'landing.search.adults': 'Adults',
@@ -241,6 +243,7 @@ export default async function LandingPage() {
           <div className="mt-32 max-w-content">
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+              areas={areas.map((area) => ({ slug: area.slug, name: area.displayName }))}
               labels={{
                 rent: labels['home.discovery.rent'],
                 buy: labels['home.discovery.buy'],
@@ -248,6 +251,8 @@ export default async function LandingPage() {
                 sell: labels['home.discovery.sell'],
                 where: labels['landing.search.where'],
                 allPhuket: labels['landing.search.all_phuket'],
+                locations: labels['landing.search.locations'],
+                projects: labels['landing.search.projects'],
                 checkIn: labels['landing.search.check_in'],
                 checkOut: labels['landing.search.check_out'],
                 adults: labels['landing.search.adults'],

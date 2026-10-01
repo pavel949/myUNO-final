@@ -33,6 +33,8 @@ describe('premium design-system surface parity', () => {
     expect(footer).toContain('/areas');
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');
     expect(source('src/app/areas/[slug]/page.tsx')).toContain('getAreaForBrowse(prisma');
+    expect(source('src/app/(public)/help/page.tsx')).toContain("'/tickets'");
+    expect(source('src/app/(public)/projects/[slug]/passport/page.tsx')).toContain('getPublicProjectPassport(prisma');
   });
 
   it('keeps the homepage conversion sequence grounded in canonical data', () => {
@@ -43,6 +45,27 @@ describe('premium design-system surface parity', () => {
     expect(home).toContain("landing.start.title");
     expect(home).toContain("href: '/sell'");
     expect(home).not.toContain('bg-white');
+  });
+
+  it('keeps list and map search on one canonical search contract', () => {
+    const results = source('src/app/search/search-results.tsx');
+    const route = source('src/app/api/search/units/route.ts');
+    const map = source('src/components/search/SearchResultsMap.tsx');
+    expect(results).toContain('swLat');
+    expect(results).toContain('<SearchResultsMap');
+    expect(route).toContain('parseMapBounds');
+    expect(route).toContain('latitude: Number(rest.project.latitude)');
+    expect(map).toContain('onBoundsChange');
+    expect(map).toContain('tile.openstreetmap.org');
+  });
+
+  it('keeps Project Passport fail-closed over canonical evidence records', () => {
+    const passport = source('src/modules/projects/passport.service.ts');
+    expect(passport).toContain("project.status !== 'live'");
+    expect(passport).toContain('regulatoryCredentials');
+    expect(passport).toContain('commercialOfferings');
+    expect(passport).toContain('complianceRecords');
+    expect(passport).not.toContain("'pass'");
   });
 
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {

@@ -31,6 +31,10 @@ describe('premium design-system surface parity', () => {
     }
     expect(navbar).toContain('/areas');
     expect(footer).toContain('/areas');
+    expect(navbar).toContain('/desks');
+    expect(footer).toContain('/desks');
+    expect(source('src/app/(public)/desks/page.tsx')).toContain('GLOBAL_DESKS');
+    expect(source('src/app/(public)/desks/[slug]/page.tsx')).toContain('getGlobalDesk');
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');
     expect(source('src/app/areas/[slug]/page.tsx')).toContain('getAreaForBrowse(prisma');
     expect(source('src/app/(public)/help/page.tsx')).toContain("'/tickets'");
@@ -44,6 +48,9 @@ describe('premium design-system surface parity', () => {
     expect(home).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).toContain("landing.start.title");
     expect(home).toContain("href: '/sell'");
+    expect(home).toContain('GLOBAL_DESKS.map');
+    expect(home).toContain('listPublicProjects().catch(() => [])');
+    expect(home).toContain('listPublicCommercialHomes(prisma).catch(() => [])');
     expect(home).not.toContain('bg-white');
   });
 
@@ -78,6 +85,7 @@ describe('premium design-system surface parity', () => {
     const sitemap = source('src/app/sitemap.ts');
     expect(sitemap).toContain('${base}/help');
     expect(sitemap).toContain('/passport');
+    expect(sitemap).toContain('${base}/desks');
   });
 
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {

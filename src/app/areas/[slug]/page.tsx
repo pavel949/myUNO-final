@@ -16,6 +16,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
 
   const [labels, publicProjects, areaName, areaDescription] = await Promise.all([
     getLabels({
+      'area.back': 'Phuket areas',
       'area.projects': '{count} public projects',
       'area.children': 'Explore nearby areas',
       'area.collection': 'Projects in this area',
@@ -54,7 +55,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
   return (
     <main className="min-h-screen bg-surface-ivory">
       <RecordPageHeader
-        eyebrow={<Link href="/areas" className="hover:text-brand-andaman">Phuket areas</Link>}
+        eyebrow={<Link href="/areas" className="hover:text-brand-andaman">{labels['area.back']}</Link>}
         title={title}
         subtitle={description || labels['area.projects'].replace('{count}', String(projects.length))}
         chips={

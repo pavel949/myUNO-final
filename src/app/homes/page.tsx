@@ -116,14 +116,14 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
         <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-small text-text-secondary">
             {labels['homes.area_filter']}
-            <select name="area" defaultValue={area} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink">
+            <select name="area" defaultValue={area} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
               <option value="">{labels['homes.all_areas']}</option>
               {areas.map((slug) => <option key={slug} value={slug}>{slug}</option>)}
             </select>
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.type_filter']}
-            <select name="type" defaultValue={type} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink">
+            <select name="type" defaultValue={type} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
               <option value="">{labels['homes.all_types']}</option>
               <option value="condo">{labels['homes.type.condo']}</option>
               <option value="villa">{labels['homes.type.villa']}</option>
@@ -132,23 +132,23 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.bedrooms_filter']}
-            <input name="bedrooms" type="number" min="0" defaultValue={searchParams?.bedrooms || ''} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink" />
+            <input name="bedrooms" type="number" min="0" defaultValue={searchParams?.bedrooms || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.min_area']}
-            <input name="minArea" type="number" min="0" defaultValue={searchParams?.minArea || ''} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink" />
+            <input name="minArea" type="number" min="0" defaultValue={searchParams?.minArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.max_area']}
-            <input name="maxArea" type="number" min="0" defaultValue={searchParams?.maxArea || ''} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink" />
+            <input name="maxArea" type="number" min="0" defaultValue={searchParams?.maxArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.min_price']}
-            <input name="minPrice" type="number" min="0" step="1000" defaultValue={searchParams?.minPrice || ''} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink" />
+            <input name="minPrice" type="number" min="0" step="1000" defaultValue={searchParams?.minPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.max_price']}
-            <input name="maxPrice" type="number" min="0" step="1000" defaultValue={searchParams?.maxPrice || ''} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink" />
+            <input name="maxPrice" type="number" min="0" step="1000" defaultValue={searchParams?.maxPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <button type="submit" className="h-48 self-end rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep">
             {labels['homes.apply_filters']} →

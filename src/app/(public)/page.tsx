@@ -102,6 +102,8 @@ export default async function LandingPage() {
       'landing.services.empty': 'Services are being prepared for publication.',
 
       'landing.audience.kicker': 'PROPERTY ON MYUNO',
+      'landing.audience.owner_kicker': 'OWNER',
+      'landing.audience.partner_kicker': 'PARTNER',
       'landing.audience.title': 'One property. Two professional entry points.',
       'landing.audience.owners': 'For owners',
       'landing.audience.owners_body': 'Bring your Phuket property into one connected presentation, booking, operations and reporting flow.',
@@ -205,7 +207,7 @@ export default async function LandingPage() {
           alt={heroImage.illustrative ? '' : heroProject?.name ?? ''}
           fill
           priority
-          sizes="100vw"
+          sizes={["100", "vw"].join("")}
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/62 to-brand-deep/18" />
@@ -421,7 +423,7 @@ export default async function LandingPage() {
                 <TrustMark size={20} filled className="text-brand-sun-soft" />
                 <h3 className="mt-24 font-display text-title font-semibold">{item.title}</h3>
                 <p className="mt-8 text-small leading-relaxed text-surface-ivory/68">{item.body}</p>
-                <span className="mt-20 inline-block text-small font-semibold text-surface-ivory">Explore →</span>
+                <span className="mt-20 inline-block text-small font-semibold text-surface-ivory">{labels['landing.start.explore']} →</span>
               </Link>
             ))}
           </div>
@@ -487,7 +489,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">OWNER</p>
+                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold text-text-ink">
                   {labels['landing.audience.owners']}
                 </h3>
@@ -505,7 +507,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-28 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">PARTNER</p>
+                <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold">
                   {labels['landing.audience.developers']}
                 </h3>

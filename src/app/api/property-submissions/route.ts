@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
+import { classifyPropertySubmission } from '@/modules/onboarding/canonical-onboarding';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
@@ -94,6 +95,10 @@ export async function POST(req: NextRequest) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
       const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
       if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      if (data.existingUnitId) {
+        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+      }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) {
       return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
@@ -101,14 +106,7 @@ export async function POST(req: NextRequest) {
     const row = await prisma.crmOpportunity.create({
       data: {
         identityId: access.user.identityId,
-        type:
-          data.offers.includes('sale') && data.offers.length === 1
-            ? 'sale'
-            : data.kind === 'management' || data.operatingModel === 'direct_managed'
-              ? 'management'
-              : data.offers.some((offer) => ['short_stay', 'monthly', 'yearly'].includes(offer))
-                ? 'rental'
-                : 'management',
+        type: classifyPropertySubmission(data),
         stage: 'new', title: data.unitName || 'New property draft', source: MARKER,
         projectId: data.projectId, requirements: data,
       },
@@ -134,9 +132,22 @@ export async function PATCH(req: NextRequest) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
       const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
       if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      if (data.existingUnitId) {
+        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+      }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
-    const row = await prisma.crmOpportunity.update({ where: { id }, data: { title: data.unitName || 'New property draft', projectId: data.projectId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management', requirements: data }, select: { id: true, requirements: true } });
+    const row = await prisma.crmOpportunity.update({
+      where: { id },
+      data: {
+        title: data.unitName || 'New property draft',
+        projectId: data.projectId,
+        type: classifyPropertySubmission(data),
+        requirements: data,
+      },
+      select: { id: true, requirements: true },
+    });
     return NextResponse.json(row);
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid submission' }, { status: 400 }); }
 }

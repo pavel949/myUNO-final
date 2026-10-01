@@ -236,4 +236,6 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'nav.footer.help', namespace: 'nav', description: 'Footer Help Center', en: 'Help Center', ru: 'Центр помощи', th: 'ศูนย์ช่วยเหลือ', status: 'needs_review' as const },
 
   { key: 'search.map.aria', namespace: 'search', description: 'Search map accessibility label', en: 'Interactive search map', ru: 'Интерактивная карта поиска', th: 'แผนที่ค้นหาแบบโต้ตอบ', status: 'needs_review' as const },
+
+  { key: 'search.map.homes', namespace: 'search', description: 'Search map project home count', en: '{count} homes', ru: '{count} объектов', th: '{count} ที่พัก', status: 'needs_review' as const },
 ];

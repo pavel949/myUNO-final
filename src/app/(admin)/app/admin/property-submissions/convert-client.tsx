@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 export default function ConvertPropertySubmission({
-  id, status, existingProjectId, projects, organizations, areas, proposedAddress, proposedAreaId, proposedLatitude, proposedLongitude, applicantKind, canonicalProjectId, canonicalUnitId,
+  id, status, existingProjectId, projects, organizations, areas, proposedAddress, proposedAreaId, proposedLatitude, proposedLongitude, applicantKind, canonicalProjectId, canonicalUnitId, initialReviewNote,
 }: {
   id: string; status: string; existingProjectId: string | null;
   projects: { id: string; name: string }[];
@@ -14,6 +14,7 @@ export default function ConvertPropertySubmission({
   proposedAddress: string; proposedAreaId: string | null;
   proposedLatitude: number | null; proposedLongitude: number | null;
   canonicalProjectId?: string | null; canonicalUnitId?: string | null;
+  initialReviewNote?: string | null;
 }) {
   const [projectId, setProjectId] = useState(existingProjectId || '');
   const [organizationId, setOrganizationId] = useState('');
@@ -28,9 +29,89 @@ export default function ConvertPropertySubmission({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ projectId: string; unitId: string | null } | null>(null);
-  if (status === 'converted') return <div className="mt-12 rounded-lg bg-state-success-soft p-16"><p>Canonical draft created.</p>{canonicalProjectId && <Link className="text-brand-andaman underline" href={`/app/admin/properties/${canonicalProjectId}/onboarding`}>Continue project onboarding →</Link>}{canonicalUnitId && <Link className="ml-12 text-brand-andaman underline" href={`/app/admin/units/${canonicalUnitId}`}>Open home →</Link>}</div>;
-  if (status !== 'submitted') return <p className="mt-12 text-small text-text-secondary">Awaiting applicant submission.</p>;
-  if (result) return <div role="status" className="mt-12 rounded-lg bg-state-success-soft p-16"><p>Created canonical draft records. Existing activation checks still apply.</p><Link className="text-brand-andaman underline" href={`/app/admin/properties/${result.projectId}/onboarding`}>Complete project onboarding →</Link>{result.unitId && <Link className="ml-12 text-brand-andaman underline" href={`/app/admin/units/${result.unitId}`}>Complete home →</Link>}</div>;
+  const [currentStatus, setCurrentStatus] = useState(status);
+  const [reviewNote, setReviewNote] = useState(initialReviewNote || '');
+  const [reviewBusy, setReviewBusy] = useState(false);
+
+  const review = async (action: 'start_review' | 'request_changes' | 'approve') => {
+    setReviewBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/admin/property-submissions/${id}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, note: reviewNote }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Review update failed');
+      setCurrentStatus(data.status);
+      if (typeof data.reviewNote === 'string') setReviewNote(data.reviewNote);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Review update failed');
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+  if (currentStatus === 'converted') {
+    return <div className="mt-12 rounded-lg bg-state-success-soft p-16">
+      <p>Canonical draft created.</p>
+      {canonicalProjectId && <Link className="text-brand-andaman underline" href={`/app/admin/properties/${canonicalProjectId}/onboarding`}>Continue project onboarding →</Link>}
+      {canonicalUnitId && <Link className="ml-12 text-brand-andaman underline" href={`/app/admin/units/${canonicalUnitId}`}>Open home →</Link>}
+    </div>;
+  }
+
+  if (currentStatus === 'draft') {
+    return <p className="mt-12 text-small text-text-secondary">Awaiting applicant submission.</p>;
+  }
+
+  if (currentStatus === 'changes_requested') {
+    return <div className="mt-12 rounded-lg border border-state-warning bg-state-warning-soft p-16">
+      <p className="font-semibold">Changes requested from applicant.</p>
+      {reviewNote ? <p className="mt-4 whitespace-pre-wrap text-small">{reviewNote}</p> : null}
+      <p className="mt-8 text-small text-text-secondary">The applicant can edit the same application and resubmit it. No duplicate property record is created.</p>
+    </div>;
+  }
+
+  if (currentStatus === 'submitted' || currentStatus === 'under_review') {
+    return <div className="mt-16 space-y-12 border-t border-border-line pt-16">
+      <div className="flex flex-wrap items-center justify-between gap-12">
+        <div>
+          <h3 className="font-semibold">{currentStatus === 'submitted' ? 'New application' : 'Review in progress'}</h3>
+          <p className="text-small text-text-secondary">Keep one application record through review, corrections and approval.</p>
+        </div>
+        {currentStatus === 'submitted' ? (
+          <button type="button" disabled={reviewBusy} onClick={() => void review('start_review')} className="rounded-lg border border-border-line px-16 py-10 text-small font-semibold disabled:opacity-40">
+            Start review
+          </button>
+        ) : null}
+      </div>
+      <label className="block text-small">Message to applicant if changes are required
+        <textarea value={reviewNote} onChange={e => setReviewNote(e.target.value)} className="mt-4 block min-h-24 w-full rounded-lg border border-border-line p-12" placeholder="State exactly what must be corrected." />
+      </label>
+      {error && <p role="alert" className="text-state-error">{error}</p>}
+      <div className="flex flex-wrap gap-8">
+        <button type="button" disabled={reviewBusy || !reviewNote.trim()} onClick={() => void review('request_changes')} className="rounded-lg border border-state-warning px-16 py-10 text-small font-semibold disabled:opacity-40">
+          Request changes
+        </button>
+        <button type="button" disabled={reviewBusy} onClick={() => void review('approve')} className="rounded-lg bg-brand-andaman px-16 py-10 text-small font-semibold text-white disabled:opacity-40">
+          Approve application
+        </button>
+      </div>
+    </div>;
+  }
+
+  if (result) {
+    return <div role="status" className="mt-12 rounded-lg bg-state-success-soft p-16">
+      <p>Created canonical draft records. Existing activation checks still apply.</p>
+      <Link className="text-brand-andaman underline" href={`/app/admin/properties/${result.projectId}/onboarding`}>Complete project onboarding →</Link>
+      {result.unitId && <Link className="ml-12 text-brand-andaman underline" href={`/app/admin/units/${result.unitId}`}>Complete home →</Link>}
+    </div>;
+  }
+
+  if (currentStatus !== 'approved') {
+    return <p className="mt-12 text-small text-text-secondary">Application state: {currentStatus}</p>;
+  }
+
   return <form className="mt-16 space-y-12 border-t border-border-line pt-16" onSubmit={async e => {
     e.preventDefault(); setError(''); setBusy(true);
     try {

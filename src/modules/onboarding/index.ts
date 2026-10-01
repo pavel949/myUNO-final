@@ -1,4 +1,5 @@
 export {
+  assertCommercialOfferingReadyForActivation,
   canonicalOfferings,
   classifyPropertySubmission,
   deriveUnitOnboardingState,

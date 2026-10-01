@@ -54,6 +54,26 @@ describe('one property intake and verified canonical conversion', () => {
     expect((await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } })).title).toBe('F705');
   });
 
+  it('classifies owner-direct rental intake as rental CRM rather than management', async () => {
+    const created = await (await POST(req('POST', {
+      ...application(),
+      offers: ['monthly'],
+      operatingModel: 'owner_direct',
+    }))).json();
+    const opportunity = await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } });
+    expect(opportunity.type).toBe('rental');
+  });
+
+  it('classifies direct-managed rental intake as management CRM', async () => {
+    const created = await (await POST(req('POST', {
+      ...application(),
+      offers: ['monthly'],
+      operatingModel: 'direct_managed',
+    }))).json();
+    const opportunity = await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } });
+    expect(opportunity.type).toBe('management');
+  });
+
   it('keeps a submitted application immutable to applicants', async () => {
     const created = await (await POST(req('POST', { ...application(), status: 'submitted' }))).json();
     expect((await PATCH(req('PATCH', { id: created.id, unitName: 'Changed' }))).status).toBe(409);

@@ -80,6 +80,7 @@ export {
 // owner; these answer who owned it *then*, which is what money records need.
 export {
   setUnitOwner,
+  setUnitOwnerTx,
   getOwnerAt,
   getOwnershipHistory,
   ensureOwnershipRecorded,

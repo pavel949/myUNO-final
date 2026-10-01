@@ -137,6 +137,8 @@ export default async function ProjectLandingPage({
     'project_page.trust.terms_body': 'Availability and the applicable price are checked before a booking is accepted.',
     'project_page.trust.responsibility': 'Know who operates it',
     'project_page.trust.responsibility_body': 'Management is property-specific; a listing on myUNO does not itself mean direct management.',
+    'project_page.trust.passport': 'View public Project Passport',
+    'project_page.trust.passport_body': 'See the evidence currently documented in myUNO, including regulatory, organization, commercial and unit-compliance coverage.',
     'landing.trust.cta': 'Learn how →',
     'landing.search.check_in': 'Check-in',
     'landing.search.check_out': 'Check-out',
@@ -636,11 +638,20 @@ export default async function ProjectLandingPage({
             </div>
           ))}
         </div>
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center gap-10 text-center sm:flex-row">
+          <Link
+            href={`/projects/${project.slug}/passport`}
+            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep"
+          >
+            {labels['project_page.trust.passport']}
+          </Link>
           <Link href="/trust" className="text-brand-andaman font-semibold hover:underline">
             {labels['landing.trust.cta']}
           </Link>
         </div>
+        <p className="mx-auto mt-12 max-w-2xl text-center text-small text-text-secondary">
+          {labels['project_page.trust.passport_body']}
+        </p>
       </section>
     </main>
   );

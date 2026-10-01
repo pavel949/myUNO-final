@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import ProjectAmenitiesSection, { type PublicProjectAmenity } from '@/components/projects/ProjectAmenitiesSection';
+import { ProcessStepper, RecordPageHeader, StatusChip } from '@/components/premium/PremiumPrimitives';
 import {
   StayCard,
   QuickActionsRow,
@@ -15,6 +16,8 @@ import {
   Button,
   type RailService,
 } from '@/components';
+
+const DONE_STATUS_TONE = 'done' as const;
 
 interface Unit {
   id: string;
@@ -219,18 +222,59 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     </div>
   );
 
+  const stepState = (step: 'booked' | 'prepare' | 'arrival' | 'stay' | 'checkout') => {
+    const order = ['booked', 'prepare', 'arrival', 'stay', 'checkout'] as const;
+    const current =
+      booking.status === 'checked_out' || booking.status === 'completed'
+        ? 4
+        : booking.status === 'checked_in'
+          ? 3
+          : booking.status === 'confirmed'
+            ? 1
+            : 0;
+    const index = order.indexOf(step);
+    if (index < current) return 'done' as const;
+    if (index === current) return 'active' as const;
+    return 'neutral' as const;
+  };
+
   return (
     <div className="min-h-screen bg-surface-ivory">
-      <div className="bg-brand-andaman text-surface-ivory px-24 py-16">
-        <div className="max-w-content mx-auto">
-          <p className="text-small m-0 mb-4">{welcomeLine}</p>
-          <h1 className="font-display text-display font-semibold m-0">
-            {booking.unit.project.name}
-          </h1>
-        </div>
-      </div>
+      <RecordPageHeader
+        eyebrow={welcomeLine}
+        title={booking.unit.project.name}
+        subtitle={booking.unit.name}
+        chips={
+          <>
+            <StatusChip tone={inStay ? 'active' : booking.status === 'checked_out' ? 'done' : 'neutral'}>
+              {labels[`home.stay_status.${booking.status}`] ?? booking.status}
+            </StatusChip>
+            {paidInFull ? <StatusChip tone={DONE_STATUS_TONE}>{labels['home.stay.paid_in_full']}</StatusChip> : null}
+            {tm30Filed ? <StatusChip tone={DONE_STATUS_TONE}>{labels['home.stay.tm30_filed']}</StatusChip> : null}
+          </>
+        }
+        actions={
+          <Link
+            href={`/trips/${booking.id}`}
+            className="inline-flex min-h-44 items-center rounded-lg border border-border-line bg-surface-paper px-16 text-small font-semibold text-text-ink hover:border-border-line-2"
+          >
+            {labels['home.pass.title']}
+          </Link>
+        }
+      />
 
-      <div className="max-w-content mx-auto px-16 py-24 lg:px-32">
+      <div className="mx-auto max-w-content px-16 py-24 lg:px-32">
+        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-20">
+          <ProcessStepper
+            steps={[
+              { label: labels['home.pass.booked'], state: stepState('booked') },
+              { label: labels['home.pass.prepare'], state: stepState('prepare') },
+              { label: labels['home.pass.arrival'], state: stepState('arrival') },
+              { label: labels['home.pass.stay'], state: stepState('stay') },
+              { label: labels['home.pass.checkout'], state: stepState('checkout') },
+            ]}
+          />
+        </section>
         {secondaryRoles.length > 0 ? (
           <RoleContextBanner
             message={(labels['home.role_context'] ?? '')

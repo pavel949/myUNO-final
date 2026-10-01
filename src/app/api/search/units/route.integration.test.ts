@@ -189,6 +189,8 @@ describe('GET /api/search/units — a unit is only as public as its project', ()
       )
     ).json();
     expect(inView.units).toHaveLength(1);
+    expect(inView.mapProjects).toHaveLength(1);
+    expect(inView.mapProjects[0]).toMatchObject({ id: expect.any(String), unitCount: 1 });
 
     const outOfView = await (
       await GET(
@@ -199,6 +201,7 @@ describe('GET /api/search/units — a unit is only as public as its project', ()
       )
     ).json();
     expect(outOfView.units).toHaveLength(0);
+    expect(outOfView.mapProjects).toEqual([]);
   });
 });
 

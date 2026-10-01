@@ -20,17 +20,21 @@ function navLinkClass(pathname: string, href: string, extra = '') {
 export interface NavbarUser {
   firstName: string;
   isAdmin: boolean;
-  roles: string[]; // distinct RoleType values, e.g. ['owner', 'guest']
+  roles: string[];
 }
 
 export interface NavbarLabels {
-  findStay: string;
-  residences: string;
-  homes?: string;
+  stay: string;
+  monthly: string;
+  buy: string;
+  sell: string;
+  areas: string;
+  projects: string;
   services: string;
   owners: string;
   about: string;
   trust: string;
+  help: string;
   language: string;
   login: string;
   register: string;
@@ -47,13 +51,6 @@ export interface NavbarLabels {
 interface NavbarProps {
   user: NavbarUser | null;
   labels: NavbarLabels;
-  /**
-   * The surfaces this person's roles give them, resolved server-side by
-   * `core.availableSurfaces` so the menu and the `/app` landing cannot drift
-   * apart. They used to be derived here from a second, hand-maintained list of
-   * role checks, which is how resident and juristic members ended up with no
-   * way into their own portals.
-   */
   roleLinks: { href: string; label: string }[];
   bellLabels: BellLabels;
   locale: string;
@@ -78,184 +75,203 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   const closeMenu = () => setMenuOpen(false);
 
+  const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
+    { href: '/search', label: labels.stay },
+    { href: '/homes?intent=rent', label: labels.monthly, activeBase: '/homes' },
+    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/sell', label: labels.sell },
+    { href: '/projects', label: labels.projects },
+    { href: '/services', label: labels.services },
+  ];
+
   const userLinks = user
     ? [
-        // Everything anyone signed in has, whatever roles they hold: their
-        // stays, their conversations, the requests they raised, the services
-        // they ordered. Each of these was reachable only from wherever it
-        // happened to be linked, which meant an order was findable only if you
-        // still had the link.
         { href: '/trips', label: labels.myTrips },
         { href: '/saved', label: labels.saved || 'Saved' },
         { href: '/property/onboard', label: 'Add a property' },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },
-        // Then the surfaces their roles give them (resolved server-side).
         ...roleLinks,
-        // Last, and for everyone: an account is not a role, it is the person.
         { href: '/account', label: labels.account },
       ]
     : [];
 
   return (
-    <header className="sticky top-0 z-40 bg-surface-paper border-b border-border-line">
-      <nav className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-y-8 min-h-64 px-24 py-8">
-        <div className="flex items-center gap-40">
+    <header className="sticky top-0 z-40 border-b border-border-line bg-surface-paper/95 backdrop-blur">
+      <nav className="mx-auto flex min-h-64 max-w-7xl items-center justify-between gap-16 px-20 py-8 md:px-32">
+        <div className="flex min-w-0 items-center gap-32 xl:gap-40">
           <Link
             href="/"
-            className="font-display text-heading-3 font-bold text-brand-andaman"
+            className="shrink-0 font-display text-heading-3 font-bold tracking-[-0.02em] text-brand-andaman"
             onClick={closeMenu}
           >
             myUNO
           </Link>
-          <div className="hidden lg:flex items-center gap-x-24">
-            <Link href="/search" className={navLinkClass(pathname, '/search')}>
-              {labels.findStay}
-            </Link>
-            <Link href="/projects" className={navLinkClass(pathname, '/projects')}>
-              {labels.residences}
-            </Link>
-            <Link href="/homes" className={navLinkClass(pathname, '/homes')}>
-              {labels.homes || 'Homes'}
-            </Link>
-            <Link href="/services" className={navLinkClass(pathname, '/services')}>
-              {labels.services}
-            </Link>
-            <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
-              {labels.owners}
-            </Link>
-            <details className="relative group">
-              <summary className="cursor-pointer list-none text-body text-text-ink hover:text-brand-andaman">{labels.about} +</summary>
-              <div className="absolute left-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
-                <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
-                <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
-                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
-                <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
-              </div>
-            </details>
+
+          <div className="hidden items-center gap-x-20 xl:flex">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={navLinkClass(pathname, link.activeBase || link.href)}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
 
-        {/* Desktop auth area */}
-        <div className="hidden md:flex flex-wrap items-center justify-end gap-x-16 gap-y-8">
+        <div className="hidden items-center justify-end gap-x-12 lg:flex">
+          <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
+            {labels.owners}
+          </Link>
+
+          <details className="relative">
+            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body text-text-ink hover:text-brand-andaman">
+              {labels.about}
+            </summary>
+            <div className="absolute right-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+              <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
+              <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
+              <Link href="/help" className={navLinkClass(pathname, '/help')}>{labels.help}</Link>
+              <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
+              <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
+              <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
+              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management</Link>
+            </div>
+          </details>
+
           <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
+
           {user ? (
             <>
               <details className="relative">
-                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-10 font-semibold text-brand-andaman">{user.firstName} · My UNO ▾</summary>
-                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[240px] flex-col gap-10 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-card">
-                  {userLinks.map(link => <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>{link.label}</Link>)}
+                <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-10 text-small font-semibold text-brand-andaman hover:border-border-line-2">
+                  {user.firstName} · My UNO
+                </summary>
+                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-10 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+                  {userLinks.map((link) => (
+                    <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
               </details>
               <NotificationBell labels={bellLabels} />
-                  <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>
-                {labels.logout}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  {labels.login}
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button variant="primary" size="sm">
-                  {labels.register}
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile bell + hamburger */}
-        <div className="lg:hidden flex items-center">
-          {user && <NotificationBell labels={bellLabels} />}
-        </div>
-        <button
-          type="button"
-          aria-label={labels.menu}
-          aria-expanded={menuOpen}
-          className="lg:hidden flex items-center justify-center w-44 h-44 text-text-ink"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            {menuOpen ? (
-              <path
-                d="M6 6l12 12M18 6L6 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            ) : (
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            )}
-          </svg>
-        </button>
-      </nav>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="lg:hidden border-t border-border-line bg-surface-paper px-24 py-16 flex flex-col gap-16">
-          <Link href="/search" className={navLinkClass(pathname, '/search', 'py-8')} onClick={closeMenu}>
-            {labels.findStay}
-          </Link>
-          <Link href="/projects" className={navLinkClass(pathname, '/projects', 'py-8')} onClick={closeMenu}>
-            {labels.residences}
-          </Link>
-          <Link href="/homes" className={navLinkClass(pathname, '/homes', 'py-8')} onClick={closeMenu}>
-            {labels.homes || 'Homes'}
-          </Link>
-          <Link href="/services" className={navLinkClass(pathname, '/services', 'py-8')} onClick={closeMenu}>
-            {labels.services}
-          </Link>
-          <Link href="/owners" className={navLinkClass(pathname, '/owners', 'py-8')} onClick={closeMenu}>
-            {labels.owners}
-          </Link>
-          <Link href="/about" className={navLinkClass(pathname, '/about', 'py-8')} onClick={closeMenu}>
-            {labels.about}
-          </Link>
-          <Link href="/trust" className={navLinkClass(pathname, '/trust', 'py-8')} onClick={closeMenu}>
-            {labels.trust}
-          </Link>
-          {user ? (
-            <>
-              {userLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={navLinkClass(pathname, link.href, 'py-8')}
-                  onClick={closeMenu}
-                >
-                  {link.label}
-                </Link>
-              ))}
               <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>
                 {labels.logout}
               </Button>
             </>
           ) : (
-            <div className="flex gap-16">
-              <Link href="/login" onClick={closeMenu} className="flex-1">
-                <Button variant="ghost" size="sm" fullWidth>
-                  {labels.login}
-                </Button>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                {labels.login}
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 lg:hidden">
+          {user ? <NotificationBell labels={bellLabels} /> : null}
+          <button
+            type="button"
+            aria-label={labels.menu}
+            aria-expanded={menuOpen}
+            className="flex h-44 w-44 items-center justify-center text-text-ink"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              {menuOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      {menuOpen ? (
+        <div className="max-h-[calc(100vh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 lg:hidden">
+          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Explore</p>
+          <div className="flex flex-col">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-14')}
+                onClick={closeMenu}
+              >
+                {link.label}
               </Link>
-              <Link href="/register" onClick={closeMenu} className="flex-1">
-                <Button variant="primary" size="sm" fullWidth>
-                  {labels.register}
-                </Button>
+            ))}
+          </div>
+
+          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">Property</p>
+          <div className="flex flex-col">
+            <Link href="/owners" className={navLinkClass(pathname, '/owners', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.owners}
+            </Link>
+            <Link href="/areas" className={navLinkClass(pathname, '/areas', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.areas}
+            </Link>
+            <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              Developers
+            </Link>
+            <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              Management
+            </Link>
+          </div>
+
+          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">myUNO</p>
+          <div className="flex flex-col">
+            <Link href="/about" className={navLinkClass(pathname, '/about', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.about}
+            </Link>
+            <Link href="/trust" className={navLinkClass(pathname, '/trust', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.trust}
+            </Link>
+            <Link href="/help" className={navLinkClass(pathname, '/help', 'border-b border-border-line py-14')} onClick={closeMenu}>
+              {labels.help}
+            </Link>
+          </div>
+
+          {user ? (
+            <>
+              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My UNO</p>
+              <div className="flex flex-col">
+                {userLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={navLinkClass(pathname, link.href, 'border-b border-border-line py-14')}
+                    onClick={closeMenu}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+              <Button className="mt-20" variant="secondary" size="md" fullWidth onClick={handleLogout} isLoading={loggingOut}>
+                {labels.logout}
+              </Button>
+            </>
+          ) : (
+            <div className="mt-24 grid grid-cols-2 gap-12">
+              <Link href="/login" onClick={closeMenu}>
+                <Button variant="secondary" size="md" fullWidth>{labels.login}</Button>
+              </Link>
+              <Link href="/register" onClick={closeMenu}>
+                <Button variant="primary" size="md" fullWidth>{labels.register}</Button>
               </Link>
             </div>
           )}
+
+          <div className="mt-24">
+            <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
+          </div>
         </div>
-      )}
+      ) : null}
     </header>
   );
 }

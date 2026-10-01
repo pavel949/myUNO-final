@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
+import { SearchResultsMap, type SearchMapProject } from '@/components/search/SearchResultsMap';
 
 /** One screenful. Beyond this the guest asks for more rather than waiting for it. */
 const PAGE_SIZE = 24;
@@ -16,6 +17,7 @@ interface Unit {
   baseNightlyThb: number;
   description?: string;
   projectId?: string;
+  project?: { id: string; name: string; slug: string; latitude: number; longitude: number } | null;
   coverUrl?: string | null;
   /** Null when nobody has reviewed it — unknown, not zero. */
   averageRating?: number | null;
@@ -59,6 +61,12 @@ export interface SearchResultsLabels {
   filterMin: string;
   filterMax: string;
   filterClear: string;
+  mapLoading: string;
+  mapUnavailable: string;
+  mapReset: string;
+  mapResults: string;
+  mapAria: string;
+  mapHomes: string;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -92,6 +100,8 @@ export default function SearchResults({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [mapProjects, setMapProjects] = useState<SearchMapProject[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -104,6 +114,11 @@ export default function SearchResults({
   const unitTypes = searchParams?.get('unitTypes') || '';
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
+  const swLat = searchParams?.get('swLat') || '';
+  const swLng = searchParams?.get('swLng') || '';
+  const neLat = searchParams?.get('neLat') || '';
+  const neLng = searchParams?.get('neLng') || '';
+  const hasMapBounds = Boolean(swLat && swLng && neLat && neLng);
   const hasDates = Boolean(startDate && endDate);
   const selectedTypes = new Set(unitTypes.split(',').filter(Boolean));
 
@@ -137,6 +152,12 @@ export default function SearchResults({
         if (unitTypes) params.set('unitTypes', unitTypes);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
+        if (hasMapBounds) {
+          params.set('swLat', swLat);
+          params.set('swLng', swLng);
+          params.set('neLat', neLat);
+          params.set('neLng', neLng);
+        }
 
         const response = await fetch(`/api/search/units?${params}`);
         if (!response.ok) {
@@ -147,6 +168,7 @@ export default function SearchResults({
         if (generation !== requestRef.current) return;
 
         setUnits((previous) => (offset === 0 ? data.units : [...previous, ...data.units]));
+        setMapProjects(Array.isArray(data.mapProjects) ? data.mapProjects : []);
         setTotal(data.total);
         setSearched(true);
 
@@ -174,13 +196,14 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
     if (!hasDates) {
       requestRef.current++;
       setUnits([]);
+      setMapProjects([]);
       setTotal(0);
       setSearched(false);
       setError(null);
@@ -213,6 +236,42 @@ export default function SearchResults({
       else next.set('unitTypes', Array.from(current).join(','));
     });
   };
+
+  const handleMapBoundsChange = useCallback(
+    (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => {
+      const next = new URLSearchParams(window.location.search);
+      const incoming = [bounds.swLat, bounds.swLng, bounds.neLat, bounds.neLng].map(String);
+      const current = [next.get('swLat'), next.get('swLng'), next.get('neLat'), next.get('neLng')];
+      if (incoming.every((value, index) => value === current[index])) return;
+      next.set('swLat', incoming[0]);
+      next.set('swLng', incoming[1]);
+      next.set('neLat', incoming[2]);
+      next.set('neLng', incoming[3]);
+      router.replace(`/search?${next.toString()}`, { scroll: false });
+    },
+    [router]
+  );
+
+  const resetMapBounds = () =>
+    replaceFilters((next) => {
+      next.delete('swLat');
+      next.delete('swLng');
+      next.delete('neLat');
+      next.delete('neLng');
+    });
+
+  const handleMapProjectSelect = useCallback(
+    (selected: string) => {
+      setSelectedProjectId(selected);
+      const unit = units.find((candidate) => candidate.project?.id === selected);
+      if (unit) {
+        document
+          .getElementById(`unit-card-${unit.id}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    },
+    [units]
+  );
 
   const handleBookCategory = (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;
@@ -397,78 +456,114 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && searched && units.length === 0 && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-            <p className="text-body text-text-ink mb-8">{labels.empty}</p>
-            <p className="text-small text-text-secondary">{labels.emptyHint}</p>
-          </div>
-        )}
+        {!loading && searched && (
+          <section className="grid gap-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+            <div>
+              <div className="mb-12 flex flex-wrap items-center justify-between gap-8">
+                <p className="text-small text-text-secondary">
+                  {fill(labels.mapResults, { shown: units.length, total })}
+                </p>
+                {hasMapBounds ? (
+                  <button
+                    type="button"
+                    onClick={resetMapBounds}
+                    className="text-small font-semibold text-brand-andaman hover:underline"
+                  >
+                    {labels.mapReset}
+                  </button>
+                ) : null}
+              </div>
 
-        {!loading && units.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
-            {units.map((unit) => (
-              <Link
-                key={unit.id}
-                href={`/units/${unit.id}?${new URLSearchParams({
-                  startDate: startDate || '',
-                  endDate: endDate || '',
-                  adults,
-                  children,
-                  ...(projectId ? { projectId } : {}),
-                  ...(areaSlug ? { areaSlug } : {}),
-                  ...(stayMode ? { stayMode } : {}),
-                }).toString()}`}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition-shadow duration-micro"
-              >
-                {unit.coverUrl ? (
-                  <Image
-                    src={unit.coverUrl}
-                    alt={unit.name}
-                    width={640}
-                    height={360}
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                )}
-                <div className="p-16">
-                  <h3 className="text-subtitle font-semibold text-text-ink mb-8">{unit.name}</h3>
-                  <p className="font-display text-title font-semibold text-brand-andaman mb-4 tabular-nums">
-                    {formatBaht(unit.baseNightlyThb ?? 0)}
-                  </p>
-                  <p className="text-small text-text-secondary">{labels.perNight}</p>
-                  {/* A villa nobody has reviewed shows nothing, rather than a
-                      zero — it is unknown, not bad. */}
-                  {unit.averageRating !== null && unit.averageRating !== undefined && (
-                    <p className="text-small text-text-secondary mt-8">
-                      {fill(labels.ratingSummary, {
-                        rating: unit.averageRating.toFixed(1),
-                        count: unit.reviewCount ?? 0,
-                      })}
-                    </p>
-                  )}
+              {units.length === 0 ? (
+                <div className="rounded-lg border border-border-line bg-surface-paper p-32 text-center">
+                  <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
+                  <p className="text-small text-text-secondary">{labels.emptyHint}</p>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
+                    {units.map((unit) => (
+                      <Link
+                        id={`unit-card-${unit.id}`}
+                        key={unit.id}
+                        href={`/units/${unit.id}?${new URLSearchParams({
+                          startDate: startDate || '',
+                          endDate: endDate || '',
+                          adults,
+                          children,
+                          ...(projectId ? { projectId } : {}),
+                          ...(areaSlug ? { areaSlug } : {}),
+                          ...(stayMode ? { stayMode } : {}),
+                        }).toString()}`}
+                        onMouseEnter={() => setSelectedProjectId(unit.project?.id ?? null)}
+                        onFocus={() => setSelectedProjectId(unit.project?.id ?? null)}
+                        className={
+                          selectedProjectId && selectedProjectId === unit.project?.id
+                            ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
+                            : 'overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
+                        }
+                      >
+                        {unit.coverUrl ? (
+                          <Image
+                            src={unit.coverUrl}
+                            alt={unit.name}
+                            width={640}
+                            height={360}
+                            className="aspect-video w-full object-cover"
+                          />
+                        ) : (
+                          <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                        )}
+                        <div className="p-16">
+                          {unit.project?.name ? (
+                            <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>
+                          ) : null}
+                          <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
+                          <p className="mb-4 font-display text-title font-semibold tabular-nums text-brand-andaman">
+                            {formatBaht(unit.baseNightlyThb ?? 0)}
+                          </p>
+                          <p className="text-small text-text-secondary">{labels.perNight}</p>
+                          {unit.averageRating !== null && unit.averageRating !== undefined && (
+                            <p className="mt-8 text-small text-text-secondary">
+                              {fill(labels.ratingSummary, {
+                                rating: unit.averageRating.toFixed(1),
+                                count: unit.reviewCount ?? 0,
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
 
-        {!loading && units.length > 0 && (
-          <div className="mt-32 text-center">
-            <p className="text-small text-text-secondary mb-16">
-              {fill(labels.showing, { shown: units.length, total })}
-            </p>
-            {units.length < total && (
-              <button
-                type="button"
-                onClick={() => fetchPage(units.length)}
-                disabled={loadingMore}
-                className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition disabled:opacity-50"
-              >
-                {loadingMore ? labels.loadingMore : labels.loadMore}
-              </button>
-            )}
-          </div>
+                  <div className="mt-32 text-center">
+                    <p className="mb-16 text-small text-text-secondary">
+                      {fill(labels.showing, { shown: units.length, total })}
+                    </p>
+                    {units.length < total && (
+                      <button
+                        type="button"
+                        onClick={() => fetchPage(units.length)}
+                        disabled={loadingMore}
+                        className="h-48 rounded-sm border border-brand-andaman px-24 font-semibold text-brand-andaman transition hover:bg-brand-andaman/10 disabled:opacity-50"
+                      >
+                        {loadingMore ? labels.loadingMore : labels.loadMore}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <SearchResultsMap
+              projects={mapProjects}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={handleMapProjectSelect}
+              onBoundsChange={handleMapBoundsChange}
+              labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable, homes: labels.mapHomes, aria: labels.mapAria }}
+              fitToProjects={!hasMapBounds}
+            />
+          </section>
         )}
       </div>
     </div>

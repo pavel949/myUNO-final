@@ -398,7 +398,7 @@ export async function GET(req: NextRequest) {
 
     const listInclude = {
       project: {
-        select: { id: true, name: true, projectType: true },
+        select: { id: true, name: true, slug: true, projectType: true, latitude: true, longitude: true },
       },
       inventoryCategory: {
         select: {
@@ -426,6 +426,17 @@ export async function GET(req: NextRequest) {
       stayTotalThb: number | null;
       ratePlanCode: string | null;
       minNights: number | null;
+    };
+
+    type MapCandidate = {
+      projectId: string;
+      project: {
+        id: string;
+        name: string;
+        slug: string;
+        latitude: unknown;
+        longitude: unknown;
+      };
     };
 
     const priceUnit = async (unit: UnitWithListRelations): Promise<PricedUnit | null> => {
@@ -476,6 +487,7 @@ export async function GET(req: NextRequest) {
 
     let pricedUnits: PricedUnit[];
     let total: number;
+    let mapCandidates: MapCandidate[] = [];
 
     if (needsCanonicalPricingAcrossCandidates) {
       const candidates = await prisma.unit.findMany({ where, include: listInclude });
@@ -522,6 +534,10 @@ export async function GET(req: NextRequest) {
         });
       }
 
+      mapCandidates = filtered.map((priced) => ({
+        projectId: priced.unit.projectId,
+        project: priced.unit.project,
+      }));
       pricedUnits = filtered.slice(offset, offset + limit);
     } else {
       let rankedPageIds: string[] | null = null;
@@ -564,7 +580,50 @@ export async function GET(req: NextRequest) {
       const priced = await Promise.all(orderedPage.map(priceUnit));
       pricedUnits = priced.filter((value): value is PricedUnit => value !== null);
       total = await prisma.unit.count({ where });
+
+      const allMapUnits = await prisma.unit.findMany({
+        where,
+        select: {
+          projectId: true,
+          project: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              latitude: true,
+              longitude: true,
+            },
+          },
+        },
+      });
+      mapCandidates = allMapUnits;
     }
+
+    const mapByProject = new Map<
+      string,
+      { id: string; name: string; slug: string; latitude: number; longitude: number; unitCount: number }
+    >();
+    for (const candidate of mapCandidates) {
+      const latitude = Number(candidate.project.latitude);
+      const longitude = Number(candidate.project.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || (latitude === 0 && longitude === 0)) {
+        continue;
+      }
+      const existing = mapByProject.get(candidate.projectId);
+      if (existing) {
+        existing.unitCount += 1;
+      } else {
+        mapByProject.set(candidate.projectId, {
+          id: candidate.project.id,
+          name: candidate.project.name,
+          slug: candidate.project.slug,
+          latitude,
+          longitude,
+          unitCount: 1,
+        });
+      }
+    }
+    const mapProjects = Array.from(mapByProject.values()).sort((a, b) => a.name.localeCompare(b.name));
 
     const ratings = await getUnitRatings(prisma, pricedUnits.map((p) => p.unit.id));
 
@@ -584,6 +643,13 @@ export async function GET(req: NextRequest) {
           const rating = ratings.get(priced.unit.id);
           return {
             ...rest,
+            project: rest.project
+              ? {
+                  ...rest.project,
+                  latitude: Number(rest.project.latitude),
+                  longitude: Number(rest.project.longitude),
+                }
+              : null,
             // Compatibility field consumed by current search cards. For dated
             // searches it now carries the canonical effective nightly amount
             // from the same calculator used by booking creation.
@@ -605,6 +671,7 @@ export async function GET(req: NextRequest) {
         limit,
         offset,
         sort: sort.key,
+        mapProjects,
       },
       { status: 200 }
     );

@@ -98,31 +98,32 @@ function seasonDuration(date: Date, season: SeasonPeriod): number {
  * config.get() so project/unit overrides win over the global default.
  * More specific (shorter) ranges win on overlap.
  */
+function selectApplicableSeason(
+  seasons: SeasonPeriod[] | null | undefined,
+  date: Date
+): SeasonPeriod | null {
+  if (!Array.isArray(seasons) || seasons.length === 0) return null;
+
+  let bestMatch: SeasonPeriod | null = null;
+  let bestDuration = Infinity;
+  for (const season of seasons) {
+    if (!isDateInSeason(date, season)) continue;
+    const duration = seasonDuration(date, season);
+    if (duration < bestDuration) {
+      bestMatch = season;
+      bestDuration = duration;
+    }
+  }
+  return bestMatch;
+}
+
 export async function getApplicableSeason(
   db: PrismaClient,
   date: Date,
   scope?: PricingScope
 ): Promise<SeasonPeriod | null> {
   const seasons = await getConfig(db, 'pricing.season.calendar', scope);
-
-  if (!Array.isArray(seasons) || seasons.length === 0) {
-    return null;
-  }
-
-  let bestMatch: SeasonPeriod | null = null;
-  let bestDuration = Infinity;
-
-  for (const season of seasons) {
-    if (isDateInSeason(date, season)) {
-      const duration = seasonDuration(date, season);
-      if (duration < bestDuration) {
-        bestMatch = season;
-        bestDuration = duration;
-      }
-    }
-  }
-
-  return bestMatch;
+  return selectApplicableSeason(Array.isArray(seasons) ? seasons : [], date);
 }
 
 /**
@@ -151,32 +152,24 @@ interface NightResolution {
  * markup → base (doc 04 §4). Category rates are absolute satang amounts
  * keyed by the season *name* from the same project's calendar.
  */
-async function resolveNightlyPrice(
-  db: PrismaClient,
+function resolveNightlyPriceFromLoaded(
   date: Date,
   unit: Unit,
-  categoryRates: CategoryRates | undefined
-): Promise<NightResolution> {
-  // Check for PricingRule covering this night
-  const rule = await db.pricingRule.findFirst({
-    where: {
-      unitId: unit.id,
-      startDate: { lte: date },
-      endDate: { gt: date }, // end is exclusive
-    },
-  });
-
-  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
-  const season = await getApplicableSeason(db, date, scope);
+  categoryRates: CategoryRates | undefined,
+  seasons: SeasonPeriod[],
+  pricingRules: Array<Pick<PricingRule, 'startDate' | 'endDate' | 'nightlyThb'>>
+): NightResolution {
+  const rule = pricingRules.find(
+    item => item.startDate <= date && item.endDate > date
+  );
+  const season = selectApplicableSeason(seasons, date);
 
   const categoryEntry =
     unit.categoryKey && categoryRates ? categoryRates[unit.categoryKey] : undefined;
   const monthlyRate =
     (season && categoryEntry?.monthly?.[season.name]) ?? null;
 
-  if (rule) {
-    return { price: rule.nightlyThb, appliedFrom: 'rule', monthlyRate };
-  }
+  if (rule) return { price: rule.nightlyThb, appliedFrom: 'rule', monthlyRate };
 
   const categoryNightly = season && categoryEntry?.nightly?.[season.name];
   if (typeof categoryNightly === 'number') {
@@ -220,8 +213,22 @@ export async function getApplicableNightlyPrice(
     throw new Error(`Unit ${unitId} not found`);
   }
 
-  const categoryRates = await getCategoryRatesForUnit(db, unit);
-  const { price } = await resolveNightlyPrice(db, date, unit, categoryRates);
+  const scope: PricingScope = { unitId: unit.id, projectId: unit.projectId };
+  const [categoryRates, rawSeasons, pricingRules] = await Promise.all([
+    getCategoryRatesForUnit(db, unit),
+    getConfig(db, 'pricing.season.calendar', scope),
+    db.pricingRule.findMany({
+      where: { unitId: unit.id, startDate: { lte: date }, endDate: { gt: date } },
+      select: { startDate: true, endDate: true, nightlyThb: true },
+    }),
+  ]);
+  const { price } = resolveNightlyPriceFromLoaded(
+    date,
+    unit,
+    categoryRates,
+    Array.isArray(rawSeasons) ? rawSeasons : [],
+    pricingRules
+  );
   return price;
 }
 
@@ -286,14 +293,29 @@ export async function computePriceBreakdown(
   // It is a genuine override rather than a floor — relaxing the minimum in low
   // season is as much a revenue lever as raising it over peak, and a rule that
   // could only tighten would not be one.
-  const arrivalRule = await db.pricingRule.findFirst({
-    where: {
-      unitId: unit.id,
-      startDate: { lte: checkInDate },
-      endDate: { gt: checkInDate },
-    },
-    select: { minNightsOverride: true, label: true },
-  });
+  const [pricingRules, categoryRates, rawSeasons] = await Promise.all([
+    db.pricingRule.findMany({
+      where: {
+        unitId: unit.id,
+        startDate: { lt: checkOutDate },
+        endDate: { gt: checkInDate },
+      },
+      select: {
+        startDate: true,
+        endDate: true,
+        nightlyThb: true,
+        minNightsOverride: true,
+        label: true,
+      },
+      orderBy: { startDate: 'asc' },
+    }),
+    getCategoryRatesForUnit(db, unit),
+    getConfig(db, 'pricing.season.calendar', scope),
+  ]);
+  const seasons = Array.isArray(rawSeasons) ? rawSeasons : [];
+  const arrivalRule = pricingRules.find(
+    rule => rule.startDate <= checkInDate && rule.endDate > checkInDate
+  );
   const minNights = arrivalRule?.minNightsOverride ?? unit.minNights;
   if (nights < minNights) {
     throw new Error(
@@ -301,19 +323,20 @@ export async function computePriceBreakdown(
     );
   }
 
-  // Generate nightly breakdown
-  const categoryRates = await getCategoryRatesForUnit(db, unit);
+  // Generate nightly breakdown entirely from the preloaded rules/config above.
+  // Search can price many candidate units without two DB/config reads per night.
   const lines: PriceBreakdownLine[] = [];
   const nightMonthlyRates: (number | null)[] = [];
   let subtotal = 0;
   let currentDate = new Date(checkInDate);
 
   while (currentDate < checkOutDate) {
-    const { price, appliedFrom, monthlyRate } = await resolveNightlyPrice(
-      db,
+    const { price, appliedFrom, monthlyRate } = resolveNightlyPriceFromLoaded(
       currentDate,
       unit,
-      categoryRates
+      categoryRates,
+      seasons,
+      pricingRules
     );
     lines.push({
       date: toCalendarDay(currentDate),

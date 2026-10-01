@@ -482,14 +482,7 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && searched && units.length === 0 && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
-            <p className="text-body text-text-ink mb-8">{labels.empty}</p>
-            <p className="text-small text-text-secondary">{labels.emptyHint}</p>
-          </div>
-        )}
-
-        {!loading && units.length > 0 && (
+        {!loading && searched && (
           <section className="grid gap-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
             <div>
               <div className="mb-12 flex flex-wrap items-center justify-between gap-8">
@@ -506,76 +499,86 @@ export default function SearchResults({
                   </button>
                 ) : null}
               </div>
-              <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
-                {units.map((unit) => (
-                  <Link
-                    id={`unit-card-${unit.id}`}
-                    key={unit.id}
-                    href={`/units/${unit.id}?${new URLSearchParams({
-                      startDate: startDate || '',
-                      endDate: endDate || '',
-                      adults,
-                      children,
-                      ...(projectId ? { projectId } : {}),
-                      ...(areaSlug ? { areaSlug } : {}),
-                      ...(stayMode ? { stayMode } : {}),
-                    }).toString()}`}
-                    onMouseEnter={() => setSelectedProjectId(unit.project?.id ?? null)}
-                    onFocus={() => setSelectedProjectId(unit.project?.id ?? null)}
-                    className={
-                      selectedProjectId && selectedProjectId === unit.project?.id
-                        ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
-                        : 'overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
-                    }
-                  >
-                    {unit.coverUrl ? (
-                      <Image
-                        src={unit.coverUrl}
-                        alt={unit.name}
-                        width={640}
-                        height={360}
-                        className="aspect-video w-full object-cover"
-                      />
-                    ) : (
-                      <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
-                    )}
-                    <div className="p-16">
-                      {unit.project?.name ? (
-                        <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>
-                      ) : null}
-                      <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
-                      <p className="mb-4 font-display text-title font-semibold tabular-nums text-brand-andaman">
-                        {formatBaht(unit.baseNightlyThb ?? 0)}
-                      </p>
-                      <p className="text-small text-text-secondary">{labels.perNight}</p>
-                      {unit.averageRating !== null && unit.averageRating !== undefined && (
-                        <p className="mt-8 text-small text-text-secondary">
-                          {fill(labels.ratingSummary, {
-                            rating: unit.averageRating.toFixed(1),
-                            count: unit.reviewCount ?? 0,
-                          })}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
 
-              <div className="mt-32 text-center">
-                <p className="mb-16 text-small text-text-secondary">
-                  {fill(labels.showing, { shown: units.length, total })}
-                </p>
-                {units.length < total && (
-                  <button
-                    type="button"
-                    onClick={() => fetchPage(units.length)}
-                    disabled={loadingMore}
-                    className="h-48 rounded-sm border border-brand-andaman px-24 font-semibold text-brand-andaman transition hover:bg-brand-andaman/10 disabled:opacity-50"
-                  >
-                    {loadingMore ? labels.loadingMore : labels.loadMore}
-                  </button>
-                )}
-              </div>
+              {units.length === 0 ? (
+                <div className="rounded-lg border border-border-line bg-surface-paper p-32 text-center">
+                  <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
+                  <p className="text-small text-text-secondary">{labels.emptyHint}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
+                    {units.map((unit) => (
+                      <Link
+                        id={`unit-card-${unit.id}`}
+                        key={unit.id}
+                        href={`/units/${unit.id}?${new URLSearchParams({
+                          startDate: startDate || '',
+                          endDate: endDate || '',
+                          adults,
+                          children,
+                          ...(projectId ? { projectId } : {}),
+                          ...(areaSlug ? { areaSlug } : {}),
+                          ...(stayMode ? { stayMode } : {}),
+                        }).toString()}`}
+                        onMouseEnter={() => setSelectedProjectId(unit.project?.id ?? null)}
+                        onFocus={() => setSelectedProjectId(unit.project?.id ?? null)}
+                        className={
+                          selectedProjectId && selectedProjectId === unit.project?.id
+                            ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
+                            : 'overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
+                        }
+                      >
+                        {unit.coverUrl ? (
+                          <Image
+                            src={unit.coverUrl}
+                            alt={unit.name}
+                            width={640}
+                            height={360}
+                            className="aspect-video w-full object-cover"
+                          />
+                        ) : (
+                          <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />
+                        )}
+                        <div className="p-16">
+                          {unit.project?.name ? (
+                            <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>
+                          ) : null}
+                          <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
+                          <p className="mb-4 font-display text-title font-semibold tabular-nums text-brand-andaman">
+                            {formatBaht(unit.baseNightlyThb ?? 0)}
+                          </p>
+                          <p className="text-small text-text-secondary">{labels.perNight}</p>
+                          {unit.averageRating !== null && unit.averageRating !== undefined && (
+                            <p className="mt-8 text-small text-text-secondary">
+                              {fill(labels.ratingSummary, {
+                                rating: unit.averageRating.toFixed(1),
+                                count: unit.reviewCount ?? 0,
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="mt-32 text-center">
+                    <p className="mb-16 text-small text-text-secondary">
+                      {fill(labels.showing, { shown: units.length, total })}
+                    </p>
+                    {units.length < total && (
+                      <button
+                        type="button"
+                        onClick={() => fetchPage(units.length)}
+                        disabled={loadingMore}
+                        className="h-48 rounded-sm border border-brand-andaman px-24 font-semibold text-brand-andaman transition hover:bg-brand-andaman/10 disabled:opacity-50"
+                      >
+                        {loadingMore ? labels.loadingMore : labels.loadMore}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <SearchResultsMap

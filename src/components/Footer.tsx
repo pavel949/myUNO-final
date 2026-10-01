@@ -86,9 +86,9 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-text-ink px-20 py-48 text-surface-ivory md:px-32 md:py-64">
+    <footer className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-48 flex flex-col justify-between gap-24 border-b border-surface-ivory/15 pb-32 md:flex-row md:items-end">
+        <div className="mb-48 flex flex-col justify-between gap-24 border-b border-surface-ivory/20 pb-32 md:flex-row md:items-end">
           <div>
             <p className="font-display text-display font-semibold tracking-[-0.02em]">{labels.brandName}</p>
             <p className="mt-8 max-w-md text-small text-surface-ivory/60">
@@ -120,7 +120,7 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
           ))}
         </div>
 
-        <div className="flex flex-col gap-8 border-t border-surface-ivory/15 pt-24 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-8 border-t border-surface-ivory/20 pt-24 md:flex-row md:items-end md:justify-between">
           <p className="max-w-3xl text-small text-surface-ivory/50">{labels.companyLine}</p>
           <p className="shrink-0 text-small text-surface-ivory/50">{labels.copyright}</p>
         </div>

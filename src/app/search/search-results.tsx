@@ -172,16 +172,23 @@ export default function SearchResults({
         setTotal(data.total);
         setSearched(true);
 
-        // Category cards for project-scoped searches (LY-6) — the rollup is the
-        // whole set, so it is fetched once with the first page, not with each.
+        // Category rollup is secondary information. Do not keep the primary
+        // unit cards behind a second pricing request: render the first page now,
+        // then hydrate project-category choices independently.
         if (offset === 0) {
           if (projectId) {
             const grouped = new URLSearchParams(params);
             grouped.set('groupBy', 'category');
-            const groupedRes = await fetch(`/api/search/units?${grouped}`);
-            if (generation !== requestRef.current) return;
-            const groupedData = groupedRes.ok ? await groupedRes.json() : null;
-            setCategories(groupedData?.categories || []);
+            void fetch(`/api/search/units?${grouped}`)
+              .then(async (groupedRes) => groupedRes.ok ? groupedRes.json() : null)
+              .then((groupedData) => {
+                if (generation === requestRef.current) {
+                  setCategories(groupedData?.categories || []);
+                }
+              })
+              .catch(() => {
+                if (generation === requestRef.current) setCategories([]);
+              });
           } else {
             setCategories([]);
           }
@@ -410,7 +417,20 @@ export default function SearchResults({
           </div>
         )}
 
-        {loading && <p className="text-body text-text-secondary">{labels.loading}</p>}
+        {loading && (
+          <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+                <div className="aspect-video animate-pulse bg-border-line/60" />
+                <div className="space-y-12 p-16">
+                  <div className="h-16 w-[42%] animate-pulse rounded-full bg-border-line/70" />
+                  <div className="h-20 w-[68%] animate-pulse rounded-full bg-border-line/70" />
+                  <div className="h-16 w-[34%] animate-pulse rounded-full bg-border-line/70" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {error && (
           <div className="bg-state-error/10 border border-state-error rounded-lg p-16 mb-24">

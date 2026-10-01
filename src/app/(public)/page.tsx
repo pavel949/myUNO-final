@@ -418,7 +418,7 @@ export default async function LandingPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group rounded-2xl border border-white/15 bg-white/[0.04] p-20 transition-colors duration-structural hover:bg-white/[0.08] md:p-24"
+                className="group rounded-2xl border border-white/15 bg-surface-ivory/[0.04] p-20 transition-colors duration-structural hover:bg-surface-ivory/[0.08] md:p-24"
               >
                 <TrustMark size={20} filled className="text-brand-sun-soft" />
                 <h3 className="mt-24 font-display text-title font-semibold">{item.title}</h3>
@@ -574,7 +574,7 @@ export default async function LandingPage() {
             </Link>
             <Link
               href="/services"
-              className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/30 px-28 font-semibold text-surface-ivory transition-colors hover:bg-white/10"
+              className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/30 px-28 font-semibold text-surface-ivory transition-colors hover:bg-surface-ivory/10"
             >
               {labels['home.final.secondary']}
             </Link>

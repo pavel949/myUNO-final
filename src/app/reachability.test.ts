@@ -226,11 +226,6 @@ const API_DEBT = new Set([
   '/api/notifications/stream',
   '/api/threads/[threadId]/stream',
 
-  // Layantara private access-instruction endpoint is intentionally staged before
-  // its staff editor UI. Keep it unreachable from generic surfaces until the
-  // role-scoped access editor ships; direct DB reads remain forbidden.
-  '/api/ops/units/[id]/access',
-
   // The API half of the dead CRM island. These five were called only by the
   // eleven unreachable components under `src/app/components/crm/`, deleted in
   // this change; the CRM a person actually uses runs on `/api/admin/crm/*`,

@@ -68,6 +68,12 @@ describe('premium design-system surface parity', () => {
     expect(passport).not.toContain("'pass'");
   });
 
+  it('publishes Help and Project Passport through the sitemap', () => {
+    const sitemap = source('src/app/sitemap.ts');
+    expect(sitemap).toContain('${base}/help');
+    expect(sitemap).toContain('/passport');
+  });
+
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {
     const sell = source('src/app/(public)/sell/page.tsx');
     expect(sell).toContain('<LeadFormSection audience="owners"');

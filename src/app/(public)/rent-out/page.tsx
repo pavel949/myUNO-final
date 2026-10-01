@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: 'Choose short stays, monthly rental or both, then connect your property to the canonical myUNO onboarding and operating model.',
 };
 
+const leadAudience = 'owners' as const;
+
 export default async function RentOutPage() {
   const labels = await getLabels({
     'rentout.kicker': 'RENT OUT',
@@ -112,6 +114,6 @@ export default async function RentOutPage() {
       </div>
     </section>
 
-    <LeadFormSection audience="owners" initialMessage={labels['rentout.lead']} />
+    <LeadFormSection audience={leadAudience} initialMessage={labels['rentout.lead']} />
   </main>;
 }

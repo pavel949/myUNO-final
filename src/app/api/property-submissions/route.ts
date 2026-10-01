@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -15,8 +15,11 @@ function normalize(body: Record<string, unknown>): Submission {
   const bedrooms = num(body.bedrooms), bathrooms = num(body.bathrooms), sizeSqm = num(body.sizeSqm), maxGuests = num(body.maxGuests), latitude = num(body.latitude), longitude = num(body.longitude);
   if ([bedrooms, bathrooms, sizeSqm, maxGuests].some(v => v !== null && (!Number.isFinite(v) || v < 0)) || (maxGuests !== null && !Number.isInteger(maxGuests))) throw new Error('Invalid property measurements.');
   if ((latitude !== null && (!Number.isFinite(latitude) || Math.abs(latitude) > 90)) || (longitude !== null && (!Number.isFinite(longitude) || Math.abs(longitude) > 180))) throw new Error('Invalid project location.');
+  const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(body.operatingModel))
+    ? String(body.operatingModel) as Submission['operatingModel']
+    : null;
   return {
-    kind, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
+    kind, operatingModel, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
     proposedProject: String(body.proposedProject || '').trim().slice(0, 160),
     projectAddress: String(body.projectAddress || '').trim().slice(0, 500),
     projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(body.projectType)) ? String(body.projectType) : 'condominium',

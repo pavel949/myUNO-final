@@ -51,10 +51,14 @@ export const COMMERCE_STRUCTURE_KEYS = [
 
   { key: 'nav.monthly', namespace: 'nav', description: 'Public navigation: monthly rentals', en: 'Monthly', ru: 'На месяц', th: 'รายเดือน', status: 'needs_review' as const },
   { key: 'nav.buy', namespace: 'nav', description: 'Public navigation: buy property', en: 'Buy', ru: 'Купить', th: 'ซื้อ', status: 'needs_review' as const },
+  { key: 'nav.sell', namespace: 'nav', description: 'Public navigation: sell property', en: 'Sell', ru: 'Продать', th: 'ขาย', status: 'needs_review' as const },
+  { key: 'nav.areas', namespace: 'nav', description: 'Public navigation: areas', en: 'Areas', ru: 'Районы', th: 'พื้นที่', status: 'needs_review' as const },
   { key: 'nav.projects', namespace: 'nav', description: 'Public navigation: projects', en: 'Projects', ru: 'Проекты', th: 'โครงการ', status: 'needs_review' as const },
   { key: 'nav.footer.stay', namespace: 'nav', description: 'Footer: stay discovery', en: 'Stay', ru: 'Проживание', th: 'เข้าพัก', status: 'needs_review' as const },
   { key: 'nav.footer.monthly', namespace: 'nav', description: 'Footer: monthly rentals', en: 'Monthly', ru: 'На месяц', th: 'รายเดือน', status: 'needs_review' as const },
   { key: 'nav.footer.buy', namespace: 'nav', description: 'Footer: buy property', en: 'Buy', ru: 'Купить', th: 'ซื้อ', status: 'needs_review' as const },
+  { key: 'nav.footer.sell', namespace: 'nav', description: 'Footer: sell property', en: 'Sell', ru: 'Продать', th: 'ขาย', status: 'needs_review' as const },
+  { key: 'nav.footer.areas', namespace: 'nav', description: 'Footer: areas', en: 'Areas', ru: 'Районы', th: 'พื้นที่', status: 'needs_review' as const },
   { key: 'nav.footer.projects', namespace: 'nav', description: 'Footer: projects', en: 'Projects', ru: 'Проекты', th: 'โครงการ', status: 'needs_review' as const },
 
   { key: 'landing.search.where', namespace: 'landing', description: 'Homepage search destination label', en: 'Where', ru: 'Где', th: 'ที่ไหน', status: 'needs_review' as const },

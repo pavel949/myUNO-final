@@ -2,15 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
-import { prisma } from '@/lib/prisma';
 import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { DiscoverySearch } from '@/components/DiscoverySearch';
-import { listPublicProjects } from '@/modules/projects';
-import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
-import { listPublicMarketplaceServices } from '@/modules/services';
+import { getPublicHomepageData } from '@/modules/home/public-homepage.service';
 import { projectPresentationImage } from '@/lib/presentation-media';
 
 export const metadata: Metadata = {
@@ -38,7 +35,7 @@ function projectRank(name: string): number {
 export default async function LandingPage() {
   const locale = getRequestLocale();
 
-  const [labels, rawProjects, commercialHomes, services] = await Promise.all([
+  const [labels, homepageData] = await Promise.all([
     getLabels({
       'landing.hero.kicker': 'PHUKET · ONE CONNECTED EXPERIENCE',
       'landing.hero.title': 'Stay. Live. Own Phuket.',
@@ -122,10 +119,9 @@ export default async function LandingPage() {
       'landing.trust.protected_body': 'Guests, owners, providers and teams see only the workflows relevant to them.',
       'landing.trust.cta': 'How trust works',
 
-      'home.discovery.stay': 'Stay',
-      'home.discovery.monthly': 'Monthly',
+      'home.discovery.rent': 'Rent',
       'home.discovery.buy': 'Buy',
-      'home.discovery.invest': 'Invest',
+      'home.discovery.manage': 'Manage',
       'home.discovery.sell': 'Sell',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
@@ -134,12 +130,25 @@ export default async function LandingPage() {
       'home.final.title': 'Your place in Phuket starts here.',
       'home.final.body': 'Find a stay, discover a home to own, or explore the services around it.',
       'home.final.primary': 'Explore properties',
+      'landing.units.kicker': 'STAYS & HOMES',
+      'landing.units.title': 'Choose the home, not just the project.',
+      'landing.units.body': 'Browse individual residences and villas connected to the same project, pricing and booking record.',
+      'landing.units.cta': 'See all stays',
+      'landing.units.guests': '{count} guests',
+      'landing.units.from': 'From ฿{price} / night',
+      'landing.units.open': 'View home',
+      'landing.areas.kicker': 'EXPLORE PHUKET',
+      'landing.areas.title': 'Choose your part of the island.',
+      'landing.areas.body': 'Browse projects by canonical location — from Layan and Bang Tao to the next areas added to myUNO.',
+      'landing.areas.projects': '{count} projects',
+      'landing.areas.open': 'Explore area',
+      'landing.areas.cta': 'View all areas',
       'home.final.secondary': 'Browse services',
     }),
-    listPublicProjects(),
-    listPublicCommercialHomes(prisma),
-    listPublicMarketplaceServices(prisma, locale, { limit: 6 }).catch(() => []),
+    getPublicHomepageData(locale),
   ]);
+
+  const { projects: rawProjects, commercialHomes, services, stayUnits, areas } = homepageData;
 
   const projects = [...rawProjects].sort((a, b) => {
     const rankDifference = projectRank(a.name) - projectRank(b.name);
@@ -233,10 +242,10 @@ export default async function LandingPage() {
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               labels={{
-                stay: labels['home.discovery.stay'],
-                monthly: labels['home.discovery.monthly'],
+                rent: labels['home.discovery.rent'],
                 buy: labels['home.discovery.buy'],
-                invest: labels['home.discovery.invest'],
+                manage: labels['home.discovery.manage'],
+                sell: labels['home.discovery.sell'],
                 where: labels['landing.search.where'],
                 allPhuket: labels['landing.search.all_phuket'],
                 checkIn: labels['landing.search.check_in'],

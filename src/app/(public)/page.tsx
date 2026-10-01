@@ -12,6 +12,7 @@ import { listPublicProjects } from '@/modules/projects';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { listPublicMarketplaceServices } from '@/modules/services';
 import { projectPresentationImage } from '@/lib/presentation-media';
+import { GLOBAL_DESKS } from '@/modules/global-desks';
 
 export const metadata: Metadata = {
   title: 'myUNO | Stay. Live. Own Phuket.',
@@ -40,9 +41,12 @@ export default async function LandingPage() {
 
   const [labels, rawProjects, commercialHomes, services] = await Promise.all([
     getLabels({
-      'landing.hero.kicker': 'PHUKET · ONE CONNECTED EXPERIENCE',
-      'landing.hero.title': 'Stay. Live. Own Phuket.',
-      'landing.hero.subtitle': 'Handpicked homes, managed residences and everything around them — connected by myUNO.',
+      'landing.global_hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
+      'landing.global_hero.title': 'Phuket homes. Global discovery. One platform.',
+      'landing.global_hero.subtitle': 'Stay, rent, buy, sell and manage Phuket property through one connected experience.',
+      'landing.global_hero.global': 'Explore global desks',
+      'landing.global_hero.areas': 'Explore Phuket areas',
+      'landing.global_hero.trust': 'How trust works',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
       'landing.search.check_in': 'Check-in',
@@ -53,11 +57,33 @@ export default async function LandingPage() {
 
       'landing.start.kicker': 'START HERE',
       'landing.start.title': 'What brings you to Phuket?',
-      'landing.start.stay_body': 'Find a verified stay for your next trip.',
-      'landing.start.monthly_body': 'Find a home for a month or longer.',
-      'landing.start.buy_body': 'Explore homes with an active sale offering.',
+      'landing.start.buy_body': 'Explore homes with an active, evidenced sale offering.',
+      'landing.start.stay_body': 'Search verified availability for your next stay.',
       'landing.start.sell_body': 'Start a documented resale and valuation review.',
+      'landing.start.rentout_body': 'Activate short-stay, monthly or long-term rental paths on one property record.',
+      'landing.start.manage_body': 'Move from listing into professional operations, PMS and owner reporting.',
       'landing.start.explore': 'Explore',
+
+      'landing.desks.kicker': 'GLOBAL DESKS',
+      'landing.desks.title': 'A more global front door to Phuket.',
+      'landing.desks.body': 'Market and language liaison routes into the same canonical myUNO property, booking and service platform. No duplicate inventory, pricing or property records.',
+      'landing.desks.cta': 'Explore all desks',
+      'landing.desks.open': 'Open desk',
+      'desks.thailand.title': 'Thailand desk',
+      'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners.',
+      'desks.thailand.languages': 'Thai · English',
+      'desks.russian.title': 'Russian-speaking desk',
+      'desks.russian.body': 'For Russian-speaking buyers, owners, guests and partners.',
+      'desks.russian.languages': 'Russian · English',
+      'desks.china.title': 'Greater China desk',
+      'desks.china.body': 'For Chinese-speaking and Greater China audiences exploring Phuket.',
+      'desks.china.languages': 'Chinese · English',
+      'desks.middle_east.title': 'Middle East desk',
+      'desks.middle_east.body': 'For Middle East buyers, families and investors exploring Phuket.',
+      'desks.middle_east.languages': 'English',
+      'desks.europe.title': 'Europe desk',
+      'desks.europe.body': 'For European buyers, residents and owners exploring Phuket.',
+      'desks.europe.languages': 'English',
 
       'landing.collection.kicker': 'THE MYUNO COLLECTION',
       'landing.collection.title': 'Explore our Phuket collection.',
@@ -107,10 +133,10 @@ export default async function LandingPage() {
       'landing.audience.title': 'One property. Two professional entry points.',
       'landing.audience.owners': 'For owners',
       'landing.audience.owners_body': 'Bring your Phuket property into one connected presentation, booking, operations and reporting flow.',
-      'landing.audience.developers': 'For developers & managers',
-      'landing.audience.developers_body': 'Connect an entire project without creating a second property or inventory model.',
-      'landing.audience.owner_cta': 'Manage my property',
-      'landing.audience.developer_cta': 'Partner with myUNO',
+      'landing.audience.developers': 'Professional management',
+      'landing.audience.developers_body': 'Move a property or portfolio from commercial activation into connected operations without creating a second inventory model.',
+      'landing.audience.owner_cta': 'Rent out my property',
+      'landing.audience.developer_cta': 'Explore professional management',
 
       'landing.trust.kicker': 'TRUST IS IN THE DETAILS',
       'landing.trust.title': 'Designed for real stays and real property operations.',
@@ -127,6 +153,8 @@ export default async function LandingPage() {
       'home.discovery.buy': 'Buy',
       'home.discovery.invest': 'Invest',
       'home.discovery.sell': 'Sell',
+      'home.discovery.rent_out': 'Rent Out',
+      'home.discovery.manage': 'Manage',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
@@ -136,8 +164,8 @@ export default async function LandingPage() {
       'home.final.primary': 'Explore properties',
       'home.final.secondary': 'Browse services',
     }),
-    listPublicProjects(),
-    listPublicCommercialHomes(prisma),
+    listPublicProjects().catch(() => []),
+    listPublicCommercialHomes(prisma).catch(() => []),
     listPublicMarketplaceServices(prisma, locale, { limit: 6 }).catch(() => []),
   ]);
 
@@ -199,7 +227,7 @@ export default async function LandingPage() {
       />
 
       <section
-        className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-brand-deep text-surface-ivory md:min-h-[720px] md:max-h-[860px]"
+        className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px] md:max-h-[860px]"
         aria-labelledby="home-title"
       >
         <Image
@@ -208,28 +236,39 @@ export default async function LandingPage() {
           fill
           priority
           sizes={["100", "vw"].join("")}
-          className="object-cover"
+          className="object-cover brightness-[1.08] saturate-[0.92]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/62 to-brand-deep/18" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/75 via-transparent to-brand-deep/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/95 via-surface-paper/76 to-surface-paper/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-paper/55 via-transparent to-surface-paper/10" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-28 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
-              {labels['landing.hero.kicker']}
+            <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+              {labels['landing.global_hero.kicker']}
             </p>
             <h1
               id="home-title"
               className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.75rem)] font-semibold leading-[0.96] tracking-[-0.04em]"
             >
-              {labels['landing.hero.title']}
+              {labels['landing.global_hero.title']}
             </h1>
-            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/88 md:text-xl">
-              {labels['landing.hero.subtitle']}
+            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-text-secondary md:text-xl">
+              {labels['landing.global_hero.subtitle']}
             </p>
+            <div className="mt-20 flex flex-wrap gap-8">
+              <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-14 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
+                {labels['landing.global_hero.global']} →
+              </Link>
+              <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+                {labels['landing.global_hero.areas']} →
+              </Link>
+              <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-14 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+                {labels['landing.global_hero.trust']} →
+              </Link>
+            </div>
           </div>
 
-          <div className="mt-32 max-w-[1180px]">
+          <div className="mt-28 max-w-[1180px]">
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               labels={{
@@ -261,12 +300,13 @@ export default async function LandingPage() {
           <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
             {labels['landing.start.title']}
           </h2>
-          <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
+          <div className="mt-24 grid grid-cols-2 gap-10 lg:grid-cols-5">
             {[
-              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
-              { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
               { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
+              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
               { title: labels['home.discovery.sell'], body: labels['landing.start.sell_body'], href: '/sell' },
+              { title: labels['home.discovery.rent_out'], body: labels['landing.start.rentout_body'], href: '/rent-out' },
+              { title: labels['home.discovery.manage'], body: labels['landing.start.manage_body'], href: '/manage' },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -277,8 +317,45 @@ export default async function LandingPage() {
                   <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
                   <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
                 </div>
-                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
+                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
                   {labels['landing.start.explore']} →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border-line bg-gradient-to-r from-surface-ivory via-surface-paper to-surface-ivory py-44 md:py-56" aria-labelledby="global-desks-heading">
+        <div className="mx-auto max-w-7xl px-20 md:px-32">
+          <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
+              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
+                {labels['landing.desks.title']}
+              </h2>
+              <p className="mt-10 text-body text-text-secondary">{labels['landing.desks.body']}</p>
+            </div>
+            <Link href="/desks" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+              {labels['landing.desks.cta']} →
+            </Link>
+          </div>
+
+          <div className="-mx-20 mt-24 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
+            {GLOBAL_DESKS.map((desk) => (
+              <Link
+                key={desk.slug}
+                href={`/desks/${desk.slug}`}
+                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+              >
+                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
+                  {desk.code}
+                </div>
+                <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
+                <p className="mt-6 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
+                <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
+                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                  {labels['landing.desks.open']} →
                 </span>
               </Link>
             ))}
@@ -288,7 +365,7 @@ export default async function LandingPage() {
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
         <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+          <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                 {labels['landing.collection.kicker']}
@@ -342,7 +419,7 @@ export default async function LandingPage() {
       {featuredHomes.length ? (
         <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
           <div className="mx-auto max-w-7xl px-20 md:px-32">
-            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+            <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
               <div className="max-w-2xl">
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                   {labels['landing.homes.kicker']}
@@ -428,7 +505,7 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-sun-soft hover:underline">
+          <Link href="/about" className="mt-28 inline-block font-semibold text-brand-sun-soft hover:underline">
             {labels['landing.value.cta']} →
           </Link>
         </div>
@@ -436,7 +513,7 @@ export default async function LandingPage() {
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
         <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+          <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                 {labels['landing.services.kicker']}
@@ -485,8 +562,8 @@ export default async function LandingPage() {
 
           <div className="mt-32 grid gap-16 md:grid-cols-2">
             <Link
-              href="/owners"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
+              href="/rent-out"
+              className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
@@ -503,8 +580,8 @@ export default async function LandingPage() {
             </Link>
 
             <Link
-              href="/developers"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
+              href="/manage"
+              className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-28 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
@@ -534,11 +611,12 @@ export default async function LandingPage() {
 
           <div className="mt-32 grid gap-0 md:grid-cols-3">
             {(['verified', 'handled', 'protected'] as const).map((key, index) => (
-              <div
+              <Link
                 key={key}
-                className={`border-t border-border-line py-24 md:border-t-0 md:py-0 ${
-                  index > 0 ? 'md:border-l md:pl-24' : ''
-                } ${index < 2 ? 'md:pr-24' : ''}`}
+                href="/trust"
+                className={`group block border-t border-border-line py-24 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:border-t-0 md:py-0 ${
+                  index > 0 ? 'md:border-l md:pl-28' : ''
+                } ${index < 2 ? 'md:pr-28' : ''}`}
               >
                 <TrustMark size={22} filled className="text-brand-andaman" />
                 <h3 className="mt-16 font-display text-title font-semibold text-text-ink">
@@ -547,11 +625,14 @@ export default async function LandingPage() {
                 <p className="mt-8 text-body text-text-secondary">
                   {labels[`landing.trust.${key}_body`]}
                 </p>
-              </div>
+                <span className="mt-14 inline-block text-small font-semibold text-brand-andaman group-hover:underline">
+                  {labels['landing.trust.cta']} →
+                </span>
+              </Link>
             ))}
           </div>
 
-          <Link href="/trust" className="mt-32 inline-block font-semibold text-brand-andaman hover:underline">
+          <Link href="/trust" className="mt-28 inline-block font-semibold text-brand-andaman hover:underline">
             {labels['landing.trust.cta']} →
           </Link>
         </div>
@@ -565,16 +646,16 @@ export default async function LandingPage() {
           <p className="mx-auto mt-12 max-w-2xl text-body text-surface-ivory/75">
             {labels['home.final.body']}
           </p>
-          <div className="mt-32 flex flex-col justify-center gap-12 sm:flex-row">
+          <div className="mt-28 flex flex-col justify-center gap-12 sm:flex-row">
             <Link
               href="/projects"
-              className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep transition-opacity hover:opacity-90"
+              className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-28 font-semibold text-brand-deep transition-opacity hover:opacity-90"
             >
               {labels['home.final.primary']} →
             </Link>
             <Link
               href="/services"
-              className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/30 px-24 font-semibold text-surface-ivory transition-colors hover:bg-surface-ivory/10"
+              className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/30 px-28 font-semibold text-surface-ivory transition-colors hover:bg-surface-ivory/10"
             >
               {labels['home.final.secondary']}
             </Link>

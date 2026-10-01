@@ -33,8 +33,14 @@ export async function createDraftUnitEngagementTx(
 ): Promise<{ id: string }> {
   const { unitId, engagementType, ownerIdentityId, noiCapAnnualThb, feeOverridePct, setupFeeThb, mandateMediaId, managementOrgId } = input;
 
-  const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true } });
+  const unit = await tx.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, projectId: true, ownerIdentityId: true },
+  });
   if (!unit) throw new Error(`Unit ${unitId} not found`);
+  if (unit.ownerIdentityId !== ownerIdentityId) {
+    throw new Error('Engagement owner must be the verified current owner of the unit');
+  }
 
   const owner = await tx.identity.findUnique({ where: { id: ownerIdentityId }, select: { id: true } });
   if (!owner) throw new Error(`Owner identity ${ownerIdentityId} not found`);
@@ -44,7 +50,12 @@ export async function createDraftUnitEngagementTx(
       throw new Error('Management organization is required for via-management-company engagement');
     }
     const org = await tx.organization.findFirst({
-      where: { id: managementOrgId, status: 'active', orgType: 'management_company' },
+      where: {
+        id: managementOrgId,
+        status: 'active',
+        orgType: 'management_company',
+        OR: [{ projectId: null }, { projectId: unit.projectId }],
+      },
       select: { id: true },
     });
     if (!org) throw new Error(`Management organization ${managementOrgId} not found or not active`);
@@ -85,6 +96,13 @@ export async function updateUnitEngagementTx(
 
   const engagement = await tx.unitEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw new Error(`UnitEngagement ${engagementId} not found`);
+  const unit = await tx.unit.findUnique({
+    where: { id: engagement.unitId },
+    select: { ownerIdentityId: true },
+  });
+  if (!unit || unit.ownerIdentityId !== engagement.ownerIdentityId) {
+    throw new Error('Engagement owner no longer matches the verified current owner');
+  }
 
   const nextMandateMediaId = mandateMediaId ?? engagement.mandateMediaId;
   const nextNoiCap = noiCapAnnualThb ?? engagement.noiCapAnnualThb;

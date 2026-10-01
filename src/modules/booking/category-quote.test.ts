@@ -36,8 +36,10 @@ describe('category stay quote token', () => {
       quotedUnitId: 'unit-1',
     });
 
-    const tampered = token.replace('123456', '999999');
-    expect(verifyCategoryStayQuoteToken(tampered)).toBeNull();
+    const parts = token.split('.');
+    const signature = parts[2];
+    parts[2] = `${signature.slice(0, -1)}${signature.endsWith('A') ? 'B' : 'A'}`;
+    expect(verifyCategoryStayQuoteToken(parts.join('.'))).toBeNull();
 
     const { token: expired } = createCategoryStayQuoteToken(
       {

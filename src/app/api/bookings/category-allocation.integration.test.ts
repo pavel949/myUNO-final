@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { seedConfig } from '@/modules/config';
 import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
+import { computePriceBreakdown } from '@/modules/core';
 
 const mockGetCurrentUser = vi.fn();
 vi.mock('@/app/actions/getCurrentUser', () => ({
@@ -166,6 +167,37 @@ describe('category booking falls through to the next villa', () => {
 
     const booking = await db.booking.findFirst({ where: { projectId } });
     expect(booking?.unitId).toBe(b.id);
+  });
+
+  it('requires re-consent when fallback inventory costs more than the accepted quote', async () => {
+    const a = await villa('Villa A');
+    const b = await villa('Villa B');
+    await db.unit.update({ where: { id: b.id }, data: { baseNightlyThb: 900_000 } });
+
+    const quoted = await computePriceBreakdown(
+      db,
+      a.id,
+      new Date(START),
+      new Date(END),
+      2
+    );
+
+    await db.blockedDate.create({
+      data: {
+        unitId: a.id,
+        startDate: new Date(START),
+        endDate: new Date(END),
+        reason: 'maintenance',
+      },
+    });
+
+    const guest = await createIdentity();
+    mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
+
+    const res = await POST(await categoryBooking(quoted.total_thb));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: 'REQUOTE_REQUIRED' });
+    expect(await db.booking.count({ where: { projectId } })).toBe(0);
   });
 
   it('prices the villa it actually books, not the one it first considered', async () => {

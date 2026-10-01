@@ -40,6 +40,9 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       'homes.all_areas': 'All areas',
       'homes.type_filter': 'Property type',
       'homes.all_types': 'All types',
+      'homes.type.condo': 'Condo',
+      'homes.type.villa': 'Villa',
+      'homes.type.townhouse': 'Townhouse',
       'homes.bedrooms_filter': 'Minimum bedrooms',
       'homes.min_area': 'Minimum area',
       'homes.max_area': 'Maximum area',
@@ -122,9 +125,9 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {labels['homes.type_filter']}
             <select name="type" defaultValue={type} className="mt-6 h-48 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink">
               <option value="">{labels['homes.all_types']}</option>
-              <option value="condo">Condo</option>
-              <option value="villa">Villa</option>
-              <option value="townhouse">Townhouse</option>
+              <option value="condo">{labels['homes.type.condo']}</option>
+              <option value="villa">{labels['homes.type.villa']}</option>
+              <option value="townhouse">{labels['homes.type.townhouse']}</option>
             </select>
           </label>
           <label className="text-small text-text-secondary">

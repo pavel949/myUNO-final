@@ -141,7 +141,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
               {labels.explore}
             </summary>
-            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-10 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
               {exploreLinks.map((link) => (
                 <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                   {link.label}

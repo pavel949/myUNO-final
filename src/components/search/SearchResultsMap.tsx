@@ -8,7 +8,6 @@ export interface SearchMapProject {
   latitude: number;
   longitude: number;
   unitCount: number;
-  fromNightlyThb: number;
 }
 
 export function SearchResultsMap({
@@ -23,7 +22,7 @@ export function SearchResultsMap({
   selectedProjectId: string | null;
   onSelectProject: (projectId: string) => void;
   onBoundsChange: (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => void;
-  labels: { loading: string; unavailable: string; perNight: string; aria: string };
+  labels: { loading: string; unavailable: string; homes: string; aria: string };
   fitToProjects?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -151,9 +150,8 @@ export function SearchResultsMap({
               project.name.replace(/[&<>"']/g, (char: string) =>
                 ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' } as Record<string, string>)[char]
               ) +
-              '</strong><br/>฿' +
-              Math.round(project.fromNightlyThb / 100).toLocaleString() +
-              ' ' + labels.perNight
+              '</strong><br/>' +
+              labels.homes.replace('{count}', String(project.unitCount))
           )
         )
         .addTo(map);

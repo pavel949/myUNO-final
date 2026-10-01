@@ -3,8 +3,8 @@ import Link from 'next/link';
 import ManagedGallery from '@/components/property/ManagedGallery';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
+import { canWriteUnitListing, resolveUnitCommercialAuthority } from '@/modules/core';
 import ManagedUnitEditor from './managed-unit-editor';
 export const dynamic = 'force-dynamic';
 
@@ -17,11 +17,20 @@ export default async function EditManagedUnitPage({ params }: { params: { unitId
     project: { select: { name: true } },
   } });
   if (!unit) notFound();
-  const staff = user.roles.some((role) => role.role === 'staff_ops' && role.projectId === unit.projectId && (!role.unitId || role.unitId === unit.id));
-  const mc = await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id });
-  if (!user.isAdmin && !staff && !mc) notFound();
+  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
+  if (!identity) notFound();
+  const allowed = await canWriteUnitListing(prisma, identity, unit.id, unit.projectId);
+  if (!allowed) notFound();
+  const authority = await resolveUnitCommercialAuthority(prisma, unit.id);
+  const ownerDirect = authority?.mode === 'owner' && authority.ownerIdentityId === user.identityId;
+  const mcManaged = authority?.mode === 'management_company' && user.roles.some((role) => role.role === 'mc_member');
+  const backHref = ownerDirect
+    ? `/owner/units/${unit.id}`
+    : mcManaged
+      ? `/mc/units/${unit.id}`
+      : `/ops/calendar/${unit.id}`;
   return <main className="min-h-screen bg-surface-ivory px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">
-    <Link href={mc && !staff ? `/mc/units/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
+    <Link href={backHref} className="text-brand-andaman">← Property workspace</Link>
     <h1 className="mt-12 font-display text-display-xl text-text-ink">Edit {unit.name}</h1>
     <p className="mt-8 text-text-secondary">{unit.project.name} · {unit.status} · Canonical physical record</p>
     <ManagedUnitEditor unit={unit}/><ManagedGallery scope="unit" id={unit.id}/>

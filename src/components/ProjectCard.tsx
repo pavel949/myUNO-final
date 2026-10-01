@@ -49,7 +49,7 @@ export function ProjectCard({
           {labels.homes.replace('{count}', String(project.liveUnitCount))}
         </p>
         <h3 className={`mt-4 font-display font-semibold tracking-[-0.02em] ${
-          featured ? 'text-display md:text-[36px] md:leading-[42px]' : 'text-title md:text-heading-2'
+          featured ? 'text-display md:text-display-xl' : 'text-title md:text-heading-2'
         }`}>
           {project.name}
         </h3>

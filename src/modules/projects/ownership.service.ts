@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
 
 /**
  * Ownership history for a unit.
@@ -36,63 +36,138 @@ function asDate(value: Date): Date {
  * and moves the unit's scalar to match — all in one transaction, so the two can
  * never disagree.
  */
-export async function setUnitOwner(db: PrismaClient, input: SetUnitOwnerInput) {
+export async function setUnitOwnerTx(
+  tx: Prisma.TransactionClient,
+  input: SetUnitOwnerInput,
+) {
   const { unitId, ownerIdentityId, recordedByIdentityId, note } = input;
   const effectiveFrom = asDate(input.effectiveFrom ?? new Date());
 
-  return db.$transaction(async (tx) => {
-    const unit = await tx.unit.findUnique({
-      where: { id: unitId },
-      select: { id: true, ownerIdentityId: true },
-    });
-    if (!unit) {
-      throw new Error('Unit not found');
-    }
+  const unit = await tx.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, projectId: true, ownerIdentityId: true },
+  });
+  if (!unit) throw new Error('Unit not found');
 
-    if (unit.ownerIdentityId === ownerIdentityId) {
-      // Nothing changed. Recording a period here would be a lie about a
-      // transfer that never happened.
-      return { changed: false as const };
-    }
+  const open = await tx.ownershipPeriod.findFirst({
+    where: { unitId, endsOn: null },
+    orderBy: { startsOn: 'desc' },
+  });
 
-    const open = await tx.ownershipPeriod.findFirst({
-      where: { unitId, endsOn: null },
-      orderBy: { startsOn: 'desc' },
-    });
-
-    if (open) {
-      if (effectiveFrom < open.startsOn) {
-        throw new Error(
-          'Ownership cannot start before the period it replaces — correct the earlier record first.'
-        );
-      }
-      // Half-open ranges, the same convention bookings use: the outgoing owner
-      // holds up to but not including the day the incoming one takes over.
-      await tx.ownershipPeriod.update({
-        where: { id: open.id },
-        data: { endsOn: effectiveFrom },
+  if (unit.ownerIdentityId === ownerIdentityId) {
+    let period = open;
+    if (ownerIdentityId && !period) {
+      period = await tx.ownershipPeriod.create({
+        data: {
+          unitId,
+          ownerIdentityId,
+          startsOn: effectiveFrom,
+          note: note ?? 'Ownership history reconciled from current owner projection.',
+          recordedByIdentityId,
+        },
       });
     }
-
-    const period = ownerIdentityId
-      ? await tx.ownershipPeriod.create({
+    if (ownerIdentityId) {
+      const existingRole = await tx.roleAssignment.findFirst({
+        where: {
+          identityId: ownerIdentityId,
+          role: 'owner',
+          scopeType: 'unit',
+          unitId,
+          status: 'active',
+        },
+        select: { id: true },
+      });
+      if (!existingRole) {
+        await tx.roleAssignment.create({
           data: {
+            identityId: ownerIdentityId,
+            role: 'owner',
+            scopeType: 'unit',
+            projectId: unit.projectId,
             unitId,
-            ownerIdentityId,
-            startsOn: effectiveFrom,
-            note,
-            recordedByIdentityId,
+            status: 'active',
+            grantedByIdentityId: recordedByIdentityId,
           },
-        })
-      : null;
+        });
+      }
+    }
+    return { changed: false as const, reconciled: true as const, period };
+  }
 
-    await tx.unit.update({
-      where: { id: unitId },
-      data: { ownerIdentityId },
+  if (open) {
+    if (effectiveFrom < open.startsOn) {
+      throw new Error(
+        'Ownership cannot start before the period it replaces — correct the earlier record first.'
+      );
+    }
+    await tx.ownershipPeriod.update({
+      where: { id: open.id },
+      data: { endsOn: effectiveFrom },
     });
+  }
 
-    return { changed: true as const, period, closedPeriodId: open?.id ?? null };
+  const period = ownerIdentityId
+    ? await tx.ownershipPeriod.create({
+        data: {
+          unitId,
+          ownerIdentityId,
+          startsOn: effectiveFrom,
+          note,
+          recordedByIdentityId,
+        },
+      })
+    : null;
+
+  await tx.unit.update({
+    where: { id: unitId },
+    data: { ownerIdentityId },
   });
+
+  if (unit.ownerIdentityId && unit.ownerIdentityId !== ownerIdentityId) {
+    await tx.roleAssignment.updateMany({
+      where: {
+        identityId: unit.ownerIdentityId,
+        role: 'owner',
+        scopeType: 'unit',
+        unitId,
+        status: 'active',
+      },
+      data: { status: 'revoked' },
+    });
+  }
+
+  if (ownerIdentityId) {
+    const existingRole = await tx.roleAssignment.findFirst({
+      where: {
+        identityId: ownerIdentityId,
+        role: 'owner',
+        scopeType: 'unit',
+        unitId,
+        status: 'active',
+      },
+      select: { id: true },
+    });
+    if (!existingRole) {
+      await tx.roleAssignment.create({
+        data: {
+          identityId: ownerIdentityId,
+          role: 'owner',
+          scopeType: 'unit',
+          projectId: unit.projectId,
+          unitId,
+          status: 'active',
+          grantedByIdentityId: recordedByIdentityId,
+        },
+      });
+    }
+  }
+
+  return { changed: true as const, period, closedPeriodId: open?.id ?? null };
+}
+
+export async function setUnitOwner(db: PrismaClient, input: SetUnitOwnerInput) {
+  return db.$transaction((tx) => setUnitOwnerTx(tx, input));
 }
 
 /**

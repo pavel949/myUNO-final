@@ -238,4 +238,9 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'search.map.aria', namespace: 'search', description: 'Search map accessibility label', en: 'Interactive search map', ru: 'Интерактивная карта поиска', th: 'แผนที่ค้นหาแบบโต้ตอบ', status: 'needs_review' as const },
 
   { key: 'search.map.homes', namespace: 'search', description: 'Search map project home count', en: '{count} homes', ru: '{count} объектов', th: '{count} ที่พัก', status: 'needs_review' as const },
+
+  { key: 'landing.audience.owner_kicker', namespace: 'landing', description: 'Homepage owner audience kicker', en: 'OWNER', ru: 'СОБСТВЕННИК', th: 'เจ้าของ', status: 'needs_review' as const },
+  { key: 'landing.audience.partner_kicker', namespace: 'landing', description: 'Homepage partner audience kicker', en: 'PARTNER', ru: 'ПАРТНЁР', th: 'พาร์ทเนอร์', status: 'needs_review' as const },
+  { key: 'nav.footer.brand_name', namespace: 'nav', description: 'Footer brand name', en: 'myUNO', ru: 'myUNO', th: 'myUNO', status: 'needs_review' as const },
+  { key: 'nav.footer.brand_tagline', namespace: 'nav', description: 'Footer brand tagline', en: 'Property, stays and services connected around one Phuket home.', ru: 'Недвижимость, проживание и сервисы вокруг одного дома на Пхукете.', th: 'อสังหาริมทรัพย์ การเข้าพัก และบริการที่เชื่อมต่อรอบบ้านหนึ่งหลังในภูเก็ต', status: 'needs_review' as const },
 ];

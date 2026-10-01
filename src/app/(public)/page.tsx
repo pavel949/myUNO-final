@@ -342,7 +342,7 @@ export default async function LandingPage() {
               <Link
                 key={desk.slug}
                 href={`/desks/${desk.slug}`}
-                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-18 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-1 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
               >
                 <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#E7F2EF] font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
                   {desk.code}
@@ -607,9 +607,10 @@ export default async function LandingPage() {
 
           <div className="mt-32 grid gap-0 md:grid-cols-3">
             {(['verified', 'handled', 'protected'] as const).map((key, index) => (
-              <div
+              <Link
                 key={key}
-                className={`border-t border-border-line py-24 md:border-t-0 md:py-0 ${
+                href="/trust"
+                className={`group block border-t border-border-line py-24 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:border-t-0 md:py-0 ${
                   index > 0 ? 'md:border-l md:pl-28' : ''
                 } ${index < 2 ? 'md:pr-28' : ''}`}
               >
@@ -620,7 +621,10 @@ export default async function LandingPage() {
                 <p className="mt-8 text-body text-text-secondary">
                   {labels[`landing.trust.${key}_body`]}
                 </p>
-              </div>
+                <span className="mt-14 inline-block text-small font-semibold text-brand-andaman group-hover:underline">
+                  {labels['landing.trust.cta']} →
+                </span>
+              </Link>
             ))}
           </div>
 

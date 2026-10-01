@@ -126,16 +126,8 @@ Area discovery now has dedicated canonical routes.
 
 These are separate business capabilities, not safe design-only substitutions:
 
-### “Project Passport”
-myUNO has ClearView methodology, regulatory credentials, compliance records and project/unit readiness. It does not yet have a canonical public versioned `ProjectPassport` aggregate with:
-- fixed domain/check schema,
-- immutable published versions,
-- second-reviewer independence rules,
-- public named gaps,
-- developer right-of-reply,
-- next review date.
-
-Do not label projects “Passport Pass/Conditional/Fail” until that aggregate exists.
+### Public Project Passport — closed at evidence-snapshot level
+A public Passport surface now projects canonical Project, verified organization provenance, RegulatoryCredential, active CommercialOffering and aggregate ComplianceRecord evidence. It deliberately does not publish a global Pass/Fail score, legal conclusion, valuation or warranty. Missing evidence is rendered as not publicly evidenced. A future governed/versioned assurance product would still require immutable versions, reviewer independence and publication governance.
 
 ### Market Truth / Property Index
 myUNO has internal metrics and property/operations data but no governed public research publication workflow with source-by-number, independent second check, release calendar and correction log. Do not publish market figures as a design-only feature.
@@ -152,22 +144,19 @@ Current `MediaAssetKind` has no video type. A real video library requires:
 ### Agent / developer partner portal
 myUNO has booking channel `agent`, CRM, organizations and attribution foundations but no first-class scoped `agent_member` / developer-partner role and no organization-scoped commission pipeline. Building only a dashboard shell would create false capability. This remains a product/data-model gap, not a visual one.
 
-### Public map discovery
-Area hierarchy and coordinates exist. A reusable public map/list discovery surface still requires the map provider integration and map/search synchronization contract. Do not create a decorative map that is disconnected from canonical search.
+### Public map discovery — closed
+Public stay search now uses the existing canonical viewport contract (`parseMapBounds` + `boundsWhere`) and Project latitude/longitude. Map movement updates the same search query used by the list; list focus highlights the corresponding project marker. If the external map renderer cannot load, the result list remains authoritative.
 
 ## Remaining gaps by priority
 
 ### P0 — before claiming full benchmark parity
 1. First-class partner/agent organization role and scoped partner pipeline.
-2. Public list/map search tied to canonical Area, Project and Unit records.
-3. Public verification aggregate if “Passport”-style trust is desired.
-4. Extend the new Stay Pass visual shell from active Home Space into the pre-arrival and post-stay detail screens.
+2. Extend the new Stay Pass visual shell from active Home Space into the pre-arrival and post-stay detail screens.
 
 ### P1
 1. Dedicated seller dashboard projection from Owner + CRM opportunity.
 2. Investor portfolio projection from existing owner/buyer/finance records.
-3. Public Help Center information architecture.
-4. Standard premium primitives rolled across every ops/admin/owner/provider screen.
+3. Standard premium primitives rolled across every ops/admin/owner/provider screen.
 
 ### P2 / optional
 1. Governed public research/index publication system.

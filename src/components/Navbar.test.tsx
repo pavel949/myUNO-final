@@ -16,12 +16,21 @@ describe('Navbar', () => {
       <Navbar
         user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
         labels={{
-          findStay: 'Find a stay',
-          residences: 'Residences',
+          stay: 'Stay',
+          monthly: 'Monthly',
+          buy: 'Buy',
+          sell: 'Sell',
+          rentOut: 'Rent Out',
+          manage: 'Manage',
+          explore: 'Explore',
+          areas: 'Areas',
+          projects: 'Projects',
           services: 'Services',
           owners: 'Owners',
           about: 'About',
           trust: 'Trust',
+          help: 'Help',
+          global: 'Global',
           language: 'Language',
           login: 'Log in',
           register: 'Sign up',

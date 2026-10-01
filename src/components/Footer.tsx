@@ -4,9 +4,11 @@ import { LocaleSwitcher } from './LocaleSwitcher';
 export interface FooterLabels {
   brandColumn: string;
   home: string;
-  residences: string;
+  stay: string;
+  monthly: string;
+  buy: string;
+  projects: string;
   services: string;
-  search: string;
   trust: string;
   about: string;
   ombudsman: string;
@@ -39,12 +41,11 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
       title: labels.brandColumn,
       links: [
         { href: '/', label: labels.home },
-        { href: '/search', label: labels.search },
-        { href: '/projects', label: labels.residences },
+        { href: '/search', label: labels.stay },
+        { href: '/homes?intent=rent', label: labels.monthly },
+        { href: '/homes?intent=buy', label: labels.buy },
+        { href: '/projects', label: labels.projects },
         { href: '/services', label: labels.services },
-        { href: '/trust', label: labels.trust },
-        { href: '/trust/ombudsman', label: labels.ombudsman },
-        { href: '/about', label: labels.about },
       ],
     },
     {
@@ -53,6 +54,8 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/owners', label: labels.owners },
         { href: '/guests', label: labels.guests },
         { href: '/providers', label: labels.providers },
+        { href: '/trust', label: labels.trust },
+        { href: '/about', label: labels.about },
       ],
     },
     {
@@ -61,6 +64,7 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/developers', label: labels.developers },
         { href: '/buyers', label: labels.buyers },
         { href: '/management-companies', label: labels.management },
+        { href: '/trust/ombudsman', label: labels.ombudsman },
       ],
     },
     {
@@ -74,16 +78,31 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-text-ink text-surface-ivory py-40 px-24">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-40 mb-40">
+    <footer className="bg-text-ink px-20 py-48 text-surface-ivory md:px-32 md:py-64">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-48 flex flex-col justify-between gap-24 border-b border-surface-ivory/15 pb-32 md:flex-row md:items-end">
+          <div>
+            <p className="font-display text-display font-semibold tracking-[-0.02em]">myUNO</p>
+            <p className="mt-8 max-w-md text-small text-surface-ivory/60">
+              Property, stays and services connected around one Phuket home.
+            </p>
+          </div>
+          <LocaleSwitcher
+            locale={locale}
+            ariaLabel={labels.language}
+            optionLabels={localeOptions}
+            variant="onDark"
+          />
+        </div>
+
+        <div className="mb-48 grid grid-cols-2 gap-x-24 gap-y-40 md:grid-cols-4">
           {columns.map((column) => (
             <div key={column.title}>
-              <p className="font-bold mb-12">{column.title}</p>
-              <ul className="space-y-8 text-small">
+              <p className="mb-16 text-small font-semibold text-surface-ivory">{column.title}</p>
+              <ul className="space-y-10 text-small text-surface-ivory/70">
                 {column.links.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="hover:underline">
+                    <Link href={link.href} className="transition-colors duration-micro hover:text-surface-ivory">
                       {link.label}
                     </Link>
                   </li>
@@ -92,17 +111,10 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-16 border-t border-surface-ivory/20 pt-32">
-          <div>
-            <p className="text-small text-surface-ivory/60 mb-12">{labels.companyLine}</p>
-            <p className="text-small text-surface-ivory/60">{labels.copyright}</p>
-          </div>
-          <LocaleSwitcher
-            locale={locale}
-            ariaLabel={labels.language}
-            optionLabels={localeOptions}
-            variant="onDark"
-          />
+
+        <div className="flex flex-col gap-8 border-t border-surface-ivory/15 pt-24 md:flex-row md:items-end md:justify-between">
+          <p className="max-w-3xl text-small text-surface-ivory/50">{labels.companyLine}</p>
+          <p className="shrink-0 text-small text-surface-ivory/50">{labels.copyright}</p>
         </div>
       </div>
     </footer>

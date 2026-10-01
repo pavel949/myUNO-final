@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -232,32 +232,40 @@ export default function SearchResults({
     });
   };
 
-  const mapProjects: SearchMapProject[] = Array.from(
-    units.reduce((projects, unit) => {
-      if (!unit.project || !Number.isFinite(unit.project.latitude) || !Number.isFinite(unit.project.longitude)) {
-        return projects;
-      }
-      const current = projects.get(unit.project.id);
-      if (current) {
-        current.unitCount += 1;
-        current.fromNightlyThb = Math.min(current.fromNightlyThb, unit.baseNightlyThb);
-      } else {
-        projects.set(unit.project.id, {
-          id: unit.project.id,
-          name: unit.project.name,
-          latitude: unit.project.latitude,
-          longitude: unit.project.longitude,
-          unitCount: 1,
-          fromNightlyThb: unit.baseNightlyThb,
-        });
-      }
-      return projects;
-    }, new Map<string, SearchMapProject>()).values()
+  const mapProjects: SearchMapProject[] = useMemo(
+    () =>
+      Array.from(
+        units.reduce((projects, unit) => {
+          if (
+            !unit.project ||
+            !Number.isFinite(unit.project.latitude) ||
+            !Number.isFinite(unit.project.longitude)
+          ) {
+            return projects;
+          }
+          const current = projects.get(unit.project.id);
+          if (current) {
+            current.unitCount += 1;
+            current.fromNightlyThb = Math.min(current.fromNightlyThb, unit.baseNightlyThb);
+          } else {
+            projects.set(unit.project.id, {
+              id: unit.project.id,
+              name: unit.project.name,
+              latitude: unit.project.latitude,
+              longitude: unit.project.longitude,
+              unitCount: 1,
+              fromNightlyThb: unit.baseNightlyThb,
+            });
+          }
+          return projects;
+        }, new Map<string, SearchMapProject>()).values()
+      ),
+    [units]
   );
 
   const handleMapBoundsChange = useCallback(
     (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => {
-      const next = new URLSearchParams(searchParams?.toString() || '');
+      const next = new URLSearchParams(window.location.search);
       const incoming = [bounds.swLat, bounds.swLng, bounds.neLat, bounds.neLng].map(String);
       const current = [next.get('swLat'), next.get('swLng'), next.get('neLat'), next.get('neLng')];
       if (incoming.every((value, index) => value === current[index])) return;
@@ -267,7 +275,7 @@ export default function SearchResults({
       next.set('neLng', incoming[3]);
       router.replace(`/search?${next.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [router]
   );
 
   const resetMapBounds = () =>
@@ -277,6 +285,19 @@ export default function SearchResults({
       next.delete('neLat');
       next.delete('neLng');
     });
+
+  const handleMapProjectSelect = useCallback(
+    (selected: string) => {
+      setSelectedProjectId(selected);
+      const unit = units.find((candidate) => candidate.project?.id === selected);
+      if (unit) {
+        document
+          .getElementById(`unit-card-${unit.id}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    },
+    [units]
+  );
 
   const handleBookCategory = (categoryKey: string) => {
     if (!startDate || !endDate || !projectId) return;
@@ -560,11 +581,7 @@ export default function SearchResults({
             <SearchResultsMap
               projects={mapProjects}
               selectedProjectId={selectedProjectId}
-              onSelectProject={(selected) => {
-                setSelectedProjectId(selected);
-                const unit = units.find((candidate) => candidate.project?.id === selected);
-                if (unit) document.getElementById(`unit-card-${unit.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
+              onSelectProject={handleMapProjectSelect}
               onBoundsChange={handleMapBoundsChange}
               labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable }}
               fitToProjects={!hasMapBounds}

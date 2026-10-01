@@ -51,6 +51,8 @@ export interface PublicLeadInput {
   sourceMedium?: string;
   sourceCampaign?: string;
   referrerIdentityId?: string;
+  projectId?: string;
+  unitId?: string;
 }
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -332,6 +334,8 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
         type,
         title: `${input.audience}: ${fullName}`,
         source,
+        projectId: input.projectId,
+        unitId: input.unitId,
         requirements: input.message ? { message: input.message.trim() } : {},
       },
     });

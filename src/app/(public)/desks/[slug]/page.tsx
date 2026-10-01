@@ -61,7 +61,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
 
   return (
     <main className="min-h-screen bg-surface-ivory">
-      <section className="border-b border-border-line bg-gradient-to-br from-[#EFF8F5] via-surface-paper to-[#F7F1E5] px-20 py-56 md:px-32 md:py-80">
+      <section className="border-b border-border-line bg-gradient-to-br from-surface-ivory via-surface-paper to-surface-ivory px-20 py-56 md:px-32 md:py-80">
         <div className="mx-auto max-w-7xl">
           <Link href="/desks" className="text-small font-semibold text-brand-andaman hover:underline">
             ← {labels['desks.detail.back']}

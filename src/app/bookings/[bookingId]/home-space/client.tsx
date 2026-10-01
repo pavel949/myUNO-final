@@ -72,6 +72,17 @@ interface InStayHomeSpaceClientProps {
   announcements: Announcement[];
   services: RailService[];
   secondaryRoles: string[];
+  arrivalGuide: {
+    checkInMethod: string;
+    entryCode: string;
+    lockboxLocation: string;
+    lockboxCode: string;
+    wifiSsid: string;
+    wifiPassword: string;
+    parkingInstructions: string;
+    arrivalNotes: string;
+    emergencyContact: string;
+  } | null;
   conciergeWhatsappUrl?: string | null;
   shuttleText?: string;
   projectAmenities: PublicProjectAmenity[];
@@ -92,6 +103,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   announcements,
   services,
   secondaryRoles,
+  arrivalGuide,
   conciergeWhatsappUrl,
   shuttleText,
   projectAmenities,
@@ -302,6 +314,8 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
               guestCount={booking.adults + booking.children}
               tm30Filed={tm30Filed}
               paidInFull={paidInFull}
+              doorCode={arrivalGuide?.entryCode || arrivalGuide?.lockboxCode || null}
+              doorCodeHint={arrivalGuide?.lockboxLocation || null}
               labels={labels}
             />
 
@@ -312,6 +326,31 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
               onRaiseIssue={handleRaiseIssue}
               onExtendStay={handleExtendStay}
             />
+            {arrivalGuide ? (
+              <section className="mb-24 rounded-lg border border-border-line bg-surface-paper p-20 md:p-24">
+                <div className="mb-16">
+                  <p className="text-kicker font-semibold uppercase tracking-widest text-brand-andaman">
+                    {labels['home.arrival.kicker']}
+                  </p>
+                  <h2 className="mt-4 font-display text-title font-semibold text-text-ink">
+                    {labels['home.arrival.title']}
+                  </h2>
+                  <p className="mt-4 text-small text-text-secondary">{labels['home.arrival.subtitle']}</p>
+                </div>
+                <dl className="grid gap-12 text-small sm:grid-cols-2">
+                  {arrivalGuide.checkInMethod ? <div><dt className="text-text-secondary">{labels['home.arrival.method']}</dt><dd className="font-semibold text-text-ink">{labels[`home.arrival.method.${arrivalGuide.checkInMethod}`] ?? arrivalGuide.checkInMethod.replace(/_/g, ' ')}</dd></div> : null}
+                  {arrivalGuide.entryCode ? <div><dt className="text-text-secondary">{labels['home.arrival.entry_code']}</dt><dd className="font-display text-title font-semibold tracking-[0.16em] text-text-ink">{arrivalGuide.entryCode}</dd></div> : null}
+                  {arrivalGuide.lockboxLocation ? <div><dt className="text-text-secondary">{labels['home.arrival.lockbox_location']}</dt><dd className="font-semibold text-text-ink">{arrivalGuide.lockboxLocation}</dd></div> : null}
+                  {arrivalGuide.lockboxCode ? <div><dt className="text-text-secondary">{labels['home.arrival.lockbox_code']}</dt><dd className="font-display text-title font-semibold tracking-[0.16em] text-text-ink">{arrivalGuide.lockboxCode}</dd></div> : null}
+                  {arrivalGuide.wifiSsid ? <div><dt className="text-text-secondary">{labels['home.arrival.wifi_network']}</dt><dd className="font-semibold text-text-ink">{arrivalGuide.wifiSsid}</dd></div> : null}
+                  {arrivalGuide.wifiPassword ? <div><dt className="text-text-secondary">{labels['home.arrival.wifi_password']}</dt><dd className="font-semibold text-text-ink">{arrivalGuide.wifiPassword}</dd></div> : null}
+                  {arrivalGuide.parkingInstructions ? <div className="sm:col-span-2"><dt className="text-text-secondary">{labels['home.arrival.parking']}</dt><dd className="whitespace-pre-wrap font-medium text-text-ink">{arrivalGuide.parkingInstructions}</dd></div> : null}
+                  {arrivalGuide.arrivalNotes ? <div className="sm:col-span-2"><dt className="text-text-secondary">{labels['home.arrival.notes']}</dt><dd className="whitespace-pre-wrap font-medium text-text-ink">{arrivalGuide.arrivalNotes}</dd></div> : null}
+                  {arrivalGuide.emergencyContact ? <div className="sm:col-span-2"><dt className="text-text-secondary">{labels['home.arrival.emergency']}</dt><dd className="font-semibold text-text-ink">{arrivalGuide.emergencyContact}</dd></div> : null}
+                </dl>
+              </section>
+            ) : null}
+
 
             {inStay && extendOpen ? (
               <ExtendStayPanel

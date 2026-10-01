@@ -68,6 +68,8 @@ export const COMMERCE_STRUCTURE_KEYS = [
 
   { key: 'landing.search.where', namespace: 'landing', description: 'Homepage search destination label', en: 'Where', ru: 'Где', th: 'ที่ไหน', status: 'needs_review' as const },
   { key: 'landing.search.all_phuket', namespace: 'landing', description: 'Homepage search all Phuket option', en: 'All Phuket', ru: 'Весь Пхукет', th: 'ภูเก็ตทั้งหมด', status: 'needs_review' as const },
+  { key: 'landing.search.locations', namespace: 'landing', description: 'Homepage destination group: locations', en: 'Locations', ru: 'Локации', th: 'พื้นที่', status: 'needs_review' as const },
+  { key: 'landing.search.projects', namespace: 'landing', description: 'Homepage destination group: projects', en: 'Projects', ru: 'Проекты', th: 'โครงการ', status: 'needs_review' as const },
 
   { key: 'landing.homes.kicker', namespace: 'landing', description: 'Homepage available homes kicker', en: 'AVAILABLE HOMES', ru: 'ДОСТУПНЫЕ ОБЪЕКТЫ', th: 'บ้านที่พร้อมให้บริการ', status: 'needs_review' as const },
   { key: 'landing.homes.title', namespace: 'landing', description: 'Homepage available homes heading', en: 'Homes to buy or rent in Phuket.', ru: 'Недвижимость на Пхукете для покупки или аренды.', th: 'บ้านสำหรับซื้อหรือเช่าในภูเก็ต', status: 'needs_review' as const },

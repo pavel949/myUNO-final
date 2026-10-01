@@ -22,6 +22,25 @@ export interface PublicCommercialHome {
 }
 
 const kinds = ['sale', 'long_term_rental'];
+
+export function publicOfferingPriceThb(
+  offeringType: string,
+  pricingTerms: unknown,
+): { intent: HomeIntent; amountThb: number } | null {
+  if (!pricingTerms || typeof pricingTerms !== 'object' || Array.isArray(pricingTerms)) return null;
+  const terms = pricingTerms as Record<string, unknown>;
+  const numeric = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  if (offeringType === 'sale') {
+    const amount = numeric(terms.askingPriceThb);
+    return amount ? { intent: 'buy', amountThb: amount } : null;
+  }
+  if (offeringType === 'long_term_rental') {
+    const amount = numeric(terms.monthlyRentThb) ?? numeric(terms.monthlyThb);
+    return amount ? { intent: 'rent', amountThb: amount } : null;
+  }
+  return null;
+}
 type Credential = {
   credentialType: string; status: string; verificationStatus: string;
   evidenceMediaId: string | null; expiryDate: Date | null; effectiveDate: Date | null;
@@ -91,20 +110,11 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       sourceBookingOwned: sourceExcluded.has(row.id),
     }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
-    const numeric = (value: unknown) =>
-      typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
     const priceThb: Partial<Record<HomeIntent, number>> = {};
     for (const offering of row.commercialOfferings) {
-      if (offering.status !== 'active' || !offering.pricingTerms || typeof offering.pricingTerms !== 'object') continue;
-      const terms = offering.pricingTerms as Record<string, unknown>;
-      if (offering.offeringType === 'sale') {
-        const amount = numeric(terms.askingPriceThb);
-        if (amount) priceThb.buy = amount;
-      }
-      if (offering.offeringType === 'long_term_rental') {
-        const amount = numeric(terms.monthlyRentThb) ?? numeric(terms.monthlyThb);
-        if (amount) priceThb.rent = amount;
-      }
+      if (offering.status !== 'active') continue;
+      const normalized = publicOfferingPriceThb(offering.offeringType, offering.pricingTerms);
+      if (normalized) priceThb[normalized.intent] = normalized.amountThb;
     }
     return [{
       id: row.id,

@@ -62,7 +62,7 @@ export default async function ManagePage() {
         </h1>
         <p className="mt-20 max-w-3xl text-lg leading-relaxed text-surface-ivory/75">{labels['manage.body']}</p>
         <div className="mt-28 flex flex-col gap-10 sm:flex-row">
-          <Link href="/property/onboard?kind=management&operatingModel=direct_managed" className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
+          <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
             {labels['manage.primary']} →
           </Link>
           <Link href="/rent-out" className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-white hover:bg-white/10">
@@ -96,7 +96,7 @@ export default async function ManagePage() {
     </section>
 
     <section className="mx-auto grid max-w-7xl gap-16 px-20 py-56 md:grid-cols-2 md:px-32 md:py-80">
-      <Link href="/property/onboard?kind=management&operatingModel=direct_managed" className="group flex min-h-[280px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
+      <Link href="/property/onboard?kind=home&operatingModel=direct_managed" className="group flex min-h-[280px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
         <div>
           <h2 className="font-display text-display font-semibold text-text-ink">{labels['manage.owner.title']}</h2>
           <p className="mt-12 max-w-xl text-body text-text-secondary">{labels['manage.owner.body']}</p>

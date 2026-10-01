@@ -383,4 +383,6 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'homes.type.condo', namespace: 'homes', description: 'Homes condo type', en: 'Condo', ru: 'Кондоминиум', th: 'คอนโด', status: 'needs_review' as const },
   { key: 'homes.type.villa', namespace: 'homes', description: 'Homes villa type', en: 'Villa', ru: 'Вилла', th: 'วิลล่า', status: 'needs_review' as const },
   { key: 'homes.type.townhouse', namespace: 'homes', description: 'Homes townhouse type', en: 'Townhouse', ru: 'Таунхаус', th: 'ทาวน์เฮาส์', status: 'needs_review' as const },
+
+  { key: 'sell.advisor_cta', namespace: 'sell', description: 'Sell advisor review CTA', en: 'Request an advisor review', ru: 'Запросить консультацию', th: 'ขอคำปรึกษาจากที่ปรึกษา', status: 'needs_review' as const },
 ];

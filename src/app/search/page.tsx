@@ -45,6 +45,7 @@ export default async function SearchPage() {
     'search.map.unavailable': 'Map is unavailable right now. The result list remains authoritative.',
     'search.map.reset': 'Reset map area',
     'search.map.results': 'Showing {shown} of {total} homes in this view',
+    'search.map.aria': 'Interactive search map',
     'catalog.unit_types.villa.label': 'Villa',
     'catalog.unit_types.condo.label': 'Apartment',
     'catalog.unit_types.townhouse.label': 'Townhouse',
@@ -93,6 +94,7 @@ export default async function SearchPage() {
           mapUnavailable: labels['search.map.unavailable'],
           mapReset: labels['search.map.reset'],
           mapResults: labels['search.map.results'],
+          mapAria: labels['search.map.aria'],
         }}
         typeOptions={[
           { key: 'villa', label: labels['catalog.unit_types.villa.label'] },

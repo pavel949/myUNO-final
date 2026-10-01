@@ -179,15 +179,11 @@ export async function getPublicProjectPassport(
     }))
     .sort((a, b) => a.type.localeCompare(b.type));
 
-  const hasFullCoverage =
-    project.units.length > 0 &&
-    byType.length > 0 &&
-    byType.some((item) => item.confirmedUnits === project.units.length);
-  const unitComplianceStatus: PassportEvidenceStatus = hasFullCoverage
-    ? 'documented'
-    : byType.length > 0
-      ? 'partial'
-      : 'not_evidenced';
+  // A confirmed record can document one specific check, but the schema does
+  // not define a public "all legal requirements complete" checklist. Never
+  // promote aggregate unit compliance to a blanket pass from one record type.
+  const unitComplianceStatus: PassportEvidenceStatus =
+    byType.length > 0 ? 'partial' : 'not_evidenced';
 
   const lat = Number(project.latitude);
   const lng = Number(project.longitude);

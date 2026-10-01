@@ -50,12 +50,12 @@ export default function ProjectStoryEditor({
         These are the same canonical translations used by the Project Portal. Edit them here instead of maintaining a separate CMS.
       </p>
     </div>
-    {message ? <p role="status" className="mb-12 rounded-md bg-surface-muted p-10 text-small">{message}</p> : null}
+    {message ? <p role="status" className="mb-12 rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
     <div className="space-y-16">
-      {fields.map(field => <div key={field.key} className="rounded-lg border border-border-line p-14">
+      {fields.map(field => <div key={field.key} className="rounded-lg border border-border-line p-16">
         <p className="font-semibold text-text-ink">{field.label}</p>
-        <p className="mt-2 text-micro text-text-secondary">{field.key}</p>
-        <div className="mt-10 grid gap-10 lg:grid-cols-3">
+        <p className="mt-8 text-micro text-text-secondary">{field.key}</p>
+        <div className="mt-12 grid gap-12 lg:grid-cols-3">
           {locales.map(locale => {
             const id = `${field.key}::${locale}`;
             return <label key={locale} className="text-small uppercase text-text-secondary">
@@ -64,13 +64,13 @@ export default function ProjectStoryEditor({
                 rows={field.key.includes('headline') || field.key.endsWith('.title') || field.key.endsWith('.cta') ? 2 : 4}
                 value={drafts[id] ?? ''}
                 onChange={e => setDrafts(prev => ({ ...prev, [id]: e.target.value }))}
-                className="mt-4 min-h-72 w-full rounded-md border border-border-line bg-surface-ivory p-9 text-small normal-case text-text-ink"
+                className="mt-4 min-h-80 w-full rounded-md border border-border-line bg-surface-ivory p-8 text-small normal-case text-text-ink"
               />
               <button
                 type="button"
                 onClick={() => save(field.key, locale)}
                 disabled={busy === id}
-                className="mt-6 rounded-md border border-border-line px-10 py-7 text-small font-semibold text-brand-andaman disabled:opacity-50"
+                className="mt-8 rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman disabled:opacity-50"
               >
                 {busy === id ? 'Saving…' : `Save ${locale.toUpperCase()}`}
               </button>

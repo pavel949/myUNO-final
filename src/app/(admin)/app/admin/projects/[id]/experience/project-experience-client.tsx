@@ -38,8 +38,8 @@ export type AmenityRow = {
   media: Media[];
 };
 
-const input = 'mt-4 h-40 w-full rounded-md border border-border-line bg-surface-paper px-10 text-text-ink';
-const area = 'mt-4 min-h-96 w-full rounded-md border border-border-line bg-surface-paper p-10 text-text-ink';
+const input = 'mt-4 h-40 w-full rounded-md border border-border-line bg-surface-paper px-12 text-text-ink';
+const area = 'mt-4 min-h-96 w-full rounded-md border border-border-line bg-surface-paper p-12 text-text-ink';
 
 function stringify(value: unknown) {
   if (!value) return '';
@@ -232,14 +232,14 @@ export default function ProjectExperienceClient({
         <label className="mt-12 block text-small">Name<input name="name" required className={input} placeholder="Cinema room, sauna, beach shuttle…" /></label>
         <label className="mt-8 block text-small">Group / category<input name="categoryKey" className={input} placeholder="wellness, entertainment, transport…" /></label>
         <label className="mt-8 block text-small">Short guest description<input name="shortDescription" className={input} /></label>
-        <button disabled={busy} className="mt-12 min-h-40 rounded-md bg-brand-andaman px-14 font-semibold text-white disabled:opacity-50">Add draft</button>
+        <button disabled={busy} className="mt-12 min-h-40 rounded-md bg-brand-andaman px-16 font-semibold text-white disabled:opacity-50">Add draft</button>
       </form>
 
       <input value={query} onChange={e => setQuery(e.target.value)} className={input} placeholder="Search amenities…" />
-      <div className="max-h-[640px] space-y-6 overflow-y-auto pr-4">
+      <div className="max-h-[640px] space-y-8 overflow-y-auto pr-4">
         {filtered.map(row => <button key={row.id} onClick={() => setSelectedId(row.id)} className={`w-full rounded-lg border p-12 text-left ${selectedId === row.id ? 'border-brand-andaman bg-surface-paper' : 'border-border-line bg-surface-ivory'}`}>
           <div className="flex justify-between gap-8"><span className="font-medium text-text-ink">{row.name}</span><span className="text-micro text-text-secondary">{row.published ? 'Live' : 'Draft'}</span></div>
-          <p className="mt-2 text-micro text-text-secondary">{row.categoryKey || 'Uncategorized'}{row.bookingRequired ? ' · booking' : ''}</p>
+          <p className="mt-8 text-micro text-text-secondary">{row.categoryKey || 'Uncategorized'}{row.bookingRequired ? ' · booking' : ''}</p>
         </button>)}
       </div>
     </aside>
@@ -252,8 +252,8 @@ export default function ProjectExperienceClient({
             <div className="flex flex-wrap items-center justify-between gap-12">
               <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p>{selected.bookingRequired && canOperateReservations ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
               <div className="flex gap-8">
-                <label className="flex items-center gap-6 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> Featured</label>
-                <label className="flex items-center gap-6 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> Published</label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> Featured</label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> Published</label>
               </div>
             </div>
 
@@ -310,16 +310,16 @@ export default function ProjectExperienceClient({
 
           <div className="rounded-xl border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12"><div><h3 className="font-semibold">Amenity gallery</h3><p className="text-small text-text-secondary">Photos belong to this amenity, not to the whole project or a unit.</p></div><label className="cursor-pointer rounded-md border border-border-line px-12 py-8 text-small font-semibold">Upload photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} className="hidden"/></label></div>
-            <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
               {selected.media.map(row => <div key={row.mediaId} className="relative overflow-hidden rounded-lg border border-border-line">
                 <Image src={row.media.storageKey} alt={selected.name} width={420} height={260} className="aspect-video w-full object-cover"/>
-                <div className="flex flex-wrap gap-6 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-micro font-semibold text-brand-andaman">{selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'}</button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-micro text-state-error">Remove</button></div>
+                <div className="flex flex-wrap gap-8 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-micro font-semibold text-brand-andaman">{selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'}</button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-micro text-state-error">Remove</button></div>
               </div>)}
             </div>
           </div>
 
           <div className="flex flex-wrap justify-between gap-12">
-            <button type="button" onClick={deleteAmenity} disabled={busy} className="min-h-40 rounded-md border border-state-error px-14 font-semibold text-state-error">Delete amenity</button>
+            <button type="button" onClick={deleteAmenity} disabled={busy} className="min-h-40 rounded-md border border-state-error px-16 font-semibold text-state-error">Delete amenity</button>
             <button disabled={busy} className="min-h-44 rounded-md bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save amenity'}</button>
           </div>
         </form>

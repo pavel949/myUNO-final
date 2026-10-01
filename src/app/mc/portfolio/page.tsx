@@ -199,9 +199,9 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
             <p className="mt-4 text-small text-text-secondary">One occupancy calendar across your authorized properties. All dates are property nights; checkout is exclusive.</p>
           </div>
           <div className="flex flex-wrap gap-8">
-            <Link href="/property/onboard" className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Submit a property →</Link>
-            {(user.isAdmin || (selectedProjectId && staffProjectIds.includes(selectedProjectId))) && selectedProjectId && <Link href={`/ops/projects/${selectedProjectId}/edit`} className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Edit complex →</Link>}
-            <Link href={user.isAdmin || staffProjectIds.length ? '/ops/calendar' : '/mc/calendar'} className="rounded-lg border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Unit calendars & rates →</Link>
+            <Link href="/property/onboard" className="rounded-lg border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold text-brand-andaman">Submit a property →</Link>
+            {(user.isAdmin || (selectedProjectId && staffProjectIds.includes(selectedProjectId))) && selectedProjectId && <Link href={`/ops/projects/${selectedProjectId}/edit`} className="rounded-lg border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold text-brand-andaman">Edit complex →</Link>}
+            <Link href={user.isAdmin || staffProjectIds.length ? '/ops/calendar' : '/mc/calendar'} className="rounded-lg border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold text-brand-andaman">Unit calendars & rates →</Link>
           </div>
         </div>
         <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
@@ -223,7 +223,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
           </nav>
           <nav aria-label="Month" className="flex items-center gap-12">
             <Link href={query(previous, selectedProjectId)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Previous month">←</Link>
-            <span className="min-w-120 text-center font-semibold text-text-ink">{label}</span>
+            <span className="min-w-[120px] text-center font-semibold text-text-ink">{label}</span>
             <Link href={query(next, selectedProjectId)} className="rounded-lg border border-border-line bg-surface-paper px-12 py-8" aria-label="Next month">→</Link>
           </nav>
         </div>
@@ -234,7 +234,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
           <table className="w-full min-w-max border-collapse text-small">
             <thead><tr className="bg-surface-ivory">
               <th scope="col" className="sticky left-0 z-20 min-w-[210px] border-b border-r border-border-line bg-surface-ivory px-12 py-12 text-left">Property / unit</th>
-              {days.map((day) => <th key={dayKey(day)} scope="col" className="min-w-[37px] border-b border-border-line px-1 py-12 text-center"><span className="block text-text-secondary">{day.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }).slice(0, 2)}</span>{day.getUTCDate()}</th>)}
+              {days.map((day) => <th key={dayKey(day)} scope="col" className="min-w-[37px] border-b border-border-line px-4 py-12 text-center"><span className="block text-text-secondary">{day.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }).slice(0, 2)}</span>{day.getUTCDate()}</th>)}
               <th scope="col" className="border-b border-border-line px-12 py-12 text-right">Base / night</th>
               <th scope="col" className="border-b border-border-line px-12 py-12 text-right">Tasks</th>
             </tr></thead>
@@ -257,7 +257,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
                   const conflict = (confirmed && (hold || activeBlocks.length > 0)) || activeBlocks.length > 1;
                   const rule = unitRules.find((r) => inNight(day, r.startDate, r.endDate));
                   const title = `${unit.name} · ${dayKey(day)}: ${conflict ? 'overlap / reconcile' : confirmed ? 'occupied' : activeBlocks.length ? activeBlocks.map((b) => b.reason).join(', ') : hold ? 'payment hold' : requested ? 'request only' : 'available'}${rule ? ` · rate override ฿${asBaht(rule.nightlyThb)}` : ''}`;
-                  return <td key={dayKey(day)} title={title} className="border-b border-l border-border-line p-1 text-center">
+                  return <td key={dayKey(day)} title={title} className="border-b border-l border-border-line p-4 text-center">
                     <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} aria-label={title} className={`block rounded-md py-8 font-semibold ${conflict ? 'bg-red-100 text-red-800' : confirmed ? 'bg-brand-andaman text-white' : activeBlocks.length ? 'bg-amber-100 text-amber-900' : hold ? 'bg-violet-100 text-violet-900' : requested ? 'bg-blue-50 text-blue-800' : 'text-text-secondary hover:bg-surface-ivory'}`}>{conflict ? '!' : confirmed ? '■' : activeBlocks.length ? '×' : hold ? 'H' : requested ? '◇' : rule ? '·' : ' '}</Link>
                   </td>;
                 })}

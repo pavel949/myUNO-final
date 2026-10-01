@@ -96,7 +96,7 @@ export function DiscoverySearch({
               setError('');
             }}
             aria-pressed={mode === item.id}
-            className={`shrink-0 rounded-full px-16 py-10 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+            className={`shrink-0 rounded-full px-16 py-12 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
               mode === item.id
                 ? 'bg-brand-andaman text-white'
                 : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
@@ -109,10 +109,10 @@ export function DiscoverySearch({
 
       {mode === 'stay' ? (
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] md:items-end">
-          <label className="col-span-2 grid gap-6 text-small text-text-secondary md:col-span-1">
+          <label className="col-span-2 grid gap-8 text-small text-text-secondary md:col-span-1">
             {labels.where}
             <select
-              className="h-52 min-w-0 rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 rounded-lg border border-border-line bg-white px-12 text-text-ink"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
@@ -123,10 +123,10 @@ export function DiscoverySearch({
             </select>
           </label>
 
-          <label className="grid gap-6 text-small text-text-secondary">
+          <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkIn}
             <input
-              className="h-52 min-w-0 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
               type="date"
               required
               min={today}
@@ -135,10 +135,10 @@ export function DiscoverySearch({
             />
           </label>
 
-          <label className="grid gap-6 text-small text-text-secondary">
+          <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkOut}
             <input
-              className="h-52 min-w-0 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
               type="date"
               required
               min={startDate || today}
@@ -147,10 +147,10 @@ export function DiscoverySearch({
             />
           </label>
 
-          <label className="grid gap-6 text-small text-text-secondary">
+          <label className="grid gap-8 text-small text-text-secondary">
             {labels.adults}
             <input
-              className="h-52 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
               type="number"
               min="1"
               max="20"
@@ -159,10 +159,10 @@ export function DiscoverySearch({
             />
           </label>
 
-          <label className="grid gap-6 text-small text-text-secondary">
+          <label className="grid gap-8 text-small text-text-secondary">
             {labels.children}
             <input
-              className="h-52 w-full rounded-lg border border-border-line bg-white px-10 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
               type="number"
               min="0"
               max="20"
@@ -172,7 +172,7 @@ export function DiscoverySearch({
           </label>
 
           <button
-            className="col-span-2 h-52 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:col-span-1"
+            className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:col-span-1"
             type="submit"
           >
             {labels.explore} →
@@ -183,7 +183,7 @@ export function DiscoverySearch({
           <p className="max-w-2xl text-body text-text-secondary">{labels.hint}</p>
           <button
             type="submit"
-            className="h-52 w-full shrink-0 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep md:w-auto"
+            className="h-48 w-full shrink-0 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep md:w-auto"
           >
             {labels.properties} →
           </button>

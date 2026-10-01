@@ -484,7 +484,7 @@ export default async function ProjectLandingPage({
             <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
           </div>
           <Link href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
-            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-10 text-small font-semibold text-white hover:opacity-90">
+            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-12 text-small font-semibold text-white hover:opacity-90">
             {labels['project_page.owner_intake.cta']}
           </Link>
         </div>
@@ -638,7 +638,7 @@ export default async function ProjectLandingPage({
             </div>
           ))}
         </div>
-        <div className="flex flex-col items-center justify-center gap-10 text-center sm:flex-row">
+        <div className="flex flex-col items-center justify-center gap-12 text-center sm:flex-row">
           <Link
             href={`/projects/${project.slug}/passport`}
             className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep"

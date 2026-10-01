@@ -237,7 +237,7 @@ export default async function AdminCompliancePage({
                       </td>
                       <td className="py-12">
                         <span
-                          className={`inline-flex px-10 py-4 rounded-full text-small font-semibold ${tm30Tone(
+                          className={`inline-flex px-12 py-4 rounded-full text-small font-semibold ${tm30Tone(
                             filing.status
                           )}`}
                         >

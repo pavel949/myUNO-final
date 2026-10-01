@@ -55,7 +55,7 @@ export default function TariffPreviewClient({
       <label className="text-small">{labels.departure}<input required type="date" value={checkOut}
         onChange={e=>setCheckOut(e.target.value)} className="block w-full border border-border-line rounded-md p-8 mt-4" /></label>
       <button type="submit" disabled={busy}
-        className="self-end rounded-md bg-brand-deep text-white px-16 py-10 disabled:opacity-50">{labels.preview}</button>
+        className="self-end rounded-md bg-brand-deep text-white px-16 py-12 disabled:opacity-50">{labels.preview}</button>
     </form>
     {result?.error && <p role="alert" className="mt-12 text-state-danger">{result.error}</p>}
     {result && !result.error && <div role="status" className="mt-16 space-y-8 text-small">

@@ -58,7 +58,7 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
                 <div className="p-16">
                   <h3 className="font-semibold text-text-ink">{amenity.name}</h3>
                   {amenity.shortDescription ? <p className="mt-8 text-small text-text-secondary">{amenity.shortDescription}</p> : null}
-                  <div className="mt-12 flex flex-wrap gap-6 text-micro text-text-secondary">
+                  <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
                     <span className="rounded-full bg-surface-ivory px-8 py-4">{amenity.pricingType === 'free' ? labels['project_amenities.free'] : amenity.pricingType === 'included' ? labels['project_amenities.included'] : human(amenity.pricingType)}</span>
                     {amenity.bookingRequired ? <span className="rounded-full bg-surface-ivory px-8 py-4">{labels['project_amenities.booking_required']}</span> : null}
                     {amenity.accessType !== 'open' ? <span className="rounded-full bg-surface-ivory px-8 py-4">{human(amenity.accessType)}</span> : null}

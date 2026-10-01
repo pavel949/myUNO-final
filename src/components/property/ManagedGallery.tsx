@@ -42,7 +42,7 @@ export default function ManagedGallery({ scope, id }: { scope: 'unit' | 'project
     <h2 className="font-display text-heading-3 text-text-ink">Property photos</h2>
     <p className="mt-4 text-small text-text-secondary">Canonical {scope === 'unit' ? 'UnitMedia' : 'ProjectMedia'} gallery; only public photographs are accepted.</p>
     {error && <p role="alert" className="mt-8 text-state-error">{error}</p>}
-    <label className="mt-12 inline-flex cursor-pointer rounded-md border border-border-line px-16 py-10 text-small font-semibold">
+    <label className="mt-12 inline-flex cursor-pointer rounded-md border border-border-line px-16 py-12 text-small font-semibold">
       {busy ? 'Saving…' : 'Upload photos'}
       <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={(event) => {
         const files = Array.from(event.target.files || []);
@@ -62,7 +62,7 @@ export default function ManagedGallery({ scope, id }: { scope: 'unit' | 'project
       {photos.map((photo, index) => <div className="overflow-hidden rounded-md border border-border-line" key={photo.mediaId}>
         {/* MediaAsset.storageKey is the existing asset URL returned by the canonical uploader. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photo.media.storageKey} alt={`Property photo ${index + 1}`} className="h-144 w-full object-cover"/>
+        <img src={photo.media.storageKey} alt={`Property photo ${index + 1}`} className="h-[144px] w-full object-cover"/>
         <div className="flex flex-wrap items-center gap-4 p-8">
           <button disabled={busy || coverId === photo.mediaId} type="button" onClick={() => void action(() => send('PATCH', { orderedMediaIds: photos.map(p => p.mediaId), coverMediaId: photo.mediaId }))} className="rounded border px-8 py-4 text-small">{coverId === photo.mediaId ? 'Cover' : 'Make cover'}</button>
           <button disabled={busy || index === 0} type="button" aria-label="Move photo left" onClick={() => void move(index,-1)} className="rounded border px-8 py-4">←</button>

@@ -211,8 +211,8 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       <span
                         className={
                           payment.status === 'failed'
-                            ? 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-error-soft text-state-error'
-                            : 'inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-warning-soft text-state-warning'
+                            ? 'inline-flex px-8 py-8 rounded-full text-small font-medium bg-state-error-soft text-state-error'
+                            : 'inline-flex px-8 py-8 rounded-full text-small font-medium bg-state-warning-soft text-state-warning'
                         }
                       >
                         {payment.status}
@@ -334,7 +334,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                     <td className="px-12 py-8 text-text-ink">{payout.executedOn}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.recordedBy}</td>
                     <td className="px-12 py-8">
-                      <span className="inline-flex px-8 py-2 rounded-full text-small font-medium bg-state-info-soft text-brand-andaman">
+                      <span className="inline-flex px-8 py-8 rounded-full text-small font-medium bg-state-info-soft text-brand-andaman">
                         {payout.status}
                       </span>
                     </td>

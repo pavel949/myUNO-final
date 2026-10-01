@@ -55,7 +55,7 @@ export default function UnitIntegrationHealthStrip({
               ) : null}
             </div>
             <span
-              className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+              className={`inline-flex items-center px-12 py-4 rounded-full text-small font-medium ${
                 statusStyle[account.status]
               }`}
             >

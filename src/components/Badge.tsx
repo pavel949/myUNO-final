@@ -14,7 +14,7 @@ export const Badge: React.FC<BadgeProps> = ({
   variant = 'default',
   className,
 }) => {
-  const baseClasses = 'inline-flex items-center gap-6 px-12 py-6 rounded-full text-small font-medium';
+  const baseClasses = 'inline-flex items-center gap-8 px-12 py-4 rounded-full text-small font-medium';
   const variantClasses =
     variant === 'verified'
       ? 'bg-state-success-soft text-state-success'

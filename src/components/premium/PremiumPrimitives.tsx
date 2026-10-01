@@ -19,7 +19,7 @@ export function StatusChip({
   tone?: PremiumStatusTone;
 }) {
   return (
-    <span className={`inline-flex min-h-28 items-center rounded-full border px-10 py-4 text-small font-semibold ${statusTone[tone]}`}>
+    <span className={`inline-flex min-h-24 items-center rounded-full border px-12 py-4 text-small font-semibold ${statusTone[tone]}`}>
       {children}
     </span>
   );
@@ -42,7 +42,7 @@ export function RecordPageHeader({
 }) {
   return (
     <header className="border-b border-border-line bg-surface-paper">
-      <div className="mx-auto max-w-7xl px-20 py-28 md:px-32 md:py-36">
+      <div className="mx-auto max-w-7xl px-20 py-24 md:px-32 md:py-40">
         <div className="flex flex-col gap-24 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             {eyebrow ? <div className="text-small text-text-secondary">{eyebrow}</div> : null}
@@ -56,13 +56,13 @@ export function RecordPageHeader({
         </div>
 
         {tabs?.length ? (
-          <nav className="-mb-28 mt-28 flex gap-24 overflow-x-auto md:-mb-36" aria-label="Record sections">
+          <nav className="-mb-32 mt-32 flex gap-24 overflow-x-auto md:-mb-40" aria-label="Record sections">
             {tabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}
                 aria-current={tab.active ? 'page' : undefined}
-                className={`shrink-0 border-b-2 pb-14 text-small font-semibold transition-colors duration-micro ${
+                className={`shrink-0 border-b-2 pb-16 text-small font-semibold transition-colors duration-micro ${
                   tab.active
                     ? 'border-brand-andaman text-brand-andaman'
                     : 'border-transparent text-text-secondary hover:text-text-ink'
@@ -92,13 +92,13 @@ export function ProcessStepper({
       {steps.map((step, index) => (
         <li key={`${step.label}-${index}`} className="min-w-0">
           <div className="flex items-center gap-8">
-            <span className={`flex h-28 w-28 shrink-0 items-center justify-center rounded-full border text-small font-semibold ${statusTone[step.state]}`}>
+            <span className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border text-small font-semibold ${statusTone[step.state]}`}>
               {index + 1}
             </span>
             <div className={`h-px flex-1 ${index === steps.length - 1 ? 'invisible' : 'bg-border-line'}`} />
           </div>
           <p className="mt-8 text-small font-semibold text-text-ink">{step.label}</p>
-          {step.detail ? <p className="mt-2 text-small text-text-secondary">{step.detail}</p> : null}
+          {step.detail ? <p className="mt-8 text-small text-text-secondary">{step.detail}</p> : null}
         </li>
       ))}
     </ol>
@@ -143,7 +143,7 @@ export function MoneyLine({
     <div className={`flex items-start justify-between gap-20 border-b border-border-line py-12 last:border-b-0 ${emphasis ? 'font-semibold' : ''}`}>
       <div>
         <p className="text-body text-text-ink">{label}</p>
-        {meta ? <p className="mt-2 text-small text-text-secondary">{meta}</p> : null}
+        {meta ? <p className="mt-8 text-small text-text-secondary">{meta}</p> : null}
       </div>
       <div className="shrink-0 text-right font-mono text-body tabular-nums text-text-ink">{amount}</div>
     </div>
@@ -167,11 +167,11 @@ export function SourceChip({
   );
 
   return href ? (
-    <Link href={href} className="inline-flex rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small text-text-ink hover:border-border-line-2">
+    <Link href={href} className="inline-flex rounded-full border border-border-line bg-surface-paper px-12 py-4 text-small text-text-ink hover:border-border-line-2">
       {content}
     </Link>
   ) : (
-    <span className="inline-flex rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small text-text-ink">
+    <span className="inline-flex rounded-full border border-border-line bg-surface-paper px-12 py-4 text-small text-text-ink">
       {content}
     </span>
   );
@@ -190,7 +190,7 @@ export function StandardFilterBar({
     <div className="flex flex-wrap items-end gap-8 rounded-xl border border-border-line bg-surface-paper p-12">
       <div className="flex min-w-0 flex-1 flex-wrap gap-8">{children}</div>
       {clearHref ? (
-        <Link href={clearHref} className="inline-flex min-h-44 items-center px-10 text-small font-semibold text-brand-andaman hover:underline">
+        <Link href={clearHref} className="inline-flex min-h-44 items-center px-12 text-small font-semibold text-brand-andaman hover:underline">
           {clearLabel}
         </Link>
       ) : null}
@@ -215,7 +215,7 @@ export function InboxItem({
     <article className="flex flex-col gap-12 border-b border-border-line py-16 last:border-b-0 md:flex-row md:items-center">
       <div className="min-w-0 flex-1">
         {eyebrow ? <p className="text-small font-semibold text-brand-andaman">{eyebrow}</p> : null}
-        <h3 className="mt-2 text-body font-semibold text-text-ink">{title}</h3>
+        <h3 className="mt-8 text-body font-semibold text-text-ink">{title}</h3>
         {subtitle ? <p className="mt-4 text-small text-text-secondary">{subtitle}</p> : null}
       </div>
       {sla ? <div className="shrink-0 font-mono text-small tabular-nums text-text-secondary">{sla}</div> : null}

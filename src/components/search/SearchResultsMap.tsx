@@ -138,7 +138,7 @@ export function SearchResultsMap({
       button.type = 'button';
       button.setAttribute('aria-label', project.name);
       button.className =
-        'rounded-full border border-brand-deep bg-surface-paper px-10 py-6 text-small font-semibold text-brand-deep shadow-card';
+        'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
       button.textContent = project.unitCount > 1 ? String(project.unitCount) : '1';
       button.onclick = () => onSelectProject(project.id);
 
@@ -169,8 +169,8 @@ export function SearchResultsMap({
     for (const [projectId, entry] of markerRefs.current.entries()) {
       entry.element.className =
         projectId === selectedProjectId
-          ? 'rounded-full border-2 border-brand-sun bg-brand-deep px-10 py-6 text-small font-semibold text-surface-paper shadow-float'
-          : 'rounded-full border border-brand-deep bg-surface-paper px-10 py-6 text-small font-semibold text-brand-deep shadow-card';
+          ? 'rounded-full border-2 border-brand-sun bg-brand-deep px-12 py-4 text-small font-semibold text-surface-paper shadow-float'
+          : 'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
     }
   }, [selectedProjectId]);
 
@@ -183,7 +183,7 @@ export function SearchResultsMap({
   }
 
   return (
-    <div className="relative min-h-[420px] overflow-hidden rounded-xl border border-border-line bg-surface-paper lg:sticky lg:top-88 lg:h-[calc(100vh-120px)]">
+    <div className="relative min-h-[420px] overflow-hidden rounded-xl border border-border-line bg-surface-paper lg:sticky lg:top-[88px] lg:h-[calc(100vh-120px)]">
       {!ready ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-paper text-small text-text-secondary">
           {labels.loading}

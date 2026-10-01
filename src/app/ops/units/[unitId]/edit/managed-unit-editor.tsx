@@ -8,7 +8,7 @@ export default function ManagedUnitEditor({ unit }: { unit: RecordData }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const field = 'mt-4 block w-full rounded-md border border-border-line bg-surface-paper px-12 py-10';
+  const field = 'mt-4 block w-full rounded-md border border-border-line bg-surface-paper px-12 py-12';
   return <form className="mt-24 grid gap-16 rounded-lg border border-border-line bg-surface-paper p-24 md:grid-cols-2" onSubmit={async (event) => {
     event.preventDefault(); setBusy(true); setMessage('');
     try {

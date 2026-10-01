@@ -213,7 +213,7 @@ export default async function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/62 to-brand-deep/18" />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/75 via-transparent to-brand-deep/10" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-28 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
             <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
               {labels['landing.hero.kicker']}
@@ -229,7 +229,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-28 max-w-[1180px]">
+          <div className="mt-32 max-w-[1180px]">
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               labels={{
@@ -261,7 +261,7 @@ export default async function LandingPage() {
           <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
             {labels['landing.start.title']}
           </h2>
-          <div className="mt-24 grid grid-cols-2 gap-10 lg:grid-cols-4">
+          <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-4">
             {[
               { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
               { title: labels['home.discovery.monthly'], body: labels['landing.start.monthly_body'], href: '/homes?intent=rent' },
@@ -277,7 +277,7 @@ export default async function LandingPage() {
                   <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
                   <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
                 </div>
-                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
                   {labels['landing.start.explore']} →
                 </span>
               </Link>
@@ -288,7 +288,7 @@ export default async function LandingPage() {
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
         <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                 {labels['landing.collection.kicker']}
@@ -342,7 +342,7 @@ export default async function LandingPage() {
       {featuredHomes.length ? (
         <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
           <div className="mx-auto max-w-7xl px-20 md:px-32">
-            <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
               <div className="max-w-2xl">
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                   {labels['landing.homes.kicker']}
@@ -428,7 +428,7 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          <Link href="/about" className="mt-28 inline-block font-semibold text-brand-sun-soft hover:underline">
+          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-sun-soft hover:underline">
             {labels['landing.value.cta']} →
           </Link>
         </div>
@@ -436,7 +436,7 @@ export default async function LandingPage() {
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
         <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <div className="mb-28 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                 {labels['landing.services.kicker']}
@@ -486,7 +486,7 @@ export default async function LandingPage() {
           <div className="mt-32 grid gap-16 md:grid-cols-2">
             <Link
               href="/owners"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-28 transition-shadow duration-structural hover:shadow-card md:p-32"
+              className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
@@ -504,7 +504,7 @@ export default async function LandingPage() {
 
             <Link
               href="/developers"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-28 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
+              className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
@@ -537,8 +537,8 @@ export default async function LandingPage() {
               <div
                 key={key}
                 className={`border-t border-border-line py-24 md:border-t-0 md:py-0 ${
-                  index > 0 ? 'md:border-l md:pl-28' : ''
-                } ${index < 2 ? 'md:pr-28' : ''}`}
+                  index > 0 ? 'md:border-l md:pl-24' : ''
+                } ${index < 2 ? 'md:pr-24' : ''}`}
               >
                 <TrustMark size={22} filled className="text-brand-andaman" />
                 <h3 className="mt-16 font-display text-title font-semibold text-text-ink">
@@ -551,7 +551,7 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          <Link href="/trust" className="mt-28 inline-block font-semibold text-brand-andaman hover:underline">
+          <Link href="/trust" className="mt-32 inline-block font-semibold text-brand-andaman hover:underline">
             {labels['landing.trust.cta']} →
           </Link>
         </div>
@@ -565,16 +565,16 @@ export default async function LandingPage() {
           <p className="mx-auto mt-12 max-w-2xl text-body text-surface-ivory/75">
             {labels['home.final.body']}
           </p>
-          <div className="mt-28 flex flex-col justify-center gap-12 sm:flex-row">
+          <div className="mt-32 flex flex-col justify-center gap-12 sm:flex-row">
             <Link
               href="/projects"
-              className="inline-flex min-h-52 items-center justify-center rounded-lg bg-surface-paper px-28 font-semibold text-brand-deep transition-opacity hover:opacity-90"
+              className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep transition-opacity hover:opacity-90"
             >
               {labels['home.final.primary']} →
             </Link>
             <Link
               href="/services"
-              className="inline-flex min-h-52 items-center justify-center rounded-lg border border-white/30 px-28 font-semibold text-surface-ivory transition-colors hover:bg-surface-ivory/10"
+              className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/30 px-24 font-semibold text-surface-ivory transition-colors hover:bg-surface-ivory/10"
             >
               {labels['home.final.secondary']}
             </Link>

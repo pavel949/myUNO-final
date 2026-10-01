@@ -45,7 +45,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
         <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>
         <p className="mt-8 text-body text-text-secondary">{project.inventoryCategories.length} categories · {unitCount} exact physical units</p>
       </div>
-      <Link href={`/app/admin/properties/${project.id}/onboarding`} className="rounded-md bg-brand-andaman px-16 py-11 font-semibold text-white">Add / edit inventory</Link>
+      <Link href={`/app/admin/properties/${project.id}/onboarding`} className="rounded-md bg-brand-andaman px-16 py-12 font-semibold text-white">Add / edit inventory</Link>
     </div>
 
     <div className="space-y-16">
@@ -61,7 +61,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
           </div>
         </div>
         <div className="divide-y divide-border-line">
-          {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="grid gap-8 p-14 hover:bg-surface-ivory md:grid-cols-[1fr_160px_150px_160px] md:items-center">
+          {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="grid gap-8 p-16 hover:bg-surface-ivory md:grid-cols-[1fr_160px_150px_160px] md:items-center">
             <div><p className="font-semibold text-text-ink">{unit.name}</p><p className="text-small text-text-secondary">{category.name} · {unit.bedrooms} bd / {unit.bathrooms} ba{unit.sizeSqm ? ` · ${unit.sizeSqm} sqm` : ''}</p></div>
             <p className="text-small text-text-secondary">{unit.status} · {unit.assetStatus}</p>
             <p className="text-small text-text-secondary">{unit._count.media} photos</p>

@@ -8,8 +8,8 @@ import { statusClasses } from '@/lib/status';
 /** Strength as a filled-dot scale (1–3) plus the number — never color alone. */
 function StrengthDots({ strength, title }: { strength: number; title: string }) {
   return (
-    <span className="inline-flex items-center gap-6" title={title} aria-label={title}>
-      <span className="inline-flex gap-2" aria-hidden>
+    <span className="inline-flex items-center gap-8" title={title} aria-label={title}>
+      <span className="inline-flex gap-8" aria-hidden>
         {[1, 2, 3].map((i) => (
           <span
             key={i}

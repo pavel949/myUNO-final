@@ -67,7 +67,7 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
         <p className="text-body text-text-secondary mt-8">
           {unit.project.name} — {labels['mc.units.calendar.subtitle']}
         </p>
-        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-brand-andaman">Edit property facts →</Link>
+        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold text-brand-andaman">Edit property facts →</Link>
         <div className="mt-24">
           <UnitIcalConflictBanner
             conflicts={conflictAlerts}

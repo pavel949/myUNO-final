@@ -71,7 +71,7 @@ export function IntegrationHealthPanel({
                 <p className="mt-4 text-small text-text-secondary">{scopeLabel(account)}</p>
               </div>
               <span
-                className={`inline-flex items-center rounded-full px-10 py-4 text-small font-medium ${
+                className={`inline-flex items-center rounded-full px-12 py-4 text-small font-medium ${
                   STATUS_STYLE[account.status]
                 }`}
               >

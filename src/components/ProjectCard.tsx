@@ -37,7 +37,7 @@ export function ProjectCard({
       />
 
       {image.illustrative ? (
-        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/40 px-10 py-6 text-small text-white/80 backdrop-blur">
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/40 px-12 py-4 text-small text-white/80 backdrop-blur">
           {labels.noPhoto}
         </span>
       ) : null}
@@ -72,7 +72,7 @@ export function ProjectCard({
             <span />
           )}
 
-          <span className="shrink-0 text-small font-semibold text-white transition-transform duration-structural group-hover:translate-x-1">
+          <span className="shrink-0 text-small font-semibold text-white transition-transform duration-structural group-hover:translate-x-4">
             {labels.view || 'Explore'} →
           </span>
         </div>

@@ -54,7 +54,7 @@ export default async function AmenityBookingPage({
     <div className="mx-auto max-w-5xl">
       <Link href={`/projects/${data.project.slug}/amenities/${data.amenity.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['amenity_booking.back']}</Link>
       <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['amenity_booking.title'].replace('{amenity}', data.amenity.name)}</h1>
-      <p className="mt-6 mb-24 text-body text-text-secondary">{data.amenity.shortDescription}</p>
+      <p className="mt-8 mb-24 text-body text-text-secondary">{data.amenity.shortDescription}</p>
       <AmenityBookingClient
         amenityId={data.amenity.id}
         bookingId={searchParams?.bookingId}

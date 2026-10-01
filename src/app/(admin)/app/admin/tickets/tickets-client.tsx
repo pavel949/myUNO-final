@@ -139,7 +139,7 @@ export default function AdminTicketsClient({
             <Link
               key={filter.key}
               href={filterHref(filter.key)}
-              className={`px-12 py-6 rounded-full text-small font-semibold border ${
+              className={`px-12 py-4 rounded-full text-small font-semibold border ${
                 activeFilter === filter.key
                   ? 'bg-brand-andaman text-surface-ivory border-brand-andaman'
                   : 'bg-surface-paper text-text-secondary border-border-line hover:border-brand-andaman'
@@ -175,7 +175,7 @@ export default function AdminTicketsClient({
                       {ticket.title}
                     </Link>
                     <span
-                      className={`inline-flex items-center px-10 py-4 rounded-full text-small font-medium ${
+                      className={`inline-flex items-center px-12 py-4 rounded-full text-small font-medium ${
                         ticketStatusStyle[ticket.status] || 'bg-surface-ivory text-text-stone'
                       }`}
                     >

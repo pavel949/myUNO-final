@@ -48,7 +48,7 @@ export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
                   href={item.href}
                   onClick={() => setPending(item.href)}
                   aria-current={active ? 'page' : undefined}
-                  className={`block px-12 py-6 rounded-md text-small transition-colors duration-micro ${
+                  className={`block px-12 py-4 rounded-md text-small transition-colors duration-micro ${
                     highlighted
                       ? 'bg-brand-andaman text-on-dark-text font-semibold'
                       : 'text-on-dark-text hover:bg-brand-andaman/60'

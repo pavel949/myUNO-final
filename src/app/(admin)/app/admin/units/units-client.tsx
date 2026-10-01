@@ -193,7 +193,7 @@ export default function UnitsAdminClient({
               value={unit.assetStatus}
               onChange={(e) => setAssetStatus(unit.id, e.target.value)}
               disabled={busyId === unit.id}
-              className="h-36 px-8 rounded-sm border border-border-line text-small text-text-ink bg-surface-paper"
+              className="h-40 px-8 rounded-sm border border-border-line text-small text-text-ink bg-surface-paper"
               aria-label={labels['admin.units.asset_status']}
             >
               <option value="managed">{labels['admin.units.asset_status.managed']}</option>

@@ -19,7 +19,7 @@ export default function DeltaChip({
   if (previousValue === null || previousValue === 0) {
     if (previousValue === 0 && currentValue === 0) return null;
     return (
-      <span className="inline-flex items-center gap-4 px-8 py-2 rounded-full bg-surface-ivory text-text-stone text-small font-semibold">
+      <span className="inline-flex items-center gap-4 px-8 py-8 rounded-full bg-surface-ivory text-text-stone text-small font-semibold">
         {newLabel}
       </span>
     );
@@ -29,7 +29,7 @@ export default function DeltaChip({
   const rounded = Math.round(pct);
   if (rounded === 0) {
     return (
-      <span className="inline-flex items-center gap-4 px-8 py-2 rounded-full bg-surface-ivory text-text-stone text-small font-semibold">
+      <span className="inline-flex items-center gap-4 px-8 py-8 rounded-full bg-surface-ivory text-text-stone text-small font-semibold">
         <span aria-hidden>→</span> 0% <span className="font-normal">{vsLabel}</span>
       </span>
     );
@@ -38,7 +38,7 @@ export default function DeltaChip({
   const up = rounded > 0;
   return (
     <span
-      className={`inline-flex items-center gap-4 px-8 py-2 rounded-full text-small font-semibold ${
+      className={`inline-flex items-center gap-4 px-8 py-8 rounded-full text-small font-semibold ${
         up
           ? 'bg-state-success-soft text-state-success'
           : 'bg-state-error-soft text-state-error'

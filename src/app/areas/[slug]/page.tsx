@@ -91,7 +91,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
               <Link
                 key={child.id}
                 href={`/areas/${child.slug}`}
-                className="rounded-full border border-border-line bg-surface-paper px-14 py-8 text-small font-semibold text-text-ink hover:border-border-line-2"
+                className="rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:border-border-line-2"
               >
                 {child.label && child.label !== child.nameKey ? child.label : child.slug}
               </Link>
@@ -103,7 +103,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
       <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
         <h2 className="font-display text-display font-semibold text-text-ink">{labels['area.collection']}</h2>
         {projects.length ? (
-          <div className="mt-28 grid grid-cols-1 gap-16 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-32 grid grid-cols-1 gap-16 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project, index) => (
               <ProjectCard
                 key={project.id}

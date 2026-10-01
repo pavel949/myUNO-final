@@ -107,7 +107,7 @@ export default function TicketsListClient({
                     {new Date(ticket.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-10">
+                <div className="flex items-center gap-12">
                   <span
                     className={`shrink-0 rounded-full px-12 py-4 text-small font-semibold ${
                       statusStyle[ticket.status] || 'bg-surface-ivory text-text-ink'

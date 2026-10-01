@@ -55,7 +55,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <div className="mt-24 flex flex-wrap gap-8">
         {home.intents.map(mode => <Link key={mode} href={'/homes/'+encodeURIComponent(home.id)+'?intent='+mode}
           aria-current={intent===mode?'page':undefined}
-          className={'rounded-full border px-20 py-10 text-small font-semibold '+
+          className={'rounded-full border px-20 py-12 text-small font-semibold '+
             (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper')}>
           {mode==='buy'?labels['homes.detail.buy']:labels['homes.detail.rent']}
         </Link>)}

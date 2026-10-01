@@ -72,10 +72,10 @@ export default function AmenityTranslationsEditor({
         <p className="mt-4 text-small text-text-secondary">Translations use the same ContentKey system as the rest of myUNO. Empty language fields fall back through the platform locale chain.</p>
       </div>
       <div className="flex gap-4 rounded-lg bg-surface-ivory p-4">
-        {LOCALES.map(l => <button key={l} type="button" onClick={()=>setLocale(l)} className={`rounded-md px-10 py-7 text-small font-semibold uppercase ${locale===l ? 'bg-brand-andaman text-white' : 'text-text-secondary'}`}>{l}</button>)}
+        {LOCALES.map(l => <button key={l} type="button" onClick={()=>setLocale(l)} className={`rounded-md px-12 py-8 text-small font-semibold uppercase ${locale===l ? 'bg-brand-andaman text-white' : 'text-text-secondary'}`}>{l}</button>)}
       </div>
     </div>
-    {message ? <p role="status" className="mt-12 rounded-md bg-surface-muted p-10 text-small">{message}</p> : null}
+    {message ? <p role="status" className="mt-12 rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
     <div className="mt-16 space-y-12">
       {rows.map(row => {
         const id = `${row.field}::${locale}`;
@@ -87,11 +87,11 @@ export default function AmenityTranslationsEditor({
             value={drafts[id] ?? ''}
             placeholder={row.fallback || ''}
             onChange={e=>setDrafts(prev=>({...prev,[id]:e.target.value}))}
-            className="mt-4 w-full rounded-md border border-border-line bg-surface-ivory p-10 normal-case text-text-ink"
+            className="mt-4 w-full rounded-md border border-border-line bg-surface-ivory p-12 normal-case text-text-ink"
           />
         </label>;
       })}
     </div>
-    <button type="button" disabled={busy} onClick={saveLocale} className="mt-16 min-h-40 rounded-md bg-brand-andaman px-14 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : `Save ${locale.toUpperCase()}`}</button>
+    <button type="button" disabled={busy} onClick={saveLocale} className="mt-16 min-h-40 rounded-md bg-brand-andaman px-16 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : `Save ${locale.toUpperCase()}`}</button>
   </section>;
 }

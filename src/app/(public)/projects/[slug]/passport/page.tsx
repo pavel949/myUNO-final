@@ -102,7 +102,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
                 {labels['passport.kicker']}
               </p>
-              <h2 className="mt-6 font-display text-display font-semibold text-text-ink">
+              <h2 className="mt-8 font-display text-display font-semibold text-text-ink">
                 {labels['passport.facts.title']}
               </h2>
             </div>
@@ -181,7 +181,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
                       <h3 className="text-body font-semibold text-text-ink">
                         {humanize(credential.credentialType)}
                       </h3>
-                      <p className="mt-2 text-small text-text-secondary">
+                      <p className="mt-8 text-small text-text-secondary">
                         {humanize(credential.requirementKey)}
                         {credential.issuingAuthority ? ` · ${credential.issuingAuthority}` : ''}
                       </p>
@@ -192,7 +192,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
                         : labels['passport.regulatory.other']}
                     </StatusChip>
                   </div>
-                  <div className="mt-10 flex flex-wrap gap-12 text-small text-text-secondary">
+                  <div className="mt-12 flex flex-wrap gap-12 text-small text-text-secondary">
                     {credential.verifiedAt ? (
                       <span>
                         {labels['passport.regulatory.verified_at'].replace(
@@ -229,9 +229,9 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
               </div>
             </div>
             {Object.keys(passport.facts.activeOfferingCounts).length ? (
-              <div className="mt-20 space-y-10">
+              <div className="mt-20 space-y-12">
                 {Object.entries(passport.facts.activeOfferingCounts).map(([type, count]) => (
-                  <div key={type} className="flex items-center justify-between gap-16 border-b border-border-line pb-10 last:border-0 last:pb-0">
+                  <div key={type} className="flex items-center justify-between gap-16 border-b border-border-line pb-12 last:border-0 last:pb-0">
                     <span className="text-body text-text-ink">{humanize(type)}</span>
                     <span className="font-mono text-small tabular-nums text-text-secondary">
                       {labels['passport.commercial.units'].replace('{count}', number.format(count))}
@@ -257,9 +257,9 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
               </StatusChip>
             </div>
             {passport.unitCompliance.byType.length ? (
-              <div className="mt-20 space-y-10">
+              <div className="mt-20 space-y-12">
                 {passport.unitCompliance.byType.map((item) => (
-                  <div key={item.type} className="flex items-center justify-between gap-16 border-b border-border-line pb-10 last:border-0 last:pb-0">
+                  <div key={item.type} className="flex items-center justify-between gap-16 border-b border-border-line pb-12 last:border-0 last:pb-0">
                     <span className="text-body text-text-ink">{humanize(item.type)}</span>
                     <span className="font-mono text-small tabular-nums text-text-secondary">
                       {labels['passport.compliance.coverage']

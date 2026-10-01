@@ -129,7 +129,7 @@ export default function BarChart({
         </svg>
         {hovered !== null ? (
           <div
-            className="absolute -top-2 pointer-events-none bg-brand-deep text-on-dark-text text-small rounded-sm px-8 py-4 shadow-float whitespace-nowrap"
+            className="absolute -top-8 pointer-events-none bg-brand-deep text-on-dark-text text-small rounded-sm px-8 py-4 shadow-float whitespace-nowrap"
             style={{
               left: `${((padLeft + hovered * band + band / 2) / width) * 100}%`,
               transform: 'translateX(-50%)',

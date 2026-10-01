@@ -514,7 +514,7 @@ export function MCDashboardClient({
               }))
             }
             placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
             style={{ width: '140px' }}
           />
           <Button
@@ -591,7 +591,7 @@ export function MCDashboardClient({
                     <Link
                       key={context.key}
                       href={context.href}
-                      className={`inline-flex items-center rounded-full px-12 py-6 text-small border transition-colors ${
+                      className={`inline-flex items-center rounded-full px-12 py-4 text-small border transition-colors ${
                         context.key === activeContextKey
                           ? 'bg-brand-andaman-soft text-brand-andaman border-brand-andaman'
                           : 'bg-surface-paper text-text-secondary border-border-line hover:text-text-ink'
@@ -834,7 +834,7 @@ export function MCDashboardClient({
                           </td>
                           <td className="p-16">
                             <span
-                              className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+                              className={`inline-flex items-center px-12 py-4 rounded-full text-small font-medium ${
                                 statusClasses(booking.status)
                               }`}
                             >
@@ -884,7 +884,7 @@ export function MCDashboardClient({
                       <div>
                         <div className="flex items-center gap-12">
                           <span
-                            className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+                            className={`inline-flex items-center px-12 py-4 rounded-full text-small font-medium ${
                               statusClasses(ticket.status)
                             }`}
                           >
@@ -1013,7 +1013,7 @@ export function MCDashboardClient({
                         )}
                       </div>
                       <span
-                        className={`inline-flex items-center px-12 py-6 rounded-full text-small font-medium ${
+                        className={`inline-flex items-center px-12 py-4 rounded-full text-small font-medium ${
                           statusClasses(order.status)
                         }`}
                       >
@@ -1033,7 +1033,7 @@ export function MCDashboardClient({
                               }))
                             }
                             placeholder={labels['mc.service_orders.receipt_placeholder']}
-                            className="h-36 px-10 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
+                            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
                             style={{ width: '150px' }}
                           />
                           <Button
@@ -1090,11 +1090,11 @@ export function MCDashboardClient({
               {labels['mc.calendar.title']}
             </h2>
             <div className="flex items-center gap-16 mb-20">
-              <span className="inline-flex items-center gap-6 text-small text-text-secondary">
+              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
                 <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-4" aria-hidden />
                 {labels['mc.calendar.occupied']}
               </span>
-              <span className="inline-flex items-center gap-6 text-small text-text-secondary">
+              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
                 <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-1" aria-hidden />
                 {labels['mc.calendar.vacant']}
               </span>

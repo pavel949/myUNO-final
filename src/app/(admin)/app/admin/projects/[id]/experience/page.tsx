@@ -60,7 +60,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
           Manage everything guests can use inside this project: pools, gyms, cinema rooms, sauna, coworking, shuttle, clubs and any custom facility. Marketplace concierge services remain separate and global.
         </p>
       </div>
-      <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-14 py-10 font-semibold text-brand-andaman">Preview portal</Link>
+      <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-16 py-12 font-semibold text-brand-andaman">Preview portal</Link>
     </div>
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />

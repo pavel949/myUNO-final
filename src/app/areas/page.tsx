@@ -42,10 +42,10 @@ export default async function AreasPage() {
       <section className="bg-brand-deep px-20 py-56 text-surface-ivory md:px-32 md:py-80">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['areas.kicker']}</p>
-          <h1 className="mt-10 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.02em]">
+          <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.02em]">
             {labels['areas.title']}
           </h1>
-          <p className="mt-14 max-w-2xl text-body text-surface-ivory/72">{labels['areas.body']}</p>
+          <p className="mt-16 max-w-2xl text-body text-surface-ivory/72">{labels['areas.body']}</p>
         </div>
       </section>
 
@@ -66,10 +66,10 @@ export default async function AreasPage() {
                     {area.displayName}
                   </h2>
                   {area.description ? (
-                    <p className="mt-10 line-clamp-3 text-body text-text-secondary">{area.description}</p>
+                    <p className="mt-12 line-clamp-3 text-body text-text-secondary">{area.description}</p>
                   ) : null}
                 </div>
-                <span className="mt-24 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-1">
+                <span className="mt-24 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
                   {labels['areas.open']} →
                 </span>
               </Link>

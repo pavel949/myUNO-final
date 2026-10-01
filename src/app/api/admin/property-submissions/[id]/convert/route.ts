@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (data.status === 'converted') {
         return { projectId: String(data.canonicalProjectId), unitId: data.canonicalUnitId ? String(data.canonicalUnitId) : null, alreadyConverted: true };
       }
-      if (data.status !== 'submitted') throw new Error('Only submitted applications can be converted.');
+      if (data.status !== 'approved') throw new Error('Approve the application before creating canonical records.');
       const applicant = await tx.identity.findUnique({
         where: { id: application.identityId },
         select: { id: true },
@@ -142,8 +142,38 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           await tx.unitMedia.createMany({ data: photos.map((mediaId, sort) => ({ unitId: unit.id, mediaId, sort })), skipDuplicates: true });
           await tx.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0] } });
         }
-        const offers = Array.isArray(data.offers) ? data.offers.filter((v): v is string => typeof v === 'string' && ['short_stay','monthly','yearly','sale'].includes(v)) : [];
-        if (offers.length) await tx.commercialOffering.createMany({ data: offers.map(offeringType => ({ unitId: unit.id, offeringType, status: 'draft' })) });
+        const submittedOffers = Array.isArray(data.offers)
+          ? data.offers.filter((v): v is string =>
+              typeof v === 'string' && ['short_stay', 'monthly', 'yearly', 'sale'].includes(v))
+          : [];
+        const offers = [...new Set(submittedOffers.map((offering) =>
+          offering === 'short_stay'
+            ? 'short_term_stay'
+            : offering === 'monthly' || offering === 'yearly'
+              ? 'long_term_rental'
+              : 'sale'
+        ))];
+        if (offers.length) {
+          await tx.commercialOffering.createMany({
+            data: offers.map((offeringType) => ({
+              projectId,
+              unitId: unit.id,
+              offeringType,
+              status: 'draft',
+            })),
+          });
+        }
+
+        if (ownerIdentityId) {
+          await tx.unitEngagement.create({
+            data: {
+              unitId: unit.id,
+              ownerIdentityId,
+              engagementType: 'owner_direct',
+              status: 'draft',
+            },
+          });
+        }
       }
 
       const result = { ...data, status: 'converted', canonicalProjectId: projectId, canonicalUnitId: unitId, convertedAt: new Date().toISOString(), reviewedByIdentityId: guard.actorIdentityId };

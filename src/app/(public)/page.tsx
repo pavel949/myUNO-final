@@ -440,6 +440,7 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+      ) : null}
 
       <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="services-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
@@ -480,7 +481,6 @@ export default async function LandingPage() {
           )}
         </div>
       </section>
-      ) : null}
 
       {featuredHomes.length ? (
         <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">

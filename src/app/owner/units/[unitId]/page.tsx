@@ -2,8 +2,10 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getActiveStayBanner } from '@/app/actions/getActiveStay';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import { prisma } from '@/lib/prisma';
 import { getOwnerUnitDashboard } from '@/modules/projects';
+import { resolveUnitCommercialAuthority } from '@/modules/core';
 import { OwnerUnitDashboardClient } from './client';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +31,7 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
     notFound();
   }
 
+  const authority = await resolveUnitCommercialAuthority(prisma, params.unitId);
   const locale = getRequestLocale();
 
   const labels = (await getLabels({
@@ -104,11 +107,23 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
     'owner.statements.view_all': 'View all statements',
     'owner.role_context': 'You are staying at {unit}. This page is your owner dashboard.',
     'owner.role_context.stay_link': 'Go to your stay',
+    'owner.authority.self.title': 'Self-managed property',
+    'owner.authority.self.body': 'You control this property’s listing, pricing and availability.',
+    'owner.authority.myuno.title': 'Managed by myUNO',
+    'owner.authority.myuno.body': 'Pricing and availability are controlled by myUNO under the active management arrangement.',
+    'owner.authority.mc.title': 'Managed by your management company',
+    'owner.authority.mc.body': 'Pricing and availability are controlled by the assigned management company.',
+    'owner.authority.unassigned.title': 'Management setup in progress',
+    'owner.authority.unassigned.body': 'Commercial authority has not been activated yet.',
+    'owner.actions.edit_listing': 'Edit property',
+    'owner.sections.rates': 'Rates & availability',
+    ...UNIT_CALENDAR_LABEL_KEYS,
   })) as Record<string, string>;
 
   return (
     <OwnerUnitDashboardClient
       activeStay={activeStay}
+      authorityMode={authority?.mode ?? 'unassigned'}
       unit={data.unit}
       summary={{
         ...data.summary,

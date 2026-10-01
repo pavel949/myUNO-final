@@ -133,7 +133,7 @@ export async function setUnitOwnerTx(
         unitId,
         status: 'active',
       },
-      data: { status: 'revoked', revokedAt: new Date() },
+      data: { status: 'revoked' },
     });
   }
 

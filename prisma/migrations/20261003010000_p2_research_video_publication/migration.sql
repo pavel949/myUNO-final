@@ -126,3 +126,59 @@ DROP TRIGGER IF EXISTS research_correction_immutable ON "research_correction";
 CREATE TRIGGER research_correction_immutable
 BEFORE UPDATE OR DELETE ON "research_correction"
 FOR EACH ROW EXECUTE FUNCTION prevent_research_correction_mutation();
+
+
+CREATE OR REPLACE FUNCTION guard_research_publication_governance()
+RETURNS trigger AS $$
+BEGIN
+  IF OLD.status <> 'draft' AND (
+    NEW.destination_key IS DISTINCT FROM OLD.destination_key OR
+    NEW.slug IS DISTINCT FROM OLD.slug OR
+    NEW.locale IS DISTINCT FROM OLD.locale OR
+    NEW.title IS DISTINCT FROM OLD.title OR
+    NEW.summary IS DISTINCT FROM OLD.summary OR
+    NEW.body IS DISTINCT FROM OLD.body OR
+    NEW.scheduled_for IS DISTINCT FROM OLD.scheduled_for OR
+    NEW.author_identity_id IS DISTINCT FROM OLD.author_identity_id
+  ) THEN
+    RAISE EXCEPTION 'research content is frozen once review begins';
+  END IF;
+
+  IF NEW.status IN ('reviewed','published') AND
+     NOT EXISTS (SELECT 1 FROM research_source WHERE publication_id = NEW.id) THEN
+    RAISE EXCEPTION 'reviewed research requires at least one numbered source';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS research_publication_governance ON "research_publication";
+CREATE TRIGGER research_publication_governance
+BEFORE UPDATE ON "research_publication"
+FOR EACH ROW EXECUTE FUNCTION guard_research_publication_governance();
+
+CREATE OR REPLACE FUNCTION guard_research_source_mutation()
+RETURNS trigger AS $$
+DECLARE publication_status "ResearchPublicationStatus";
+DECLARE target_publication_id text;
+BEGIN
+  target_publication_id := COALESCE(NEW.publication_id, OLD.publication_id);
+  SELECT status INTO publication_status FROM research_publication WHERE id = target_publication_id;
+  IF publication_status IS DISTINCT FROM 'draft'::"ResearchPublicationStatus" THEN
+    RAISE EXCEPTION 'research sources are frozen once review begins';
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS research_source_frozen ON "research_source";
+CREATE TRIGGER research_source_frozen
+BEFORE INSERT OR UPDATE OR DELETE ON "research_source"
+FOR EACH ROW EXECUTE FUNCTION guard_research_source_mutation();
+
+ALTER TABLE "video_publication"
+  DROP CONSTRAINT IF EXISTS "video_published_requires_provenance";
+ALTER TABLE "video_publication"
+  ADD CONSTRAINT "video_published_requires_provenance"
+  CHECK ("status" <> 'published' OR length(trim(COALESCE("provenance", ''))) > 0);

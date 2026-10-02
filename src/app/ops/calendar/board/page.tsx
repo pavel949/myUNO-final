@@ -225,6 +225,7 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.channel_health': 'Channels',
       'staff.unified_calendar.channel_warning': 'homes do not have fully verified healthy ARI. iCal/manual channels do not push rates or restrictions.',
       'staff.unified_calendar.rate_unavailable': 'Rate unavailable',
+      'staff.unified_calendar.effective_rate': 'Effective daily rate',
       'staff.unified_calendar.tasks': 'Housekeeping & readiness →',
     }),
   ]);

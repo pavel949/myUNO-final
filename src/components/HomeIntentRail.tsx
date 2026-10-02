@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+const HOME_RAIL_IMAGE_SIZES = '(max-width: 768px) 280px, (max-width: 1024px) 50vw, 25vw';
+
 export type HomeRailIntent = 'stay' | 'monthly' | 'buy';
 
 export interface HomeRailItem {
@@ -88,7 +90,7 @@ export function HomeIntentRail({ items, labels }: HomeIntentRailProps) {
                     src={item.imageSrc}
                     alt={item.name}
                     fill
-                    sizes="(max-width: 768px) 280px, (max-width: 1024px) 50vw, 25vw"
+                    sizes={HOME_RAIL_IMAGE_SIZES}
                     className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
                   />
                 ) : null}

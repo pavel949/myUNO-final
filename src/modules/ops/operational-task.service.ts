@@ -145,12 +145,16 @@ export async function getUnitReadinessMap(
 
 export async function listOperationalTasks(
   db: PrismaClient,
-  input: { projectIds?: string[]; unitId?: string; statuses?: OperationalTaskStatus[] } = {}
+  input: { projectIds?: string[]; unitId?: string; unitIds?: string[]; statuses?: OperationalTaskStatus[] } = {}
 ) {
   return db.operationalTask.findMany({
     where: {
       ...(input.projectIds?.length ? { projectId: { in: input.projectIds } } : {}),
-      ...(input.unitId ? { unitId: input.unitId } : {}),
+      ...(input.unitId
+        ? { unitId: input.unitId }
+        : input.unitIds?.length
+          ? { unitId: { in: input.unitIds } }
+          : {}),
       ...(input.statuses?.length ? { status: { in: input.statuses } } : {}),
     },
     include: {

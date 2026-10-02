@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function OperationalTasksPage({
   searchParams,
-}: { searchParams?: { unitId?: string } }) {
+}: { searchParams?: { unitId?: string; mc?: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/tasks');
 
@@ -53,8 +53,9 @@ export default async function OperationalTasksPage({
     if (!allowed) redirect('/ops/tasks');
   }
 
+  const explicitMcMode = searchParams?.mc === '1' && mcScopes.length > 0;
   const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
-  const backHref = mcOnly ? '/mc/calendar' : '/ops/calendar';
+  const backHref = explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
 
   const labels = await getLabels({
     'staff.tasks.back': '← Calendar',

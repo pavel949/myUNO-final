@@ -716,9 +716,12 @@ export function MCDashboardClient({
                       <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
                       <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
-                    <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
+                    <Link
+                      href={\`/mc/calendar?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                      className="text-small font-semibold text-brand-andaman hover:underline"
+                    >
                       {labels['mc.workspace.full_calendar']} →
-                    </button>
+                    </Link>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
@@ -763,52 +766,6 @@ export function MCDashboardClient({
 
       {/* Content */}
       <section className="max-w-7xl mx-auto px-24 py-40">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div>
-            {/* Portfolio detail */}
-            {/* Managed Units List */}
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-              <h2 className="text-heading-2 font-bold text-text-ink mb-20">
-                {labels['mc.units.title']}
-              </h2>
-              <div className="space-y-16">
-                {units.length === 0 ? (
-                  <p className="text-body text-text-secondary">{labels['mc.units.empty']}</p>
-                ) : (
-                  units.map((unit) => (
-                    <div
-                      key={unit.id}
-                      className="border border-border-line rounded-lg p-16 hover:bg-surface-ivory transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-heading-3 font-bold text-text-ink">{unit.name}</h3>
-                          <p className="text-small text-text-secondary mt-4">{unit.description}</p>
-                          <div className="flex gap-16 mt-12">
-                            <span className="text-small text-text-secondary">
-                              {formatBaht(unit.baseNightlyThb)} {labels['mc.units.per_night']}
-                            </span>
-                            <span className="text-small font-semibold text-brand-andaman">
-                              {unit.status}
-                            </span>
-                          </div>
-                        </div>
-                        <Link
-                          href={`/mc/units/${unit.id}`}
-                          className="text-brand-andaman font-semibold hover:underline"
-                        >
-                          {labels['mc.units.manage']} →
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div>
@@ -1112,50 +1069,6 @@ export function MCDashboardClient({
                 ))
               )}
             </div>
-          </div>
-        )}
-
-        {/* Calendar Tab — month heat strip per unit */}
-        {activeTab === 'calendar' && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <h2 className="text-heading-2 font-bold text-text-ink mb-8">
-              {labels['mc.calendar.title']}
-            </h2>
-            <div className="flex items-center gap-16 mb-20">
-              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-4" aria-hidden />
-                {labels['mc.calendar.occupied']}
-              </span>
-              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-1" aria-hidden />
-                {labels['mc.calendar.vacant']}
-              </span>
-            </div>
-            {units.length === 0 ? (
-              <p className="text-body text-text-secondary">{labels['mc.calendar.empty']}</p>
-            ) : (
-              <div className="space-y-16">
-                {units.map((unit) => (
-                  <div key={unit.id} className="border border-border-line rounded-lg p-16">
-                    <div className="flex items-center justify-between gap-12 mb-8">
-                      <p className="text-body font-semibold text-text-ink">{unit.name}</p>
-                      <Link
-                        href={`/mc/units/${unit.id}`}
-                        className="text-small font-semibold text-brand-andaman hover:underline"
-                      >
-                        {labels['mc.calendar.manage']} →
-                      </Link>
-                    </div>
-                    <MonthHeatStrip
-                      days={monthHeatDays(unit.id, bookings)}
-                      occupiedLabel={labels['mc.calendar.occupied']}
-                      vacantLabel={labels['mc.calendar.vacant']}
-                      noDataLabel={labels['mc.calendar.no_data']}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

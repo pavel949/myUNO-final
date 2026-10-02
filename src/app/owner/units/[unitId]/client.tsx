@@ -202,19 +202,19 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
             </p>
           </div>
           <div className="mt-16 flex flex-wrap gap-8">
-            <a href="#performance" className="rounded-full border border-border-line px-14 py-8 text-small font-semibold text-text-ink">
+            <a href="#performance" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
               {labels['owner.digital_twin.performance']}
             </a>
-            <a href="#money" className="rounded-full border border-border-line px-14 py-8 text-small font-semibold text-text-ink">
+            <a href="#money" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
               {labels['owner.digital_twin.money']}
             </a>
-            <a href="#operations" className="rounded-full border border-border-line px-14 py-8 text-small font-semibold text-text-ink">
+            <a href="#operations" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
               {labels['owner.digital_twin.operations']}
             </a>
-            <Link href={`/property/listings/${unit.id}`} className="rounded-full border border-border-line px-14 py-8 text-small font-semibold text-text-ink">
+            <Link href={`/property/listings/${unit.id}`} className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
               {labels['owner.digital_twin.record']}
             </Link>
-            <a href="#decisions" className="rounded-full border border-border-line px-14 py-8 text-small font-semibold text-text-ink">
+            <a href="#decisions" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
               {labels['owner.digital_twin.decisions']}
             </a>
           </div>

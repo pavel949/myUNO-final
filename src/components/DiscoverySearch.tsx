@@ -67,14 +67,14 @@ export function DiscoverySearch({
       return;
     }
     if (mode === 'manage') {
-      router.push('/owners');
+      router.push('/manage');
       return;
     }
     if (mode === 'sell') {
       router.push('/sell');
       return;
     }
-    if (!startDate || !endDate || endDate <= startDate) {
+    if (!startDate || !endDate || startDate < today || endDate <= startDate) {
       setError(labels.error);
       return;
     }
@@ -121,8 +121,8 @@ export function DiscoverySearch({
       </div>
 
       {mode === 'rent' ? (
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] md:items-end">
-          <label className="col-span-2 grid gap-8 text-small text-text-secondary md:col-span-1">
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] lg:items-end">
+          <label className="col-span-2 grid gap-8 text-small text-text-secondary lg:col-span-1">
             {labels.where}
             <select
               className="h-48 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
@@ -176,6 +176,7 @@ export function DiscoverySearch({
             <input
               className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
+              required
               min="1"
               max="20"
               value={adults}
@@ -188,6 +189,7 @@ export function DiscoverySearch({
             <input
               className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
+              required
               min="0"
               max="20"
               value={children}
@@ -196,7 +198,7 @@ export function DiscoverySearch({
           </label>
 
           <button
-            className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:col-span-1"
+            className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman lg:col-span-1"
             type="submit"
           >
             {labels.explore} →

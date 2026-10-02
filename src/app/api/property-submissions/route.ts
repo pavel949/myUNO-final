@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
+import { classifyPropertySubmission } from '@/modules/onboarding';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -15,8 +16,11 @@ function normalize(body: Record<string, unknown>): Submission {
   const bedrooms = num(body.bedrooms), bathrooms = num(body.bathrooms), sizeSqm = num(body.sizeSqm), maxGuests = num(body.maxGuests), latitude = num(body.latitude), longitude = num(body.longitude);
   if ([bedrooms, bathrooms, sizeSqm, maxGuests].some(v => v !== null && (!Number.isFinite(v) || v < 0)) || (maxGuests !== null && !Number.isInteger(maxGuests))) throw new Error('Invalid property measurements.');
   if ((latitude !== null && (!Number.isFinite(latitude) || Math.abs(latitude) > 90)) || (longitude !== null && (!Number.isFinite(longitude) || Math.abs(longitude) > 180))) throw new Error('Invalid project location.');
+  const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(body.operatingModel))
+    ? String(body.operatingModel) as Submission['operatingModel']
+    : null;
   return {
-    kind, projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
+    kind, existingUnitId: typeof body.existingUnitId === 'string' && body.existingUnitId ? body.existingUnitId : null, operatingModel, requestedManagementCompanyName: String(body.requestedManagementCompanyName || '').trim().slice(0, 160), projectId: typeof body.projectId === 'string' && body.projectId ? body.projectId : null,
     proposedProject: String(body.proposedProject || '').trim().slice(0, 160),
     projectAddress: String(body.projectAddress || '').trim().slice(0, 500),
     projectType: ['resort', 'condominium', 'villa_estate', 'standalone'].includes(String(body.projectType)) ? String(body.projectType) : 'condominium',
@@ -48,9 +52,34 @@ async function authorized() {
   return { user } as const;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const access = await authorized();
   if ('error' in access) return access.error;
+  const projectId = req.nextUrl.searchParams.get('projectId');
+  if (projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
+    const scoped = access.user.roles.some(role => role.projectId === projectId && (role.role === 'owner' || role.role === 'mc_member'));
+    if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) {
+      return NextResponse.json({ error: 'Project not available.' }, { status: 404 });
+    }
+    const scopedUnitIds = access.user.roles
+      .filter((role) => role.projectId === projectId && role.unitId)
+      .map((role) => role.unitId as string);
+    const units = await prisma.unit.findMany({
+      where: access.user.isAdmin || scoped
+        ? { projectId, status: { not: 'offboarded' } }
+        : {
+            projectId,
+            status: { not: 'offboarded' },
+            OR: [{ status: 'live' }, ...(scopedUnitIds.length ? [{ id: { in: scopedUnitIds } }] : [])],
+          },
+      select: { id: true, name: true, floor: true, bedrooms: true, bathrooms: true, sizeSqm: true },
+      orderBy: { name: 'asc' },
+      take: 500,
+    });
+    return NextResponse.json({ units });
+  }
+
   const rows = await prisma.crmOpportunity.findMany({
     where: { identityId: access.user.identityId, source: MARKER },
     select: { id: true, createdAt: true, updatedAt: true, requirements: true },
@@ -75,13 +104,18 @@ export async function POST(req: NextRequest) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
       const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
       if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      if (data.existingUnitId) {
+        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+      }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) {
       return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
     }
     const row = await prisma.crmOpportunity.create({
       data: {
-        identityId: access.user.identityId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management',
+        identityId: access.user.identityId,
+        type: classifyPropertySubmission(data),
         stage: 'new', title: data.unitName || 'New property draft', source: MARKER,
         projectId: data.projectId, requirements: data,
       },
@@ -107,9 +141,22 @@ export async function PATCH(req: NextRequest) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
       const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
       if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      if (data.existingUnitId) {
+        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+      }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });
-    const row = await prisma.crmOpportunity.update({ where: { id }, data: { title: data.unitName || 'New property draft', projectId: data.projectId, type: data.offers.includes('sale') && data.offers.length === 1 ? 'sale' : 'management', requirements: data }, select: { id: true, requirements: true } });
+    const row = await prisma.crmOpportunity.update({
+      where: { id },
+      data: {
+        title: data.unitName || 'New property draft',
+        projectId: data.projectId,
+        type: classifyPropertySubmission(data),
+        requirements: data,
+      },
+      select: { id: true, requirements: true },
+    });
     return NextResponse.json(row);
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid submission' }, { status: 400 }); }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Navbar } from './Navbar';
 
 vi.mock('next/navigation', () => ({
@@ -16,17 +16,28 @@ describe('Navbar', () => {
       <Navbar
         user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
         labels={{
-          findStay: 'Find a stay',
-          residences: 'Residences',
+          stay: 'Stay',
+          monthly: 'Monthly',
+          buy: 'Buy',
+          sell: 'Sell',
+          rentOut: 'Rent Out',
+          manage: 'Manage',
+          explore: 'Explore',
+          areas: 'Areas',
+          projects: 'Projects',
           services: 'Services',
           owners: 'Owners',
           about: 'About',
           trust: 'Trust',
+          help: 'Help',
+          global: 'Global',
           language: 'Language',
           login: 'Log in',
           register: 'Sign up',
           logout: 'Log out',
           myTrips: 'My trips',
+          saved: 'Saved', addProperty: 'Add property',
+          developers: 'Developers', buyers: 'Buyers', management: 'Management',
           messages: 'Messages',
           tickets: 'My requests',
           orders: 'My orders',
@@ -44,5 +55,13 @@ describe('Navbar', () => {
     expect(owner).toHaveClass('font-semibold');
     const trips = screen.getAllByRole('link', { name: 'My trips' })[0];
     expect(trips).not.toHaveClass('font-semibold');
+    const menu = screen.getByRole('button', { name: 'Menu' });
+    expect(menu.parentElement).toHaveClass('xl:hidden');
+    fireEvent.click(menu);
+    expect(menu).toHaveAttribute('aria-expanded', 'true');
+    expect(document.getElementById('mobile-navigation')).toHaveClass('xl:hidden');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(menu).toHaveAttribute('aria-expanded', 'false');
+    expect(menu).toHaveFocus();
   });
 });

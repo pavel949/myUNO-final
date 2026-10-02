@@ -16,15 +16,15 @@ describe('connected public homepage', () => {
     expect(landing).toContain('<ProjectCard');
     expect(landing).toContain('<ServiceCard');
   });
-  it('provides connected entry points to stays, projects, owners and developers', () => {
-    for (const route of ['/search', '/projects', '/owners', '/developers', '/services']) {
-      expect(landing).toContain(route);
+  it('provides connected entry points to the five primary intents and discovery', () => {
+    for (const route of ['/search', '/projects', '/homes?intent=buy', '/sell', '/rent-out', '/manage', '/services']) {
+      expect(landing + navbar + discovery).toContain(route);
     }
   });
   it('keeps date-aware stays on canonical search and makes other modes navigational', () => {
     expect(discovery).toContain("router.push('/search?' + params.toString())");
     expect(discovery).toContain("router.push('/homes?intent=buy')");
-    expect(discovery).toContain("router.push('/owners')");
+    expect(discovery).toContain("router.push('/manage')");
     expect(discovery).toContain("router.push('/sell')");
     expect(discovery).toContain("mode === 'rent'");
     expect(discovery).toContain("{ id: 'rent', title: labels.rent }");

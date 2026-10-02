@@ -11,15 +11,36 @@ export type HomeIntent = 'buy' | 'rent';
 export interface PublicCommercialHome {
   id: string;
   name: string;
-  project: { name: string; slug: string };
+  project: { name: string; slug: string; areaSlug: string | null };
+  unitType: 'villa' | 'condo' | 'townhouse';
   bedrooms: number;
   bathrooms: number;
   sizeSqm: number | null;
   imageUrl: string | null;
   intents: HomeIntent[];
+  priceThb: Partial<Record<HomeIntent, number>>;
 }
 
 const kinds = ['sale', 'long_term_rental'];
+
+export function publicOfferingPriceThb(
+  offeringType: string,
+  pricingTerms: unknown,
+): { intent: HomeIntent; amountThb: number } | null {
+  if (!pricingTerms || typeof pricingTerms !== 'object' || Array.isArray(pricingTerms)) return null;
+  const terms = pricingTerms as Record<string, unknown>;
+  const numeric = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  if (offeringType === 'sale') {
+    const amount = numeric(terms.askingPriceThb);
+    return amount ? { intent: 'buy', amountThb: amount } : null;
+  }
+  if (offeringType === 'long_term_rental') {
+    const amount = numeric(terms.monthlyRentThb) ?? numeric(terms.monthlyThb);
+    return amount ? { intent: 'rent', amountThb: amount } : null;
+  }
+  return null;
+}
 type Credential = {
   credentialType: string; status: string; verificationStatus: string;
   evidenceMediaId: string | null; expiryDate: Date | null; effectiveDate: Date | null;
@@ -59,9 +80,9 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       OR: [{ coverMediaId: { not: null } }, { media: { some: {} } }],
     },
     select: {
-      id: true, name: true, bedrooms: true, bathrooms: true, sizeSqm: true,
+      id: true, name: true, unitType: true, bedrooms: true, bathrooms: true, sizeSqm: true,
       permittedUseConfirmedAt: true,
-      project: { select: { name: true, slug: true } },
+      project: { select: { name: true, slug: true, area: { select: { slug: true } } } },
       coverMedia: { select: { storageKey: true } },
       media: { take: 1, orderBy: { sort: 'asc' }, select: { media: { select: { storageKey: true } } } },
       regulatoryCredentials: { select: {
@@ -72,7 +93,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       engagements: { select: { status: true, mandateMediaId: true, startsOn: true, endsOn: true } },
       commercialOfferings: {
         where: { offeringType: { in: kinds } },
-        select: { offeringType: true, status: true },
+        select: { offeringType: true, status: true, pricingTerms: true },
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
@@ -89,11 +110,23 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       sourceBookingOwned: sourceExcluded.has(row.id),
     }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
+    const priceThb: Partial<Record<HomeIntent, number>> = {};
+    for (const offering of row.commercialOfferings) {
+      if (offering.status !== 'active') continue;
+      const normalized = publicOfferingPriceThb(offering.offeringType, offering.pricingTerms);
+      if (normalized) priceThb[normalized.intent] = normalized.amountThb;
+    }
     return [{
-      id: row.id, name: row.name, project: row.project,
-      bedrooms: row.bedrooms, bathrooms: row.bathrooms, sizeSqm: row.sizeSqm,
+      id: row.id,
+      name: row.name,
+      project: { name: row.project.name, slug: row.project.slug, areaSlug: row.project.area?.slug ?? null },
+      unitType: row.unitType,
+      bedrooms: row.bedrooms,
+      bathrooms: row.bathrooms,
+      sizeSqm: row.sizeSqm,
       imageUrl: row.coverMedia?.storageKey ?? row.media[0]?.media.storageKey ?? null,
       intents,
+      priceThb,
     }];
   });
 }

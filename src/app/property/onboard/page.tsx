@@ -4,10 +4,15 @@ import { prisma } from '@/lib/prisma';
 import PropertySubmissionWizard from './wizard';
 
 export const dynamic = 'force-dynamic';
-export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string } }) {
+export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string } }) {
   const user = await getCurrentUser();
   if (!user) {
-    const query = typeof searchParams?.projectId === 'string' ? `?projectId=${encodeURIComponent(searchParams.projectId)}` : '';
+    const params = new URLSearchParams();
+    if (typeof searchParams?.projectId === 'string') params.set('projectId', searchParams.projectId);
+    if (typeof searchParams?.offers === 'string') params.set('offers', searchParams.offers);
+    if (typeof searchParams?.kind === 'string') params.set('kind', searchParams.kind);
+    if (typeof searchParams?.operatingModel === 'string') params.set('operatingModel', searchParams.operatingModel);
+    const query = params.toString() ? `?${params.toString()}` : '';
     redirect(`/login?next=${encodeURIComponent('/property/onboard' + query)}`);
   }
   const scopedIds = user.roles.map(role => role.projectId).filter((id): id is string => Boolean(id));
@@ -17,5 +22,18 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     take: 500,
   }), prisma.area.findMany({ where: { status: 'live' }, select: { id: true, slug: true }, orderBy: { sort: 'asc' } })]);
   const initialProjectId = projects.some(project => project.id === searchParams?.projectId) ? searchParams?.projectId : undefined;
-  return <PropertySubmissionWizard projects={projects} areas={areas} initialProjectId={initialProjectId} />;
+  const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
+  const initialOffers = (searchParams?.offers || '').split(',').filter((offer) => allowedOffers.has(offer));
+  const initialKind = ['home', 'resort', 'management'].includes(searchParams?.kind || '') ? searchParams?.kind : undefined;
+  const initialOperatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(searchParams?.operatingModel || '')
+    ? searchParams?.operatingModel
+    : undefined;
+  return <PropertySubmissionWizard
+    projects={projects}
+    areas={areas}
+    initialProjectId={initialProjectId}
+    initialOffers={initialOffers}
+    initialKind={initialKind}
+    initialOperatingModel={initialOperatingModel}
+  />;
 }

@@ -38,8 +38,10 @@ describe('specified surfaces wired to existing rails', () => {
   });
 
   it('links header, footer, owners CTA, tickets, and handbook', () => {
-    expect(navbar).toContain('/owners');
+    expect(navbar).toContain('/rent-out');
+    expect(navbar).toContain('/manage');
     expect(navbar).toContain('/about');
+    expect(footer).toContain('/owners');
     expect(footer).toContain('/trust/ombudsman');
     expect(footer).toContain('/legal');
     expect(footer).toContain('LocaleSwitcher');

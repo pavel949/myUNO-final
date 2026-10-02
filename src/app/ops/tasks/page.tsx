@@ -33,6 +33,8 @@ export default async function OperationalTasksPage({
     for (const unit of units) mcManagedUnitIds.add(unit.id);
   }
 
+  if (!user.isAdmin && !staffProjectIds.length && !mcManagedUnitIds.size) redirect('/');
+
   const requestedUnitId =
     typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
 

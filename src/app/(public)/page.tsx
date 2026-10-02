@@ -41,15 +41,16 @@ export default async function LandingPage() {
 
   const [labels, homepageData] = await Promise.all([
     getLabels({
-      'landing.global_hero.kicker': 'PHUKET · PROPERTY · STAYS · SERVICES',
-      'landing.global_hero.title': 'Everything around your place in Phuket.',
-      'landing.global_hero.subtitle': 'Stay. Buy. Own. Manage. Live — through one connected property platform.',
+      'landing.global_hero.kicker': 'PHUKET · STAYS · HOMES · SERVICES',
+      'landing.global_hero.title': 'Phuket, better connected.',
+      'landing.global_hero.subtitle': 'Stay in places we know. Manage your trip. Get trusted local services.',
       'landing.global_hero.global': 'Explore global desks',
       'landing.global_hero.areas': 'Explore Phuket areas',
       'landing.global_hero.trust': 'How trust works',
       'landing.global_hero.sell': 'Sell a property',
       'landing.global_hero.rent_out': 'Rent it out',
       'landing.global_hero.manage': 'Property management',
+      'landing.global_hero.services': 'Explore Phuket services',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
       'landing.search.locations': 'Locations',
@@ -314,14 +315,6 @@ export default async function LandingPage() {
             <p className="mt-20 max-w-xl text-body text-text-ink md:text-subtitle">
               {labels['landing.global_hero.subtitle']}
             </p>
-            <div className="mt-20 flex flex-wrap gap-x-16 gap-y-8 text-small font-semibold">
-              <Link href="/areas" className="text-text-ink hover:text-brand-andaman">
-                {labels['landing.global_hero.areas']} →
-              </Link>
-              <Link href="/trust" className="text-text-ink hover:text-brand-andaman">
-                {labels['landing.global_hero.trust']} →
-              </Link>
-            </div>
           </div>
 
           <div className="mt-32 max-w-content">
@@ -347,7 +340,11 @@ export default async function LandingPage() {
                 error: labels['home.discovery.error'],
               }}
             />
-            <div className="mt-12 flex flex-wrap gap-x-16 gap-y-8 px-4 text-small">
+            <div className="mt-12 flex flex-wrap items-center gap-x-16 gap-y-8 px-4 text-small">
+              <Link href="/services" className="font-semibold text-brand-andaman hover:underline">
+                {labels['landing.global_hero.services']} →
+              </Link>
+              <span aria-hidden="true" className="hidden text-border-line-2 sm:inline">·</span>
               <Link href="/sell" className="font-semibold text-text-ink hover:text-brand-andaman">
                 {labels['landing.global_hero.sell']} →
               </Link>

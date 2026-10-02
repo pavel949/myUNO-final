@@ -10,6 +10,9 @@ import {
 import type { CalendarEntry } from '@/modules/booking/calendar-projection';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { computeCanonicalCalendarRates } from '@/modules/core';
+import { getUnitReadinessMap } from '@/modules/ops';
+import { getChannelHealthForUnits } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,11 +115,23 @@ export default async function UnifiedStayCalendarPage({
   const days = calendarDays(start, daysCount);
   const end = shiftCalendarDay(start, daysCount);
   const unitIds = visibleUnits.map((unit) => unit.id);
+  const rangeStart = new Date(start + 'T00:00:00.000Z');
+  const rangeEnd = new Date(end + 'T00:00:00.000Z');
   const dateWhere = {
     unitId: { in: unitIds },
-    startDate: { lt: new Date(end + 'T00:00:00.000Z') },
-    endDate: { gt: new Date(start + 'T00:00:00.000Z') },
+    startDate: { lt: rangeEnd },
+    endDate: { gt: rangeStart },
   };
+  const [readinessByUnit, channelHealthByUnit, calendarRateResults] = await Promise.all([
+    getUnitReadinessMap(prisma, unitIds),
+    getChannelHealthForUnits(prisma, unitIds),
+    Promise.all(unitIds.map(async (id) => [
+      id,
+      await computeCanonicalCalendarRates(prisma, id, rangeStart, rangeEnd, 1),
+    ] as const)),
+  ]);
+  const calendarRatesByUnit = Object.fromEntries(calendarRateResults);
+
   // This is a projection only: Booking and BlockedDate remain the same
   // authoritative rows used by checkout, availability and unit operations.
   const [bookings, blocks, labels] = await Promise.all([
@@ -169,6 +184,14 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.source': 'Live myUNO database',
       'staff.unified_calendar.no_entries': 'No reservation or closure for this date.',
       'staff.unified_calendar.protected': 'Imported occupancy is protected as a calendar block until booking and payment identities are reconciled.',
+      'staff.unified_calendar.readiness': 'Readiness',
+      'staff.unified_calendar.ready': 'Ready',
+      'staff.unified_calendar.needs_cleaning': 'Needs cleaning',
+      'staff.unified_calendar.needs_inspection': 'Needs inspection',
+      'staff.unified_calendar.in_progress': 'In progress',
+      'staff.unified_calendar.channel_health': 'Channels',
+      'staff.unified_calendar.rate_unavailable': 'Rate unavailable',
+      'staff.unified_calendar.tasks': 'Housekeeping & readiness →',
     }),
   ]);
 
@@ -216,10 +239,24 @@ export default async function UnifiedStayCalendarPage({
           ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')),
       categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
+      readiness: readinessByUnit[unit.id]?.state ?? 'ready',
+      openTaskCount: readinessByUnit[unit.id]?.openTaskCount ?? 0,
+      channelState: channelHealthByUnit[unit.id]?.state ?? 'manual_only',
+      channelRows: channelHealthByUnit[unit.id]?.rows ?? [],
     }))}
     allUnits={categoryUnits.map((unit) => ({ id: unit.id, name: unit.name }))}
     projectId={projectId} categoryId={categoryId} unitId={unitId}
     cells={cells} entries={{ ...bookingDetails, ...blockDetails }}
+    rates={Object.fromEntries(Object.entries(calendarRatesByUnit).map(([id, result]) => [
+      id,
+      {
+        error: result.error,
+        byDate: Object.fromEntries(result.lines.map((line) => [
+          line.date,
+          { nightlyThb: line.nightlyThb, source: line.source },
+        ])),
+      },
+    ]))}
     arrivals={bookings.filter((booking) =>
       booking.startDate.toISOString().slice(0, 10) >= start &&
       booking.startDate.toISOString().slice(0, 10) < end &&

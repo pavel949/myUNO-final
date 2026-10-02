@@ -53,6 +53,9 @@ export default async function OperationalTasksPage({
     if (!allowed) redirect('/ops/tasks');
   }
 
+  const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
+  const backHref = mcOnly ? '/mc/calendar' : '/ops/calendar';
+
   const labels = await getLabels({
     'staff.tasks.back': '← Calendar',
     'staff.tasks.title': 'Housekeeping & readiness',
@@ -78,7 +81,7 @@ export default async function OperationalTasksPage({
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-5xl">
       <div className="mb-24">
-        <Link href="/ops/calendar" className="text-small font-semibold text-brand-andaman hover:underline">{labels['staff.tasks.back']}</Link>
+        <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">{labels['staff.tasks.back']}</Link>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.tasks.title']}</h1>
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>

@@ -43,14 +43,16 @@ export default async function OperationalTasksPage({
       where: { id: requestedUnitId },
       select: { projectId: true },
     });
-    const allowed = Boolean(
-      requestedUnit &&
-      (
-        staffProjectIds.includes(requestedUnit.projectId) ||
-        mcManagedUnitIds.has(requestedUnitId)
-      )
-    );
-    if (!allowed) redirect('/ops/tasks');
+    const allowed = explicitMcMode
+      ? mcManagedUnitIds.has(requestedUnitId)
+      : Boolean(
+          requestedUnit &&
+          (
+            staffProjectIds.includes(requestedUnit.projectId) ||
+            mcManagedUnitIds.has(requestedUnitId)
+          )
+        );
+    if (!allowed) redirect(explicitMcMode ? '/ops/tasks?mc=1' : '/ops/tasks');
   }
 
   const explicitMcMode = searchParams?.mc === '1' && mcScopes.length > 0;
@@ -71,10 +73,17 @@ export default async function OperationalTasksPage({
   });
 
   const tasks = await listOperationalTasks(prisma, {
-    ...(!user.isAdmin ? {
-      projectIds: staffProjectIds,
-      unitIds: Array.from(mcManagedUnitIds),
-    } : {}),
+    ...(!user.isAdmin
+      ? explicitMcMode
+        ? {
+            projectIds: [],
+            unitIds: Array.from(mcManagedUnitIds),
+          }
+        : {
+            projectIds: staffProjectIds,
+            unitIds: Array.from(mcManagedUnitIds),
+          }
+      : {}),
     unitId: requestedUnitId,
     statuses: ['planned', 'assigned', 'in_progress', 'inspected'],
   });

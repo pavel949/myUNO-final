@@ -104,20 +104,21 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const closeMenu = () => setMenuOpen(false);
 
   const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
-    { href: '/projects', label: labels.explore },
     { href: '/search', label: labels.stay },
-    { href: '/homes?intent=buy', label: labels.homes, activeBase: '/homes' },
-    { href: '/services', label: labels.services },
+    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
     { href: '/owners', label: labels.owners },
-    { href: '/partners', label: labels.partners },
+    { href: '/services', label: labels.services },
+    { href: user ? '/app' : '/login?next=/app', label: 'My UNO', activeBase: '/app' },
   ];
 
   const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [
+    { href: '/projects', label: labels.explore },
+    { href: '/areas', label: labels.areas },
+    { href: '/partners', label: labels.partners },
     { href: '/homes?intent=rent', label: labels.monthly },
     { href: '/sell', label: labels.sell },
     { href: '/rent-out', label: labels.rentOut },
     { href: '/manage', label: labels.manage },
-    { href: '/areas', label: labels.areas },
     { href: '/desks', label: labels.global },
     { href: '/trust', label: labels.trust },
     { href: '/help', label: labels.help },

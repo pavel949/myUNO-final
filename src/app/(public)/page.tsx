@@ -283,6 +283,7 @@ export default async function LandingPage() {
 
           <div className="mt-32 max-w-content">
             <DiscoverySearch
+              locale={locale}
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               areas={areas.map((area) => ({ slug: area.slug, name: area.displayName }))}
               labels={{

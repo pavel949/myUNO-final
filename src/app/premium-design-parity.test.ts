@@ -60,9 +60,9 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).not.toContain('id="start-heading"');
     const discovery = source('src/components/DiscoverySearch.tsx');
-    expect(discovery).toContain("router.push('/sell')");
-    expect(discovery).toContain("router.push('/manage')");
-    expect(discovery).toContain("router.push('/homes?intent=buy')");
+    expect(discovery).toContain("/property/onboard?kind=home&offers=sale");
+    expect(discovery).toContain("/property/onboard?kind=home&operatingModel=direct_managed");
+    expect(discovery).toContain("router.push('/homes?' + params.toString())");
     expect(home).toContain("landing.units.title");
     expect(home).toContain("landing.areas.title");
     expect(home).toContain('GLOBAL_DESKS.map');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { StayDatePicker } from './StayDatePicker';
 import { useRouter } from 'next/navigation';
 
 type Mode = 'rent' | 'buy' | 'manage' | 'sell';
@@ -17,9 +18,11 @@ export interface DiscoveryAreaOption {
 
 export function DiscoverySearch({
   labels,
+  locale = 'en',
   projects = [],
   areas = [],
 }: {
+  locale?: string;
   labels: {
     rent: string;
     buy: string;
@@ -48,6 +51,11 @@ export function DiscoverySearch({
   const [endDate, setEndDate] = useState('');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [unitType, setUnitType] = useState('');
+  const [bedrooms, setBedrooms] = useState('');
+  const [budget, setBudget] = useState('');
+  const [managementPath, setManagementPath] = useState('home');
+  const copy = locale === 'ru' ? { type: 'Тип недвижимости', all: 'Любой', villa: 'Вилла', condo: 'Кондо', bedrooms: 'Спальни', budget: 'Бюджет до, ฿ / ночь', buyBudget: 'Бюджет покупки до, ฿', previous: 'Предыдущий месяц', next: 'Следующий месяц', close: 'Готово', clear: 'Сбросить', manage: 'Передайте объект в управление myUNO или подключите портфель управляющей компании.', home: 'Мой объект', portfolio: 'Портфель / компания', apply: 'Подать заявку на управление', sell: 'Добавьте объект для продажи: данные, фотографии и подтверждение полномочий.', sellCta: 'Добавить объект для продажи' } : locale === 'th' ? { type: 'ประเภทที่พัก', all: 'ทั้งหมด', villa: 'วิลล่า', condo: 'คอนโด', bedrooms: 'ห้องนอน', budget: 'งบสูงสุด ฿ / คืน', buyBudget: 'งบซื้อสูงสุด ฿', previous: 'เดือนก่อนหน้า', next: 'เดือนถัดไป', close: 'เสร็จสิ้น', clear: 'ล้าง', manage: 'สมัครให้ myUNO ดูแลที่พัก หรือเชื่อมต่อพอร์ตของบริษัทจัดการ', home: 'ที่พักของฉัน', portfolio: 'พอร์ต / บริษัท', apply: 'สมัครการจัดการ', sell: 'เพิ่มที่พักเพื่อขาย พร้อมรายละเอียด รูปภาพ และหลักฐานสิทธิ์', sellCta: 'เพิ่มที่พักเพื่อขาย' } : { type: 'Property type', all: 'Any', villa: 'Villa', condo: 'Condo', bedrooms: 'Bedrooms', budget: 'Budget up to, ฿ / night', buyBudget: 'Purchase budget up to, ฿', previous: 'Previous month', next: 'Next month', close: 'Done', clear: 'Clear', manage: 'Apply for myUNO property management or connect your management company portfolio.', home: 'My property', portfolio: 'Portfolio / company', apply: 'Apply for management', sell: 'Add a property for sale with its details, photos and listing authority.', sellCta: 'Add property for sale' };
   const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
@@ -63,15 +71,21 @@ export function DiscoverySearch({
     setError('');
 
     if (mode === 'buy') {
-      router.push('/homes?intent=buy');
+      const params = new URLSearchParams({ intent: 'buy' });
+      if (destination.startsWith('area:')) params.set('area', destination.slice(5));
+      if (destination.startsWith('project:')) params.set('projectId', destination.slice(8));
+      if (unitType) params.set('type', unitType);
+      if (bedrooms) params.set('bedrooms', bedrooms);
+      if (budget) params.set('maxPrice', budget);
+      router.push('/homes?' + params.toString());
       return;
     }
     if (mode === 'manage') {
-      router.push('/manage');
+      router.push(managementPath === 'home' ? '/property/onboard?kind=home&operatingModel=direct_managed' : '/property/onboard?kind=project&operatingModel=via_management_company');
       return;
     }
     if (mode === 'sell') {
-      router.push('/sell');
+      router.push('/property/onboard?kind=home&offers=sale');
       return;
     }
     if (!startDate || !endDate || startDate < today || endDate <= startDate) {
@@ -90,6 +104,9 @@ export function DiscoverySearch({
     } else if (destination.startsWith('area:')) {
       params.set('areaSlug', destination.slice('area:'.length));
     }
+    if (unitType) params.set('unitTypes', unitType);
+    if (bedrooms) params.set('bedrooms', bedrooms);
+    if (budget) params.set('maxPrice', budget);
     router.push('/search?' + params.toString());
   }
 
@@ -106,6 +123,7 @@ export function DiscoverySearch({
             type="button"
             onClick={() => {
               setMode(item.id);
+              setBudget('');
               setError('');
             }}
             aria-pressed={mode === item.id}
@@ -120,8 +138,8 @@ export function DiscoverySearch({
         ))}
       </div>
 
-      {mode === 'rent' ? (
-        <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] lg:items-end">
+      {mode === 'rent' || mode === 'buy' ? (
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:items-end">
           <label className="col-span-2 grid gap-8 text-small text-text-secondary lg:col-span-1">
             {labels.where}
             <select
@@ -147,31 +165,9 @@ export function DiscoverySearch({
             </select>
           </label>
 
-          <label className="grid gap-8 text-small text-text-secondary">
-            {labels.checkIn}
-            <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
-              type="date"
-              required
-              min={today}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </label>
+          {mode === 'rent' && <StayDatePicker start={startDate} end={endDate} min={today} locale={locale} labels={{ checkIn: labels.checkIn, checkOut: labels.checkOut, ...copy }} onChange={(start, end) => { setStartDate(start); setEndDate(end); setError(''); }} />}
 
-          <label className="grid gap-8 text-small text-text-secondary">
-            {labels.checkOut}
-            <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
-              type="date"
-              required
-              min={startDate || today}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </label>
-
-          <label className="grid gap-8 text-small text-text-secondary">
+          {mode === 'rent' && <><label className="grid gap-8 text-small text-text-secondary">
             {labels.adults}
             <input
               className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
@@ -197,6 +193,20 @@ export function DiscoverySearch({
             />
           </label>
 
+          </>}
+          <label className="grid gap-8 text-small text-text-secondary">{copy.type}
+            <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={unitType} onChange={e => setUnitType(e.target.value)}>
+              <option value="">{copy.all}</option><option value="villa">{copy.villa}</option><option value="condo">{copy.condo}</option>
+            </select>
+          </label>
+          <label className="grid gap-8 text-small text-text-secondary">{copy.bedrooms}
+            <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={bedrooms} onChange={e => setBedrooms(e.target.value)}>
+              <option value="">{copy.all}</option>{[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}{mode === 'buy' ? '+' : ''}</option>)}
+            </select>
+          </label>
+          <label className="col-span-2 grid gap-8 text-small text-text-secondary">{mode === 'rent' ? copy.budget : copy.buyBudget}
+            <input type="number" min="0" step="100" value={budget} onChange={e => setBudget(e.target.value)} className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" />
+          </label>
           <button
             className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman lg:col-span-1"
             type="submit"
@@ -206,12 +216,13 @@ export function DiscoverySearch({
         </div>
       ) : (
         <div className="flex flex-col items-start justify-between gap-16 rounded-xl bg-surface-ivory px-16 py-16 md:flex-row md:items-center">
-          <p className="max-w-2xl text-body text-text-secondary">{labels.hint}</p>
+          <p className="max-w-2xl text-body text-text-secondary">{mode === 'manage' ? copy.manage : copy.sell}</p>
+          {mode === 'manage' && <select aria-label={copy.manage} value={managementPath} onChange={e => setManagementPath(e.target.value)} className="h-48 w-full rounded-lg border border-border-line bg-surface-paper px-12 md:w-auto"><option value="home">{copy.home}</option><option value="portfolio">{copy.portfolio}</option></select>}
           <button
             type="submit"
             className="h-48 w-full shrink-0 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep md:w-auto"
           >
-            {labels.properties} →
+            {mode === 'manage' ? copy.apply : copy.sellCta} →
           </button>
         </div>
       )}

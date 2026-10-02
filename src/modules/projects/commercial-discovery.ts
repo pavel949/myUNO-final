@@ -11,7 +11,7 @@ export type HomeIntent = 'buy' | 'rent';
 export interface PublicCommercialHome {
   id: string;
   name: string;
-  project: { name: string; slug: string; areaSlug: string | null };
+  project: { id: string; name: string; slug: string; areaSlug: string | null };
   unitType: 'villa' | 'condo' | 'townhouse';
   bedrooms: number;
   bathrooms: number;
@@ -82,7 +82,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
     select: {
       id: true, name: true, unitType: true, bedrooms: true, bathrooms: true, sizeSqm: true,
       permittedUseConfirmedAt: true,
-      project: { select: { name: true, slug: true, area: { select: { slug: true } } } },
+      project: { select: { id: true, name: true, slug: true, area: { select: { slug: true } } } },
       coverMedia: { select: { storageKey: true } },
       media: { take: 1, orderBy: { sort: 'asc' }, select: { media: { select: { storageKey: true } } } },
       regulatoryCredentials: { select: {
@@ -119,7 +119,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
     return [{
       id: row.id,
       name: row.name,
-      project: { name: row.project.name, slug: row.project.slug, areaSlug: row.project.area?.slug ?? null },
+      project: { id: row.project.id, name: row.project.name, slug: row.project.slug, areaSlug: row.project.area?.slug ?? null },
       unitType: row.unitType,
       bedrooms: row.bedrooms,
       bathrooms: row.bathrooms,

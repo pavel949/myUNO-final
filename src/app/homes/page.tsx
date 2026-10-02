@@ -8,6 +8,7 @@ import { LeadFormSection } from '@/app/(public)/lead-form-section';
 export const dynamic = 'force-dynamic';
 
 type SearchParams = {
+  projectId?: string;
   intent?: string;
   area?: string;
   type?: string;
@@ -73,6 +74,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
 
   const homes = allHomes.filter((home) => {
     const price = home.priceThb[intent] ?? null;
+    if (searchParams?.projectId && home.project.id !== searchParams.projectId) return false;
     if (area && home.project.areaSlug !== area) return false;
     if (type && home.unitType !== type) return false;
     if (bedrooms !== null && home.bedrooms < bedrooms) return false;
@@ -132,6 +134,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
           </label>
           <label className="text-small text-text-secondary">
             {labels['homes.bedrooms_filter']}
+            {searchParams?.projectId && <input type="hidden" name="projectId" value={searchParams.projectId} />}
             <input name="bedrooms" type="number" min="0" defaultValue={searchParams?.bedrooms || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           <label className="text-small text-text-secondary">

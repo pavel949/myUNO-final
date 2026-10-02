@@ -111,6 +111,7 @@ export default function SearchResults({
   const areaSlug = searchParams?.get('areaSlug');
   const stayMode = searchParams?.get('stayMode');
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
+  const bedrooms = searchParams?.get('bedrooms') || '';
   const unitTypes = searchParams?.get('unitTypes') || '';
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
@@ -149,6 +150,7 @@ export default function SearchResults({
         if (projectId) params.set('projectId', projectId);
         if (areaSlug) params.set('areaSlug', areaSlug);
         if (stayMode) params.set('stayMode', stayMode);
+        if (bedrooms) params.set('bedrooms', bedrooms);
         if (unitTypes) params.set('unitTypes', unitTypes);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
@@ -203,7 +205,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {

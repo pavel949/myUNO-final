@@ -63,7 +63,7 @@ export default function ResearchAdminClient({ publications, labels }: { publicat
 
     <form onSubmit={create} className="mt-32 grid gap-12 rounded-2xl border border-border-line bg-surface-paper p-24 md:grid-cols-2">
       <input name="slug" required placeholder={labels['admin.research.slug']} className="rounded-lg border border-border-line p-12" />
-      <select name="locale" className="rounded-lg border border-border-line p-12"><option value="en">EN</option><option value="ru">RU</option><option value="th">TH</option><option value="zh">ZH</option></select>
+      <select name="locale" className="rounded-lg border border-border-line p-12"><option value="en">{labels['nav.locale.en']}</option><option value="ru">{labels['nav.locale.ru']}</option><option value="th">{labels['nav.locale.th']}</option><option value="zh">{labels['nav.locale.zh']}</option></select>
       <input name="title" required placeholder={labels['admin.research.pub_title']} className="rounded-lg border border-border-line p-12 md:col-span-2" />
       <textarea name="summary" required placeholder={labels['admin.research.summary']} className="min-h-24 rounded-lg border border-border-line p-12 md:col-span-2" />
       <textarea name="body" required placeholder={labels['admin.research.article_body']} className="min-h-48 rounded-lg border border-border-line p-12 md:col-span-2" />

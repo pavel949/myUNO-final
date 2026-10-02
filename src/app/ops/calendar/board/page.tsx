@@ -41,17 +41,29 @@ export default async function UnifiedStayCalendarPage({
   const mcScopes = mcMode ? getMCProjectScopes(user) : [];
   if (mcMode && mcScopes.length === 0) redirect('/');
 
-  const organizationScopes = mcMode && requestedOrganizationId
-    ? mcScopes.filter((scope) => scope.organizationId === requestedOrganizationId)
+  // Query params are a filter, not a grant. An org or project the caller
+  // does not hold is ignored; we keep their authorized scope instead of
+  // emptying it (which hid homes) or honouring the unauthorised id (which
+  // would widen the board).
+  const requestedOrgAuthorized = Boolean(
+    requestedOrganizationId &&
+    mcScopes.some((scope) => scope.organizationId === requestedOrganizationId),
+  );
+  const organizationId = mcMode
+    ? (requestedOrgAuthorized
+        ? requestedOrganizationId!
+        : (mcScopes[0]?.organizationId ?? ''))
+    : (requestedOrganizationId ?? '');
+  const organizationScopes = mcMode && organizationId
+    ? mcScopes.filter((scope) => scope.organizationId === organizationId)
     : mcScopes;
-  const projectScopes = mcMode && requestedProjectId
+  const requestedProjectAuthorized = Boolean(
+    requestedProjectId &&
+    organizationScopes.some((scope) => scope.projectId === requestedProjectId),
+  );
+  const effectiveScopes = requestedProjectAuthorized
     ? organizationScopes.filter((scope) => scope.projectId === requestedProjectId)
     : organizationScopes;
-  const effectiveScopes = projectScopes.length
-    ? projectScopes
-    : mcMode && requestedProjectId
-      ? mcScopes.filter((scope) => scope.projectId === requestedProjectId)
-      : mcScopes;
 
   const managedUnitLists = mcMode
     ? await Promise.all(effectiveScopes.map((scope) =>
@@ -71,8 +83,11 @@ export default async function UnifiedStayCalendarPage({
   ]);
   const sourceExcluded = new Set(sourceExcludedUnitIds);
   const authorizedIds = new Set(projects.map((project) => project.id));
-  const projectId =
-    requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
+  const projectId = mcMode
+    ? (requestedProjectAuthorized
+        ? requestedProjectId!
+        : (organizationScopes[0]?.projectId ?? ''))
+    : (requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '');
   const unitWhere = {
     status: { not: 'offboarded' as const },
     ...(mcMode
@@ -204,7 +219,7 @@ export default async function UnifiedStayCalendarPage({
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
-    mode={mcMode ? 'mc' : 'staff'} organizationId={requestedOrganizationId ?? ''}
+    mode={mcMode ? 'mc' : 'staff'} organizationId={organizationId}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({

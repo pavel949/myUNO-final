@@ -245,7 +245,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   <span className="block font-semibold text-text-ink">{unit.name}</span>
                   <span className="block text-[11px] text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
                 </span>
-                <span className={'shrink-0 rounded-md px-10 py-6 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                <span className={'shrink-0 rounded-md px-8 py-4 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
                   {state}
                 </span>
               </button>;

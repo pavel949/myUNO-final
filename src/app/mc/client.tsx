@@ -601,15 +601,15 @@ export function MCDashboardClient({
           <div className="flex flex-col gap-16 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-8 text-small text-text-secondary mb-4">
-                <span className="font-semibold uppercase tracking-[0.12em] text-brand-andaman">myUNO Operations</span>
+                <span className="font-semibold uppercase tracking-[0.12em] text-brand-andaman">{labels['mc.workspace.brand']}</span>
                 <span aria-hidden="true">/</span>
                 <span>{activeContext?.organizationName}</span>
               </div>
               <h1 className="font-display text-display-xl font-semibold text-text-ink">
-                Management Company
+                {labels['mc.portal.title']}
               </h1>
               <p className="text-body text-text-stone mt-4">
-                {activeContext?.projectName} · live portfolio operations
+                {activeContext?.projectName} · {labels['mc.workspace.live']}
               </p>
             </div>
 
@@ -656,12 +656,12 @@ export function MCDashboardClient({
           <nav aria-label="Management company workspace" className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
               {[
-                ['overview', 'Overview'],
-                ['calendar', 'Calendar'],
-                ['bookings', 'Reservations'],
-                ['service_orders', 'Operations'],
-                ['tickets', 'Requests'],
-                ['reports', 'Finance'],
+                ['overview', labels['mc.tabs.overview']],
+                ['calendar', labels['mc.tabs.calendar']],
+                ['bookings', labels['mc.tabs.bookings']],
+                ['service_orders', labels['mc.tabs.service_orders']],
+                ['tickets', labels['mc.tabs.tickets']],
+                ['reports', labels['mc.tabs.reports']],
               ].map(([key, label]) => (
                 <button
                   key={key}
@@ -718,12 +718,12 @@ export function MCDashboardClient({
             <section className="px-16 lg:px-24 pt-24">
               <div className="grid grid-cols-2 xl:grid-cols-6 gap-12">
                 {[
-                  ['Arrivals', arrivalsToday],
-                  ['Departures', departuresToday],
-                  ['In house', inHouseNow],
-                  ['Booking requests', requestedBookings],
-                  ['Open issues', dashboard.openTicketsCount],
-                  ['Outstanding', formatBaht(outstandingThb)],
+                  [labels['mc.workspace.arrivals'], arrivalsToday],
+                  [labels['mc.workspace.departures'], departuresToday],
+                  [labels['mc.workspace.in_house'], inHouseNow],
+                  [labels['mc.attention.requests'], requestedBookings],
+                  [labels['mc.attention.tickets'], dashboard.openTicketsCount],
+                  [labels['mc.workspace.outstanding'], formatBaht(outstandingThb)],
                 ].map(([label, value]) => (
                   <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-16">
                     <p className="text-small text-text-secondary">{label}</p>
@@ -736,8 +736,8 @@ export function MCDashboardClient({
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
                     <div>
-                      <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">Today</p>
-                      <h2 className="mt-2 text-heading-2 font-bold text-text-ink">Operational timeline</h2>
+                      <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
+                      <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
                       Full calendar →
@@ -745,9 +745,9 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      ['Arrivals', arrivalsToday, 'Check guest readiness, payment and unit status'],
-                      ['Departures', departuresToday, 'Coordinate inspection, deposit and turnover'],
-                      ['In house', inHouseNow, 'Active stays requiring live operational support'],
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
                     ].map(([label, value, hint]) => (
                       <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
                         <p className="text-small font-semibold text-text-ink">{label}</p>
@@ -759,14 +759,14 @@ export function MCDashboardClient({
                 </div>
 
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
-                  <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">Needs attention</p>
-                  <h2 className="mt-2 text-heading-2 font-bold text-text-ink">Action queue</h2>
+                  <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.attention.title']}</p>
+                  <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
                   <div className="mt-16 space-y-8">
                     {[
-                      ['Booking requests', requestedBookings, 'bookings' as const],
-                      ['Open tickets', dashboard.openTicketsCount, 'tickets' as const],
-                      ['Service orders', actionableServiceOrders, 'service_orders' as const],
-                      ['Pending payments', pendingPayments.length, 'bookings' as const],
+                      [labels['mc.attention.requests'], requestedBookings, 'bookings' as const],
+                      [labels['mc.attention.tickets'], dashboard.openTicketsCount, 'tickets' as const],
+                      [labels['mc.attention.services'], actionableServiceOrders, 'service_orders' as const],
+                      [labels['mc.workspace.pending_payments'], pendingPayments.length, 'bookings' as const],
                     ].map(([label, count, target]) => (
                       <button
                         key={String(label)}
@@ -789,46 +789,7 @@ export function MCDashboardClient({
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
-            {/* Action queues use the same scoped booking, ticket and service records as their tabs. */}
-            <div className="mb-24 rounded-lg border border-border-line bg-surface-paper p-24">
-              <h2 className="text-heading-2 font-bold text-text-ink mb-8">{labels['mc.attention.title']}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
-                {[
-                  { tab: 'bookings' as const, label: labels['mc.attention.requests'], count: requestedBookings },
-                  { tab: 'tickets' as const, label: labels['mc.attention.tickets'], count: dashboard.openTicketsCount },
-                  { tab: 'service_orders' as const, label: labels['mc.attention.services'], count: actionableServiceOrders },
-                ].map((item) => (
-                  <button
-                    key={item.tab}
-                    type="button"
-                    onClick={() => setActiveTab(item.tab)}
-                    className="flex items-center justify-between rounded-md border border-border-line p-16 text-left hover:border-brand-andaman focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
-                  >
-                    <span className="text-small text-text-ink">{item.label}</span>
-                    <span className="font-display text-title font-semibold tabular-nums text-brand-andaman">{item.count} →</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Stats Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-24 mb-40">
-              <StatTile label={labels['mc.stats.units']} value={dashboard.unitsCount} variant="occupancy" />
-              <StatTile
-                label={labels['mc.stats.bookings_month']}
-                value={dashboard.bookingsThisMonth}
-                variant="occupancy"
-                delta={
-                  <DeltaChip
-                    currentValue={dashboard.bookingsThisMonth}
-                    previousValue={dashboard.bookingsPrevMonth ?? null}
-                    vsLabel={labels['mc.stats.vs_last_month']}
-                    newLabel={labels['mc.stats.new_period']}
-                  />
-                }
-              />
-              <StatTile label={labels['mc.stats.open_tickets']} value={dashboard.openTicketsCount} variant="neutral" />
-            </div>
-
+            {/* Portfolio detail */}
             {/* Managed Units List */}
             <div className="bg-surface-paper border border-border-line rounded-lg p-24">
               <h2 className="text-heading-2 font-bold text-text-ink mb-20">

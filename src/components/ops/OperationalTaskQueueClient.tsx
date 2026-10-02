@@ -30,7 +30,7 @@ export default function OperationalTaskQueueClient({
     setBusy(task.id);
     setError(null);
     try {
-      const response = await fetch('/api/ops/tasks/' + encodeURIComponent(task.id), {
+      const response = await fetch(`/api/ops/tasks/${encodeURIComponent(task.id)}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ status, assignToMe }),

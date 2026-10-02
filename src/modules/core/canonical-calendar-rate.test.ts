@@ -70,4 +70,46 @@ describe('canonical calendar rate parity', () => {
       }))
     );
   });
+  it('does not turn a 30-day calendar viewport into a monthly booking quote', async () => {
+    const unit = {
+      id: 'unit-a',
+      projectId: 'project-a',
+      inventoryCategoryId: 'category-a',
+      status: 'live',
+      maxGuests: 4,
+      petsAllowed: false,
+      maxPets: null,
+      minNights: 1,
+      baseNightlyThb: 300000,
+      categoryKey: 'two_br',
+      project: {
+        id: 'project-a',
+        status: 'live',
+        timezone: 'Asia/Bangkok',
+        projectType: null,
+      },
+      inventoryCategory: {
+        id: 'category-a',
+        status: 'live',
+        minNights: 1,
+        baseNightlyThb: 300000,
+        categoryKey: 'two_br',
+      },
+    };
+    const db: any = {
+      unit: { findUnique: vi.fn().mockResolvedValue(unit) },
+      commercialOffering: { findMany: vi.fn().mockResolvedValue([]) },
+      ratePlan: { findFirst: vi.fn().mockResolvedValue(null) },
+      pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
+    };
+
+    const start = new Date('2026-11-01T00:00:00.000Z');
+    const end = new Date('2026-12-01T00:00:00.000Z');
+    const calendar = await computeCanonicalCalendarRates(db, 'unit-a', start, end, 1);
+
+    expect(calendar.error).toBeNull();
+    expect(calendar.lines).toHaveLength(30);
+    expect(calendar.lines.every((line) => line.source !== 'category_monthly')).toBe(true);
+  });
+
 });

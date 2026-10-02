@@ -54,7 +54,7 @@ export default async function RentOutPage() {
             </h1>
             <p className="mt-16 max-w-3xl text-body text-text-secondary">{copy.vacationBody}</p>
 
-            <div className="mt-24 flex flex-wrap gap-12">
+            <div className="mt-44 flex flex-wrap gap-12">
               <Link
                 href="/property/onboard?kind=home"
                 className="inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white"
@@ -70,9 +70,9 @@ export default async function RentOutPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-28">
+          <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-32">
             <h2 className="font-display text-title font-semibold">{copy.howTitle}</h2>
-            <div className="mt-20 flex flex-wrap gap-8">
+            <div className="mt-40 flex flex-wrap gap-8">
               {activation.map((step, index) => (
                 <div
                   key={step}
@@ -96,7 +96,7 @@ export default async function RentOutPage() {
           <p className="mt-12 text-body text-text-secondary">{copy.responsibility}</p>
         </div>
 
-        <div className="mt-28 grid gap-16 md:grid-cols-2">
+        <div className="mt-44 grid gap-16 md:grid-cols-2">
           {goals.map((goal) => (
             <Link
               key={goal.title}
@@ -105,7 +105,7 @@ export default async function RentOutPage() {
             >
               <h3 className="font-display text-title font-semibold text-text-ink">{goal.title}</h3>
               <p className="mt-8 text-body text-text-secondary">{goal.body}</p>
-              <span className="mt-20 inline-flex min-h-44 items-center text-small font-semibold text-brand-andaman">
+              <span className="mt-40 inline-flex min-h-44 items-center text-small font-semibold text-brand-andaman">
                 {copy.list} →
               </span>
             </Link>
@@ -118,7 +118,7 @@ export default async function RentOutPage() {
             <p className="mt-8 text-body text-text-secondary">{copy.listingBody}</p>
             <Link
               href="/property/onboard?kind=home"
-              className="mt-20 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline"
+              className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline"
             >
               {copy.list} →
             </Link>
@@ -128,7 +128,7 @@ export default async function RentOutPage() {
             <p className="mt-8 text-body text-text-secondary">{copy.managementBody}</p>
             <Link
               href="/manage"
-              className="mt-20 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline"
+              className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline"
             >
               {copy.request} →
             </Link>

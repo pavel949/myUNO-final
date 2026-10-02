@@ -625,25 +625,25 @@ export function MCDashboardClient({
               <button
                 type="button"
                 onClick={() => setActiveTab('overview')}
-                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition \${activeTab === 'overview' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'overview' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
                 {labels['mc.workspace.today']}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('bookings')}
-                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition \${activeTab === 'bookings' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'bookings' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
                 {labels['mc.workspace.reservations']}
               </button>
               <Link
-                href={\`/mc/calendar?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
                 className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
               >
                 {labels['mc.tabs.calendar']}
               </Link>
               <Link
-                href={\`/mc/tm30?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
                 className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
               >
                 {labels['mc.workspace.guests']}
@@ -665,28 +665,28 @@ export function MCDashboardClient({
               <button
                 type="button"
                 onClick={() => setActiveTab('service_orders')}
-                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'service_orders' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'service_orders' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
                 {labels['mc.workspace.services']}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('tickets')}
-                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'tickets' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'tickets' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
                 {labels['mc.workspace.issues']}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('reports')}
-                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'reports' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'reports' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
                 {labels['mc.workspace.revenue_finance']}
               </button>
-              <Link href={\`/mc/mobilization?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.nav.mobilization']}
               </Link>
-              <Link href={\`/mc/costs?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.costs']}
               </Link>
               <Link href="/announcements" className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
@@ -717,7 +717,7 @@ export function MCDashboardClient({
                       <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <Link
-                      href={\`/mc/calendar?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                      href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
                       className="text-small font-semibold text-brand-andaman hover:underline"
                     >
                       {labels['mc.workspace.full_calendar']} →

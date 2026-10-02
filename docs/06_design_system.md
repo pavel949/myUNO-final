@@ -49,7 +49,7 @@ Rules: text on ivory/paper uses ink/stone only; `brand.sun` is never body-text c
 
 ### 2.2 Typography
 
-Display is locale-aware: **Outfit** for Latin-script EN, **Manrope 600** for Cyrillic RU, and **Noto Sans Thai 600** for TH; body is **Manrope** with Noto Sans Thai fallback. This avoids mixed fallback glyphs inside one heading. All fonts use `display: swap`.
+Display is locale-aware: **Outfit** for Latin-script EN, **Manrope 600** for Cyrillic RU, and **Noto Sans Thai 600** for TH; body is **Manrope** with Noto Sans Thai fallback. This avoids mixed fallback glyphs inside one heading. All fonts use `display: swap`. The files are self-hosted (`@fontsource-variable/*`) so `next build` does not fetch Google Fonts — that compile-time fetch is what broke GitHub `ci` on `main` after #167.
 
 | Token | Spec | Use |
 |---|---|---|

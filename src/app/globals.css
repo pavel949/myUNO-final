@@ -4,6 +4,9 @@
 
 html {
   scroll-behavior: smooth;
+  --font-outfit: 'Outfit Variable', sans-serif;
+  --font-manrope: 'Manrope Variable', sans-serif;
+  --font-noto-thai: 'Noto Sans Thai Variable', sans-serif;
   --font-display-active: var(--font-outfit);
 }
 

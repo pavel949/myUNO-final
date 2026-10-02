@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, StatTile } from '@/components';
+import { Button } from '@/components';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 import UnitIcalConflictBanner, {
@@ -15,7 +15,6 @@ import {
   HBarStack,
   MonthHeatStrip,
   HeroNumber,
-  DeltaChip,
   CHART_SERIES,
   formatThb,
 } from '@/components/viz';
@@ -238,15 +237,6 @@ export function MCDashboardClient({
   const actionableServiceOrders = serviceOrders.filter((order) =>
     order.status === 'placed' || order.status === 'paid'
   ).length;
-
-  const tabs = [
-    { key: 'overview' as const, label: labels['mc.tabs.overview'] },
-    { key: 'bookings' as const, label: labels['mc.tabs.bookings'] },
-    { key: 'tickets' as const, label: labels['mc.tabs.tickets'] },
-    { key: 'service_orders' as const, label: labels['mc.tabs.service_orders'] },
-    { key: 'calendar' as const, label: labels['mc.tabs.calendar'] },
-    { key: 'reports' as const, label: labels['mc.tabs.reports'] },
-  ];
 
   const statusLabel = (status: string) =>
     labels[`mc.status.${status}`] || status.replace(/_/g, ' ');
@@ -656,7 +646,7 @@ export function MCDashboardClient({
           <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
               {[
-                ['overview', labels['mc.tabs.overview']],
+                ['overview', labels['mc.workspace.today']],
                 ['calendar', labels['mc.tabs.calendar']],
                 ['bookings', labels['mc.tabs.bookings']],
                 ['service_orders', labels['mc.tabs.service_orders']],
@@ -716,23 +706,7 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
-              <div className="grid grid-cols-2 xl:grid-cols-6 gap-12">
-                {[
-                  [labels['mc.workspace.arrivals'], arrivalsToday],
-                  [labels['mc.workspace.departures'], departuresToday],
-                  [labels['mc.workspace.in_house'], inHouseNow],
-                  [labels['mc.attention.requests'], requestedBookings],
-                  [labels['mc.attention.tickets'], dashboard.openTicketsCount],
-                  [labels['mc.workspace.outstanding'], formatBaht(outstandingThb)],
-                ].map(([label, value]) => (
-                  <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-16">
-                    <p className="text-small text-text-secondary">{label}</p>
-                    <p className="mt-8 font-display text-title font-semibold tabular-nums text-text-ink">{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-16 grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
+              <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
                     <div>

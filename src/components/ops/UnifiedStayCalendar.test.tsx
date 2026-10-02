@@ -53,6 +53,7 @@ const labels: Record<string,string> = {
   'staff.unified_calendar.in_progress': 'In progress',
   'staff.unified_calendar.channel_health': 'Channels',
   'staff.unified_calendar.rate_unavailable': 'Rate unavailable',
+  'staff.unified_calendar.effective_rate': 'Effective daily rate',
   'staff.unified_calendar.tasks': 'Housekeeping & readiness',
 };
 const props = {

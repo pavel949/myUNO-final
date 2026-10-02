@@ -569,172 +569,227 @@ export function MCDashboardClient({
     return <span className="text-small text-text-secondary">—</span>;
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const isSameLocalDay = (value: Date | string) => {
+    const date = new Date(value);
+    return date >= today && date < tomorrow;
+  };
+
+  const arrivalsToday = bookings.filter(
+    (booking) => isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
+  ).length;
+  const departuresToday = bookings.filter(
+    (booking) => isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status)
+  ).length;
+  const inHouseNow = bookings.filter((booking) => {
+    const start = new Date(booking.startDate);
+    const end = new Date(booking.endDate);
+    return start <= new Date() && end > new Date() && ['confirmed', 'checked_in'].includes(booking.status);
+  }).length;
+  const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
+  const outstandingThb = pendingPayments.reduce((sum, booking) => sum + booking.totalThb, 0);
+
   return (
     <main className="min-h-screen bg-surface-ivory">
-      {/* Header */}
-      <section className="bg-surface-paper border-b border-border-line px-24 py-16">
-        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row xl:items-start xl:justify-between gap-16">
-          <div>
-            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-4">
-              {labels['mc.portal.title']}
-            </h1>
-            <p className="text-body text-text-stone">{labels['mc.portal.subtitle']}</p>
-            <p className="text-small text-text-secondary mt-8">
-              {labels['mc.context.active']}:{' '}
-              {activeContext?.projectName} · {activeContext?.organizationName}
-            </p>
-            {contexts.length > 1 && (
-              <div className="mt-12">
-                <p className="text-small text-text-secondary mb-8">{labels['mc.context.switcher']}</p>
-                <div className="flex flex-wrap gap-8">
+      {/* MC workspace shell */}
+      <section className="bg-surface-paper border-b border-border-line">
+        <div className="max-w-[1600px] mx-auto px-16 lg:px-24 py-16">
+          <div className="flex flex-col gap-16 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-8 text-small text-text-secondary mb-4">
+                <span className="font-semibold uppercase tracking-[0.12em] text-brand-andaman">{labels['mc.workspace.brand']}</span>
+                <span aria-hidden="true">/</span>
+                <span>{activeContext?.organizationName}</span>
+              </div>
+              <h1 className="font-display text-display-xl font-semibold text-text-ink">
+                {labels['mc.portal.title']}
+              </h1>
+              <p className="text-body text-text-stone mt-4">
+                {activeContext?.projectName} · {labels['mc.workspace.live']}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-8">
+              {contexts.length > 1 && (
+                <label className="sr-only" htmlFor="mc-context-switcher">
+                  {labels['mc.context.switcher']}
+                </label>
+              )}
+              {contexts.length > 1 ? (
+                <select
+                  id="mc-context-switcher"
+                  value={activeContextKey}
+                  onChange={(event) => {
+                    const context = contexts.find((item) => item.key === event.target.value);
+                    if (context) router.push(context.href);
+                  }}
+                  className="h-44 min-w-[220px] rounded-md border border-border-line bg-surface-paper px-12 text-small font-medium text-text-ink focus:border-brand-andaman focus:outline-none"
+                >
                   {contexts.map((context) => (
-                    <Link
-                      key={context.key}
-                      href={context.href}
-                      className={`inline-flex items-center rounded-full px-12 py-4 text-small border transition-colors ${
-                        context.key === activeContextKey
-                          ? 'bg-brand-andaman-soft text-brand-andaman border-brand-andaman'
-                          : 'bg-surface-paper text-text-secondary border-border-line hover:text-text-ink'
-                      }`}
-                    >
+                    <option key={context.key} value={context.key}>
                       {context.projectName} · {context.organizationName}
-                    </Link>
+                    </option>
                   ))}
+                </select>
+              ) : (
+                <span className="inline-flex h-44 items-center rounded-md border border-border-line px-12 text-small font-medium text-text-ink">
+                  {activeContext?.projectName}
+                </span>
+              )}
+              <Link
+                href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                className="inline-flex h-44 items-center rounded-md bg-brand-deep px-16 text-small font-semibold text-white hover:opacity-90"
+              >
+                {labels['mc.workspace.open_calendar']}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-[1600px] mx-auto lg:grid lg:grid-cols-[228px_minmax(0,1fr)]">
+        <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
+          <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
+            <div className="flex gap-8 overflow-x-auto lg:flex-col">
+              {[
+                ['overview', labels['mc.tabs.overview']],
+                ['calendar', labels['mc.tabs.calendar']],
+                ['bookings', labels['mc.tabs.bookings']],
+                ['service_orders', labels['mc.tabs.service_orders']],
+                ['tickets', labels['mc.tabs.tickets']],
+                ['reports', labels['mc.tabs.reports']],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key as typeof activeTab)}
+                  className={`whitespace-nowrap rounded-md px-12 py-10 text-left text-small font-semibold transition ${
+                    activeTab === key
+                      ? 'bg-brand-andaman-soft text-brand-andaman'
+                      : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="hidden lg:block my-16 border-t border-border-line" />
+
+            <div className="hidden lg:flex lg:flex-col gap-4">
+              <Link href="/mc/portfolio" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.workspace.portfolio']}
+              </Link>
+              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.nav.mobilization']}
+              </Link>
+              <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.workspace.guests_tm30']}
+              </Link>
+              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.workspace.costs']}
+              </Link>
+              <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.workspace.services']}
+              </Link>
+              <Link href="/announcements" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+                {labels['mc.workspace.announcements']}
+              </Link>
+            </div>
+          </nav>
+        </aside>
+
+        <div className="min-w-0">
+          {icalConflicts.length > 0 && (
+            <section className="px-16 lg:px-24 pt-24">
+              <UnitIcalConflictBanner
+                conflicts={icalConflicts}
+                labels={labels}
+                calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.mc}
+              />
+            </section>
+          )}
+
+          {activeTab === 'overview' && (
+            <section className="px-16 lg:px-24 pt-24">
+              <div className="grid grid-cols-2 xl:grid-cols-6 gap-12">
+                {[
+                  [labels['mc.workspace.arrivals'], arrivalsToday],
+                  [labels['mc.workspace.departures'], departuresToday],
+                  [labels['mc.workspace.in_house'], inHouseNow],
+                  [labels['mc.attention.requests'], requestedBookings],
+                  [labels['mc.attention.tickets'], dashboard.openTicketsCount],
+                  [labels['mc.workspace.outstanding'], formatBaht(outstandingThb)],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-16">
+                    <p className="text-small text-text-secondary">{label}</p>
+                    <p className="mt-6 font-display text-title font-semibold tabular-nums text-text-ink">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-16 grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
+                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                  <div className="flex items-center justify-between gap-12 mb-16">
+                    <div>
+                      <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
+                      <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
+                    </div>
+                    <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
+                      {labels['mc.workspace.full_calendar']} →
+                    </button>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-12">
+                    {[
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
+                    ].map(([label, value, hint]) => (
+                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                        <p className="text-small font-semibold text-text-ink">{label}</p>
+                        <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
+                        <p className="mt-8 text-small text-text-secondary">{hint}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                  <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.attention.title']}</p>
+                  <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
+                  <div className="mt-16 space-y-8">
+                    {[
+                      [labels['mc.attention.requests'], requestedBookings, 'bookings' as const],
+                      [labels['mc.attention.tickets'], dashboard.openTicketsCount, 'tickets' as const],
+                      [labels['mc.attention.services'], actionableServiceOrders, 'service_orders' as const],
+                      [labels['mc.workspace.pending_payments'], pendingPayments.length, 'bookings' as const],
+                    ].map(([label, count, target]) => (
+                      <button
+                        key={String(label)}
+                        type="button"
+                        onClick={() => setActiveTab(target as typeof activeTab)}
+                        className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-10 text-left hover:border-brand-andaman"
+                      >
+                        <span className="text-small text-text-ink">{label}</span>
+                        <span className="font-semibold tabular-nums text-brand-andaman">{count} →</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-          <nav aria-label={labels['mc.portal.title']} className="flex flex-wrap items-center gap-8 xl:justify-end">
-            <Link
-              href={`/mc/requests?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.requests']}
-            </Link>
-            <Link
-              href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.mobilization']}
-            </Link>
-            <Link
-              href="/mc/portfolio"
-              className="inline-flex items-center h-40 px-20 rounded-md bg-brand-deep text-white font-medium hover:opacity-90 transition-opacity"
-            >
-              {labels['mc.nav.calendar']}
-            </Link>
-            <Link
-              href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.calendar']}
-            </Link>
-            <Link
-              href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.tm30']}
-            </Link>
-            <Link
-              href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.costs']}
-            </Link>
-            <Link
-              href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`}
-              className="inline-flex items-center h-40 px-20 rounded-md border border-brand-andaman text-brand-andaman font-medium hover:bg-brand-andaman-soft transition-colors duration-micro"
-            >
-              {labels['mc.nav.services']}
-            </Link>
-            <Link
-              href="/announcements"
-              className="inline-flex items-center h-40 px-20 rounded-md bg-brand-andaman text-surface-ivory font-medium hover:bg-brand-deep transition-colors duration-micro"
-            >
-              {labels['mc.nav.announcements']}
-            </Link>
-          </nav>
-        </div>
-      </section>
-
-      {icalConflicts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-24 pt-24">
-          <UnitIcalConflictBanner
-            conflicts={icalConflicts}
-            labels={labels}
-            calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.mc}
-          />
-        </section>
-      )}
-
-      {/* Navigation Tabs */}
-      <section className="bg-surface-paper border-b border-border-line sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-24">
-          <div className="flex gap-32 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                aria-pressed={activeTab === tab.key}
-                className={`py-16 font-semibold text-body border-b-3 whitespace-nowrap transition ${
-                  activeTab === tab.key
-                    ? 'border-brand-andaman text-brand-andaman'
-                    : 'border-transparent text-text-secondary hover:text-text-ink'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+            </section>
+          )}
 
       {/* Content */}
       <section className="max-w-7xl mx-auto px-24 py-40">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
-            {/* Action queues use the same scoped booking, ticket and service records as their tabs. */}
-            <div className="mb-24 rounded-lg border border-border-line bg-surface-paper p-24">
-              <h2 className="text-heading-2 font-bold text-text-ink mb-8">{labels['mc.attention.title']}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
-                {[
-                  { tab: 'bookings' as const, label: labels['mc.attention.requests'], count: requestedBookings },
-                  { tab: 'tickets' as const, label: labels['mc.attention.tickets'], count: dashboard.openTicketsCount },
-                  { tab: 'service_orders' as const, label: labels['mc.attention.services'], count: actionableServiceOrders },
-                ].map((item) => (
-                  <button
-                    key={item.tab}
-                    type="button"
-                    onClick={() => setActiveTab(item.tab)}
-                    className="flex items-center justify-between rounded-md border border-border-line p-16 text-left hover:border-brand-andaman focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
-                  >
-                    <span className="text-small text-text-ink">{item.label}</span>
-                    <span className="font-display text-title font-semibold tabular-nums text-brand-andaman">{item.count} →</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Stats Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-24 mb-40">
-              <StatTile label={labels['mc.stats.units']} value={dashboard.unitsCount} variant="occupancy" />
-              <StatTile
-                label={labels['mc.stats.bookings_month']}
-                value={dashboard.bookingsThisMonth}
-                variant="occupancy"
-                delta={
-                  <DeltaChip
-                    currentValue={dashboard.bookingsThisMonth}
-                    previousValue={dashboard.bookingsPrevMonth ?? null}
-                    vsLabel={labels['mc.stats.vs_last_month']}
-                    newLabel={labels['mc.stats.new_period']}
-                  />
-                }
-              />
-              <StatTile label={labels['mc.stats.open_tickets']} value={dashboard.openTicketsCount} variant="neutral" />
-            </div>
-
+            {/* Portfolio detail */}
             {/* Managed Units List */}
             <div className="bg-surface-paper border border-border-line rounded-lg p-24">
               <h2 className="text-heading-2 font-bold text-text-ink mb-20">
@@ -1206,6 +1261,8 @@ export function MCDashboardClient({
           </div>
         )}
       </section>
+        </div>
+      </div>
 
       <CheckInConditionReportModal
         bookingId={checkinBooking?.id ?? null}

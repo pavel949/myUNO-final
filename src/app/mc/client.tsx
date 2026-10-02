@@ -191,6 +191,9 @@ export function MCDashboardClient({
   const [activeTab, setActiveTab] = useState<
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
+  const [reservationView, setReservationView] = useState<
+    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+  >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
   const [feeReportLoading, setFeeReportLoading] = useState(false);
@@ -555,6 +558,21 @@ export function MCDashboardClient({
     return start <= new Date() && end > new Date() && ['confirmed', 'checked_in'].includes(booking.status);
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
+  const visibleBookings = bookings.filter((booking) => {
+    if (reservationView === 'all') return true;
+    if (reservationView === 'requests') {
+      return ['requested', 'pending_payment'].includes(booking.status);
+    }
+    if (reservationView === 'arrivals') {
+      return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
+    }
+    if (reservationView === 'departures') {
+      return isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status);
+    }
+    const start = new Date(booking.startDate);
+    const end = new Date(booking.endDate);
+    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+  });
 
   return (
     <main className="min-h-screen bg-surface-ivory">
@@ -798,9 +816,38 @@ export function MCDashboardClient({
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
-              {labels['mc.bookings.title']}
-            </h2>
+            <div className="mb-20 flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {labels['mc.workspace.reservations']}
+                </p>
+                <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                  {labels['mc.bookings.title']}
+                </h2>
+              </div>
+              <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
+                {[
+                  ['requests', labels['mc.workspace.requests']],
+                  ['arrivals', labels['mc.workspace.arrivals']],
+                  ['in_house', labels['mc.workspace.in_house']],
+                  ['departures', labels['mc.workspace.departures']],
+                  ['all', labels['mc.workspace.all_reservations']],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setReservationView(key as typeof reservationView)}
+                    className={`min-h-40 whitespace-nowrap rounded-full border px-12 text-small font-semibold transition ${
+                      reservationView === key
+                        ? 'border-brand-andaman bg-brand-andaman text-white'
+                        : 'border-border-line bg-surface-paper text-text-secondary hover:text-text-ink'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             {bookingError && (
               <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
                 <p className="text-small text-state-error">{bookingError}</p>
@@ -821,14 +868,14 @@ export function MCDashboardClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.length === 0 ? (
+                    {visibleBookings.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center p-24 text-text-secondary">
                           {labels['mc.bookings.empty']}
                         </td>
                       </tr>
                     ) : (
-                      bookings.map((booking) => (
+                      visibleBookings.map((booking) => (
                         <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
                             {booking.unit.name}

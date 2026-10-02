@@ -273,7 +273,10 @@ export default async function UnifiedStayCalendarPage({
       readiness: readinessByUnit[unit.id]?.state ?? 'ready',
       openTaskCount: readinessByUnit[unit.id]?.openTaskCount ?? 0,
       channelState: channelHealthByUnit[unit.id]?.state ?? 'manual_only',
-      channelRows: channelHealthByUnit[unit.id]?.rows ?? [],
+      channelRows: (channelHealthByUnit[unit.id]?.rows ?? []).map((row) => ({
+        ...row,
+        lastSyncAt: row.lastSyncAt?.toISOString() ?? null,
+      })),
     }))}
     allUnits={categoryUnits.map((unit) => ({ id: unit.id, name: unit.name }))}
     projectId={projectId} categoryId={categoryId} unitId={unitId}

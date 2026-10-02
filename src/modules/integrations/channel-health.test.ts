@@ -49,7 +49,7 @@ describe('channel health projection', () => {
           unitId: 'unit-a',
           channelMappings: [{
             channel: 'booking_com',
-            syncState: 'synced',
+            syncState: 'ari_push',
             lastSyncAt: new Date('2026-10-02T09:50:00Z'),
             syncErrors: [],
             channelOverrides: {

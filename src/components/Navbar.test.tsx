@@ -28,6 +28,7 @@ describe('Navbar', () => {
           projects: 'Projects',
           services: 'Services',
           owners: 'Owners',
+          partners: 'Partners',
           about: 'About',
           trust: 'Trust',
           help: 'Help',

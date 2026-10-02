@@ -581,7 +581,6 @@ export function MCDashboardClient({
     return start <= new Date() && end > new Date() && ['confirmed', 'checked_in'].includes(booking.status);
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
-  const outstandingThb = pendingPayments.reduce((sum, booking) => sum + booking.totalThb, 0);
 
   return (
     <main className="min-h-screen bg-surface-ivory">

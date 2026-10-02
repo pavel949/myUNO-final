@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { getRequestLocale } from '@/lib/i18n';
 import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { getDestination } from '@/modules/destinations';
 const leadAudience = 'owners' as const;
-export const metadata = { title: 'Property management in Phuket | myUNO' };
+const destination = getDestination();
+export const metadata = { title: `Property management in ${destination.name} | myUNO` };
 export default async function ManagePage() {
   const copy = supplierCopy(getRequestLocale());
   return <main className="min-h-screen bg-surface-ivory">

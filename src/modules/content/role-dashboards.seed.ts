@@ -156,4 +156,7 @@ export const ROLE_DASHBOARD_KEYS = [
   { key: 'videos.empty', namespace: 'videos', description: 'P2 product capability; translation review required', en: "No public videos have been published yet.", ru: "Публичные видео пока не опубликованы.", status: 'needs_review' as const },
   { key: 'nav.footer.research', namespace: 'nav', description: 'P2 product capability; translation review required', en: "Research", ru: "Исследования", status: 'needs_review' as const },
   { key: 'nav.footer.videos', namespace: 'nav', description: 'P2 product capability; translation review required', en: "Videos", ru: "Видео", status: 'needs_review' as const },
+  { key: 'admin.video.scope_area', namespace: 'admin', description: 'P2 video scope; translation review required', en: "Area", ru: "Район", status: 'needs_review' as const },
+  { key: 'admin.video.scope_project', namespace: 'admin', description: 'P2 video scope; translation review required', en: "Project", ru: "Проект", status: 'needs_review' as const },
+  { key: 'admin.video.scope_unit', namespace: 'admin', description: 'P2 video scope; translation review required', en: "Unit", ru: "Объект", status: 'needs_review' as const },
 ];

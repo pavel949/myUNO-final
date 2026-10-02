@@ -61,6 +61,7 @@ export interface SearchResultsLabels {
   filterMin: string;
   filterMax: string;
   filterClear: string;
+  filterBedrooms?: string;
   mapLoading: string;
   mapUnavailable: string;
   mapReset: string;
@@ -370,6 +371,7 @@ export default function SearchResults({
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-12">
+              {bedrooms && <p className="text-small text-text-stone">{labels.filterBedrooms || 'Bedrooms'}: {bedrooms}</p>}
               <label className="text-small text-text-stone">
                 {labels.filterMin}
                 <input
@@ -400,7 +402,7 @@ export default function SearchResults({
                   className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
-              {(unitTypes || minPrice || maxPrice) && (
+              {(bedrooms || unitTypes || minPrice || maxPrice) && (
                 <button
                   type="button"
                   onClick={() =>
@@ -408,6 +410,7 @@ export default function SearchResults({
                       next.delete('unitTypes');
                       next.delete('minPrice');
                       next.delete('maxPrice');
+                      next.delete('bedrooms');
                     })
                   }
                   className="h-40 text-small font-semibold text-brand-andaman hover:underline"

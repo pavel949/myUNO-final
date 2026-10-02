@@ -17,6 +17,15 @@ beforeEach(() => {
 });
 
 describe('DiscoverySearch', () => {
+  it('keeps Enter in project search from submitting discovery', () => {
+    render(<DiscoverySearch labels={labels} projects={[{id: 'p1', name: 'Project'}]} />);
+    fireEvent.click(screen.getByText('Projects'));
+    const input = screen.getByRole('searchbox', {name: 'Projects'});
+    fireEvent.change(input, {target: {value: 'Pro'}});
+    expect(fireEvent.keyDown(input, {key: 'Enter', code: 'Enter', cancelable: true})).toBe(false);
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', {name: 'Project'})).toBeInTheDocument();
+  });
   it('requires dates and avoids native mobile date inputs', () => {
     const { container } = render(<DiscoverySearch labels={labels} />);
     expect(container.querySelector('input[type="date"]')).toBeNull();

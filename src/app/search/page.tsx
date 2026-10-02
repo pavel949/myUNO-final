@@ -12,6 +12,7 @@ export default async function SearchPage() {
   );
 
   const labels = await getLabels({
+    'search.filters.bedrooms': 'Bedrooms',
     'search.title': 'Find your stay',
     'search.results_summary': '{from} to {to} · {guests} guests',
     'search.prompt': 'Choose your dates to see available homes.',
@@ -91,6 +92,7 @@ export default async function SearchPage() {
           filterMin: labels['search.filters.min_price'],
           filterMax: labels['search.filters.max_price'],
           filterClear: labels['search.filters.clear'],
+          filterBedrooms: labels['search.filters.bedrooms'],
           mapLoading: labels['search.map.loading'],
           mapUnavailable: labels['search.map.unavailable'],
           mapReset: labels['search.map.reset'],

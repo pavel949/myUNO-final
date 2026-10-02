@@ -398,9 +398,9 @@ export default function UnifiedStayCalendar(props: Props) {
           <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
-          {props.mode!=='mc' && <Link href={'/ops/tasks?unitId='+encodeURIComponent(inspect.id)} className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman">
+          <Link href={'/ops/tasks?unitId='+encodeURIComponent(inspect.id)} className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman">
             {props.labels['staff.unified_calendar.tasks']}
-          </Link>}
+          </Link>
         </div>
       </aside>}
       <p className="text-small text-text-secondary">{props.labels['staff.unified_calendar.read_only']}</p>

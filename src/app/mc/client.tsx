@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, StatTile } from '@/components';
+import { Button } from '@/components';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 import UnitIcalConflictBanner, {
@@ -15,7 +15,6 @@ import {
   HBarStack,
   MonthHeatStrip,
   HeroNumber,
-  DeltaChip,
   CHART_SERIES,
   formatThb,
 } from '@/components/viz';
@@ -238,15 +237,6 @@ export function MCDashboardClient({
   const actionableServiceOrders = serviceOrders.filter((order) =>
     order.status === 'placed' || order.status === 'paid'
   ).length;
-
-  const tabs = [
-    { key: 'overview' as const, label: labels['mc.tabs.overview'] },
-    { key: 'bookings' as const, label: labels['mc.tabs.bookings'] },
-    { key: 'tickets' as const, label: labels['mc.tabs.tickets'] },
-    { key: 'service_orders' as const, label: labels['mc.tabs.service_orders'] },
-    { key: 'calendar' as const, label: labels['mc.tabs.calendar'] },
-    { key: 'reports' as const, label: labels['mc.tabs.reports'] },
-  ];
 
   const statusLabel = (status: string) =>
     labels[`mc.status.${status}`] || status.replace(/_/g, ' ');

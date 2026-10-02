@@ -34,4 +34,4 @@ ALTER TABLE "operational_task" ADD CONSTRAINT "operational_task_assigned_identit
   FOREIGN KEY ("assigned_identity_id") REFERENCES "identity"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 ALTER TABLE "operational_task" ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON TABLE "operational_task" FROM anon, authenticated;
+REVOKE ALL ON TABLE "operational_task" FROM PUBLIC, anon, authenticated;

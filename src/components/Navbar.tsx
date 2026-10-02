@@ -36,6 +36,7 @@ export interface NavbarLabels {
   projects: string;
   services: string;
   owners: string;
+  partners: string;
   about: string;
   trust: string;
   help: string;
@@ -108,6 +109,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     { href: '/homes?intent=buy', label: labels.homes, activeBase: '/homes' },
     { href: '/services', label: labels.services },
     { href: '/owners', label: labels.owners },
+    { href: '/partners', label: labels.partners },
   ];
 
   const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [

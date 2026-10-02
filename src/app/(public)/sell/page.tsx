@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { ProcessStepper, SourceChip } from '@/components/premium/PremiumPrimitives';
+import { getDestination } from '@/modules/destinations';
+
+const destination = getDestination();
 
 export const metadata: Metadata = {
-  title: 'Sell a Phuket property | myUNO',
-  description: 'Start a documented resale and valuation conversation for your Phuket property.',
+  title: `Sell a ${destination.name} property | myUNO`,
+  description: `Start a documented resale and valuation conversation for your ${destination.name} property.`,
 };
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +36,7 @@ export default async function SellPage() {
     'sell.evidence.property': 'Canonical property facts',
     'sell.evidence.offering': 'Commercial offering record',
     'sell.evidence.mandate': 'Mandate evidence',
-    'sell.lead.prefill': 'I would like a valuation and resale review for my Phuket property.',
+    'sell.lead.prefill': `I would like a valuation and resale review for my ${destination.name} property.`,
   });
 
   return (

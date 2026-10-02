@@ -17,7 +17,7 @@ describe('connected public homepage', () => {
     expect(landing).toContain('<ServiceCard');
   });
   it('provides connected entry points to the five primary intents and discovery', () => {
-    for (const route of ['/search', '/projects', '/homes?intent=buy', '/sell', '/rent-out', '/manage', '/services']) {
+    for (const route of ['/search', '/projects', '/homes?intent=buy', '/owners', '/sell', '/rent-out', '/manage', '/services']) {
       expect(landing + navbar + discovery).toContain(route);
     }
   });
@@ -36,7 +36,7 @@ describe('connected public homepage', () => {
   });
   it('keeps a shared header/footer with account role links', () => {
     expect(navbar).toContain('roleLinks');
-    expect(navbar).toContain('My UNO');
+    expect(navbar).toContain('My myUNO');
     expect(footer).toContain("href: '/developers'");
     expect(footer).toContain("href: '/legal/privacy'");
   });

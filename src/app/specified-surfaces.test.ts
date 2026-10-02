@@ -45,7 +45,8 @@ describe('specified surfaces wired to existing rails', () => {
     expect(footer).toContain('/trust/ombudsman');
     expect(footer).toContain('/legal');
     expect(footer).toContain('LocaleSwitcher');
-    expect(owners).toContain('#lead-form');
+    expect(owners).toContain('href="/rent-out"');
+    expect(owners).toContain('href="/manage"');
     expect(tickets).toContain('filter_all');
     expect(ticketDetail).toContain('/messages/');
     expect(handbook).toContain('/home-space');

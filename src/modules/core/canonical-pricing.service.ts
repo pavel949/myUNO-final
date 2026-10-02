@@ -83,7 +83,8 @@ export async function computeCanonicalPriceBreakdown(
   checkOutDate: Date,
   guestCount: number,
   bookingDate: Date = new Date(),
-  pets: number = 0
+  pets: number = 0,
+  options: { calendarProjection?: boolean } = {}
 ): Promise<PriceBreakdown> {
   const unit = await db.unit.findUnique({
     where: { id: unitId },
@@ -158,7 +159,8 @@ export async function computeCanonicalPriceBreakdown(
     // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
     // discount. A draft/unverified monthly offer cannot be silently substituted
     // by an arbitrary 20% nightly discount.
-    const mode: TariffMode = nights >= 30 ? 'monthly' : 'daily';
+    const mode: TariffMode =
+      options.calendarProjection ? 'daily' : nights >= 30 ? 'monthly' : 'daily';
     if (mode === 'monthly' && monthlyGrid === null)
       throw new Error('Validated monthly tariff is required for this stay');
     const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
@@ -184,7 +186,7 @@ export async function computeCanonicalPriceBreakdown(
       commercialTerms = resolveSourceBookingTerms(
         rules, mode, arrivalRate.seasonCode,
       );
-      if (nights < commercialTerms.minimumNights)
+      if (!options.calendarProjection && nights < commercialTerms.minimumNights)
         throw new Error('Stay length below booking-policy minimum of ' +
           commercialTerms.minimumNights);
     }
@@ -237,7 +239,7 @@ export async function computeCanonicalPriceBreakdown(
   const canonicalMinNights =
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
   const minNights = arrivalRule?.minNightsOverride ?? canonicalMinNights;
-  if (nights < minNights) {
+  if (!options.calendarProjection && nights < minNights) {
     throw new Error(`Stay length ${nights} nights is below minimum of ${minNights}`);
   }
 
@@ -292,7 +294,11 @@ export async function computeCanonicalPriceBreakdown(
   }
 
   let monthlyApplied = false;
-  if (nights >= 28 && nightMonthlyRates.every((m) => typeof m === 'number')) {
+  if (
+    !options.calendarProjection &&
+    nights >= 28 &&
+    nightMonthlyRates.every((m) => typeof m === 'number')
+  ) {
     monthlyApplied = true;
     subtotal = 0;
     for (let i = 0; i < lines.length; i++) {
@@ -382,7 +388,9 @@ export async function computeCanonicalCalendarRates(
       startDate,
       endDate,
       guestCount,
-      bookingDate
+      bookingDate,
+      0,
+      { calendarProjection: true }
     );
     return {
       lines: quote.lines.map((line) => ({

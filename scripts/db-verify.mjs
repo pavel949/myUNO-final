@@ -53,6 +53,7 @@ const OPERATIONAL_TABLES = [
   'external_aggregate_checkpoint',
   'property_onboarding_template',
   'project_onboarding_draft',
+  'operational_task',
 ];
 
 function loadDotEnv() {

@@ -2,14 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const destination = getDestination();
   const labels = await getLabels({
     'partners.title': 'Partner with myUNO',
     'partners.lede':
-      'Operate properties, connect a development, or provide trusted services through one Phuket property network.',
+      `Operate properties, connect a development, or provide trusted services through one ${destination.name} property network.`,
   });
 
   return {
@@ -20,11 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PartnersPage() {
+  const destination = getDestination();
   const labels = await getLabels({
     'partners.kicker': 'PARTNERS',
     'partners.title': 'Partner with myUNO',
     'partners.lede':
-      'Operate properties, connect a development, or provide trusted services through one Phuket property network.',
+      `Operate properties, connect a development, or provide trusted services through one ${destination.name} property network.`,
     'partners.management.title': 'Property managers',
     'partners.management.body':
       'Run projects and portfolios with bookings, availability, team workflows, finance and owner reporting connected to the same property records.',

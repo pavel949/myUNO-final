@@ -450,6 +450,82 @@ export default async function LandingPage() {
         </section>
       ) : null}
 
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="value-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <div className="max-w-3xl">
+            <p className="text-kicker uppercase text-brand-andaman">
+              {labels['landing.value.kicker']}
+            </p>
+            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+              {labels['landing.value.title']}
+            </h2>
+            <p className="mt-12 max-w-2xl text-body text-text-secondary">
+              {labels['landing.value.body']}
+            </p>
+          </div>
+
+          <div className="mt-32 grid grid-cols-2 gap-12 md:mt-40 md:grid-cols-4 md:gap-16">
+            {valueCards.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
+              >
+                <TrustMark size={20} filled className="text-brand-andaman" />
+                <h3 className="mt-24 font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
+                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
+              </Link>
+            ))}
+          </div>
+
+          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-andaman hover:underline">
+            {labels['landing.value.cta']} →
+          </Link>
+        </div>
+      </section>
+
+
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="services-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase text-brand-andaman">
+                {labels['landing.services.kicker']}
+              </p>
+              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                {labels['landing.services.title']}
+              </h2>
+              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
+            </div>
+            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
+              {labels['landing.services.cta']} →
+            </Link>
+          </div>
+
+          {services.length ? (
+            <div className="grid grid-cols-1 gap-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-20">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  href={`/services/${service.id}`}
+                  labels={{
+                    vetted: labels['landing.services.vetted'],
+                    from: labels['landing.services.from'],
+                    noPhoto: labels['landing.services.no_photo'],
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+              {labels['landing.services.empty']}
+            </div>
+          )}
+        </div>
+      </section>
+
       {areas.length ? (
         <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="areas-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
@@ -506,82 +582,6 @@ export default async function LandingPage() {
           </div>
         </section>
       ) : null}
-
-      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="services-heading">
-        <div className="mx-auto max-w-content px-20 md:px-32">
-          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
-            <div className="max-w-2xl">
-              <p className="text-kicker uppercase text-brand-andaman">
-                {labels['landing.services.kicker']}
-              </p>
-              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
-                {labels['landing.services.title']}
-              </h2>
-              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
-            </div>
-            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
-              {labels['landing.services.cta']} →
-            </Link>
-          </div>
-
-          {services.length ? (
-            <div className="grid grid-cols-1 gap-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-20">
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  href={`/services/${service.id}`}
-                  labels={{
-                    vetted: labels['landing.services.vetted'],
-                    from: labels['landing.services.from'],
-                    noPhoto: labels['landing.services.no_photo'],
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
-              {labels['landing.services.empty']}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="value-heading">
-        <div className="mx-auto max-w-content px-20 md:px-32">
-          <div className="max-w-3xl">
-            <p className="text-kicker uppercase text-brand-andaman">
-              {labels['landing.value.kicker']}
-            </p>
-            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
-              {labels['landing.value.title']}
-            </h2>
-            <p className="mt-12 max-w-2xl text-body text-text-secondary">
-              {labels['landing.value.body']}
-            </p>
-          </div>
-
-          <div className="mt-32 grid grid-cols-2 gap-12 md:mt-40 md:grid-cols-4 md:gap-16">
-            {valueCards.map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
-              >
-                <TrustMark size={20} filled className="text-brand-andaman" />
-                <h3 className="mt-24 font-display text-title font-semibold text-text-ink">{item.title}</h3>
-                <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
-                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
-              </Link>
-            ))}
-          </div>
-
-          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-andaman hover:underline">
-            {labels['landing.value.cta']} →
-          </Link>
-        </div>
-      </section>
-
 
       <section className="py-56 md:py-96" aria-labelledby="audience-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">

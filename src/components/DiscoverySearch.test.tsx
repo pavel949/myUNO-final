@@ -5,7 +5,7 @@ import { DiscoverySearch } from './DiscoverySearch';
 const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 const labels = {
-  rent: 'Rent', buy: 'Buy', manage: 'Manage', sell: 'Sell', where: 'Where',
+  stay: 'Stay', monthly: 'Monthly', buy: 'Buy', where: 'Where',
   allPhuket: 'All Phuket', locations: 'Locations', projects: 'Projects',
   checkIn: 'Check-in', checkOut: 'Check-out', adults: 'Adults', children: 'Children',
   explore: 'Search', properties: 'Continue', hint: 'Choose your next step', error: 'Invalid dates',
@@ -60,13 +60,14 @@ describe('DiscoverySearch', () => {
     fireEvent.submit(screen.getByRole('form'));
     expect(push).toHaveBeenCalledWith('/homes?intent=buy&projectId=p1&type=condo&maxPrice=5000000');
   });
-  it('connects management and selling to existing workflows', () => {
-    render(<DiscoverySearch labels={labels} />);
-    fireEvent.click(screen.getByRole('button', {name: 'Manage'}));
+  it('routes monthly discovery to canonical long-rent homes', () => {
+    render(<DiscoverySearch labels={labels} areas={[{slug: 'layan', name: 'Layan'}]} />);
+    fireEvent.click(screen.getByRole('button', {name: 'Monthly'}));
+    expect(screen.queryByLabelText('Adults')).toBeNull();
+    expect(screen.queryByRole('button', {name: 'Check-in → Check-out'})).toBeNull();
+    fireEvent.change(screen.getByLabelText('Where'), {target: {value: 'area:layan'}});
+    fireEvent.change(screen.getByLabelText('Budget up to, ฿ / month'), {target: {value: '150000'}});
     fireEvent.submit(screen.getByRole('form'));
-    expect(push).toHaveBeenLastCalledWith('/manage');
-    fireEvent.click(screen.getByRole('button', {name: 'Sell'}));
-    fireEvent.submit(screen.getByRole('form'));
-    expect(push).toHaveBeenLastCalledWith('/property/onboard?kind=home&offers=sale');
+    expect(push).toHaveBeenLastCalledWith('/homes?intent=rent&area=layan&maxPrice=150000');
   });
 });

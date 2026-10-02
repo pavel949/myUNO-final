@@ -49,6 +49,7 @@ export default async function RootLayout({
     'nav.find_stay': 'Stay',
     'nav.monthly': 'Monthly',
     'nav.buy': 'Buy',
+    'nav.homes': 'Homes',
     'nav.sell': 'Sell',
     'nav.list_property': locale === 'ru' ? 'Разместить объект' : locale === 'th' ? 'ลงประกาศที่พัก' : 'List your property',
     'nav.request_management': locale === 'ru' ? 'Передать в управление' : locale === 'th' ? 'ให้ myUNO จัดการ' : 'Property management',
@@ -57,6 +58,7 @@ export default async function RootLayout({
     'nav.projects': 'Projects',
     'nav.services': 'Services',
     'nav.owners': 'Owners',
+    'nav.partners': 'Partners',
     'nav.about': 'About',
     'nav.language': 'Language',
     'nav.locale.en': 'EN',
@@ -92,6 +94,7 @@ export default async function RootLayout({
     'nav.admin': 'Admin',
     'nav.account': 'Account',
     'nav.menu': 'Menu',
+    'nav.more': 'More',
   });
 
   const activeBookingId = user ? await getActiveStayId() : null;
@@ -162,6 +165,7 @@ export default async function RootLayout({
             stay: navLabels['nav.find_stay'],
             monthly: navLabels['nav.monthly'],
             buy: navLabels['nav.buy'],
+            homes: navLabels['nav.homes'],
             sell: navLabels['nav.sell'],
             rentOut: navLabels['nav.list_property'],
             manage: navLabels['nav.request_management'],
@@ -170,6 +174,7 @@ export default async function RootLayout({
             projects: navLabels['nav.projects'],
             services: navLabels['nav.services'],
             owners: navLabels['nav.owners'],
+            partners: navLabels['nav.partners'],
             about: navLabels['nav.about'],
             trust: navLabels['nav.trust'],
             help: navLabels['nav.help'],
@@ -189,6 +194,7 @@ export default async function RootLayout({
             orders: navLabels['nav.orders'],
             account: navLabels['nav.account'],
             menu: navLabels['nav.menu'],
+            more: navLabels['nav.more'],
           }}
           roleLinks={roleLinks}
           bellLabels={{

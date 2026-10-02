@@ -60,9 +60,14 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).not.toContain('id="start-heading"');
     const discovery = source('src/components/DiscoverySearch.tsx');
-    expect(discovery).toContain("/property/onboard?kind=home&offers=sale");
-    expect(discovery).toContain("router.push('/manage')");
+    // Consumer search is deliberately Stay / Monthly / Buy; supplier intents live beside it on the homepage.
+    expect(discovery).toContain("{ id: 'stay', title: labels.stay }");
+    expect(discovery).toContain("{ id: 'monthly', title: labels.monthly }");
+    expect(discovery).toContain("{ id: 'buy', title: labels.buy }");
     expect(discovery).toContain("router.push('/homes?' + params.toString())");
+    expect(home).toContain('href="/sell"');
+    expect(home).toContain('href="/rent-out"');
+    expect(home).toContain('href="/manage"');
     expect(home).toContain("landing.units.title");
     expect(home).toContain("landing.areas.title");
     expect(home).toContain('GLOBAL_DESKS.map');

@@ -30,8 +30,8 @@ export default async function OwnerPage() {
   const locale = getRequestLocale();
 
   const labels = await getLabels({
-    'owner.dashboard.title': 'Owner Dashboard',
-    'owner.dashboard.subtitle': 'Manage your properties and stay informed',
+    'owner.dashboard.title': 'My Homes',
+    'owner.dashboard.subtitle': 'Bookings, statements, condition, approvals and owner stays in one place.',
     'owner.dashboard.portfolio_subtitle': '{units} units across {projects} projects',
     'owner.dashboard.scope_project': 'Showing figures and records for {project} only.',
     'owner.compliance.permitted_yes': 'Confirmed',

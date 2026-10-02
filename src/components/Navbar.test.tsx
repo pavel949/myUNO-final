@@ -19,6 +19,7 @@ describe('Navbar', () => {
           stay: 'Stay',
           monthly: 'Monthly',
           buy: 'Buy',
+          homes: 'Homes',
           sell: 'Sell',
           rentOut: 'Rent Out',
           manage: 'Manage',
@@ -27,6 +28,7 @@ describe('Navbar', () => {
           projects: 'Projects',
           services: 'Services',
           owners: 'Owners',
+          partners: 'Partners',
           about: 'About',
           trust: 'Trust',
           help: 'Help',
@@ -43,6 +45,7 @@ describe('Navbar', () => {
           orders: 'My orders',
           account: 'Account',
           menu: 'Menu',
+          more: 'More',
         }}
         roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
         bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}

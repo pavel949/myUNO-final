@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/areas`, priority: 0.7 },
     { url: `${base}/services`, priority: 0.7 },
     { url: `${base}/owners`, priority: 0.6 },
+    { url: `${base}/partners`, priority: 0.6 },
     { url: `${base}/guests`, priority: 0.6 },
     { url: `${base}/developers`, priority: 0.6 },
     { url: `${base}/buyers`, priority: 0.6 },

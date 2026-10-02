@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, StatTile } from '@/components';
+import { Button } from '@/components';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 import UnitIcalConflictBanner, {
@@ -15,7 +15,6 @@ import {
   HBarStack,
   MonthHeatStrip,
   HeroNumber,
-  DeltaChip,
   CHART_SERIES,
   formatThb,
 } from '@/components/viz';
@@ -238,15 +237,6 @@ export function MCDashboardClient({
   const actionableServiceOrders = serviceOrders.filter((order) =>
     order.status === 'placed' || order.status === 'paid'
   ).length;
-
-  const tabs = [
-    { key: 'overview' as const, label: labels['mc.tabs.overview'] },
-    { key: 'bookings' as const, label: labels['mc.tabs.bookings'] },
-    { key: 'tickets' as const, label: labels['mc.tabs.tickets'] },
-    { key: 'service_orders' as const, label: labels['mc.tabs.service_orders'] },
-    { key: 'calendar' as const, label: labels['mc.tabs.calendar'] },
-    { key: 'reports' as const, label: labels['mc.tabs.reports'] },
-  ];
 
   const statusLabel = (status: string) =>
     labels[`mc.status.${status}`] || status.replace(/_/g, ' ');
@@ -591,7 +581,6 @@ export function MCDashboardClient({
     return start <= new Date() && end > new Date() && ['confirmed', 'checked_in'].includes(booking.status);
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
-  const outstandingThb = pendingPayments.reduce((sum, booking) => sum + booking.totalThb, 0);
 
   return (
     <main className="min-h-screen bg-surface-ivory">
@@ -656,7 +645,7 @@ export function MCDashboardClient({
           <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
               {[
-                ['overview', labels['mc.tabs.overview']],
+                ['overview', labels['mc.workspace.today']],
                 ['calendar', labels['mc.tabs.calendar']],
                 ['bookings', labels['mc.tabs.bookings']],
                 ['service_orders', labels['mc.tabs.service_orders']],
@@ -667,7 +656,7 @@ export function MCDashboardClient({
                   key={key}
                   type="button"
                   onClick={() => setActiveTab(key as typeof activeTab)}
-                  className={`whitespace-nowrap rounded-md px-12 py-10 text-left text-small font-semibold transition ${
+                  className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${
                     activeTab === key
                       ? 'bg-brand-andaman-soft text-brand-andaman'
                       : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
@@ -681,22 +670,22 @@ export function MCDashboardClient({
             <div className="hidden lg:block my-16 border-t border-border-line" />
 
             <div className="hidden lg:flex lg:flex-col gap-4">
-              <Link href="/mc/portfolio" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href="/mc/portfolio" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.portfolio']}
               </Link>
-              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.nav.mobilization']}
               </Link>
-              <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.guests_tm30']}
               </Link>
-              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.costs']}
               </Link>
-              <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.services']}
               </Link>
-              <Link href="/announcements" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href="/announcements" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.announcements']}
               </Link>
             </div>
@@ -716,28 +705,12 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
-              <div className="grid grid-cols-2 xl:grid-cols-6 gap-12">
-                {[
-                  [labels['mc.workspace.arrivals'], arrivalsToday],
-                  [labels['mc.workspace.departures'], departuresToday],
-                  [labels['mc.workspace.in_house'], inHouseNow],
-                  [labels['mc.attention.requests'], requestedBookings],
-                  [labels['mc.attention.tickets'], dashboard.openTicketsCount],
-                  [labels['mc.workspace.outstanding'], formatBaht(outstandingThb)],
-                ].map(([label, value]) => (
-                  <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-16">
-                    <p className="text-small text-text-secondary">{label}</p>
-                    <p className="mt-6 font-display text-title font-semibold tabular-nums text-text-ink">{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-16 grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
+              <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
                     <div>
                       <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
-                      <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
+                      <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
                       {labels['mc.workspace.full_calendar']} →
@@ -760,7 +733,7 @@ export function MCDashboardClient({
 
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.attention.title']}</p>
-                  <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
+                  <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
                   <div className="mt-16 space-y-8">
                     {[
                       [labels['mc.attention.requests'], requestedBookings, 'bookings' as const],
@@ -772,7 +745,7 @@ export function MCDashboardClient({
                         key={String(label)}
                         type="button"
                         onClick={() => setActiveTab(target as typeof activeTab)}
-                        className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-10 text-left hover:border-brand-andaman"
+                        className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-8 text-left hover:border-brand-andaman"
                       >
                         <span className="text-small text-text-ink">{label}</span>
                         <span className="font-semibold tabular-nums text-brand-andaman">{count} →</span>

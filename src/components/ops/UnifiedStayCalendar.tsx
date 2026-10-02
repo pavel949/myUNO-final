@@ -144,6 +144,7 @@ export default function UnifiedStayCalendar(props: Props) {
     [props.labels['staff.unified_calendar.readiness'],String(rows.filter(unit=>unit.readiness!=='ready').length)],
     [props.labels['staff.unified_calendar.arrivals'],String(props.arrivals)],
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
+  const channelAttention = rows.filter((unit) => unit.channelState !== 'healthy').length;
   const inspect=selected && props.units.find((unit)=>unit.id===selected.unitId);
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-[1600px] space-y-24">
@@ -182,6 +183,9 @@ export default function UnifiedStayCalendar(props: Props) {
       </section>
       {conflicts>0 && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-16 text-red-900">
         {conflicts} {props.labels['staff.unified_calendar.conflict_warning']}
+      </div>}
+      {channelAttention>0 && <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-16 text-amber-950">
+        {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
       <section aria-label="Calendar filters" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">

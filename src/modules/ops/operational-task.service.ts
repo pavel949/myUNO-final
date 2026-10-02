@@ -50,15 +50,13 @@ export async function ensureTurnoverTasksForCheckout(
 
 export async function assertUnitReadyForCheckIn(
   db: PrismaClient,
-  unitId: string,
-  at: Date = new Date()
+  unitId: string
 ) {
   const blockers = await db.operationalTask.findMany({
     where: {
       unitId,
       taskType: { in: ['turnover_cleaning', 'turnover_inspection'] },
       status: { in: OPEN_STATUSES },
-      dueAt: { lte: at },
     },
     select: { id: true, taskType: true, status: true, dueAt: true },
     orderBy: [{ dueAt: 'asc' }, { taskType: 'asc' }],

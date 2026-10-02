@@ -44,17 +44,23 @@ export default async function UnifiedStayCalendarPage({
   const mcScopes = mcMode ? getMCProjectScopes(user) : [];
   if (mcMode && mcScopes.length === 0) redirect('/');
 
-  const organizationScopes = mcMode && requestedOrganizationId
-    ? mcScopes.filter((scope) => scope.organizationId === requestedOrganizationId)
-    : mcScopes;
-  const projectScopes = mcMode && requestedProjectId
-    ? organizationScopes.filter((scope) => scope.projectId === requestedProjectId)
-    : organizationScopes;
-  const effectiveScopes = projectScopes.length
-    ? projectScopes
-    : mcMode && requestedProjectId
-      ? mcScopes.filter((scope) => scope.projectId === requestedProjectId)
-      : mcScopes;
+  const requestedScopes = mcMode
+    ? mcScopes.filter((scope) =>
+        (!requestedOrganizationId || scope.organizationId === requestedOrganizationId) &&
+        (!requestedProjectId || scope.projectId === requestedProjectId)
+      )
+    : [];
+  const hasExplicitScopeRequest = Boolean(requestedOrganizationId || requestedProjectId);
+  // A forged or stale MC scope must never widen access. When an explicit scope
+  // is invalid, fall back to one real authorized scope rather than silently
+  // switching to "all managed" or returning misleading blank filter state.
+  const effectiveScopes = mcMode
+    ? requestedScopes.length
+      ? requestedScopes
+      : hasExplicitScopeRequest
+        ? mcScopes.slice(0, 1)
+        : mcScopes
+    : [];
 
   const managedUnitLists = mcMode
     ? await Promise.all(effectiveScopes.map((scope) =>
@@ -74,8 +80,19 @@ export default async function UnifiedStayCalendarPage({
   ]);
   const sourceExcluded = new Set(sourceExcludedUnitIds);
   const authorizedIds = new Set(projects.map((project) => project.id));
+  const fallbackScope = mcMode && hasExplicitScopeRequest ? effectiveScopes[0] : undefined;
   const projectId =
-    requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
+    requestedProjectId && authorizedIds.has(requestedProjectId) &&
+    (!mcMode || effectiveScopes.some((scope) => scope.projectId === requestedProjectId))
+      ? requestedProjectId
+      : fallbackScope?.projectId ?? '';
+  const organizationId =
+    mcMode
+      ? requestedOrganizationId &&
+        effectiveScopes.some((scope) => scope.organizationId === requestedOrganizationId)
+        ? requestedOrganizationId
+        : fallbackScope?.organizationId ?? ''
+      : '';
   const unitWhere = {
     status: { not: 'offboarded' as const },
     ...(mcMode
@@ -262,7 +279,7 @@ export default async function UnifiedStayCalendarPage({
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
-    mode={mcMode ? 'mc' : 'staff'} organizationId={requestedOrganizationId ?? ''}
+    mode={mcMode ? 'mc' : 'staff'} organizationId={organizationId}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({

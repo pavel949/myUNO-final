@@ -7,6 +7,7 @@ import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { DiscoverySearch } from '@/components/DiscoverySearch';
+import { HomeIntentRail, type HomeRailItem } from '@/components/HomeIntentRail';
 import { getPublicHomepageData } from '@/modules/home/public-homepage.service';
 import { projectPresentationImage } from '@/lib/presentation-media';
 import { GLOBAL_DESKS } from '@/modules/global-desks';
@@ -41,12 +42,15 @@ export default async function LandingPage() {
 
   const [labels, homepageData] = await Promise.all([
     getLabels({
-      'landing.global_hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
-      'landing.global_hero.title': 'Phuket homes. Global discovery. One platform.',
-      'landing.global_hero.subtitle': 'Stay, rent, buy, sell and manage Phuket property through one connected experience.',
+      'landing.global_hero.kicker': 'PHUKET · PROPERTY · STAYS · SERVICES',
+      'landing.global_hero.title': 'Everything around your place in Phuket.',
+      'landing.global_hero.subtitle': 'Stay. Buy. Own. Manage. Live — through one connected property platform.',
       'landing.global_hero.global': 'Explore global desks',
       'landing.global_hero.areas': 'Explore Phuket areas',
       'landing.global_hero.trust': 'How trust works',
+      'landing.global_hero.sell': 'Sell a property',
+      'landing.global_hero.rent_out': 'Rent it out',
+      'landing.global_hero.manage': 'Property management',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
       'landing.search.locations': 'Locations',
@@ -108,8 +112,8 @@ export default async function LandingPage() {
       'landing.homes.terms': 'Commercial terms on request',
 
       'landing.value.kicker': 'ONE CONNECTED PLATFORM',
-      'landing.value.title': 'More than a property listing.',
-      'landing.value.body': 'Discover a home, transact through the right commercial path, add services and keep the property connected after the first transaction.',
+      'landing.value.title': 'One property. One connected journey.',
+      'landing.value.body': 'Discover → transact → stay → use services → own → manage. The public experience and operations stay connected to the same property record.',
       'landing.value.stay': 'Stay',
       'landing.value.stay_body': 'Search verified availability and continue into one booking flow.',
       'landing.value.own': 'Own',
@@ -121,8 +125,8 @@ export default async function LandingPage() {
       'landing.value.cta': 'Discover how myUNO works',
 
       'landing.services.kicker': 'BEYOND YOUR STAY',
-      'landing.services.title': 'Everything around your stay.',
-      'landing.services.body': 'Book your home first. Add relevant services before arrival or while you are in Phuket.',
+      'landing.services.title': 'Everything around your home and stay.',
+      'landing.services.body': 'Transfers, housekeeping, maintenance, wellness, food, experiences and property services — connected to the same guest or property journey.',
       'landing.services.cta': 'Explore all services',
       'landing.services.vetted': 'Vetted',
       'landing.services.from': 'From',
@@ -132,7 +136,7 @@ export default async function LandingPage() {
       'landing.audience.kicker': 'PROPERTY ON MYUNO',
       'landing.audience.owner_kicker': 'OWNER',
       'landing.audience.partner_kicker': 'PARTNER',
-      'landing.audience.title': 'One property. Two professional entry points.',
+      'landing.audience.title': 'Put your property or business on myUNO.',
       'landing.audience.owners': 'For owners',
       'landing.audience.owners_body': 'Bring your Phuket property into one connected presentation, booking, operations and reporting flow.',
       'landing.audience.developers': 'Professional management',
@@ -150,10 +154,9 @@ export default async function LandingPage() {
       'landing.trust.protected_body': 'Guests, owners, providers and teams see only the workflows relevant to them.',
       'landing.trust.cta': 'How trust works',
 
-      'home.discovery.rent': 'Rent',
+      'home.discovery.stay': 'Stay',
+      'home.discovery.monthly': 'Monthly',
       'home.discovery.buy': 'Buy',
-      'home.discovery.manage': 'Manage',
-      'home.discovery.sell': 'Sell',
       'home.discovery.rent_out': 'Rent Out',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
@@ -162,10 +165,10 @@ export default async function LandingPage() {
       'home.final.title': 'Your place in Phuket starts here.',
       'home.final.body': 'Find a stay, discover a home to own, or explore the services around it.',
       'home.final.primary': 'Explore properties',
-      'landing.units.kicker': 'STAYS & HOMES',
-      'landing.units.title': 'Choose the home, not just the project.',
-      'landing.units.body': 'Browse individual residences and villas connected to the same project, pricing and booking record.',
-      'landing.units.cta': 'See all stays',
+      'landing.units.kicker': 'HOMES RIGHT NOW',
+      'landing.units.title': 'One home. The right commercial path.',
+      'landing.units.body': 'Stay, rent monthly or buy from the same canonical property record — without duplicate listings.',
+      'landing.units.cta': 'Explore all homes',
       'landing.units.guests': '{count} guests',
       'landing.units.from': 'From ฿{price} / night',
       'landing.units.open': 'View home',
@@ -207,7 +210,45 @@ export default async function LandingPage() {
   };
 
   const featuredProjects = projects.slice(0, 5);
-  const featuredHomes = commercialHomes.slice(0, 6);
+  const homeRailItems: HomeRailItem[] = [
+    ...stayUnits.map((unit) => {
+      const media = projectPresentationImage(unit.id, unit.coverUrl);
+      return {
+        key: `stay:${unit.id}`,
+        intent: 'stay' as const,
+        name: unit.name,
+        projectName: unit.project.name,
+        href: `/units/${unit.id}`,
+        imageSrc: media.src,
+        bedrooms: unit.bedrooms,
+        bathrooms: unit.bathrooms,
+        guests: unit.maxGuests,
+        priceLabel: labels['landing.units.from'].replace(
+          '{price}',
+          Math.round(unit.baseNightlyThb / 100).toLocaleString()
+        ),
+      };
+    }),
+    ...commercialHomes.flatMap((home) =>
+      home.intents.map((intent) => ({
+        key: `${intent}:${home.id}`,
+        intent: intent === 'rent' ? ('monthly' as const) : ('buy' as const),
+        name: home.name,
+        projectName: home.project.name,
+        href: `/homes/${encodeURIComponent(home.id)}?intent=${intent}`,
+        imageSrc: home.imageUrl,
+        bedrooms: home.bedrooms,
+        bathrooms: home.bathrooms,
+        sizeSqm: home.sizeSqm,
+        priceLabel:
+          home.priceThb[intent] != null
+            ? intent === 'rent'
+              ? `฿${home.priceThb[intent]!.toLocaleString()} / month`
+              : `฿${home.priceThb[intent]!.toLocaleString()}`
+            : labels['landing.homes.terms'],
+      }))
+    ),
+  ];
 
   const valueCards = [
     {
@@ -268,14 +309,11 @@ export default async function LandingPage() {
             <p className="mt-20 max-w-xl text-body text-text-ink md:text-subtitle">
               {labels['landing.global_hero.subtitle']}
             </p>
-            <div className="mt-20 flex flex-wrap gap-8">
-              <Link href="/desks" className="rounded-full border border-brand-andaman/20 bg-surface-paper/85 px-12 py-8 text-small font-semibold text-brand-andaman backdrop-blur hover:border-brand-andaman/40">
-                {labels['landing.global_hero.global']} →
-              </Link>
-              <Link href="/areas" className="rounded-full border border-border-line bg-surface-paper/85 px-12 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+            <div className="mt-20 flex flex-wrap gap-x-16 gap-y-8 text-small font-semibold">
+              <Link href="/areas" className="text-text-ink hover:text-brand-andaman">
                 {labels['landing.global_hero.areas']} →
               </Link>
-              <Link href="/trust" className="rounded-full border border-border-line bg-surface-paper/85 px-12 py-8 text-small font-semibold text-text-ink backdrop-blur hover:border-border-line-2">
+              <Link href="/trust" className="text-text-ink hover:text-brand-andaman">
                 {labels['landing.global_hero.trust']} →
               </Link>
             </div>
@@ -287,10 +325,9 @@ export default async function LandingPage() {
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
               areas={areas.map((area) => ({ slug: area.slug, name: area.displayName }))}
               labels={{
-                rent: labels['home.discovery.rent'],
+                stay: labels['home.discovery.stay'],
+                monthly: labels['home.discovery.monthly'],
                 buy: labels['home.discovery.buy'],
-                manage: labels['home.discovery.manage'],
-                sell: labels['home.discovery.sell'],
                 where: labels['landing.search.where'],
                 allPhuket: labels['landing.search.all_phuket'],
                 locations: labels['landing.search.locations'],
@@ -305,47 +342,21 @@ export default async function LandingPage() {
                 error: labels['home.discovery.error'],
               }}
             />
-          </div>
-        </div>
-      </section>
-
-
-      <section className="border-y border-border-line bg-gradient-to-r from-surface-ivory via-surface-paper to-surface-ivory py-44 md:py-56" aria-labelledby="global-desks-heading">
-        <div className="mx-auto max-w-content px-20 md:px-32">
-          <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
-            <div className="max-w-2xl">
-              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
-              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
-                {labels['landing.desks.title']}
-              </h2>
-              <p className="mt-12 text-body text-text-secondary">{labels['landing.desks.body']}</p>
-            </div>
-            <Link href="/desks" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
-              {labels['landing.desks.cta']} →
-            </Link>
-          </div>
-
-          <div className="-mx-20 mt-24 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
-            {GLOBAL_DESKS.map((desk) => (
-              <Link
-                key={desk.slug}
-                href={`/desks/${desk.slug}`}
-                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
-              >
-                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
-                  {desk.code}
-                </div>
-                <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
-                <p className="mt-8 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
-                <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
-                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-[1px]">
-                  {labels['landing.desks.open']} →
-                </span>
+            <div className="mt-12 flex flex-wrap gap-x-16 gap-y-8 px-4 text-small">
+              <Link href="/sell" className="font-semibold text-text-ink hover:text-brand-andaman">
+                {labels['landing.global_hero.sell']} →
               </Link>
-            ))}
+              <Link href="/rent-out" className="font-semibold text-text-ink hover:text-brand-andaman">
+                {labels['landing.global_hero.rent_out']} →
+              </Link>
+              <Link href="/manage" className="font-semibold text-text-ink hover:text-brand-andaman">
+                {labels['landing.global_hero.manage']} →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
+
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
@@ -400,66 +411,36 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {stayUnits.length ? (
+      {homeRailItems.length ? (
         <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="units-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
             <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
               <div className="max-w-2xl">
-                <p className="text-kicker uppercase text-brand-andaman">
-                  {labels['landing.units.kicker']}
-                </p>
+                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.units.kicker']}</p>
                 <h2 id="units-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                   {labels['landing.units.title']}
                 </h2>
-                <p className="mt-12 max-w-xl text-body text-text-secondary">
-                  {labels['landing.units.body']}
-                </p>
+                <p className="mt-12 max-w-xl text-body text-text-secondary">{labels['landing.units.body']}</p>
               </div>
-              <Link href="/search" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+              <Link href="/homes" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
                 {labels['landing.units.cta']} →
               </Link>
             </div>
 
-            <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
-              {stayUnits.slice(0, 4).map((unit) => {
-                const media = projectPresentationImage(unit.id, unit.coverUrl);
-                return (
-                  <Link
-                    key={unit.id}
-                    href={`/units/${unit.id}`}
-                    className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card"
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden bg-surface-paper">
-                      <Image
-                        src={media.src}
-                        alt={media.illustrative ? '' : unit.name}
-                        fill
-                        sizes={HOME_UNIT_IMAGE_SIZES}
-                        className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
-                      />
-                    </div>
-                    <div className="p-20">
-                      <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
-                      <h3 className="mt-4 font-display text-title font-semibold text-text-ink">{unit.name}</h3>
-                      {unit.categoryName ? (
-                        <p className="mt-4 text-small text-text-secondary">{unit.categoryName}</p>
-                      ) : null}
-                      <p className="mt-12 text-small text-text-secondary">
-                        {unit.bedrooms} {labels['landing.homes.bedrooms']} · {unit.bathrooms} {labels['landing.homes.bathrooms']} · {labels['landing.units.guests'].replace('{count}', String(unit.maxGuests))}
-                      </p>
-                      <div className="mt-16 flex items-end justify-between gap-12">
-                        <p className="font-display text-body-strong tabular-nums text-text-ink">
-                          {labels['landing.units.from'].replace('{price}', Math.round(unit.baseNightlyThb / 100).toLocaleString())}
-                        </p>
-                        <span className="shrink-0 text-small font-semibold text-brand-andaman">
-                          {labels['landing.units.open']} →
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <HomeIntentRail
+              items={homeRailItems}
+              labels={{
+                stay: labels['home.discovery.stay'],
+                monthly: labels['home.discovery.monthly'],
+                buy: labels['home.discovery.buy'],
+                bedrooms: labels['landing.homes.bedrooms'],
+                bathrooms: labels['landing.homes.bathrooms'],
+                sqm: labels['landing.homes.area'],
+                guests: labels['landing.units.guests'],
+                open: labels['landing.units.open'],
+                empty: labels['landing.homes.terms'],
+              }}
+            />
           </div>
         </section>
       ) : null}
@@ -561,66 +542,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {featuredHomes.length ? (
-        <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
-          <div className="mx-auto max-w-content px-20 md:px-32">
-            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
-              <div className="max-w-2xl">
-                <p className="text-kicker uppercase text-brand-andaman">
-                  {labels['landing.homes.kicker']}
-                </p>
-                <h2 id="available-homes-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
-                  {labels['landing.homes.title']}
-                </h2>
-                <p className="mt-12 text-body text-text-secondary">
-                  {labels['landing.homes.body']}
-                </p>
-              </div>
-              <Link href="/homes?intent=buy" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
-                {labels['landing.homes.cta']} →
-              </Link>
-            </div>
-
-            <div className="-mx-20 flex snap-x gap-16 overflow-x-auto px-20 pb-8 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-4">
-              {featuredHomes.slice(0, 4).map((home) => {
-                const primaryIntent = home.intents.includes('buy') ? 'buy' : 'rent';
-                return (
-                  <Link
-                    key={home.id}
-                    href={`/homes/${encodeURIComponent(home.id)}?intent=${primaryIntent}`}
-                    className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card md:w-auto"
-                  >
-                    {home.imageUrl ? (
-                      <Image
-                        src={home.imageUrl}
-                        alt={home.name}
-                        width={720}
-                        height={540}
-                        className="aspect-[4/3] w-full object-cover transition duration-700 group-hover:scale-[1.02]"
-                      />
-                    ) : (
-                      <div className="aspect-[4/3] bg-surface-paper" />
-                    )}
-                    <div className="p-20">
-                      <p className="text-small font-medium text-brand-andaman">{home.project.name}</p>
-                      <h3 className="mt-4 font-display text-title font-semibold text-text-ink">{home.name}</h3>
-                      <p className="mt-8 text-small text-text-secondary">
-                        {home.bedrooms} {labels['landing.homes.bedrooms']} · {home.bathrooms} {labels['landing.homes.bathrooms']}
-                        {home.sizeSqm ? ` · ${home.sizeSqm} ${labels['landing.homes.area']}` : ''}
-                      </p>
-                      <p className="mt-16 text-small text-text-secondary">{labels['landing.homes.terms']}</p>
-                      <span className="mt-12 inline-block text-small font-semibold text-brand-andaman">
-                        {labels['landing.homes.details']} →
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="value-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="max-w-3xl">
@@ -702,6 +623,43 @@ export default async function LandingPage() {
                 {labels['landing.audience.developer_cta']} →
               </span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border-line bg-gradient-to-r from-surface-ivory via-surface-paper to-surface-ivory py-44 md:py-56" aria-labelledby="global-desks-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
+              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
+                {labels['landing.desks.title']}
+              </h2>
+              <p className="mt-12 text-body text-text-secondary">{labels['landing.desks.body']}</p>
+            </div>
+            <Link href="/desks" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+              {labels['landing.desks.cta']} →
+            </Link>
+          </div>
+
+          <div className="-mx-20 mt-24 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
+            {GLOBAL_DESKS.map((desk) => (
+              <Link
+                key={desk.slug}
+                href={`/desks/${desk.slug}`}
+                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+              >
+                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
+                  {desk.code}
+                </div>
+                <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
+                <p className="mt-8 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
+                <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
+                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-[1px]">
+                  {labels['landing.desks.open']} →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

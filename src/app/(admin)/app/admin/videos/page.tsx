@@ -30,6 +30,13 @@ export default async function VideoAdminPage() {
       'admin.video.status': 'Status',
       'admin.video.empty': 'No video publications yet.',
       'admin.video.error': 'Action failed',
+      'admin.video.scope_area': 'Area',
+      'admin.video.scope_project': 'Project',
+      'admin.video.scope_unit': 'Unit',
+      'nav.locale.en': 'EN',
+      'nav.locale.ru': 'RU',
+      'nav.locale.th': 'TH',
+      'nav.locale.zh': 'ZH',
     }),
   ]);
 

@@ -131,7 +131,7 @@ FOR EACH ROW EXECUTE FUNCTION prevent_research_correction_mutation();
 CREATE OR REPLACE FUNCTION guard_research_publication_governance()
 RETURNS trigger AS $$
 BEGIN
-  IF OLD.status <> 'draft' AND (
+  IF NEW.status <> 'draft' AND (
     NEW.destination_key IS DISTINCT FROM OLD.destination_key OR
     NEW.slug IS DISTINCT FROM OLD.slug OR
     NEW.locale IS DISTINCT FROM OLD.locale OR
@@ -163,7 +163,11 @@ RETURNS trigger AS $$
 DECLARE publication_status "ResearchPublicationStatus";
 DECLARE target_publication_id text;
 BEGIN
-  target_publication_id := COALESCE(NEW.publication_id, OLD.publication_id);
+  IF TG_OP = 'DELETE' THEN
+    target_publication_id := OLD.publication_id;
+  ELSE
+    target_publication_id := NEW.publication_id;
+  END IF;
   SELECT status INTO publication_status FROM research_publication WHERE id = target_publication_id;
   IF publication_status IS DISTINCT FROM 'draft'::"ResearchPublicationStatus" THEN
     RAISE EXCEPTION 'research sources are frozen once review begins';

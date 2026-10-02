@@ -62,3 +62,10 @@ export {
 } from './messenger';
 
 export { auditLegacyOccupancies, classifyLegacyOccupancy, type LegacyOccupancy, type ReconciliationDecision } from './layantara/adapter';
+
+export {
+  getChannelHealthForUnits,
+  type ChannelHealthState,
+  type ChannelHealthRow,
+  type UnitChannelHealth,
+} from './channel-health';

@@ -858,6 +858,7 @@ model Identity {
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
 
   @@map("identity")
+  operationalTasksAssigned OperationalTask[] @relation("operationalTaskAssignee")
 }
 
 model AuthAccount {
@@ -996,6 +997,7 @@ model Project {
   inventoryCategories   InventoryCategory[]
   ratePlans             RatePlan[]
   bookings              Booking[]
+  operationalTasks       OperationalTask[]
   ledgerEntries         LedgerEntry[]
   threads               Thread[]
   tickets               Ticket[]
@@ -1083,6 +1085,7 @@ model Unit {
   blockedDates                 BlockedDate[]
   pricingRules                 PricingRule[]
   bookings                     Booking[]
+  operationalTasks             OperationalTask[]
   ledgerEntries                LedgerEntry[]
   tickets                      Ticket[]
   serviceOrders                ServiceOrder[]
@@ -1201,6 +1204,7 @@ model Booking {
   amenityReservations ProjectAmenityReservation[]
   tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
+  operationalTasks OperationalTask[]
   depositClaims    DepositClaim[]
   depositPreauth   DepositPreauth?
   analyticsEvents  AnalyticsEvent[]
@@ -2239,6 +2243,50 @@ model Message {
 
   @@index([threadId, createdAt])
   @@map("message")
+}
+
+enum OperationalTaskType {
+  turnover_cleaning
+  turnover_inspection
+  maintenance_followup
+}
+
+enum OperationalTaskStatus {
+  planned
+  assigned
+  in_progress
+  inspected
+  ready
+  cancelled
+}
+
+model OperationalTask {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId         String                @map("project_id")
+  unitId            String                @map("unit_id")
+  bookingId         String?               @map("booking_id")
+  taskType          OperationalTaskType   @map("task_type")
+  status            OperationalTaskStatus @default(planned)
+  dueAt             DateTime              @map("due_at")
+  assignedIdentityId String?              @map("assigned_identity_id")
+  startedAt         DateTime?             @map("started_at")
+  inspectedAt       DateTime?             @map("inspected_at")
+  readyAt           DateTime?             @map("ready_at")
+  notes             String?
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit     Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  booking  Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assignee Identity? @relation("operationalTaskAssignee", fields: [assignedIdentityId], references: [id], onDelete: SetNull)
+
+  @@unique([bookingId, taskType])
+  @@index([projectId, status, dueAt])
+  @@index([unitId, status, dueAt])
+  @@index([assignedIdentityId, status, dueAt])
+  @@map("operational_task")
 }
 
 model Ticket {

@@ -67,6 +67,17 @@ export async function POST(
       const checkedIn = await checkInBooking(prisma, params.id);
       checkedInAt = checkedIn.checkedInAt ?? new Date();
     } catch (error) {
+      const coded = error as Error & { code?: string; blockers?: unknown[] };
+      if (coded?.code === 'UNIT_NOT_READY') {
+        return NextResponse.json(
+          {
+            error: coded.message,
+            code: coded.code,
+            blockers: coded.blockers ?? [],
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Cannot check in this booking' },
         { status: 400 }

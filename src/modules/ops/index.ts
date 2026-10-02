@@ -53,3 +53,12 @@ export {
   formatCheckOutChecklistNotes,
   type CheckOutChecklistItem,
 } from './check-out-checklist';
+
+export {
+  ensureTurnoverTasksForCheckout,
+  assertUnitReadyForCheckIn,
+  transitionOperationalTask,
+  getUnitReadinessMap,
+  listOperationalTasks,
+  type UnitReadinessState,
+} from './operational-task.service';

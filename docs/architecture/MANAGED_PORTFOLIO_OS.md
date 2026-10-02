@@ -55,6 +55,14 @@ The authoritative sellability predicate is the existing booking/availability ser
 - Remaining product work is narrower: housekeeping/readiness overlays, effective-rate parity with the canonical quote engine, channel-sync health/ARI evidence, and the full multi-role production smoke matrix.
 - RoleAssignment is checked again at read time, paired to active UnitEngagement, protecting against stale session scope.
 
+## PMS release slice — readiness, rates and channel health (2026-10-02)
+
+- **Housekeeping/readiness:** checkout atomically creates canonical `OperationalTask` rows for turnover cleaning and inspection. Open required turnover tasks block the next check-in. The unified calendar projects readiness; writes happen in the scoped `/ops/tasks` queue.
+- **Effective daily rate:** the calendar calls `computeCanonicalCalendarRates`, which delegates to the same `computeCanonicalPriceBreakdown` used by booking. The calendar does not own a rate formula or writable rate table.
+- **Channel health:** `ChannelMapping + IntegrationAccount` are projected as availability/rates/restrictions capabilities. iCal is availability-import only and is never labelled ARI. A channel is `healthy` only when a trusted adapter has written `syncState=ari_push`, all A/R/I capabilities are declared, and the last successful sync is fresh.
+- **External boundary:** no OTA ARI provider is fabricated by myUNO. Until a real provider adapter/credentials write verified `ari_push` state, the PMS remains fail-closed and warns operators that external rates/restrictions/inventory require manual handling.
+- **Security:** `operational_task` is server-only, RLS-enabled, and denied to PUBLIC/anon/authenticated Data API roles. MC task reads/writes are further bounded to actively managed units.
+
 ## Delivery gates
 
 A. Complete: shared cross-project read-only occupancy grid, canonical booking/block projection and links into existing unit editor; no second calendar store.

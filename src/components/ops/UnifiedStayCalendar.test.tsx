@@ -46,6 +46,15 @@ const labels: Record<string,string> = {
   'staff.unified_calendar.read_only': 'Read-only',
   'staff.unified_calendar.source': 'Live myUNO database',
   'staff.unified_calendar.no_entries': 'No entries',
+  'staff.unified_calendar.readiness': 'Readiness',
+  'staff.unified_calendar.ready': 'Ready',
+  'staff.unified_calendar.needs_cleaning': 'Needs cleaning',
+  'staff.unified_calendar.needs_inspection': 'Needs inspection',
+  'staff.unified_calendar.in_progress': 'In progress',
+  'staff.unified_calendar.channel_health': 'Channels',
+  'staff.unified_calendar.rate_unavailable': 'Rate unavailable',
+  'staff.unified_calendar.effective_rate': 'Effective daily rate',
+  'staff.unified_calendar.tasks': 'Housekeeping & readiness',
 };
 const props = {
   labels, today: '2026-09-29', start: '2026-09-29',
@@ -56,6 +65,13 @@ const props = {
     id: 'unit-a', name: 'Villa A', projectId: 'project-a',
     projectName: 'Resort', categoryId: 'category-a',
     categoryName: '2BR', sellable: true,
+    readiness: 'ready' as const, openTaskCount: 0,
+    channelState: 'healthy' as const,
+    channelRows: [{
+      channel: 'airbnb', state: 'healthy' as const,
+      availability: 'push' as const, rates: 'push' as const,
+      restrictions: 'push' as const, lastSyncAt: null, error: null,
+    }],
   }],
   allUnits: [{ id: 'unit-a', name: 'Villa A' }],
   projectId: 'project-a', categoryId: 'category-a', unitId: '',
@@ -67,6 +83,12 @@ const props = {
     id: 'booking-a', kind: 'booking' as const, status: 'confirmed',
     channel: 'direct', label: 'Reservation',
   } },
+  rates: {
+    'unit-a': {
+      error: null,
+      byDate: { '2026-09-29': { nightlyThb: 650000, source: 'category_season' } },
+    },
+  },
   arrivals: 1, departures: 0,
 };
 
@@ -75,10 +97,12 @@ describe('one calendar surface with mode-specific safe actions', () => {
     render(<UnifiedStayCalendar {...props} mode="mc" organizationId="org-a"/>);
     expect(screen.queryByRole('link', { name: /Stay operations/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc');
-    fireEvent.click(screen.getByRole('button', { name: /Villa A.*2026-09-29/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/mc/units/unit-a');
     expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
+      .toContain('mc=1');
     // Navigation stays on the same canonical board and retains organization.
     const nextHref = screen.getByRole('link', { name: /Next/ }).getAttribute('href') || '';
     expect(nextHref).toContain('organizationId=org-a');
@@ -91,10 +115,13 @@ describe('one calendar surface with mode-specific safe actions', () => {
     render(<UnifiedStayCalendar {...props} mode="staff"/>);
     expect(screen.getByRole('link', { name: /Stay operations/ }).getAttribute('href'))
       .toBe('/ops/stays');
-    fireEvent.click(screen.getByRole('button', { name: /Villa A.*2026-09-29/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
     expect(screen.getByRole('link', { name: /Open canonical stay/ }).getAttribute('href'))
       .toBe('/ops/stays/booking-a');
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/ops/calendar/unit-a');
+    expect(screen.getByText(/category_season/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
+      .toContain('/ops/tasks?unitId=unit-a');
   });
 });

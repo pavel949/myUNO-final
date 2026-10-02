@@ -45,7 +45,11 @@ export {
 // Canonical commercial pricing seam. All application callers importing
 // computePriceBreakdown from @/modules/core now use InventoryCategory + BAR
 // RatePlan defaults while preserving the established fee/discount/tax policy.
-export { computeCanonicalPriceBreakdown as computePriceBreakdown } from './canonical-pricing.service';
+export {
+  computeCanonicalPriceBreakdown as computePriceBreakdown,
+  computeCanonicalCalendarRates,
+  type CanonicalCalendarRateLine,
+} from './canonical-pricing.service';
 
 export {
   createComplianceRecord,

@@ -6,7 +6,27 @@ import { useRouter } from 'next/navigation';
 import { shiftCalendarDay } from '@/modules/booking/calendar-projection';
 import type { CalendarCell, CalendarState } from '@/modules/booking/calendar-projection';
 
-interface UnitRow { id: string; name: string; projectId: string; projectName: string; categoryId: string | null; categoryName: string; sellable: boolean }
+interface UnitRow {
+  id: string;
+  name: string;
+  projectId: string;
+  projectName: string;
+  categoryId: string | null;
+  categoryName: string;
+  sellable: boolean;
+  readiness: 'ready' | 'needs_cleaning' | 'needs_inspection' | 'in_progress';
+  openTaskCount: number;
+  channelState: 'healthy' | 'delayed' | 'error' | 'connected' | 'manual_only';
+  channelRows: Array<{
+    channel: string;
+    state: 'healthy' | 'delayed' | 'error' | 'connected' | 'manual_only';
+    availability: 'push' | 'ical' | 'manual';
+    rates: 'push' | 'manual';
+    restrictions: 'push' | 'manual';
+    lastSyncAt: string | Date | null;
+    error: string | null;
+  }>;
+}
 interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
 type Props = {
   mode?: 'staff' | 'mc'; organizationId?: string;
@@ -19,6 +39,10 @@ type Props = {
   projectId: string; categoryId: string; unitId: string;
   cells: Record<string, CalendarCell[]>;
   entries: Record<string, EntryDetail>;
+  rates: Record<string, {
+    error: string | null;
+    byDate: Record<string, { nightlyThb: number; source: string }>;
+  }>;
   arrivals: number; departures: number;
 };
 const stateClass: Record<CalendarState, string> = {
@@ -116,8 +140,11 @@ export default function UnifiedStayCalendar(props: Props) {
   const stats=[['Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
     [props.labels['staff.unified_calendar.not_sellable'],String(rows.filter(unit=>!unit.sellable).length)],
     [props.labels['staff.unified_calendar.booked'],String(booked)], [props.labels['staff.unified_calendar.holds'],String(holds)],
+    [props.labels['staff.unified_calendar.ready'],String(rows.filter(unit=>unit.readiness==='ready').length)],
+    [props.labels['staff.unified_calendar.readiness'],String(rows.filter(unit=>unit.readiness!=='ready').length)],
     [props.labels['staff.unified_calendar.arrivals'],String(props.arrivals)],
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
+  const channelAttention = rows.filter((unit) => unit.channelState !== 'healthy').length;
   const inspect=selected && props.units.find((unit)=>unit.id===selected.unitId);
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-[1600px] space-y-24">
@@ -156,6 +183,9 @@ export default function UnifiedStayCalendar(props: Props) {
       </section>
       {conflicts>0 && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-16 text-red-900">
         {conflicts} {props.labels['staff.unified_calendar.conflict_warning']}
+      </div>}
+      {channelAttention>0 && <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-16 text-amber-950">
+        {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
       <section aria-label="Calendar filters" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
@@ -238,15 +268,25 @@ export default function UnifiedStayCalendar(props: Props) {
               const state=!unit.sellable&&cell.state==='free'
                 ? props.labels['staff.unified_calendar.not_sellable']
                 : stateLabel[cell.state];
+              const rate=props.rates[unit.id]?.byDate[mobileDate];
               return <button key={unit.id} type="button"
                 onClick={()=>setSelected({unitId:unit.id,date:mobileDate,cell})}
                 className="flex w-full items-center justify-between gap-12 rounded-md border border-border-line bg-surface-ivory p-12 text-left">
                 <span>
                   <span className="block font-semibold text-text-ink">{unit.name}</span>
                   <span className="block text-[11px] text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
+                  <span className="block text-[10px] text-text-secondary">
+                    {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
+                    {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                  </span>
                 </span>
-                <span className={'shrink-0 rounded-md px-10 py-6 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
-                  {state}
+                <span className="text-right">
+                  <span className={'block shrink-0 rounded-md px-12 py-8 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                    {state}
+                  </span>
+                  <span className="mt-4 block text-[10px] font-semibold text-text-secondary">
+                    {rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString() : '—'}
+                  </span>
                 </span>
               </button>;
             })}
@@ -270,17 +310,32 @@ export default function UnifiedStayCalendar(props: Props) {
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
                     <span className="block font-semibold text-text-ink">{unit.name}</span>
                     <span className="block text-[11px] font-normal text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
+                    <span className="block text-[10px] font-semibold text-text-secondary">
+                      {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
+                      {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                    </span>
                     {!unit.sellable && <span className="block text-[10px] font-semibold text-amber-900">{props.labels['staff.unified_calendar.not_sellable']}</span>}
                   </th>
-                  {(props.cells[unit.id]||[]).map((cell,index)=><td key={props.days[index]} className="border-b border-l border-border-line p-[2px]">
-                    <button type="button"
-                      aria-label={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
-                      title={unit.name+' · '+props.days[index]+' · '+(!unit.sellable&&cell.state==='free'?props.labels['staff.unified_calendar.not_sellable']:stateLabel[cell.state])}
-                      onClick={()=>setSelected({unitId:unit.id,date:props.days[index],cell})}
-                      className={'h-40 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
-                      {!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}
-                    </button>
-                  </td>)}
+                  {(props.cells[unit.id]||[]).map((cell,index)=>{
+                    const day=props.days[index];
+                    const rate=props.rates[unit.id]?.byDate[day];
+                    const occupancy=!unit.sellable&&cell.state==='free'
+                      ? props.labels['staff.unified_calendar.not_sellable']
+                      : stateLabel[cell.state];
+                    const rateLabel=rate
+                      ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString()+' · '+rate.source
+                      : (props.rates[unit.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']);
+                    return <td key={day} className="border-b border-l border-border-line p-[2px]">
+                      <button type="button"
+                        aria-label={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
+                        title={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
+                        onClick={()=>setSelected({unitId:unit.id,date:day,cell})}
+                        className={'h-48 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                        <span className="block">{!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}</span>
+                        <span className="block text-[9px] font-medium opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString() : '—'}</span>
+                      </button>
+                    </td>;
+                  })}
                 </tr>)}
             </tbody>
           </table>
@@ -301,6 +356,32 @@ export default function UnifiedStayCalendar(props: Props) {
           <button type="button" onClick={()=>setSelected(null)} aria-label="Close details" className="rounded-md border border-border-line px-12 py-8">×</button>
         </div>
         <p className="my-12 text-small font-semibold text-text-secondary">{stateLabel[selected.cell.state]}</p>
+        <div className="mb-12 grid gap-8 sm:grid-cols-3">
+          <div className="rounded-md bg-surface-ivory p-12 text-small">
+            <span className="block text-text-secondary">{props.labels['staff.unified_calendar.readiness']}</span>
+            <span className="font-semibold text-text-ink">{props.labels['staff.unified_calendar.'+inspect.readiness] || inspect.readiness}</span>
+          </div>
+          <div className="rounded-md bg-surface-ivory p-12 text-small">
+            <span className="block text-text-secondary">{props.labels['staff.unified_calendar.channel_health']}</span>
+            <span className="font-semibold text-text-ink">{inspect.channelState.replace(/_/g,' ')}</span>
+          </div>
+          <div className="rounded-md bg-surface-ivory p-12 text-small">
+            <span className="block text-text-secondary">{props.labels['staff.unified_calendar.effective_rate']}</span>
+            {props.rates[inspect.id]?.byDate[selected.date]
+              ? <span className="font-semibold text-text-ink">
+                  ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString()}
+                  {' · '}{props.rates[inspect.id].byDate[selected.date].source}
+                </span>
+              : <span className="font-semibold text-amber-900">{props.rates[inspect.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']}</span>}
+          </div>
+        </div>
+        {inspect.channelRows.length>0 && <div className="mb-12 space-y-4">
+          {inspect.channelRows.map((channel)=><p key={channel.channel} className="text-[11px] text-text-secondary">
+            <span className="font-semibold text-text-ink">{channel.channel}</span>
+            {' · '}{channel.state.replace(/_/g,' ')}
+            {' · A:'}{channel.availability}{' R:'}{channel.rates}{' I:'}{channel.restrictions}
+          </p>)}
+        </div>}
         {selected.cell.entryIds.length===0 ? <p className="text-small text-text-secondary">{props.labels['staff.unified_calendar.no_entries']}</p>
           : <ul className="space-y-8">{selected.cell.entryIds.map((id)=>{
             const item=props.entries[id];
@@ -313,9 +394,20 @@ export default function UnifiedStayCalendar(props: Props) {
                 <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
             </li> : null;
           })}</ul>}
-        <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
-          {props.labels['staff.unified_calendar.open_unit']} →
-        </Link>
+        <div className="mt-16 flex flex-wrap gap-8">
+          <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+            {props.labels['staff.unified_calendar.open_unit']} →
+          </Link>
+          <Link
+            href={'/ops/tasks?'+new URLSearchParams({
+              unitId: inspect.id,
+              ...(props.mode==='mc' ? { mc:'1' } : {}),
+            }).toString()}
+            className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman"
+          >
+            {props.labels['staff.unified_calendar.tasks']}
+          </Link>
+        </div>
       </aside>}
       <p className="text-small text-text-secondary">{props.labels['staff.unified_calendar.read_only']}</p>
     </div>

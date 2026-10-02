@@ -74,14 +74,17 @@ describe('one calendar surface with mode-specific safe actions', () => {
   it('keeps MC occupancy in their authorized project/org scope and hides staff-only stay navigation', () => {
     render(<UnifiedStayCalendar {...props} mode="mc" organizationId="org-a"/>);
     expect(screen.queryByRole('link', { name: /Stay operations/ })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc/calendar');
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc');
     fireEvent.click(screen.getByRole('button', { name: /Villa A.*2026-09-29/ }));
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/mc/units/unit-a');
     expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
     // Navigation stays on the same canonical board and retains organization.
-    expect(screen.getByRole('link', { name: /Next/ }).getAttribute('href'))
-      .toContain('organizationId=org-a');
+    const nextHref = screen.getByRole('link', { name: /Next/ }).getAttribute('href') || '';
+    expect(nextHref).toContain('organizationId=org-a');
+    expect(nextHref).toContain('mc=1');
+    expect(screen.getByRole('link', { name: '30 days' })).toBeTruthy();
+    expect((screen.getByLabelText('Property') as HTMLSelectElement).disabled).toBe(false);
   });
 
   it('retains staff canonical stay actions and unit editor', () => {

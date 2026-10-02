@@ -41,6 +41,10 @@ export default async function ResearchAdminPage() {
       'admin.research.correction_detail': 'Correction detail',
       'admin.research.empty': 'No research publications yet.',
       'admin.research.error': 'Action failed',
+      'nav.locale.en': 'EN',
+      'nav.locale.ru': 'RU',
+      'nav.locale.th': 'TH',
+      'nav.locale.zh': 'ZH',
     }),
   ]);
 

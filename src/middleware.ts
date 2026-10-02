@@ -48,6 +48,7 @@ export function middleware(request: NextRequest) {
       scriptSrc,
       "style-src 'self' 'unsafe-inline' https://unpkg.com", // Tailwind + pinned MapLibre CSS
       "img-src 'self' data: https:",
+      "media-src 'self' https: blob:",
       "font-src 'self'",
       // Search map raster tiles are loaded by MapLibre over fetch/XHR.
       "connect-src 'self' https://tile.openstreetmap.org",

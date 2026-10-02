@@ -174,7 +174,7 @@ export default async function MyUnoPage() {
           <h2 className="font-display text-heading-2 font-semibold text-text-ink">
             {labels['myuno.discover.title']}
           </h2>
-          <div className="mt-20 flex flex-wrap gap-10">
+          <div className="mt-20 flex flex-wrap gap-12">
             <Link href="/search" className="rounded-full bg-brand-andaman px-20 py-12 font-semibold text-white">{labels['myuno.discover.stay']}</Link>
             <Link href="/homes?intent=buy" className="rounded-full border border-border-line bg-surface-paper px-20 py-12 font-semibold text-text-ink">{labels['myuno.discover.buy']}</Link>
             <Link href="/owners" className="rounded-full border border-border-line bg-surface-paper px-20 py-12 font-semibold text-text-ink">{labels['myuno.discover.own']}</Link>

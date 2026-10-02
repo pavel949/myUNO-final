@@ -4,16 +4,18 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { listBrowsableAreas } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { EmptyState } from '@/components/premium/PremiumPrimitives';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AreasPage() {
   const locale = getRequestLocale();
+  const destination = getDestination();
   const [areas, labels] = await Promise.all([
     listBrowsableAreas(prisma),
     getLabels({
-      'areas.kicker': 'PHUKET BY AREA',
-      'areas.title': 'Find the part of Phuket that fits you.',
+      'areas.kicker': `${destination.name.toUpperCase()} BY AREA`,
+      'areas.title': `Find the part of ${destination.name} that fits you.`,
       'areas.body': 'Browse live myUNO projects by their canonical area. An area appears only when it contains public inventory.',
       'areas.projects': '{count} projects',
       'areas.open': 'Explore area',

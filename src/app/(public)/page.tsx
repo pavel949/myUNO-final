@@ -20,7 +20,6 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const HOME_UNIT_IMAGE_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
 const HOME_AREA_IMAGE_SIZES = '(max-width: 768px) 100vw, 33vw';
 
 const PROJECT_PRIORITY = [
@@ -139,19 +138,25 @@ export default async function LandingPage() {
       'landing.audience.title': 'Put your property or business on myUNO.',
       'landing.audience.owners': 'For owners',
       'landing.audience.owners_body': 'Bring your Phuket property into one connected presentation, booking, operations and reporting flow.',
-      'landing.audience.developers': 'Professional management',
-      'landing.audience.developers_body': 'Move a property or portfolio from commercial activation into connected operations without creating a second inventory model.',
+      'landing.audience.management': 'Management companies',
+      'landing.audience.management_body': 'Operate projects and portfolios with bookings, PMS, team workflows, finance and owner reporting in one workspace.',
+      'landing.audience.developers': 'Developers',
+      'landing.audience.developers_body': 'Connect project inventory, sales, rentals and owner services without creating a second property model.',
+      'landing.audience.providers': 'Service providers',
+      'landing.audience.providers_body': 'Offer trusted services to guests, residents and owners through the connected marketplace.',
       'landing.audience.owner_cta': 'Rent out my property',
-      'landing.audience.developer_cta': 'Explore professional management',
+      'landing.audience.management_cta': 'Explore management',
+      'landing.audience.developer_cta': 'Developer solutions',
+      'landing.audience.provider_cta': 'Join the marketplace',
 
       'landing.trust.kicker': 'TRUST IS IN THE DETAILS',
       'landing.trust.title': 'Designed for real stays and real property operations.',
       'landing.trust.verified': 'Verified property information',
-      'landing.trust.verified_body': 'Public facts are connected to the underlying project and home records.',
-      'landing.trust.handled': 'Transparent commercial terms',
-      'landing.trust.handled_body': 'Booking prices are confirmed through the pricing flow before the guest accepts.',
-      'landing.trust.protected': 'Controlled access',
-      'landing.trust.protected_body': 'Guests, owners, providers and teams see only the workflows relevant to them.',
+      'landing.trust.verified_body': 'Project, unit, media and public offering facts remain connected to the same underlying property record.',
+      'landing.trust.handled': 'Verified commercial status',
+      'landing.trust.handled_body': 'Only eligible active offerings reach public discovery; booking prices are confirmed through the pricing flow.',
+      'landing.trust.protected': 'Real operations, controlled access',
+      'landing.trust.protected_body': 'Bookings connect to stay operations while guests, owners, providers and teams see only their relevant workspace.',
       'landing.trust.cta': 'How trust works',
 
       'home.discovery.stay': 'Stay',
@@ -588,41 +593,63 @@ export default async function LandingPage() {
           </h2>
 
           <div className="mt-32 grid gap-16 md:grid-cols-2">
-            <Link
-              href="/rent-out"
-              className="group flex min-h-[220px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
-            >
-              <div>
-                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
-                <h3 className="mt-12 font-display text-display font-semibold text-text-ink">
-                  {labels['landing.audience.owners']}
-                </h3>
-                <p className="mt-12 max-w-md text-body text-text-secondary">
-                  {labels['landing.audience.owners_body']}
-                </p>
-              </div>
-              <span className="mt-32 font-semibold text-brand-andaman">
-                {labels['landing.audience.owner_cta']} →
-              </span>
-            </Link>
-
-            <Link
-              href="/manage"
-              className="group flex min-h-[220px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
-            >
-              <div>
-                <p className="text-kicker uppercase text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
-                <h3 className="mt-12 font-display text-display font-semibold">
-                  {labels['landing.audience.developers']}
-                </h3>
-                <p className="mt-12 max-w-md text-body text-surface-ivory/75">
-                  {labels['landing.audience.developers_body']}
-                </p>
-              </div>
-              <span className="mt-32 font-semibold text-surface-ivory">
-                {labels['landing.audience.developer_cta']} →
-              </span>
-            </Link>
+            {[
+              {
+                href: '/rent-out',
+                kicker: labels['landing.audience.owner_kicker'],
+                title: labels['landing.audience.owners'],
+                body: labels['landing.audience.owners_body'],
+                cta: labels['landing.audience.owner_cta'],
+                accent: false,
+              },
+              {
+                href: '/management-companies',
+                kicker: labels['landing.audience.partner_kicker'],
+                title: labels['landing.audience.management'],
+                body: labels['landing.audience.management_body'],
+                cta: labels['landing.audience.management_cta'],
+                accent: true,
+              },
+              {
+                href: '/developers',
+                kicker: labels['landing.audience.partner_kicker'],
+                title: labels['landing.audience.developers'],
+                body: labels['landing.audience.developers_body'],
+                cta: labels['landing.audience.developer_cta'],
+                accent: false,
+              },
+              {
+                href: '/providers',
+                kicker: labels['landing.audience.partner_kicker'],
+                title: labels['landing.audience.providers'],
+                body: labels['landing.audience.providers_body'],
+                cta: labels['landing.audience.provider_cta'],
+                accent: false,
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex min-h-[220px] flex-col justify-between rounded-2xl p-24 transition-shadow duration-structural hover:shadow-card md:p-32 ${
+                  item.accent
+                    ? 'bg-brand-andaman text-surface-ivory'
+                    : 'border border-border-line bg-surface-paper text-text-ink'
+                }`}
+              >
+                <div>
+                  <p className={`text-kicker uppercase ${item.accent ? 'text-brand-sun-soft' : 'text-brand-andaman'}`}>
+                    {item.kicker}
+                  </p>
+                  <h3 className="mt-12 font-display text-display font-semibold">{item.title}</h3>
+                  <p className={`mt-12 max-w-md text-body ${item.accent ? 'text-surface-ivory/75' : 'text-text-secondary'}`}>
+                    {item.body}
+                  </p>
+                </div>
+                <span className={`mt-32 font-semibold ${item.accent ? 'text-surface-ivory' : 'text-brand-andaman'}`}>
+                  {item.cta} →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -632,7 +659,7 @@ export default async function LandingPage() {
           <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
-              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-[40px] md:leading-[46px]">
+              <h2 id="global-desks-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink md:text-display-xl">
                 {labels['landing.desks.title']}
               </h2>
               <p className="mt-12 text-body text-text-secondary">{labels['landing.desks.body']}</p>
@@ -655,7 +682,7 @@ export default async function LandingPage() {
                 <h3 className="mt-16 font-display text-title font-semibold text-text-ink">{labels[desk.titleKey]}</h3>
                 <p className="mt-8 line-clamp-2 text-small leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
                 <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
-                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-[1px]">
+                <span className="mt-16 inline-block text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
                   {labels['landing.desks.open']} →
                 </span>
               </Link>

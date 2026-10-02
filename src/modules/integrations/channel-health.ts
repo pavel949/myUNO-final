@@ -100,6 +100,7 @@ export async function getChannelHealthForUnits(
       const ratesPush = ari.rates === true;
       const restrictionsPush = ari.restrictions === true;
       const fullAri = availabilityPush && ratesPush && restrictionsPush;
+      const verifiedAri = fullAri && mapping.syncState === 'ari_push';
       const partialAri = availabilityPush || ratesPush || restrictionsPush;
 
       const integrationKey = ICAL_KEY_BY_CHANNEL[mapping.channel];
@@ -119,7 +120,7 @@ export async function getChannelHealthForUnits(
         account?.status === 'error';
       let state: ChannelHealthState;
       if (error) state = 'error';
-      else if (fullAri) state = stale ? 'delayed' : 'healthy';
+      else if (verifiedAri) state = stale ? 'delayed' : 'healthy';
       else if (partialAri) state = 'connected';
       else state = 'manual_only';
 

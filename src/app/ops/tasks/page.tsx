@@ -19,13 +19,8 @@ export default async function OperationalTasksPage({
   const staffProjectIds = await getDepartmentProjectIds(user, [
     'housekeeping', 'front_desk', 'maintenance', 'guest_care', 'reservations',
   ]);
-  let projectIds = user.isAdmin
-    ? (await prisma.project.findMany({ select: { id: true } })).map((project) => project.id)
-    : [...staffProjectIds];
-
   const mcScopes = getMCProjectScopes(user);
-  projectIds = Array.from(new Set([...projectIds, ...mcScopes.map((scope) => scope.projectId)]));
-  if (!projectIds.length) redirect('/');
+  if (!user.isAdmin && !staffProjectIds.length && !mcScopes.length) redirect('/');
 
   const mcManagedUnitIds = new Set<string>();
   for (const scope of mcScopes) {
@@ -41,13 +36,19 @@ export default async function OperationalTasksPage({
   const requestedUnitId =
     typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
 
-  if (
-    requestedUnitId &&
-    !user.isAdmin &&
-    !staffProjectIds.length &&
-    !mcManagedUnitIds.has(requestedUnitId)
-  ) {
-    redirect('/ops/tasks');
+  if (requestedUnitId && !user.isAdmin) {
+    const requestedUnit = await prisma.unit.findUnique({
+      where: { id: requestedUnitId },
+      select: { projectId: true },
+    });
+    const allowed = Boolean(
+      requestedUnit &&
+      (
+        staffProjectIds.includes(requestedUnit.projectId) ||
+        mcManagedUnitIds.has(requestedUnitId)
+      )
+    );
+    if (!allowed) redirect('/ops/tasks');
   }
 
   const labels = await getLabels({
@@ -64,11 +65,11 @@ export default async function OperationalTasksPage({
   });
 
   const tasks = await listOperationalTasks(prisma, {
-    projectIds,
+    ...(!user.isAdmin ? {
+      projectIds: staffProjectIds,
+      unitIds: Array.from(mcManagedUnitIds),
+    } : {}),
     unitId: requestedUnitId,
-    ...(!user.isAdmin && !staffProjectIds.length
-      ? { unitIds: Array.from(mcManagedUnitIds) }
-      : {}),
     statuses: ['planned', 'assigned', 'in_progress', 'inspected'],
   });
 

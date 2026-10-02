@@ -37,6 +37,7 @@ export default async function OperationalTasksPage({
 
   const requestedUnitId =
     typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
+  const explicitMcMode = searchParams?.mc === '1' && mcScopes.length > 0;
 
   if (requestedUnitId && !user.isAdmin) {
     const requestedUnit = await prisma.unit.findUnique({
@@ -55,7 +56,6 @@ export default async function OperationalTasksPage({
     if (!allowed) redirect(explicitMcMode ? '/ops/tasks?mc=1' : '/ops/tasks');
   }
 
-  const explicitMcMode = searchParams?.mc === '1' && mcScopes.length > 0;
   const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
   const backHref = explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
 

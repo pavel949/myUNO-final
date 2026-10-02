@@ -168,7 +168,10 @@ BEGIN
   IF publication_status IS DISTINCT FROM 'draft'::"ResearchPublicationStatus" THEN
     RAISE EXCEPTION 'research sources are frozen once review begins';
   END IF;
-  RETURN COALESCE(NEW, OLD);
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 

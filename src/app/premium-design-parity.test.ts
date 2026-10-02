@@ -60,6 +60,7 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).not.toContain('id="start-heading"');
     const discovery = source('src/components/DiscoverySearch.tsx');
+    // Consumer search is deliberately Stay / Monthly / Buy; supplier intents live beside it on the homepage.
     expect(discovery).toContain("{ id: 'stay', title: labels.stay }");
     expect(discovery).toContain("{ id: 'monthly', title: labels.monthly }");
     expect(discovery).toContain("{ id: 'buy', title: labels.buy }");

@@ -25,8 +25,8 @@ export default async function ProviderLayout({
   );
 
   const labels = await getLabels({
-    'provider.portal.title': 'Provider Portal',
-    'provider.portal.nav_orders': 'Orders',
+    'provider.portal.title': 'Provider workspace',
+    'provider.portal.nav_orders': 'My Orders',
     'provider.portal.nav_services': 'My Services',
     'provider.portal.nav_remittances': 'Remittances',
   });

@@ -1873,6 +1873,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'search.filters.min_price', namespace: 'search', description: 'Search filter: min nightly THB', en: 'Min nightly THB', ru: 'Мин. за ночь, THB', th: 'ราคาต่ำสุดต่อคืน (THB)', status: NR },
   { key: 'search.filters.max_price', namespace: 'search', description: 'Search filter: max nightly THB', en: 'Max nightly THB', ru: 'Макс. за ночь, THB', th: 'ราคาสูงสุดต่อคืน (THB)', status: NR },
   { key: 'search.filters.clear', namespace: 'search', description: 'Search filter: clear', en: 'Clear filters', ru: 'Сбросить фильтры', th: 'ล้างตัวกรอง', status: NR },
+  { key: 'search.filters.bedrooms', namespace: 'search', description: 'Active bedroom filter', en: 'Bedrooms', ru: 'Спальни', th: 'ห้องนอน', status: NR },
 
   // Unit detail page
   { key: 'listing.loading', namespace: 'listing', description: 'Unit detail loading message', en: 'Loading unit details…', ru: 'Загружаем данные…', th: 'กำลังโหลดรายละเอียดห้อง…', status: NR },

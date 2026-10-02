@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from './supplierListingAccess';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
@@ -20,7 +21,8 @@ export async function managedMediaAccess(scope: { projectId: string; unitId?: st
   const mc = scope.unitId ? await hasManagedUnitMcAccess(user, {
     projectId: scope.projectId, unitId: scope.unitId,
   }) : false;
-  if (!user.isAdmin && !staff && !mc) {
+  const selfListing = scope.unitId ? await hasSelfListingAccess(user.identityId, scope.unitId) : false;
+  if (!user.isAdmin && !staff && !mc && !selfListing) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;
   }
   return { user } as const;

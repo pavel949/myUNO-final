@@ -24,15 +24,15 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className={`group relative isolate overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
-        featured ? 'min-h-[420px] md:col-span-2 md:row-span-2 md:min-h-[520px]' : 'min-h-[230px] md:min-h-[250px]'
+      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+        featured ? 'min-h-[340px] md:min-h-[516px]' : 'min-h-[280px] md:min-h-[250px]'
       }`}
     >
       <Image
         src={image.src}
         alt={image.illustrative ? '' : project.name}
         fill
-        sizes={featured ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 50vw, 33vw'}
+        sizes={featured ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw'}
         className="object-cover transition duration-700 group-hover:scale-[1.03]"
       />
 
@@ -62,9 +62,9 @@ export function ProjectCard({
           </p>
         ) : null}
 
-        <div className="mt-12 flex items-end justify-between gap-12">
+        <div className="mt-12 flex flex-wrap items-end justify-between gap-8">
           {labels.fromPrice && project.fromNightlyThb !== null ? (
-            <p className="text-small font-semibold text-white/90">
+            <p className="max-w-full text-small font-semibold text-white/90">
               {labels.fromPrice.replace(
                 '{price}',
                 Math.round(project.fromNightlyThb / 100).toLocaleString()

@@ -23,9 +23,9 @@ describe('connected public homepage', () => {
   });
   it('keeps date-aware stays on canonical search and makes other modes navigational', () => {
     expect(discovery).toContain("router.push('/search?' + params.toString())");
-    expect(discovery).toContain("router.push('/homes?intent=buy')");
+    expect(discovery).toContain("router.push('/homes?' + params.toString())");
     expect(discovery).toContain("router.push('/manage')");
-    expect(discovery).toContain("router.push('/sell')");
+    expect(discovery).toContain("/property/onboard?kind=home&offers=sale");
     expect(discovery).toContain("mode === 'rent'");
     expect(discovery).toContain("{ id: 'rent', title: labels.rent }");
     expect(discovery).toContain("{ id: 'buy', title: labels.buy }");

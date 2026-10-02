@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { getLabels } from '@/lib/i18n';
+import { supplierCopy } from '@/modules/onboarding/supplier-copy';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
 import { prisma } from '@/lib/prisma';
@@ -122,12 +123,12 @@ export default async function OwnersPage() {
             {labels['audience.owners.hero_lede']}
           </p>
           <Link
-            href="/property/onboard"
+            href="/rent-out"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
-            {labels['audience.owners.add_property']} →
+            {supplierCopy(getRequestLocale()).list} →
           </Link>
-          <Link href="#lead-form" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{labels['audience.owners.cta']}</Link>
+          <Link href="/manage" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{supplierCopy(getRequestLocale()).request}</Link>
         </div>
       </section>
 

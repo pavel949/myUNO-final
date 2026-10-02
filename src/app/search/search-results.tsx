@@ -61,6 +61,7 @@ export interface SearchResultsLabels {
   filterMin: string;
   filterMax: string;
   filterClear: string;
+  filterBedrooms?: string;
   mapLoading: string;
   mapUnavailable: string;
   mapReset: string;
@@ -111,6 +112,7 @@ export default function SearchResults({
   const areaSlug = searchParams?.get('areaSlug');
   const stayMode = searchParams?.get('stayMode');
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
+  const bedrooms = searchParams?.get('bedrooms') || '';
   const unitTypes = searchParams?.get('unitTypes') || '';
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
@@ -149,6 +151,7 @@ export default function SearchResults({
         if (projectId) params.set('projectId', projectId);
         if (areaSlug) params.set('areaSlug', areaSlug);
         if (stayMode) params.set('stayMode', stayMode);
+        if (bedrooms) params.set('bedrooms', bedrooms);
         if (unitTypes) params.set('unitTypes', unitTypes);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
@@ -203,7 +206,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -368,6 +371,7 @@ export default function SearchResults({
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-12">
+              {bedrooms && <p className="text-small text-text-stone">{labels.filterBedrooms || 'Bedrooms'}: {bedrooms}</p>}
               <label className="text-small text-text-stone">
                 {labels.filterMin}
                 <input
@@ -398,7 +402,7 @@ export default function SearchResults({
                   className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
-              {(unitTypes || minPrice || maxPrice) && (
+              {(bedrooms || unitTypes || minPrice || maxPrice) && (
                 <button
                   type="button"
                   onClick={() =>
@@ -406,6 +410,7 @@ export default function SearchResults({
                       next.delete('unitTypes');
                       next.delete('minPrice');
                       next.delete('maxPrice');
+                      next.delete('bedrooms');
                     })
                   }
                   className="h-40 text-small font-semibold text-brand-andaman hover:underline"

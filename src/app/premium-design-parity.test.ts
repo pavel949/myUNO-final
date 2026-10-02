@@ -41,10 +41,10 @@ describe('premium design-system surface parity', () => {
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');
     expect(source('src/app/areas/[slug]/page.tsx')).toContain('getAreaForBrowse(prisma');
     expect(source('src/app/(public)/help/page.tsx')).toContain("'/tickets'");
-    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('/property/onboard?offers=short_stay');
+    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('/property/onboard?kind=home&offers=short_stay,monthly,yearly');
     expect(source('src/app/(public)/sell/page.tsx')).toContain('/property/onboard?offers=sale');
     expect(source('src/app/(public)/rent-out/page.tsx')).toContain('href="/manage"');
-    expect(source('src/app/(public)/manage/page.tsx')).toContain('/property/onboard?kind=home&operatingModel=direct_managed');
+    expect(source('src/app/(public)/manage/page.tsx')).toContain('href="#lead-form"');
     const onboardPage = source('src/app/property/onboard/page.tsx');
     expect(onboardPage).toContain("params.set('offers'");
     expect(onboardPage).toContain("params.set('operatingModel'");
@@ -60,9 +60,9 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).not.toContain('id="start-heading"');
     const discovery = source('src/components/DiscoverySearch.tsx');
-    expect(discovery).toContain("router.push('/sell')");
+    expect(discovery).toContain("/property/onboard?kind=home&offers=sale");
     expect(discovery).toContain("router.push('/manage')");
-    expect(discovery).toContain("router.push('/homes?intent=buy')");
+    expect(discovery).toContain("router.push('/homes?' + params.toString())");
     expect(home).toContain("landing.units.title");
     expect(home).toContain("landing.areas.title");
     expect(home).toContain('GLOBAL_DESKS.map');

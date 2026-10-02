@@ -4,10 +4,11 @@ import { prisma } from '@/lib/prisma';
 import PropertySubmissionWizard from './wizard';
 
 export const dynamic = 'force-dynamic';
-export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string } }) {
+export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string; submissionId?: string } }) {
   const user = await getCurrentUser();
   if (!user) {
     const params = new URLSearchParams();
+    if (typeof searchParams?.submissionId === 'string') params.set('submissionId', searchParams.submissionId);
     if (typeof searchParams?.projectId === 'string') params.set('projectId', searchParams.projectId);
     if (typeof searchParams?.offers === 'string') params.set('offers', searchParams.offers);
     if (typeof searchParams?.kind === 'string') params.set('kind', searchParams.kind);
@@ -31,6 +32,7 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
   return <PropertySubmissionWizard
     projects={projects}
     areas={areas}
+    initialSubmissionId={searchParams?.submissionId}
     initialProjectId={initialProjectId}
     initialOffers={initialOffers}
     initialKind={initialKind}

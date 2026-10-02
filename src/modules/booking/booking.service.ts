@@ -684,6 +684,7 @@ export async function checkInBooking(
   // previous departure. Any open cleaning/inspection obligation blocks the
   // next arrival; there is no UI-only "ready" flag to drift from operations.
   const checkedIn = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
     const readinessBlockers = await tx.operationalTask.findMany({
       where: {
         unitId: booking.unitId,
@@ -740,6 +741,7 @@ export async function checkOutBooking(
   // State transition and turnover obligations commit atomically. A failed task
   // write must never leave a checked-out stay with no readiness work behind it.
   const checkedOut = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
     const updated = await tx.booking.update({
       where: { id: bookingId },
       data: {

@@ -113,10 +113,10 @@ export function DiscoverySearch({
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border border-white/10 bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
+      className="rounded-2xl border border-border-line bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
       aria-label={labels.explore}
     >
-      <div className="mb-12 grid grid-cols-4 gap-4" role="group" aria-label={labels.explore}>
+      <div className="mb-12 grid grid-cols-2 gap-8 sm:grid-cols-4" role="group" aria-label={labels.explore}>
         {options.map((item) => (
           <button
             key={item.id}
@@ -158,12 +158,12 @@ export function DiscoverySearch({
             </select>
           </label>
 
-          {projects.length > 0 && <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8">
-            <summary className="cursor-pointer text-small font-semibold text-brand-andaman">{labels.projects}{projectId ? ` · ${projects.find(p => p.id === projectId)?.name || ''}` : ''}</summary>
+          {projects.length > 0 && <details className="col-span-2 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 py-8">
+            <summary className="min-h-32 cursor-pointer break-words text-small font-semibold text-brand-andaman">{labels.projects}{projectId ? ` · ${projects.find(p => p.id === projectId)?.name || ''}` : ''}</summary>
             <input aria-label={labels.projects} type="search" value={projectQuery} onChange={e => setProjectQuery(e.target.value)} placeholder={labels.projects} className="mt-8 h-44 w-full rounded-lg border border-border-line bg-surface-paper px-12 text-text-ink" />
-            <div className="mt-8 flex max-h-[160px] flex-wrap gap-8 overflow-y-auto">
-              <button type="button" aria-pressed={!projectId} onClick={() => setProjectId('')} className={`min-h-44 rounded-full border px-12 text-small ${!projectId ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{copy.all}</button>
-              {projects.filter(p => p.name.toLocaleLowerCase(locale).includes(projectQuery.toLocaleLowerCase(locale))).map(project => <button key={project.id} type="button" aria-pressed={projectId === project.id} onClick={() => { setProjectId(project.id); setDestination(''); }} className={`min-h-44 rounded-full border px-12 text-small ${projectId === project.id ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{project.name}</button>)}
+            <div className="mt-8 flex max-h-[160px] flex-wrap gap-8 overflow-y-auto overscroll-contain">
+              <button type="button" aria-pressed={!projectId} onClick={() => setProjectId('')} className={`min-h-44 max-w-full break-words rounded-full border px-12 py-8 text-left text-small ${!projectId ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{copy.all}</button>
+              {projects.filter(p => p.name.toLocaleLowerCase(locale).includes(projectQuery.toLocaleLowerCase(locale))).map(project => <button key={project.id} type="button" aria-pressed={projectId === project.id} onClick={() => { setProjectId(project.id); setDestination(''); }} className={`min-h-44 max-w-full break-words rounded-full border px-12 py-8 text-left text-small ${projectId === project.id ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{project.name}</button>)}
             </div>
           </details>}
           {mode === 'rent' && <StayDatePicker start={startDate} end={endDate} min={today} locale={locale} labels={{ checkIn: labels.checkIn, checkOut: labels.checkOut, ...copy }} onChange={(start, end) => { setStartDate(start); setEndDate(end); setError(''); }} />}

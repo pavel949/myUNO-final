@@ -240,7 +240,7 @@ export default async function LandingPage() {
       />
 
       <section
-        className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px] md:max-h-[860px]"
+        className="relative isolate min-h-[calc(100svh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px] "
         aria-labelledby="home-title"
       >
         <Image
@@ -249,23 +249,23 @@ export default async function LandingPage() {
           fill
           priority
           sizes={["100", "vw"].join("")}
-          className="object-cover brightness-[1.08] saturate-[0.92]"
+          className="object-cover saturate-[1.08]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/95 via-surface-paper/75 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-paper/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/85 via-surface-paper/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/20 via-transparent to-transparent" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
-          <div className="max-w-4xl">
+        <div className="relative mx-auto flex min-h-[calc(100svh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-32 md:min-h-[720px] md:px-32 md:pb-56">
+          <div className="max-w-2xl">
             <p className="text-kicker uppercase text-brand-andaman">
               {labels['landing.global_hero.kicker']}
             </p>
             <h1
               id="home-title"
-              className="mt-12 max-w-4xl font-display text-display-hero font-semibold text-text-ink md:text-display-hero-lg"
+              className="mt-12 max-w-2xl font-display text-display-hero font-semibold text-text-ink md:text-display-hero-lg"
             >
               {labels['landing.global_hero.title']}
             </h1>
-            <p className="mt-20 max-w-2xl text-body text-text-secondary md:text-subtitle">
+            <p className="mt-20 max-w-xl text-body text-text-ink md:text-subtitle">
               {labels['landing.global_hero.subtitle']}
             </p>
             <div className="mt-20 flex flex-wrap gap-8">
@@ -367,16 +367,16 @@ export default async function LandingPage() {
           </div>
 
           {featuredProjects.length ? (
-            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:auto-rows-[250px] md:gap-16">
+            <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 md:grid-cols-3 md:auto-rows-[250px] md:gap-16">
               {featuredProjects.map((project, index) => (
                 <div
                   key={project.id}
                   className={
                     index === 0
-                      ? 'col-span-2 md:col-span-2 md:row-span-2'
+                      ? 'min-w-0 sm:col-span-2 md:col-span-2 md:row-span-2'
                       : index === 4
-                        ? 'col-span-2 md:col-span-2'
-                        : 'col-span-1'
+                        ? 'min-w-0 sm:col-span-2 md:col-span-2'
+                        : 'min-w-0 col-span-1'
                   }
                 >
                   <ProjectCard
@@ -539,7 +539,7 @@ export default async function LandingPage() {
           </div>
 
           {services.length ? (
-            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:gap-20">
+            <div className="grid grid-cols-1 gap-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-20">
               {services.map((service) => (
                 <ServiceCard
                   key={service.id}
@@ -669,7 +669,7 @@ export default async function LandingPage() {
           <div className="mt-32 grid gap-16 md:grid-cols-2">
             <Link
               href="/rent-out"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
+              className="group flex min-h-[220px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
@@ -687,7 +687,7 @@ export default async function LandingPage() {
 
             <Link
               href="/manage"
-              className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
+              className="group flex min-h-[220px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
                 <p className="text-kicker uppercase text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>

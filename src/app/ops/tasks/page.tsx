@@ -26,29 +26,35 @@ export default async function OperationalTasksPage({
   projectIds = Array.from(new Set([...projectIds, ...mcScopes.map((scope) => scope.projectId)]));
   if (!projectIds.length) redirect('/');
 
+  const mcManagedUnitIds = new Set<string>();
+  for (const scope of mcScopes) {
+    const units = await getMCManagedUnits(
+      prisma,
+      user.identityId,
+      scope.projectId,
+      scope.organizationId
+    );
+    for (const unit of units) mcManagedUnitIds.add(unit.id);
+  }
+
   const requestedUnitId =
     typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
 
-  if (requestedUnitId && !user.isAdmin && !staffProjectIds.length) {
-    let allowed = false;
-    for (const scope of mcScopes) {
-      const units = await getMCManagedUnits(
-        prisma,
-        user.identityId,
-        scope.projectId,
-        scope.organizationId
-      );
-      if (units.some((unit) => unit.id === requestedUnitId)) {
-        allowed = true;
-        break;
-      }
-    }
-    if (!allowed) redirect('/ops/tasks');
+  if (
+    requestedUnitId &&
+    !user.isAdmin &&
+    !staffProjectIds.length &&
+    !mcManagedUnitIds.has(requestedUnitId)
+  ) {
+    redirect('/ops/tasks');
   }
 
   const tasks = await listOperationalTasks(prisma, {
     projectIds,
     unitId: requestedUnitId,
+    ...(!user.isAdmin && !staffProjectIds.length
+      ? { unitIds: Array.from(mcManagedUnitIds) }
+      : {}),
     statuses: ['planned', 'assigned', 'in_progress', 'inspected'],
   });
 

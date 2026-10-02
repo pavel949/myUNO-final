@@ -56,10 +56,10 @@ export function DiscoverySearch({
   const [projectQuery, setProjectQuery] = useState('');
   const [projectId, setProjectId] = useState('');
   const copy = locale === 'ru'
-    ? { type: 'Тип недвижимости', all: 'Любой', villa: 'Вилла', condo: 'Кондо', bedrooms: 'Спальни', budget: 'Бюджет до, ฿ / ночь', monthlyBudget: 'Бюджет до, ฿ / месяц', buyBudget: 'Бюджет покупки до, ฿', previous: 'Предыдущий месяц', next: 'Следующий месяц', close: 'Готово', clear: 'Сбросить' }
+    ? { type: 'Тип недвижимости', all: 'Любой', villa: 'Вилла', condo: 'Кондо', bedrooms: 'Спальни', budget: 'Бюджет до, ฿ / ночь', monthlyBudget: 'Бюджет до, ฿ / месяц', buyBudget: 'Бюджет покупки до, ฿', previous: 'Предыдущий месяц', next: 'Следующий месяц', close: 'Готово', clear: 'Сбросить', moreFilters: 'Больше фильтров' }
     : locale === 'th'
-      ? { type: 'ประเภทที่พัก', all: 'ทั้งหมด', villa: 'วิลล่า', condo: 'คอนโด', bedrooms: 'ห้องนอน', budget: 'งบสูงสุด ฿ / คืน', monthlyBudget: 'งบสูงสุด ฿ / เดือน', buyBudget: 'งบซื้อสูงสุด ฿', previous: 'เดือนก่อนหน้า', next: 'เดือนถัดไป', close: 'เสร็จสิ้น', clear: 'ล้าง' }
-      : { type: 'Property type', all: 'Any', villa: 'Villa', condo: 'Condo', bedrooms: 'Bedrooms', budget: 'Budget up to, ฿ / night', monthlyBudget: 'Budget up to, ฿ / month', buyBudget: 'Purchase budget up to, ฿', previous: 'Previous month', next: 'Next month', close: 'Done', clear: 'Clear' };
+      ? { type: 'ประเภทที่พัก', all: 'ทั้งหมด', villa: 'วิลล่า', condo: 'คอนโด', bedrooms: 'ห้องนอน', budget: 'งบสูงสุด ฿ / คืน', monthlyBudget: 'งบสูงสุด ฿ / เดือน', buyBudget: 'งบซื้อสูงสุด ฿', previous: 'เดือนก่อนหน้า', next: 'เดือนถัดไป', close: 'เสร็จสิ้น', clear: 'ล้าง', moreFilters: 'ตัวกรองเพิ่มเติม' }
+      : { type: 'Property type', all: 'Any', villa: 'Villa', condo: 'Condo', bedrooms: 'Bedrooms', budget: 'Budget up to, ฿ / night', monthlyBudget: 'Budget up to, ฿ / month', buyBudget: 'Purchase budget up to, ฿', previous: 'Previous month', next: 'Next month', close: 'Done', clear: 'Clear', moreFilters: 'More filters' };
   const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
@@ -189,19 +189,26 @@ export function DiscoverySearch({
           </label>
 
           </>}
-          <label className="grid gap-8 text-small text-text-secondary">{copy.type}
-            <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={unitType} onChange={e => setUnitType(e.target.value)}>
-              <option value="">{copy.all}</option><option value="villa">{copy.villa}</option><option value="condo">{copy.condo}</option>
-            </select>
-          </label>
-          <label className="grid gap-8 text-small text-text-secondary">{copy.bedrooms}
-            <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={bedrooms} onChange={e => setBedrooms(e.target.value)}>
-              <option value="">{copy.all}</option>{[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}{mode === 'buy' ? '+' : ''}</option>)}
-            </select>
-          </label>
-          <label className="col-span-2 grid gap-8 text-small text-text-secondary">{mode === 'stay' ? copy.budget : mode === 'monthly' ? copy.monthlyBudget : copy.buyBudget}
-            <input type="number" min="0" step="100" value={budget} onChange={e => setBudget(e.target.value)} className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" />
-          </label>
+          <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8 lg:col-span-4">
+            <summary className="min-h-32 cursor-pointer text-small font-semibold text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+              {copy.moreFilters}
+            </summary>
+            <div className="mt-12 grid gap-8 sm:grid-cols-3">
+              <label className="grid gap-8 text-small text-text-secondary">{copy.type}
+                <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={unitType} onChange={e => setUnitType(e.target.value)}>
+                  <option value="">{copy.all}</option><option value="villa">{copy.villa}</option><option value="condo">{copy.condo}</option>
+                </select>
+              </label>
+              <label className="grid gap-8 text-small text-text-secondary">{copy.bedrooms}
+                <select className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" value={bedrooms} onChange={e => setBedrooms(e.target.value)}>
+                  <option value="">{copy.all}</option>{[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}{mode === 'buy' ? '+' : ''}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-8 text-small text-text-secondary">{mode === 'stay' ? copy.budget : mode === 'monthly' ? copy.monthlyBudget : copy.buyBudget}
+                <input type="number" min="0" step="100" value={budget} onChange={e => setBudget(e.target.value)} className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink" />
+              </label>
+            </div>
+          </details>
           <button
             className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman lg:col-span-1"
             type="submit"

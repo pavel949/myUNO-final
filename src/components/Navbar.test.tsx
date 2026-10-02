@@ -19,6 +19,7 @@ describe('Navbar', () => {
           stay: 'Stay',
           monthly: 'Monthly',
           buy: 'Buy',
+          homes: 'Homes',
           sell: 'Sell',
           rentOut: 'Rent Out',
           manage: 'Manage',

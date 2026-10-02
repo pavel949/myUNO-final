@@ -123,7 +123,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     ? [
         { href: '/trips', label: labels.myTrips },
         { href: '/saved', label: labels.saved },
-        { href: '/property/onboard', label: labels.addProperty },
+        { href: '/property/listings', label: labels.addProperty },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },

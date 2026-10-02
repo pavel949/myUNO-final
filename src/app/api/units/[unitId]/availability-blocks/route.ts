@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -58,7 +59,7 @@ export async function GET(_req: NextRequest, { params }: { params: { unitId: str
     action: 'units:manage_availability_and_pricing',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed) {
+  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest, { params }: { params: { unitId: str
     requiredAccess: 'allow',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed) {
+  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

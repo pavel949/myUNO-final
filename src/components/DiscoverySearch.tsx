@@ -54,8 +54,9 @@ export function DiscoverySearch({
   const [unitType, setUnitType] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [budget, setBudget] = useState('');
-  const [managementPath, setManagementPath] = useState('home');
-  const copy = locale === 'ru' ? { type: 'Тип недвижимости', all: 'Любой', villa: 'Вилла', condo: 'Кондо', bedrooms: 'Спальни', budget: 'Бюджет до, ฿ / ночь', buyBudget: 'Бюджет покупки до, ฿', previous: 'Предыдущий месяц', next: 'Следующий месяц', close: 'Готово', clear: 'Сбросить', manage: 'Передайте объект в управление myUNO или подключите портфель управляющей компании.', home: 'Мой объект', portfolio: 'Портфель / компания', apply: 'Подать заявку на управление', sell: 'Добавьте объект для продажи: данные, фотографии и подтверждение полномочий.', sellCta: 'Добавить объект для продажи' } : locale === 'th' ? { type: 'ประเภทที่พัก', all: 'ทั้งหมด', villa: 'วิลล่า', condo: 'คอนโด', bedrooms: 'ห้องนอน', budget: 'งบสูงสุด ฿ / คืน', buyBudget: 'งบซื้อสูงสุด ฿', previous: 'เดือนก่อนหน้า', next: 'เดือนถัดไป', close: 'เสร็จสิ้น', clear: 'ล้าง', manage: 'สมัครให้ myUNO ดูแลที่พัก หรือเชื่อมต่อพอร์ตของบริษัทจัดการ', home: 'ที่พักของฉัน', portfolio: 'พอร์ต / บริษัท', apply: 'สมัครการจัดการ', sell: 'เพิ่มที่พักเพื่อขาย พร้อมรายละเอียด รูปภาพ และหลักฐานสิทธิ์', sellCta: 'เพิ่มที่พักเพื่อขาย' } : { type: 'Property type', all: 'Any', villa: 'Villa', condo: 'Condo', bedrooms: 'Bedrooms', budget: 'Budget up to, ฿ / night', buyBudget: 'Purchase budget up to, ฿', previous: 'Previous month', next: 'Next month', close: 'Done', clear: 'Clear', manage: 'Apply for myUNO property management or connect your management company portfolio.', home: 'My property', portfolio: 'Portfolio / company', apply: 'Apply for management', sell: 'Add a property for sale with its details, photos and listing authority.', sellCta: 'Add property for sale' };
+  const [projectQuery, setProjectQuery] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const copy = locale === 'ru' ? { type: 'Тип недвижимости', all: 'Любой', villa: 'Вилла', condo: 'Кондо', bedrooms: 'Спальни', budget: 'Бюджет до, ฿ / ночь', buyBudget: 'Бюджет покупки до, ฿', previous: 'Предыдущий месяц', next: 'Следующий месяц', close: 'Готово', clear: 'Сбросить', manage: 'Передайте объект в управление myUNO: доход, обслуживание и отчётность в одном месте.', home: 'Мой объект', portfolio: 'Портфель / компания', apply: 'Подать заявку на управление', sell: 'Добавьте объект для продажи: данные, фотографии и подтверждение полномочий.', sellCta: 'Добавить объект для продажи' } : locale === 'th' ? { type: 'ประเภทที่พัก', all: 'ทั้งหมด', villa: 'วิลล่า', condo: 'คอนโด', bedrooms: 'ห้องนอน', budget: 'งบสูงสุด ฿ / คืน', buyBudget: 'งบซื้อสูงสุด ฿', previous: 'เดือนก่อนหน้า', next: 'เดือนถัดไป', close: 'เสร็จสิ้น', clear: 'ล้าง', manage: 'ให้ myUNO ดูแลที่พัก รายได้จากการเช่า และรายงานสำหรับเจ้าของ', home: 'ที่พักของฉัน', portfolio: 'พอร์ต / บริษัท', apply: 'สมัครการจัดการ', sell: 'เพิ่มที่พักเพื่อขาย พร้อมรายละเอียด รูปภาพ และหลักฐานสิทธิ์', sellCta: 'เพิ่มที่พักเพื่อขาย' } : { type: 'Property type', all: 'Any', villa: 'Villa', condo: 'Condo', bedrooms: 'Bedrooms', budget: 'Budget up to, ฿ / night', buyBudget: 'Purchase budget up to, ฿', previous: 'Previous month', next: 'Next month', close: 'Done', clear: 'Clear', manage: 'Let myUNO manage your property: rental income, property care and owner reporting.', home: 'My property', portfolio: 'Portfolio / company', apply: 'Apply for management', sell: 'Add a property for sale with its details, photos and listing authority.', sellCta: 'Add property for sale' };
   const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
@@ -73,7 +74,7 @@ export function DiscoverySearch({
     if (mode === 'buy') {
       const params = new URLSearchParams({ intent: 'buy' });
       if (destination.startsWith('area:')) params.set('area', destination.slice(5));
-      if (destination.startsWith('project:')) params.set('projectId', destination.slice(8));
+      if (projectId) params.set('projectId', projectId);
       if (unitType) params.set('type', unitType);
       if (bedrooms) params.set('bedrooms', bedrooms);
       if (budget) params.set('maxPrice', budget);
@@ -81,7 +82,7 @@ export function DiscoverySearch({
       return;
     }
     if (mode === 'manage') {
-      router.push(managementPath === 'home' ? '/property/onboard?kind=home&operatingModel=direct_managed' : '/property/onboard?kind=project&operatingModel=via_management_company');
+      router.push('/manage');
       return;
     }
     if (mode === 'sell') {
@@ -99,9 +100,8 @@ export function DiscoverySearch({
       adults: String(adults),
       children: String(children),
     });
-    if (destination.startsWith('project:')) {
-      params.set('projectId', destination.slice('project:'.length));
-    } else if (destination.startsWith('area:')) {
+    if (projectId) params.set('projectId', projectId);
+    if (destination.startsWith('area:')) {
       params.set('areaSlug', destination.slice('area:'.length));
     }
     if (unitType) params.set('unitTypes', unitType);
@@ -145,7 +145,7 @@ export function DiscoverySearch({
             <select
               className="h-48 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
+              onChange={(e) => { setDestination(e.target.value); setProjectId(''); }}
             >
               <option value="">{labels.allPhuket}</option>
               {areas.length ? (
@@ -155,16 +155,17 @@ export function DiscoverySearch({
                   ))}
                 </optgroup>
               ) : null}
-              {projects.length ? (
-                <optgroup label={labels.projects}>
-                  {projects.map((project) => (
-                    <option key={project.id} value={`project:${project.id}`}>{project.name}</option>
-                  ))}
-                </optgroup>
-              ) : null}
             </select>
           </label>
 
+          {projects.length > 0 && <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8">
+            <summary className="cursor-pointer text-small font-semibold text-brand-andaman">{labels.projects}{projectId ? ` · ${projects.find(p => p.id === projectId)?.name || ''}` : ''}</summary>
+            <input aria-label={labels.projects} type="search" value={projectQuery} onChange={e => setProjectQuery(e.target.value)} placeholder={labels.projects} className="mt-8 h-44 w-full rounded-lg border border-border-line bg-surface-paper px-12 text-text-ink" />
+            <div className="mt-8 flex max-h-[160px] flex-wrap gap-8 overflow-y-auto">
+              <button type="button" aria-pressed={!projectId} onClick={() => setProjectId('')} className={`min-h-44 rounded-full border px-12 text-small ${!projectId ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{copy.all}</button>
+              {projects.filter(p => p.name.toLocaleLowerCase(locale).includes(projectQuery.toLocaleLowerCase(locale))).map(project => <button key={project.id} type="button" aria-pressed={projectId === project.id} onClick={() => { setProjectId(project.id); setDestination(''); }} className={`min-h-44 rounded-full border px-12 text-small ${projectId === project.id ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line bg-surface-paper'}`}>{project.name}</button>)}
+            </div>
+          </details>}
           {mode === 'rent' && <StayDatePicker start={startDate} end={endDate} min={today} locale={locale} labels={{ checkIn: labels.checkIn, checkOut: labels.checkOut, ...copy }} onChange={(start, end) => { setStartDate(start); setEndDate(end); setError(''); }} />}
 
           {mode === 'rent' && <><label className="grid gap-8 text-small text-text-secondary">
@@ -217,7 +218,7 @@ export function DiscoverySearch({
       ) : (
         <div className="flex flex-col items-start justify-between gap-16 rounded-xl bg-surface-ivory px-16 py-16 md:flex-row md:items-center">
           <p className="max-w-2xl text-body text-text-secondary">{mode === 'manage' ? copy.manage : copy.sell}</p>
-          {mode === 'manage' && <select aria-label={copy.manage} value={managementPath} onChange={e => setManagementPath(e.target.value)} className="h-48 w-full rounded-lg border border-border-line bg-surface-paper px-12 md:w-auto"><option value="home">{copy.home}</option><option value="portfolio">{copy.portfolio}</option></select>}
+
           <button
             type="submit"
             className="h-48 w-full shrink-0 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep md:w-auto"

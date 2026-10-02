@@ -130,6 +130,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             throw new Error('Bedrooms, bathrooms and capacity must be valid.');
           }
 
+          const proposedNightlyBaht = data.proposedNightlyBaht == null ? 0 : Number(data.proposedNightlyBaht);
+          const proposedMinNights = data.proposedMinNights == null ? 1 : Number(data.proposedMinNights);
+          if (!Number.isSafeInteger(proposedNightlyBaht) || proposedNightlyBaht < 0 || proposedNightlyBaht > 10000000 || !Number.isSafeInteger(proposedMinNights) || proposedMinNights < 1 || proposedMinNights > 365) throw new Error('Invalid proposed rental terms.');
           const unit = await tx.unit.create({
             data: {
               projectId,
@@ -145,8 +148,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
               floor: String(data.floor || '') || null,
               addressSupplement: unitName,
               descriptionKey: `unit.${application.id.replace(/-/g, '')}.description`,
-              baseNightlyThb: 0,
-              minNights: 1,
+              baseNightlyThb: proposedNightlyBaht * 100,
+              minNights: proposedMinNights,
               status: 'draft',
               instantBook: false,
             },

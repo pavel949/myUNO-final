@@ -44,7 +44,8 @@ describe('DiscoverySearch', () => {
     fireEvent.click(screen.getByRole('button', {name: 'Buy'}));
     expect(screen.queryByLabelText('Adults')).toBeNull();
     expect(screen.queryByRole('button', {name: 'Check-in → Check-out'})).toBeNull();
-    fireEvent.change(screen.getByLabelText('Where'), {target: {value: 'project:p1'}});
+    fireEvent.click(screen.getByText('Projects'));
+    fireEvent.click(screen.getByRole('button', {name: 'Project'}));
     fireEvent.change(screen.getByLabelText('Property type'), {target: {value: 'condo'}});
     fireEvent.change(screen.getByLabelText('Purchase budget up to, ฿'), {target: {value: '5000000'}});
     fireEvent.submit(screen.getByRole('form'));
@@ -54,7 +55,7 @@ describe('DiscoverySearch', () => {
     render(<DiscoverySearch labels={labels} />);
     fireEvent.click(screen.getByRole('button', {name: 'Manage'}));
     fireEvent.submit(screen.getByRole('form'));
-    expect(push).toHaveBeenLastCalledWith('/property/onboard?kind=home&operatingModel=direct_managed');
+    expect(push).toHaveBeenLastCalledWith('/manage');
     fireEvent.click(screen.getByRole('button', {name: 'Sell'}));
     fireEvent.submit(screen.getByRole('form'));
     expect(push).toHaveBeenLastCalledWith('/property/onboard?kind=home&offers=sale');

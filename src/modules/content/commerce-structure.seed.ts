@@ -313,6 +313,11 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'nav.global', namespace: 'nav', description: 'Global desks navigation', en: 'Global', ru: 'Глобально', th: 'Global', status: 'needs_review' as const },
   { key: 'nav.footer.global', namespace: 'nav', description: 'Global desks footer link', en: 'Global desks', ru: 'Глобальные направления', th: 'Global Desks', status: 'needs_review' as const },
 
+  { key: 'nav.my_listings', namespace: 'nav', description: 'Supplier listings workspace', en: 'My listings', ru: 'Мои объявления', th: 'ประกาศของฉัน', status: 'needs_review' as const },
+  { key: 'nav.list_property', namespace: 'nav', description: 'Owner and supplier journey', en: 'List your property', ru: 'Разместить объект', th: 'ลงประกาศที่พัก', status: 'needs_review' as const },
+  { key: 'nav.request_management', namespace: 'nav', description: 'Owner and supplier journey', en: 'Property management', ru: 'Передать в управление', th: 'ให้ myUNO จัดการ', status: 'needs_review' as const },
+  { key: 'nav.footer.list_property', namespace: 'nav', description: 'Owner and supplier journey', en: 'List your property', ru: 'Разместить объект', th: 'ลงประกาศที่พัก', status: 'needs_review' as const },
+  { key: 'nav.footer.request_management', namespace: 'nav', description: 'Owner and supplier journey', en: 'Property management', ru: 'Передать в управление', th: 'ให้ myUNO จัดการ', status: 'needs_review' as const },
   { key: 'nav.rent_out', namespace: 'nav', description: 'Primary navigation rent out', en: 'Rent Out', ru: 'Сдать в аренду', th: 'ปล่อยเช่า', status: 'needs_review' as const },
   { key: 'nav.manage', namespace: 'nav', description: 'Primary navigation manage', en: 'Manage', ru: 'Управление', th: 'บริหาร', status: 'needs_review' as const },
   { key: 'nav.explore', namespace: 'nav', description: 'Secondary explore navigation', en: 'Explore', ru: 'Обзор', th: 'สำรวจ', status: 'needs_review' as const },

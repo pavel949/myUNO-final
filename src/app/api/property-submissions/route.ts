@@ -6,7 +6,7 @@ import { classifyPropertySubmission } from '@/modules/onboarding';
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   const kind = String(body.kind || '');
@@ -16,6 +16,8 @@ function normalize(body: Record<string, unknown>): Submission {
   const bedrooms = num(body.bedrooms), bathrooms = num(body.bathrooms), sizeSqm = num(body.sizeSqm), maxGuests = num(body.maxGuests), latitude = num(body.latitude), longitude = num(body.longitude);
   if ([bedrooms, bathrooms, sizeSqm, maxGuests].some(v => v !== null && (!Number.isFinite(v) || v < 0)) || (maxGuests !== null && !Number.isInteger(maxGuests))) throw new Error('Invalid property measurements.');
   if ((latitude !== null && (!Number.isFinite(latitude) || Math.abs(latitude) > 90)) || (longitude !== null && (!Number.isFinite(longitude) || Math.abs(longitude) > 180))) throw new Error('Invalid project location.');
+  const proposedNightlyBaht = num(body.proposedNightlyBaht), proposedMinNights = num(body.proposedMinNights);
+  if ([proposedNightlyBaht, proposedMinNights].some(value => value !== null && (!Number.isSafeInteger(value) || value < 1)) || (proposedNightlyBaht !== null && proposedNightlyBaht > 10000000) || (proposedMinNights !== null && proposedMinNights > 365)) throw new Error('Invalid proposed rental terms.');
   const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(body.operatingModel))
     ? String(body.operatingModel) as Submission['operatingModel']
     : null;
@@ -29,7 +31,7 @@ function normalize(body: Record<string, unknown>): Submission {
     projectPhotos: Array.isArray(body.projectPhotos) ? [...new Set(body.projectPhotos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
     unitName: String(body.unitName || '').trim().slice(0, 160),
     unitType: ['villa', 'apartment', 'condo', 'house'].includes(String(body.unitType)) ? String(body.unitType) : 'condo',
-    bedrooms, bathrooms, sizeSqm, maxGuests, floor: String(body.floor || '').trim().slice(0, 40),
+    bedrooms, bathrooms, sizeSqm, maxGuests, proposedNightlyBaht, proposedMinNights, floor: String(body.floor || '').trim().slice(0, 40),
     description: String(body.description || '').trim().slice(0, 3000),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
     photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],

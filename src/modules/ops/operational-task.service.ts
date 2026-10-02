@@ -147,14 +147,24 @@ export async function listOperationalTasks(
   db: PrismaClient,
   input: { projectIds?: string[]; unitId?: string; unitIds?: string[]; statuses?: OperationalTaskStatus[] } = {}
 ) {
-  return db.operationalTask.findMany({
-    where: {
-      ...(input.projectIds?.length ? { projectId: { in: input.projectIds } } : {}),
-      ...(input.unitId
-        ? { unitId: input.unitId }
+  const visibility = input.unitId
+    ? { unitId: input.unitId }
+    : input.projectIds?.length && input.unitIds?.length
+      ? {
+          OR: [
+            { projectId: { in: input.projectIds } },
+            { unitId: { in: input.unitIds } },
+          ],
+        }
+      : input.projectIds?.length
+        ? { projectId: { in: input.projectIds } }
         : input.unitIds?.length
           ? { unitId: { in: input.unitIds } }
-          : {}),
+          : {};
+
+  return db.operationalTask.findMany({
+    where: {
+      ...visibility,
       ...(input.statuses?.length ? { status: { in: input.statuses } } : {}),
     },
     include: {

@@ -17,6 +17,10 @@ describe('Navbar', () => {
         user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
         labels={{
           stay: 'Stay',
+          stays: 'Stays',
+          homes: 'Homes',
+          partners: 'For Partners',
+          myUno: 'My myUNO',
           monthly: 'Monthly',
           buy: 'Buy',
           sell: 'Sell',
@@ -26,7 +30,7 @@ describe('Navbar', () => {
           areas: 'Areas',
           projects: 'Projects',
           services: 'Services',
-          owners: 'Owners',
+          owners: 'For Owners',
           about: 'About',
           trust: 'Trust',
           help: 'Help',

@@ -34,6 +34,9 @@ export default async function OwnersPage() {
       'myUNO runs your unit to hotel standard and shows you everything from wherever you live: nights sold, money in and out, who entered, what it cost.',
     'audience.owners.cta': 'Entrust your unit',
     'audience.owners.add_property': 'Add my property',
+    'audience.owners.path_list': 'List or self-manage',
+    'audience.owners.path_manage': 'Apply for myUNO management',
+    'audience.owners.path_claim': 'Claim an invited account',
     'audience.owners.problem.title': "You can't manage what you can't see.",
     'audience.owners.problem.lede':
       'Ask the simple questions about your own property, and watch how long the answers take — if they come at all.',
@@ -129,6 +132,20 @@ export default async function OwnersPage() {
             {supplierCopy(getRequestLocale()).list} →
           </Link>
           <Link href="/manage" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{supplierCopy(getRequestLocale()).request}</Link>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-24 py-40">
+        <div className="grid gap-12 md:grid-cols-3">
+          <Link href="/owners/submit" className="rounded-xl border border-border-line bg-surface-paper p-24 font-semibold text-brand-andaman">
+            {labels['audience.owners.path_list']} →
+          </Link>
+          <Link href="/owners/management" className="rounded-xl border border-border-line bg-surface-paper p-24 font-semibold text-brand-andaman">
+            {labels['audience.owners.path_manage']} →
+          </Link>
+          <Link href="/owners/claim" className="rounded-xl border border-border-line bg-surface-paper p-24 font-semibold text-brand-andaman">
+            {labels['audience.owners.path_claim']} →
+          </Link>
         </div>
       </section>
 

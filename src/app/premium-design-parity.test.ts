@@ -26,16 +26,19 @@ describe('premium design-system surface parity', () => {
   it('exposes the benchmark-aligned public discovery surfaces', () => {
     const navbar = source('src/components/Navbar.tsx');
     const footer = source('src/components/Footer.tsx');
-    for (const route of ['/homes?intent=buy', '/search', '/sell', '/rent-out', '/manage']) {
+    for (const route of ['/explore', '/stays', '/services', '/homes', '/owners', '/partners', '/me']) {
       expect(navbar).toContain(route);
     }
-    expect(navbar).toContain('/homes?intent=rent');
-    expect(navbar).toContain('/projects');
-    expect(navbar).toContain('/services');
-    expect(navbar).toContain('/areas');
+    expect(footer).toContain('/owners/submit');
+    expect(footer).toContain('/owners/management');
+    expect(footer).toContain('/homes?intent=buy');
+    expect(footer).toContain('/homes?intent=rent');
+    expect(footer).toContain('/sell');
+    expect(footer).toContain('/projects');
     expect(footer).toContain('/areas');
-    expect(navbar).toContain('/desks');
     expect(footer).toContain('/desks');
+    expect(source('src/app/(public)/explore/page.tsx')).toContain("href: '/stays'");
+    expect(source('src/app/(public)/explore/page.tsx')).toContain('href="/projects"');
     expect(source('src/app/(public)/desks/page.tsx')).toContain('GLOBAL_DESKS');
     expect(source('src/app/(public)/desks/[slug]/page.tsx')).toContain('getGlobalDesk');
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');

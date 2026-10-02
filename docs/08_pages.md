@@ -26,10 +26,20 @@ URL scheme: public site under `/{locale}/…` (`ru` default, `hreflang` alternat
 | Path | Page | Keys | Primary CTA |
 |---|---|---|---|
 | `/` | Master landing (S1) | `landing.*` | Search stays; audience doors |
+| `/explore` | Public IA hub (DESIGN.md §7, PRODUCT.md §2) | `explore.*` | Stays / homes / services / owners / partners |
+| `/stays` | Stay search alias of `/search` (S3) | `search.*` | Book (F-GUEST-2) |
 | `/projects/{slug}` | Project landing (S2) | `project_page.*` + project content keys | Check availability |
+| `/properties/{slug}` | Canonical alias → `/projects/{slug}` | — | — |
 | `/search` | Search results (S3) | `search.*` | Book (F-GUEST-2) |
 | `/units/{id}` | Unit detail (S4) | `listing.*` | Book / Request (F-GUEST-3/4) |
 | `/owners` | Owners audience page | `audience.owners.*` | "Entrust your unit" → lead form |
+| `/owners/submit` | List / self-manage entry → `/rent-out` | `rentout.*` | Onboard listing |
+| `/owners/management` | Management request → `/manage` | `manage.*` | Lead form |
+| `/owners/claim` | Invited-account claim → `/auth/claim` | `auth.claim.*` | Activate |
+| `/partners` | Partner hub | `partners.*` | Managers / providers / developers |
+| `/partners/property-managers` | Alias → `/management-companies` | `audience.mc.*` | Lead form |
+| `/partners/providers` | Alias → `/providers` | `audience.providers.*` | Apply |
+| `/me` | My myUNO hub (PRODUCT.md §8) | `me.*` | Continue to primary workspace |
 | `/guests` | Guests audience page | `audience.guests.*` | Search stays |
 | `/developers` | Developers audience page | `audience.developers.*` | "Talk to us" → lead form |
 | `/buyers` | Buyers audience page | `audience.buyers.*` | "Start the conversation" → lead form |

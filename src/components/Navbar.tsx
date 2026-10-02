@@ -7,11 +7,15 @@ import { Button } from './Button';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { NotificationBell, type BellLabels } from './NotificationBell';
 
-function navLinkClass(pathname: string, href: string, extra = '') {
-  const active =
-    href === '/'
-      ? pathname === '/'
-      : pathname === href || pathname.startsWith(`${href}/`);
+function pathBase(href: string) {
+  return href.split('?')[0] || href;
+}
+
+function navLinkClass(pathname: string, href: string, extra = '', aliases: string[] = []) {
+  const bases = [pathBase(href), ...aliases];
+  const active = bases.some((base) =>
+    base === '/' ? pathname === '/' : pathname === base || pathname.startsWith(`${base}/`)
+  );
   return `${extra} whitespace-nowrap text-body transition-colors duration-micro ${
     active ? 'text-brand-andaman font-semibold' : 'text-text-ink hover:text-brand-andaman'
   }`;
@@ -31,6 +35,10 @@ export interface NavbarLabels {
   rentOut: string;
   manage: string;
   explore: string;
+  stays: string;
+  homes: string;
+  partners: string;
+  myUno: string;
   areas: string;
   projects: string;
   services: string;
@@ -100,27 +108,18 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   const closeMenu = () => setMenuOpen(false);
 
-  const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
-    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
-    { href: '/search', label: labels.stay },
-    { href: '/sell', label: labels.sell },
-    { href: '/rent-out', label: labels.rentOut },
-    { href: '/manage', label: labels.manage },
-  ];
-
-  const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [
-    { href: '/homes?intent=rent', label: labels.monthly },
-    { href: '/projects', label: labels.projects },
-    { href: '/areas', label: labels.areas },
+  const publicLinks: ReadonlyArray<{ href: string; label: string; aliases?: string[] }> = [
+    { href: '/explore', label: labels.explore },
+    { href: '/stays', label: labels.stays, aliases: ['/search'] },
     { href: '/services', label: labels.services },
-    { href: '/desks', label: labels.global },
-    { href: '/trust', label: labels.trust },
-    { href: '/help', label: labels.help },
-    { href: '/about', label: labels.about },
+    { href: '/homes', label: labels.homes },
+    { href: '/owners', label: labels.owners },
+    { href: '/partners', label: labels.partners },
   ];
 
   const userLinks = user
     ? [
+        { href: '/me', label: labels.myUno },
         { href: '/trips', label: labels.myTrips },
         { href: '/saved', label: labels.saved },
         { href: '/property/listings', label: labels.addProperty },
@@ -149,7 +148,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link
                 key={link.href}
                 href={link.href}
-                className={navLinkClass(pathname, link.activeBase || link.href)}
+                className={navLinkClass(pathname, link.href, '', link.aliases)}
               >
                 {link.label}
               </Link>
@@ -158,30 +157,13 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         </div>
 
         <div className="hidden items-center justify-end gap-x-12 xl:flex">
-          <details className="relative">
-            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
-              {labels.explore}
-            </summary>
-            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
-              {exploreLinks.map((link) => (
-                <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
-                  {link.label}
-                </Link>
-              ))}
-              <div className="mt-4 border-t border-border-line pt-12">
-                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
-              </div>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
-            </div>
-          </details>
-
           <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
 
           {user ? (
             <>
               <details className="relative">
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
-                  {user.firstName} · My UNO
+                  {user.firstName} · {labels.myUno}
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
@@ -197,11 +179,18 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </Button>
             </>
           ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                {labels.login}
-              </Button>
-            </Link>
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  {labels.login}
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="primary" size="sm">
+                  {labels.register}
+                </Button>
+              </Link>
+            </>
           )}
         </div>
 
@@ -229,43 +218,23 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
       {menuOpen ? (
         <div id="mobile-navigation" className="max-h-[calc(100dvh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 xl:hidden">
-          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Explore</p>
+          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.explore}</p>
           <div className="flex flex-col">
             {publicLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-12')}
+                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12', link.aliases)}
                 onClick={closeMenu}
               >
                 {link.label}
               </Link>
             ))}
-          </div>
-
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.explore}</p>
-          <div className="flex flex-col">
-            {exploreLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
-                onClick={closeMenu}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              Developers
-            </Link>
-            <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              Management companies
-            </Link>
           </div>
 
           {user ? (
             <>
-              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My UNO</p>
+              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.myUno}</p>
               <div className="flex flex-col">
                 {userLinks.map((link) => (
                   <Link

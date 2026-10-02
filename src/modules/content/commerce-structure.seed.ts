@@ -14,7 +14,7 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'admin.deal.back', namespace: 'admin', description: 'Return to canonical opportunity', en: 'Back to opportunity', ru: 'К сделке CRM', th: 'กลับไปยังโอกาสการขาย', status: 'needs_review' as const },
   { key: 'admin.deal.title', namespace: 'admin', description: 'Agreement page heading', en: 'Commercial agreement', ru: 'Коммерческий договор', th: 'สัญญาทางการค้า', status: 'needs_review' as const },
   { key: 'admin.deal.no_unit', namespace: 'admin', description: 'Deal unit prerequisite', en: 'Select a physical unit in CRM before drafting an agreement.', ru: 'Выберите конкретный объект в CRM перед созданием договора.', th: 'เลือกยูนิตใน CRM ก่อนจัดทำสัญญา', status: 'needs_review' as const },
-  { key: 'nav.homes', namespace: 'nav', description: "Public navigation: buy or rent", en: "Buy / Rent", ru: "Купить / арендовать", th: "ซื้อ / เช่า", status: 'needs_review' as const },
+  { key: 'nav.homes', namespace: 'nav', description: 'Primary navigation homes', en: 'Homes', ru: 'Дома', th: 'บ้าน', status: 'needs_review' as const },
   { key: 'project_page.trust.property', namespace: 'project_page', description: "Project published property facts", en: "Property details", ru: "Данные об объекте", th: "ข้อมูลที่พัก", status: 'needs_review' as const },
   { key: 'project_page.trust.property_body', namespace: 'project_page', description: "Project published facts disclaimer", en: "Discover the published property facts, accommodation category and unit details.", ru: "Изучите опубликованные сведения о проекте, категории размещения и конкретном объекте.", th: "ดูข้อมูลโครงการ ประเภทที่พัก และยูนิตที่เผยแพร่", status: 'needs_review' as const },
   { key: 'project_page.trust.terms', namespace: 'project_page', description: "Project booking terms", en: "Check booking terms", ru: "Проверьте условия бронирования", th: "ตรวจสอบเงื่อนไขการจอง", status: 'needs_review' as const },
@@ -412,4 +412,19 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'homes.type.townhouse', namespace: 'homes', description: 'Homes townhouse type', en: 'Townhouse', ru: 'Таунхаус', th: 'ทาวน์เฮาส์', status: 'needs_review' as const },
 
   { key: 'sell.advisor_cta', namespace: 'sell', description: 'Sell advisor review CTA', en: 'Request an advisor review', ru: 'Запросить консультацию', th: 'ขอคำปรึกษาจากที่ปรึกษา', status: 'needs_review' as const },
+
+  { key: 'nav.stays', namespace: 'nav', description: 'Primary navigation stays', en: 'Stays', ru: 'Проживание', th: 'ที่พัก', status: 'needs_review' as const },
+  { key: 'nav.partners', namespace: 'nav', description: 'Primary navigation partners', en: 'For Partners', ru: 'Партнёрам', th: 'สำหรับพาร์ทเนอร์', status: 'needs_review' as const },
+  { key: 'nav.my_uno', namespace: 'nav', description: 'Personal hub navigation', en: 'My myUNO', ru: 'Мой myUNO', th: 'myUNO ของฉัน', status: 'needs_review' as const },
+  { key: 'nav.footer.explore', namespace: 'nav', description: 'Footer explore', en: 'Explore', ru: 'Обзор', th: 'สำรวจ', status: 'needs_review' as const },
+  { key: 'nav.footer.homes', namespace: 'nav', description: 'Footer homes', en: 'Homes', ru: 'Дома', th: 'บ้าน', status: 'needs_review' as const },
+  { key: 'nav.footer.partners', namespace: 'nav', description: 'Footer partners hub', en: 'Partners', ru: 'Партнёры', th: 'พาร์ทเนอร์', status: 'needs_review' as const },
+
+  { key: 'explore.kicker', namespace: 'explore', description: 'Explore kicker', en: 'EXPLORE', ru: 'ОБЗОР', th: 'สำรวจ', status: 'needs_review' as const },
+  { key: 'explore.title', namespace: 'explore', description: 'Explore title', en: 'Find your way into Phuket.', ru: 'Найдите свой путь на Пхукет.', th: 'ค้นหาเส้นทางของคุณในภูเก็ต', status: 'needs_review' as const },
+  { key: 'explore.body', namespace: 'explore', description: 'Explore body', en: 'Stays, homes and services share one property record. Start with the path that matches what you need.', ru: 'Проживание, дома и сервисы используют одну карточку объекта. Начните с нужного вам пути.', th: 'ที่พัก บ้าน และบริการใช้ข้อมูลทรัพย์สินชุดเดียวกัน เริ่มจากเส้นทางที่ตรงกับสิ่งที่คุณต้องการ', status: 'needs_review' as const },
+  { key: 'partners.kicker', namespace: 'partners', description: 'Partners kicker', en: 'FOR PARTNERS', ru: 'ПАРТНЁРАМ', th: 'สำหรับพาร์ทเนอร์', status: 'needs_review' as const },
+  { key: 'partners.title', namespace: 'partners', description: 'Partners title', en: 'Operate inside one property network.', ru: 'Работайте внутри одной сети объектов.', th: 'ดำเนินงานภายในเครือข่ายทรัพย์สินเดียว', status: 'needs_review' as const },
+  { key: 'me.kicker', namespace: 'me', description: 'My myUNO kicker', en: 'MY MYUNO', ru: 'МОЙ MYUNO', th: 'MYUNO ของฉัน', status: 'needs_review' as const },
+  { key: 'me.title', namespace: 'me', description: 'My myUNO title', en: 'Your myUNO', ru: 'Ваш myUNO', th: 'myUNO ของคุณ', status: 'needs_review' as const },
 ];

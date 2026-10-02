@@ -35,6 +35,9 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 |---|---|
 | `common.*` | Shared vocabulary: actions (`common.action.save/cancel/confirm/back`), statuses (`common.status.booking.confirmed` …every enum label from doc 02), roles, dates ("night(s)"), empty/loading/error state texts (`common.state.empty/error/loading.*`). |
 | `nav.*` | Navigation: menu items, the project switcher, portfolio, footer links. |
+| `explore.*` | Public Explore hub (`/explore`). |
+| `partners.*` | Public partner hub (`/partners`). |
+| `me.*` | Authenticated My myUNO hub (`/me`). |
 | `landing.*` | The master landing page sections (doc 08 §2). |
 | `audience.*` | The audience pages: `audience.owners.*`, `audience.guests.*`, `audience.developers.*`, `audience.buyers.*`, `audience.mc.*`, `audience.providers.*`. |
 | `project_page.*` | The per-project public landing template ("{Project} on myUNO"). |

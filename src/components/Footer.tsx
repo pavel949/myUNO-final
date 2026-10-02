@@ -6,7 +6,9 @@ export interface FooterLabels {
   brandTagline: string;
   brandColumn: string;
   home: string;
+  explore: string;
   stay: string;
+  homes: string;
   monthly: string;
   buy: string;
   sell: string;
@@ -25,6 +27,7 @@ export interface FooterLabels {
   guests: string;
   providers: string;
   partnersColumn: string;
+  partners: string;
   developers: string;
   buyers: string;
   management: string;
@@ -49,41 +52,44 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
       title: labels.brandColumn,
       links: [
         { href: '/', label: labels.home },
-        { href: '/search', label: labels.stay },
-        { href: '/homes?intent=rent', label: labels.monthly },
-        { href: '/homes?intent=buy', label: labels.buy },
-        { href: '/sell', label: labels.sell },
-        { href: '/rent-out', label: labels.rentOut },
-        { href: '/manage', label: labels.manage },
+        { href: '/explore', label: labels.explore },
+        { href: '/stays', label: labels.stay },
+        { href: '/services', label: labels.services },
+        { href: '/homes', label: labels.homes },
         { href: '/areas', label: labels.areas },
         { href: '/projects', label: labels.projects },
-        { href: '/services', label: labels.services },
       ],
     },
     {
       title: labels.audienceColumn,
       links: [
         { href: '/owners', label: labels.owners },
+        { href: '/owners/submit', label: labels.rentOut },
+        { href: '/owners/management', label: labels.manage },
+        { href: '/sell', label: labels.sell },
+        { href: '/homes?intent=buy', label: labels.buy },
+        { href: '/homes?intent=rent', label: labels.monthly },
         { href: '/guests', label: labels.guests },
-        { href: '/providers', label: labels.providers },
-        { href: '/trust', label: labels.trust },
-        { href: '/about', label: labels.about },
-        { href: '/help', label: labels.help },
-        { href: '/desks', label: labels.global },
       ],
     },
     {
       title: labels.partnersColumn,
       links: [
+        { href: '/partners', label: labels.partners },
+        { href: '/partners/property-managers', label: labels.management },
+        { href: '/partners/providers', label: labels.providers },
         { href: '/developers', label: labels.developers },
         { href: '/buyers', label: labels.buyers },
-        { href: '/management-companies', label: labels.management },
-        { href: '/trust/ombudsman', label: labels.ombudsman },
+        { href: '/desks', label: labels.global },
       ],
     },
     {
       title: labels.legalColumn,
       links: [
+        { href: '/trust', label: labels.trust },
+        { href: '/help', label: labels.help },
+        { href: '/about', label: labels.about },
+        { href: '/trust/ombudsman', label: labels.ombudsman },
         { href: '/legal', label: labels.legalIndex },
         { href: '/legal/terms', label: labels.terms },
         { href: '/legal/privacy', label: labels.privacy },

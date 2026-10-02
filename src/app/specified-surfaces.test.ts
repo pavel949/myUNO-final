@@ -38,15 +38,20 @@ describe('specified surfaces wired to existing rails', () => {
   });
 
   it('links header, footer, owners CTA, tickets, and handbook', () => {
-    expect(navbar).toContain('/rent-out');
-    expect(navbar).toContain('/manage');
-    expect(navbar).toContain('/about');
+    expect(navbar).toContain('/explore');
+    expect(navbar).toContain('/stays');
+    expect(navbar).toContain('/homes');
+    expect(navbar).toContain('/owners');
+    expect(navbar).toContain('/partners');
+    expect(navbar).toContain('/me');
     expect(footer).toContain('/owners');
     expect(footer).toContain('/trust/ombudsman');
     expect(footer).toContain('/legal');
     expect(footer).toContain('LocaleSwitcher');
     expect(owners).toContain('href="/rent-out"');
     expect(owners).toContain('href="/manage"');
+    expect(owners).toContain('href="/owners/submit"');
+    expect(owners).toContain('href="/owners/management"');
     expect(tickets).toContain('filter_all');
     expect(ticketDetail).toContain('/messages/');
     expect(handbook).toContain('/home-space');

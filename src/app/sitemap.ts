@@ -17,7 +17,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${base}/`, priority: 1.0 },
     { url: `${base}/projects`, priority: 0.9 },
+    { url: `${base}/explore`, priority: 0.9 },
+    { url: `${base}/stays`, priority: 0.8 },
     { url: `${base}/search`, priority: 0.8 },
+    { url: `${base}/homes`, priority: 0.8 },
     { url: `${base}/homes?intent=buy`, priority: 0.8 },
     { url: `${base}/homes?intent=rent`, priority: 0.8 },
     { url: `${base}/sell`, priority: 0.7 },
@@ -26,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/areas`, priority: 0.7 },
     { url: `${base}/services`, priority: 0.7 },
     { url: `${base}/owners`, priority: 0.6 },
+    { url: `${base}/partners`, priority: 0.6 },
     { url: `${base}/guests`, priority: 0.6 },
     { url: `${base}/developers`, priority: 0.6 },
     { url: `${base}/buyers`, priority: 0.6 },

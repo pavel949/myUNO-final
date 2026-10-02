@@ -147,8 +147,11 @@ export async function listOperationalTasks(
   db: PrismaClient,
   input: { projectIds?: string[]; unitId?: string; unitIds?: string[]; statuses?: OperationalTaskStatus[] } = {}
 ) {
+  const scopedRead = input.projectIds !== undefined || input.unitIds !== undefined;
   const visibility = input.unitId
     ? { unitId: input.unitId }
+    : scopedRead && !input.projectIds?.length && !input.unitIds?.length
+      ? { id: '__no_authorized_operational_task__' }
     : input.projectIds?.length && input.unitIds?.length
       ? {
           OR: [

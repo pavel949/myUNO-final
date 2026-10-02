@@ -275,12 +275,12 @@ enum DepositPreauthStatus {
 
 enum MediaAssetKind {
   photo
-  video
   document
   receipt
   passport
   avatar
   brand
+  video
 }
 
 enum NotificationChannel {

@@ -353,3 +353,49 @@ export async function computeCanonicalPriceBreakdown(
     total_thb: total,
   };
 }
+
+
+export interface CanonicalCalendarRateLine {
+  date: string;
+  nightlyThb: number;
+  source: PriceBreakdown['lines'][number]['applied_from'];
+}
+
+/**
+ * Calendar pricing is a read projection of the exact booking quote engine.
+ * It never re-implements rate precedence. If the selected date range is not a
+ * valid quote (for example minimum stay), callers receive the reason rather
+ * than a fabricated nightly price.
+ */
+export async function computeCanonicalCalendarRates(
+  db: PrismaClient,
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+  guestCount: number = 1,
+  bookingDate: Date = new Date()
+): Promise<{ lines: CanonicalCalendarRateLine[]; error: string | null }> {
+  try {
+    const quote = await computeCanonicalPriceBreakdown(
+      db,
+      unitId,
+      startDate,
+      endDate,
+      guestCount,
+      bookingDate
+    );
+    return {
+      lines: quote.lines.map((line) => ({
+        date: line.date,
+        nightlyThb: line.nightly_thb,
+        source: line.applied_from,
+      })),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      lines: [],
+      error: error instanceof Error ? error.message : 'Pricing unavailable',
+    };
+  }
+}

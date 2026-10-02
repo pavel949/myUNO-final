@@ -62,6 +62,7 @@ export interface PublicProjectCard {
   slug: string;
   name: string;
   areaLabelKey: string;
+  areaName: string | null;
   descriptionKey: string;
   coverUrl: string | null;
   liveUnitCount: number;
@@ -115,6 +116,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { storageKey: true } },
+      area: { select: { nameKey: true } },
       amenities: {
         where: { published: true, isFeatured: true },
         select: { id: true, slug: true, name: true, iconKey: true },
@@ -131,11 +133,12 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     },
   });
 
-  const amenityNameKeys = projects.flatMap(project =>
-    project.amenities.map(amenity => `project_amenity.${amenity.id}.name`)
-  );
-  const amenityNames = amenityNameKeys.length
-    ? await tMany(prisma, amenityNameKeys, locale)
+  const publicCopyKeys = projects.flatMap(project => [
+    ...(project.area?.nameKey ? [project.area.nameKey] : []),
+    ...project.amenities.map(amenity => `project_amenity.${amenity.id}.name`),
+  ]);
+  const publicCopy = publicCopyKeys.length
+    ? await tMany(prisma, publicCopyKeys, locale)
     : {};
 
   return projects.map((p) => ({
@@ -143,6 +146,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     slug: p.slug,
     name: p.name,
     areaLabelKey: p.areaLabelKey,
+    areaName: p.area?.nameKey ? (publicCopy[p.area.nameKey] || null) : null,
     descriptionKey: p.descriptionKey,
     coverUrl: p.coverMedia?.storageKey ?? null,
     liveUnitCount: p.units.length,
@@ -153,7 +157,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
       : null,
     featuredAmenities: p.amenities.map(amenity => ({
       ...amenity,
-      name: amenityNames[`project_amenity.${amenity.id}.name`] || amenity.name,
+      name: publicCopy[`project_amenity.${amenity.id}.name`] || amenity.name,
     })),
   }));
 }

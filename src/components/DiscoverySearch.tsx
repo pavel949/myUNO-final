@@ -3,24 +3,32 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Mode = 'stay' | 'monthly' | 'buy' | 'invest';
+type Mode = 'rent' | 'buy' | 'manage' | 'sell';
 
 export interface DiscoveryProjectOption {
   id: string;
   name: string;
 }
 
+export interface DiscoveryAreaOption {
+  slug: string;
+  name: string;
+}
+
 export function DiscoverySearch({
   labels,
   projects = [],
+  areas = [],
 }: {
   labels: {
-    stay: string;
-    monthly: string;
+    rent: string;
     buy: string;
-    invest: string;
+    manage: string;
+    sell: string;
     where: string;
     allPhuket: string;
+    locations: string;
+    projects: string;
     checkIn: string;
     checkOut: string;
     adults: string;
@@ -31,10 +39,11 @@ export function DiscoverySearch({
     error: string;
   };
   projects?: DiscoveryProjectOption[];
+  areas?: DiscoveryAreaOption[];
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>('stay');
-  const [projectId, setProjectId] = useState('');
+  const [mode, setMode] = useState<Mode>('rent');
+  const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [adults, setAdults] = useState(2);
@@ -43,10 +52,10 @@ export function DiscoverySearch({
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
   const options: { id: Mode; title: string }[] = [
-    { id: 'stay', title: labels.stay },
-    { id: 'monthly', title: labels.monthly },
+    { id: 'rent', title: labels.rent },
     { id: 'buy', title: labels.buy },
-    { id: 'invest', title: labels.invest },
+    { id: 'manage', title: labels.manage },
+    { id: 'sell', title: labels.sell },
   ];
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -57,12 +66,12 @@ export function DiscoverySearch({
       router.push('/homes?intent=buy');
       return;
     }
-    if (mode === 'monthly') {
-      router.push('/homes?intent=rent');
+    if (mode === 'manage') {
+      router.push('/owners');
       return;
     }
-    if (mode === 'invest') {
-      router.push('/buyers');
+    if (mode === 'sell') {
+      router.push('/sell');
       return;
     }
     if (!startDate || !endDate || endDate <= startDate) {
@@ -75,8 +84,12 @@ export function DiscoverySearch({
       endDate,
       adults: String(adults),
       children: String(children),
-      ...(projectId ? { projectId } : {}),
     });
+    if (destination.startsWith('project:')) {
+      params.set('projectId', destination.slice('project:'.length));
+    } else if (destination.startsWith('area:')) {
+      params.set('areaSlug', destination.slice('area:'.length));
+    }
     router.push('/search?' + params.toString());
   }
 
@@ -86,7 +99,7 @@ export function DiscoverySearch({
       className="rounded-2xl border border-white/10 bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
       aria-label={labels.explore}
     >
-      <div className="mb-12 flex gap-4 overflow-x-auto" role="group" aria-label={labels.explore}>
+      <div className="mb-12 grid grid-cols-4 gap-4" role="group" aria-label={labels.explore}>
         {options.map((item) => (
           <button
             key={item.id}
@@ -96,7 +109,7 @@ export function DiscoverySearch({
               setError('');
             }}
             aria-pressed={mode === item.id}
-            className={`shrink-0 rounded-full px-16 py-12 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+            className={`min-h-44 rounded-full px-8 py-8 text-small font-semibold transition-colors duration-micro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
               mode === item.id
                 ? 'bg-brand-andaman text-white'
                 : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
@@ -107,26 +120,37 @@ export function DiscoverySearch({
         ))}
       </div>
 
-      {mode === 'stay' ? (
+      {mode === 'rent' ? (
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.35fr_1fr_1fr_.65fr_.65fr_auto] md:items-end">
           <label className="col-span-2 grid gap-8 text-small text-text-secondary md:col-span-1">
             {labels.where}
             <select
-              className="h-48 min-w-0 rounded-lg border border-border-line bg-white px-12 text-text-ink"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
+              className="h-48 min-w-0 rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
             >
               <option value="">{labels.allPhuket}</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
+              {areas.length ? (
+                <optgroup label={labels.locations}>
+                  {areas.map((area) => (
+                    <option key={area.slug} value={`area:${area.slug}`}>{area.name}</option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {projects.length ? (
+                <optgroup label={labels.projects}>
+                  {projects.map((project) => (
+                    <option key={project.id} value={`project:${project.id}`}>{project.name}</option>
+                  ))}
+                </optgroup>
+              ) : null}
             </select>
           </label>
 
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkIn}
             <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="date"
               required
               min={today}
@@ -138,7 +162,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.checkOut}
             <input
-              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 min-w-0 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="date"
               required
               min={startDate || today}
@@ -150,7 +174,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.adults}
             <input
-              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
               min="1"
               max="20"
@@ -162,7 +186,7 @@ export function DiscoverySearch({
           <label className="grid gap-8 text-small text-text-secondary">
             {labels.children}
             <input
-              className="h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink"
+              className="h-48 w-full rounded-lg border border-border-line bg-surface-ivory px-12 text-text-ink"
               type="number"
               min="0"
               max="20"

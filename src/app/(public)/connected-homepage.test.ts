@@ -10,8 +10,9 @@ const footer = source('src/components/Footer.tsx');
 
 describe('connected public homepage', () => {
   it('keeps canonical project and services data rather than local catalogues', () => {
-    expect(landing).toContain('listPublicProjects()');
-    expect(landing).toContain('listPublicMarketplaceServices(prisma, locale');
+    expect(landing).toContain('getPublicHomepageData(locale)');
+    expect(source('src/modules/home/public-homepage.service.ts')).toContain('listPublicProjects(locale)');
+    expect(source('src/modules/home/public-homepage.service.ts')).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(landing).toContain('<ProjectCard');
     expect(landing).toContain('<ServiceCard');
   });
@@ -23,9 +24,13 @@ describe('connected public homepage', () => {
   it('keeps date-aware stays on canonical search and makes other modes navigational', () => {
     expect(discovery).toContain("router.push('/search?' + params.toString())");
     expect(discovery).toContain("router.push('/homes?intent=buy')");
-    expect(discovery).toContain("router.push('/homes?intent=rent')");
-    expect(discovery).toContain("router.push('/buyers')");
-    expect(discovery).toContain("mode === 'monthly'");
+    expect(discovery).toContain("router.push('/owners')");
+    expect(discovery).toContain("router.push('/sell')");
+    expect(discovery).toContain("mode === 'rent'");
+    expect(discovery).toContain("{ id: 'rent', title: labels.rent }");
+    expect(discovery).toContain("{ id: 'buy', title: labels.buy }");
+    expect(discovery).toContain("{ id: 'manage', title: labels.manage }");
+    expect(discovery).toContain("{ id: 'sell', title: labels.sell }");
   });
   it('keeps a shared header/footer with account role links', () => {
     expect(navbar).toContain('roleLinks');

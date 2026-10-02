@@ -46,10 +46,12 @@ export function ProjectCard({
 
       <div className="absolute inset-x-0 bottom-0 p-20 text-white md:p-24">
         <p className="text-small text-white/70">
-          {labels.homes.replace('{count}', String(project.liveUnitCount))}
+          {[project.areaName, labels.homes.replace('{count}', String(project.liveUnitCount))]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
         <h3 className={`mt-4 font-display font-semibold tracking-[-0.02em] ${
-          featured ? 'text-display md:text-[36px] md:leading-[42px]' : 'text-title md:text-heading-2'
+          featured ? 'text-display md:text-display-xl' : 'text-title md:text-heading-2'
         }`}>
           {project.name}
         </h3>

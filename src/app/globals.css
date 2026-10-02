@@ -4,6 +4,15 @@
 
 html {
   scroll-behavior: smooth;
+  --font-display-active: var(--font-outfit);
+}
+
+html[lang='ru'] {
+  --font-display-active: var(--font-manrope);
+}
+
+html[lang='th'] {
+  --font-display-active: var(--font-noto-thai);
 }
 
 body {

@@ -14,7 +14,10 @@ type Task = {
   assignee: { id: string; firstName: string; lastName: string } | null;
 };
 
-export default function OperationalTaskQueueClient({ tasks }: { tasks: Task[] }) {
+export default function OperationalTaskQueueClient({
+  tasks,
+  labels,
+}: { tasks: Task[]; labels: Record<string, string> }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,17 +36,17 @@ export default function OperationalTaskQueueClient({ tasks }: { tasks: Task[] })
         body: JSON.stringify({ status, assignToMe }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Task update failed');
+      if (!response.ok) throw new Error(data.error || labels['staff.tasks.update_failed']);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Task update failed');
+      setError(err instanceof Error ? err.message : labels['staff.tasks.update_failed']);
     } finally {
       setBusy(null);
     }
   };
 
   if (!tasks.length) {
-    return <p className="rounded-lg border border-border-line bg-surface-paper p-20 text-body text-text-secondary">No open readiness tasks.</p>;
+    return <p className="rounded-lg border border-border-line bg-surface-paper p-20 text-body text-text-secondary">{labels['staff.tasks.empty']}</p>;
   }
 
   return <div className="space-y-12">
@@ -58,21 +61,21 @@ export default function OperationalTaskQueueClient({ tasks }: { tasks: Task[] })
               {task.taskType.replace(/_/g, ' ')}
             </h2>
             <p className="mt-4 text-small text-text-secondary">
-              Due {new Date(task.dueAt).toLocaleString()} · {task.status.replace(/_/g, ' ')}
+              {labels['staff.tasks.due']} {new Date(task.dueAt).toLocaleString()} · {task.status.replace(/_/g, ' ')}
               {task.assignee ? ' · ' + task.assignee.firstName + ' ' + task.assignee.lastName : ''}
             </p>
           </div>
           <div className="flex flex-wrap gap-8">
             {task.status === 'planned' && <button disabled={busy===task.id} onClick={()=>update(task,'assigned',true)}
-              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">Assign to me</button>}
+              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">{labels['staff.tasks.assign_me']}</button>}
             {task.status === 'assigned' && <button disabled={busy===task.id} onClick={()=>update(task,'in_progress')}
-              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">Start</button>}
+              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">{labels['staff.tasks.start']}</button>}
             {task.status === 'in_progress' && isInspection && <button disabled={busy===task.id} onClick={()=>update(task,'inspected')}
-              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">Inspected</button>}
+              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">{labels['staff.tasks.inspected']}</button>}
             {task.status === 'in_progress' && !isInspection && <button disabled={busy===task.id} onClick={()=>update(task,'ready')}
-              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">Ready</button>}
+              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">{labels['staff.tasks.ready']}</button>}
             {task.status === 'inspected' && <button disabled={busy===task.id} onClick={()=>update(task,'ready')}
-              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">Ready</button>}
+              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">{labels['staff.tasks.ready']}</button>}
           </div>
         </div>
       </article>;

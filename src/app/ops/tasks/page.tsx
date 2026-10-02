@@ -88,8 +88,14 @@ export default async function OperationalTasksPage({
       <OperationalTaskQueueClient
         labels={labels}
         tasks={tasks.map((task) => ({
-          ...task,
+          id: task.id,
+          taskType: task.taskType,
+          status: task.status,
           dueAt: task.dueAt.toISOString(),
+          notes: task.notes,
+          project: task.project,
+          unit: task.unit,
+          assignee: task.assignee,
         }))}
       />
     </div>

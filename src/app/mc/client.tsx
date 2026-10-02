@@ -619,48 +619,77 @@ export function MCDashboardClient({
         <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
           <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
-              {[
-                ['overview', labels['mc.workspace.today']],
-                ['calendar', labels['mc.tabs.calendar']],
-                ['bookings', labels['mc.tabs.bookings']],
-                ['service_orders', labels['mc.tabs.service_orders']],
-                ['tickets', labels['mc.tabs.tickets']],
-                ['reports', labels['mc.tabs.reports']],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveTab(key as typeof activeTab)}
-                  className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${
-                    activeTab === key
-                      ? 'bg-brand-andaman-soft text-brand-andaman'
-                      : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+                {labels['mc.workspace.operate']}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('overview')}
+                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition \${activeTab === 'overview' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+              >
+                {labels['mc.workspace.today']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('bookings')}
+                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition \${activeTab === 'bookings' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+              >
+                {labels['mc.workspace.reservations']}
+              </button>
+              <Link
+                href={\`/mc/calendar?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.tabs.calendar']}
+              </Link>
+              <Link
+                href={\`/mc/tm30?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.workspace.guests']}
+              </Link>
+              <Link
+                href="/ops/tasks?mc=1"
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.workspace.tasks']}
+              </Link>
 
-            <div className="hidden lg:block my-16 border-t border-border-line" />
-
-            <div className="hidden lg:flex lg:flex-col gap-4">
-              <Link href="/mc/portfolio" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <div className="hidden lg:block my-8 border-t border-border-line" />
+              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+                {labels['mc.workspace.manage']}
+              </p>
+              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.portfolio']}
               </Link>
-              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => setActiveTab('service_orders')}
+                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'service_orders' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+              >
+                {labels['mc.workspace.services']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('tickets')}
+                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'tickets' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+              >
+                {labels['mc.workspace.issues']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('reports')}
+                className={\`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition \${activeTab === 'reports' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}\`}
+              >
+                {labels['mc.workspace.revenue_finance']}
+              </button>
+              <Link href={\`/mc/mobilization?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.nav.mobilization']}
               </Link>
-              <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.guests_tm30']}
-              </Link>
-              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={\`/mc/costs?projectId=\${encodeURIComponent(activeContext?.projectId || '')}&organizationId=\${encodeURIComponent(activeContext?.organizationId || '')}\`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.costs']}
               </Link>
-              <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.services']}
-              </Link>
-              <Link href="/announcements" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href="/announcements" className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.announcements']}
               </Link>
             </div>

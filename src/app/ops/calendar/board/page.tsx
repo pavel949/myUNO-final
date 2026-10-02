@@ -14,6 +14,7 @@ import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-aut
 export const dynamic = 'force-dynamic';
 
 interface CalendarSearchParams {
+  mc?: string;
   projectId?: string;
   organizationId?: string;
   categoryId?: string;
@@ -28,25 +29,40 @@ export default async function UnifiedStayCalendarPage({
   if (!user) redirect('/login?next=/ops/calendar/board');
 
   const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
-  // A dual-role user explicitly entering via /mc/calendar keeps the MC unit
-  // boundary; direct /ops/calendar visits retain their staff scope.
+  const requestedProjectId = searchParams?.projectId;
+  const requestedOrganizationId = searchParams?.organizationId;
+  // Explicit mc=1 keeps a dual-role user inside the management-company
+  // authorization boundary even when viewing all of their managed projects.
   const mcMode = !user.isAdmin && (
-    Boolean(searchParams?.organizationId) || staffProjectIds.length === 0
+    searchParams?.mc === '1' || Boolean(requestedOrganizationId) || staffProjectIds.length === 0
   );
-  // MC project roles alone are NOT unit authorization: require a matching
-  // active via-management-company engagement for every visible physical unit.
+  // MC project roles alone are NOT unit authorization: every physical unit
+  // must also be covered by the matching active management engagement.
   const mcScopes = mcMode ? getMCProjectScopes(user) : [];
   if (mcMode && mcScopes.length === 0) redirect('/');
-  const activeScope = mcMode ? (
-    mcScopes.find(scope => scope.projectId === searchParams?.projectId &&
-      scope.organizationId === searchParams?.organizationId) ??
-    mcScopes.find(scope => scope.projectId === searchParams?.projectId) ?? mcScopes[0]
-  ) : null;
-  const managedIds = activeScope ? (await getMCManagedUnits(
-    prisma, user.identityId, activeScope.projectId, activeScope.organizationId,
-  )).map(unit => unit.id) : [];
-  const projectWhere = user.isAdmin ? {} : mcMode ?
-    { id: activeScope!.projectId } : { id: { in: staffProjectIds } };
+
+  const organizationScopes = mcMode && requestedOrganizationId
+    ? mcScopes.filter((scope) => scope.organizationId === requestedOrganizationId)
+    : mcScopes;
+  const projectScopes = mcMode && requestedProjectId
+    ? organizationScopes.filter((scope) => scope.projectId === requestedProjectId)
+    : organizationScopes;
+  const effectiveScopes = projectScopes.length
+    ? projectScopes
+    : mcMode && requestedProjectId
+      ? mcScopes.filter((scope) => scope.projectId === requestedProjectId)
+      : mcScopes;
+
+  const managedUnitLists = mcMode
+    ? await Promise.all(effectiveScopes.map((scope) =>
+        getMCManagedUnits(prisma, user.identityId, scope.projectId, scope.organizationId)
+      ))
+    : [];
+  const managedIds = Array.from(new Set(managedUnitLists.flat().map((unit) => unit.id)));
+  const mcProjectIds = Array.from(new Set(mcScopes.map((scope) => scope.projectId)));
+  const projectWhere = user.isAdmin ? {} : mcMode
+    ? { id: { in: mcProjectIds } }
+    : { id: { in: staffProjectIds } };
   const [projects, sourceExcludedUnitIds] = await Promise.all([
     prisma.project.findMany({
       where: projectWhere, select: { id: true, name: true }, orderBy: { name: 'asc' },
@@ -55,13 +71,15 @@ export default async function UnifiedStayCalendarPage({
   ]);
   const sourceExcluded = new Set(sourceExcludedUnitIds);
   const authorizedIds = new Set(projects.map((project) => project.id));
-  const requestedProjectId = searchParams?.projectId;
-  const projectId = mcMode ? activeScope!.projectId :
+  const projectId =
     requestedProjectId && authorizedIds.has(requestedProjectId) ? requestedProjectId : '';
   const unitWhere = {
     status: { not: 'offboarded' as const },
-    ...(mcMode ? { id: { in: managedIds }, projectId: activeScope!.projectId } :
-      !user.isAdmin ? { projectId: { in: staffProjectIds } } : {}),
+    ...(mcMode
+      ? { id: { in: managedIds } }
+      : !user.isAdmin
+        ? { projectId: { in: staffProjectIds } }
+        : {}),
     ...(projectId ? { projectId } : {}),
   };
   const units = await prisma.unit.findMany({
@@ -90,7 +108,7 @@ export default async function UnifiedStayCalendarPage({
   const today = bangkokCalendarDay();
   const start = searchParams?.start && validCalendarDay(searchParams.start) ? searchParams.start : today;
   const requestedDays = Number(searchParams?.days);
-  const daysCount = [7, 14, 28].includes(requestedDays) ? requestedDays : 14;
+  const daysCount = [7, 14, 30].includes(requestedDays) ? requestedDays : 14;
   const days = calendarDays(start, daysCount);
   const end = shiftCalendarDay(start, daysCount);
   const unitIds = visibleUnits.map((unit) => unit.id);
@@ -186,7 +204,7 @@ export default async function UnifiedStayCalendarPage({
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
-    mode={mcMode ? 'mc' : 'staff'} organizationId={activeScope?.organizationId ?? ''}
+    mode={mcMode ? 'mc' : 'staff'} organizationId={requestedOrganizationId ?? ''}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({

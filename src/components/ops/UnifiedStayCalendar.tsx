@@ -48,11 +48,15 @@ export default function UnifiedStayCalendar(props: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
+  const [mobileDate, setMobileDate] = useState(
+    props.days.includes(props.today) ? props.today : (props.days[0] || props.start)
+  );
   const [refreshRequestedAt, setRefreshRequestedAt] = useState<string|null>(null);
   const lastCursor = useRef<string|null|undefined>(undefined);
   const q = (patch: Record<string,string|null>) => {
     const params = new URLSearchParams();
     for (const [key,value] of Object.entries({
+      mc:props.mode==='mc' ? '1' : '',
       projectId:props.projectId, organizationId:props.organizationId || '',
       categoryId:props.categoryId, unitId:props.unitId,
       start:props.start, days:String(props.daysCount), ...patch,
@@ -96,6 +100,12 @@ export default function UnifiedStayCalendar(props: Props) {
     (unit.name + ' ' + unit.projectName + ' ' + unit.categoryName).toLocaleLowerCase()
       .includes(search.toLocaleLowerCase().trim()),
   ),[props.units,search]);
+  useEffect(() => {
+    if (!props.days.includes(mobileDate)) {
+      setMobileDate(props.days.includes(props.today) ? props.today : (props.days[0] || props.start));
+    }
+  }, [mobileDate, props.days, props.start, props.today]);
+  const mobileIndex = Math.max(0, props.days.indexOf(mobileDate));
   let booked=0, available=0, holds=0, conflicts=0;
   for (const unit of rows) for (const cell of props.cells[unit.id] || []) {
     if (cell.state==='free' && unit.sellable) available++;
@@ -113,7 +123,7 @@ export default function UnifiedStayCalendar(props: Props) {
     <div className="mx-auto max-w-[1600px] space-y-24">
       <header className="flex flex-wrap items-start justify-between gap-16">
         <div className="space-y-8">
-          <Link href={props.mode==='mc' ? '/mc/calendar' : '/ops'} className="text-small font-semibold text-brand-andaman hover:underline">
+          <Link href={props.mode==='mc' ? '/mc' : '/ops'} className="text-small font-semibold text-brand-andaman hover:underline">
             {props.labels['staff.unified_calendar.back']}
           </Link>
           <p className="text-kicker font-bold tracking-widest text-brand-andaman">
@@ -151,7 +161,7 @@ export default function UnifiedStayCalendar(props: Props) {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
           <label className="text-small font-semibold text-text-secondary">
             {props.labels['staff.unified_calendar.project']}
-            <select value={props.projectId} disabled={props.mode==='mc'} onChange={(event)=>router.push(q({projectId:event.target.value,categoryId:null,unitId:null}))}
+            <select value={props.projectId} onChange={(event)=>router.push(q({projectId:event.target.value,organizationId:null,categoryId:null,unitId:null}))}
               className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
               <option value="">{props.labels['staff.unified_calendar.all_projects']}</option>
               {props.projects.map((item)=><option value={item.id} key={item.id}>{item.name}</option>)}
@@ -194,7 +204,7 @@ export default function UnifiedStayCalendar(props: Props) {
             <span className="text-small font-semibold text-text-ink">{props.days[0]} — {props.days[props.days.length-1]}</span>
           </div>
           <div className="flex gap-4" aria-label="Calendar range">
-            {[7,14,28].map((length)=><Link key={length} href={q({days:String(length)})}
+            {[7,14,30].map((length)=><Link key={length} href={q({days:String(length)})}
               aria-current={props.daysCount===length?'page':undefined}
               className={props.daysCount===length
                 ? 'rounded-md bg-brand-deep px-12 py-8 text-small font-bold text-white'
@@ -205,7 +215,45 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>
       </section>
 
-      <section aria-label="Unified occupancy grid" className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
+      <section aria-label="Mobile occupancy agenda" className="rounded-lg border border-border-line bg-surface-paper p-12 md:hidden">
+        <div className="mb-12 flex items-center justify-between gap-8">
+          <button type="button" disabled={mobileIndex<=0}
+            onClick={()=>mobileIndex>0 && setMobileDate(props.days[mobileIndex-1])}
+            className="rounded-md border border-border-line px-12 py-8 text-small font-semibold disabled:opacity-40">←</button>
+          <div className="text-center">
+            <p className="font-semibold text-text-ink">{mobileDate}</p>
+            <p className="text-[11px] text-text-secondary">
+              {new Date(mobileDate+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}
+            </p>
+          </div>
+          <button type="button" disabled={mobileIndex>=props.days.length-1}
+            onClick={()=>mobileIndex<props.days.length-1 && setMobileDate(props.days[mobileIndex+1])}
+            className="rounded-md border border-border-line px-12 py-8 text-small font-semibold disabled:opacity-40">→</button>
+        </div>
+        <div className="space-y-8">
+          {rows.length===0 ? <p className="p-12 text-small text-text-secondary">{props.labels['staff.unified_calendar.empty']}</p> :
+            rows.map((unit)=>{
+              const cell=(props.cells[unit.id]||[])[mobileIndex];
+              if (!cell) return null;
+              const state=!unit.sellable&&cell.state==='free'
+                ? props.labels['staff.unified_calendar.not_sellable']
+                : stateLabel[cell.state];
+              return <button key={unit.id} type="button"
+                onClick={()=>setSelected({unitId:unit.id,date:mobileDate,cell})}
+                className="flex w-full items-center justify-between gap-12 rounded-md border border-border-line bg-surface-ivory p-12 text-left">
+                <span>
+                  <span className="block font-semibold text-text-ink">{unit.name}</span>
+                  <span className="block text-[11px] text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
+                </span>
+                <span className={'shrink-0 rounded-md px-10 py-6 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                  {state}
+                </span>
+              </button>;
+            })}
+        </div>
+      </section>
+
+      <section aria-label="Unified occupancy grid" className="hidden overflow-hidden rounded-lg border border-border-line bg-surface-paper md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-small" style={{minWidth:Math.max(780,220+props.days.length*52)}}>
             <thead><tr>

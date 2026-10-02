@@ -71,7 +71,7 @@ export default async function PartnersPage() {
           <p className="text-kicker uppercase text-brand-andaman">
             {labels['partners.kicker']}
           </p>
-          <h1 className="mt-12 max-w-3xl font-display text-display-xl font-semibold text-text-ink md:text-[56px] md:leading-[62px]">
+          <h1 className="mt-12 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['partners.title']}
           </h1>
           <p className="mt-20 max-w-2xl text-body text-text-secondary md:text-subtitle">

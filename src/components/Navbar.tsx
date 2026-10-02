@@ -27,6 +27,7 @@ export interface NavbarLabels {
   stay: string;
   monthly: string;
   buy: string;
+  homes: string;
   sell: string;
   rentOut: string;
   manage: string;
@@ -104,7 +105,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
     { href: '/projects', label: labels.explore },
     { href: '/search', label: labels.stay },
-    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/homes?intent=buy', label: labels.homes, activeBase: '/homes' },
     { href: '/services', label: labels.services },
     { href: '/owners', label: labels.owners },
   ];
@@ -245,7 +246,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             ))}
           </div>
 
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.explore}</p>
+          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.more}</p>
           <div className="flex flex-col">
             {exploreLinks.map((link) => (
               <Link

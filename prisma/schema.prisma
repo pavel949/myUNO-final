@@ -858,6 +858,7 @@ model Identity {
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
 
   @@map("identity")
+  operationalTasksAssigned OperationalTask[] @relation("operationalTaskAssignee")
 }
 
 model AuthAccount {
@@ -1087,7 +1088,6 @@ model Unit {
   operationalTasks             OperationalTask[]
   ledgerEntries                LedgerEntry[]
   tickets                      Ticket[]
-  operationalTasksAssigned     OperationalTask[]             @relation("operationalTaskAssignee")
   serviceOrders                ServiceOrder[]
   amenityReservations          ProjectAmenityReservation[]
   conditionReports             ConditionReport[]

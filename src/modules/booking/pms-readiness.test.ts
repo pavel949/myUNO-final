@@ -58,7 +58,7 @@ describe('PMS readiness lifecycle', () => {
     const db: any = {
       booking,
       operationalTask,
-      $transaction: (fn: any) => fn({ booking, operationalTask }),
+      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn() }),
     };
 
     await checkOutBooking(db, 'booking-a', checkedOut.checkedOutAt);

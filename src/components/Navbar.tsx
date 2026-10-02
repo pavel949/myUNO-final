@@ -54,6 +54,7 @@ export interface NavbarLabels {
   orders: string;
   account: string;
   menu: string;
+  more: string;
 }
 
 interface NavbarProps {
@@ -101,18 +102,19 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const closeMenu = () => setMenuOpen(false);
 
   const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
-    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/projects', label: labels.explore },
     { href: '/search', label: labels.stay },
-    { href: '/sell', label: labels.sell },
-    { href: '/rent-out', label: labels.rentOut },
-    { href: '/manage', label: labels.manage },
+    { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
+    { href: '/services', label: labels.services },
+    { href: '/owners', label: labels.owners },
   ];
 
   const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [
     { href: '/homes?intent=rent', label: labels.monthly },
-    { href: '/projects', label: labels.projects },
+    { href: '/sell', label: labels.sell },
+    { href: '/rent-out', label: labels.rentOut },
+    { href: '/manage', label: labels.manage },
     { href: '/areas', label: labels.areas },
-    { href: '/services', label: labels.services },
     { href: '/desks', label: labels.global },
     { href: '/trust', label: labels.trust },
     { href: '/help', label: labels.help },
@@ -160,7 +162,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         <div className="hidden items-center justify-end gap-x-12 xl:flex">
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
-              {labels.explore}
+              {labels.more}
             </summary>
             <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
               {exploreLinks.map((link) => (
@@ -181,7 +183,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <>
               <details className="relative">
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
-                  {user.firstName} · My UNO
+                  {user.firstName} · My myUNO
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
@@ -265,7 +267,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
           {user ? (
             <>
-              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My UNO</p>
+              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My myUNO</p>
               <div className="flex flex-col">
                 {userLinks.map((link) => (
                   <Link

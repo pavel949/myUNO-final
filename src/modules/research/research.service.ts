@@ -52,6 +52,12 @@ export async function addResearchSource(
   input: ResearchSourceInput
 ) {
   if (!validHttpUrl(input.url)) throw new Error('Research source URL must be http(s)');
+  const publication = await db.researchPublication.findUnique({
+    where: { id: publicationId },
+    select: { status: true },
+  });
+  if (!publication) throw new Error('Research publication not found');
+  if (publication.status !== 'draft') throw new Error('Sources are frozen once review begins');
   const last = await db.researchSource.aggregate({
     where: { publicationId },
     _max: { sourceNumber: true },

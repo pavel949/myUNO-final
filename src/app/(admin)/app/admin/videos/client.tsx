@@ -4,6 +4,8 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
+const VIDEO_ACCEPT = 'video/mp4,video/webm';
+
 type Video = { id:string; slug:string; locale:string; title:string; description:string|null; provenance:string|null; status:string; mediaUrl:string; mimeType:string };
 
 async function post(payload: Record<string,unknown>) {
@@ -49,20 +51,20 @@ export default function VideoAdminClient({ videos, labels }: { videos:Video[]; l
 
     <form onSubmit={create} className="mt-32 grid gap-12 rounded-2xl border border-border-line bg-surface-paper p-24 md:grid-cols-2">
       <input name="slug" required placeholder={labels['admin.video.slug']} className="rounded-lg border border-border-line p-12"/>
-      <select name="locale" className="rounded-lg border border-border-line p-12"><option value="en">EN</option><option value="ru">RU</option><option value="th">TH</option><option value="zh">ZH</option></select>
+      <select name="locale" className="rounded-lg border border-border-line p-12"><option value="en">{labels['nav.locale.en']}</option><option value="ru">{labels['nav.locale.ru']}</option><option value="th">{labels['nav.locale.th']}</option><option value="zh">{labels['nav.locale.zh']}</option></select>
       <input name="title" required placeholder={labels['admin.video.video_title']} className="rounded-lg border border-border-line p-12 md:col-span-2"/>
       <textarea name="description" placeholder={labels['admin.video.description']} className="rounded-lg border border-border-line p-12 md:col-span-2"/>
       <input name="provenance" required placeholder={labels['admin.video.provenance']} className="rounded-lg border border-border-line p-12 md:col-span-2"/>
       <label className="text-small text-text-secondary">{labels['admin.video.recorded_on']}<input name="recordedOn" type="date" className="mt-8 block w-full rounded-lg border border-border-line p-12"/></label>
-      <input name="file" required type="file" accept="video/mp4,video/webm" className="rounded-lg border border-border-line p-12"/>
-      <select name="scopeType" className="rounded-lg border border-border-line p-12"><option value="">{labels['admin.video.scope_none']}</option><option value="area">Area</option><option value="project">Project</option><option value="unit">Unit</option></select>
+      <input name="file" required type="file" accept={VIDEO_ACCEPT} className="rounded-lg border border-border-line p-12"/>
+      <select name="scopeType" className="rounded-lg border border-border-line p-12"><option value="">{labels['admin.video.scope_none']}</option><option value="area">{labels['admin.video.scope_area']}</option><option value="project">{labels['admin.video.scope_project']}</option><option value="unit">{labels['admin.video.scope_unit']}</option></select>
       <input name="scopeId" placeholder={labels['admin.video.scope_id']} className="rounded-lg border border-border-line p-12"/>
       <Button type="submit" disabled={busy}>{labels['admin.video.create']}</Button>
     </form>
 
     <div className="mt-32 grid gap-20 md:grid-cols-2">
       {videos.length===0?<p className="text-text-secondary">{labels['admin.video.empty']}</p>:videos.map(video=><article key={video.id} className="overflow-hidden rounded-2xl border border-border-line bg-surface-paper">
-        <video controls preload="metadata" className="aspect-video w-full bg-black"><source src={video.mediaUrl} type={video.mimeType}/></video>
+        <video controls className="aspect-video w-full bg-black"><source src={video.mediaUrl} type={video.mimeType}/></video>
         <div className="p-20"><div className="flex items-start justify-between gap-12"><h2 className="font-display text-title font-semibold text-text-ink">{video.title}</h2><span className="text-small">{labels['admin.video.status']}: {video.status}</span></div>
         {video.description?<p className="mt-8 text-small text-text-secondary">{video.description}</p>:null}
         <p className="mt-8 text-small text-text-secondary">{video.provenance}</p>

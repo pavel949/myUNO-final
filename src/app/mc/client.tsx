@@ -1300,6 +1300,8 @@ export function MCDashboardClient({
           </div>
         )}
       </section>
+        </div>
+      </div>
 
       <CheckInConditionReportModal
         bookingId={checkinBooking?.id ?? null}

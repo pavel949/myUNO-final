@@ -14,6 +14,7 @@ import { Footer } from '@/components/Footer';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
+import { getDestination } from '@/modules/destinations';
 
 const SURFACE_LABEL_KEYS = {
   active_stay: 'nav.stay',
@@ -29,10 +30,12 @@ const SURFACE_LABEL_KEYS = {
   public: 'nav.find_stay',
 } as const satisfies Record<Landing['reason'], string>;
 
+const destination = getDestination();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: 'myUNO',
-  description: 'Property, stays and services connected around one Phuket home.',
+  description: `Stay, buy, own and access trusted local services in ${destination.name} through one connected property network.`,
 };
 
 export const dynamic = 'force-dynamic';
@@ -57,7 +60,7 @@ export default async function RootLayout({
     'nav.areas': 'Areas',
     'nav.projects': 'Projects',
     'nav.services': 'Services',
-    'nav.owners': 'Owners',
+    'nav.owners': 'Own',
     'nav.partners': 'Partners',
     'nav.about': 'About',
     'nav.language': 'Language',
@@ -113,7 +116,7 @@ export default async function RootLayout({
 
   const footerLabels = await getLabels({
     'nav.footer.brand_name': 'myUNO',
-    'nav.footer.brand_tagline': 'Property, stays and services connected around one Phuket home.',
+    'nav.footer.brand_tagline': `Property, stays and services connected across ${destination.name}.`,
     'nav.footer.brand_column': 'Explore',
     'nav.footer.home': 'Home',
     'nav.footer.stay': 'Stay',
@@ -133,7 +136,7 @@ export default async function RootLayout({
     'nav.footer.legal_index': 'Legal',
     'nav.language': 'Language',
     'nav.footer.audience_column': 'Property',
-    'nav.footer.owners': 'Owners',
+    'nav.footer.owners': 'Own',
     'nav.footer.guests': 'Guests',
     'nav.footer.providers': 'Providers',
     'nav.footer.partners_column': 'Partners',

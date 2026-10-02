@@ -46,6 +46,7 @@ describe('Navbar', () => {
           account: 'Account',
           menu: 'Menu',
           more: 'More',
+          myUno: 'My UNO',
         }}
         roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
         bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}

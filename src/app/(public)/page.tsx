@@ -11,10 +11,13 @@ import { HomeIntentRail, type HomeRailItem } from '@/components/HomeIntentRail';
 import { getPublicHomepageData } from '@/modules/home/public-homepage.service';
 import { projectPresentationImage } from '@/lib/presentation-media';
 import { GLOBAL_DESKS } from '@/modules/global-desks';
+import { getDestination } from '@/modules/destinations';
+
+const destination = getDestination();
 
 export const metadata: Metadata = {
-  title: 'myUNO | Stay. Live. Own Phuket.',
-  description: 'Discover verified stays, homes and services across Phuket through one connected property platform.',
+  title: `myUNO | Stay. Buy. Own ${destination.name}.`,
+  description: `Discover stays, homes and trusted local services across ${destination.name} through one connected property network.`,
   alternates: publicPageAlternates('/'),
 };
 
@@ -38,12 +41,13 @@ function projectRank(name: string): number {
 
 export default async function LandingPage() {
   const locale = getRequestLocale();
+  const activeDestination = getDestination();
 
   const [labels, homepageData] = await Promise.all([
     getLabels({
       'landing.global_hero.kicker': 'PHUKET · STAYS · HOMES · SERVICES',
-      'landing.global_hero.title': 'Phuket, better connected.',
-      'landing.global_hero.subtitle': 'Stay in places we know. Manage your trip. Get trusted local services.',
+      'landing.global_hero.title': activeDestination.heroTitle,
+      'landing.global_hero.subtitle': activeDestination.heroSubtitle,
       'landing.global_hero.global': 'Explore global desks',
       'landing.global_hero.areas': 'Explore Phuket areas',
       'landing.global_hero.trust': 'How trust works',
@@ -62,7 +66,7 @@ export default async function LandingPage() {
       'landing.search.submit': 'Search homes',
 
       'landing.start.kicker': 'START HERE',
-      'landing.start.title': 'What brings you to Phuket?',
+      'landing.start.title': `What brings you to ${activeDestination.name}?`,
       'landing.start.buy_body': 'Explore homes with an active, evidenced sale offering.',
       'landing.start.stay_body': 'Search verified availability for your next stay.',
       'landing.start.sell_body': 'Start a documented resale and valuation review.',

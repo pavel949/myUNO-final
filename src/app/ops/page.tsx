@@ -77,7 +77,14 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
 
   const labels = await getLabels({
     ...bookingRequestInboxLabelDrafts,
-    'staff.ops.title': 'Ops board',
+    'staff.ops.title': 'Today',
+    'staff.ops.priority.title': 'Needs attention now',
+    'staff.ops.priority.arrivals': 'Arrivals',
+    'staff.ops.priority.departures': 'Departures',
+    'staff.ops.priority.requests': 'Booking requests',
+    'staff.ops.priority.payments': 'Unpaid stays',
+    'staff.ops.priority.services': 'Service orders',
+    'staff.ops.priority.tickets': 'Open tickets',
     'staff.ops.subtitle': '{date} · {arrivals} arrivals, {departures} departures, {unpaid} unpaid',
     'staff.ops.context.switcher': 'Project context',
     'staff.ops.context.all_projects': 'All projects',
@@ -311,6 +318,31 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
           basePath={switcherBasePath}
           labels={labels}
         />
+
+        <section className="mb-32">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink">
+            {labels['staff.ops.priority.title']}
+          </h2>
+          <div className="mt-16 grid grid-cols-2 gap-12 md:grid-cols-3 lg:grid-cols-6">
+            {[
+              { label: labels['staff.ops.priority.arrivals'], value: arrivals.length, href: opsHref('/ops/stays', validActiveProjectId) },
+              { label: labels['staff.ops.priority.departures'], value: departures.length, href: opsHref('/ops/stays', validActiveProjectId) },
+              { label: labels['staff.ops.priority.requests'], value: pendingRequests.length, href: opsHref('/ops/requests', validActiveProjectId) },
+              { label: labels['staff.ops.priority.payments'], value: pendingPayment.length, href: opsHref('/ops/stays', validActiveProjectId) },
+              { label: labels['staff.ops.priority.services'], value: pendingServiceOrders.length, href: '/services/orders' },
+              { label: labels['staff.ops.priority.tickets'], value: openTickets.length, href: '/tickets' },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`rounded-2xl border p-16 transition hover:border-brand-andaman/40 ${item.value > 0 ? 'border-state-warning/40 bg-state-warning-soft' : 'border-border-line bg-surface-paper'}`}
+              >
+                <p className="font-display text-heading-2 font-semibold tabular-nums text-text-ink">{item.value}</p>
+                <p className="mt-4 text-small text-text-secondary">{item.label}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <div className="mb-24">
           <h2 className="font-display text-title font-semibold text-text-ink mb-16">

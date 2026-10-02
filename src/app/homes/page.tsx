@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { listPublicCommercialHomes, type HomeIntent } from '@/modules/projects/commercial-discovery';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +27,14 @@ const positiveNumber = (value?: string) => {
 
 export default async function HomesPage({ searchParams }: { searchParams?: SearchParams }) {
   const intent: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
+  const destination = getDestination();
   const [allHomes, labels] = await Promise.all([
     listPublicCommercialHomes(prisma, intent).catch(() => []),
     getLabels({
       'homes.kicker': 'myUNO · REAL ESTATE',
-      'homes.inquiry.buy': 'I am looking to purchase a property in Phuket.',
-      'homes.inquiry.rent': 'I am looking for a long-term rental in Phuket.',
-      'homes.title': 'Homes in Phuket',
+      'homes.inquiry.buy': `I am looking to purchase a property in ${destination.name}.`,
+      'homes.inquiry.rent': `I am looking for a long-term rental in ${destination.name}.`,
+      'homes.title': `Homes in ${destination.name}`,
       'homes.subtitle': 'Explore real properties with documented listing authority. Every transaction is reviewed individually.',
       'homes.buy': 'Buy',
       'homes.rent': 'Long-term rent',

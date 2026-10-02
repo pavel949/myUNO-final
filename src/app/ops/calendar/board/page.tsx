@@ -107,6 +107,18 @@ export default async function UnifiedStayCalendarPage({
   const unitId = searchParams?.unitId && categoryUnits.some((unit) => unit.id === searchParams.unitId)
     ? searchParams.unitId : '';
   const visibleUnits = unitId ? categoryUnits.filter((unit) => unit.id === unitId) : categoryUnits;
+  const isUnitSellable = (unit: (typeof visibleUnits)[number]) =>
+    unit.status === 'live' &&
+    unit.project.status === 'live' &&
+    unit.inventoryCategory?.status === 'live' &&
+    !sourceExcluded.has(unit.id) &&
+    (
+      !unit.project.projectType ||
+      unit.commercialOfferings.some((offer) =>
+        ['short_term_stay', 'short_stay'].includes(offer.offeringType) &&
+        offer.status === 'active'
+      )
+    );
 
   const today = bangkokCalendarDay();
   const start = searchParams?.start && validCalendarDay(searchParams.start) ? searchParams.start : today;
@@ -122,13 +134,34 @@ export default async function UnifiedStayCalendarPage({
     startDate: { lt: rangeEnd },
     endDate: { gt: rangeStart },
   };
-  const [readinessByUnit, channelHealthByUnit, calendarRateResults] = await Promise.all([
-    getUnitReadinessMap(prisma, unitIds),
-    getChannelHealthForUnits(prisma, unitIds),
-    Promise.all(unitIds.map(async (id) => [
-      id,
-      await computeCanonicalCalendarRates(prisma, id, rangeStart, rangeEnd, 1),
-    ] as const)),
+  const readinessPromise = getUnitReadinessMap(prisma, unitIds);
+  const channelHealthPromise = getChannelHealthForUnits(prisma, unitIds);
+  // Quote only sellable stay inventory and bound concurrency so a 100-unit
+  // portfolio cannot stampede the DB. Every line still comes from the same
+  // canonical booking quote engine.
+  const pricedUnits = visibleUnits.filter(isUnitSellable);
+  const calendarRateResults: Array<
+    readonly [string, Awaited<ReturnType<typeof computeCanonicalCalendarRates>>]
+  > = [];
+  const RATE_BATCH = 12;
+  for (let offset = 0; offset < pricedUnits.length; offset += RATE_BATCH) {
+    const batch = await Promise.all(
+      pricedUnits.slice(offset, offset + RATE_BATCH).map(async (unit) => [
+        unit.id,
+        await computeCanonicalCalendarRates(
+          prisma,
+          unit.id,
+          rangeStart,
+          rangeEnd,
+          1
+        ),
+      ] as const)
+    );
+    calendarRateResults.push(...batch);
+  }
+  const [readinessByUnit, channelHealthByUnit] = await Promise.all([
+    readinessPromise,
+    channelHealthPromise,
   ]);
   const calendarRatesByUnit = Object.fromEntries(calendarRateResults);
 
@@ -234,10 +267,7 @@ export default async function UnifiedStayCalendarPage({
     units={visibleUnits.map((unit) => ({
       id: unit.id, name: unit.name, projectId: unit.projectId,
       projectName: unit.project.name,
-      sellable: unit.status === 'live' && unit.project.status === 'live' &&
-        unit.inventoryCategory?.status === 'live' && !sourceExcluded.has(unit.id) &&
-        (!unit.project.projectType || unit.commercialOfferings.some(offer =>
-          ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')),
+      sellable: isUnitSellable(unit),
       categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
       readiness: readinessByUnit[unit.id]?.state ?? 'ready',

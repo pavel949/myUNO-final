@@ -281,7 +281,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   </span>
                 </span>
                 <span className="text-right">
-                  <span className={'block shrink-0 rounded-md px-10 py-6 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                  <span className={'block shrink-0 rounded-md px-12 py-8 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
                     {state}
                   </span>
                   <span className="mt-4 block text-[10px] font-semibold text-text-secondary">

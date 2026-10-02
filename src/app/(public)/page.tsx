@@ -325,7 +325,7 @@ export default async function LandingPage() {
             >
               {labels['landing.global_hero.title']}
             </h1>
-            <p className="mt-20 max-w-xl text-body text-text-ink md:text-subtitle">
+            <p className="mt-40 max-w-xl text-body text-text-ink md:text-subtitle">
               {labels['landing.global_hero.subtitle']}
             </p>
           </div>
@@ -474,35 +474,35 @@ export default async function LandingPage() {
                 {labels['landing.vacation.body']}
               </p>
 
-              <div className="mt-28 grid gap-12 md:grid-cols-2">
+              <div className="mt-44 grid gap-12 md:grid-cols-2">
                 <div className="rounded-2xl border border-border-line bg-surface-ivory p-20 md:p-24">
                   <p className="text-kicker uppercase text-brand-andaman">{labels['landing.vacation.guest_title']}</p>
                   <p className="mt-8 text-body text-text-secondary">{labels['landing.vacation.guest_body']}</p>
-                  <Link href="/search" className="mt-20 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
+                  <Link href="/search" className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
                     {labels['landing.vacation.guest_cta']} →
                   </Link>
                 </div>
                 <div className="rounded-2xl border border-border-line bg-surface-ivory p-20 md:p-24">
                   <p className="text-kicker uppercase text-brand-andaman">{labels['landing.vacation.owner_title']}</p>
                   <p className="mt-8 text-body text-text-secondary">{labels['landing.vacation.owner_body']}</p>
-                  <Link href="/rent-out" className="mt-20 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
+                  <Link href="/rent-out" className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
                     {labels['landing.vacation.owner_cta']} →
                   </Link>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-28">
+            <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-32">
               <p className="font-display text-title font-semibold">{labels['landing.vacation.kicker']}</p>
-              <div className="mt-20 space-y-12">
+              <div className="mt-40 space-y-12">
                 {[
                   labels['landing.vacation.proof_property'],
                   labels['landing.vacation.proof_eligibility'],
                   labels['landing.vacation.proof_journey'],
                   labels['landing.vacation.proof_owner'],
                 ].map((item) => (
-                  <div key={item} className="flex gap-10 border-b border-white/10 pb-12 last:border-0 last:pb-0">
-                    <TrustMark size={18} filled className="mt-2 shrink-0 text-brand-sun" />
+                  <div key={item} className="flex gap-12 border-b border-white/10 pb-12 last:border-0 last:pb-0">
+                    <TrustMark size={18} filled className="mt-4 shrink-0 text-brand-sun" />
                     <span className="text-body text-surface-ivory">{item}</span>
                   </div>
                 ))}
@@ -535,9 +535,9 @@ export default async function LandingPage() {
                 className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
               >
                 <TrustMark size={20} filled className="text-brand-andaman" />
-                <h3 className="mt-24 font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                <h3 className="mt-44 font-display text-title font-semibold text-text-ink">{item.title}</h3>
                 <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
-                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
+                <span className="mt-40 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
               </Link>
             ))}
           </div>
@@ -732,7 +732,7 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          <div className="-mx-20 mt-24 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
+          <div className="-mx-20 mt-44 flex snap-x gap-12 overflow-x-auto px-20 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
             {GLOBAL_DESKS.map((desk) => (
               <Link
                 key={desk.slug}

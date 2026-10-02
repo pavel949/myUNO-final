@@ -8,6 +8,9 @@ describe('destination configuration', () => {
     expect(destination.currency).toBe('THB');
     expect(destination.timezone).toBe('Asia/Bangkok');
     expect(destination.supportedLocales).toContain('ru');
+    const russianDesk = destination.desks.find((desk) => desk.slug === 'russian-speaking');
+    expect(russianDesk?.supportedLocales).toEqual(['ru', 'en']);
+    expect(russianDesk?.sourceMarkets).toContain('Russian-speaking world');
   });
 
   it('keeps destination selection behind one boundary', () => {

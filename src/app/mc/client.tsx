@@ -644,7 +644,7 @@ export function MCDashboardClient({
                 href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
                 className="inline-flex h-44 items-center rounded-md bg-brand-deep px-16 text-small font-semibold text-white hover:opacity-90"
               >
-                Open calendar
+                {labels['mc.workspace.open_calendar']}
               </Link>
             </div>
           </div>
@@ -653,7 +653,7 @@ export function MCDashboardClient({
 
       <div className="max-w-[1600px] mx-auto lg:grid lg:grid-cols-[228px_minmax(0,1fr)]">
         <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
-          <nav aria-label="Management company workspace" className="p-12 lg:p-16">
+          <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
               {[
                 ['overview', labels['mc.tabs.overview']],
@@ -682,22 +682,22 @@ export function MCDashboardClient({
 
             <div className="hidden lg:flex lg:flex-col gap-4">
               <Link href="/mc/portfolio" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Portfolio
+                {labels['mc.workspace.portfolio']}
               </Link>
               <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Mobilization
+                {labels['mc.nav.mobilization']}
               </Link>
               <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Guests & TM30
+                {labels['mc.workspace.guests_tm30']}
               </Link>
               <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Costs
+                {labels['mc.workspace.costs']}
               </Link>
               <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Services
+                {labels['mc.workspace.services']}
               </Link>
               <Link href="/announcements" className="rounded-md px-12 py-10 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                Announcements
+                {labels['mc.workspace.announcements']}
               </Link>
             </div>
           </nav>
@@ -740,7 +740,7 @@ export function MCDashboardClient({
                       <h2 className="mt-2 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
-                      Full calendar →
+                      {labels['mc.workspace.full_calendar']} →
                     </button>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">

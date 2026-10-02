@@ -29,7 +29,7 @@ describe('PMS readiness lifecycle', () => {
     const db: any = {
       booking,
       operationalTask,
-      $transaction: (fn: any) => fn({ booking, operationalTask }),
+      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn() }),
     };
 
     await expect(

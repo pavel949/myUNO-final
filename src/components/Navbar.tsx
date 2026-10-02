@@ -57,6 +57,7 @@ export interface NavbarLabels {
   account: string;
   menu: string;
   more: string;
+  myUno: string;
 }
 
 interface NavbarProps {
@@ -108,7 +109,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
     { href: '/owners', label: labels.owners },
     { href: '/services', label: labels.services },
-    { href: user ? '/app' : '/login?next=/app', label: 'My UNO', activeBase: '/app' },
+    { href: user ? '/app' : '/login?next=/app', label: labels.myUno, activeBase: '/app' },
   ];
 
   const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [

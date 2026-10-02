@@ -13,12 +13,10 @@ import UnitIcalConflictBanner, {
 import type { UnitIcalConflictAlert } from '@/modules/integrations';
 import {
   HBarStack,
-  MonthHeatStrip,
   HeroNumber,
   CHART_SERIES,
   formatThb,
 } from '@/components/viz';
-import type { HeatDay } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
 
@@ -178,29 +176,6 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
 }
 
-/** Build the current month's day cells for a unit from its bookings. */
-function monthHeatDays(unitId: string, bookings: Booking[]): HeatDay[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const occupying = bookings.filter(
-    (b) =>
-      b.unit?.id === unitId &&
-      ['confirmed', 'checked_in', 'checked_out'].includes(b.status)
-  );
-  const days: HeatDay[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const night = new Date(year, month, d);
-    const occupied = occupying.some(
-      (b) => new Date(b.startDate) <= night && new Date(b.endDate) > night
-    );
-    const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    days.push({ date: iso, occupied });
-  }
-  return days;
-}
-
 export function MCDashboardClient({
   dashboard,
   units,
@@ -215,7 +190,7 @@ export function MCDashboardClient({
 }: MCDashboardClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'bookings' | 'tickets' | 'service_orders' | 'calendar' | 'reports'
+    'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);

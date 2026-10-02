@@ -27,6 +27,7 @@ describe('Security headers (T-042, doc 12)', () => {
     // guest types, passport details included.
     expect(csp).toContain("form-action 'self'");
     expect(csp).toContain("connect-src 'self'");
+    expect(csp).toContain("media-src 'self' https: blob:");
   });
 
   it("keeps 'unsafe-eval' out of the production script policy", () => {

@@ -11,8 +11,19 @@ One account may unlock multiple layers.
 
 ## 2. Public IA
 
+The first navigation layer is job-based and intentionally limited to:
+`Stay · Buy · Own · Services · My UNO`.
+
+Explore, Areas, Projects, Partners, Sell, List and Management remain discoverable
+secondary paths; they are not equal-weight top-level modules.
+
 ```text
 /
+├─ /search                 # Stay
+├─ /homes?intent=buy       # Buy
+├─ /owners                 # Own
+├─ /services               # Services
+├─ /app                    # My UNO relationship hub
 ├─ /explore
 ├─ /stays
 ├─ /services
@@ -33,6 +44,15 @@ One account may unlock multiple layers.
 ```
 
 Preserve existing canonical routes and redirects where sensible.
+
+## 2.1 Destination boundary
+
+Phuket is the first configured destination, not a permanent product assumption.
+Destination configuration owns market-level name, country, currency, timezone,
+supported locales and destination proposition. Domain engines continue to own
+property, booking, money, ownership and service facts and must not fork per
+destination. A new standard destination must be configuration/data work rather
+than a new application.
 
 ## 3. Homepage
 
@@ -86,10 +106,14 @@ Modes: instant, provider-confirmed, quote, concierge, referral. UI states which 
 
 ## 8. My myUNO
 
-Adaptive sections:
-`Trips · Orders · Homes · Services · Saved · Ownership · Work · Partner`.
+`/app` is a real relationship home, not a role redirect. It exposes personal
+journeys first and then the authorized workspaces attached to the same identity.
 
-Only relevant sections appear.
+Adaptive sections:
+`Trips · Orders · Homes · Services · Saved · Messages · Ownership · Work · Partner`.
+
+Only relevant sections appear. Role workspaces stay independent authorization
+scopes; My UNO only connects them and never becomes a parallel writer.
 
 ## 9. Guest Trip Hub
 

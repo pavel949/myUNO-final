@@ -122,7 +122,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     if (body.action === 'channel_mapping') {
       if (body.syncState === 'ari_push') throw new Error('ARI push cannot be marked manually; connect a verified ARI provider first');
-      const authority = await layantaraAuthority(params.id);
       const requestedType = body.offeringType || 'short_term_stay';
       const stayType = requestedType === 'short_stay' || requestedType === 'short_term_stay';
       const offeringType = stayType ? 'short_term_stay' : requestedType;

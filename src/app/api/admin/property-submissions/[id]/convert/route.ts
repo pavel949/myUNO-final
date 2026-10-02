@@ -165,6 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           });
         }
 
+        const canonicalUnitId = unitId;
         const photos = Array.isArray(data.photos) ? data.photos.filter((id): id is string => typeof id === 'string') : [];
         if (photos.length) {
           const count = await tx.mediaAsset.count({
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           });
           if (count !== new Set(photos).size) throw new Error('Unit photographs are not verified applicant media.');
           await tx.unitMedia.createMany({
-            data: photos.map((mediaId, sort) => ({ unitId, mediaId, sort })),
+            data: photos.map((mediaId, sort) => ({ unitId: canonicalUnitId, mediaId, sort })),
             skipDuplicates: true,
           });
           const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { coverMediaId: true } });

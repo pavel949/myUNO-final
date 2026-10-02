@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './Button';
@@ -44,7 +44,11 @@ export interface NavbarLabels {
   register: string;
   logout: string;
   myTrips: string;
-  saved?: string;
+  saved: string;
+  addProperty: string;
+  developers: string;
+  buyers: string;
+  management: string;
   messages: string;
   tickets: string;
   orders: string;
@@ -65,6 +69,23 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const pathname = usePathname() ?? '';
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -101,8 +122,8 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const userLinks = user
     ? [
         { href: '/trips', label: labels.myTrips },
-        { href: '/saved', label: labels.saved || 'Saved' },
-        { href: '/property/onboard', label: 'Add a property' },
+        { href: '/saved', label: labels.saved },
+        { href: '/property/onboard', label: labels.addProperty },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },
@@ -136,7 +157,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           </div>
         </div>
 
-        <div className="hidden items-center justify-end gap-x-12 lg:flex">
+        <div className="hidden items-center justify-end gap-x-12 xl:flex">
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
               {labels.explore}
@@ -148,9 +169,9 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
                 </Link>
               ))}
               <div className="mt-4 border-t border-border-line pt-12">
-                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
+                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
               </div>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management companies</Link>
+              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
             </div>
           </details>
 
@@ -184,12 +205,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           )}
         </div>
 
-        <div className="flex items-center gap-4 lg:hidden">
+        <div className="flex items-center gap-4 xl:hidden">
           {user ? <NotificationBell labels={bellLabels} /> : null}
           <button
             type="button"
             aria-label={labels.menu}
             aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            ref={menuButton}
             className="flex h-44 w-44 items-center justify-center text-text-ink"
             onClick={() => setMenuOpen((open) => !open)}
           >
@@ -205,8 +228,8 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
       </nav>
 
       {menuOpen ? (
-        <div className="max-h-[calc(100vh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 lg:hidden">
-          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Start</p>
+        <div id="mobile-navigation" className="max-h-[calc(100dvh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 xl:hidden">
+          <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Explore</p>
           <div className="flex flex-col">
             {publicLinks.map((link) => (
               <Link

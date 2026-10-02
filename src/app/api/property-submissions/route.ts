@@ -67,10 +67,10 @@ export async function GET(req: NextRequest) {
       .map((role) => role.unitId as string);
     const units = await prisma.unit.findMany({
       where: access.user.isAdmin || scoped
-        ? { projectId, status: { not: 'archived' } }
+        ? { projectId, status: { not: 'offboarded' } }
         : {
             projectId,
-            status: { not: 'archived' },
+            status: { not: 'offboarded' },
             OR: [{ status: 'live' }, ...(scopedUnitIds.length ? [{ id: { in: scopedUnitIds } }] : [])],
           },
       select: { id: true, name: true, floor: true, bedrooms: true, bathrooms: true, sizeSqm: true },

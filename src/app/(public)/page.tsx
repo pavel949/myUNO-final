@@ -2,15 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
-import { prisma } from '@/lib/prisma';
 import { siteUrl, publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { DiscoverySearch } from '@/components/DiscoverySearch';
-import { listPublicProjects } from '@/modules/projects';
-import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
-import { listPublicMarketplaceServices } from '@/modules/services';
+import { getPublicHomepageData } from '@/modules/home/public-homepage.service';
 import { projectPresentationImage } from '@/lib/presentation-media';
 import { GLOBAL_DESKS } from '@/modules/global-desks';
 
@@ -21,6 +18,9 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
+
+const HOME_UNIT_IMAGE_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
+const HOME_AREA_IMAGE_SIZES = '(max-width: 768px) 100vw, 33vw';
 
 const PROJECT_PRIORITY = [
   'Layan Tara Villas',
@@ -39,7 +39,7 @@ function projectRank(name: string): number {
 export default async function LandingPage() {
   const locale = getRequestLocale();
 
-  const [labels, rawProjects, commercialHomes, services] = await Promise.all([
+  const [labels, homepageData] = await Promise.all([
     getLabels({
       'landing.global_hero.kicker': 'PHUKET · GLOBAL DISCOVERY · LOCAL OPERATIONS',
       'landing.global_hero.title': 'Phuket homes. Global discovery. One platform.',
@@ -49,6 +49,8 @@ export default async function LandingPage() {
       'landing.global_hero.trust': 'How trust works',
       'landing.search.where': 'Where',
       'landing.search.all_phuket': 'All Phuket',
+      'landing.search.locations': 'Locations',
+      'landing.search.projects': 'Projects',
       'landing.search.check_in': 'Check-in',
       'landing.search.check_out': 'Check-out',
       'landing.search.adults': 'Adults',
@@ -148,13 +150,11 @@ export default async function LandingPage() {
       'landing.trust.protected_body': 'Guests, owners, providers and teams see only the workflows relevant to them.',
       'landing.trust.cta': 'How trust works',
 
-      'home.discovery.stay': 'Stay',
-      'home.discovery.monthly': 'Monthly',
+      'home.discovery.rent': 'Rent',
       'home.discovery.buy': 'Buy',
-      'home.discovery.invest': 'Invest',
+      'home.discovery.manage': 'Manage',
       'home.discovery.sell': 'Sell',
       'home.discovery.rent_out': 'Rent Out',
-      'home.discovery.manage': 'Manage',
       'home.discovery.properties': 'Explore properties',
       'home.discovery.hint': 'Explore canonical homes and projects through the commercial path that fits your intent.',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
@@ -162,12 +162,25 @@ export default async function LandingPage() {
       'home.final.title': 'Your place in Phuket starts here.',
       'home.final.body': 'Find a stay, discover a home to own, or explore the services around it.',
       'home.final.primary': 'Explore properties',
+      'landing.units.kicker': 'STAYS & HOMES',
+      'landing.units.title': 'Choose the home, not just the project.',
+      'landing.units.body': 'Browse individual residences and villas connected to the same project, pricing and booking record.',
+      'landing.units.cta': 'See all stays',
+      'landing.units.guests': '{count} guests',
+      'landing.units.from': 'From ฿{price} / night',
+      'landing.units.open': 'View home',
+      'landing.areas.kicker': 'EXPLORE PHUKET',
+      'landing.areas.title': 'Choose your part of the island.',
+      'landing.areas.body': 'Browse projects by canonical location — from Layan and Bang Tao to the next areas added to myUNO.',
+      'landing.areas.projects': '{count} projects',
+      'landing.areas.open': 'Explore area',
+      'landing.areas.cta': 'View all areas',
       'home.final.secondary': 'Browse services',
     }),
-    listPublicProjects().catch(() => []),
-    listPublicCommercialHomes(prisma).catch(() => []),
-    listPublicMarketplaceServices(prisma, locale, { limit: 6 }).catch(() => []),
+    getPublicHomepageData(locale),
   ]);
+
+  const { projects: rawProjects, commercialHomes, services, stayUnits, areas } = homepageData;
 
   const projects = [...rawProjects].sort((a, b) => {
     const rankDifference = projectRank(a.name) - projectRank(b.name);
@@ -238,21 +251,21 @@ export default async function LandingPage() {
           sizes={["100", "vw"].join("")}
           className="object-cover brightness-[1.08] saturate-[0.92]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/95 via-surface-paper/76 to-surface-paper/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-paper/55 via-transparent to-surface-paper/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/95 via-surface-paper/75 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-paper/50 via-transparent to-transparent" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-48 md:min-h-[720px] md:px-32 md:pb-56">
           <div className="max-w-4xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+            <p className="text-kicker uppercase text-brand-andaman">
               {labels['landing.global_hero.kicker']}
             </p>
             <h1
               id="home-title"
-              className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.75rem)] font-semibold leading-[0.96] tracking-[-0.04em]"
+              className="mt-12 max-w-4xl font-display text-display-hero font-semibold text-text-ink md:text-display-hero-lg"
             >
               {labels['landing.global_hero.title']}
             </h1>
-            <p className="mt-20 max-w-2xl text-lg leading-relaxed text-text-secondary md:text-xl">
+            <p className="mt-20 max-w-2xl text-body text-text-secondary md:text-subtitle">
               {labels['landing.global_hero.subtitle']}
             </p>
             <div className="mt-20 flex flex-wrap gap-8">
@@ -268,16 +281,19 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-32 max-w-[1180px]">
+          <div className="mt-32 max-w-content">
             <DiscoverySearch
               projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+              areas={areas.map((area) => ({ slug: area.slug, name: area.displayName }))}
               labels={{
-                stay: labels['home.discovery.stay'],
-                monthly: labels['home.discovery.monthly'],
+                rent: labels['home.discovery.rent'],
                 buy: labels['home.discovery.buy'],
-                invest: labels['home.discovery.invest'],
+                manage: labels['home.discovery.manage'],
+                sell: labels['home.discovery.sell'],
                 where: labels['landing.search.where'],
                 allPhuket: labels['landing.search.all_phuket'],
+                locations: labels['landing.search.locations'],
+                projects: labels['landing.search.projects'],
                 checkIn: labels['landing.search.check_in'],
                 checkOut: labels['landing.search.check_out'],
                 adults: labels['landing.search.adults'],
@@ -292,42 +308,9 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-surface-ivory py-40 md:py-56" aria-labelledby="start-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
-            {labels['landing.start.kicker']}
-          </p>
-          <h2 id="start-heading" className="mt-8 font-display text-display font-semibold tracking-[-0.02em] text-text-ink">
-            {labels['landing.start.title']}
-          </h2>
-          <div className="mt-24 grid grid-cols-2 gap-12 lg:grid-cols-5">
-            {[
-              { title: labels['home.discovery.buy'], body: labels['landing.start.buy_body'], href: '/homes?intent=buy' },
-              { title: labels['home.discovery.stay'], body: labels['landing.start.stay_body'], href: '/search' },
-              { title: labels['home.discovery.sell'], body: labels['landing.start.sell_body'], href: '/sell' },
-              { title: labels['home.discovery.rent_out'], body: labels['landing.start.rentout_body'], href: '/rent-out' },
-              { title: labels['home.discovery.manage'], body: labels['landing.start.manage_body'], href: '/manage' },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group flex min-h-[170px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:min-h-[190px] md:p-24"
-              >
-                <div>
-                  <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
-                  <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
-                </div>
-                <span className="mt-20 text-small font-semibold text-brand-andaman transition-transform group-hover:translate-x-4">
-                  {labels['landing.start.explore']} →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section className="border-y border-border-line bg-gradient-to-r from-surface-ivory via-surface-paper to-surface-ivory py-44 md:py-56" aria-labelledby="global-desks-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="flex flex-col justify-between gap-16 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.desks.kicker']}</p>
@@ -364,13 +347,13 @@ export default async function LandingPage() {
       </section>
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="collection-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
             <div className="max-w-2xl">
-              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+              <p className="text-kicker uppercase text-brand-andaman">
                 {labels['landing.collection.kicker']}
               </p>
-              <h2 id="collection-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink md:text-[52px] md:leading-[58px]">
+              <h2 id="collection-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                 {labels['landing.collection.title']}
               </h2>
               <p className="mt-12 max-w-xl text-body text-text-secondary">
@@ -416,15 +399,176 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {featuredHomes.length ? (
-        <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
-          <div className="mx-auto max-w-7xl px-20 md:px-32">
+      {stayUnits.length ? (
+        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="units-heading">
+          <div className="mx-auto max-w-content px-20 md:px-32">
             <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
               <div className="max-w-2xl">
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+                <p className="text-kicker uppercase text-brand-andaman">
+                  {labels['landing.units.kicker']}
+                </p>
+                <h2 id="units-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                  {labels['landing.units.title']}
+                </h2>
+                <p className="mt-12 max-w-xl text-body text-text-secondary">
+                  {labels['landing.units.body']}
+                </p>
+              </div>
+              <Link href="/search" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+                {labels['landing.units.cta']} →
+              </Link>
+            </div>
+
+            <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
+              {stayUnits.slice(0, 4).map((unit) => {
+                const media = projectPresentationImage(unit.id, unit.coverUrl);
+                return (
+                  <Link
+                    key={unit.id}
+                    href={`/units/${unit.id}`}
+                    className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-surface-paper">
+                      <Image
+                        src={media.src}
+                        alt={media.illustrative ? '' : unit.name}
+                        fill
+                        sizes={HOME_UNIT_IMAGE_SIZES}
+                        className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
+                      />
+                    </div>
+                    <div className="p-20">
+                      <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
+                      <h3 className="mt-4 font-display text-title font-semibold text-text-ink">{unit.name}</h3>
+                      {unit.categoryName ? (
+                        <p className="mt-4 text-small text-text-secondary">{unit.categoryName}</p>
+                      ) : null}
+                      <p className="mt-12 text-small text-text-secondary">
+                        {unit.bedrooms} {labels['landing.homes.bedrooms']} · {unit.bathrooms} {labels['landing.homes.bathrooms']} · {labels['landing.units.guests'].replace('{count}', String(unit.maxGuests))}
+                      </p>
+                      <div className="mt-16 flex items-end justify-between gap-12">
+                        <p className="font-display text-body-strong tabular-nums text-text-ink">
+                          {labels['landing.units.from'].replace('{price}', Math.round(unit.baseNightlyThb / 100).toLocaleString())}
+                        </p>
+                        <span className="shrink-0 text-small font-semibold text-brand-andaman">
+                          {labels['landing.units.open']} →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {areas.length ? (
+        <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="areas-heading">
+          <div className="mx-auto max-w-content px-20 md:px-32">
+            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+              <div className="max-w-2xl">
+                <p className="text-kicker uppercase text-brand-andaman">
+                  {labels['landing.areas.kicker']}
+                </p>
+                <h2 id="areas-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                  {labels['landing.areas.title']}
+                </h2>
+                <p className="mt-12 max-w-xl text-body text-text-secondary">
+                  {labels['landing.areas.body']}
+                </p>
+              </div>
+              <Link href="/areas" className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+                {labels['landing.areas.cta']} →
+              </Link>
+            </div>
+
+            <div className="grid gap-16 md:grid-cols-3">
+              {areas.slice(0, 3).map((area) => {
+                const media = projectPresentationImage(area.id, area.coverUrl);
+                return (
+                  <Link
+                    key={area.id}
+                    href={`/areas/${area.slug}`}
+                    className="group relative isolate min-h-[320px] overflow-hidden rounded-2xl bg-brand-deep"
+                  >
+                    <Image
+                      src={media.src}
+                      alt={media.illustrative ? '' : area.displayName}
+                      fill
+                      sizes={HOME_AREA_IMAGE_SIZES}
+                      className="object-cover transition-transform duration-structural group-hover:scale-[1.02]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/90 via-brand-deep/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-24 text-surface-ivory">
+                      <p className="text-small text-surface-ivory/80">
+                        {labels['landing.areas.projects'].replace('{count}', String(area.projectCount))}
+                      </p>
+                      <h3 className="mt-4 font-display text-display font-semibold">{area.displayName}</h3>
+                      {area.description ? (
+                        <p className="mt-8 line-clamp-2 text-small text-surface-ivory/80">{area.description}</p>
+                      ) : null}
+                      <span className="mt-16 inline-block text-small font-semibold">
+                        {labels['landing.areas.open']} →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="services-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-kicker uppercase text-brand-andaman">
+                {labels['landing.services.kicker']}
+              </p>
+              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
+                {labels['landing.services.title']}
+              </h2>
+              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
+            </div>
+            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
+              {labels['landing.services.cta']} →
+            </Link>
+          </div>
+
+          {services.length ? (
+            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:gap-20">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  href={`/services/${service.id}`}
+                  labels={{
+                    vetted: labels['landing.services.vetted'],
+                    from: labels['landing.services.from'],
+                    noPhoto: labels['landing.services.no_photo'],
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+              {labels['landing.services.empty']}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {featuredHomes.length ? (
+        <section className="py-56 md:py-96" aria-labelledby="available-homes-heading">
+          <div className="mx-auto max-w-content px-20 md:px-32">
+            <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
+              <div className="max-w-2xl">
+                <p className="text-kicker uppercase text-brand-andaman">
                   {labels['landing.homes.kicker']}
                 </p>
-                <h2 id="available-homes-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+                <h2 id="available-homes-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                   {labels['landing.homes.title']}
                 </h2>
                 <p className="mt-12 text-body text-text-secondary">
@@ -476,16 +620,16 @@ export default async function LandingPage() {
         </section>
       ) : null}
 
-      <section className="bg-brand-deep py-56 text-surface-ivory md:py-96" aria-labelledby="value-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
+      <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="value-heading">
+        <div className="mx-auto max-w-content px-20 md:px-32">
           <div className="max-w-3xl">
-            <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
+            <p className="text-kicker uppercase text-brand-andaman">
               {labels['landing.value.kicker']}
             </p>
-            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em]">
+            <h2 id="value-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
               {labels['landing.value.title']}
             </h2>
-            <p className="mt-12 max-w-2xl text-body text-surface-ivory/70">
+            <p className="mt-12 max-w-2xl text-body text-text-secondary">
               {labels['landing.value.body']}
             </p>
           </div>
@@ -495,68 +639,29 @@ export default async function LandingPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group rounded-2xl border border-white/15 bg-surface-ivory/[0.04] p-20 transition-colors duration-structural hover:bg-surface-ivory/[0.08] md:p-24"
+                className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
               >
-                <TrustMark size={20} filled className="text-brand-sun-soft" />
-                <h3 className="mt-24 font-display text-title font-semibold">{item.title}</h3>
-                <p className="mt-8 text-small leading-relaxed text-surface-ivory/68">{item.body}</p>
-                <span className="mt-20 inline-block text-small font-semibold text-surface-ivory">{labels['landing.start.explore']} →</span>
+                <TrustMark size={20} filled className="text-brand-andaman" />
+                <h3 className="mt-24 font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
+                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">{labels['landing.start.explore']} →</span>
               </Link>
             ))}
           </div>
 
-          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-sun-soft hover:underline">
+          <Link href="/about" className="mt-32 inline-block font-semibold text-brand-andaman hover:underline">
             {labels['landing.value.cta']} →
           </Link>
         </div>
       </section>
 
-      <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="services-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <div className="mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end">
-            <div className="max-w-2xl">
-              <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
-                {labels['landing.services.kicker']}
-              </p>
-              <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
-                {labels['landing.services.title']}
-              </h2>
-              <p className="mt-12 text-body text-text-secondary">{labels['landing.services.body']}</p>
-            </div>
-            <Link href="/services" className="shrink-0 font-semibold text-brand-andaman hover:underline">
-              {labels['landing.services.cta']} →
-            </Link>
-          </div>
-
-          {services.length ? (
-            <div className="grid grid-cols-2 gap-12 md:grid-cols-3 md:gap-20">
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  href={`/services/${service.id}`}
-                  labels={{
-                    vetted: labels['landing.services.vetted'],
-                    from: labels['landing.services.from'],
-                    noPhoto: labels['landing.services.no_photo'],
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
-              {labels['landing.services.empty']}
-            </div>
-          )}
-        </div>
-      </section>
 
       <section className="py-56 md:py-96" aria-labelledby="audience-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <p className="text-kicker uppercase text-brand-andaman">
             {labels['landing.audience.kicker']}
           </p>
-          <h2 id="audience-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+          <h2 id="audience-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['landing.audience.title']}
           </h2>
 
@@ -566,7 +671,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
+                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.audience.owner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold text-text-ink">
                   {labels['landing.audience.owners']}
                 </h3>
@@ -584,7 +689,7 @@ export default async function LandingPage() {
               className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-brand-andaman p-24 text-surface-ivory transition-opacity duration-structural hover:opacity-95 md:p-32"
             >
               <div>
-                <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
+                <p className="text-kicker uppercase text-brand-sun-soft">{labels['landing.audience.partner_kicker']}</p>
                 <h3 className="mt-12 font-display text-display font-semibold">
                   {labels['landing.audience.developers']}
                 </h3>
@@ -601,11 +706,11 @@ export default async function LandingPage() {
       </section>
 
       <section className="border-y border-border-line bg-surface-paper py-56 md:py-80" aria-labelledby="trust-heading">
-        <div className="mx-auto max-w-7xl px-20 md:px-32">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
+        <div className="mx-auto max-w-content px-20 md:px-32">
+          <p className="text-kicker uppercase text-brand-andaman">
             {labels['landing.trust.kicker']}
           </p>
-          <h2 id="trust-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink">
+          <h2 id="trust-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['landing.trust.title']}
           </h2>
 
@@ -640,7 +745,7 @@ export default async function LandingPage() {
 
       <section className="bg-brand-andaman py-56 text-surface-ivory md:py-80">
         <div className="mx-auto max-w-4xl px-20 text-center md:px-32">
-          <h2 className="font-display text-display-xl font-semibold tracking-[-0.02em]">
+          <h2 className="font-display text-display-xl font-semibold">
             {labels['home.final.title']}
           </h2>
           <p className="mx-auto mt-12 max-w-2xl text-body text-surface-ivory/75">

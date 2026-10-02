@@ -179,3 +179,23 @@ Distinguish emergency guidance, urgent property issue, normal support and servic
 8. Failures explain recovery.
 9. Every role sees the smallest useful surface.
 10. Every meaningful state change is traceable.
+
+
+## 18. Governed research
+
+Public market research is a publication workflow, never a dashboard metric copied into marketing.
+Every published item requires numbered sources and an independent reviewer. Review freezes content
+and evidence; later corrections are appended publicly rather than rewriting history. Research does
+not make legal, valuation or investment guarantees.
+
+## 19. Video media
+
+Video is a canonical MediaAsset kind plus publication metadata. Public video requires provenance,
+a supported direct-play format and an explicit publication state. Project/unit association does not
+change canonical property facts, and media never becomes evidence merely because it is public.
+
+## 20. Destination desks
+
+Country/market desks are localization routes owned by DestinationConfig. A desk declares target
+markets and supported/default locales, but reuses the same property, offering, booking, CRM and
+service records. A desk never owns separate inventory or prices.

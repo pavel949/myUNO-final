@@ -92,6 +92,7 @@ export default async function RootLayout({
     'nav.admin': 'Admin',
     'nav.account': 'Account',
     'nav.menu': 'Menu',
+    'nav.more': 'More',
   });
 
   const activeBookingId = user ? await getActiveStayId() : null;
@@ -189,6 +190,7 @@ export default async function RootLayout({
             orders: navLabels['nav.orders'],
             account: navLabels['nav.account'],
             menu: navLabels['nav.menu'],
+            more: navLabels['nav.more'],
           }}
           roleLinks={roleLinks}
           bellLabels={{

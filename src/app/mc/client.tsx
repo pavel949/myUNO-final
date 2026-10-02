@@ -761,6 +761,36 @@ export function MCDashboardClient({
                   </div>
                 </div>
               </div>
+
+              <div className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                      {labels['mc.workspace.health']}
+                    </p>
+                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                      {labels['mc.workspace.health_title']}
+                    </h2>
+                  </div>
+                  <Link href="/ops/tasks?mc=1" className="text-small font-semibold text-brand-andaman hover:underline">
+                    {labels['mc.workspace.open_tasks']} →
+                  </Link>
+                </div>
+                <div className="mt-16 grid gap-12 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    [labels['mc.workspace.health_payments'], pendingPayments.length, pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_channels'], icalConflicts.length, icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_issues'], dashboard.openTicketsCount, dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_services'], actionableServiceOrders, actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
+                  ].map(([label, count, status]) => (
+                    <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      <p className="text-small font-semibold text-text-ink">{label}</p>
+                      <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{count}</p>
+                      <p className="mt-8 text-small text-text-secondary">{status}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
           )}
 

@@ -366,7 +366,7 @@ export default function UnifiedStayCalendar(props: Props) {
             <span className="font-semibold text-text-ink">{inspect.channelState.replace(/_/g,' ')}</span>
           </div>
           <div className="rounded-md bg-surface-ivory p-12 text-small">
-            <span className="block text-text-secondary">Effective daily rate</span>
+            <span className="block text-text-secondary">{props.labels['staff.unified_calendar.effective_rate']}</span>
             {props.rates[inspect.id]?.byDate[selected.date]
               ? <span className="font-semibold text-text-ink">
                   ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString()}

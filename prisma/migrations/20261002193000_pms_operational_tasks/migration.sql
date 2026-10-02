@@ -33,5 +33,44 @@ ALTER TABLE "operational_task" ADD CONSTRAINT "operational_task_booking_id_fkey"
 ALTER TABLE "operational_task" ADD CONSTRAINT "operational_task_assigned_identity_id_fkey"
   FOREIGN KEY ("assigned_identity_id") REFERENCES "identity"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+-- Existing checked-out stays predate OperationalTask. Seed the required
+-- turnover obligations so the first post-migration readiness projection does
+-- not incorrectly call those units ready.
+INSERT INTO "operational_task" (
+  "id","created_at","updated_at","project_id","unit_id","booking_id",
+  "task_type","status","due_at"
+)
+SELECT
+  'turnover-clean-' || b."id",
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  b."project_id",
+  b."unit_id",
+  b."id",
+  'turnover_cleaning'::"OperationalTaskType",
+  'planned'::"OperationalTaskStatus",
+  COALESCE(b."checked_out_at", b."end_date"::timestamp)
+FROM "booking" b
+WHERE b."status" = 'checked_out'
+ON CONFLICT ("booking_id","task_type") DO NOTHING;
+
+INSERT INTO "operational_task" (
+  "id","created_at","updated_at","project_id","unit_id","booking_id",
+  "task_type","status","due_at"
+)
+SELECT
+  'turnover-inspect-' || b."id",
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  b."project_id",
+  b."unit_id",
+  b."id",
+  'turnover_inspection'::"OperationalTaskType",
+  'planned'::"OperationalTaskStatus",
+  COALESCE(b."checked_out_at", b."end_date"::timestamp)
+FROM "booking" b
+WHERE b."status" = 'checked_out'
+ON CONFLICT ("booking_id","task_type") DO NOTHING;
+
 ALTER TABLE "operational_task" ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE "operational_task" FROM PUBLIC, anon, authenticated;

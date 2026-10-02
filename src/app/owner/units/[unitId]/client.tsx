@@ -159,7 +159,8 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contextType: 'general',
+        contextType: 'unit',
+        contextId: unit.id,
         intent: 'sell_interest',
       }),
     });

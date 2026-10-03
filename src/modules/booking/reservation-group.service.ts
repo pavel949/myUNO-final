@@ -60,10 +60,13 @@ export async function createReservationGroup(
     });
 
     if (bookingIds.length) {
-      await tx.booking.updateMany({
+      const linked = await tx.booking.updateMany({
         where: { id: { in: bookingIds }, reservationGroupId: null },
         data: { reservationGroupId: group.id },
       });
+      if (linked.count !== bookingIds.length) {
+        throw new Error('RESERVATION_GROUP_CONCURRENT_LINK_CONFLICT');
+      }
     }
 
     return tx.reservationGroup.findUniqueOrThrow({

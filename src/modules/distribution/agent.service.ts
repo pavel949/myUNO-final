@@ -158,8 +158,6 @@ export async function createAgentQuote(
     adults: number;
     children?: number;
     markupSatang?: number;
-    discountSatang?: number;
-    commissionRateBps?: number;
     clientProtectionId?: string | null;
     validUntil?: Date | null;
     publicNote?: string | null;
@@ -168,13 +166,11 @@ export async function createAgentQuote(
   const children = input.children ?? 0;
   const party = input.adults + children;
   const markupSatang = input.markupSatang ?? 0;
-  const discountSatang = input.discountSatang ?? 0;
-  const commissionRateBps = input.commissionRateBps ?? 1000;
+  const commissionRateBps = 1000;
 
   if (party < 1) throw new Error('QUOTE_PARTY_REQUIRED');
   if (input.endDate <= input.startDate) throw new Error('QUOTE_DATES_INVALID');
-  if (markupSatang < 0 || discountSatang < 0) throw new Error('QUOTE_ADJUSTMENT_INVALID');
-  if (commissionRateBps < 0) throw new Error('QUOTE_COMMISSION_INVALID');
+  if (markupSatang < 0) throw new Error('QUOTE_ADJUSTMENT_INVALID');
 
   if (input.clientProtectionId) {
     const protection = await db.agentClientProtection.findFirst({
@@ -201,10 +197,7 @@ export async function createAgentQuote(
   ]);
 
   const baseTotalSatang = breakdown.total_thb;
-  const clientTotalSatang = Math.max(
-    0,
-    baseTotalSatang + markupSatang - discountSatang,
-  );
+  const clientTotalSatang = baseTotalSatang + markupSatang;
   const commissionSatang = Math.round(baseTotalSatang * commissionRateBps / 10000);
 
   return db.agentQuote.create({
@@ -214,7 +207,7 @@ export async function createAgentQuote(
       clientProtectionId: input.clientProtectionId ?? null,
       baseTotalSatang,
       markupSatang,
-      discountSatang,
+      discountSatang: 0,
       feesSatang: breakdown.cleaning_fee_thb + breakdown.service_fee_thb,
       taxesSatang: breakdown.occupancy_tax_thb,
       clientTotalSatang,

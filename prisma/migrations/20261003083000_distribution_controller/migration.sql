@@ -62,3 +62,10 @@ ALTER TABLE "offering_distribution_policy"
 
 ALTER TABLE "offering_distribution_policy" ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE "offering_distribution_policy" FROM PUBLIC, anon, authenticated;
+
+-- Bind quote items to the commercial context used to price/distribute them.
+ALTER TABLE "agent_quote_item" ADD COLUMN "offering_id" TEXT;
+CREATE INDEX "agent_quote_item_offering_id_idx" ON "agent_quote_item"("offering_id");
+ALTER TABLE "agent_quote_item"
+  ADD CONSTRAINT "agent_quote_item_offering_id_fkey"
+  FOREIGN KEY ("offering_id") REFERENCES "commercial_offering"("id") ON DELETE SET NULL ON UPDATE CASCADE;

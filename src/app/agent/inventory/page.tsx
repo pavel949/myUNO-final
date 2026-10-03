@@ -51,7 +51,20 @@ export default async function AgentInventoryPage({
       inventoryCategory: { select: { name: true, baseNightlyThb: true } },
       commercialOfferings: {
         where: { status: 'active', offeringType: { in: offerTypes } },
-        select: { id: true, offeringType: true, pricingTerms: true },
+        select: {
+          id: true,
+          offeringType: true,
+          pricingTerms: true,
+          distributionPolicy: {
+            select: {
+              agentDistributionEnabled: true,
+              availabilityMode: true,
+              bookingMode: true,
+              inventorySource: true,
+              defaultAgentCommissionBps: true,
+            },
+          },
+        },
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
@@ -67,6 +80,8 @@ export default async function AgentInventoryPage({
     'agent.inventory.rent': 'Long rent',
     'agent.inventory.buy': 'Buy',
     'agent.inventory.instant': 'Instant',
+    'agent.inventory.live': 'Live calendar',
+    'agent.inventory.synced': 'Synced',
     'agent.inventory.request': 'Request',
     'agent.inventory.quote': 'Create quote',
     'agent.inventory.view_property': 'View property',
@@ -105,10 +120,29 @@ export default async function AgentInventoryPage({
         </Link>)}
       </nav>
 
-      {!units.length ? <p className="rounded-lg border border-border-line bg-surface-paper p-20 text-text-secondary">
+      {!units.some(unit => unit.commercialOfferings.some(offer =>
+        offer.distributionPolicy?.agentDistributionEnabled !== false &&
+        offer.distributionPolicy?.bookingMode !== 'not_agent_bookable'
+      )) ? <p className="rounded-lg border border-border-line bg-surface-paper p-20 text-text-secondary">
         {labels['agent.inventory.empty']}
       </p> : <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">
-        {units.map(unit => <article key={unit.id} className="rounded-xl border border-border-line bg-surface-paper p-18">
+        {units.flatMap(unit => {
+          const offer = unit.commercialOfferings.find(candidate =>
+            candidate.distributionPolicy?.agentDistributionEnabled !== false &&
+            candidate.distributionPolicy?.bookingMode !== 'not_agent_bookable'
+          );
+          if (!offer) return [];
+          const policy = offer.distributionPolicy;
+          const availabilityLabel = !policy
+            ? unit.instantBook ? labels['agent.inventory.instant'] : labels['agent.inventory.request']
+            : policy.availabilityMode === 'request'
+              ? labels['agent.inventory.request']
+              : policy.availabilityMode === 'synced'
+                ? labels['agent.inventory.synced']
+                : policy.bookingMode === 'instant'
+                  ? labels['agent.inventory.instant']
+                  : labels['agent.inventory.live'];
+          return [<article key={unit.id+':'+offer.id} className="rounded-xl border border-border-line bg-surface-paper p-18">
           <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
           <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">{unit.name}</h2>
           <p className="mt-6 text-small text-text-secondary">
@@ -116,9 +150,9 @@ export default async function AgentInventoryPage({
           </p>
           <div className="mt-12 flex items-center justify-between">
             <span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold text-text-secondary">
-              {unit.instantBook ? labels['agent.inventory.instant'] : labels['agent.inventory.request']}
+              {availabilityLabel}
             </span>
-            {unit.inventoryCategory?.baseNightlyThb ? <span className="font-semibold text-text-ink">
+            {mode === 'stay' && unit.inventoryCategory?.baseNightlyThb ? <span className="font-semibold text-text-ink">
               ฿{Math.round(unit.inventoryCategory.baseNightlyThb/100).toLocaleString()}
             </span> : null}
           </div>
@@ -129,7 +163,7 @@ export default async function AgentInventoryPage({
                 {labels['agent.inventory.view_property']}
               </Link>
             ) : (
-              <Link href={'/agent/quotes/new?unitId='+encodeURIComponent(unit.id)}
+              <Link href={'/agent/quotes/new?unitId='+encodeURIComponent(unit.id)+'&offeringId='+encodeURIComponent(offer.id)}
                 className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">
                 {labels['agent.inventory.quote']}
               </Link>
@@ -139,7 +173,8 @@ export default async function AgentInventoryPage({
               {labels['agent.inventory.add_shortlist']}
             </Link>
           </div>
-        </article>)}
+        </article>];
+        })}
       </section>}
     </div>
   </main>;

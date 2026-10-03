@@ -42,7 +42,7 @@ describe('Agent Distribution security boundaries', () => {
   it('does not allow public agent inputs to control commission or discount authority', () => {
     expect(quoteRoute).not.toContain('commissionPct');
     expect(quoteRoute).not.toContain('discountThb');
-    expect(service).toContain('const commissionRateBps = 1000');
+    expect(service).toContain('const commissionRateBps = distribution.defaultAgentCommissionBps');
     expect(service).toContain('discountSatang: 0');
   });
 

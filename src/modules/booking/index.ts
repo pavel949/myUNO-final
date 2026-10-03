@@ -15,6 +15,7 @@ export {
   completeBooking,
   requestExtension,
   changeBookingDates,
+  finalizeCategoryBookingAllocation,
   type ChangeDatesResult,
   markNoShow,
   expireHolds,

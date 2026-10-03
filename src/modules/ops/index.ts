@@ -60,7 +60,12 @@ export {
   transitionOperationalTask,
   getUnitReadinessMap,
   listOperationalTasks,
+  createOperationalTask,
+  createPreventiveMaintenancePlan,
+  generateDuePreventiveMaintenanceTasks,
   type UnitReadinessState,
+  type CreateOperationalTaskInput,
+  type CreatePreventiveMaintenancePlanInput,
 } from './operational-task.service';
 
 

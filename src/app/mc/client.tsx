@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components';
@@ -13,12 +12,10 @@ import UnitIcalConflictBanner, {
 import type { UnitIcalConflictAlert } from '@/modules/integrations';
 import {
   HBarStack,
-  MonthHeatStrip,
   HeroNumber,
   CHART_SERIES,
   formatThb,
 } from '@/components/viz';
-import type { HeatDay } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
 
@@ -178,29 +175,6 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
 }
 
-/** Build the current month's day cells for a unit from its bookings. */
-function monthHeatDays(unitId: string, bookings: Booking[]): HeatDay[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const occupying = bookings.filter(
-    (b) =>
-      b.unit?.id === unitId &&
-      ['confirmed', 'checked_in', 'checked_out'].includes(b.status)
-  );
-  const days: HeatDay[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const night = new Date(year, month, d);
-    const occupied = occupying.some(
-      (b) => new Date(b.startDate) <= night && new Date(b.endDate) > night
-    );
-    const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    days.push({ date: iso, occupied });
-  }
-  return days;
-}
-
 export function MCDashboardClient({
   dashboard,
   units,
@@ -215,8 +189,11 @@ export function MCDashboardClient({
 }: MCDashboardClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'bookings' | 'tickets' | 'service_orders' | 'calendar' | 'reports'
+    'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
+  const [reservationView, setReservationView] = useState<
+    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+  >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
   const [feeReportLoading, setFeeReportLoading] = useState(false);
@@ -581,6 +558,21 @@ export function MCDashboardClient({
     return start <= new Date() && end > new Date() && ['confirmed', 'checked_in'].includes(booking.status);
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
+  const visibleBookings = bookings.filter((booking) => {
+    if (reservationView === 'all') return true;
+    if (reservationView === 'requests') {
+      return ['requested', 'pending_payment'].includes(booking.status);
+    }
+    if (reservationView === 'arrivals') {
+      return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
+    }
+    if (reservationView === 'departures') {
+      return isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status);
+    }
+    const start = new Date(booking.startDate);
+    const end = new Date(booking.endDate);
+    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+  });
 
   return (
     <main className="min-h-screen bg-surface-ivory">
@@ -644,48 +636,77 @@ export function MCDashboardClient({
         <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
           <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
-              {[
-                ['overview', labels['mc.workspace.today']],
-                ['calendar', labels['mc.tabs.calendar']],
-                ['bookings', labels['mc.tabs.bookings']],
-                ['service_orders', labels['mc.tabs.service_orders']],
-                ['tickets', labels['mc.tabs.tickets']],
-                ['reports', labels['mc.tabs.reports']],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveTab(key as typeof activeTab)}
-                  className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${
-                    activeTab === key
-                      ? 'bg-brand-andaman-soft text-brand-andaman'
-                      : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+                {labels['mc.workspace.operate']}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('overview')}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'overview' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+              >
+                {labels['mc.workspace.today']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('bookings')}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'bookings' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+              >
+                {labels['mc.workspace.reservations']}
+              </button>
+              <Link
+                href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.tabs.calendar']}
+              </Link>
+              <Link
+                href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.workspace.guests']}
+              </Link>
+              <Link
+                href="/ops/tasks?mc=1"
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
+                {labels['mc.workspace.tasks']}
+              </Link>
 
-            <div className="hidden lg:block my-16 border-t border-border-line" />
-
-            <div className="hidden lg:flex lg:flex-col gap-4">
-              <Link href="/mc/portfolio" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <div className="hidden lg:block my-8 border-t border-border-line" />
+              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+                {labels['mc.workspace.manage']}
+              </p>
+              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.portfolio']}
               </Link>
-              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => setActiveTab('service_orders')}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'service_orders' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+              >
+                {labels['mc.workspace.services']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('tickets')}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'tickets' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+              >
+                {labels['mc.workspace.issues']}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('reports')}
+                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'reports' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+              >
+                {labels['mc.workspace.revenue_finance']}
+              </button>
+              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.nav.mobilization']}
               </Link>
-              <Link href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.guests_tm30']}
-              </Link>
-              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.costs']}
               </Link>
-              <Link href={`/services?projectId=${encodeURIComponent(activeContext?.projectId || '')}${serviceUnitId ? `&unitId=${encodeURIComponent(serviceUnitId)}` : ''}&context=mc`} className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.services']}
-              </Link>
-              <Link href="/announcements" className="rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href="/announcements" className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.announcements']}
               </Link>
             </div>
@@ -712,9 +733,12 @@ export function MCDashboardClient({
                       <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
                       <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
-                    <button type="button" onClick={() => setActiveTab('calendar')} className="text-small font-semibold text-brand-andaman">
+                    <Link
+                      href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                      className="text-small font-semibold text-brand-andaman hover:underline"
+                    >
                       {labels['mc.workspace.full_calendar']} →
-                    </button>
+                    </Link>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
@@ -754,63 +778,76 @@ export function MCDashboardClient({
                   </div>
                 </div>
               </div>
+
+              <div className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                      {labels['mc.workspace.health']}
+                    </p>
+                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                      {labels['mc.workspace.health_title']}
+                    </h2>
+                  </div>
+                  <Link href="/ops/tasks?mc=1" className="text-small font-semibold text-brand-andaman hover:underline">
+                    {labels['mc.workspace.open_tasks']} →
+                  </Link>
+                </div>
+                <div className="mt-16 grid gap-12 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    [labels['mc.workspace.health_payments'], pendingPayments.length, pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_channels'], icalConflicts.length, icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_issues'], dashboard.openTicketsCount, dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
+                    [labels['mc.workspace.health_services'], actionableServiceOrders, actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
+                  ].map(([label, count, status]) => (
+                    <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      <p className="text-small font-semibold text-text-ink">{label}</p>
+                      <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{count}</p>
+                      <p className="mt-8 text-small text-text-secondary">{status}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
           )}
 
       {/* Content */}
       <section className="max-w-7xl mx-auto px-24 py-40">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div>
-            {/* Portfolio detail */}
-            {/* Managed Units List */}
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-              <h2 className="text-heading-2 font-bold text-text-ink mb-20">
-                {labels['mc.units.title']}
-              </h2>
-              <div className="space-y-16">
-                {units.length === 0 ? (
-                  <p className="text-body text-text-secondary">{labels['mc.units.empty']}</p>
-                ) : (
-                  units.map((unit) => (
-                    <div
-                      key={unit.id}
-                      className="border border-border-line rounded-lg p-16 hover:bg-surface-ivory transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-heading-3 font-bold text-text-ink">{unit.name}</h3>
-                          <p className="text-small text-text-secondary mt-4">{unit.description}</p>
-                          <div className="flex gap-16 mt-12">
-                            <span className="text-small text-text-secondary">
-                              {formatBaht(unit.baseNightlyThb)} {labels['mc.units.per_night']}
-                            </span>
-                            <span className="text-small font-semibold text-brand-andaman">
-                              {unit.status}
-                            </span>
-                          </div>
-                        </div>
-                        <Link
-                          href={`/mc/units/${unit.id}`}
-                          className="text-brand-andaman font-semibold hover:underline"
-                        >
-                          {labels['mc.units.manage']} →
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
-              {labels['mc.bookings.title']}
-            </h2>
+            <div className="mb-20 flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {labels['mc.workspace.reservations']}
+                </p>
+                <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                  {labels['mc.bookings.title']}
+                </h2>
+              </div>
+              <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
+                {[
+                  ['requests', labels['mc.workspace.requests']],
+                  ['arrivals', labels['mc.workspace.arrivals']],
+                  ['in_house', labels['mc.workspace.in_house']],
+                  ['departures', labels['mc.workspace.departures']],
+                  ['all', labels['mc.workspace.all_reservations']],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setReservationView(key as typeof reservationView)}
+                    className={`min-h-40 whitespace-nowrap rounded-full border px-12 text-small font-semibold transition ${
+                      reservationView === key
+                        ? 'border-brand-andaman bg-brand-andaman text-white'
+                        : 'border-border-line bg-surface-paper text-text-secondary hover:text-text-ink'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             {bookingError && (
               <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
                 <p className="text-small text-state-error">{bookingError}</p>
@@ -831,14 +868,14 @@ export function MCDashboardClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.length === 0 ? (
+                    {visibleBookings.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center p-24 text-text-secondary">
                           {labels['mc.bookings.empty']}
                         </td>
                       </tr>
                     ) : (
-                      bookings.map((booking) => (
+                      visibleBookings.map((booking) => (
                         <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
                             {booking.unit.name}
@@ -1108,50 +1145,6 @@ export function MCDashboardClient({
                 ))
               )}
             </div>
-          </div>
-        )}
-
-        {/* Calendar Tab — month heat strip per unit */}
-        {activeTab === 'calendar' && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
-            <h2 className="text-heading-2 font-bold text-text-ink mb-8">
-              {labels['mc.calendar.title']}
-            </h2>
-            <div className="flex items-center gap-16 mb-20">
-              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-4" aria-hidden />
-                {labels['mc.calendar.occupied']}
-              </span>
-              <span className="inline-flex items-center gap-8 text-small text-text-secondary">
-                <span className="inline-block w-12 h-12 rounded-sm bg-chart-seq-1" aria-hidden />
-                {labels['mc.calendar.vacant']}
-              </span>
-            </div>
-            {units.length === 0 ? (
-              <p className="text-body text-text-secondary">{labels['mc.calendar.empty']}</p>
-            ) : (
-              <div className="space-y-16">
-                {units.map((unit) => (
-                  <div key={unit.id} className="border border-border-line rounded-lg p-16">
-                    <div className="flex items-center justify-between gap-12 mb-8">
-                      <p className="text-body font-semibold text-text-ink">{unit.name}</p>
-                      <Link
-                        href={`/mc/units/${unit.id}`}
-                        className="text-small font-semibold text-brand-andaman hover:underline"
-                      >
-                        {labels['mc.calendar.manage']} →
-                      </Link>
-                    </div>
-                    <MonthHeatStrip
-                      days={monthHeatDays(unit.id, bookings)}
-                      occupiedLabel={labels['mc.calendar.occupied']}
-                      vacantLabel={labels['mc.calendar.vacant']}
-                      noDataLabel={labels['mc.calendar.no_data']}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

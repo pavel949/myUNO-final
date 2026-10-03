@@ -80,7 +80,7 @@ export default async function ReservationDesk({
     }),
     prisma.identity.findMany({
       where:{
-        status:{notIn:['deleted','suspended']},
+        status:'active',
         OR:[
           {roleAssignments:{some:{role:{in:['guest','resident','buyer']},status:'active'}}},
           {bookingsAsGuest:{some:{}}},

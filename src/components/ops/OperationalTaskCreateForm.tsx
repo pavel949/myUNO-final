@@ -46,7 +46,7 @@ export default function OperationalTaskCreateForm({
     event.currentTarget.reset();setBusy(false);router.refresh();
   }
   const taskTypes=['custom','turnover_cleaning','turnover_inspection','maintenance_followup','preventive_maintenance','deep_cleaning','restocking','guest_request','prearrival','owner_request','utilities','pool','garden','pest_control','compliance'];
-  return <form onSubmit={submit} className="mb-20 grid gap-10 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-2 xl:grid-cols-4">
+  return <form onSubmit={submit} className="mb-20 grid gap-12 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-2 xl:grid-cols-4">
     <input required name="title" placeholder={labels['staff.task_form.title']} className="h-44 rounded-md border border-border-line px-12"/>
     <select required name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.property']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
     <select name="taskType" defaultValue={'custom'} className="h-44 rounded-md border border-border-line px-12">

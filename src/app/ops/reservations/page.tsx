@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { BookingStatus } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
@@ -64,10 +65,11 @@ export default async function ReservationDesk({
     prisma,spaceId,user.identityId,'manage_reservations',
   );
 
-  const allowedStatuses=[
+  const allowedStatuses: BookingStatus[]=[
     'requested','pending_payment','confirmed','checked_in','checked_out','completed','cancelled',
   ];
-  const status=allowedStatuses.includes(searchParams?.status||'')?searchParams?.status:'';
+  const requestedStatus=searchParams?.status as BookingStatus | undefined;
+  const status=requestedStatus&&allowedStatuses.includes(requestedStatus)?requestedStatus:undefined;
   const now=new Date();
 
   const [units,guests,groups,bookings]=await Promise.all([
@@ -104,7 +106,7 @@ export default async function ReservationDesk({
     prisma.booking.findMany({
       where:{
         unitId:{in:authorizedUnitIds},
-        ...(status?{status:status as any}:{}),
+        ...(status?{status}:{}),
       },
       select:{
         id:true,status:true,channel:true,startDate:true,endDate:true,totalThb:true,
@@ -157,7 +159,7 @@ export default async function ReservationDesk({
   const requests=bookings.filter(b=>b.status==='requested').length;
   const balance=bookings.reduce((sum,b)=>sum+Math.max(0,b.balanceDueThb),0);
 
-  const statusHref=(value:string)=>'/ops/reservations?'+new URLSearchParams({
+  const statusHref=(value:BookingStatus|'' )=>'/ops/reservations?'+new URLSearchParams({
     spaceId,...(value?{status:value}:{}),
   }).toString();
 

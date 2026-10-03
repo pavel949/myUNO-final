@@ -14,7 +14,7 @@ describe('Agent quote money authority', () => {
   });
 
   it('keeps commission server-controlled and uses canonical pricing', () => {
-    expect(service).toContain('const commissionRateBps = 1000');
+    expect(service).toContain('const commissionRateBps = distribution.defaultAgentCommissionBps');
     expect(service).toContain('computePriceBreakdown(');
     expect(service).toContain('checkAvailability(');
     expect(service).toContain('discountSatang: 0');

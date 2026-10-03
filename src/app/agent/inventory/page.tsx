@@ -69,6 +69,7 @@ export default async function AgentInventoryPage({
     'agent.inventory.instant': 'Instant',
     'agent.inventory.request': 'Request',
     'agent.inventory.quote': 'Create quote',
+    'agent.inventory.view_property': 'View property',
     'agent.inventory.add_shortlist': 'Add to shortlist',
     'agent.inventory.empty': 'No distributable inventory matches this search.',
     'agent.common.bedrooms_short': 'BR',
@@ -122,10 +123,17 @@ export default async function AgentInventoryPage({
             </span> : null}
           </div>
           <div className="mt-16 flex flex-wrap gap-8">
-            <Link href={'/agent/quotes/new?unitId='+encodeURIComponent(unit.id)}
-              className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">
-              {labels['agent.inventory.quote']}
-            </Link>
+            {mode === 'buy' ? (
+              <Link href={'/units/'+encodeURIComponent(unit.id)}
+                className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">
+                {labels['agent.inventory.view_property']}
+              </Link>
+            ) : (
+              <Link href={'/agent/quotes/new?unitId='+encodeURIComponent(unit.id)}
+                className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">
+                {labels['agent.inventory.quote']}
+              </Link>
+            )}
             <Link href={'/agent/shortlists/new?unitId='+encodeURIComponent(unit.id)}
               className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-text-ink">
               {labels['agent.inventory.add_shortlist']}

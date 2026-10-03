@@ -4,11 +4,12 @@ import { FormEvent, useState } from 'react';
 
 type Props={
   unit:{id:string;name:string;maxGuests:number;project:{name:string}};
+  offeringId:string;
   clients:Array<{id:string;clientName:string;clientWhatsapp:string|null}>;
   labels:Record<string,string>;
 };
 
-export default function AgentQuoteForm({unit,clients,labels}:Props){
+export default function AgentQuoteForm({unit,offeringId,clients,labels}:Props){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [shareUrl,setShareUrl]=useState('');
@@ -19,7 +20,7 @@ export default function AgentQuoteForm({unit,clients,labels}:Props){
     const form=new FormData(event.currentTarget);
     const clientId=String(form.get('clientProtectionId')||'');
     const response=await fetch('/api/agent/quotes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
-      unitId:unit.id,startDate:String(form.get('startDate')||''),endDate:String(form.get('endDate')||''),
+      unitId:unit.id,offeringId,startDate:String(form.get('startDate')||''),endDate:String(form.get('endDate')||''),
       adults:Number(form.get('adults')||1),children:Number(form.get('children')||0),
       markupThb:Number(form.get('markupThb')||0),clientProtectionId:clientId||undefined,
       validHours:Number(form.get('validHours')||24),publicNote:String(form.get('publicNote')||''),

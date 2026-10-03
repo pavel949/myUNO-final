@@ -7,13 +7,19 @@ import { getLabels } from '@/lib/i18n';
 import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
 import { deriveStayWorkItems, stayWorkDepartments } from '@/modules/booking/work-projection';
 import type { StayWorkDepartment } from '@/modules/booking/work-projection';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
 
 export const dynamic='force-dynamic';
 export default async function StayOperationsPage({
   searchParams,
-}:{searchParams?:{projectId?:string;department?:string}}){
+}:{searchParams?:{projectId?:string;department?:string;spaceId?:string}}){
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays');
+  const requestedSpaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';
+  const spaceMembership=requestedSpaceId&&!user.isAdmin
+    ?await getOperatingSpaceMembership(prisma,requestedSpaceId,user.identityId):null;
+  if(requestedSpaceId&&!user.isAdmin&&!spaceMembership?.active)redirect('/ops/spaces');
+  const spaceUnitIds=requestedSpaceId?await getOperatingSpaceUnitIds(prisma,requestedSpaceId):[];
   const staffIds=await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','guest_care','finance']);
   if(!user.isAdmin&&!staffIds.length)redirect('/');
   const projects=await prisma.project.findMany({
@@ -34,6 +40,7 @@ export default async function StayOperationsPage({
   const today=bangkokCalendarDay();
   const bookings=await prisma.booking.findMany({
     where:{
+      ...(requestedSpaceId?{unitId:{in:spaceUnitIds}}:{}),
       ...(projectId?{projectId}:user.isAdmin?{}:{projectId:{in:staffIds}}),
       status:{in:['requested','pending_payment','confirmed','checked_in','checked_out','cancelled']},
     },
@@ -82,7 +89,8 @@ export default async function StayOperationsPage({
     'staff.stay_queue.arrival':'Arrival',
   });
   const href=(dept:string|null,p:string)=>'/ops/stays?'+new URLSearchParams({
-    ...(dept?{department:dept}:{}),...(p?{projectId:p}:{})
+    ...(dept?{department:dept}:{}),...(p?{projectId:p}:{}),
+    ...(requestedSpaceId?{spaceId:requestedSpaceId}:{})
   }).toString();
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-6xl space-y-24">

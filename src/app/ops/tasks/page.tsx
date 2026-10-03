@@ -5,16 +5,25 @@ import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectS
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getMCManagedUnits } from '@/modules/projects';
-import { listOperationalTasks } from '@/modules/ops';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, listOperationalTasks } from '@/modules/ops';
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function OperationalTasksPage({
   searchParams,
-}: { searchParams?: { unitId?: string; mc?: string } }) {
+}: { searchParams?: { unitId?: string; mc?: string; spaceId?: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/tasks');
+
+  const requestedSpaceId = typeof searchParams?.spaceId === 'string' ? searchParams.spaceId : '';
+  const spaceMembership = requestedSpaceId && !user.isAdmin
+    ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
+    : null;
+  if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
+  const spaceUnitIds = requestedSpaceId
+    ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
+    : [];
 
   const staffProjectIds = await getDepartmentProjectIds(user, [
     'housekeeping', 'front_desk', 'maintenance', 'guest_care', 'reservations',
@@ -56,8 +65,24 @@ export default async function OperationalTasksPage({
     if (!allowed) redirect(explicitMcMode ? '/ops/tasks?mc=1' : '/ops/tasks');
   }
 
+  const authorizedSpaceUnitIds = requestedSpaceId && !user.isAdmin
+    ? (await prisma.unit.findMany({
+        where: {
+          id: { in: spaceUnitIds },
+          OR: [
+            ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
+            ...(mcManagedUnitIds.size ? [{ id: { in: Array.from(mcManagedUnitIds) } }] : []),
+          ],
+        },
+        select: { id: true },
+      })).map((unit) => unit.id)
+    : spaceUnitIds;
+  if (requestedSpaceId && !user.isAdmin && !authorizedSpaceUnitIds.length) redirect('/ops/spaces');
+
   const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
-  const backHref = explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
+  const backHref = requestedSpaceId
+    ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId)
+    : explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
 
   const labels = await getLabels({
     'staff.tasks.back': '← Calendar',
@@ -73,7 +98,9 @@ export default async function OperationalTasksPage({
   });
 
   const tasks = await listOperationalTasks(prisma, {
-    ...(!user.isAdmin
+    ...(requestedSpaceId
+      ? { projectIds: [], unitIds: authorizedSpaceUnitIds }
+      : !user.isAdmin
       ? explicitMcMode
         ? {
             projectIds: [],

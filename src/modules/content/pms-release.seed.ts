@@ -49,4 +49,15 @@ export const PMS_RELEASE_KEYS = [
   { key: 'staff.maintenance.employee', namespace: 'staff', description: 'Maintenance employee selector', en: 'Employee', ru: 'Сотрудник', th: 'พนักงาน', status: 'needs_review' as const },
   { key: 'staff.maintenance.blocks_inventory', namespace: 'staff', description: 'Preventive plan blocks inventory', en: 'Blocks inventory', ru: 'Блокирует инвентарь', th: 'บล็อกอินเวนทอรี', status: 'needs_review' as const },
   { key: 'staff.space.maintenance', namespace: 'staff', description: 'Operating space maintenance link', en: 'Maintenance', ru: 'Техобслуживание', th: 'การบำรุงรักษา', status: 'needs_review' as const },
+
+  { key: 'staff.task_form.title', namespace: 'staff', description: 'Task title placeholder', en: 'Task title', ru: 'Название задачи', th: 'ชื่องาน', status: 'needs_review' as const },
+  { key: 'staff.task_form.estimated_cost', namespace: 'staff', description: 'Task estimated cost placeholder', en: 'Estimated cost THB', ru: 'Оценка стоимости THB', th: 'ค่าใช้จ่ายโดยประมาณ THB', status: 'needs_review' as const },
+  { key: 'staff.task_form.description', namespace: 'staff', description: 'Task description placeholder', en: 'Description', ru: 'Описание', th: 'รายละเอียด', status: 'needs_review' as const },
+  { key: 'staff.task_form.creating', namespace: 'staff', description: 'Task creating state', en: 'Creating…', ru: 'Создание…', th: 'กำลังสร้าง…', status: 'needs_review' as const },
+  { key: 'staff.task_form.create', namespace: 'staff', description: 'Create task action', en: 'Create task', ru: 'Создать задачу', th: 'สร้างงาน', status: 'needs_review' as const },
+  { key: 'staff.maintenance.plan_title', namespace: 'staff', description: 'Maintenance plan title placeholder', en: 'Maintenance plan', ru: 'План обслуживания', th: 'แผนบำรุงรักษา', status: 'needs_review' as const },
+  { key: 'staff.maintenance.estimated_cost', namespace: 'staff', description: 'Maintenance estimated cost', en: 'Estimated cost THB', ru: 'Оценка стоимости THB', th: 'ค่าใช้จ่ายโดยประมาณ THB', status: 'needs_review' as const },
+  { key: 'staff.maintenance.description', namespace: 'staff', description: 'Maintenance description placeholder', en: 'Description', ru: 'Описание', th: 'รายละเอียด', status: 'needs_review' as const },
+  { key: 'staff.maintenance.creating', namespace: 'staff', description: 'Maintenance plan creating state', en: 'Creating…', ru: 'Создание…', th: 'กำลังสร้าง…', status: 'needs_review' as const },
+  { key: 'staff.maintenance.create_plan', namespace: 'staff', description: 'Create maintenance plan action', en: 'Create plan', ru: 'Создать план', th: 'สร้างแผน', status: 'needs_review' as const },
 ];

@@ -52,7 +52,7 @@ export default async function AgentQuoteNewPage({searchParams}:{searchParams?:{u
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32"><div className="mx-auto max-w-3xl space-y-20">
     <header><Link href="/agent/inventory" className="text-small font-semibold text-brand-andaman">{labels['agent.common.back_inventory']}</Link>
       <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['agent.quote.new_title']}</h1>
-      <p className="mt-6 text-body text-text-secondary">{unit.project.name} · {unit.name}</p></header>
+      <p className="mt-8 text-body text-text-secondary">{unit.project.name} · {unit.name}</p></header>
     <AgentQuoteForm unit={unit} clients={clients} labels={labels}/>
   </div></main>;
 }

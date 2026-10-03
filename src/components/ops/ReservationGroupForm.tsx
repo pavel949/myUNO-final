@@ -27,13 +27,13 @@ export default function ReservationGroupForm({
     if(!response.ok){setError(body.error||labels['reservations.group_failed']);setBusy(false);return;}
     event.currentTarget.reset();setBusy(false);router.refresh();
   }
-  return <form onSubmit={submit} className="grid gap-10 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-4">
-    <input required name="title" placeholder={labels['reservations.group_title']} className="h-44 rounded-md border border-border-line px-10"/>
-    <select required name="guestIdentityId" className="h-44 rounded-md border border-border-line bg-white px-10">
+  return <form onSubmit={submit} className="grid gap-12 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-4">
+    <input required name="title" placeholder={labels['reservations.group_title']} className="h-44 rounded-md border border-border-line px-12"/>
+    <select required name="guestIdentityId" className="h-44 rounded-md border border-border-line bg-white px-12">
       <option value="">{labels['reservations.guest']}</option>
       {guests.map(guest=><option key={guest.id} value={guest.id}>{guest.firstName} {guest.lastName}{guest.email?' · '+guest.email:''}</option>)}
     </select>
-    <input name="notes" placeholder={labels['reservations.note']} className="h-44 rounded-md border border-border-line px-10"/>
+    <input name="notes" placeholder={labels['reservations.note']} className="h-44 rounded-md border border-border-line px-12"/>
     <button disabled={busy} className="h-44 rounded-md border border-brand-deep px-12 text-small font-semibold text-brand-deep">
       {busy?labels['reservations.creating']:labels['reservations.create_group']}
     </button>

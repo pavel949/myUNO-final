@@ -7,7 +7,7 @@ import { transitionOperationalTask } from '@/modules/ops';
 import { getMCManagedUnits } from '@/modules/projects';
 
 const ALLOWED: OperationalTaskStatus[] = [
-  'planned', 'assigned', 'in_progress', 'inspected', 'ready', 'cancelled',
+  'planned', 'assigned', 'in_progress', 'inspected', 'blocked', 'ready', 'cancelled',
 ];
 
 async function canOperateTask(

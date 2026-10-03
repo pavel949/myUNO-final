@@ -85,7 +85,7 @@ export default async function AgentInventoryPage({
       <header>
         <Link href="/agent" className="text-small font-semibold text-brand-andaman">{labels['agent.inventory.back']}</Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['agent.inventory.title']}</h1>
-        <p className="mt-6 text-body text-text-secondary">{labels['agent.inventory.subtitle']}</p>
+        <p className="mt-8 text-body text-text-secondary">{labels['agent.inventory.subtitle']}</p>
       </header>
 
       <form className="flex flex-col gap-8 md:flex-row" action="/agent/inventory">
@@ -107,14 +107,14 @@ export default async function AgentInventoryPage({
       {!units.length ? <p className="rounded-lg border border-border-line bg-surface-paper p-20 text-text-secondary">
         {labels['agent.inventory.empty']}
       </p> : <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">
-        {units.map(unit => <article key={unit.id} className="rounded-xl border border-border-line bg-surface-paper p-18">
+        {units.map(unit => <article key={unit.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
           <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
           <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">{unit.name}</h2>
-          <p className="mt-6 text-small text-text-secondary">
+          <p className="mt-8 text-small text-text-secondary">
             {unit.bedrooms} {labels['agent.common.bedrooms_short']} · {unit.bathrooms} {labels['agent.common.bathrooms_short']}{unit.sizeSqm ? ' · '+unit.sizeSqm+' sqm' : ''}
           </p>
           <div className="mt-12 flex items-center justify-between">
-            <span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold text-text-secondary">
+            <span className="rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold text-text-secondary">
               {unit.instantBook ? labels['agent.inventory.instant'] : labels['agent.inventory.request']}
             </span>
             {unit.inventoryCategory?.baseNightlyThb ? <span className="font-semibold text-text-ink">

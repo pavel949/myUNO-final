@@ -530,6 +530,16 @@ export async function approveBookingRequest(
       now,
       booking.pets
     );
+    if (
+      booking.allocationStatus === 'category_reserved' &&
+      repriced.total_thb > booking.totalThb
+    ) {
+      const error = new Error(
+        'Replacement unit prices above the accepted category booking total',
+      );
+      (error as Error & { code?: string }).code = 'REQUOTE_REQUIRED';
+      throw error;
+    }
   }
   // `requested` sits outside the exclusion constraint, so this update is the
   // moment the dates are actually claimed — and the moment a race can be lost.
@@ -538,7 +548,7 @@ export async function approveBookingRequest(
       where: { id: bookingId },
       data: {
         unitId,
-        ...(repriced
+        ...(repriced && booking.allocationStatus !== 'category_reserved'
           ? {
               totalThb: repriced.total_thb,
               priceBreakdown: repriced as any,

@@ -42,7 +42,7 @@ export default async function AgentClientsPage() {
       <header>
         <Link href="/agent" className="text-small font-semibold text-brand-andaman">{labels['agent.clients.back']}</Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['agent.clients.title']}</h1>
-        <p className="mt-6 text-body text-text-secondary">{labels['agent.clients.subtitle']}</p>
+        <p className="mt-8 text-body text-text-secondary">{labels['agent.clients.subtitle']}</p>
       </header>
       <AgentClientProtectionForm labels={labels}/>
       <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">

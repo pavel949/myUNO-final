@@ -53,6 +53,7 @@ export const PMS_RELEASE_KEYS = [
   { key: 'staff.task_form.title', namespace: 'staff', description: 'Task title placeholder', en: 'Task title', ru: 'Название задачи', th: 'ชื่องาน', status: 'needs_review' as const },
   { key: 'staff.task_form.estimated_cost', namespace: 'staff', description: 'Task estimated cost placeholder', en: 'Estimated cost THB', ru: 'Оценка стоимости THB', th: 'ค่าใช้จ่ายโดยประมาณ THB', status: 'needs_review' as const },
   { key: 'staff.task_form.description', namespace: 'staff', description: 'Task description placeholder', en: 'Description', ru: 'Описание', th: 'รายละเอียด', status: 'needs_review' as const },
+  { key: 'staff.task_form.photos', namespace: 'staff', description: 'Task photo evidence label', en: 'Photos', ru: 'Фотографии', th: 'รูปภาพ', status: 'needs_review' as const },
   { key: 'staff.task_form.creating', namespace: 'staff', description: 'Task creating state', en: 'Creating…', ru: 'Создание…', th: 'กำลังสร้าง…', status: 'needs_review' as const },
   { key: 'staff.task_form.create', namespace: 'staff', description: 'Create task action', en: 'Create task', ru: 'Создать задачу', th: 'สร้างงาน', status: 'needs_review' as const },
   { key: 'staff.maintenance.plan_title', namespace: 'staff', description: 'Maintenance plan title placeholder', en: 'Maintenance plan', ru: 'План обслуживания', th: 'แผนบำรุงรักษา', status: 'needs_review' as const },

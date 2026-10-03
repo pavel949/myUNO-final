@@ -74,6 +74,8 @@ enum OrganizationType {
   management_company
   juristic_person
   developer
+  agency
+  distribution_partner
 }
 
 enum OrganizationStatus {
@@ -82,6 +84,7 @@ enum OrganizationStatus {
 }
 
 enum RoleType {
+  agent_member
   owner
   guest
   resident
@@ -753,6 +756,12 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  agentClientProtectionsAsAgent AgentClientProtection[] @relation("agentClientProtectionAgent")
+  agentClientProtectionsAsClient AgentClientProtection[] @relation("agentClientProtectionClient")
+  agentShortlists               AgentShortlist[]
+  agentQuotes                   AgentQuote[]
+  agentCommissions              AgentCommission[]
+  agentSharedLinks              AgentSharedLink[]
   operatingSpaceMemberships OperatingSpaceMember[]
   operatingTeamMemberships OperatingTeamMember[]
   teamPermissions ProjectStaffPermission[]
@@ -1021,6 +1030,8 @@ model Project {
 }
 
 model Unit {
+  agentShortlistItems AgentShortlistItem[]
+  agentQuoteItems     AgentQuoteItem[]
   operatingSpaces OperatingSpaceUnit[]
   accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
@@ -1159,6 +1170,7 @@ model PricingRule {
 }
 
 model Booking {
+  agentCommissions AgentCommission[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1558,6 +1570,10 @@ model UnitEngagement {
 }
 
 model Organization {
+  agentClientProtections AgentClientProtection[]
+  agentShortlists        AgentShortlist[]
+  agentQuotes            AgentQuote[]
+  agentCommissions       AgentCommission[]
   operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -3755,4 +3771,184 @@ model OperatingTeamMember {
   @@unique([operatingTeamId, identityId])
   @@index([identityId, active])
   @@map("operating_team_member")
+}
+
+model AgentClientProtection {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agentIdentityId      String   @map("agent_identity_id")
+  agencyOrganizationId String?  @map("agency_organization_id")
+  clientIdentityId     String?  @map("client_identity_id")
+  clientName           String   @map("client_name")
+  clientPhone          String?  @map("client_phone")
+  clientWhatsapp       String?  @map("client_whatsapp")
+  transactionScope     String   @default("all") @map("transaction_scope")
+  destinationScope     String?  @map("destination_scope")
+  startsAt             DateTime @default(now()) @map("starts_at")
+  expiresAt            DateTime @map("expires_at")
+  status               String   @default("active")
+  notes                String?
+
+  agent  Identity @relation("agentClientProtectionAgent", fields: [agentIdentityId], references: [id], onDelete: Cascade)
+  client Identity? @relation("agentClientProtectionClient", fields: [clientIdentityId], references: [id], onDelete: SetNull)
+  agency Organization? @relation(fields: [agencyOrganizationId], references: [id], onDelete: SetNull)
+  shortlists AgentShortlist[]
+  quotes AgentQuote[]
+
+  @@index([agentIdentityId, status, expiresAt])
+  @@index([agencyOrganizationId, status])
+  @@index([clientPhone])
+  @@map("agent_client_protection")
+}
+
+model AgentShortlist {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agentIdentityId      String  @map("agent_identity_id")
+  agencyOrganizationId String? @map("agency_organization_id")
+  clientProtectionId   String? @map("client_protection_id")
+  title                String
+  brandMode            String  @default("myuno") @map("brand_mode")
+  status               String  @default("draft")
+  notes                String?
+
+  agent Identity @relation(fields: [agentIdentityId], references: [id], onDelete: Cascade)
+  agency Organization? @relation(fields: [agencyOrganizationId], references: [id], onDelete: SetNull)
+  clientProtection AgentClientProtection? @relation(fields: [clientProtectionId], references: [id], onDelete: SetNull)
+  items AgentShortlistItem[]
+  sharedLinks AgentSharedLink[]
+
+  @@index([agentIdentityId, status])
+  @@index([agencyOrganizationId, status])
+  @@map("agent_shortlist")
+}
+
+model AgentShortlistItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  shortlistId String @map("shortlist_id")
+  unitId      String @map("unit_id")
+  sortOrder   Int    @default(0) @map("sort_order")
+  note        String?
+
+  shortlist AgentShortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistId, unitId])
+  @@index([unitId])
+  @@map("agent_shortlist_item")
+}
+
+model AgentQuote {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agentIdentityId      String  @map("agent_identity_id")
+  agencyOrganizationId String? @map("agency_organization_id")
+  clientProtectionId   String? @map("client_protection_id")
+  status               String  @default("draft")
+  currency             String  @default("THB")
+  baseTotalSatang      Int     @default(0) @map("base_total_satang")
+  markupSatang         Int     @default(0) @map("markup_satang")
+  discountSatang       Int     @default(0) @map("discount_satang")
+  feesSatang           Int     @default(0) @map("fees_satang")
+  taxesSatang          Int     @default(0) @map("taxes_satang")
+  clientTotalSatang    Int     @default(0) @map("client_total_satang")
+  commissionSatang     Int     @default(0) @map("commission_satang")
+  availabilityState    String  @default("request") @map("availability_state")
+  validUntil           DateTime? @map("valid_until")
+  priceBreakdown       Json?   @map("price_breakdown")
+  publicNote           String? @map("public_note")
+
+  agent Identity @relation(fields: [agentIdentityId], references: [id], onDelete: Cascade)
+  agency Organization? @relation(fields: [agencyOrganizationId], references: [id], onDelete: SetNull)
+  clientProtection AgentClientProtection? @relation(fields: [clientProtectionId], references: [id], onDelete: SetNull)
+  items AgentQuoteItem[]
+  sharedLinks AgentSharedLink[]
+
+  @@index([agentIdentityId, status, createdAt])
+  @@index([agencyOrganizationId, status])
+  @@map("agent_quote")
+}
+
+model AgentQuoteItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  quoteId    String   @map("quote_id")
+  unitId     String   @map("unit_id")
+  startDate  DateTime @map("start_date")
+  endDate    DateTime @map("end_date")
+  adults     Int      @default(1)
+  children   Int      @default(0)
+  baseSatang Int      @default(0) @map("base_satang")
+  markupSatang Int    @default(0) @map("markup_satang")
+  clientSatang Int    @default(0) @map("client_satang")
+  rateSnapshot Json?  @map("rate_snapshot")
+
+  quote AgentQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId])
+  @@index([unitId, startDate, endDate])
+  @@map("agent_quote_item")
+}
+
+model AgentCommission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agentIdentityId      String  @map("agent_identity_id")
+  agencyOrganizationId String? @map("agency_organization_id")
+  bookingId            String? @map("booking_id")
+  transactionType      String  @map("transaction_type")
+  transactionRef       String? @map("transaction_ref")
+  basisAmountSatang    Int     @map("basis_amount_satang")
+  rateBps              Int     @default(1000) @map("rate_bps")
+  amountSatang         Int     @map("amount_satang")
+  status               String  @default("estimated")
+  approvedAt           DateTime? @map("approved_at")
+  payableAt            DateTime? @map("payable_at")
+  paidAt               DateTime? @map("paid_at")
+  reversedAt           DateTime? @map("reversed_at")
+
+  agent Identity @relation(fields: [agentIdentityId], references: [id], onDelete: Restrict)
+  agency Organization? @relation(fields: [agencyOrganizationId], references: [id], onDelete: SetNull)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([agentIdentityId, status])
+  @@index([agencyOrganizationId, status])
+  @@index([bookingId])
+  @@map("agent_commission")
+}
+
+model AgentSharedLink {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agentIdentityId String @map("agent_identity_id")
+  shortlistId     String? @map("shortlist_id")
+  quoteId         String? @map("quote_id")
+  token           String @unique
+  brandMode       String @default("myuno") @map("brand_mode")
+  expiresAt       DateTime? @map("expires_at")
+  viewCount       Int @default(0) @map("view_count")
+  lastViewedAt    DateTime? @map("last_viewed_at")
+
+  agent Identity @relation(fields: [agentIdentityId], references: [id], onDelete: Cascade)
+  shortlist AgentShortlist? @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  quote AgentQuote? @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([agentIdentityId, createdAt])
+  @@index([shortlistId])
+  @@index([quoteId])
+  @@map("agent_shared_link")
 }

@@ -62,3 +62,14 @@ export {
   listOperationalTasks,
   type UnitReadinessState,
 } from './operational-task.service';
+
+
+export {
+  OPERATING_SPACE_CAPABILITIES,
+  listOperatingSpacesForIdentity,
+  getOperatingSpaceUnitIds,
+  getOperatingSpaceMembership,
+  hasOperatingSpaceCapability,
+  assertOperatingSpaceCapability,
+  type OperatingSpaceCapability,
+} from './operating-space.service';

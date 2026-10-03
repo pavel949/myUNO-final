@@ -58,7 +58,7 @@ export default function OperationalTaskCreateForm({
     <textarea name="description" placeholder={labels['staff.task_form.description']} className="min-h-24 rounded-md border border-border-line p-12 md:col-span-2"/>
     <label className="flex flex-col gap-4 text-small text-text-secondary">
       {labels['staff.task_form.photos']||'Photos'}
-      <input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple className="text-small"/>
+      <input name="photos" type="file" accept={labels['staff.task_form.photo_accept']||undefined} multiple className="text-small"/>
     </label>
     <label className="flex items-center gap-8 text-small text-text-secondary"><input type="checkbox" name="blocksInventory"/>{labels['staff.task_form.blocks_inventory']}</label>
     <button disabled={busy} className="h-44 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{busy?labels['staff.task_form.creating']:labels['staff.task_form.create']}</button>

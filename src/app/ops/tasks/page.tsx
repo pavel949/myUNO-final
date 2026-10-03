@@ -133,7 +133,7 @@ export default async function OperationalTasksPage({
           }
       : {}),
     unitId: requestedUnitId,
-    statuses: ['planned', 'assigned', 'in_progress', 'inspected'],
+    statuses: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'],
   });
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">

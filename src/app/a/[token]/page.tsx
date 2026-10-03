@@ -61,7 +61,7 @@ export default async function AgentSharedPage({params}:{params:{token:string}}){
       <header className="rounded-xl border border-border-line bg-surface-paper p-20">
         <p className="text-kicker font-bold tracking-widest text-brand-andaman">{link.brandMode==='neutral'?labels['agent.share.selection_kicker']:'myUNO'}</p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{title}</h1>
-        {quote?<div className="mt-16 grid gap-10 md:grid-cols-3">
+        {quote?<div className="mt-16 grid gap-12 md:grid-cols-3">
           <div><p className="text-small text-text-secondary">{labels['agent.share.client_total']}</p><p className="font-display text-heading-2 font-bold">฿{Math.round(quote.clientTotalSatang/100).toLocaleString()}</p></div>
           <div><p className="text-small text-text-secondary">{labels['agent.share.availability']}</p><p className="font-semibold">{quote.availabilityState}</p></div>
           <div><p className="text-small text-text-secondary">{labels['agent.share.valid_until']}</p><p className="font-semibold">{quote.validUntil?quote.validUntil.toISOString().slice(0,16).replace('T',' '):'—'}</p></div>
@@ -69,11 +69,11 @@ export default async function AgentSharedPage({params}:{params:{token:string}}){
       </header>
 
       <section className="grid gap-12 md:grid-cols-2">
-        {items.map(item=><article key={item.id} className="rounded-xl border border-border-line bg-surface-paper p-18">
+        {items.map(item=><article key={item.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
           <p className="text-small font-semibold text-brand-andaman">{item.unit.project.name}</p>
           <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">{item.unit.name}</h2>
-          <p className="mt-6 text-small text-text-secondary">{item.unit.bedrooms} {labels['agent.common.bedrooms_short']} · {item.unit.bathrooms} {labels['agent.common.bathrooms_short']}{item.unit.sizeSqm?' · '+item.unit.sizeSqm+' sqm':''}</p>
-          <a href={'/units/'+encodeURIComponent(item.unit.id)} className="mt-14 inline-flex rounded-md bg-brand-deep px-14 py-8 text-small font-semibold text-white">{labels['agent.share.view_property']}</a>
+          <p className="mt-8 text-small text-text-secondary">{item.unit.bedrooms} {labels['agent.common.bedrooms_short']} · {item.unit.bathrooms} {labels['agent.common.bathrooms_short']}{item.unit.sizeSqm?' · '+item.unit.sizeSqm+' sqm':''}</p>
+          <a href={'/units/'+encodeURIComponent(item.unit.id)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">{labels['agent.share.view_property']}</a>
         </article>)}
       </section>
     </div>

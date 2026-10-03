@@ -97,7 +97,7 @@ export default function OperationalTaskQueueClient({
             {task.status === 'planned' && <button disabled={busy===task.id} onClick={()=>update(task,'assigned',true)}
               className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">{labels['staff.tasks.assign_me']}</button>}
             {task.status === 'blocked' && <button disabled={busy===task.id} onClick={()=>update(task,'in_progress')}
-              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">Resume</button>}
+              className="rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">{labels['staff.tasks.resume']}</button>}
             {task.status === 'assigned' && <button disabled={busy===task.id} onClick={()=>update(task,'in_progress')}
               className="rounded-md bg-brand-deep px-12 py-8 text-small font-semibold text-white">{labels['staff.tasks.start']}</button>}
             {task.status === 'in_progress' && isInspection && <button disabled={busy===task.id} onClick={()=>update(task,'inspected')}

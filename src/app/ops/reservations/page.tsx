@@ -171,8 +171,8 @@ export default async function ReservationDesk({
         <Link href={'/ops/spaces/'+encodeURIComponent(spaceId)}
           className="text-small font-semibold text-brand-andaman">{labels['reservations.back']}</Link>
         <p className="mt-16 text-kicker font-bold tracking-widest text-brand-andaman">{labels['reservations.kicker']}</p>
-        <h1 className="mt-6 font-display text-display-xl font-semibold text-text-ink">{labels['reservations.title']}</h1>
-        <p className="mt-6 text-body text-text-secondary">{labels['reservations.subtitle']}</p>
+        <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['reservations.title']}</h1>
+        <p className="mt-8 text-body text-text-secondary">{labels['reservations.subtitle']}</p>
       </header>
 
       <section className="grid grid-cols-2 gap-8 md:grid-cols-4">
@@ -190,10 +190,10 @@ export default async function ReservationDesk({
       {canManage?<ReservationGroupForm operatingSpaceId={spaceId} guests={guests} labels={labels}/>:null}
       {canManage?<ManualReservationForm operatingSpaceId={spaceId} units={units} guests={guests} groups={groups.map(g=>({id:g.id,title:g.title,guestIdentityId:g.guestIdentityId}))} labels={labels}/>:null}
 
-      <nav className="flex flex-wrap gap-6">
-        <Link href={statusHref('')} className="rounded-full border border-border-line bg-surface-paper px-12 py-6 text-small">{labels['reservations.all']}</Link>
+      <nav className="flex flex-wrap gap-8">
+        <Link href={statusHref('')} className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small">{labels['reservations.all']}</Link>
         {allowedStatuses.map(value=><Link key={value} href={statusHref(value)}
-          className={'rounded-full border px-12 py-6 text-small '+(status===value?'border-brand-andaman text-brand-andaman':'border-border-line bg-surface-paper')}>
+          className={'rounded-full border px-12 py-8 text-small '+(status===value?'border-brand-andaman text-brand-andaman':'border-border-line bg-surface-paper')}>
           {value.replace(/_/g,' ')}
         </Link>)}
       </nav>
@@ -201,7 +201,7 @@ export default async function ReservationDesk({
       <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
         {bookings.map(booking=>{
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
-          return <article key={booking.id} className="grid gap-10 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
+          return <article key={booking.id} className="grid gap-12 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
             <div className="md:col-span-2">
               <p className="font-semibold text-text-ink">{booking.unit.project.name} · {booking.unit.name}</p>
               <p className="text-small text-text-secondary">{booking.guestIdentity.firstName} {booking.guestIdentity.lastName}</p>
@@ -216,12 +216,12 @@ export default async function ReservationDesk({
 
       <section>
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.groups']}</h2>
-        <div className="mt-10 grid gap-10 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
           {groups.map(group=><article key={group.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
             <p className="font-display text-heading-3 font-semibold">{group.title||group.id.slice(0,8)}</p>
             <p className="mt-4 text-small text-text-secondary">{group.guest.firstName} {group.guest.lastName}</p>
-            <p className="mt-10 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString())}</p>
-            <div className="mt-8 flex flex-wrap gap-4">{group.bookings.map(b=><span key={b.id} className="rounded-full bg-surface-ivory px-8 py-3 text-small">{b.unit.project.name} · {b.unit.name}</span>)}</div>
+            <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString())}</p>
+            <div className="mt-8 flex flex-wrap gap-4">{group.bookings.map(b=><span key={b.id} className="rounded-full bg-surface-ivory px-8 py-4 text-small">{b.unit.project.name} · {b.unit.name}</span>)}</div>
           </article>)}
         </div>
       </section>

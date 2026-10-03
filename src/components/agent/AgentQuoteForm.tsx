@@ -47,8 +47,6 @@ export default function AgentQuoteForm({unit,clients,labels}:Props){
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.adults']}<input name="adults" type="number" min="1" max={unit.maxGuests} defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.children']}<input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.markup']}<input name="markupThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.discount']}<input name="discountThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.commission']}<input name="commissionPct" type="number" min="0" step="0.1" defaultValue="10" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.valid_hours']}<input name="validHours" type="number" min="1" max="168" defaultValue="24" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
     </div>
     <textarea name="publicNote" placeholder={labels['agent.quote.public_note']} className="min-h-24 w-full rounded-md border border-border-line p-12"/>

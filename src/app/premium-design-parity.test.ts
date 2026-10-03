@@ -95,6 +95,24 @@ describe('premium design-system surface parity', () => {
     expect(tailwind).toContain("'var(--font-display-active)'");
   });
 
+  it('keeps Vacation Rental and MC operations on one connected UX model', () => {
+    const home = source('src/app/(public)/page.tsx');
+    const rentOut = source('src/app/(public)/rent-out/page.tsx');
+    const mc = source('src/app/mc/client.tsx');
+
+    expect(home).toContain("landing.vacation.title");
+    expect(home).toContain('href="/rent-out"');
+    expect(rentOut).toContain('copy.goalShort');
+    expect(rentOut).toContain('copy.howEligibility');
+    expect(rentOut).toContain('/property/onboard?kind=home&offers=short_stay,monthly,yearly');
+
+    expect(mc).toContain('/mc/calendar?projectId=');
+    expect(mc).toContain('/ops/tasks?mc=1');
+    expect(mc).toContain('reservationView');
+    expect(mc).not.toContain('MonthHeatStrip');
+    expect(mc).not.toContain("activeTab === 'calendar'");
+  });
+
   it('keeps list and map search on one canonical search contract', () => {
     const results = source('src/app/search/search-results.tsx');
     const route = source('src/app/api/search/units/route.ts');

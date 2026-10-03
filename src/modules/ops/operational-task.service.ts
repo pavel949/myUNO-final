@@ -4,7 +4,7 @@ import type {
   PrismaClient,
 } from '@prisma/client';
 
-const OPEN_STATUSES: OperationalTaskStatus[] = ['planned', 'assigned', 'in_progress', 'inspected'];
+const OPEN_STATUSES: OperationalTaskStatus[] = ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'];
 
 export type UnitReadinessState =
   | 'ready'
@@ -70,10 +70,11 @@ export async function assertUnitReadyForCheckIn(
 }
 
 const TRANSITIONS: Record<OperationalTaskStatus, OperationalTaskStatus[]> = {
-  planned: ['assigned', 'in_progress', 'cancelled'],
-  assigned: ['in_progress', 'cancelled'],
-  in_progress: ['inspected', 'ready', 'cancelled'],
-  inspected: ['ready', 'in_progress', 'cancelled'],
+  planned: ['assigned', 'in_progress', 'blocked', 'cancelled'],
+  assigned: ['in_progress', 'blocked', 'cancelled'],
+  in_progress: ['inspected', 'blocked', 'ready', 'cancelled'],
+  inspected: ['ready', 'in_progress', 'blocked', 'cancelled'],
+  blocked: ['planned', 'assigned', 'in_progress', 'cancelled'],
   ready: [],
   cancelled: [],
 };
@@ -101,7 +102,7 @@ export async function transitionOperationalTask(
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         ...(nextStatus === 'in_progress' && !task.startedAt ? { startedAt: now } : {}),
         ...(nextStatus === 'inspected' ? { inspectedAt: now } : {}),
-        ...(nextStatus === 'ready' ? { readyAt: now } : {}),
+        ...(nextStatus === 'ready' ? { readyAt: now, completedAt: now } : {}),
       },
     });
   });
@@ -171,8 +172,239 @@ export async function listOperationalTasks(
     include: {
       unit: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
+      operatingSpace: { select: { id: true, name: true } },
+      assignedTeam: { select: { id: true, name: true, teamType: true } },
       assignee: { select: { id: true, firstName: true, lastName: true } },
+      media: { include: { media: true }, orderBy: { sortOrder: 'asc' } },
     },
     orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }],
   });
+}
+
+
+export interface CreateOperationalTaskInput {
+  projectId: string;
+  unitId: string;
+  operatingSpaceId?: string | null;
+  bookingId?: string | null;
+  taskType: OperationalTaskType;
+  title?: string | null;
+  description?: string | null;
+  priority?: string;
+  dueAt: Date;
+  assignedIdentityId?: string | null;
+  assignedTeamId?: string | null;
+  estimatedCostSatang?: number | null;
+  actualCostSatang?: number | null;
+  blocksInventory?: boolean;
+  notes?: string | null;
+  mediaAssetIds?: string[];
+}
+
+export async function createOperationalTask(
+  db: PrismaClient,
+  input: CreateOperationalTaskInput,
+) {
+  if (!input.projectId || !input.unitId) throw new Error('TASK_SCOPE_REQUIRED');
+  if (!(input.dueAt instanceof Date) || Number.isNaN(input.dueAt.getTime())) {
+    throw new Error('TASK_DUE_AT_INVALID');
+  }
+  if ((input.estimatedCostSatang ?? 0) < 0 || (input.actualCostSatang ?? 0) < 0) {
+    throw new Error('TASK_COST_INVALID');
+  }
+
+  const unit = await db.unit.findFirst({
+    where: { id: input.unitId, projectId: input.projectId },
+    select: { id: true, projectId: true },
+  });
+  if (!unit) throw new Error('TASK_UNIT_NOT_FOUND');
+
+  if (input.operatingSpaceId) {
+    const membership = await db.operatingSpaceUnit.findFirst({
+      where: {
+        operatingSpaceId: input.operatingSpaceId,
+        unitId: input.unitId,
+        active: true,
+        OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (!membership) throw new Error('TASK_UNIT_OUTSIDE_OPERATING_SPACE');
+  }
+
+  if (input.assignedTeamId) {
+    const team = await db.operatingTeam.findFirst({
+      where: {
+        id: input.assignedTeamId,
+        active: true,
+        ...(input.operatingSpaceId ? { operatingSpaceId: input.operatingSpaceId } : {}),
+      },
+      select: { id: true },
+    });
+    if (!team) throw new Error('TASK_TEAM_NOT_FOUND');
+  }
+
+  const mediaIds = Array.from(new Set(input.mediaAssetIds ?? []));
+  if (mediaIds.length) {
+    const mediaCount = await db.mediaAsset.count({ where: { id: { in: mediaIds } } });
+    if (mediaCount !== mediaIds.length) throw new Error('TASK_MEDIA_NOT_FOUND');
+  }
+
+  return db.operationalTask.create({
+    data: {
+      projectId: input.projectId,
+      unitId: input.unitId,
+      operatingSpaceId: input.operatingSpaceId ?? null,
+      bookingId: input.bookingId ?? null,
+      taskType: input.taskType,
+      status: input.assignedIdentityId || input.assignedTeamId ? 'assigned' : 'planned',
+      title: input.title ?? null,
+      description: input.description ?? null,
+      priority: input.priority ?? 'normal',
+      dueAt: input.dueAt,
+      assignedIdentityId: input.assignedIdentityId ?? null,
+      assignedTeamId: input.assignedTeamId ?? null,
+      estimatedCostSatang: input.estimatedCostSatang ?? null,
+      actualCostSatang: input.actualCostSatang ?? null,
+      blocksInventory: input.blocksInventory ?? false,
+      notes: input.notes ?? null,
+      ...(mediaIds.length ? {
+        media: {
+          create: mediaIds.map((mediaAssetId, sortOrder) => ({ mediaAssetId, sortOrder })),
+        },
+      } : {}),
+    },
+    include: {
+      project: { select: { id: true, name: true } },
+      unit: { select: { id: true, name: true } },
+      assignee: { select: { id: true, firstName: true, lastName: true } },
+      assignedTeam: { select: { id: true, name: true, teamType: true } },
+      media: { include: { media: true }, orderBy: { sortOrder: 'asc' } },
+    },
+  });
+}
+
+export interface CreatePreventiveMaintenancePlanInput {
+  operatingSpaceId: string;
+  projectId?: string | null;
+  unitId?: string | null;
+  assignedTeamId?: string | null;
+  assignedIdentityId?: string | null;
+  taskType?: OperationalTaskType;
+  title: string;
+  description?: string | null;
+  frequencyDays: number;
+  nextDueAt: Date;
+  estimatedCostSatang?: number | null;
+  blocksInventory?: boolean;
+}
+
+export async function createPreventiveMaintenancePlan(
+  db: PrismaClient,
+  input: CreatePreventiveMaintenancePlanInput,
+) {
+  if (!input.title.trim()) throw new Error('PREVENTIVE_TITLE_REQUIRED');
+  if (!Number.isInteger(input.frequencyDays) || input.frequencyDays < 1) {
+    throw new Error('PREVENTIVE_FREQUENCY_INVALID');
+  }
+  if (input.unitId) {
+    const scoped = await db.operatingSpaceUnit.findFirst({
+      where: {
+        operatingSpaceId: input.operatingSpaceId,
+        unitId: input.unitId,
+        active: true,
+      },
+      include: { unit: { select: { projectId: true } } },
+    });
+    if (!scoped) throw new Error('PREVENTIVE_UNIT_OUTSIDE_OPERATING_SPACE');
+    if (input.projectId && scoped.unit.projectId !== input.projectId) {
+      throw new Error('PREVENTIVE_PROJECT_UNIT_MISMATCH');
+    }
+  }
+  return db.preventiveMaintenancePlan.create({
+    data: {
+      operatingSpaceId: input.operatingSpaceId,
+      projectId: input.projectId ?? null,
+      unitId: input.unitId ?? null,
+      assignedTeamId: input.assignedTeamId ?? null,
+      assignedIdentityId: input.assignedIdentityId ?? null,
+      taskType: input.taskType ?? 'preventive_maintenance',
+      title: input.title.trim(),
+      description: input.description ?? null,
+      frequencyDays: input.frequencyDays,
+      nextDueAt: input.nextDueAt,
+      estimatedCostSatang: input.estimatedCostSatang ?? null,
+      blocksInventory: input.blocksInventory ?? false,
+    },
+  });
+}
+
+export async function generateDuePreventiveMaintenanceTasks(
+  db: PrismaClient,
+  now: Date = new Date(),
+) {
+  const duePlans = await db.preventiveMaintenancePlan.findMany({
+    where: { active: true, nextDueAt: { lte: now } },
+    orderBy: { nextDueAt: 'asc' },
+    take: 200,
+  });
+
+  const generated: string[] = [];
+  for (const candidate of duePlans) {
+    const ids = await db.$transaction(async (tx) => {
+      const claimed = await tx.preventiveMaintenancePlan.updateMany({
+        where: {
+          id: candidate.id,
+          active: true,
+          nextDueAt: { lte: now },
+        },
+        data: {
+          lastGeneratedAt: now,
+          nextDueAt: new Date(
+            candidate.nextDueAt.getTime() + candidate.frequencyDays * 24 * 60 * 60 * 1000
+          ),
+        },
+      });
+      if (claimed.count !== 1) return [];
+
+      const scopedUnits = await tx.operatingSpaceUnit.findMany({
+        where: {
+          operatingSpaceId: candidate.operatingSpaceId,
+          active: true,
+          OR: [{ endsOn: null }, { endsOn: { gt: now } }],
+          ...(candidate.unitId
+            ? { unitId: candidate.unitId }
+            : candidate.projectId
+              ? { unit: { projectId: candidate.projectId } }
+              : {}),
+        },
+        include: { unit: { select: { id: true, projectId: true } } },
+      });
+
+      const created = [];
+      for (const scoped of scopedUnits) {
+        created.push(await tx.operationalTask.create({
+          data: {
+            projectId: scoped.unit.projectId,
+            unitId: scoped.unit.id,
+            operatingSpaceId: candidate.operatingSpaceId,
+            preventiveMaintenancePlanId: candidate.id,
+            taskType: candidate.taskType,
+            status: candidate.assignedIdentityId || candidate.assignedTeamId ? 'assigned' : 'planned',
+            title: candidate.title,
+            description: candidate.description,
+            dueAt: candidate.nextDueAt,
+            assignedIdentityId: candidate.assignedIdentityId,
+            assignedTeamId: candidate.assignedTeamId,
+            estimatedCostSatang: candidate.estimatedCostSatang,
+            blocksInventory: candidate.blocksInventory,
+          },
+          select: { id: true },
+        }));
+      }
+      return created.map((task) => task.id);
+    });
+    generated.push(...ids);
+  }
+  return generated;
 }

@@ -21,8 +21,7 @@ export default function AgentQuoteForm({unit,clients,labels}:Props){
     const response=await fetch('/api/agent/quotes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
       unitId:unit.id,startDate:String(form.get('startDate')||''),endDate:String(form.get('endDate')||''),
       adults:Number(form.get('adults')||1),children:Number(form.get('children')||0),
-      markupThb:Number(form.get('markupThb')||0),discountThb:Number(form.get('discountThb')||0),
-      commissionPct:Number(form.get('commissionPct')||10),clientProtectionId:clientId||undefined,
+      markupThb:Number(form.get('markupThb')||0),clientProtectionId:clientId||undefined,
       validHours:Number(form.get('validHours')||24),publicNote:String(form.get('publicNote')||''),
     })});
     const data=await response.json();

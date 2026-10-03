@@ -65,8 +65,24 @@ export default async function OperationalTasksPage({
     if (!allowed) redirect(explicitMcMode ? '/ops/tasks?mc=1' : '/ops/tasks');
   }
 
+  const authorizedSpaceUnitIds = requestedSpaceId && !user.isAdmin
+    ? (await prisma.unit.findMany({
+        where: {
+          id: { in: spaceUnitIds },
+          OR: [
+            ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
+            ...(mcManagedUnitIds.size ? [{ id: { in: Array.from(mcManagedUnitIds) } }] : []),
+          ],
+        },
+        select: { id: true },
+      })).map((unit) => unit.id)
+    : spaceUnitIds;
+  if (requestedSpaceId && !user.isAdmin && !authorizedSpaceUnitIds.length) redirect('/ops/spaces');
+
   const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
-  const backHref = explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
+  const backHref = requestedSpaceId
+    ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId)
+    : explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
 
   const labels = await getLabels({
     'staff.tasks.back': '← Calendar',
@@ -83,7 +99,7 @@ export default async function OperationalTasksPage({
 
   const tasks = await listOperationalTasks(prisma, {
     ...(requestedSpaceId
-      ? { projectIds: [], unitIds: spaceUnitIds }
+      ? { projectIds: [], unitIds: authorizedSpaceUnitIds }
       : !user.isAdmin
       ? explicitMcMode
         ? {

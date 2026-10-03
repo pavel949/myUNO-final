@@ -2370,8 +2370,8 @@ model PreventiveMaintenancePlan {
   assignee       Identity?      @relation("preventivePlanAssignee", fields: [assignedIdentityId], references: [id], onDelete: SetNull)
   tasks          OperationalTask[]
 
-  @@index([operatingSpaceId, active, nextDueAt])
-  @@index([unitId, active, nextDueAt])
+  @@index([operatingSpaceId, active, nextDueAt], map: "preventive_plan_space_active_due_idx")
+  @@index([unitId, active, nextDueAt], map: "preventive_plan_unit_active_due_idx")
   @@map("preventive_maintenance_plan")
 }
 

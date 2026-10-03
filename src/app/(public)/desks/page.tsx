@@ -2,16 +2,20 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { GLOBAL_DESKS } from '@/modules/global-desks';
+import { getDestination } from '@/modules/destinations';
+
+const destination = getDestination();
 
 export const metadata: Metadata = {
   title: 'Global desks | myUNO',
-  description: 'Market and language liaison routes for international myUNO users exploring Phuket property.',
+  description: `Market and language liaison routes for international myUNO users exploring ${destination.name} property.`,
 };
 
 export default async function GlobalDesksPage() {
+  const destination = getDestination();
   const labels = await getLabels({
     'desks.index.kicker': 'GLOBAL DESKS',
-    'desks.index.title': 'Phuket property, easier to navigate from wherever you are.',
+    'desks.index.title': `${destination.name} property, easier to navigate from wherever you are.`,
     'desks.index.body': 'Each desk is a market and language liaison route into the same canonical myUNO property, booking and service platform. Desks do not represent separate inventory or physical offices.',
     'desks.index.cta': 'Open desk',
     'desks.thailand.title': 'Thailand desk',

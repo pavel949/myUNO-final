@@ -3,27 +3,30 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLabels } from '@/lib/i18n';
 import { getGlobalDesk } from '@/modules/global-desks';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const destination = getDestination();
   const desk = getGlobalDesk(params.slug);
   if (!desk) return { title: 'Global desk | myUNO' };
   return {
     title: `${desk.code} desk | myUNO`,
-    description: 'A market and language liaison route into myUNO Phuket property discovery, stays and services.',
+    description: `A market and language liaison route into myUNO ${destination.name} property discovery, stays and services.`,
   };
 }
 
 export default async function GlobalDeskDetailPage({ params }: { params: { slug: string } }) {
+  const destination = getDestination();
   const desk = getGlobalDesk(params.slug);
   if (!desk) notFound();
 
   const labels = await getLabels({
     'desks.detail.back': 'All global desks',
     'desks.detail.kicker': 'GLOBAL DESK',
-    'desks.detail.body': 'This desk is a market and language liaison route into myUNO. It does not represent a separate property database, separate pricing, or a physical office unless explicitly stated elsewhere.',
-    'desks.detail.discover': 'Discover Phuket property',
+    'desks.detail.body': 'This desk localizes market context and language into the same myUNO property, booking and service records. It does not create separate inventory, pricing or a physical office.',
+    'desks.detail.discover': `Discover ${destination.name} property`,
     'desks.detail.discover_body': 'Browse the same canonical projects and homes available across myUNO.',
     'desks.detail.stay': 'Plan a stay',
     'desks.detail.stay_body': 'Search authoritative availability and continue into the standard myUNO booking flow.',
@@ -75,6 +78,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
           </h1>
           <p className="mt-12 max-w-2xl text-lg leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
           <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
+          <p className="mt-8 text-small text-text-secondary">{desk.sourceMarkets.join(' · ')}</p>
           <p className="mt-20 max-w-3xl text-small leading-relaxed text-text-secondary">{labels['desks.detail.body']}</p>
         </div>
       </section>

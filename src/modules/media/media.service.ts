@@ -9,8 +9,10 @@ import type { PrismaClient, MediaAssetKind } from '@prisma/client';
  * Swapping to S3/R2 later means changing ONLY this file.
  */
 
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
-export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+const ALLOWED_VIDEO_MIME_TYPES = new Set(['video/mp4', 'video/webm']);
+export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB images
+export const MAX_VIDEO_UPLOAD_BYTES = 200 * 1024 * 1024; // direct-play MP4/WebM only
 
 export interface StoreMediaInput {
   buffer: Buffer;
@@ -21,7 +23,15 @@ export interface StoreMediaInput {
 }
 
 export function isAllowedImageType(mimeType: string): boolean {
-  return ALLOWED_MIME_TYPES.has(mimeType);
+  return ALLOWED_IMAGE_MIME_TYPES.has(mimeType);
+}
+
+export function isAllowedVideoType(mimeType: string): boolean {
+  return ALLOWED_VIDEO_MIME_TYPES.has(mimeType);
+}
+
+export function isAllowedMediaType(mimeType: string): boolean {
+  return isAllowedImageType(mimeType) || isAllowedVideoType(mimeType);
 }
 
 async function putToStorage(
@@ -49,11 +59,16 @@ async function putToStorage(
 export async function storeMedia(db: PrismaClient, input: StoreMediaInput) {
   const { buffer, mimeType, kind, uploadedByIdentityId } = input;
 
-  if (!isAllowedImageType(mimeType)) {
+  const video = input.kind === 'video';
+  if (video ? !isAllowedVideoType(mimeType) : !isAllowedImageType(mimeType)) {
     throw new Error(`Unsupported media type: ${mimeType}`);
   }
-  if (buffer.byteLength === 0 || buffer.byteLength > MAX_UPLOAD_BYTES) {
-    throw new Error(`File size must be between 1 byte and ${MAX_UPLOAD_BYTES} bytes`);
+  const maxBytes = video ? MAX_VIDEO_UPLOAD_BYTES : MAX_UPLOAD_BYTES;
+  if (buffer.byteLength === 0 || buffer.byteLength > maxBytes) {
+    throw new Error(`File size must be between 1 byte and ${maxBytes} bytes`);
+  }
+  if (video && !process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new Error('Video upload requires configured blob storage; data-URI fallback is intentionally disabled');
   }
 
   const ext = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1].split('+')[0];

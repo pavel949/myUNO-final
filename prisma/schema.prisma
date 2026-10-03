@@ -280,6 +280,7 @@ enum MediaAssetKind {
   passport
   avatar
   brand
+  video
 }
 
 enum NotificationChannel {
@@ -750,6 +751,20 @@ enum JobRunOutcome {
   failed
 }
 
+enum ResearchPublicationStatus {
+  draft
+  in_review
+  reviewed
+  published
+  retracted
+}
+
+enum VideoPublicationStatus {
+  draft
+  published
+  archived
+}
+
 // --- The spine ---
 
 model Identity {
@@ -861,6 +876,10 @@ model Identity {
   managementContractsOwned      ManagementContract[]          @relation("contractOwner")
   managementContractsSigned     ManagementContract[]          @relation("contractSignatory")
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
+  researchPublicationsAuthored  ResearchPublication[]          @relation("researchAuthor")
+  researchPublicationsReviewed  ResearchPublication[]          @relation("researchReviewer")
+  researchCorrectionsCreated    ResearchCorrection[]           @relation("researchCorrectionAuthor")
+  videoPublicationsCreated      VideoPublication[]              @relation("videoPublicationCreator")
 
   @@map("identity")
   operationalTasksAssigned OperationalTask[] @relation("operationalTaskAssignee")
@@ -1931,6 +1950,7 @@ model MediaAsset {
   regulatoryCredentialDocs RegulatoryCredential[] @relation("regulatoryDoc")
   dealContracts PropertyDeal[] @relation("propertyDealContract")
   dealCompletionEvidence PropertyDeal[] @relation("propertyDealCompletion")
+  videoPublications       VideoPublication[] @relation("videoPublicationMedia")
 
   @@index([deleteAfter])
   @@map("media_asset")
@@ -3870,4 +3890,103 @@ model OperatingTeamMember {
   @@unique([operatingTeamId, identityId])
   @@index([identityId, active])
   @@map("operating_team_member")
+}
+
+// --- Governed public knowledge + video publication (P2 product layer) ---
+
+model ResearchPublication {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  destinationKey String @default("phuket") @map("destination_key")
+  slug           String
+  locale         String @default("en")
+  title          String
+  summary        String
+  body           String @db.Text
+  status         ResearchPublicationStatus @default(draft)
+  version        Int @default(1)
+  scheduledFor   DateTime? @map("scheduled_for")
+  reviewedAt     DateTime? @map("reviewed_at")
+  publishedAt    DateTime? @map("published_at")
+  retractedAt    DateTime? @map("retracted_at")
+  authorIdentityId   String @map("author_identity_id")
+  reviewerIdentityId String? @map("reviewer_identity_id")
+
+  author      Identity  @relation("researchAuthor", fields: [authorIdentityId], references: [id], onDelete: Restrict)
+  reviewer    Identity? @relation("researchReviewer", fields: [reviewerIdentityId], references: [id], onDelete: Restrict)
+  sources     ResearchSource[]
+  corrections ResearchCorrection[]
+
+  @@unique([destinationKey, slug, locale])
+  @@index([destinationKey, status, publishedAt])
+  @@index([authorIdentityId])
+  @@index([reviewerIdentityId])
+  @@map("research_publication")
+}
+
+model ResearchSource {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  publicationId String @map("publication_id")
+  sourceNumber  Int @map("source_number")
+  title         String
+  publisher     String?
+  url           String
+  publishedOn   DateTime? @map("published_on") @db.Date
+  accessedOn    DateTime @default(now()) @map("accessed_on")
+  note          String?
+
+  publication ResearchPublication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationId, sourceNumber])
+  @@index([publicationId])
+  @@map("research_source")
+}
+
+model ResearchCorrection {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  publicationId String @map("publication_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  summary      String
+  detail       String @db.Text
+  publicAt     DateTime @default(now()) @map("public_at")
+
+  publication ResearchPublication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  createdBy   Identity @relation("researchCorrectionAuthor", fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+
+  @@index([publicationId, publicAt])
+  @@index([createdByIdentityId])
+  @@map("research_correction")
+}
+
+model VideoPublication {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  destinationKey String @default("phuket") @map("destination_key")
+  slug           String
+  locale         String @default("en")
+  title          String
+  description    String?
+  mediaAssetId   String @map("media_asset_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  status         VideoPublicationStatus @default(draft)
+  recordedOn     DateTime? @map("recorded_on") @db.Date
+  provenance     String?
+  scopeType      String? @map("scope_type")
+  scopeId        String? @map("scope_id")
+  publishedAt    DateTime? @map("published_at")
+
+  mediaAsset MediaAsset @relation("videoPublicationMedia", fields: [mediaAssetId], references: [id], onDelete: Restrict)
+  createdBy  Identity   @relation("videoPublicationCreator", fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+
+  @@unique([destinationKey, slug, locale])
+  @@index([destinationKey, status, publishedAt])
+  @@index([mediaAssetId])
+  @@index([scopeType, scopeId])
+  @@map("video_publication")
 }

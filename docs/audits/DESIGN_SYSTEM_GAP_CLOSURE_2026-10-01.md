@@ -158,10 +158,10 @@ Public stay search now uses the existing canonical viewport contract (`parseMapB
 2. Investor portfolio projection from existing owner/buyer/finance records.
 3. Standard premium primitives rolled across every ops/admin/owner/provider screen.
 
-### P2 / optional
-1. Governed public research/index publication system.
-2. Video library.
-3. Country-desk localization model.
+### P2 / optional — closed 2026-10-03
+1. **Governed public research/index publication system — closed.** Independent review, numbered sources, frozen review evidence and append-only public corrections; no fabricated market data.
+2. **Video library — closed.** Canonical MediaAsset video kind + governed publication metadata/provenance, direct-play MP4/WebM and public/admin surfaces.
+3. **Country-desk localization model — closed.** Desks now belong to DestinationConfig with source markets and locale policy while reusing canonical inventory/booking/services.
 
 ## Integrity rules
 

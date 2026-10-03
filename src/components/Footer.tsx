@@ -19,6 +19,8 @@ export interface FooterLabels {
   about: string;
   help: string;
   global: string;
+  research: string;
+  videos: string;
   ombudsman: string;
   audienceColumn: string;
   owners: string;
@@ -70,6 +72,8 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
         { href: '/about', label: labels.about },
         { href: '/help', label: labels.help },
         { href: '/desks', label: labels.global },
+        { href: '/research', label: labels.research },
+        { href: '/videos', label: labels.videos },
       ],
     },
     {

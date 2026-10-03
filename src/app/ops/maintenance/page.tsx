@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
+import { getLabels } from '@/lib/i18n';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
 import { getMCManagedUnits } from '@/modules/projects';
 import PreventiveMaintenanceForm from '@/components/ops/PreventiveMaintenanceForm';
@@ -45,6 +46,25 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
   }
   if(!authorizedUnitIds.length)redirect('/ops/spaces');
 
+  const labels=await getLabels({
+    'staff.maintenance.title':'Maintenance',
+    'staff.maintenance.subtitle':'Open work and recurring preventive plans in this operating space.',
+    'staff.maintenance.open':'Open maintenance',
+    'staff.maintenance.preventive':'Preventive plans',
+    'staff.maintenance.frequency':'Frequency',
+    'staff.maintenance.days':'days',
+    'staff.maintenance.next_due':'Next due',
+    'staff.maintenance.assigned':'Assigned',
+    'staff.maintenance.all_homes':'All authorized homes',
+    'staff.maintenance.team':'Team',
+    'staff.maintenance.employee':'Employee',
+    'staff.maintenance.blocks_inventory':'Blocks inventory',
+    'staff.maintenance.plan_title':'Maintenance plan',
+    'staff.maintenance.estimated_cost':'Estimated cost THB',
+    'staff.maintenance.description':'Description',
+    'staff.maintenance.creating':'Creating…',
+    'staff.maintenance.create_plan':'Create plan',
+  });
   const [units,teams,members,plans,tasks]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds}},
@@ -71,9 +91,9 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
   ]);
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32"><div className="mx-auto max-w-7xl space-y-20">
-    <header><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-andaman">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold">Maintenance</h1><p className="mt-6 text-body text-text-secondary">Open work and recurring preventive plans in this operating space.</p></header>
-    <PreventiveMaintenanceForm operatingSpaceId={spaceId} units={units} teams={teams} members={members}/>
-    <section><h2 className="font-display text-heading-2 font-semibold">Open maintenance</h2><div className="mt-10 grid gap-10 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="rounded-xl border border-border-line bg-surface-paper p-16"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><h3 className="mt-4 font-display text-heading-3 font-semibold">{task.title||task.taskType.replace(/_/g,' ')}</h3><p className="mt-6 text-small text-text-secondary">{task.unit.name} · {task.status.replace(/_/g,' ')} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
-    <section><h2 className="font-display text-heading-2 font-semibold">Preventive plans</h2><div className="mt-10 overflow-hidden rounded-xl border border-border-line bg-surface-paper">{plans.map(plan=><article key={plan.id} className="grid gap-8 border-b border-border-line p-16 last:border-0 md:grid-cols-4"><div><p className="font-semibold">{plan.title}</p><p className="text-small text-text-secondary">{plan.unit?plan.unit.project.name+' · '+plan.unit.name:'All scoped homes'}</p></div><div><p className="text-small text-text-secondary">Frequency</p><p>{plan.frequencyDays} days</p></div><div><p className="text-small text-text-secondary">Next due</p><p>{plan.nextDueAt.toISOString().slice(0,10)}</p></div><div><p className="text-small text-text-secondary">Assigned</p><p>{plan.assignedTeam?.name||[plan.assignee?.firstName,plan.assignee?.lastName].filter(Boolean).join(' ')||'—'}</p></div></article>)}</div></section>
+    <header><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-andaman">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold">{labels['staff.maintenance.title']}</h1><p className="mt-6 text-body text-text-secondary">{labels['staff.maintenance.subtitle']}</p></header>
+    <PreventiveMaintenanceForm operatingSpaceId={spaceId} units={units} teams={teams} members={members} labels={labels}/>
+    <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.open']}</h2><div className="mt-10 grid gap-10 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="rounded-xl border border-border-line bg-surface-paper p-16"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><h3 className="mt-4 font-display text-heading-3 font-semibold">{task.title||task.taskType.replace(/_/g,' ')}</h3><p className="mt-6 text-small text-text-secondary">{task.unit.name} · {task.status.replace(/_/g,' ')} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
+    <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.preventive']}</h2><div className="mt-10 overflow-hidden rounded-xl border border-border-line bg-surface-paper">{plans.map(plan=><article key={plan.id} className="grid gap-8 border-b border-border-line p-16 last:border-0 md:grid-cols-4"><div><p className="font-semibold">{plan.title}</p><p className="text-small text-text-secondary">{plan.unit?plan.unit.project.name+' · '+plan.unit.name:'All scoped homes'}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.frequency']}</p><p>{plan.frequencyDays} {labels['staff.maintenance.days']}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.next_due']}</p><p>{plan.nextDueAt.toISOString().slice(0,10)}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.assigned']}</p><p>{plan.assignedTeam?.name||[plan.assignee?.firstName,plan.assignee?.lastName].filter(Boolean).join(' ')||'—'}</p></div></article>)}</div></section>
   </div></main>;
 }

@@ -105,12 +105,16 @@ export default async function UnifiedStayCalendarPage({
   const unitWhere = {
     status: { not: 'offboarded' as const },
     ...(requestedSpaceId
-      ? { id: { in: spaceUnitIds } }
+      ? user.isAdmin
+        ? { id: { in: spaceUnitIds } }
+        : mcMode
+          ? { id: { in: spaceUnitIds.filter((id) => managedIds.includes(id)) } }
+          : { id: { in: spaceUnitIds }, projectId: { in: staffProjectIds } }
       : mcMode
-      ? { id: { in: managedIds } }
-      : !user.isAdmin
-        ? { projectId: { in: staffProjectIds } }
-        : {}),
+        ? { id: { in: managedIds } }
+        : !user.isAdmin
+          ? { projectId: { in: staffProjectIds } }
+          : {}),
     ...(projectId ? { projectId } : {}),
   };
   const units = await prisma.unit.findMany({

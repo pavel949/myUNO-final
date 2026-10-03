@@ -80,6 +80,7 @@ export const AGENT_DISTRIBUTION_KEYS = [
   { key:'agent.inventory.instant',namespace:'agent',description:'Instant availability badge',en:'Instant',ru:'Мгновенно',th:'ยืนยันทันที',status:'needs_review' as const },
   { key:'agent.inventory.request',namespace:'agent',description:'Request availability badge',en:'Request',ru:'По запросу',th:'ตามคำขอ',status:'needs_review' as const },
   { key:'agent.inventory.quote',namespace:'agent',description:'Create quote action',en:'Create quote',ru:'Создать предложение',th:'สร้างใบเสนอราคา',status:'needs_review' as const },
+  { key:'agent.inventory.view_property',namespace:'agent',description:'View sale property action',en:'View property',ru:'Посмотреть объект',th:'ดูอสังหาริมทรัพย์',status:'needs_review' as const },
   { key:'agent.inventory.add_shortlist',namespace:'agent',description:'Add to shortlist action',en:'Add to shortlist',ru:'В подборку',th:'เพิ่มในรายการคัดเลือก',status:'needs_review' as const },
   { key:'agent.inventory.empty',namespace:'agent',description:'No inventory state',en:'No distributable inventory matches this search.',ru:'По этому запросу нет доступного для дистрибуции инвентаря.',th:'ไม่พบอินเวนทอรีที่จัดจำหน่ายได้ตามการค้นหานี้',status:'needs_review' as const },
 

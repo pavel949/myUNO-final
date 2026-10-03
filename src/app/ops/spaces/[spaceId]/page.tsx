@@ -116,7 +116,7 @@ export default async function OperatingSpaceHome({
     [labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.team'], '/ops/team?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
+    [labels['staff.space.channels'], '/ops/distribution?spaceId=' + encodeURIComponent(space.id)],
   ] as const;
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">

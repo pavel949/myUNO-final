@@ -8,15 +8,22 @@ import { getLabels } from '@/lib/i18n';
 
 export const dynamic='force-dynamic';
 
-export default async function AgentQuoteNewPage({searchParams}:{searchParams?:{unitId?:string}}){
+export default async function AgentQuoteNewPage({searchParams}:{searchParams?:{unitId?:string;offeringId?:string}}){
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/agent/quotes/new');
   const context=await getAgentContext(prisma,user.identityId);
   if(!context&&!user.isAdmin)redirect('/');
   const unitId=typeof searchParams?.unitId==='string'?searchParams.unitId:'';
-  if(!unitId)redirect('/agent/inventory');
+  const offeringId=typeof searchParams?.offeringId==='string'?searchParams.offeringId:'';
+  if(!unitId||!offeringId)redirect('/agent/inventory');
   const unit=await prisma.unit.findFirst({
-    where:{id:unitId,status:'live',project:{status:'live'}},
+    where:{
+      id:unitId,status:'live',project:{status:'live'},
+      commercialOfferings:{some:{
+        id:offeringId,status:'active',
+        offeringType:{in:['short_term_stay','short_stay','long_term_rental','long_rent']}
+      }}
+    },
     select:{id:true,name:true,maxGuests:true,project:{select:{name:true}}},
   });
   if(!unit)notFound();
@@ -53,6 +60,6 @@ export default async function AgentQuoteNewPage({searchParams}:{searchParams?:{u
     <header><Link href="/agent/inventory" className="text-small font-semibold text-brand-andaman">{labels['agent.common.back_inventory']}</Link>
       <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['agent.quote.new_title']}</h1>
       <p className="mt-6 text-body text-text-secondary">{unit.project.name} · {unit.name}</p></header>
-    <AgentQuoteForm unit={unit} clients={clients} labels={labels}/>
+    <AgentQuoteForm unit={unit} offeringId={offeringId} clients={clients} labels={labels}/>
   </div></main>;
 }

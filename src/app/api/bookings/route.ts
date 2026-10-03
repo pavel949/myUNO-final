@@ -275,6 +275,10 @@ export async function POST(req: NextRequest) {
             }),
           },
           cancellationPolicySnapshot: { ...policy },
+          ...(resolvedInventoryCategoryId && {
+            requestedInventoryCategoryId: resolvedInventoryCategoryId,
+            allocationStatus: 'category_reserved' as const,
+          }),
         });
       } catch (error) {
         if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) {

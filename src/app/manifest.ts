@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { COLOR } from '@/lib/design-tokens';
+import { getDestination } from '@/modules/destinations';
 
 /**
  * PWA manifest (LY-7): the guest home space is installable to the home
@@ -7,10 +8,11 @@ import { COLOR } from '@/lib/design-tokens';
  * no offline layer in loop one.
  */
 export default function manifest(): MetadataRoute.Manifest {
+  const destination = getDestination();
   return {
     name: 'myUNO',
     short_name: 'myUNO',
-    description: 'Serviced living in Phuket — stays, services, and your home space.',
+    description: `Stays, homes and trusted services in ${destination.name}, connected through myUNO.`,
     start_url: '/',
     display: 'standalone',
     background_color: COLOR.surface.ivory,

@@ -1,4 +1,5 @@
 export const AGENT_LABELS = {
+  'agent.contracts': 'Contracts and completion',
   'agent.sqm': 'm²',
   'agent.home': "Agent HomeSpace",
   'agent.contacts': "Contacts",

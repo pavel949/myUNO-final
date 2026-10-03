@@ -160,7 +160,9 @@ try {
  report.screenshots.push('myuno-coordination.png');
  const internal=await adminCtx.request.get(origin+'/api/crm/opportunities');
  assert.equal(internal.status(),200);
- assert(!(await internal.text()).includes('Runtime purchase'));
+ const sharedInternal=await internal.text();
+ assert(sharedInternal.includes('Runtime purchase'));
+ assert(!sharedInternal.includes('RUNTIME-PRIVATE-NOTES'));
  report.checks.push('Browser/HTTP: explicit handover receipt, coordinator queue and legacy CRM isolation');
  await page.setViewportSize({width:390,height:844});
  await page.goto(agentUrl('home'));

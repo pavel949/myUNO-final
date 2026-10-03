@@ -104,6 +104,10 @@ describe('agent workspace isolation and approved client offers',()=>{
     await adminAgentAction(db,f.admin.id,{action:'handover-status',id:h1.id,status:'acknowledged'});
     const saved=await db.agentIntroduction.findUniqueOrThrow({where:{id:f.intro.id}});
     expect(saved.agentIdentityId).toBe(f.alice.id);
+    await agentAction(db,f.alice.id,f.a.id,'activities',{introductionId:f.intro.id,subject:'AGENCY-PRIVATE-TASK',dueAt:new Date().toISOString()});
+    const shared=await internalCrm.crmOpportunity.findUnique({where:{id:saved.opportunityId},include:{activities:true}});
+    expect(shared).not.toBeNull();
+    expect(shared!.activities).toEqual([]);
   });
   it('keeps private records out of the legacy internal CRM including direct IDs and aggregates',async()=>{
     const f=await fixture();

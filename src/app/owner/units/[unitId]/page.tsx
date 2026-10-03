@@ -32,11 +32,19 @@ export default async function OwnerUnitPage({ params }: { params: { unitId: stri
   const locale = getRequestLocale();
 
   const labels = (await getLabels({
-    'owner.dashboard.title': 'Owner Dashboard',
+    'owner.dashboard.title': 'My Home',
+    'owner.digital_twin.kicker': 'PROPERTY DIGITAL TWIN',
+    'owner.digital_twin.subtitle': 'One living record for performance, money, condition, bookings, compliance and decisions.',
+    'owner.digital_twin.performance': 'Performance',
+    'owner.digital_twin.money': 'Money',
+    'owner.digital_twin.operations': 'Operations',
+    'owner.digital_twin.record': 'Property record',
+    'owner.digital_twin.decisions': 'Decisions',
+    'owner.digital_twin.open_record': 'Open property record',
     'owner.compliance.permitted_yes': 'Confirmed',
     'owner.compliance.permitted_no': 'Not confirmed',
     'owner.unit.back': '← Owner dashboard',
-    'owner.unit.subtitle': 'Everything about this unit — occupancy, bookings, statements, and open requests.',
+    'owner.unit.subtitle': 'A single, traceable record of this home across ownership, operation and commercial life.',
     'owner.dashboard.occupancy_this_month': 'Occupied This Month',
     'owner.dashboard.revenue_this_month': 'Revenue This Month',
     'owner.stats.nights': 'nights',

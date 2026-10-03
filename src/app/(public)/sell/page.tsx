@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { ProcessStepper, SourceChip } from '@/components/premium/PremiumPrimitives';
+import { getDestination } from '@/modules/destinations';
+
+const destination = getDestination();
 
 export const metadata: Metadata = {
-  title: 'Sell a Phuket property | myUNO',
-  description: 'Start a documented resale and valuation conversation for your Phuket property.',
+  title: `Sell a ${destination.name} property | myUNO`,
+  description: `Start a documented resale and valuation conversation for your ${destination.name} property.`,
 };
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +21,8 @@ export default async function SellPage() {
     'sell.kicker': 'SELL WITH MYUNO',
     'sell.title': 'Sell with evidence, not guesswork.',
     'sell.body': 'Start with the real property record, current commercial context and a documented mandate. We do not publish a listing before authority and property facts are checked.',
-    'sell.cta': 'Request a valuation review',
+    'sell.cta': 'Start selling my property',
+    'sell.advisor_cta': 'Request an advisor review',
     'sell.owner_cta': 'Open Owner Hub',
     'sell.process.title': 'A clear resale path',
     'sell.process.intake': 'Property intake',
@@ -32,7 +36,7 @@ export default async function SellPage() {
     'sell.evidence.property': 'Canonical property facts',
     'sell.evidence.offering': 'Commercial offering record',
     'sell.evidence.mandate': 'Mandate evidence',
-    'sell.lead.prefill': 'I would like a valuation and resale review for my Phuket property.',
+    'sell.lead.prefill': `I would like a valuation and resale review for my ${destination.name} property.`,
   });
 
   return (
@@ -45,8 +49,11 @@ export default async function SellPage() {
           </h1>
           <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/75">{labels['sell.body']}</p>
           <div className="mt-32 flex flex-col gap-12 sm:flex-row">
-            <a href="#lead-form" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
-              {labels['sell.cta']}
+            <Link href="/property/onboard?offers=sale" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
+              {labels['sell.cta']} →
+            </Link>
+            <a href="#lead-form" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
+              {labels['sell.advisor_cta']}
             </a>
             <Link href="/owner" className="inline-flex min-h-48 items-center justify-center rounded-lg border border-white/25 px-24 font-semibold text-surface-ivory hover:bg-white/10">
               {labels['sell.owner_cta']}

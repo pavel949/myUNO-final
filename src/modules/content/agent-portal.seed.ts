@@ -1,4 +1,5 @@
 export const AGENT_PORTAL_KEYS = [
+  { key: 'agent.contracts', namespace: 'agent', description: 'Shared opportunity administration', en: 'Contracts and completion', ru: 'Договоры и завершение сделки', status: 'needs_review' as const },
   { key: 'agent.sqm', namespace: 'agent', description: 'Area unit', en: 'm²', ru: 'м²', status: 'needs_review' as const },
   { key: 'agent.home', namespace: 'agent', description: 'Agent portal: home', en: "Agent HomeSpace", ru: "Рабочее место агента", status: 'needs_review' as const },
   { key: 'agent.contacts', namespace: 'agent', description: 'Agent portal: contacts', en: "Contacts", ru: "Контакты", status: 'needs_review' as const },

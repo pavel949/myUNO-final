@@ -49,6 +49,7 @@ export default async function AgentPartnersAdminPage() {
         const contact=h.contactSnapshot as Record<string,unknown>;
         return <article className={card+' mb-16'} key={h.id}>
           <h3 className="font-display text-heading-3">{h.introduction.opportunity.title}</h3>
+          <Link href={'/app/admin/crm/opportunities/'+h.introduction.opportunity.id+'/deal'} className="my-12 block text-brand-andaman">{l('contracts')}</Link>
           <p className="my-12">{h.introduction.workspace.organization.name} · {h.introduction.agent.firstName} {h.introduction.agent.lastName}</p>
           <p className="text-small text-text-stone">{l('receipt')}: {h.introduction.id}</p>
           <p className="my-16">{String(contact.displayName??'')} · {[contact.email,contact.phone,contact.telegram].filter(Boolean).join(' · ')}</p>

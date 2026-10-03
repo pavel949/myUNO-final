@@ -16,7 +16,7 @@ Every agent action checks current membership, active Identity, active agency and
 
 One canonical opportunity is linked to an immutable introduction receipt containing originating agency and agent. Agent stages cannot mark financial completion. Handover requires the agent to confirm client permission and shares an explicit contact snapshot and request; private notes are excluded. The receipt proves recorded introduction and does not imply exclusivity or commission entitlement.
 
-The old CRM endpoints use a scoped Prisma client that excludes agency opportunities and activities from list, aggregate and direct-ID operations. The explicit MyUNO handover queue is the administrative collaboration projection. New private tables and the opportunity/activity tables have RLS enabled and Data API privileges revoked, including PUBLIC, anon, authenticated and service_role. Application Prisma credentials remain server-only. Immutable introduction, approved quote version and agreement version rows are protected by database triggers.
+The old CRM endpoints use a scoped Prisma client that excludes unshared agency opportunities and all private agency activities from list, aggregate and direct-ID operations. Explicit handover adds the same opportunity to the internal CRM, with private activity projections filtered; the coordinator can continue through the existing contract/deal engine. New private tables and the opportunity/activity tables have RLS enabled and Data API privileges revoked, including PUBLIC, anon, authenticated and service_role. Application Prisma credentials remain server-only. Immutable introduction, approved quote version and agreement version rows are protected by database triggers.
 
 ## Quotes, inventory and messaging
 
@@ -46,7 +46,7 @@ Rollback application code by reverting the branch while retaining additive schem
 - Team-specific MyUNO CRM grants beyond current administrator authority.
 - Pagination/export/import and richer contact editing, deduplication/dispute resolution and team reassignment.
 - Offer revisions, automatic authoritative fee calculation, short-stay quoting, multi-property shortlists, client response capture and PDFs.
-- Contract/booking acceptance handover beyond the visible coordinator queue; no automatic conversion exists.
+- Automatic quote acceptance into a contract/booking; coordinators currently use the existing contract/deal engine manually from the shared opportunity.
 - AI assistant/semantic search and connected WhatsApp/Telegram delivery/webhook adapters.
 - Translation approval, content publication, agent agreement and operating SLA configuration.
 - Production migration, deployment and post-deployment verification.

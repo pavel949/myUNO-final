@@ -151,7 +151,7 @@ export default async function HelpPage() {
               <div className="mt-16 divide-y divide-border-line">
                 {section.items.map(([question, answer]) => (
                   <details key={question} className="group py-12">
-                    <summary className="cursor-pointer list-none text-body font-semibold text-text-ink">
+                    <summary className="cursor-pointer list-none rounded-lg text-body font-semibold text-text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman">
                       <span className="flex items-start justify-between gap-12">
                         {question}
                         <span aria-hidden="true" className="text-brand-andaman transition group-open:rotate-45">
@@ -168,7 +168,7 @@ export default async function HelpPage() {
                   <Link
                     key={href}
                     href={href}
-                    className="text-small font-semibold text-brand-andaman hover:underline"
+                    className="rounded-md text-small font-semibold text-brand-andaman hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
                   >
                     {label} →
                   </Link>

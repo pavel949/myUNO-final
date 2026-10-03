@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './Button';
@@ -28,25 +28,37 @@ export interface NavbarLabels {
   stay: string;
   monthly: string;
   buy: string;
+  homes: string;
   sell: string;
+  rentOut: string;
+  manage: string;
+  explore: string;
   areas: string;
   projects: string;
   services: string;
   owners: string;
+  partners: string;
   about: string;
   trust: string;
   help: string;
+  global: string;
   language: string;
   login: string;
   register: string;
   logout: string;
   myTrips: string;
-  saved?: string;
+  saved: string;
+  addProperty: string;
+  developers: string;
+  buyers: string;
+  management: string;
   messages: string;
   tickets: string;
   orders: string;
   account: string;
   menu: string;
+  more: string;
+  myUno: string;
 }
 
 interface NavbarProps {
@@ -62,6 +74,23 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const pathname = usePathname() ?? '';
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -78,18 +107,31 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   const publicLinks: ReadonlyArray<{ href: string; label: string; activeBase?: string }> = [
     { href: '/search', label: labels.stay },
-    { href: '/homes?intent=rent', label: labels.monthly, activeBase: '/homes' },
     { href: '/homes?intent=buy', label: labels.buy, activeBase: '/homes' },
-    { href: '/sell', label: labels.sell },
-    { href: '/projects', label: labels.projects },
+    { href: '/owners', label: labels.owners },
     { href: '/services', label: labels.services },
+    { href: user ? '/app' : '/login?next=/app', label: labels.myUno, activeBase: '/app' },
+  ];
+
+  const exploreLinks: ReadonlyArray<{ href: string; label: string }> = [
+    { href: '/projects', label: labels.explore },
+    { href: '/areas', label: labels.areas },
+    { href: '/partners', label: labels.partners },
+    { href: '/homes?intent=rent', label: labels.monthly },
+    { href: '/sell', label: labels.sell },
+    { href: '/rent-out', label: labels.rentOut },
+    { href: '/manage', label: labels.manage },
+    { href: '/desks', label: labels.global },
+    { href: '/trust', label: labels.trust },
+    { href: '/help', label: labels.help },
+    { href: '/about', label: labels.about },
   ];
 
   const userLinks = user
     ? [
         { href: '/trips', label: labels.myTrips },
-        { href: '/saved', label: labels.saved || 'Saved' },
-        { href: '/property/onboard', label: 'Add a property' },
+        { href: '/saved', label: labels.saved },
+        { href: '/property/listings', label: labels.addProperty },
         { href: '/messages', label: labels.messages },
         { href: '/tickets', label: labels.tickets },
         { href: '/services/orders', label: labels.orders },
@@ -123,24 +165,22 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           </div>
         </div>
 
-        <div className="hidden items-center justify-end gap-x-12 lg:flex">
-          <Link href="/owners" className={navLinkClass(pathname, '/owners')}>
-            {labels.owners}
-          </Link>
-
+        <div className="hidden items-center justify-end gap-x-12 xl:flex">
           <details className="relative">
-            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body text-text-ink hover:text-brand-andaman">
-              {labels.about}
+            <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+              {labels.more}
             </summary>
-            <div className="absolute right-0 top-full z-50 mt-12 flex min-w-[220px] flex-col gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
-              <Link href="/about" className={navLinkClass(pathname, '/about')}>{labels.about}</Link>
-              <Link href="/trust" className={navLinkClass(pathname, '/trust')}>{labels.trust}</Link>
-              <Link href="/help" className={navLinkClass(pathname, '/help')}>{labels.help}</Link>
+            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+              {exploreLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                  {link.label}
+                </Link>
+              ))}
+              <div className="mt-4 border-t border-border-line pt-12">
+                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
+              </div>
               {labels.agents?<Link href="/partners/agents" className={navLinkClass(pathname, '/partners/agents')}>{labels.agents}</Link>:null}
-              <Link href="/areas" className={navLinkClass(pathname, '/areas')}>{labels.areas}</Link>
-              <Link href="/developers" className={navLinkClass(pathname, '/developers')}>Developers</Link>
-              <Link href="/buyers" className={navLinkClass(pathname, '/buyers')}>Buyers</Link>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>Management</Link>
+              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
             </div>
           </details>
 
@@ -150,7 +190,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <>
               <details className="relative">
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
-                  {user.firstName} · My UNO
+                  {user.firstName} · My myUNO
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
@@ -174,12 +214,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           )}
         </div>
 
-        <div className="flex items-center gap-4 lg:hidden">
+        <div className="flex items-center gap-4 xl:hidden">
           {user ? <NotificationBell labels={bellLabels} /> : null}
           <button
             type="button"
             aria-label={labels.menu}
             aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            ref={menuButton}
             className="flex h-44 w-44 items-center justify-center text-text-ink"
             onClick={() => setMenuOpen((open) => !open)}
           >
@@ -195,7 +237,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
       </nav>
 
       {menuOpen ? (
-        <div className="max-h-[calc(100vh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 lg:hidden">
+        <div id="mobile-navigation" className="max-h-[calc(100dvh-64px)] overflow-y-auto border-t border-border-line bg-surface-paper px-20 py-20 xl:hidden">
           <p className="mb-12 text-kicker uppercase tracking-[0.18em] text-text-secondary">Explore</p>
           <div className="flex flex-col">
             {publicLinks.map((link) => (
@@ -210,38 +252,29 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             ))}
           </div>
 
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">Property</p>
+          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.more}</p>
           <div className="flex flex-col">
-            <Link href="/owners" className={navLinkClass(pathname, '/owners', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              {labels.owners}
-            </Link>
-            <Link href="/areas" className={navLinkClass(pathname, '/areas', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              {labels.areas}
-            </Link>
+            {exploreLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
+                onClick={closeMenu}
+              >
+                {link.label}
+              </Link>
+            ))}
             <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-12')} onClick={closeMenu}>
               Developers
             </Link>
             <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              Management
-            </Link>
-          </div>
-
-          <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">myUNO</p>
-          <div className="flex flex-col">
-            <Link href="/about" className={navLinkClass(pathname, '/about', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              {labels.about}
-            </Link>
-            <Link href="/trust" className={navLinkClass(pathname, '/trust', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              {labels.trust}
-            </Link>
-            <Link href="/help" className={navLinkClass(pathname, '/help', 'border-b border-border-line py-12')} onClick={closeMenu}>
-              {labels.help}
+              Management companies
             </Link>
           </div>
 
           {user ? (
             <>
-              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My UNO</p>
+              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My myUNO</p>
               <div className="flex flex-col">
                 {userLinks.map((link) => (
                   <Link

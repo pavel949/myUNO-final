@@ -1,7 +1,12 @@
 import { listAgentWorkspaces } from '@/modules/agents';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
-import { Manrope, Noto_Sans_Thai, Outfit } from 'next/font/google';
+// Self-hosted variable cuts (OFL). next/font/google fetches CSS from Google at
+// compile time; GitHub Actions then crashed when a font URL had no extension
+// (`Cannot read properties of null (reading '1')` in the Google loader).
+import '@fontsource-variable/outfit/wght.css';
+import '@fontsource-variable/manrope/wght.css';
+import '@fontsource-variable/noto-sans-thai/wght.css';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -11,6 +16,7 @@ import { Footer } from '@/components/Footer';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
+import { getDestination } from '@/modules/destinations';
 
 const SURFACE_LABEL_KEYS = {
   active_stay: 'nav.stay',
@@ -27,31 +33,12 @@ const SURFACE_LABEL_KEYS = {
   public: 'nav.find_stay',
 } as const satisfies Record<Landing['reason'], string>;
 
-const outfit = Outfit({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-outfit',
-  display: 'swap',
-});
-
-const manrope = Manrope({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-manrope',
-  display: 'swap',
-});
-
-const notoSansThai = Noto_Sans_Thai({
-  subsets: ['thai'],
-  weight: ['400', '500', '600'],
-  variable: '--font-noto-thai',
-  display: 'swap',
-});
+const destination = getDestination();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: 'myUNO',
-  description: 'Property, stays and services connected around one Phuket home.',
+  description: `Stay, buy, own and access trusted local services in ${destination.name} through one connected property network.`,
 };
 
 export const dynamic = 'force-dynamic';
@@ -68,11 +55,16 @@ export default async function RootLayout({
     'nav.find_stay': 'Stay',
     'nav.monthly': 'Monthly',
     'nav.buy': 'Buy',
+    'nav.homes': 'Homes',
     'nav.sell': 'Sell',
+    'nav.list_property': locale === 'ru' ? 'Разместить объект' : locale === 'th' ? 'ลงประกาศที่พัก' : 'List your property',
+    'nav.request_management': locale === 'ru' ? 'Передать в управление' : locale === 'th' ? 'ให้ myUNO จัดการ' : 'Property management',
+    'nav.explore': 'Explore',
     'nav.areas': 'Areas',
     'nav.projects': 'Projects',
     'nav.services': 'Services',
-    'nav.owners': 'Owners',
+    'nav.owners': 'Own',
+    'nav.partners': 'Partners',
     'nav.about': 'About',
     'nav.language': 'Language',
     'nav.locale.en': 'EN',
@@ -81,10 +73,16 @@ export default async function RootLayout({
     'nav.locale.zh': '中文',
     'nav.trust': 'Trust',
     'nav.help': 'Help',
+    'nav.global': 'Global',
     'nav.login': 'Log in',
     'nav.register': 'Sign up',
     'nav.logout': 'Log out',
     'nav.my_trips': 'My trips',
+    'nav.saved': 'Saved',
+    'nav.my_listings': locale === 'ru' ? 'Мои объявления' : locale === 'th' ? 'ประกาศของฉัน' : 'My listings',
+    'nav.developers': 'Developers',
+    'nav.buyers': 'Buyers',
+    'nav.management': 'Management',
     'nav.messages': 'Messages',
     'nav.tickets': 'My requests',
     'nav.orders': 'My orders',
@@ -103,6 +101,8 @@ export default async function RootLayout({
     'nav.agent_portal': 'Agent HomeSpace',
     'nav.account': 'Account',
     'nav.menu': 'Menu',
+    'nav.more': 'More',
+    'nav.my_uno': 'My UNO',
   });
 
   const activeBookingId = user ? await getActiveStayId() : null;
@@ -122,24 +122,27 @@ export default async function RootLayout({
 
   const footerLabels = await getLabels({
     'nav.footer.brand_name': 'myUNO',
-    'nav.footer.brand_tagline': 'Property, stays and services connected around one Phuket home.',
+    'nav.footer.brand_tagline': `Property, stays and services connected across ${destination.name}.`,
     'nav.footer.brand_column': 'Explore',
     'nav.footer.home': 'Home',
     'nav.footer.stay': 'Stay',
     'nav.footer.monthly': 'Monthly',
     'nav.footer.buy': 'Buy',
     'nav.footer.sell': 'Sell',
+    'nav.footer.list_property': locale === 'ru' ? 'Разместить объект' : locale === 'th' ? 'ลงประกาศที่พัก' : 'List your property',
+    'nav.footer.request_management': locale === 'ru' ? 'Передать в управление' : locale === 'th' ? 'ให้ myUNO จัดการ' : 'Property management',
     'nav.footer.areas': 'Areas',
     'nav.footer.projects': 'Projects',
     'nav.footer.services': 'Services',
     'nav.footer.trust': 'Trust',
     'nav.footer.about': 'About',
     'nav.footer.help': 'Help Center',
+    'nav.footer.global': 'Global desks',
     'nav.footer.ombudsman': 'Ombudsman',
     'nav.footer.legal_index': 'Legal',
     'nav.language': 'Language',
     'nav.footer.audience_column': 'Property',
-    'nav.footer.owners': 'Owners',
+    'nav.footer.owners': 'Own',
     'nav.footer.guests': 'Guests',
     'nav.footer.providers': 'Providers',
     'nav.footer.partners_column': 'Partners',
@@ -155,10 +158,7 @@ export default async function RootLayout({
   });
 
   return (
-    <html
-      lang={locale}
-      className={`${outfit.variable} ${manrope.variable} ${notoSansThai.variable}`}
-    >
+    <html lang={locale}>
       <body className="flex min-h-screen flex-col">
         <Navbar
           user={
@@ -175,24 +175,37 @@ export default async function RootLayout({
             agents: navLabels['nav.agent_portal'],
             monthly: navLabels['nav.monthly'],
             buy: navLabels['nav.buy'],
+            homes: navLabels['nav.homes'],
             sell: navLabels['nav.sell'],
+            rentOut: navLabels['nav.list_property'],
+            manage: navLabels['nav.request_management'],
+            explore: navLabels['nav.explore'],
             areas: navLabels['nav.areas'],
             projects: navLabels['nav.projects'],
             services: navLabels['nav.services'],
             owners: navLabels['nav.owners'],
+            partners: navLabels['nav.partners'],
             about: navLabels['nav.about'],
             trust: navLabels['nav.trust'],
             help: navLabels['nav.help'],
+            global: navLabels['nav.global'],
             language: navLabels['nav.language'],
             login: navLabels['nav.login'],
             register: navLabels['nav.register'],
             logout: navLabels['nav.logout'],
             myTrips: navLabels['nav.my_trips'],
+            saved: navLabels['nav.saved'],
+            addProperty: navLabels['nav.my_listings'],
+            developers: navLabels['nav.developers'],
+            buyers: navLabels['nav.buyers'],
+            management: navLabels['nav.management'],
             messages: navLabels['nav.messages'],
             tickets: navLabels['nav.tickets'],
             orders: navLabels['nav.orders'],
             account: navLabels['nav.account'],
             menu: navLabels['nav.menu'],
+            more: navLabels['nav.more'],
+            myUno: navLabels['nav.my_uno'],
           }}
           roleLinks={roleLinks}
           bellLabels={{
@@ -222,12 +235,15 @@ export default async function RootLayout({
             monthly: footerLabels['nav.footer.monthly'],
             buy: footerLabels['nav.footer.buy'],
             sell: footerLabels['nav.footer.sell'],
+            rentOut: footerLabels['nav.footer.list_property'],
+            manage: footerLabels['nav.footer.request_management'],
             areas: footerLabels['nav.footer.areas'],
             projects: footerLabels['nav.footer.projects'],
             services: footerLabels['nav.footer.services'],
             trust: footerLabels['nav.footer.trust'],
             about: footerLabels['nav.footer.about'],
             help: footerLabels['nav.footer.help'],
+            global: footerLabels['nav.footer.global'],
             ombudsman: footerLabels['nav.footer.ombudsman'],
             audienceColumn: footerLabels['nav.footer.audience_column'],
             owners: footerLabels['nav.footer.owners'],

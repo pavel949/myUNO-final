@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { getLabels } from '@/lib/i18n';
+import { supplierCopy } from '@/modules/onboarding/supplier-copy';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
 import { prisma } from '@/lib/prisma';
@@ -33,6 +34,15 @@ export default async function OwnersPage() {
       'myUNO runs your unit to hotel standard and shows you everything from wherever you live: nights sold, money in and out, who entered, what it cost.',
     'audience.owners.cta': 'Entrust your unit',
     'audience.owners.add_property': 'Add my property',
+    'audience.owners.lifecycle.kicker': 'ONE PROPERTY · ONE RECORD',
+    'audience.owners.lifecycle.title': 'Choose what you want to do with your property.',
+    'audience.owners.lifecycle.list': 'List it',
+    'audience.owners.lifecycle.list_body': 'Offer the same canonical home for short stays, monthly or long-term rental.',
+    'audience.owners.lifecycle.manage': 'Manage it',
+    'audience.owners.lifecycle.manage_body': 'Move into professional operations, guest care, maintenance and owner reporting.',
+    'audience.owners.lifecycle.sell': 'Sell it',
+    'audience.owners.lifecycle.sell_body': 'Use the property record and commercial history to start a documented resale process.',
+    'audience.owners.lifecycle.open': 'Open my homes',
     'audience.owners.problem.title': "You can't manage what you can't see.",
     'audience.owners.problem.lede':
       'Ask the simple questions about your own property, and watch how long the answers take — if they come at all.',
@@ -122,12 +132,39 @@ export default async function OwnersPage() {
             {labels['audience.owners.hero_lede']}
           </p>
           <Link
-            href="/property/onboard"
+            href="/rent-out"
             className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
           >
-            {labels['audience.owners.add_property']} →
+            {supplierCopy(getRequestLocale()).list} →
           </Link>
-          <Link href="#lead-form" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{labels['audience.owners.cta']}</Link>
+          <Link href="/manage" className="ml-16 inline-flex items-center justify-center px-20 py-16 font-semibold text-surface-ivory underline">{supplierCopy(getRequestLocale()).request}</Link>
+        </div>
+      </section>
+
+      <section className="border-b border-border-line bg-surface-paper">
+        <div className="mx-auto max-w-6xl px-24 py-56">
+          <p className="text-kicker font-semibold uppercase tracking-[0.18em] text-brand-andaman">
+            {labels['audience.owners.lifecycle.kicker']}
+          </p>
+          <h2 className="mt-8 max-w-3xl font-display text-heading-2 font-semibold text-text-ink">
+            {labels['audience.owners.lifecycle.title']}
+          </h2>
+          <div className="mt-24 grid gap-16 md:grid-cols-3">
+            {[
+              { href: '/rent-out', title: labels['audience.owners.lifecycle.list'], body: labels['audience.owners.lifecycle.list_body'] },
+              { href: '/manage', title: labels['audience.owners.lifecycle.manage'], body: labels['audience.owners.lifecycle.manage_body'] },
+              { href: '/sell', title: labels['audience.owners.lifecycle.sell'], body: labels['audience.owners.lifecycle.sell_body'] },
+            ].map((item) => (
+              <Link key={item.href} href={item.href} className="rounded-2xl border border-border-line bg-surface-ivory p-24 transition hover:border-brand-andaman/40">
+                <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
+                <p className="mt-8 text-body text-text-secondary">{item.body}</p>
+                <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">Continue →</span>
+              </Link>
+            ))}
+          </div>
+          <Link href="/owner" className="mt-20 inline-flex font-semibold text-brand-andaman">
+            {labels['audience.owners.lifecycle.open']} →
+          </Link>
         </div>
       </section>
 

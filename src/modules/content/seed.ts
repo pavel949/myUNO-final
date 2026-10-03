@@ -16,6 +16,8 @@ import { PROJECT_GALLERY_KEYS } from './project-gallery.seed';
 import { PROJECT_TEAM_KEYS } from './project-team.seed';
 import { AGENT_PORTAL_KEYS } from './agent-portal.seed';
 import { CONSOLIDATED_RELEASE_KEYS } from './consolidated-release.seed';
+import { PMS_RELEASE_KEYS } from './pms-release.seed';
+import { OPERATING_SPACE_KEYS } from './operating-space.seed';
 
 interface KeyDef {
   key: string;
@@ -1874,6 +1876,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'search.filters.min_price', namespace: 'search', description: 'Search filter: min nightly THB', en: 'Min nightly THB', ru: 'Мин. за ночь, THB', th: 'ราคาต่ำสุดต่อคืน (THB)', status: NR },
   { key: 'search.filters.max_price', namespace: 'search', description: 'Search filter: max nightly THB', en: 'Max nightly THB', ru: 'Макс. за ночь, THB', th: 'ราคาสูงสุดต่อคืน (THB)', status: NR },
   { key: 'search.filters.clear', namespace: 'search', description: 'Search filter: clear', en: 'Clear filters', ru: 'Сбросить фильтры', th: 'ล้างตัวกรอง', status: NR },
+  { key: 'search.filters.bedrooms', namespace: 'search', description: 'Active bedroom filter', en: 'Bedrooms', ru: 'Спальни', th: 'ห้องนอน', status: NR },
 
   // Unit detail page
   { key: 'listing.loading', namespace: 'listing', description: 'Unit detail loading message', en: 'Loading unit details…', ru: 'Загружаем данные…', th: 'กำลังโหลดรายละเอียดห้อง…', status: NR },
@@ -4335,6 +4338,27 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'buying.structure_title', namespace: 'buying', description: 'Buying: ownership structure heading', en: 'About ownership structure', ru: 'О форме собственности', th: 'เกี่ยวกับโครงสร้างความเป็นเจ้าของ', status: NR },
   { key: 'buying.structure_body', namespace: 'buying', description: 'Buying: why structure is not shown on screen (Q41)', en: 'How a particular home can be owned — freehold, a company, a lease and its term — is confirmed in writing during due diligence, against the title documents. We do not display it here, because a figure on a screen is not a legal position and we will not have you rely on one.', ru: 'Форма собственности по конкретному объекту — фрихолд, компания, аренда и её срок — подтверждается письменно в ходе проверки, по документам на объект. Мы не показываем её здесь: строка на экране не является юридической позицией, и полагаться на неё нельзя.', th: 'บ้านแต่ละหลังเป็นเจ้าของได้อย่างไร — freehold บริษัท สัญญาเช่าและระยะเวลา — ยืนยันเป็นลายลักษณ์อักษรระหว่าง due diligence เทียบกับเอกสารกรรมสิทธิ์ เราไม่แสดงที่นี่ เพราะตัวเลขบนหน้าจอไม่ใช่ตำแหน่งทางกฎหมาย และเราไม่ให้คุณอิงจากมัน', status: NR },
   { key: 'buying.messages', namespace: 'buying', description: 'Buying: messages link', en: 'My messages', ru: 'Мои сообщения', th: 'ข้อความของฉัน', status: NR },
+
+  // UX system release — public navigation and partner hub (2026-10-02)
+  { key: 'nav.homes', namespace: 'nav', description: 'Primary public navigation: homes', en: 'Homes', ru: 'Объекты', th: 'บ้าน', status: NR },
+  { key: 'nav.more', namespace: 'nav', description: 'Primary public navigation: secondary menu', en: 'More', ru: 'Ещё', th: 'เพิ่มเติม', status: NR },
+  { key: 'nav.partners', namespace: 'nav', description: 'Primary public navigation: partners', en: 'Partners', ru: 'Партнёры', th: 'พันธมิตร', status: NR },
+  { key: 'landing.global_hero.services', namespace: 'landing', description: 'Homepage hero secondary services action', en: 'Explore Phuket services', ru: 'Услуги на Пхукете', th: 'สำรวจบริการในภูเก็ต', status: NR },
+  { key: 'partners.kicker', namespace: 'partners', description: 'Partners hub kicker', en: 'PARTNERS', ru: 'ПАРТНЁРЫ', th: 'พันธมิตร', status: NR },
+  { key: 'partners.title', namespace: 'partners', description: 'Partners hub title', en: 'Partner with myUNO', ru: 'Партнёрство с myUNO', th: 'ร่วมเป็นพันธมิตรกับ myUNO', status: NR },
+  { key: 'partners.lede', namespace: 'partners', description: 'Partners hub introduction', en: 'Operate properties, connect a development, or provide trusted services through one Phuket property network.', ru: 'Управляйте недвижимостью, подключайте проекты или предоставляйте проверенные услуги через единую сеть myUNO на Пхукете.', th: 'บริหารอสังหาริมทรัพย์ เชื่อมต่อโครงการ หรือให้บริการที่ผ่านการตรวจสอบผ่านเครือข่ายอสังหาริมทรัพย์เดียวในภูเก็ต', status: NR },
+  { key: 'partners.management.title', namespace: 'partners', description: 'Partners hub management-company card title', en: 'Property managers', ru: 'Управляющие компании', th: 'ผู้จัดการอสังหาริมทรัพย์', status: NR },
+  { key: 'partners.management.body', namespace: 'partners', description: 'Partners hub management-company card body', en: 'Run projects and portfolios with bookings, availability, team workflows, finance and owner reporting connected to the same property records.', ru: 'Управляйте проектами и портфелями: бронирования, доступность, команды, финансы и отчётность собственникам связаны с единой карточкой объекта.', th: 'บริหารโครงการและพอร์ตด้วยการจอง ความพร้อม ทีมงาน การเงิน และรายงานเจ้าของที่เชื่อมกับข้อมูลอสังหาริมทรัพย์เดียวกัน', status: NR },
+  { key: 'partners.management.cta', namespace: 'partners', description: 'Partners hub management-company CTA', en: 'For management companies', ru: 'Для управляющих компаний', th: 'สำหรับบริษัทบริหาร', status: NR },
+  { key: 'partners.developers.title', namespace: 'partners', description: 'Partners hub developer card title', en: 'Developers', ru: 'Девелоперы', th: 'ผู้พัฒนาโครงการ', status: NR },
+  { key: 'partners.developers.body', namespace: 'partners', description: 'Partners hub developer card body', en: 'Connect project inventory, sales, rentals and post-handover owner services without building a second property model.', ru: 'Свяжите инвентарь проекта, продажи, аренду и сервис для собственников после передачи без создания второй модели недвижимости.', th: 'เชื่อมต่อสินค้าคงคลังโครงการ การขาย การเช่า และบริการเจ้าของหลังส่งมอบโดยไม่สร้างโมเดลอสังหาริมทรัพย์ซ้ำ', status: NR },
+  { key: 'partners.developers.cta', namespace: 'partners', description: 'Partners hub developer CTA', en: 'For developers', ru: 'Для девелоперов', th: 'สำหรับผู้พัฒนาโครงการ', status: NR },
+  { key: 'partners.providers.title', namespace: 'partners', description: 'Partners hub provider card title', en: 'Service providers', ru: 'Поставщики услуг', th: 'ผู้ให้บริการ', status: NR },
+  { key: 'partners.providers.body', namespace: 'partners', description: 'Partners hub provider card body', en: 'Offer vetted local services to guests, residents and owners through the connected marketplace and fulfillment workflow.', ru: 'Предлагайте проверенные локальные услуги гостям, резидентам и собственникам через связанный маркетплейс и операционный процесс.', th: 'เสนอบริการท้องถิ่นที่ผ่านการตรวจสอบแก่แขก ผู้อยู่อาศัย และเจ้าของผ่านมาร์เก็ตเพลสและขั้นตอนการให้บริการที่เชื่อมต่อกัน', status: NR },
+  { key: 'partners.providers.cta', namespace: 'partners', description: 'Partners hub provider CTA', en: 'For service providers', ru: 'Для поставщиков услуг', th: 'สำหรับผู้ให้บริการ', status: NR },
+  { key: 'partners.trust.title', namespace: 'partners', description: 'Partners hub trust section title', en: 'One network, explicit responsibility.', ru: 'Единая сеть, понятная ответственность.', th: 'เครือข่ายเดียว ความรับผิดชอบชัดเจน', status: NR },
+  { key: 'partners.trust.body', namespace: 'partners', description: 'Partners hub trust section body', en: 'Each partner sees only the delegated capabilities and records they are authorized to operate. Public responsibility stays visible to customers and owners.', ru: 'Каждый партнёр видит только делегированные функции и данные, на которые у него есть полномочия. Ответственность остаётся прозрачной для клиентов и собственников.', th: 'พันธมิตรแต่ละรายเห็นเฉพาะความสามารถและข้อมูลที่ได้รับมอบหมายและมีสิทธิ์ดำเนินการ ความรับผิดชอบต่อสาธารณะยังคงชัดเจนต่อผู้ใช้และเจ้าของ', status: NR },
+  { key: 'partners.trust.cta', namespace: 'partners', description: 'Partners hub trust CTA', en: 'How trust works', ru: 'Как работает доверие', th: 'ระบบความน่าเชื่อถือทำงานอย่างไร', status: NR },
 ];
 
 const STATUS_LABEL_KEYS: KeyDef[] = [
@@ -4440,7 +4464,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...AGENT_PORTAL_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...AGENT_PORTAL_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.

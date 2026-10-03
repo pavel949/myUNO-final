@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import ManagedGallery from '@/components/property/ManagedGallery';
@@ -19,9 +20,10 @@ export default async function EditManagedUnitPage({ params }: { params: { unitId
   if (!unit) notFound();
   const staff = user.roles.some((role) => role.role === 'staff_ops' && role.projectId === unit.projectId && (!role.unitId || role.unitId === unit.id));
   const mc = await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id });
-  if (!user.isAdmin && !staff && !mc) notFound();
+  const selfListing = await hasSelfListingAccess(user.identityId, unit.id);
+  if (!user.isAdmin && !staff && !mc && !selfListing) notFound();
   return <main className="min-h-screen bg-surface-ivory px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">
-    <Link href={mc && !staff ? `/mc/units/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
+    <Link href={selfListing ? `/property/listings/${unit.id}` : mc && !staff ? `/mc/units/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
     <h1 className="mt-12 font-display text-display-xl text-text-ink">Edit {unit.name}</h1>
     <p className="mt-8 text-text-secondary">{unit.project.name} · {unit.status} · Canonical physical record</p>
     <ManagedUnitEditor unit={unit}/><ManagedGallery scope="unit" id={unit.id}/>

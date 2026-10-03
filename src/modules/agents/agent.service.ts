@@ -128,11 +128,11 @@ export async function agentAction(db: PrismaClient, actorId: string, workspaceId
         const type = input.type;
         if (!['rental','purchase','sale'].includes(String(type))) throw new AgentError('invalid_opportunity_type');
         const opportunity = await tx.crmOpportunity.create({ data: {
-          identityId: relationship.identityId, assignedToIdentityId: actorId,
+          identityId: relationship.identityId, assignedToIdentityId: relationship.ownerIdentityId,
           type: type as 'rental'|'purchase'|'sale', title: text(input.title), source: 'agent_portal',
         } });
         const row = await tx.agentIntroduction.create({ data: {
-          workspaceId, relationshipId: relationship.id, opportunityId: opportunity.id, agentIdentityId: actorId,
+          workspaceId, relationshipId: relationship.id, opportunityId: opportunity.id, agentIdentityId: relationship.ownerIdentityId,
         } });
         await audit(tx,actorId,'agent.introduction.recorded',row.id,workspaceId);
         return { id: row.id, recordedAt: row.createdAt.toISOString() };
@@ -266,7 +266,7 @@ export async function getAgentAdminDashboard(db: PrismaClient, actorId: string) 
     },take:100,orderBy:{createdAt:'asc'} }),
     db.agentHandover.findMany({ select: { id:true,status:true,request:true,contactSnapshot:true,createdAt:true,
       coordinator: { select:{firstName:true,lastName:true} },
-      introduction:{select:{id:true,createdAt:true,opportunity:{select:{title:true,stage:true,type:true}},
+      introduction:{select:{id:true,createdAt:true,opportunity:{select:{id:true,title:true,stage:true,type:true}},
         agent:{select:{firstName:true,lastName:true}},workspace:{select:{organization:{select:{name:true}}}}}},
     }, take:100,orderBy:{createdAt:'desc'} }),
     db.agentKnowledgeArticle.findMany({ take:100,orderBy:{updatedAt:'desc'},

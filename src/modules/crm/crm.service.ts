@@ -325,25 +325,43 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
       },
     });
 
+    const existingPropertySubmission =
+      input.audience === 'owners'
+        ? await tx.crmOpportunity.findFirst({
+            where: {
+              identityId: identity.id,
+              source: 'myuno_property_submission_v1',
+              stage: { in: ACTIVE_STAGES },
+            },
+            orderBy: { updatedAt: 'desc' },
+          })
+        : null;
+
     const type = opportunityTypeForAudience(input.audience);
-    const opportunity = await tx.crmOpportunity.create({
-      data: {
-        identityId: identity.id,
-        type,
-        title: `${input.audience}: ${fullName}`,
-        source,
-        requirements: input.message ? { message: input.message.trim() } : {},
-      },
-    });
+    const opportunity =
+      existingPropertySubmission ??
+      (await tx.crmOpportunity.create({
+        data: {
+          identityId: identity.id,
+          type,
+          title: `${input.audience}: ${fullName}`,
+          source,
+          requirements: input.message ? { message: input.message.trim() } : {},
+        },
+      }));
+
     await tx.crmActivity.create({
       data: {
         identityId: identity.id,
         opportunityId: opportunity.id,
         type: 'system',
         status: 'completed',
-        subject: 'Public inquiry received',
+        subject: existingPropertySubmission ? 'Advisor inquiry linked to property onboarding' : 'Public inquiry received',
         body: input.message?.trim() || null,
         completedAt: new Date(),
+        metadata: existingPropertySubmission
+          ? { source, audience: input.audience, linkedToExistingPropertySubmission: true }
+          : undefined,
       },
     });
     return { identityId: identity.id, opportunityId: opportunity.id };

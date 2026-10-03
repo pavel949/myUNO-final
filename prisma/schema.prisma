@@ -765,6 +765,8 @@ model Identity {
   agentQuoteShares AgentQuoteShare[] @relation("agentQuoteShareCreator")
   agentKnowledgeReviewed AgentKnowledgeArticle[] @relation("agentKnowledgeReviewer")
   agentAgreementsApproved AgentAgreementVersion[] @relation("agentAgreementApprover")
+  operatingSpaceMemberships OperatingSpaceMember[]
+  operatingTeamMemberships OperatingTeamMember[]
   teamPermissions ProjectStaffPermission[]
   unitAccessUpdates UnitAccessInstruction[]
   id        String   @id @default(uuid())
@@ -870,6 +872,7 @@ model Identity {
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
 
   @@map("identity")
+  operationalTasksAssigned OperationalTask[] @relation("operationalTaskAssignee")
 }
 
 model AuthAccount {
@@ -1008,6 +1011,7 @@ model Project {
   inventoryCategories   InventoryCategory[]
   ratePlans             RatePlan[]
   bookings              Booking[]
+  operationalTasks       OperationalTask[]
   ledgerEntries         LedgerEntry[]
   threads               Thread[]
   tickets               Ticket[]
@@ -1029,6 +1033,7 @@ model Project {
 }
 
 model Unit {
+  operatingSpaces OperatingSpaceUnit[]
   accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -1095,6 +1100,7 @@ model Unit {
   blockedDates                 BlockedDate[]
   pricingRules                 PricingRule[]
   bookings                     Booking[]
+  operationalTasks             OperationalTask[]
   ledgerEntries                LedgerEntry[]
   tickets                      Ticket[]
   serviceOrders                ServiceOrder[]
@@ -1213,6 +1219,7 @@ model Booking {
   amenityReservations ProjectAmenityReservation[]
   tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
+  operationalTasks OperationalTask[]
   depositClaims    DepositClaim[]
   depositPreauth   DepositPreauth?
   analyticsEvents  AnalyticsEvent[]
@@ -1568,6 +1575,7 @@ model Organization {
   memberships OrganizationMembership[]
   crmWorkspace CrmWorkspace?
   agentAgreements AgentAgreementVersion[]
+  operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -2256,6 +2264,50 @@ model Message {
 
   @@index([threadId, createdAt])
   @@map("message")
+}
+
+enum OperationalTaskType {
+  turnover_cleaning
+  turnover_inspection
+  maintenance_followup
+}
+
+enum OperationalTaskStatus {
+  planned
+  assigned
+  in_progress
+  inspected
+  ready
+  cancelled
+}
+
+model OperationalTask {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId         String                @map("project_id")
+  unitId            String                @map("unit_id")
+  bookingId         String?               @map("booking_id")
+  taskType          OperationalTaskType   @map("task_type")
+  status            OperationalTaskStatus @default(planned)
+  dueAt             DateTime              @map("due_at")
+  assignedIdentityId String?              @map("assigned_identity_id")
+  startedAt         DateTime?             @map("started_at")
+  inspectedAt       DateTime?             @map("inspected_at")
+  readyAt           DateTime?             @map("ready_at")
+  notes             String?
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit     Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  booking  Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assignee Identity? @relation("operationalTaskAssignee", fields: [assignedIdentityId], references: [id], onDelete: SetNull)
+
+  @@unique([bookingId, taskType])
+  @@index([projectId, status, dueAt])
+  @@index([unitId, status, dueAt])
+  @@index([assignedIdentityId, status, dueAt])
+  @@map("operational_task")
 }
 
 model Ticket {
@@ -3632,6 +3684,98 @@ model UnitAccessInstruction {
   unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade, onUpdate:NoAction)
   updatedBy Identity @relation(fields:[updatedById], references:[id], onDelete:NoAction, onUpdate:NoAction)
   @@map("unit_access_instruction")
+}
+
+
+model OperatingSpace {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  key            String @unique
+  name           String
+  organizationId String @map("organization_id")
+  timezone       String @default("Asia/Bangkok")
+  status         String @default("active")
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  units        OperatingSpaceUnit[]
+  members      OperatingSpaceMember[]
+  teams        OperatingTeam[]
+
+  @@index([organizationId, status])
+  @@map("operating_space")
+}
+
+model OperatingSpaceUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String   @map("operating_space_id")
+  unitId           String   @map("unit_id")
+  active           Boolean  @default(true)
+  startsOn         DateTime @default(now()) @map("starts_on")
+  endsOn           DateTime? @map("ends_on")
+
+  operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  unit           Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingSpaceId, unitId])
+  @@index([unitId, active])
+  @@map("operating_space_unit")
+}
+
+model OperatingSpaceMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String   @map("operating_space_id")
+  identityId       String   @map("identity_id")
+  capabilities     String[] @default([])
+  active           Boolean  @default(true)
+
+  operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  identity       Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingSpaceId, identityId])
+  @@index([identityId, active])
+  @@map("operating_space_member")
+}
+
+model OperatingTeam {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String @map("operating_space_id")
+  name             String
+  teamType         String @map("team_type")
+  active           Boolean @default(true)
+
+  operatingSpace OperatingSpace       @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  members        OperatingTeamMember[]
+
+  @@unique([operatingSpaceId, name])
+  @@index([operatingSpaceId, teamType, active])
+  @@map("operating_team")
+}
+
+model OperatingTeamMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  operatingTeamId String @map("operating_team_id")
+  identityId      String @map("identity_id")
+  active          Boolean @default(true)
+
+  operatingTeam OperatingTeam @relation(fields: [operatingTeamId], references: [id], onDelete: Cascade)
+  identity      Identity      @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingTeamId, identityId])
+  @@index([identityId, active])
+  @@map("operating_team_member")
 }
 
 enum AgentMembershipRole {

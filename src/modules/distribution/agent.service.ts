@@ -219,7 +219,7 @@ export async function createAgentQuote(
       taxesSatang: breakdown.occupancy_tax_thb,
       clientTotalSatang,
       commissionSatang,
-      availabilityState: availability.available ? 'live' : 'blocked',
+      availabilityState: availability ? 'live' : 'blocked',
       validUntil: input.validUntil ?? null,
       priceBreakdown: breakdown,
       publicNote: input.publicNote ?? null,

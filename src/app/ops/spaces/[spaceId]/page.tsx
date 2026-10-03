@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
+import { addDays, calendarDayIn, startOfCalendarDayUtc } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,14 +34,11 @@ export default async function OperatingSpaceHome({
 
   const unitIds = await getOperatingSpaceUnitIds(prisma, space.id);
   const now = new Date();
-  const day = new Intl.DateTimeFormat('en-CA', {
-    timeZone: space.timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-  const start = new Date(day + 'T00:00:00+07:00');
-  const end = new Date(new Date(start).getTime() + 24 * 60 * 60 * 1000);
+  // Booking.startDate/endDate are @db.Date values. Resolve "today" in the
+  // operating-space timezone, then compare using the same UTC-midnight
+  // calendar-day representation Prisma round-trips for date columns.
+  const start = startOfCalendarDayUtc(calendarDayIn(now, space.timezone));
+  const end = addDays(start, 1);
 
   const [units, arrivals, departures, occupied, requests, openTasks] = await Promise.all([
     prisma.unit.count({ where: { id: { in: unitIds }, status: { not: 'offboarded' } } }),
@@ -75,7 +73,7 @@ export default async function OperatingSpaceHome({
     prisma.operationalTask.count({
       where: {
         unitId: { in: unitIds },
-        status: { in: ['planned', 'assigned', 'in_progress', 'inspected'] },
+        status: { in: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'] },
       },
     }),
   ]);

@@ -95,3 +95,18 @@ ALTER TABLE "operating_team_member"
 ALTER TABLE "operating_team_member"
   ADD CONSTRAINT "operating_team_member_identity_id_fkey"
   FOREIGN KEY ("identity_id") REFERENCES "identity"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Server-only operational scope tables. Supabase Data API roles must not read
+-- or write these tables directly; application authorization remains canonical.
+ALTER TABLE "operating_space" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "operating_space_unit" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "operating_space_member" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "operating_team" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "operating_team_member" ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE "operating_space" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "operating_space_unit" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "operating_space_member" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "operating_team" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "operating_team_member" FROM PUBLIC, anon, authenticated;

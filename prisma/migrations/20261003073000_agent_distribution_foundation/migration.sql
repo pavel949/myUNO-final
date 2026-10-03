@@ -237,3 +237,22 @@ ALTER TABLE "agent_client_protection"
 ALTER TABLE "agent_commission"
   ADD CONSTRAINT "agent_commission_non_negative_chk"
   CHECK ("basis_amount_satang" >= 0 AND "rate_bps" >= 0 AND "amount_satang" >= 0);
+
+
+-- Agent commercial records are server-authorized. Public share pages read
+-- through server code; Supabase Data API roles receive no direct table access.
+ALTER TABLE "agent_client_protection" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_shortlist" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_shortlist_item" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_quote" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_quote_item" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_commission" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_shared_link" ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE "agent_client_protection" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_shortlist" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_shortlist_item" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_quote" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_quote_item" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_commission" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "agent_shared_link" FROM PUBLIC, anon, authenticated;

@@ -7,6 +7,7 @@ import { getLabels } from '@/lib/i18n';
 import { getMCManagedUnits } from '@/modules/projects';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, listOperationalTasks } from '@/modules/ops';
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
+import OperationalTaskCreateForm from '@/components/ops/OperationalTaskCreateForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +85,26 @@ export default async function OperationalTasksPage({
     ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId)
     : explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
 
+  const taskFormData = requestedSpaceId
+    ? await Promise.all([
+        prisma.unit.findMany({
+          where: { id: { in: authorizedSpaceUnitIds } },
+          select: { id: true, name: true, project: { select: { name: true } } },
+          orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
+        }),
+        prisma.operatingTeam.findMany({
+          where: { operatingSpaceId: requestedSpaceId, active: true },
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        }),
+        prisma.operatingSpaceMember.findMany({
+          where: { operatingSpaceId: requestedSpaceId, active: true },
+          select: { identity: { select: { id: true, firstName: true, lastName: true } } },
+          orderBy: { identity: { firstName: 'asc' } },
+        }),
+      ])
+    : null;
+
   const labels = await getLabels({
     'staff.tasks.back': '← Calendar',
     'staff.tasks.title': 'Housekeeping & readiness',
@@ -95,6 +116,20 @@ export default async function OperationalTasksPage({
     'staff.tasks.start': 'Start',
     'staff.tasks.inspected': 'Inspected',
     'staff.tasks.ready': 'Ready',
+    'staff.tasks.resume': 'Resume',
+    'staff.task_form.title': 'Task title',
+    'staff.task_form.property': 'Property',
+    'staff.task_form.employee': 'Employee',
+    'staff.task_form.team': 'Team',
+    'staff.task_form.priority.low': 'Low',
+    'staff.task_form.priority.normal': 'Normal',
+    'staff.task_form.priority.high': 'High',
+    'staff.task_form.priority.urgent': 'Urgent',
+    'staff.task_form.estimated_cost': 'Estimated cost THB',
+    'staff.task_form.description': 'Description',
+    'staff.task_form.blocks_inventory': 'Blocks inventory',
+    'staff.task_form.creating': 'Creating…',
+    'staff.task_form.create': 'Create task',
   });
 
   const tasks = await listOperationalTasks(prisma, {
@@ -112,7 +147,7 @@ export default async function OperationalTasksPage({
           }
       : {}),
     unitId: requestedUnitId,
-    statuses: ['planned', 'assigned', 'in_progress', 'inspected'],
+    statuses: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'],
   });
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
@@ -122,6 +157,13 @@ export default async function OperationalTasksPage({
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.tasks.title']}</h1>
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>
+      {requestedSpaceId && taskFormData ? <OperationalTaskCreateForm
+        operatingSpaceId={requestedSpaceId}
+        units={taskFormData[0]}
+        teams={taskFormData[1]}
+        members={taskFormData[2]}
+        labels={labels}
+      /> : null}
       <OperationalTaskQueueClient
         labels={labels}
         tasks={tasks.map((task) => ({
@@ -133,6 +175,12 @@ export default async function OperationalTasksPage({
           project: task.project,
           unit: task.unit,
           assignee: task.assignee,
+          assignedTeam: task.assignedTeam,
+          title: task.title,
+          priority: task.priority,
+          estimatedCostSatang: task.estimatedCostSatang,
+          actualCostSatang: task.actualCostSatang,
+          blocksInventory: task.blocksInventory,
         }))}
       />
     </div>

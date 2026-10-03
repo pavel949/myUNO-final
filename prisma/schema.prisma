@@ -152,6 +152,12 @@ enum BookingChangeType {
   cancel
   status
   price
+  unit
+}
+
+enum BookingAllocationStatus {
+  final
+  category_reserved
 }
 
 enum PaymentPurpose {
@@ -753,6 +759,7 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  bookingAllocationsFinalized Booking[] @relation("bookingAllocationFinalizedBy")
   reservationGroupsAsGuest   ReservationGroup[] @relation("reservationGroupGuest")
   reservationGroupsCreated   ReservationGroup[] @relation("reservationGroupCreator")
   operatingSpaceMemberships OperatingSpaceMember[]
@@ -1184,7 +1191,11 @@ model ReservationGroup {
 }
 
 model Booking {
-  reservationGroupId String? @map("reservation_group_id")
+  reservationGroupId             String?                 @map("reservation_group_id")
+  requestedInventoryCategoryId    String?                 @map("requested_inventory_category_id")
+  allocationStatus                BookingAllocationStatus @default(final) @map("allocation_status")
+  allocationFinalizedAt           DateTime?               @map("allocation_finalized_at")
+  allocationFinalizedByIdentityId String?                 @map("allocation_finalized_by_identity_id")
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1222,6 +1233,8 @@ model Booking {
 
   // Relations
   reservationGroup ReservationGroup? @relation(fields: [reservationGroupId], references: [id], onDelete: SetNull)
+  requestedInventoryCategory InventoryCategory? @relation("bookingRequestedCategory", fields: [requestedInventoryCategoryId], references: [id], onDelete: SetNull)
+  allocationFinalizedBy Identity? @relation("bookingAllocationFinalizedBy", fields: [allocationFinalizedByIdentityId], references: [id], onDelete: SetNull)
   unit             Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   guestIdentity    Identity            @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
@@ -1244,6 +1257,7 @@ model Booking {
 
   @@unique([externalRef, channel])
   @@index([reservationGroupId])
+  @@index([requestedInventoryCategoryId, allocationStatus, status, startDate, endDate])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])
   @@index([projectId])
@@ -3385,6 +3399,7 @@ model InventoryCategory {
   project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   units     Unit[]
   ratePlans RatePlan[]
+  categoryReservations Booking[] @relation("bookingRequestedCategory")
   galleryMedia InventoryCategoryMedia[]
   coverMediaId String? @map("cover_media_id")
   coverMedia MediaAsset? @relation("categoryCover", fields: [coverMediaId], references: [id], onDelete: SetNull)

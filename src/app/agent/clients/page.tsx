@@ -28,6 +28,14 @@ export default async function AgentClientsPage() {
     'agent.clients.scope':'Scope',
     'agent.clients.expires':'Protected until',
     'agent.clients.empty':'No protected clients yet.',
+    'agent.client_form.name':'Client name',
+    'agent.client_form.whatsapp':'WhatsApp',
+    'agent.client_form.phone':'Phone',
+    'agent.client_form.scope.all':'All',
+    'agent.client_form.scope.stay':'Stay',
+    'agent.client_form.scope.long_rent':'Long rent',
+    'agent.client_form.scope.buy':'Buy',
+    'agent.client_form.protect':'Protect',
   });
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-6xl space-y-24">
@@ -36,7 +44,7 @@ export default async function AgentClientsPage() {
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['agent.clients.title']}</h1>
         <p className="mt-6 text-body text-text-secondary">{labels['agent.clients.subtitle']}</p>
       </header>
-      <AgentClientProtectionForm />
+      <AgentClientProtectionForm labels={labels}/>
       <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
         {!clients.length?<p className="p-20 text-text-secondary">{labels['agent.clients.empty']}</p>:
           clients.map(c=><article key={c.id} className="grid gap-8 border-b border-border-line p-16 last:border-0 md:grid-cols-4">

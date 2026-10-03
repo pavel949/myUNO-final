@@ -5,9 +5,10 @@ import { FormEvent, useState } from 'react';
 type Props={
   unit:{id:string;name:string;maxGuests:number;project:{name:string}};
   clients:Array<{id:string;clientName:string;clientWhatsapp:string|null}>;
+  labels:Record<string,string>;
 };
 
-export default function AgentQuoteForm({unit,clients}:Props){
+export default function AgentQuoteForm({unit,clients,labels}:Props){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [shareUrl,setShareUrl]=useState('');
@@ -40,20 +41,20 @@ export default function AgentQuoteForm({unit,clients}:Props){
 
   return <form onSubmit={submit} className="space-y-16 rounded-xl border border-border-line bg-surface-paper p-20">
     <div className="grid gap-12 md:grid-cols-2">
-      <label className="text-small font-semibold text-text-secondary">Client<select name="clientProtectionId" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"><option value="">No protected client</option>{clients.map(c=><option key={c.id} value={c.id}>{c.clientName}</option>)}</select></label>
-      <label className="text-small font-semibold text-text-secondary">Brand<select name="brandMode" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"><option value="myuno">myUNO</option><option value="cobranded">Co-branded</option><option value="agent">Agent branded</option><option value="neutral">Neutral</option></select></label>
-      <label className="text-small font-semibold text-text-secondary">Check-in<input required name="startDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Check-out<input required name="endDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Adults<input name="adults" type="number" min="1" max={unit.maxGuests} defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Children<input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Markup THB<input name="markupThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Discount THB<input name="discountThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Commission %<input name="commissionPct" type="number" min="0" step="0.1" defaultValue="10" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">Valid hours<input name="validHours" type="number" min="1" max="168" defaultValue="24" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.common.client']}<select name="clientProtectionId" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"><option value="">{labels['agent.common.no_client']}</option>{clients.map(c=><option key={c.id} value={c.id}>{c.clientName}</option>)}</select></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.common.brand']}<select name="brandMode" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"><option value="myuno">{labels['agent.common.brand.myuno']}</option><option value="cobranded">{labels['agent.common.brand.cobranded']}</option><option value="agent">{labels['agent.common.brand.agent']}</option><option value="neutral">{labels['agent.common.brand.neutral']}</option></select></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.checkin']}<input required name="startDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.checkout']}<input required name="endDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.adults']}<input name="adults" type="number" min="1" max={unit.maxGuests} defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.children']}<input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.markup']}<input name="markupThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.discount']}<input name="discountThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.commission']}<input name="commissionPct" type="number" min="0" step="0.1" defaultValue="10" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
+      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.valid_hours']}<input name="validHours" type="number" min="1" max="168" defaultValue="24" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
     </div>
-    <textarea name="publicNote" placeholder="Client note" className="min-h-24 w-full rounded-md border border-border-line p-12"/>
-    <button disabled={busy} className="rounded-md bg-brand-deep px-20 py-10 text-small font-semibold text-white">{busy?'Creating…':'Create & share'}</button>
+    <textarea name="publicNote" placeholder={labels['agent.quote.public_note']} className="min-h-24 w-full rounded-md border border-border-line p-12"/>
+    <button disabled={busy} className="rounded-md bg-brand-deep px-20 py-10 text-small font-semibold text-white">{busy?labels['agent.quote.creating']:labels['agent.quote.create_share']}</button>
     {error?<p role="alert" className="text-small text-red-700">{error}</p>:null}
-    {shareUrl?<div className="rounded-lg bg-surface-ivory p-16"><p className="break-all text-small text-text-secondary">{shareUrl}</p><a href={whatsapp} target="_blank" rel="noreferrer" className="mt-10 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">Share in WhatsApp</a></div>:null}
+    {shareUrl?<div className="rounded-lg bg-surface-ivory p-16"><p className="break-all text-small text-text-secondary">{shareUrl}</p><a href={whatsapp} target="_blank" rel="noreferrer" className="mt-10 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">{labels['agent.common.whatsapp_share']}</a></div>:null}
   </form>;
 }

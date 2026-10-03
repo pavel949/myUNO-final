@@ -753,6 +753,8 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  reservationGroupsAsGuest   ReservationGroup[] @relation("reservationGroupGuest")
+  reservationGroupsCreated   ReservationGroup[] @relation("reservationGroupCreator")
   operatingSpaceMemberships OperatingSpaceMember[]
   operatingTeamMemberships OperatingTeamMember[]
   teamPermissions ProjectStaffPermission[]
@@ -1158,7 +1160,31 @@ model PricingRule {
   @@map("pricing_rule")
 }
 
+model ReservationGroup {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  guestIdentityId     String  @map("guest_identity_id")
+  createdByIdentityId String? @map("created_by_identity_id")
+  operatingSpaceId    String? @map("operating_space_id")
+  title               String?
+  status              String  @default("active")
+  currency            String  @default("THB")
+  notes               String?
+
+  guest          Identity        @relation("reservationGroupGuest", fields: [guestIdentityId], references: [id], onDelete: Restrict)
+  createdBy      Identity?       @relation("reservationGroupCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  operatingSpace OperatingSpace? @relation(fields: [operatingSpaceId], references: [id], onDelete: SetNull)
+  bookings       Booking[]
+
+  @@index([guestIdentityId, status])
+  @@index([operatingSpaceId, status])
+  @@map("reservation_group")
+}
+
 model Booking {
+  reservationGroupId String? @map("reservation_group_id")
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1195,6 +1221,7 @@ model Booking {
   internalNote               String?            @map("internal_note")
 
   // Relations
+  reservationGroup ReservationGroup? @relation(fields: [reservationGroupId], references: [id], onDelete: SetNull)
   unit             Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   guestIdentity    Identity            @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
@@ -1216,6 +1243,7 @@ model Booking {
   reschedules BookingReschedule[]
 
   @@unique([externalRef, channel])
+  @@index([reservationGroupId])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])
   @@index([projectId])
@@ -3667,6 +3695,7 @@ model UnitAccessInstruction {
 
 
 model OperatingSpace {
+  reservationGroups ReservationGroup[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

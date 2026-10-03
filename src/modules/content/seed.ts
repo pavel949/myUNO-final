@@ -1,4 +1,3 @@
-import { AGENT_DISTRIBUTION_KEYS } from './agent-distribution.seed';
 /**
  * Seed content keys and translations for the common.* namespace
  * This is called during database initialization
@@ -18,6 +17,7 @@ import { PROJECT_TEAM_KEYS } from './project-team.seed';
 import { CONSOLIDATED_RELEASE_KEYS } from './consolidated-release.seed';
 import { PMS_RELEASE_KEYS } from './pms-release.seed';
 import { OPERATING_SPACE_KEYS } from './operating-space.seed';
+import { AGENT_DISTRIBUTION_KEYS } from './agent-distribution.seed';
 
 interface KeyDef {
   key: string;
@@ -4464,7 +4464,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...AGENT_DISTRIBUTION_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.
@@ -4509,7 +4509,7 @@ export async function seedContent(
     const contentKeyId = idByKey.get(keyDef.key);
     if (!contentKeyId) continue; // just upserted above — should always resolve
     for (const locale of locales) {
-      const value = keyDef[locale  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...AGENT_DISTRIBUTION_KEYS];
+      const value = keyDef[locale];
       if (value === undefined) continue;
       translationRows.push({ contentKeyId, locale, value, status: keyDef.status || 'ok' });
     }

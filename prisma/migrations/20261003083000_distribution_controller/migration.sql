@@ -69,3 +69,5 @@ CREATE INDEX "agent_quote_item_offering_id_idx" ON "agent_quote_item"("offering_
 ALTER TABLE "agent_quote_item"
   ADD CONSTRAINT "agent_quote_item_offering_id_fkey"
   FOREIGN KEY ("offering_id") REFERENCES "commercial_offering"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "agent_quote" ADD COLUMN "distribution_snapshot" JSONB;

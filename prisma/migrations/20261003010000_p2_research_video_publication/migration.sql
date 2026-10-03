@@ -189,3 +189,11 @@ ALTER TABLE "video_publication"
 ALTER TABLE "video_publication"
   ADD CONSTRAINT "video_published_requires_provenance"
   CHECK ("status" <> 'published' OR length(trim(COALESCE("provenance", ''))) > 0);
+
+
+-- Public knowledge tables are service-mediated; never expose raw rows through PostgREST.
+ALTER TABLE "research_publication" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "research_source" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "research_correction" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "video_publication" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE "research_publication", "research_source", "research_correction", "video_publication" FROM PUBLIC, anon, authenticated;

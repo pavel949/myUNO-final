@@ -71,6 +71,8 @@ export default async function AgentInventoryPage({
     'agent.inventory.quote': 'Create quote',
     'agent.inventory.add_shortlist': 'Add to shortlist',
     'agent.inventory.empty': 'No distributable inventory matches this search.',
+    'agent.common.bedrooms_short': 'BR',
+    'agent.common.bathrooms_short': 'BA',
   });
 
   const href = (nextMode: string) => '/agent/inventory?' + new URLSearchParams({
@@ -109,7 +111,7 @@ export default async function AgentInventoryPage({
           <p className="text-small font-semibold text-brand-andaman">{unit.project.name}</p>
           <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">{unit.name}</h2>
           <p className="mt-6 text-small text-text-secondary">
-            {unit.bedrooms} BR · {unit.bathrooms} BA{unit.sizeSqm ? ' · '+unit.sizeSqm+' sqm' : ''}
+            {unit.bedrooms} {labels['agent.common.bedrooms_short']} · {unit.bathrooms} {labels['agent.common.bathrooms_short']}{unit.sizeSqm ? ' · '+unit.sizeSqm+' sqm' : ''}
           </p>
           <div className="mt-12 flex items-center justify-between">
             <span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold text-text-secondary">

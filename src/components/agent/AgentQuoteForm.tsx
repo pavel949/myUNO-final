@@ -4,11 +4,12 @@ import { FormEvent, useState } from 'react';
 
 type Props={
   unit:{id:string;name:string;maxGuests:number;project:{name:string}};
+  offeringId:string;
   clients:Array<{id:string;clientName:string;clientWhatsapp:string|null}>;
   labels:Record<string,string>;
 };
 
-export default function AgentQuoteForm({unit,clients,labels}:Props){
+export default function AgentQuoteForm({unit,offeringId,clients,labels}:Props){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [shareUrl,setShareUrl]=useState('');
@@ -19,10 +20,9 @@ export default function AgentQuoteForm({unit,clients,labels}:Props){
     const form=new FormData(event.currentTarget);
     const clientId=String(form.get('clientProtectionId')||'');
     const response=await fetch('/api/agent/quotes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
-      unitId:unit.id,startDate:String(form.get('startDate')||''),endDate:String(form.get('endDate')||''),
+      unitId:unit.id,offeringId,startDate:String(form.get('startDate')||''),endDate:String(form.get('endDate')||''),
       adults:Number(form.get('adults')||1),children:Number(form.get('children')||0),
-      markupThb:Number(form.get('markupThb')||0),discountThb:Number(form.get('discountThb')||0),
-      commissionPct:Number(form.get('commissionPct')||10),clientProtectionId:clientId||undefined,
+      markupThb:Number(form.get('markupThb')||0),clientProtectionId:clientId||undefined,
       validHours:Number(form.get('validHours')||24),publicNote:String(form.get('publicNote')||''),
     })});
     const data=await response.json();
@@ -48,8 +48,6 @@ export default function AgentQuoteForm({unit,clients,labels}:Props){
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.adults']}<input name="adults" type="number" min="1" max={unit.maxGuests} defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.children']}<input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.markup']}<input name="markupThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.discount']}<input name="discountThb" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
-      <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.commission']}<input name="commissionPct" type="number" min="0" step="0.1" defaultValue="10" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
       <label className="text-small font-semibold text-text-secondary">{labels['agent.quote.valid_hours']}<input name="validHours" type="number" min="1" max="168" defaultValue="24" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/></label>
     </div>
     <textarea name="publicNote" placeholder={labels['agent.quote.public_note']} className="min-h-24 w-full rounded-md border border-border-line p-12"/>

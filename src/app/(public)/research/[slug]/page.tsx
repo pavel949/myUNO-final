@@ -38,14 +38,14 @@ export default async function ResearchDetailPage({ params }: { params:{slug:stri
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['research.detail.sources']}</h2>
         <ol className="mt-40 space-y-16">
           {publication.sources.map(source=><li key={source.id} id={`source-${source.sourceNumber}`} className="text-small text-text-secondary">
-            <span className="font-semibold text-text-ink">[{source.sourceNumber}]</span> <a href={source.url} target="_blank" rel="noreferrer" className="underline">{source.title}</a>{source.publisher?` · ${source.publisher}`:''}<span className="block mt-2">{labels['research.detail.source_accessed']}: {source.accessedOn.toLocaleDateString(locale)}</span>
+            <span className="font-semibold text-text-ink">[{source.sourceNumber}]</span> <a href={source.url} target="_blank" rel="noreferrer" className="underline">{source.title}</a>{source.publisher?` · ${source.publisher}`:''}<span className="block mt-4">{labels['research.detail.source_accessed']}: {source.accessedOn.toLocaleDateString(locale)}</span>
           </li>)}
         </ol>
       </section>
 
       {publication.corrections.length?<section className="mt-40 border-t border-border-line pt-32">
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['research.detail.corrections']}</h2>
-        <div className="mt-20 space-y-16">{publication.corrections.map(correction=><div key={correction.id} className="rounded-xl border border-border-line bg-surface-paper p-20"><p className="font-semibold text-text-ink">{correction.summary}</p><p className="mt-8 text-small text-text-secondary">{correction.detail}</p><p className="mt-8 text-small text-text-secondary">{correction.publicAt.toLocaleDateString(locale)}</p></div>)}</div>
+        <div className="mt-40 space-y-16">{publication.corrections.map(correction=><div key={correction.id} className="rounded-xl border border-border-line bg-surface-paper p-20"><p className="font-semibold text-text-ink">{correction.summary}</p><p className="mt-8 text-small text-text-secondary">{correction.detail}</p><p className="mt-8 text-small text-text-secondary">{correction.publicAt.toLocaleDateString(locale)}</p></div>)}</div>
       </section>:null}
     </article>
   </main>;

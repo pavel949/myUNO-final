@@ -44,6 +44,7 @@ export const JOB_KEYS = {
   guestLifecycle: 'guest_lifecycle',
   serviceOrderExpiry: 'service_order_expiry',
   depositRelease: 'deposit_release',
+  preventiveMaintenance: 'preventive_maintenance',
 } as const;
 
 export type JobKey = (typeof JOB_KEYS)[keyof typeof JOB_KEYS];
@@ -107,6 +108,7 @@ const JOB_SPECS: readonly JobSpec[] = [
   // right cadence: the window is measured in days, and holding a guest's
   // money a few hours longer than strictly necessary is the safe error.
   { key: JOB_KEYS.depositRelease, cadence: 'nightly', intendedIntervalMs: DAY_MS },
+  { key: JOB_KEYS.preventiveMaintenance, cadence: 'nightly', intendedIntervalMs: DAY_MS },
 ];
 
 /**

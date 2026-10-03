@@ -26,9 +26,9 @@ export default async function AgentQuotesPage(){
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32"><div className="mx-auto max-w-6xl space-y-20">
     <header className="flex flex-wrap items-end justify-between gap-12"><div><Link href="/agent" className="text-small font-semibold text-brand-andaman">{labels['agent.quotes.back']}</Link><h1 className="mt-12 font-display text-display-xl font-semibold">{labels['agent.quotes.title']}</h1></div>
       <Link href="/agent/inventory" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">{labels['agent.quotes.new']}</Link></header>
-    <section className="space-y-10">{!quotes.length?<p className="rounded-lg border border-border-line bg-surface-paper p-20 text-text-secondary">{labels['agent.quotes.empty']}</p>:quotes.map(q=>{
+    <section className="space-y-12">{!quotes.length?<p className="rounded-lg border border-border-line bg-surface-paper p-20 text-text-secondary">{labels['agent.quotes.empty']}</p>:quotes.map(q=>{
       const item=q.items[0]; return <article key={q.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
-        <div className="grid gap-10 md:grid-cols-5"><div className="md:col-span-2"><p className="font-semibold">{item?.unit.project.name} · {item?.unit.name}</p><p className="text-small text-text-secondary">{q.clientProtection?.clientName||'—'}</p></div>
+        <div className="grid gap-12 md:grid-cols-5"><div className="md:col-span-2"><p className="font-semibold">{item?.unit.project.name} · {item?.unit.name}</p><p className="text-small text-text-secondary">{q.clientProtection?.clientName||'—'}</p></div>
         <div><p className="text-small text-text-secondary">{labels['agent.quotes.total']}</p><p className="font-semibold">฿{Math.round(q.clientTotalSatang/100).toLocaleString()}</p></div>
         <div><p className="text-small text-text-secondary">{labels['agent.quotes.commission']}</p><p className="font-semibold">฿{Math.round(q.commissionSatang/100).toLocaleString()}</p></div>
         <div><p className="text-small text-text-secondary">{labels['agent.quotes.availability']}</p><p className="font-semibold">{q.availabilityState}</p></div></div>

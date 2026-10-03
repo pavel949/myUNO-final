@@ -116,6 +116,20 @@ export default async function OperationalTasksPage({
     'staff.tasks.start': 'Start',
     'staff.tasks.inspected': 'Inspected',
     'staff.tasks.ready': 'Ready',
+    'staff.tasks.resume': 'Resume',
+    'staff.task_form.title': 'Task title',
+    'staff.task_form.property': 'Property',
+    'staff.task_form.employee': 'Employee',
+    'staff.task_form.team': 'Team',
+    'staff.task_form.priority.low': 'Low',
+    'staff.task_form.priority.normal': 'Normal',
+    'staff.task_form.priority.high': 'High',
+    'staff.task_form.priority.urgent': 'Urgent',
+    'staff.task_form.estimated_cost': 'Estimated cost THB',
+    'staff.task_form.description': 'Description',
+    'staff.task_form.blocks_inventory': 'Blocks inventory',
+    'staff.task_form.creating': 'Creating…',
+    'staff.task_form.create': 'Create task',
   });
 
   const tasks = await listOperationalTasks(prisma, {
@@ -148,6 +162,7 @@ export default async function OperationalTasksPage({
         units={taskFormData[0]}
         teams={taskFormData[1]}
         members={taskFormData[2]}
+        labels={labels}
       /> : null}
       <OperationalTaskQueueClient
         labels={labels}

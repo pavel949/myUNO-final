@@ -1570,6 +1570,7 @@ model UnitEngagement {
 }
 
 model Organization {
+  suppliedDistributionPolicies OfferingDistributionPolicy[]
   agentClientProtections AgentClientProtection[]
   agentShortlists        AgentShortlist[]
   agentQuotes            AgentQuote[]
@@ -3257,12 +3258,42 @@ model CommercialOffering {
   project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
+  distributionPolicy OfferingDistributionPolicy?
   propertyDeals PropertyDeal[]
 
   @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
   @@index([unitId, offeringType])
   @@index([projectId, offeringType])
   @@map("commercial_offering")
+}
+
+model OfferingDistributionPolicy {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  offeringId               String  @unique @map("offering_id")
+  supplyOrganizationId     String? @map("supply_organization_id")
+  inventorySource          String  @default("managed") @map("inventory_source")
+  availabilityMode         String  @default("live") @map("availability_mode")
+  bookingMode              String  @default("request") @map("booking_mode")
+  agentDistributionEnabled Boolean @default(true) @map("agent_distribution_enabled")
+  directDistributionEnabled Boolean @default(true) @map("direct_distribution_enabled")
+  otaDistributionEnabled   Boolean @default(false) @map("ota_distribution_enabled")
+  allowAgentMarkup         Boolean @default(true) @map("allow_agent_markup")
+  maxAgentMarkupBps        Int?    @map("max_agent_markup_bps")
+  defaultAgentCommissionBps Int    @default(1000) @map("default_agent_commission_bps")
+  confirmationSlaMinutes   Int?    @map("confirmation_sla_minutes")
+  staleAfterMinutes        Int?    @map("stale_after_minutes")
+  notes                    String?
+
+  offering           CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  supplyOrganization Organization?       @relation(fields: [supplyOrganizationId], references: [id], onDelete: SetNull)
+
+  @@index([inventorySource, availabilityMode])
+  @@index([agentDistributionEnabled, bookingMode])
+  @@index([supplyOrganizationId])
+  @@map("offering_distribution_policy")
 }
 
 model ChannelMapping {

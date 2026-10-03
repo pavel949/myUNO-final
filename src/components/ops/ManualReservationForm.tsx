@@ -50,44 +50,44 @@ export default function ManualReservationForm({
 
   return <form onSubmit={submit} className="space-y-12 rounded-xl border border-border-line bg-surface-paper p-16">
     <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.create']}</h2>
-    <div className="grid gap-10 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.unit']}
-        <select required name="unitId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-10">
+        <select required name="unitId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-12">
           <option value="">{labels['reservations.select']}</option>
           {units.map(unit=><option key={unit.id} value={unit.id}>{unit.project.name} · {unit.name}</option>)}
         </select>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.guest']}
-        <select required name="guestIdentityId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-10">
+        <select required name="guestIdentityId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-12">
           <option value="">{labels['reservations.select']}</option>
           {guests.map(guest=><option key={guest.id} value={guest.id}>{guest.firstName} {guest.lastName}{guest.email?' · '+guest.email:''}</option>)}
         </select>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.group']}
-        <select name="reservationGroupId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-10">
+        <select name="reservationGroupId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-12">
           <option value="">{labels['reservations.no_group']}</option>
           {groups.map(group=><option key={group.id} value={group.id}>{group.title||group.id.slice(0,8)}</option>)}
         </select>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.adults']}
-        <input name="adults" type="number" min="1" defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-10"/>
+        <input name="adults" type="number" min="1" defaultValue="2" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.start']}
-        <input required name="startDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-10"/>
+        <input required name="startDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.end']}
-        <input required name="endDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-10"/>
+        <input required name="endDate" type="date" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.children']}
-        <input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-10"/>
+        <input name="children" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.pets']}
-        <input name="pets" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-10"/>
+        <input name="pets" type="number" min="0" defaultValue="0" className="mt-4 h-44 w-full rounded-md border border-border-line px-12"/>
       </label>
     </div>
-    <textarea name="guestNote" placeholder={labels['reservations.note']} className="min-h-20 w-full rounded-md border border-border-line p-10"/>
+    <textarea name="guestNote" placeholder={labels['reservations.note']} className="min-h-20 w-full rounded-md border border-border-line p-12"/>
     <div className="flex items-center gap-12">
-      <button disabled={busy} className="rounded-md bg-brand-deep px-16 py-9 text-small font-semibold text-white">
+      <button disabled={busy} className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
         {busy?labels['reservations.creating']:labels['reservations.create_action']}
       </button>
       {error?<span role="alert" className="text-small text-red-700">{error}</span>:null}

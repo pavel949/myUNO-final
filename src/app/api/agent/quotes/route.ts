@@ -45,8 +45,6 @@ export async function POST(req: NextRequest) {
       adults?: number;
       children?: number;
       markupThb?: number;
-      discountThb?: number;
-      commissionPct?: number;
       clientProtectionId?: string;
       validHours?: number;
       publicNote?: string;
@@ -62,8 +60,6 @@ export async function POST(req: NextRequest) {
       adults: Math.max(1, Number(body.adults ?? 1)),
       children: Math.max(0, Number(body.children ?? 0)),
       markupSatang: Math.round(Number(body.markupThb ?? 0) * 100),
-      discountSatang: Math.round(Number(body.discountThb ?? 0) * 100),
-      commissionRateBps: Math.round(Number(body.commissionPct ?? 10) * 100),
       clientProtectionId: body.clientProtectionId || null,
       validUntil: new Date(Date.now() + validHours * 60 * 60 * 1000),
       publicNote: body.publicNote || null,

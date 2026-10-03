@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as {
       unitId?: string;
+      offeringId?: string;
       startDate?: string;
       endDate?: string;
       adults?: number;
@@ -49,12 +50,13 @@ export async function POST(req: NextRequest) {
       validHours?: number;
       publicNote?: string;
     };
-    if (!body.unitId || !body.startDate || !body.endDate) throw new Error('QUOTE_INPUT_REQUIRED');
+    if (!body.unitId || !body.offeringId || !body.startDate || !body.endDate) throw new Error('QUOTE_INPUT_REQUIRED');
     const startDate = new Date(body.startDate + 'T00:00:00.000Z');
     const endDate = new Date(body.endDate + 'T00:00:00.000Z');
     const validHours = Math.max(1, Math.min(168, Number(body.validHours ?? 24)));
     const quote = await createAgentQuote(prisma, agent, {
       unitId: body.unitId,
+      offeringId: body.offeringId,
       startDate,
       endDate,
       adults: Math.max(1, Number(body.adults ?? 1)),

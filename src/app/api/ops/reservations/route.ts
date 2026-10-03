@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     if (!unit || unit.status !== 'live' || unit.inventoryCategory?.status !== 'live') {
       return NextResponse.json({ error: 'Unit is not bookable' }, { status: 409 });
     }
-    if (!guest || guest.status === 'deleted' || guest.status === 'suspended') {
+    if (!guest || guest.status !== 'active') {
       return NextResponse.json({ error: 'Guest is not active' }, { status: 400 });
     }
 

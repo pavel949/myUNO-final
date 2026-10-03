@@ -13,6 +13,7 @@ import {
 import { getMCManagedUnits } from '@/modules/projects';
 import ManualReservationForm from '@/components/ops/ManualReservationForm';
 import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
+import CategoryAllocationForm from '@/components/ops/CategoryAllocationForm';
 
 export const dynamic='force-dynamic';
 
@@ -75,7 +76,7 @@ export default async function ReservationDesk({
   const [units,guests,groups,bookings]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds},status:{not:'offboarded'}},
-      select:{id:true,name:true,instantBook:true,project:{select:{name:true}}},
+      select:{id:true,name:true,instantBook:true,inventoryCategoryId:true,project:{select:{name:true}}},
       orderBy:[{project:{name:'asc'}},{name:'asc'}],
     }),
     prisma.identity.findMany({
@@ -110,7 +111,8 @@ export default async function ReservationDesk({
       },
       select:{
         id:true,status:true,channel:true,startDate:true,endDate:true,totalThb:true,
-        balanceDueThb:true,reservationGroupId:true,
+        balanceDueThb:true,reservationGroupId:true,allocationStatus:true,
+        requestedInventoryCategory:{select:{id:true,name:true}},
         guestIdentity:{select:{id:true,firstName:true,lastName:true}},
         unit:{select:{id:true,name:true,project:{select:{name:true}}}},
         payments:{where:{status:'succeeded',purpose:{in:['stay','stay_balance']}},select:{amountThb:true}},
@@ -150,6 +152,12 @@ export default async function ReservationDesk({
     'reservations.group_title':'Group title',
     'reservations.group_failed':'Group creation failed',
     'reservations.all':'All',
+    'reservations.category_reserved':'Category reserved',
+    'reservations.assignment_pending':'Physical unit assignment pending',
+    'reservations.assign_unit':'Assign unit',
+    'reservations.assigning':'Assigning…',
+    'reservations.allocation_failed':'Unit assignment failed',
+    'reservations.capacity_slot':'Capacity slot',
   });
 
   const bangkokDay=new Intl.DateTimeFormat('en-CA',{
@@ -201,8 +209,26 @@ export default async function ReservationDesk({
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
           return <article key={booking.id} className="grid gap-10 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
             <div className="md:col-span-2">
-              <p className="font-semibold text-text-ink">{booking.unit.project.name} · {booking.unit.name}</p>
+              <p className="font-semibold text-text-ink">
+                {booking.allocationStatus==='category_reserved'&&booking.requestedInventoryCategory
+                  ? booking.unit.project.name+' · '+booking.requestedInventoryCategory.name
+                  : booking.unit.project.name+' · '+booking.unit.name}
+              </p>
               <p className="text-small text-text-secondary">{booking.guestIdentity.firstName} {booking.guestIdentity.lastName}</p>
+              {booking.allocationStatus==='category_reserved'&&booking.requestedInventoryCategory?<div>
+                <span className="mt-4 inline-flex rounded-full bg-amber-50 px-8 py-3 text-small font-semibold text-amber-800">
+                  {labels['reservations.category_reserved']}
+                </span>
+                <p className="mt-4 text-small text-text-secondary">
+                  {labels['reservations.capacity_slot']}: {booking.unit.name}
+                </p>
+                {canManage?<CategoryAllocationForm
+                  bookingId={booking.id}
+                  operatingSpaceId={spaceId}
+                  units={units.filter(unit=>unit.inventoryCategoryId===booking.requestedInventoryCategory?.id).map(unit=>({id:unit.id,name:unit.name}))}
+                  labels={labels}
+                />:null}
+              </div>:null}
             </div>
             <div><p className="text-small text-text-secondary">{booking.status.replace(/_/g,' ')}</p><p>{booking.channel}</p></div>
             <div><p>{booking.startDate.toISOString().slice(0,10)}</p><p className="text-small text-text-secondary">→ {booking.endDate.toISOString().slice(0,10)}</p></div>

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
-import { checkAvailability, computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown } from '@/modules/core';
+import { resolveAvailabilityConfidence, resolveDistributionPolicy } from './policy.service';
 
 export interface AgentContext {
   identityId: string;
@@ -153,6 +154,7 @@ export async function createAgentQuote(
   context: AgentContext,
   input: {
     unitId: string;
+    offeringId: string;
     startDate: Date;
     endDate: Date;
     adults: number;
@@ -166,11 +168,28 @@ export async function createAgentQuote(
   const children = input.children ?? 0;
   const party = input.adults + children;
   const markupSatang = input.markupSatang ?? 0;
-  const commissionRateBps = 1000;
-
   if (party < 1) throw new Error('QUOTE_PARTY_REQUIRED');
   if (input.endDate <= input.startDate) throw new Error('QUOTE_DATES_INVALID');
   if (markupSatang < 0) throw new Error('QUOTE_ADJUSTMENT_INVALID');
+
+  const offering = await db.commercialOffering.findFirst({
+    where: {
+      id: input.offeringId,
+      unitId: input.unitId,
+      status: 'active',
+      offeringType: { in: ['short_term_stay', 'short_stay', 'long_term_rental', 'long_rent'] },
+    },
+    select: { id: true, offeringType: true },
+  });
+  if (!offering) throw new Error('QUOTE_OFFERING_NOT_DISTRIBUTABLE');
+
+  const distribution = await resolveDistributionPolicy(db, offering.id);
+  if (!distribution.agentDistributionEnabled || distribution.bookingMode === 'not_agent_bookable') {
+    throw new Error('AGENT_DISTRIBUTION_DISABLED');
+  }
+  if (markupSatang > 0 && !distribution.allowAgentMarkup) {
+    throw new Error('AGENT_MARKUP_DISABLED');
+  }
 
   if (input.clientProtectionId) {
     const protection = await db.agentClientProtection.findFirst({
@@ -185,7 +204,7 @@ export async function createAgentQuote(
     if (!protection) throw new Error('CLIENT_PROTECTION_NOT_FOUND');
   }
 
-  const [breakdown, availability] = await Promise.all([
+  const [breakdown, availabilityState] = await Promise.all([
     computePriceBreakdown(
       db,
       input.unitId,
@@ -193,11 +212,23 @@ export async function createAgentQuote(
       input.endDate,
       party,
     ),
-    checkAvailability(db, input.unitId, input.startDate, input.endDate),
+    resolveAvailabilityConfidence(db, {
+      offeringId: offering.id,
+      unitId: input.unitId,
+      startDate: input.startDate,
+      endDate: input.endDate,
+    }),
   ]);
 
   const baseTotalSatang = breakdown.total_thb;
+  if (
+    distribution.maxAgentMarkupBps !== null &&
+    markupSatang > Math.round(baseTotalSatang * distribution.maxAgentMarkupBps / 10000)
+  ) {
+    throw new Error('AGENT_MARKUP_EXCEEDS_POLICY');
+  }
   const clientTotalSatang = baseTotalSatang + markupSatang;
+  const commissionRateBps = distribution.defaultAgentCommissionBps;
   const commissionSatang = Math.round(baseTotalSatang * commissionRateBps / 10000);
 
   return db.agentQuote.create({
@@ -212,13 +243,26 @@ export async function createAgentQuote(
       taxesSatang: breakdown.occupancy_tax_thb,
       clientTotalSatang,
       commissionSatang,
-      availabilityState: availability ? 'live' : 'blocked',
+      availabilityState,
       validUntil: input.validUntil ?? null,
       priceBreakdown: breakdown,
+      distributionSnapshot: {
+        offeringId: offering.id,
+        offeringType: offering.offeringType,
+        inventorySource: distribution.inventorySource,
+        availabilityMode: distribution.availabilityMode,
+        bookingMode: distribution.bookingMode,
+        allowAgentMarkup: distribution.allowAgentMarkup,
+        maxAgentMarkupBps: distribution.maxAgentMarkupBps,
+        commissionRateBps,
+        confirmationSlaMinutes: distribution.confirmationSlaMinutes,
+        explicitPolicy: distribution.explicit,
+      },
       publicNote: input.publicNote ?? null,
       items: {
         create: {
           unitId: input.unitId,
+          offeringId: offering.id,
           startDate: input.startDate,
           endDate: input.endDate,
           adults: input.adults,

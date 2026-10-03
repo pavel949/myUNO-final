@@ -100,13 +100,13 @@ export default function DistributionPolicyTable({
           </div>
           <div className="flex flex-wrap gap-6">
             {row.channelHealth.length===0
-              ? <span className="rounded-full bg-surface-ivory px-10 py-4 text-small text-text-secondary">No channel mapping</span>
+              ? <span className="rounded-full bg-surface-ivory px-10 py-4 text-small text-text-secondary">{labels['distribution.no_channel_mapping']}</span>
               : row.channelHealth.map(channel=><span key={channel.channel}
                   title={channel.lastSyncAt||undefined}
                   className={'rounded-full px-10 py-4 text-small font-semibold '+(channel.hasErrors?'bg-red-50 text-red-700':'bg-surface-ivory text-text-secondary')}>
                   {channel.channel} · {channel.hasErrors?(labels['distribution.channel_error']||'Attention'):(labels['distribution.channel_ok']||'Healthy')}
                 </span>)}
-            {hasChannelError?<span className="sr-only">Channel attention required</span>:null}
+            {hasChannelError?<span className="sr-only">{labels['distribution.channel_attention_required']}</span>:null}
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export default function DistributionPolicyTable({
             <select disabled={!canManage} value={p.inventorySource}
               onChange={e=>patch(row.id,{inventorySource:e.target.value,supplyOrganizationId:e.target.value==='managed'?null:p.supplyOrganizationId})}
               className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-10 text-text-ink">
-              <option value="managed">managed</option><option value="partner">partner</option>
+              <option value="managed">{labels['distribution.source.managed']}</option><option value="partner">{labels['distribution.source.partner']}</option>
             </select>
           </label>
 

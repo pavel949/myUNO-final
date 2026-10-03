@@ -1,0 +1,79 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { prisma } from '@/lib/prisma';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
+import { getMCManagedUnits } from '@/modules/projects';
+import PreventiveMaintenanceForm from '@/components/ops/PreventiveMaintenanceForm';
+
+export const dynamic='force-dynamic';
+
+export default async function MaintenanceWorkspace({searchParams}:{searchParams?:{spaceId?:string}}){
+  const user=await getCurrentUser();
+  if(!user)redirect('/login?next=/ops/maintenance');
+  const spaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';
+  if(!spaceId)redirect('/ops/spaces');
+
+  const membership=user.isAdmin?null:await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
+  if(!user.isAdmin&&!membership?.active)redirect('/ops/spaces');
+
+  const [space,spaceUnitIds,staffProjectIds]=await Promise.all([
+    prisma.operatingSpace.findUnique({where:{id:spaceId},select:{id:true,name:true,status:true}}),
+    getOperatingSpaceUnitIds(prisma,spaceId),
+    getDepartmentProjectIds(user,['maintenance','housekeeping','front_desk','reservations']),
+  ]);
+  if(!space||space.status!=='active')redirect('/ops/spaces');
+
+  let authorizedUnitIds=spaceUnitIds;
+  if(!user.isAdmin){
+    const mcIds=new Set<string>();
+    for(const scope of getMCProjectScopes(user)){
+      const managed=await getMCManagedUnits(prisma,user.identityId,scope.projectId,scope.organizationId);
+      for(const unit of managed)mcIds.add(unit.id);
+    }
+    authorizedUnitIds=(await prisma.unit.findMany({
+      where:{
+        id:{in:spaceUnitIds},
+        OR:[
+          ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
+          ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
+        ],
+      },
+      select:{id:true},
+    })).map(unit=>unit.id);
+  }
+  if(!authorizedUnitIds.length)redirect('/ops/spaces');
+
+  const [units,teams,members,plans,tasks]=await Promise.all([
+    prisma.unit.findMany({
+      where:{id:{in:authorizedUnitIds}},
+      select:{id:true,name:true,project:{select:{name:true}}},
+      orderBy:[{project:{name:'asc'}},{name:'asc'}],
+    }),
+    prisma.operatingTeam.findMany({where:{operatingSpaceId:spaceId,active:true},select:{id:true,name:true},orderBy:{name:'asc'}}),
+    prisma.operatingSpaceMember.findMany({where:{operatingSpaceId:spaceId,active:true},select:{identity:{select:{id:true,firstName:true,lastName:true}}},orderBy:{identity:{firstName:'asc'}}}),
+    prisma.preventiveMaintenancePlan.findMany({
+      where:{operatingSpaceId:spaceId},
+      include:{unit:{select:{name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
+      orderBy:[{active:'desc'},{nextDueAt:'asc'}],
+    }),
+    prisma.operationalTask.findMany({
+      where:{
+        operatingSpaceId:spaceId,
+        unitId:{in:authorizedUnitIds},
+        taskType:{in:['maintenance_followup','preventive_maintenance','utilities','pool','garden','pest_control']},
+        status:{in:['planned','assigned','in_progress','inspected','blocked']},
+      },
+      include:{unit:{select:{name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
+      orderBy:{dueAt:'asc'},
+    }),
+  ]);
+
+  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32"><div className="mx-auto max-w-7xl space-y-20">
+    <header><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-andaman">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold">Maintenance</h1><p className="mt-6 text-body text-text-secondary">Open work and recurring preventive plans in this operating space.</p></header>
+    <PreventiveMaintenanceForm operatingSpaceId={spaceId} units={units} teams={teams} members={members}/>
+    <section><h2 className="font-display text-heading-2 font-semibold">Open maintenance</h2><div className="mt-10 grid gap-10 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="rounded-xl border border-border-line bg-surface-paper p-16"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><h3 className="mt-4 font-display text-heading-3 font-semibold">{task.title||task.taskType.replace(/_/g,' ')}</h3><p className="mt-6 text-small text-text-secondary">{task.unit.name} · {task.status.replace(/_/g,' ')} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
+    <section><h2 className="font-display text-heading-2 font-semibold">Preventive plans</h2><div className="mt-10 overflow-hidden rounded-xl border border-border-line bg-surface-paper">{plans.map(plan=><article key={plan.id} className="grid gap-8 border-b border-border-line p-16 last:border-0 md:grid-cols-4"><div><p className="font-semibold">{plan.title}</p><p className="text-small text-text-secondary">{plan.unit?plan.unit.project.name+' · '+plan.unit.name:'All scoped homes'}</p></div><div><p className="text-small text-text-secondary">Frequency</p><p>{plan.frequencyDays} days</p></div><div><p className="text-small text-text-secondary">Next due</p><p>{plan.nextDueAt.toISOString().slice(0,10)}</p></div><div><p className="text-small text-text-secondary">Assigned</p><p>{plan.assignedTeam?.name||[plan.assignee?.firstName,plan.assignee?.lastName].filter(Boolean).join(' ')||'—'}</p></div></article>)}</div></section>
+  </div></main>;
+}

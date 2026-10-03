@@ -115,3 +115,12 @@ ALTER TABLE "operational_task"
     ("estimated_cost_satang" IS NULL OR "estimated_cost_satang" >= 0)
     AND ("actual_cost_satang" IS NULL OR "actual_cost_satang" >= 0)
   );
+
+
+-- New operational support tables are server-only; existing operational_task
+-- RLS remains unchanged and continues to protect canonical task records.
+ALTER TABLE "operational_task_media" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "preventive_maintenance_plan" ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE "operational_task_media" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "preventive_maintenance_plan" FROM PUBLIC, anon, authenticated;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmOpportunityType } from '@prisma/client';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { createOpportunity, getPipeline } from '@/modules/crm';
 
 export async function GET() {

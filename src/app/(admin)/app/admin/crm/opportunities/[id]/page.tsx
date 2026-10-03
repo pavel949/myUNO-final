@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { getLabels } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { OpportunityDetailClient } from '@/app/components/crm/OpportunityDetailClient';

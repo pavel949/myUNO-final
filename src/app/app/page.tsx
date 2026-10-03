@@ -1,3 +1,4 @@
+import { listAgentWorkspaces } from '@/modules/agents';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
@@ -44,6 +45,7 @@ export default async function AppLandingPage() {
 
   const landing = resolveLanding({
     isAdmin: user.isAdmin,
+    hasAgentWorkspace: (await listAgentWorkspaces(prisma,user.identityId)).length > 0,
     roles: user.roles.map((r) => r.role as RoleType),
     activeBookingId,
     ownerUnitId,

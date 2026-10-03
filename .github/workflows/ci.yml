@@ -141,3 +141,26 @@ jobs:
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
         run: npm run build
 
+
+      - name: Install Chromium for agent portal verification
+        run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+
+      - name: Verify production agent portal in Chromium
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://127.0.0.1:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: node scripts/verify-agent-portal.mjs
+        timeout-minutes: 5
+
+      - name: Upload agent portal runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-portal-verification
+          path: artifacts/agent/
+          if-no-files-found: ignore
+          retention-days: 14

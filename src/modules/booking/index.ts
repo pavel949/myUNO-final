@@ -95,3 +95,9 @@ export {
   type EffectiveStayOffer,
   type PricingTraceNight,
 } from './revenue-tariff-engine';
+
+export {
+  createReservationGroup,
+  attachBookingToReservationGroup,
+  removeBookingFromReservationGroup,
+} from './reservation-group.service';

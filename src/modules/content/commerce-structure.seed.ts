@@ -449,5 +449,43 @@ export const COMMERCE_STRUCTURE_KEYS = [
   { key: 'homes.type.villa', namespace: 'homes', description: 'Homes villa type', en: 'Villa', ru: 'Вилла', th: 'วิลล่า', status: 'needs_review' as const },
   { key: 'homes.type.townhouse', namespace: 'homes', description: 'Homes townhouse type', en: 'Townhouse', ru: 'Таунхаус', th: 'ทาวน์เฮาส์', status: 'needs_review' as const },
 
+  // MC workspace v2
+  { key: 'mc.workspace.operate', namespace: 'mc', description: 'MC primary operate navigation group', en: 'Operate', ru: 'Операции', th: 'ดำเนินงาน', status: 'needs_review' as const },
+  { key: 'mc.workspace.manage', namespace: 'mc', description: 'MC management navigation group', en: 'Manage', ru: 'Управление', th: 'บริหาร', status: 'needs_review' as const },
+  { key: 'mc.workspace.reservations', namespace: 'mc', description: 'MC reservation workspace', en: 'Reservations', ru: 'Бронирования', th: 'การจอง', status: 'needs_review' as const },
+  { key: 'mc.workspace.reservation_views', namespace: 'mc', description: 'MC reservation segmented-control label', en: 'Reservation views', ru: 'Режимы бронирований', th: 'มุมมองการจอง', status: 'needs_review' as const },
+  { key: 'mc.workspace.requests', namespace: 'mc', description: 'MC reservation requests view', en: 'Requests', ru: 'Запросы', th: 'คำขอ', status: 'needs_review' as const },
+  { key: 'mc.workspace.all_reservations', namespace: 'mc', description: 'MC all reservations view', en: 'All', ru: 'Все', th: 'ทั้งหมด', status: 'needs_review' as const },
+  { key: 'mc.workspace.guests', namespace: 'mc', description: 'MC guest workspace', en: 'Guests', ru: 'Гости', th: 'ผู้เข้าพัก', status: 'needs_review' as const },
+  { key: 'mc.workspace.tasks', namespace: 'mc', description: 'MC readiness task workspace', en: 'Tasks', ru: 'Задачи', th: 'งาน', status: 'needs_review' as const },
+  { key: 'mc.workspace.issues', namespace: 'mc', description: 'MC issue workspace', en: 'Issues', ru: 'Проблемы', th: 'ปัญหา', status: 'needs_review' as const },
+  { key: 'mc.workspace.revenue_finance', namespace: 'mc', description: 'MC revenue and finance workspace', en: 'Revenue & finance', ru: 'Доходы и финансы', th: 'รายได้และการเงิน', status: 'needs_review' as const },
+  { key: 'mc.workspace.health', namespace: 'mc', description: 'MC operational health kicker', en: 'Operational health', ru: 'Операционное состояние', th: 'สถานะการดำเนินงาน', status: 'needs_review' as const },
+  { key: 'mc.workspace.health_title', namespace: 'mc', description: 'MC operational health title', en: 'What may block today', ru: 'Что может заблокировать работу сегодня', th: 'สิ่งที่อาจขัดขวางงานวันนี้', status: 'needs_review' as const },
+  { key: 'mc.workspace.open_tasks', namespace: 'mc', description: 'MC readiness tasks CTA', en: 'Open readiness tasks', ru: 'Открыть задачи готовности', th: 'เปิดงานความพร้อม', status: 'needs_review' as const },
+  { key: 'mc.workspace.health_payments', namespace: 'mc', description: 'MC payment health', en: 'Payments', ru: 'Платежи', th: 'การชำระเงิน', status: 'needs_review' as const },
+  { key: 'mc.workspace.health_channels', namespace: 'mc', description: 'MC channel health', en: 'Channels', ru: 'Каналы', th: 'ช่องทาง', status: 'needs_review' as const },
+  { key: 'mc.workspace.health_issues', namespace: 'mc', description: 'MC issue health', en: 'Issues', ru: 'Проблемы', th: 'ปัญหา', status: 'needs_review' as const },
+  { key: 'mc.workspace.health_services', namespace: 'mc', description: 'MC service health', en: 'Service orders', ru: 'Заказы сервисов', th: 'คำสั่งบริการ', status: 'needs_review' as const },
+  { key: 'mc.workspace.action_required', namespace: 'mc', description: 'MC action-required state', en: 'Action required', ru: 'Требуется действие', th: 'ต้องดำเนินการ', status: 'needs_review' as const },
+  { key: 'mc.workspace.review', namespace: 'mc', description: 'MC review state', en: 'Review', ru: 'Проверить', th: 'ตรวจสอบ', status: 'needs_review' as const },
+  { key: 'mc.workspace.clear', namespace: 'mc', description: 'MC clear state', en: 'Clear', ru: 'В порядке', th: 'ปกติ', status: 'needs_review' as const },
+
+  // Homepage Vacation Rental product block
+  { key: 'landing.vacation.kicker', namespace: 'landing', description: 'Vacation Rental block kicker', en: 'VACATION RENTALS', ru: 'VACATION RENTALS', th: 'VACATION RENTALS', status: 'needs_review' as const },
+  { key: 'landing.vacation.title', namespace: 'landing', description: 'Vacation Rental block title', en: 'One rental product. Two sides of the same home.', ru: 'Один арендный продукт. Две стороны одного объекта.', th: 'ผลิตภัณฑ์ให้เช่าหนึ่งระบบ สองด้านของบ้านเดียวกัน', status: 'needs_review' as const },
+  { key: 'landing.vacation.body', namespace: 'landing', description: 'Vacation Rental block body', en: 'Guests discover and book verified stays. Owners activate the same property for short stays with pricing, distribution, operations and reporting connected end to end.', ru: 'Гости находят и бронируют проверенное жильё. Собственники активируют тот же объект для краткосрочной аренды с единой системой цен, дистрибуции, операций и отчётности.', th: 'ผู้เข้าพักค้นหาและจองที่พักที่ตรวจสอบแล้ว เจ้าของเปิดใช้ทรัพย์สินเดียวกันสำหรับการเข้าพักระยะสั้น โดยเชื่อมราคา ช่องทาง การดำเนินงาน และรายงานแบบครบวงจร', status: 'needs_review' as const },
+  { key: 'landing.vacation.guest_title', namespace: 'landing', description: 'Vacation Rental guest card title', en: 'For guests', ru: 'Для гостей', th: 'สำหรับผู้เข้าพัก', status: 'needs_review' as const },
+  { key: 'landing.vacation.guest_body', namespace: 'landing', description: 'Vacation Rental guest card body', en: 'Search verified stays, then keep booking, arrival, Home Space and services connected through the whole trip.', ru: 'Найдите проверенное жильё и ведите бронирование, заезд, Home Space и сервисы в одном путешествии.', th: 'ค้นหาที่พักที่ตรวจสอบแล้ว และเชื่อมการจอง การมาถึง Home Space และบริการตลอดทั้งทริป', status: 'needs_review' as const },
+  { key: 'landing.vacation.guest_cta', namespace: 'landing', description: 'Vacation Rental guest CTA', en: 'Explore vacation stays', ru: 'Найти жильё для отдыха', th: 'ค้นหาที่พักสำหรับวันหยุด', status: 'needs_review' as const },
+  { key: 'landing.vacation.owner_title', namespace: 'landing', description: 'Vacation Rental owner card title', en: 'For owners', ru: 'Для собственников', th: 'สำหรับเจ้าของ', status: 'needs_review' as const },
+  { key: 'landing.vacation.owner_body', namespace: 'landing', description: 'Vacation Rental owner card body', en: 'Start with your property and income goal. myUNO resolves eligibility, operating model, pricing, distribution and reporting.', ru: 'Начните с объекта и вашей цели по доходу. myUNO определит допустимость, модель управления, цены, дистрибуцию и отчётность.', th: 'เริ่มจากทรัพย์สินและเป้าหมายรายได้ myUNO จะกำหนดสิทธิ์ รูปแบบการดำเนินงาน ราคา ช่องทาง และรายงาน', status: 'needs_review' as const },
+  { key: 'landing.vacation.owner_cta', namespace: 'landing', description: 'Vacation Rental owner CTA', en: 'Activate my home', ru: 'Активировать мой объект', th: 'เปิดใช้งานบ้านของฉัน', status: 'needs_review' as const },
+  { key: 'landing.vacation.proof_property', namespace: 'landing', description: 'Vacation Rental proof: canonical property', en: 'One canonical property record', ru: 'Одна каноническая карточка объекта', th: 'ข้อมูลทรัพย์สินหลักหนึ่งชุด', status: 'needs_review' as const },
+  { key: 'landing.vacation.proof_eligibility', namespace: 'landing', description: 'Vacation Rental proof: eligibility', en: 'Verified responsibility and eligibility', ru: 'Проверенные ответственность и допустимость', th: 'ตรวจสอบความรับผิดชอบและสิทธิ์', status: 'needs_review' as const },
+  { key: 'landing.vacation.proof_journey', namespace: 'landing', description: 'Vacation Rental proof: guest journey', en: 'Trip Hub, Home Space and services', ru: 'Trip Hub, Home Space и сервисы', th: 'Trip Hub, Home Space และบริการ', status: 'needs_review' as const },
+  { key: 'landing.vacation.proof_owner', namespace: 'landing', description: 'Vacation Rental proof: owner reporting', en: 'Owner reporting and operating evidence', ru: 'Отчётность собственника и операционные подтверждения', th: 'รายงานเจ้าของและหลักฐานการดำเนินงาน', status: 'needs_review' as const },
+
+
   { key: 'sell.advisor_cta', namespace: 'sell', description: 'Sell advisor review CTA', en: 'Request an advisor review', ru: 'Запросить консультацию', th: 'ขอคำปรึกษาจากที่ปรึกษา', status: 'needs_review' as const },
 ];

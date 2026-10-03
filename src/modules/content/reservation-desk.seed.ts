@@ -29,4 +29,6 @@ export const RESERVATION_DESK_KEYS = [
   {key:'reservations.group_title',namespace:'reservations',description:'Group title placeholder',en:'Group title',ru:'Название группы',th:'ชื่อกลุ่ม',status:'needs_review' as const},
   {key:'reservations.group_failed',namespace:'reservations',description:'Group creation error',en:'Group creation failed',ru:'Не удалось создать группу',th:'สร้างกลุ่มไม่สำเร็จ',status:'needs_review' as const},
   {key:'reservations.all',namespace:'reservations',description:'All statuses filter',en:'All',ru:'Все',th:'ทั้งหมด',status:'needs_review' as const},
+  {key:'reservations.paid',namespace:'reservations',description:'Paid amount label',en:'Paid',ru:'Оплачено',th:'ชำระแล้ว',status:'needs_review' as const},
+  {key:'reservations.group_summary',namespace:'reservations',description:'Reservation group summary',en:'{count} reservations · ฿{amount}',ru:'Бронирований: {count} · ฿{amount}',th:'{count} การจอง · ฿{amount}',status:'needs_review' as const},
 ] as const;

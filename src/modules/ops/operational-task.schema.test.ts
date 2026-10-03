@@ -15,9 +15,9 @@ describe('OperationalTask schema relations', () => {
 
   it('links OperationalTask to project, unit, booking and assignee', () => {
     const task = schema.match(/model OperationalTask \{[\s\S]*?\n\}/)?.[0] ?? '';
-    expect(task).toContain('project  Project');
-    expect(task).toContain('unit     Unit');
-    expect(task).toContain('booking  Booking?');
-    expect(task).toContain('assignee Identity? @relation("operationalTaskAssignee"');
+    expect(task).toMatch(/project\s+Project\s+@relation/);
+    expect(task).toMatch(/unit\s+Unit\s+@relation/);
+    expect(task).toMatch(/booking\s+Booking\?\s+@relation/);
+    expect(task).toMatch(/assignee\s+Identity\?\s+@relation\("operationalTaskAssignee"/);
   });
 });

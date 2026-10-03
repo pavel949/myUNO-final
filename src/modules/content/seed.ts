@@ -32,6 +32,7 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
   // Actions
   {
     key: 'common.action.save',

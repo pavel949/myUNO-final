@@ -4,8 +4,8 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function PreventiveMaintenanceForm({
-  operatingSpaceId,units,teams,members,
-}:{operatingSpaceId:string;units:Array<{id:string;name:string;project:{name:string}}>;teams:Array<{id:string;name:string}>;members:Array<{identity:{id:string;firstName:string;lastName:string}}>;}){
+  operatingSpaceId,units,teams,members,labels,
+}:{operatingSpaceId:string;units:Array<{id:string;name:string;project:{name:string}}>;teams:Array<{id:string;name:string}>;members:Array<{identity:{id:string;firstName:string;lastName:string}}>;labels:Record<string,string>;}){
   const router=useRouter();const[busy,setBusy]=useState(false);const[error,setError]=useState('');
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy(true);setError('');
@@ -22,16 +22,16 @@ export default function PreventiveMaintenanceForm({
     event.currentTarget.reset();setBusy(false);router.refresh();
   }
   return <form onSubmit={submit} className="grid gap-10 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-2 xl:grid-cols-4">
-    <input required name="title" placeholder="Maintenance plan" className="h-44 rounded-md border border-border-line px-12"/>
-    <select name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">All authorized homes</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
+    <input required name="title" placeholder={labels['staff.maintenance.plan_title']} className="h-44 rounded-md border border-border-line px-12"/>
+    <select name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.maintenance.all_homes']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
     <input required name="frequencyDays" type="number" min="1" defaultValue="90" className="h-44 rounded-md border border-border-line px-12"/>
     <input required name="nextDueAt" type="datetime-local" className="h-44 rounded-md border border-border-line px-12"/>
-    <select name="assignedTeamId" className="h-44 rounded-md border border-border-line px-12"><option value="">Team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
-    <select name="assignedIdentityId" className="h-44 rounded-md border border-border-line px-12"><option value="">Employee</option>{members.map(m=><option key={m.identity.id} value={m.identity.id}>{m.identity.firstName} {m.identity.lastName}</option>)}</select>
-    <input name="estimatedCostThb" type="number" min="0" placeholder="Estimated cost THB" className="h-44 rounded-md border border-border-line px-12"/>
-    <label className="flex items-center gap-8 text-small text-text-secondary"><input name="blocksInventory" type="checkbox"/>Blocks inventory</label>
-    <textarea name="description" placeholder="Description" className="min-h-24 rounded-md border border-border-line p-12 md:col-span-2 xl:col-span-3"/>
-    <button disabled={busy} className="h-44 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{busy?'Creating…':'Create plan'}</button>
+    <select name="assignedTeamId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.maintenance.team']}</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+    <select name="assignedIdentityId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.maintenance.employee']}</option>{members.map(m=><option key={m.identity.id} value={m.identity.id}>{m.identity.firstName} {m.identity.lastName}</option>)}</select>
+    <input name="estimatedCostThb" type="number" min="0" placeholder={labels['staff.maintenance.estimated_cost']} className="h-44 rounded-md border border-border-line px-12"/>
+    <label className="flex items-center gap-8 text-small text-text-secondary"><input name="blocksInventory" type="checkbox"/>{labels['staff.maintenance.blocks_inventory']}</label>
+    <textarea name="description" placeholder={labels['staff.maintenance.description']} className="min-h-24 rounded-md border border-border-line p-12 md:col-span-2 xl:col-span-3"/>
+    <button disabled={busy} className="h-44 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{busy?labels['staff.maintenance.creating']:labels['staff.maintenance.create_plan']}</button>
     {error?<p role="alert" className="text-small text-red-700 md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }

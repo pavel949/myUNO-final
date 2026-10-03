@@ -55,9 +55,9 @@ CREATE UNIQUE INDEX "operational_task_media_operational_task_id_media_asset_id_k
 CREATE INDEX "operational_task_media_media_asset_id_idx"
   ON "operational_task_media"("media_asset_id");
 
-CREATE INDEX "preventive_maintenance_plan_operating_space_id_active_next_due_at_idx"
+CREATE INDEX "preventive_plan_space_active_due_idx"
   ON "preventive_maintenance_plan"("operating_space_id","active","next_due_at");
-CREATE INDEX "preventive_maintenance_plan_unit_id_active_next_due_at_idx"
+CREATE INDEX "preventive_plan_unit_active_due_idx"
   ON "preventive_maintenance_plan"("unit_id","active","next_due_at");
 
 ALTER TABLE "operational_task"

@@ -49,6 +49,9 @@ export async function GET(req: NextRequest) {
             name: true,
           },
         },
+        requestedInventoryCategory: {
+          select: { id: true, name: true },
+        },
         payments: {
           select: {
             id: true,
@@ -71,6 +74,11 @@ export async function GET(req: NextRequest) {
     const bookingsForClient = bookings.map((b) => ({
       ...b,
       totalThb: Math.round(b.totalThb / 100),
+      unit:
+        b.allocationStatus === 'category_reserved' && b.requestedInventoryCategory
+          ? { id: '', name: b.requestedInventoryCategory.name }
+          : b.unit,
+      allocationPending: b.allocationStatus === 'category_reserved',
     }));
 
     return NextResponse.json(

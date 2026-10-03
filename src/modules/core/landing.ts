@@ -14,6 +14,7 @@ import { RoleType } from '@prisma/client';
 
 export interface LandingContext {
   isAdmin: boolean;
+  hasAgentWorkspace?: boolean;
   roles: readonly RoleType[];
   /** A stay that is under way right now — checked in, or inside its dates. */
   activeBookingId?: string | null;
@@ -27,6 +28,7 @@ export interface Landing {
   reason:
     | 'active_stay'
     | 'admin'
+    | 'agent'
     | 'staff'
     | 'management_company'
     | 'juristic'
@@ -80,6 +82,8 @@ export function resolveLanding(context: LandingContext): Landing {
     return { path: '/app/admin', reason: 'admin' };
   }
 
+  if (context.hasAgentWorkspace && !context.roles.some(role => ['staff_ops','onsite_host','mc_member','juristic_member','provider_member'].includes(role))) return { path: '/agent', reason: 'agent' };
+
   const held = new Set(context.roles);
   for (const entry of PRECEDENCE) {
     if (held.has(entry.role)) {
@@ -117,6 +121,8 @@ export function availableSurfaces(context: LandingContext): Landing[] {
   if (context.isAdmin) {
     surfaces.push({ path: '/app/admin', reason: 'admin' });
   }
+
+  if (context.hasAgentWorkspace) surfaces.push({ path: '/agent', reason: 'agent' });
 
   const held = new Set(context.roles);
   const seen = new Set(surfaces.map((s) => s.path));

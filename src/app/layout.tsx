@@ -1,3 +1,5 @@
+import { listAgentWorkspaces } from '@/modules/agents';
+import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 // Self-hosted variable cuts (OFL). next/font/google fetches CSS from Google at
 // compile time; GitHub Actions then crashed when a font URL had no extension
@@ -19,6 +21,7 @@ import { getDestination } from '@/modules/destinations';
 const SURFACE_LABEL_KEYS = {
   active_stay: 'nav.stay',
   admin: 'nav.admin',
+  agent: 'nav.agent_portal',
   staff: 'nav.ops',
   management_company: 'nav.mc_portal',
   juristic: 'nav.juristic_portal',
@@ -95,6 +98,7 @@ export default async function RootLayout({
     'nav.mc_portal': 'MC portal',
     'nav.ops': 'Ops',
     'nav.admin': 'Admin',
+    'nav.agent_portal': 'Agent HomeSpace',
     'nav.account': 'Account',
     'nav.menu': 'Menu',
     'nav.more': 'More',
@@ -105,6 +109,7 @@ export default async function RootLayout({
   const roleLinks = user
     ? availableSurfaces({
         isAdmin: user.isAdmin,
+        hasAgentWorkspace: (await listAgentWorkspaces(prisma,user.identityId)).length > 0,
         roles: user.roles.map((r) => r.role as RoleType),
         activeBookingId,
       })
@@ -167,6 +172,7 @@ export default async function RootLayout({
           }
           labels={{
             stay: navLabels['nav.find_stay'],
+            agents: navLabels['nav.agent_portal'],
             monthly: navLabels['nav.monthly'],
             buy: navLabels['nav.buy'],
             homes: navLabels['nav.homes'],

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { NextRequest, NextResponse } from 'next/server';
 import { CrmLifecycleStage } from '@prisma/client';
 import { requireAdmin } from '@/app/libs/onboardingGuard';

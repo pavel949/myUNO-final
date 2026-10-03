@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { propertyDealJson } from '@/modules/crm/property-deal-serialization';
 import PropertyDealClient from '@/components/property/PropertyDealClient';

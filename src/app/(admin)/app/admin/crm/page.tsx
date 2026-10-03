@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { getLabels } from '@/lib/i18n';
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { getPipeline } from '@/modules/crm';
 import CrmPipelineClient from './pipeline-client';
 import CrmDashboardPanel from './crm-dashboard-panel';
@@ -19,6 +20,7 @@ export default async function CrmPage() {
   ]);
   const labels = await getLabels({
     'admin.crm.title': 'CRM & Pipeline',
+    'nav.agent_portal': 'Agent HomeSpace',
     'admin.crm.subtitle': 'One commercial memory from first inquiry through guest, buyer and owner.',
     'admin.crm.pipeline_breakdown': 'Pipeline breakdown',
     'admin.crm.next_action_overdue': 'Next action overdue',
@@ -86,6 +88,7 @@ export default async function CrmPage() {
         {labels['admin.crm.title']}
       </h1>
       <p className="text-body text-text-stone mb-24">{labels['admin.crm.subtitle']}</p>
+      <Link href="/app/admin/agent-partners" className="mb-24 block text-brand-andaman">{labels['nav.agent_portal']}</Link>
       <CrmDashboardPanel labels={labels} />
       <CrmLifecyclePanel labels={labels} />
       <CrmPipelineClient

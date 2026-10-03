@@ -44,6 +44,20 @@ const ROLES_SQL = join(root, 'scripts', 'sql', 'supabase-compat-roles.sql');
 
 /** Tables the security gate asserts are closed to the Data API. */
 const OPERATIONAL_TABLES = [
+  'organization_membership',
+  'crm_workspace',
+  'crm_contact_relationship',
+  'agent_introduction',
+  'agent_handover',
+  'agent_quote',
+  'agent_quote_version',
+  'agent_quote_share',
+  'agent_knowledge_article',
+  'agent_agreement_version',
+  'agent_commission',
+  'crm_opportunity',
+  'crm_activity',
+
   'service_quote_request',
   'service_quote_version',
   'booking_reschedule',

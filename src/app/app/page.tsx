@@ -1,3 +1,4 @@
+import { listAgentWorkspaces } from '@/modules/agents';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { RoleType } from '@prisma/client';
@@ -13,6 +14,7 @@ export const dynamic = 'force-dynamic';
 const reasonLabelKey = {
   active_stay: 'myuno.context.stay',
   admin: 'myuno.context.admin',
+  agent: 'nav.agent_portal',
   staff: 'myuno.context.operations',
   management_company: 'myuno.context.portfolio',
   juristic: 'myuno.context.residence',
@@ -47,6 +49,7 @@ export default async function MyUnoPage() {
 
   const surfaces = availableSurfaces({
     isAdmin: user.isAdmin,
+    hasAgentWorkspace: (await listAgentWorkspaces(prisma,user.identityId)).length > 0,
     roles: user.roles.map((role) => role.role as RoleType),
     activeBookingId,
     ownerUnitId,
@@ -54,6 +57,7 @@ export default async function MyUnoPage() {
 
   const labels = await getLabels({
     'myuno.kicker': 'MY UNO',
+    'nav.agent_portal': 'Agent HomeSpace',
     'myuno.title': 'Everything connected to you.',
     'myuno.subtitle': 'Trips, homes, orders, ownership and work in one relationship hub. Only the parts relevant to you are shown.',
     'myuno.continue': 'Continue',

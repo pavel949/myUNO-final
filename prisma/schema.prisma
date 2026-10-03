@@ -74,6 +74,7 @@ enum OrganizationType {
   management_company
   juristic_person
   developer
+  brokerage
 }
 
 enum OrganizationStatus {
@@ -753,6 +754,17 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  organizationMemberships OrganizationMembership[]
+  agentContactRelationships CrmContactRelationship[] @relation("agentContactIdentity")
+  agentOwnedContacts CrmContactRelationship[] @relation("agentContactOwner")
+  agentIntroductions AgentIntroduction[] @relation("introducingAgent")
+  agentHandoversShared AgentHandover[] @relation("agentHandoverSharer")
+  agentHandoversCoordinated AgentHandover[] @relation("agentHandoverCoordinator")
+  agentQuotes AgentQuote[] @relation("agentQuoteCreator")
+  agentQuotesApproved AgentQuoteVersion[] @relation("agentQuoteApprover")
+  agentQuoteShares AgentQuoteShare[] @relation("agentQuoteShareCreator")
+  agentKnowledgeReviewed AgentKnowledgeArticle[] @relation("agentKnowledgeReviewer")
+  agentAgreementsApproved AgentAgreementVersion[] @relation("agentAgreementApprover")
   operatingSpaceMemberships OperatingSpaceMember[]
   operatingTeamMemberships OperatingTeamMember[]
   teamPermissions ProjectStaffPermission[]
@@ -1333,6 +1345,7 @@ model Refund {
 }
 
 model LedgerEntry {
+  agentCommission AgentCommission?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -1452,6 +1465,7 @@ model StatementLineItem {
 }
 
 model Payout {
+  agentCommission AgentCommission?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -1558,6 +1572,9 @@ model UnitEngagement {
 }
 
 model Organization {
+  memberships OrganizationMembership[]
+  crmWorkspace CrmWorkspace?
+  agentAgreements AgentAgreementVersion[]
   operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -2876,6 +2893,7 @@ model PropertyDeal {
 }
 
 model CrmOpportunity {
+  agentIntroduction AgentIntroduction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -2915,6 +2933,8 @@ model CrmOpportunity {
 }
 
 model CrmActivity {
+  workspaceId String? @map("workspace_id")
+  workspace CrmWorkspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -3225,6 +3245,7 @@ model Bed {
 }
 
 model CommercialOffering {
+  agentQuotes AgentQuote[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -3755,4 +3776,237 @@ model OperatingTeamMember {
   @@unique([operatingTeamId, identityId])
   @@index([identityId, active])
   @@map("operating_team_member")
+}
+
+enum AgentMembershipRole {
+  agent
+  manager
+}
+enum AgentMembershipStatus {
+  active
+  revoked
+}
+enum AgentQuoteStatus {
+  draft
+  submitted
+  approved
+  revoked
+}
+enum AgentHandoverStatus {
+  queued
+  acknowledged
+  completed
+  declined
+}
+enum AgentKnowledgeStatus {
+  draft
+  published
+  withdrawn
+}
+
+model OrganizationMembership {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  organizationId String @map("organization_id")
+  identityId String @map("identity_id")
+  role AgentMembershipRole @default(agent)
+  status AgentMembershipStatus @default(active)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Restrict)
+  @@unique([organizationId, identityId])
+  @@index([identityId, status])
+  @@map("organization_membership")
+}
+
+model CrmWorkspace {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  organizationId String @unique @map("organization_id")
+  active Boolean @default(true)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  contacts CrmContactRelationship[]
+  activities CrmActivity[]
+  quotes AgentQuote[]
+  introductions AgentIntroduction[]
+  @@map("crm_workspace")
+}
+
+model CrmContactRelationship {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  workspaceId String @map("workspace_id")
+  identityId String @map("identity_id")
+  ownerIdentityId String @map("owner_identity_id")
+  displayName String @map("display_name")
+  email String? @db.Citext
+  phone String?
+  telegram String?
+  privateNotes String @default("") @map("private_notes")
+  workspace CrmWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  identity Identity @relation("agentContactIdentity", fields: [identityId], references: [id], onDelete: Restrict)
+  owner Identity @relation("agentContactOwner", fields: [ownerIdentityId], references: [id], onDelete: Restrict)
+  opportunities AgentIntroduction[]
+  @@unique([workspaceId, identityId])
+  @@index([workspaceId, ownerIdentityId])
+  @@index([email])
+  @@index([phone])
+  @@index([telegram])
+  @@map("crm_contact_relationship")
+}
+
+/// One canonical CRM opportunity, with immutable introduction attribution.
+/// Existence does not assert an approved commission or exclusivity agreement.
+model AgentIntroduction {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  workspaceId String @map("workspace_id")
+  relationshipId String @map("relationship_id")
+  opportunityId String @unique @map("opportunity_id")
+  agentIdentityId String @map("agent_identity_id")
+  workspace CrmWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  relationship CrmContactRelationship @relation(fields: [relationshipId], references: [id], onDelete: Restrict)
+  opportunity CrmOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  agent Identity @relation("introducingAgent", fields: [agentIdentityId], references: [id], onDelete: Restrict)
+  commission AgentCommission?
+  handover AgentHandover?
+  quotes AgentQuote[]
+  @@index([workspaceId, agentIdentityId, createdAt])
+  @@map("agent_introduction")
+}
+
+model AgentHandover {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  introductionId String @unique @map("introduction_id")
+  request String
+  /// Only the fields the agent explicitly shared; never private notes.
+  contactSnapshot Json @map("contact_snapshot") @db.JsonB
+  sharedByIdentityId String @map("shared_by_identity_id")
+  consentConfirmedAt DateTime @map("consent_confirmed_at")
+  status AgentHandoverStatus @default(queued)
+  coordinatorIdentityId String? @map("coordinator_identity_id")
+  introduction AgentIntroduction @relation(fields: [introductionId], references: [id], onDelete: Restrict)
+  sharedBy Identity @relation("agentHandoverSharer", fields: [sharedByIdentityId], references: [id], onDelete: Restrict)
+  coordinator Identity? @relation("agentHandoverCoordinator", fields: [coordinatorIdentityId], references: [id], onDelete: Restrict)
+  @@index([status, createdAt])
+  @@map("agent_handover")
+}
+
+/// Agent-prepared client quote. Publication requires MyUNO approval.
+/// Monetary values are integer satang; agent remuneration never appears here.
+model AgentQuote {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  workspaceId String @map("workspace_id")
+  introductionId String @map("introduction_id")
+  offeringId String @map("offering_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  title String
+  amountSatang BigInt @map("amount_satang")
+  feeSatang BigInt @map("fee_satang")
+  depositSatang BigInt @map("deposit_satang")
+  currency String @default("THB")
+  terms String
+  expiresAt DateTime @map("expires_at")
+  status AgentQuoteStatus @default(draft)
+  workspace CrmWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  introduction AgentIntroduction @relation(fields: [introductionId], references: [id], onDelete: Restrict)
+  offering CommercialOffering @relation(fields: [offeringId], references: [id], onDelete: Restrict)
+  createdBy Identity @relation("agentQuoteCreator", fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  version AgentQuoteVersion?
+  @@index([workspaceId, status, createdAt])
+  @@map("agent_quote")
+}
+
+/// Immutable customer-safe snapshot at approval. No relationship/contact IDs,
+/// owner data, legal evidence, internal costs or commission are serialized.
+model AgentQuoteVersion {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  quoteId String @unique @map("quote_id")
+  approvedByIdentityId String @map("approved_by_identity_id")
+  snapshot Json @db.JsonB
+  quote AgentQuote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  approvedBy Identity @relation("agentQuoteApprover", fields: [approvedByIdentityId], references: [id], onDelete: Restrict)
+  shares AgentQuoteShare[]
+  @@map("agent_quote_version")
+}
+
+model AgentQuoteShare {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  versionId String @map("version_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  tokenHash String @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  version AgentQuoteVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  createdBy Identity @relation("agentQuoteShareCreator", fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  @@index([versionId, expiresAt])
+  @@map("agent_quote_share")
+}
+
+model AgentKnowledgeArticle {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  locale String
+  title String
+  body String
+  sourceUrl String @map("source_url")
+  status AgentKnowledgeStatus @default(draft)
+  publishedAt DateTime? @map("published_at")
+  expiresAt DateTime @map("expires_at")
+  reviewedByIdentityId String? @map("reviewed_by_identity_id")
+  reviewedBy Identity? @relation("agentKnowledgeReviewer", fields: [reviewedByIdentityId], references: [id], onDelete: Restrict)
+  @@index([status, locale, expiresAt])
+  @@map("agent_knowledge_article")
+}
+
+enum AgentCommissionStatus {
+  pending
+  due
+  paid
+  disputed
+}
+model AgentAgreementVersion {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  organizationId String @map("organization_id")
+  version Int
+  terms String
+  /// No default rates or commercial milestones are invented by this module.
+  dueMilestone String @map("due_milestone")
+  deadlineBasis String @map("deadline_basis")
+  approvedAt DateTime @map("approved_at")
+  approvedByIdentityId String @map("approved_by_identity_id")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  approvedBy Identity @relation("agentAgreementApprover", fields: [approvedByIdentityId], references: [id], onDelete: Restrict)
+  commissions AgentCommission[]
+  @@unique([organizationId, version])
+  @@map("agent_agreement_version")
+}
+model AgentCommission {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  introductionId String @unique @map("introduction_id")
+  agreementVersionId String @map("agreement_version_id")
+  amountSatang BigInt @map("amount_satang")
+  currency String @default("THB")
+  status AgentCommissionStatus @default(pending)
+  dueAt DateTime? @map("due_at")
+  targetAt DateTime? @map("target_at")
+  deadlineAt DateTime? @map("deadline_at")
+  /// Existing finance remains the settlement authority.
+  ledgerEntryId String? @unique @map("ledger_entry_id")
+  payoutId String? @unique @map("payout_id")
+  introduction AgentIntroduction @relation(fields: [introductionId], references: [id], onDelete: Restrict)
+  agreementVersion AgentAgreementVersion @relation(fields: [agreementVersionId], references: [id], onDelete: Restrict)
+  ledgerEntry LedgerEntry? @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  payout Payout? @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  @@index([status, deadlineAt])
+  @@map("agent_commission")
 }

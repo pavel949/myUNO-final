@@ -24,6 +24,7 @@ export interface NavbarUser {
 }
 
 export interface NavbarLabels {
+  agents?: string;
   stay: string;
   monthly: string;
   buy: string;
@@ -178,6 +179,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <div className="mt-4 border-t border-border-line pt-12">
                 <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
               </div>
+              {labels.agents?<Link href="/partners/agents" className={navLinkClass(pathname, '/partners/agents')}>{labels.agents}</Link>:null}
               <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
             </div>
           </details>
@@ -300,6 +302,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             </div>
           )}
 
+          {labels.agents?<Link href="/partners/agents" onClick={closeMenu} className="mt-16 block text-brand-andaman">{labels.agents}</Link>:null}
           <div className="mt-24">
             <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
           </div>

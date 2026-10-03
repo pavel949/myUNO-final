@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { internalCrm as prisma } from '@/modules/agents/internal-crm';
 import { propertyDealJson } from '@/modules/crm/property-deal-serialization';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import {

@@ -3259,6 +3259,7 @@ model CommercialOffering {
   unit            Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   channelMappings ChannelMapping[]
   distributionPolicy OfferingDistributionPolicy?
+  agentQuoteItems AgentQuoteItem[]
   propertyDeals PropertyDeal[]
 
   @@unique([unitId, offeringType], map: "commercial_offering_unit_type_unique")
@@ -3914,6 +3915,7 @@ model AgentQuoteItem {
 
   quoteId    String   @map("quote_id")
   unitId     String   @map("unit_id")
+  offeringId String?  @map("offering_id")
   startDate  DateTime @map("start_date")
   endDate    DateTime @map("end_date")
   adults     Int      @default(1)
@@ -3925,8 +3927,10 @@ model AgentQuoteItem {
 
   quote AgentQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  offering CommercialOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
 
   @@index([quoteId])
+  @@index([offeringId])
   @@index([unitId, startDate, endDate])
   @@map("agent_quote_item")
 }

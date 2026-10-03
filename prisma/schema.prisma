@@ -3896,6 +3896,7 @@ model AgentQuote {
   availabilityState    String  @default("request") @map("availability_state")
   validUntil           DateTime? @map("valid_until")
   priceBreakdown       Json?   @map("price_breakdown")
+  distributionSnapshot Json?   @map("distribution_snapshot")
   publicNote           String? @map("public_note")
 
   agent Identity @relation(fields: [agentIdentityId], references: [id], onDelete: Cascade)

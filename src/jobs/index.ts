@@ -21,5 +21,6 @@ export {
   runMetricsRollupJob,
   runGuestLifecycleJob,
   runServiceOrderExpiryJob,
+  runPreventiveMaintenanceJob,
 } from './dispatch';
 export type { JobDispatchResult } from './dispatch';

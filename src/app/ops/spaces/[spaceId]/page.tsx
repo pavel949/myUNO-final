@@ -93,6 +93,7 @@ export default async function OperatingSpaceHome({
     'staff.space.calendar': 'Calendar',
     'staff.space.reservations': 'Reservations',
     'staff.space.housekeeping': 'Housekeeping & tasks',
+    'staff.space.maintenance': 'Maintenance',
     'staff.space.pricing': 'Pricing',
     'staff.space.team': 'Team',
     'staff.space.finance': 'Finance & reports',
@@ -112,7 +113,8 @@ export default async function OperatingSpaceHome({
   const links = [
     [labels['staff.space.calendar'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.reservations'], '/ops/stays?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.housekeeping'], '/ops/tasks?spaceId=' + encodeURIComponent(space.id)],
+    [labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)],
+    [labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.team'], '/ops/team?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)],

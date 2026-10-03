@@ -70,7 +70,7 @@ export default async function OperatingSpacesPage() {
           {spaces.map((space) => (
             <article key={space.id} className="rounded-xl border border-border-line bg-surface-paper p-20">
               <p className="text-small font-semibold text-brand-andaman">{space.key}</p>
-              <h2 className="mt-6 font-display text-heading-2 font-semibold text-text-ink">{space.name}</h2>
+              <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{space.name}</h2>
               <div className="mt-16 grid grid-cols-2 gap-8">
                 <div className="rounded-md bg-surface-ivory p-12">
                   <p className="font-display text-heading-3 font-bold text-text-ink">{space._count.units}</p>

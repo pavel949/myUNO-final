@@ -66,6 +66,7 @@ export async function GET(
         minNights: true,
         instantBook: true,
         cancellationPolicyKey: true,
+        coverMediaId: true,
         status: true,
         assetStatus: true,
         commercialOfferings: { select: { offeringType: true, status: true } },

@@ -71,11 +71,17 @@ export function eligiblePublicHomeIntents(input: {
   return result;
 }
 
-export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeIntent, unitId?: string): Promise<PublicCommercialHome[]> {
+export async function listPublicCommercialHomes(
+  db: PrismaClient,
+  intent?: HomeIntent,
+  unitId?: string,
+  projectId?: string,
+): Promise<PublicCommercialHome[]> {
   const sourceExcluded = new Set(await allExcludedSourceControlledUnitIds(db));
   const rows = await db.unit.findMany({
     where: {
       ...(unitId ? { id: unitId } : {}),
+      ...(projectId ? { projectId } : {}),
       status: 'live', assetStatus: { not: 'suspended' },
       project: { status: 'live' },
       commercialOfferings: { some: { status: 'active', offeringType: { in: kinds } } },
@@ -113,7 +119,7 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-    take: unitId ? 1 : 200,
+    take: unitId ? 1 : projectId ? 100 : 200,
   });
   const now = new Date();
   return rows.flatMap(row => {

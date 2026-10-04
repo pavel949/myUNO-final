@@ -1,37 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { OperationalTaskType } from '@prisma/client';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import {
   createOperationalTask,
   hasOperatingSpaceCapability,
 } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
-
-async function hasLegacyUnitAuthority(
-  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
-  projectId: string,
-  unitId: string,
-) {
-  if (user.isAdmin) return true;
-  const staffProjectIds = await getDepartmentProjectIds(user, [
-    'housekeeping', 'front_desk', 'maintenance', 'guest_care', 'reservations',
-  ]);
-  if (staffProjectIds.includes(projectId)) return true;
-
-  const scopes = getMCProjectScopes(user).filter((scope) => scope.projectId === projectId);
-  for (const scope of scopes) {
-    const managed = await getMCManagedUnits(
-      prisma,
-      user.identityId,
-      scope.projectId,
-      scope.organizationId,
-    );
-    if (managed.some((unit) => unit.id === unitId)) return true;
-  }
-  return false;
-}
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -65,7 +40,12 @@ export async function POST(request: NextRequest) {
     });
     if (!unit) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 
-    if (!(await hasLegacyUnitAuthority(user, unit.projectId, unit.id))) {
+    const authorizedUnits = await getAuthorizedOperationalUnitIds(
+      user,
+      [unit.id],
+      ['housekeeping','front_desk','maintenance','guest_care','reservations'],
+    );
+    if (!user.isAdmin && !authorizedUnits.includes(unit.id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

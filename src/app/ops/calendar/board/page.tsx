@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds, getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { getMCManagedUnits } from '@/modules/projects';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
@@ -11,7 +11,7 @@ import type { CalendarEntry } from '@/modules/booking/calendar-projection';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { computeCanonicalCalendarRates } from '@/modules/core';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, getUnitReadinessMap } from '@/modules/ops';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, getUnitReadinessMap, hasOperatingSpaceCapability } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
@@ -41,16 +41,33 @@ export default async function UnifiedStayCalendarPage({
   const spaceMembership = requestedSpaceId && !user.isAdmin
     ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
     : null;
-  if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
+  if (requestedSpaceId && !user.isAdmin) {
+    if (!spaceMembership?.active) redirect('/ops/spaces');
+    if (!(await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'view_calendar'))) {
+      redirect('/ops/spaces/' + encodeURIComponent(requestedSpaceId));
+    }
+  }
   const spaceUnitIds = requestedSpaceId
     ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
+    : [];
+  const authorizedSpaceUnitIds = requestedSpaceId
+    ? await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['reservations','front_desk','housekeeping','maintenance','guest_care','pricing'],
+      )
     : [];
   const requestedProjectId = searchParams?.projectId;
   const requestedOrganizationId = searchParams?.organizationId;
   // Explicit mc=1 keeps a dual-role user inside the management-company
   // authorization boundary even when viewing all of their managed projects.
+  const hasStaffAssignment = user.roles.some((assignment) =>
+    ['staff_ops','onsite_host'].includes(assignment.role)
+  );
   const mcMode = !user.isAdmin && (
-    searchParams?.mc === '1' || Boolean(requestedOrganizationId) || staffProjectIds.length === 0
+    searchParams?.mc === '1' ||
+    Boolean(requestedOrganizationId) ||
+    (!hasStaffAssignment && getMCProjectScopes(user).length > 0)
   );
   // MC project roles alone are NOT unit authorization: every physical unit
   // must also be covered by the matching active management engagement.
@@ -82,9 +99,19 @@ export default async function UnifiedStayCalendarPage({
     : [];
   const managedIds = Array.from(new Set(managedUnitLists.flat().map((unit) => unit.id)));
   const mcProjectIds = Array.from(new Set(mcScopes.map((scope) => scope.projectId)));
-  const projectWhere = user.isAdmin ? {} : mcMode
-    ? { id: { in: mcProjectIds } }
-    : { id: { in: staffProjectIds } };
+  const spaceProjectIds = requestedSpaceId && authorizedSpaceUnitIds.length
+    ? Array.from(new Set((await prisma.unit.findMany({
+        where: { id: { in: authorizedSpaceUnitIds } },
+        select: { projectId: true },
+      })).map((unit) => unit.projectId)))
+    : [];
+  const projectWhere = user.isAdmin
+    ? requestedSpaceId && spaceProjectIds.length ? { id: { in: spaceProjectIds } } : {}
+    : requestedSpaceId
+      ? { id: { in: spaceProjectIds } }
+      : mcMode
+        ? { id: { in: mcProjectIds } }
+        : { id: { in: staffProjectIds } };
   const [projects, sourceExcludedUnitIds] = await Promise.all([
     prisma.project.findMany({
       where: projectWhere, select: { id: true, name: true }, orderBy: { name: 'asc' },
@@ -109,11 +136,7 @@ export default async function UnifiedStayCalendarPage({
   const unitWhere = {
     status: { not: 'offboarded' as const },
     ...(requestedSpaceId
-      ? user.isAdmin
-        ? { id: { in: spaceUnitIds } }
-        : mcMode
-          ? { id: { in: spaceUnitIds.filter((id) => managedIds.includes(id)) } }
-          : { id: { in: spaceUnitIds }, projectId: { in: staffProjectIds } }
+      ? { id: { in: user.isAdmin ? spaceUnitIds : authorizedSpaceUnitIds } }
       : mcMode
         ? { id: { in: managedIds } }
         : !user.isAdmin

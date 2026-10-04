@@ -191,6 +191,7 @@ export async function getAuthorizedOperationalUnitIds(
   user: CurrentUser,
   candidateUnitIds: readonly string[],
   departments: readonly string[] = [],
+  operatingSpaceId?: string,
 ): Promise<string[]> {
   const uniqueCandidates = Array.from(new Set(candidateUnitIds.filter(Boolean)));
   if (!uniqueCandidates.length) return [];
@@ -247,7 +248,36 @@ export async function getAuthorizedOperationalUnitIds(
     }
   }
 
-  return uniqueCandidates.filter((unitId) => exactStaffUnitIds.has(unitId));
+  let authorized = uniqueCandidates.filter((unitId) => exactStaffUnitIds.has(unitId));
+
+  if (operatingSpaceId) {
+    const membership = await prisma.operatingSpaceMember.findUnique({
+      where: {
+        operatingSpaceId_identityId: {
+          operatingSpaceId,
+          identityId: user.identityId,
+        },
+      },
+      select: { active: true },
+    });
+    if (membership?.active) {
+      const explicitAssignments = await prisma.operatingSpaceMemberUnit.findMany({
+        where: {
+          operatingSpaceId,
+          identityId: user.identityId,
+          active: true,
+          unitId: { in: uniqueCandidates },
+        },
+        select: { unitId: true },
+      });
+      if (explicitAssignments.length) {
+        const explicit = new Set(explicitAssignments.map((row) => row.unitId));
+        authorized = authorized.filter((unitId) => explicit.has(unitId));
+      }
+    }
+  }
+
+  return authorized;
 }
 
 export async function getDepartmentProjectIds(

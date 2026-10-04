@@ -68,6 +68,7 @@ async function notifyOpsNewBooking(
 
   opsRecipients.delete(booking.guestIdentityId);
   mcRecipients.delete(booking.guestIdentityId);
+  for (const identityId of opsRecipients) mcRecipients.delete(identityId);
 
   const opsBookingUrl = `${baseUrl}/ops/stays/${encodeURIComponent(booking.id)}`;
   const mcBookingUrl = `${baseUrl}/mc/properties/${encodeURIComponent(booking.unitId)}?tab=reservations`;

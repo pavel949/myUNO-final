@@ -54,11 +54,13 @@ export async function POST(
       return NextResponse.json(
         { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }
-
-    if (access.isStaff && !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'manage_front_desk'))) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
       );
+    }
+    if (
+      access.isStaff &&
+      !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'manage_front_desk'))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // The transition itself belongs to the booking module, not to this route.

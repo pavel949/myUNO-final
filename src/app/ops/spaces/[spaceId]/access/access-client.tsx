@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 type UnitRow={id:string;name:string;project:{id:string;name:string}};
 type Member={
@@ -26,14 +26,14 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
   const[teamName,setTeamName]=useState('');
   const[teamType,setTeamType]=useState('operations');
 
-  const load=async()=>{
+  const load=useCallback(async()=>{
     setError('');
     const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{cache:'no-store'});
     const body=await response.json().catch(()=>null);
     if(!response.ok){setError(body?.error||labels['staff.space_access.error']);return;}
     setData(body as Payload);
-  };
-  useEffect(()=>{void load();},[spaceId]);
+  },[spaceId,labels]);
+  useEffect(()=>{void load();},[load]);
 
   const allUnitIds=useMemo(()=>data?.units.map(unit=>unit.id)||[],[data]);
   const toggle=(list:string[],value:string,setter:(next:string[])=>void)=>

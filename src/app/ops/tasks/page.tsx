@@ -76,6 +76,7 @@ export default async function OperationalTasksPage({
         user,
         spaceUnitIds,
         ['housekeeping','front_desk','maintenance','guest_care','reservations'],
+        requestedSpaceId,
       )
     : spaceUnitIds;
   if (requestedSpaceId && !user.isAdmin && !authorizedSpaceUnitIds.length) redirect('/ops/spaces');

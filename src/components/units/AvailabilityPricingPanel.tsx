@@ -42,9 +42,11 @@ type Labels = Record<string, string>;
 export default function AvailabilityPricingPanel({
   unitId,
   labels,
+  initialDate,
 }: {
   unitId: string;
   labels: Labels;
+  initialDate?: string;
 }) {
   const [blocks, setBlocks] = useState<BlockRow[] | null>(null);
   const [rules, setRules] = useState<RuleRow[] | null>(null);
@@ -193,6 +195,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="startDate"
               type="date"
+              defaultValue={initialDate || ''}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -304,6 +307,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="startDate"
               type="date"
+              defaultValue={initialDate || ''}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />

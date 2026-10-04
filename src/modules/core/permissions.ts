@@ -96,6 +96,7 @@ export const PERMISSIONS: PermissionEntry[] = [
   { action: 'units:edit_listing', role: 'mc_member', access: 'allow', scope: 'their_units' },
 
   { action: 'units:manage_availability_and_pricing', role: 'staff_ops', access: 'allow' },
+  { action: 'units:manage_availability_and_pricing', role: 'onsite_host', access: 'allow' },
   { action: 'units:manage_availability_and_pricing', role: 'owner', access: 'read', scope: 'own_units' },
   { action: 'units:manage_availability_and_pricing', role: 'mc_member', access: 'allow', scope: 'their_units' },
 

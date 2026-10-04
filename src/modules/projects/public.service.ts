@@ -195,13 +195,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     areaLabelKey: p.areaLabelKey,
     areaName: p.area?.nameKey ? (publicCopy[p.area.nameKey] || null) : null,
     descriptionKey: p.descriptionKey,
-    coverUrl: projectMedia.ready
-      ? p.galleryMedia.find(
-          (link) =>
-            link.mediaId === p.coverMediaId &&
-            projectMedia.urls.includes(link.media.storageKey)
-        )?.media.storageKey ?? projectMedia.urls[0] ?? null
-      : null,
+    coverUrl: projectMedia.ready ? projectMedia.coverUrl : null,
     liveUnitCount: eligibleUnits.length,
     fromNightlyThb: eligibleUnits.length
       ? Math.min(
@@ -297,9 +291,7 @@ export async function getPublicProjectBySlug(
     amenityKeys: project.amenityKeys,
     areaNameKey: project.area?.nameKey ?? null,
     areaDescriptionKey: project.area?.descriptionKey ?? null,
-    coverUrl: projectMedia.ready
-      ? project.galleryMedia.find((g) => g.mediaId === project.coverMediaId)?.media.storageKey ?? projectMedia.urls[0] ?? null
-      : null,
+    coverUrl: projectMedia.ready ? projectMedia.coverUrl : null,
     galleryUrls: projectMedia.urls,
     units: eligibleUnits.map(({ unit: u, media }) => ({
       id: u.id,
@@ -312,7 +304,7 @@ export async function getPublicProjectBySlug(
       sizeSqm: u.sizeSqm,
       baseNightlyThb: u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb,
       instantBook: u.instantBook,
-      coverUrl: media.urls[0] ?? null,
+      coverUrl: media.coverUrl,
       galleryUrls: media.urls,
       photoScope: media.photoScope === 'room_type' ? 'room_type' : 'exact_unit',
     })),
@@ -381,7 +373,7 @@ async function buildPublicCategories(
         unitCount: units.length,
         fromNightlyThb: category.baseNightlyThb,
         monthlyFromThb: null,
-        coverUrl: category.galleryMedia.find((row) => row.mediaId === category.coverMediaId)?.media.storageKey ?? categoryMedia.urls[0] ?? null,
+        coverUrl: categoryMedia.coverUrl,
         galleryUrls: categoryMedia.urls,
       }];
     })
@@ -503,7 +495,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     sizeSqm: unit.sizeSqm,
     baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
     instantBook: unit.instantBook,
-    coverUrl: media.urls[0] ?? null,
+    coverUrl: media.coverUrl,
     galleryUrls: media.urls,
     photoScope: media.photoScope === 'room_type' ? 'room_type' : 'exact_unit',
     descriptionKey: unit.descriptionKey,

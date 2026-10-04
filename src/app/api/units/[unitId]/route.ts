@@ -191,10 +191,21 @@ export async function GET(
       coverMedia: _coverMedia,
       media: _media,
       commercialOfferings: _commercialOfferings,
+      inventoryCategory,
       project,
       ...rest
     } = unit;
-    const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
+    const publicUnit = {
+      ...rest,
+      inventoryCategory: inventoryCategory
+        ? {
+            id: inventoryCategory.id,
+            categoryKey: inventoryCategory.categoryKey,
+            name: inventoryCategory.name,
+          }
+        : null,
+      project: { id: project.id, name: project.name },
+    };
     const coverUrl = mediaReadiness.urls.find((url) => {
       if (mediaReadiness.photoScope === 'exact_unit') {
         return unit.media.some(

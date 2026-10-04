@@ -1,7 +1,12 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  assessGalleryReadiness,
+  MIN_PUBLIC_GALLERY_PHOTOS,
+  RECOMMENDED_PUBLIC_GALLERY_PHOTOS,
+} from '@/modules/media/public-readiness';
 
 type Scope = 'project' | 'category' | 'unit';
 type Asset = { id: string; storageKey: string; mimeType: string; kind: string };
@@ -39,6 +44,27 @@ export default function ScopedGalleryEditor({
   const [message, setMessage] = useState<string | null>(null);
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
   const galleryUrl = endpoint(target);
+  const readiness = useMemo(
+    () =>
+      assessGalleryReadiness({
+        coverMediaId: cover,
+        links: items.map((item, index) => ({
+          mediaId: item.mediaId,
+          sort: index,
+          media: {
+            ...item.media,
+            encrypted: false,
+          },
+        })),
+      }),
+    [cover, items]
+  );
+  const scopeExplanation =
+    target.scope === 'project'
+      ? 'Shared property spaces: facade, grounds, lobby and common facilities.'
+      : target.scope === 'category'
+        ? 'Representative room or villa type: layout, bedroom arrangement and type-level character.'
+        : 'Exact physical home: its real view, fit-out, rooms and distinguishing details.';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,6 +141,41 @@ export default function ScopedGalleryEditor({
           </select>
         </label>
       </div>
+    </div>
+    <div className="rounded-lg border border-border-line bg-surface-paper p-16">
+      <div className="flex flex-wrap items-start justify-between gap-12">
+        <div>
+          <p className="text-small font-semibold text-text-ink">{scopeExplanation}</p>
+          <p className="mt-4 text-small text-text-secondary">
+            Public minimum: {MIN_PUBLIC_GALLERY_PHOTOS} valid photos + a cover from this gallery.
+            Recommended: {RECOMMENDED_PUBLIC_GALLERY_PHOTOS}+ photos.
+          </p>
+        </div>
+        <span
+          className={
+            readiness.ready
+              ? 'rounded-full bg-state-success-soft px-12 py-6 text-small font-semibold text-state-success'
+              : 'rounded-full bg-state-warning-soft px-12 py-6 text-small font-semibold text-state-warning'
+          }
+        >
+          {readiness.ready ? 'Ready for public use' : 'Not media-ready'}
+        </span>
+      </div>
+      {!readiness.ready ? (
+        <p className="mt-8 text-small text-text-secondary">
+          {readiness.photoCount < MIN_PUBLIC_GALLERY_PHOTOS
+            ? `Add ${MIN_PUBLIC_GALLERY_PHOTOS - readiness.photoCount} more valid photo(s). `
+            : ''}
+          {!readiness.coverReady ? 'Choose a cover from this gallery. ' : ''}
+          {readiness.invalidMediaIds.length > 0
+            ? 'Replace unsupported or non-public media assets.'
+            : ''}
+        </p>
+      ) : readiness.photoCount < RECOMMENDED_PUBLIC_GALLERY_PHOTOS ? (
+        <p className="mt-8 text-small text-text-secondary">
+          Ready, but add {RECOMMENDED_PUBLIC_GALLERY_PHOTOS - readiness.photoCount} more photo(s) for a stronger listing.
+        </p>
+      ) : null}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-12">
       <div><h3 className="font-semibold">{target.name} · {items.length} {labels['admin.gallery.photos']}</h3>

@@ -71,7 +71,7 @@ export default async function MCPropertyWorkspace({
   const recentStart = new Date(now); recentStart.setDate(recentStart.getDate() - 30);
   const futureEnd = new Date(now); futureEnd.setDate(futureEnd.getDate() + 90);
 
-  const [readinessMap, channelMap, bookings, tasks, tickets, blocks, rules, statements, ledger, audit, calendarLabels] = await Promise.all([
+  const [readinessMap, channelMap, bookings, tasks, tickets, statements, ledger, audit, calendarLabels] = await Promise.all([
     getUnitReadinessMap(prisma, [unit.id]),
     getChannelHealthForUnits(prisma, [unit.id]),
     prisma.booking.findMany({
@@ -96,16 +96,6 @@ export default async function MCPropertyWorkspace({
       where: { unitId: unit.id, status: { in: ['open','acknowledged','in_progress','waiting_reporter'] } },
       select: { id: true, title: true, priority: true, status: true, createdAt: true },
       orderBy: { createdAt: 'desc' }, take: 20,
-    }),
-    prisma.blockedDate.findMany({
-      where: { unitId: unit.id, endDate: { gte: now } },
-      select: { id: true, startDate: true, endDate: true, reason: true, note: true },
-      orderBy: { startDate: 'asc' }, take: 20,
-    }),
-    prisma.pricingRule.findMany({
-      where: { unitId: unit.id, endDate: { gte: now } },
-      select: { id: true, startDate: true, endDate: true, nightlyThb: true, label: true, minNightsOverride: true },
-      orderBy: { startDate: 'asc' }, take: 20,
     }),
     prisma.ownerStatement.findMany({
       where: { unitId: unit.id },

@@ -60,13 +60,13 @@ const stateClass: Record<CalendarState, string> = {
   conflict: 'bg-red-600 hover:bg-red-700 text-white',
 };
 const stateLabel: Record<CalendarState, string> = {
-  free:'Available', request:'Request only', hold:'Hold', confirmed:'Reserved',
-  in_house:'In house', past:'Past stay', owner:'Owner', maintenance:'Maintenance',
-  external:'Imported', blocked:'Blocked', conflict:'Conflict',
+  free:'Available', request:'Booking request', hold:'Payment hold', confirmed:'Confirmed booking',
+  in_house:'Guest in house', past:'Past stay', owner:'Owner hold', maintenance:'Maintenance',
+  external:'OTA/imported', blocked:'Blocked', conflict:'Conflict',
 };
 const shortLabel: Record<CalendarState, string> = {
-  free:'', request:'?', hold:'H', confirmed:'●', in_house:'IN', past:'·',
-  owner:'O', maintenance:'M', external:'EXT', blocked:'×', conflict:'!',
+  free:'', request:'REQ', hold:'PAY', confirmed:'BKD', in_house:'IN', past:'·',
+  owner:'OWN', maintenance:'MNT', external:'OTA', blocked:'×', conflict:'!',
 };
 
 export default function UnifiedStayCalendar(props: Props) {
@@ -395,7 +395,19 @@ export default function UnifiedStayCalendar(props: Props) {
           </div>
           <button type="button" onClick={()=>setSelected(null)} aria-label="Close details" className="rounded-md border border-border-line px-12 py-8">×</button>
         </div>
-        <p className="my-12 text-small font-semibold text-text-secondary">{stateLabel[selected.cell.state]}</p>
+        <div className="my-12 flex flex-wrap items-center gap-8">
+          <span className={'rounded-full px-10 py-4 text-small font-semibold '+stateClass[selected.cell.state]}>
+            {stateLabel[selected.cell.state]}
+          </span>
+          <span className={selected.cell.blocking
+            ? 'rounded-full bg-slate-900 px-10 py-4 text-small font-semibold text-white'
+            : 'rounded-full bg-emerald-50 px-10 py-4 text-small font-semibold text-emerald-900'}>
+            {selected.cell.blocking ? 'Dates locked' : 'Dates still sellable'}
+          </span>
+        </div>
+        {selected.cell.state==='request' && <p className="mb-12 text-small text-text-secondary">A guest has requested these dates, but inventory remains available until the request is approved.</p>}
+        {selected.cell.state==='hold' && <p className="mb-12 text-small text-text-secondary">Payment is pending. These dates are temporarily held and cannot be sold to another guest.</p>}
+        {selected.cell.state==='confirmed' && <p className="mb-12 text-small text-text-secondary">Payment/confirmation is complete. These dates are reserved for this booking.</p>}
         <div className="mb-12 grid gap-8 sm:grid-cols-3">
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.readiness']}</span>
@@ -425,11 +437,13 @@ export default function UnifiedStayCalendar(props: Props) {
         {selected.cell.entryIds.length===0 ? <p className="text-small text-text-secondary">{props.labels['staff.unified_calendar.no_entries']}</p>
           : <ul className="space-y-8">{selected.cell.entryIds.map((id)=>{
             const item=props.entries[id];
-            return item ? <li key={id} className="rounded-md bg-surface-ivory p-12 text-small text-text-ink">
-              <span className="font-semibold">{item.label}</span>
-              <span className="ml-8 text-text-secondary">{item.channel||item.status}</span>
+            return item ? <li key={id} className="rounded-md border border-border-line bg-surface-ivory p-12 text-small text-text-ink">
+              <div className="flex flex-wrap items-center justify-between gap-8">
+                <span className="font-semibold">{item.label}</span>
+                <span className="rounded-full bg-surface-paper px-8 py-4 text-[11px] font-semibold text-text-secondary">{(item.channel||item.status).replace(/_/g,' ')}</span>
+              </div>
               {item.kind === 'booking' ?
-                <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
+                <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">Open booking details →</Link> :
                 <Link href={props.mode==='mc'
                   ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({tab:'calendar',date:selected.date}).toString()
                   : '/ops/calendar/'+encodeURIComponent(inspect.id)}

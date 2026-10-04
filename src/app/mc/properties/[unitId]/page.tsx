@@ -140,7 +140,10 @@ export default async function MCPropertyWorkspace({
   const activeEngagement = unit.engagements[0];
   const currentBookings = bookings.filter(b => b.startDate <= now && b.endDate > now && !['cancelled','declined'].includes(b.status));
   const upcomingBookings = bookings.filter(b => b.startDate > now && !['cancelled','declined'].includes(b.status));
-  const pastBookings = bookings.filter(b => b.endDate <= now || ['checked_out','completed'].includes(b.status));
+  const pastBookings = bookings.filter(
+    b => !['cancelled','declined'].includes(b.status) &&
+      (b.endDate <= now || ['checked_out','completed'].includes(b.status))
+  );
   const cancelledBookings = bookings.filter(b => ['cancelled','declined'].includes(b.status));
   const bookingGroups = [
     ['Current',currentBookings],

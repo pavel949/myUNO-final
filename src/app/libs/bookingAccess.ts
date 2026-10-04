@@ -1,5 +1,5 @@
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasStaffUnitAccess } from '@/app/libs/projectScope';
 
 /** Minimal booking fields needed for role-scoped access checks (doc 03). */
 export interface BookingScope {
@@ -30,7 +30,7 @@ export async function resolveBookingAccess(
   const isOwner = Boolean(
     booking.ownerIdentityId && booking.ownerIdentityId === user.identityId
   );
-  const isStaff = hasProjectStaffAccess(user, booking.projectId);
+  const isStaff = hasStaffUnitAccess(user, { projectId: booking.projectId, unitId: booking.unitId });
   const isMc =
     !isStaff &&
     (await hasManagedUnitMcAccess(user, {

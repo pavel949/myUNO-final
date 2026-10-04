@@ -877,7 +877,7 @@ export function MCDashboardClient({
                 </div>
               </div>
 
-              <div id="managed-properties" className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20 scroll-mt-24">
+              <div id="managed-properties" className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20 scroll-mt-44">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.portfolio']}</p>
@@ -1058,7 +1058,7 @@ export function MCDashboardClient({
                           </td>
                           <td className="p-16 text-body text-text-ink tabular-nums">
                             <p className="font-semibold">฿{booking.totalThb.toLocaleString()}</p>
-                            {booking.balanceDueThb > 0 && <p className="mt-2 text-caption text-state-warning">{labels['mc.bookings.due']} ฿{booking.balanceDueThb.toLocaleString()}</p>}
+                            {booking.balanceDueThb > 0 && <p className="mt-4 text-caption text-state-warning">{labels['mc.bookings.due']} ฿{booking.balanceDueThb.toLocaleString()}</p>}
                           </td>
                           <td className="p-16">
                             <span
@@ -1088,7 +1088,7 @@ export function MCDashboardClient({
                               </Link>
                             </div>
                             {bookingFeedback[booking.id] && (
-                              <p role={bookingFeedback[booking.id].kind === 'error' ? 'alert' : 'status'} className={`mt-6 text-caption ${bookingFeedback[booking.id].kind === 'error' ? 'text-state-error' : 'text-emerald-800'}`}>
+                              <p role={bookingFeedback[booking.id].kind === 'error' ? 'alert' : 'status'} className={`mt-8 text-caption ${bookingFeedback[booking.id].kind === 'error' ? 'text-state-error' : 'text-emerald-800'}`}>
                                 {bookingFeedback[booking.id].message}
                               </p>
                             )}

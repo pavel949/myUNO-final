@@ -6,6 +6,9 @@ import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getUnitReadinessMap } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
+import { getLabels } from '@/lib/i18n';
+import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
+import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +71,7 @@ export default async function MCPropertyWorkspace({
   const recentStart = new Date(now); recentStart.setDate(recentStart.getDate() - 30);
   const futureEnd = new Date(now); futureEnd.setDate(futureEnd.getDate() + 90);
 
-  const [readinessMap, channelMap, bookings, tasks, tickets, blocks, rules, statements, ledger, audit] = await Promise.all([
+  const [readinessMap, channelMap, bookings, tasks, tickets, blocks, rules, statements, ledger, audit, calendarLabels] = await Promise.all([
     getUnitReadinessMap(prisma, [unit.id]),
     getChannelHealthForUnits(prisma, [unit.id]),
     prisma.booking.findMany({
@@ -119,6 +122,7 @@ export default async function MCPropertyWorkspace({
       select: { id: true, action: true, entityType: true, at: true, actor: { select: { firstName: true, lastName: true } } },
       orderBy: { at: 'desc' }, take: 30,
     }),
+    getLabels(UNIT_CALENDAR_LABEL_KEYS),
   ]);
 
   const readiness = readinessMap[unit.id] ?? { state: 'ready', openTaskCount: 0 };
@@ -178,7 +182,7 @@ export default async function MCPropertyWorkspace({
             {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && tickets.length===0 && <p className={small}>No operational exceptions.</p>}
           </div></div>
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Quick actions</h2><div className="mt-12 grid gap-8 sm:grid-cols-2">
-            <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/mc/units/${unit.id}`}>Block dates / rate override →</Link>
+            <Link className="rounded-md border border-border-line p-12 font-semibold" href={tabHref(unit.id,'calendar',focusDate)}>Block dates / rate override →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/tasks?mc=1&unitId=${unit.id}`}>Open tasks →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={tabHref(unit.id,'reservations',focusDate)}>Reservations →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/units/${unit.id}/edit`}>Property & media →</Link>
@@ -186,18 +190,19 @@ export default async function MCPropertyWorkspace({
         </section>
       </div>}
 
-      {tab==='calendar' && <section className={card}>
-        <h2 className="font-display text-heading-2 font-semibold">Calendar & availability</h2>
-        <p className="mt-8 text-body text-text-secondary">The portfolio calendar remains the read projection. Availability blocks and one-off price changes write through the canonical unit actions.</p>
-        <div className="mt-16 flex flex-wrap gap-8">
-          <Link href={`/mc/calendar?projectId=${unit.projectId}&unitId=${unit.id}${focusDate?'&start='+focusDate:''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
-          <Link href={`/mc/units/${unit.id}`} className="rounded-md border border-border-line px-16 py-12 text-small font-semibold">Manage availability & pricing</Link>
-        </div>
-        <div className="mt-20 grid gap-12 md:grid-cols-2">
-          <div><h3 className="font-semibold">Upcoming blocks</h3><div className="mt-8 space-y-8">{blocks.length?blocks.map(b=><p key={b.id} className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.reason.replace(/_/g,' ')}{b.note?' · '+b.note:''}</p>):<p className={small}>No future blocks.</p>}</div></div>
-          <div><h3 className="font-semibold">Upcoming rate overrides</h3><div className="mt-8 space-y-8">{rules.length?rules.map(r=><p key={r.id} className={small}>{date(r.startDate)} → {date(r.endDate)} · {money(r.nightlyThb)}{r.minNightsOverride?' · min '+r.minNightsOverride+' nights':''}</p>):<p className={small}>No future overrides.</p>}</div></div>
-        </div>
-      </section>}
+      {tab==='calendar' && <div className="space-y-16">
+        <section className={card}>
+          <div className="flex flex-wrap items-start justify-between gap-12">
+            <div>
+              <h2 className="font-display text-heading-2 font-semibold">Calendar & availability</h2>
+              <p className="mt-8 text-body text-text-secondary">Confirmed stays and live payment holds lock inventory automatically. Manual closures are stored as canonical BlockedDate records.</p>
+              {focusDate && <p className="mt-8 text-small font-semibold text-brand-andaman">Selected date: {focusDate}</p>}
+            </div>
+            <Link href={`/mc/calendar?projectId=${unit.projectId}&unitId=${unit.id}${focusDate?'&start='+focusDate:''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
+          </div>
+        </section>
+        <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} />
+      </div>}
 
       {tab==='reservations' && <section className="space-y-12">
         <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/mc" className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
@@ -212,7 +217,7 @@ export default async function MCPropertyWorkspace({
         <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><div key={t.id} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {date(t.createdAt)}</p></div>):<p className={small}>No open issues.</p>}</div></section>
       </div>}
 
-      {tab==='rates' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Rates & restrictions</h2><p className="mt-8 text-body text-text-secondary">Category base rate remains canonical; unit rules are explicit overrides.</p><div className="mt-12 grid gap-8 md:grid-cols-3"><div><p className={small}>Category base</p><p className="font-semibold">{money(unit.inventoryCategory?.baseNightlyThb)}</p></div><div><p className={small}>Minimum stay</p><p className="font-semibold">{unit.minNights} nights</p></div><div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant':'Request'}</p></div></div><Link href={`/mc/units/${unit.id}`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link></section>}
+      {tab==='rates' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Rates & restrictions</h2><p className="mt-8 text-body text-text-secondary">Category base rate remains canonical; unit rules are explicit overrides.</p><div className="mt-12 grid gap-8 md:grid-cols-3"><div><p className={small}>Category base</p><p className="font-semibold">{money(unit.inventoryCategory?.baseNightlyThb)}</p></div><div><p className={small}>Minimum stay</p><p className="font-semibold">{unit.minNights} nights</p></div><div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant':'Request'}</p></div></div><Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link></section>}
 
       {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{row.channel}</p><p className={small}>{row.state.replace(/_/g,' ')} · A:{String(row.availability)} R:{String(row.rates)} I:{String(row.restrictions)}</p></div>):<p className={small}>No channel mapping. Inventory is manual-only.</p>}</div></section>}
 

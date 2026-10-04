@@ -35,6 +35,7 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
         user,
         spaceUnitIds,
         ['maintenance','housekeeping','front_desk','reservations'],
+        spaceId,
       );
   if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 

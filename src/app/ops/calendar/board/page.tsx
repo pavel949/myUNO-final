@@ -60,6 +60,7 @@ export default async function UnifiedStayCalendarPage({
         user,
         spaceUnitIds,
         ['reservations','front_desk','housekeeping','maintenance','guest_care','pricing'],
+        requestedSpaceId,
       )
     : [];
   const requestedProjectId = searchParams?.projectId;

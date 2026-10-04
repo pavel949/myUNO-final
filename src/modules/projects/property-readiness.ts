@@ -146,8 +146,17 @@ export async function getPropertyReadiness(
         links: category.galleryMedia,
       });
       if (!categoryMedia.ready) {
+        // Representative type media is mandatory when the project genuinely
+        // sells/allocates accommodation by category (hotel/resort/villa estate).
+        // A condominium may still use categories for taxonomy while selling
+        // exact units; missing type photography must not block an otherwise
+        // truthful exact-unit listing.
+        const categoryMediaSeverity: ReadinessSeverity =
+          ['hotel', 'resort', 'villa_estate'].includes(project.projectType ?? '')
+            ? 'blocker'
+            : 'warning';
         add(
-          'blocker',
+          categoryMediaSeverity,
           `category.media.${category.id}`,
           `${category.name}: ${publicMediaReadinessMessage(categoryMedia)}`,
           { href: `/app/admin/projects/${project.id}/media?select=category:${category.id}` }

@@ -395,7 +395,7 @@ export default function UnifiedStayCalendar(props: Props) {
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">
-          <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          <Link href={props.mode==='mc' ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({date:selected?.date||props.start,tab:'overview'}).toString() : '/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
           <Link

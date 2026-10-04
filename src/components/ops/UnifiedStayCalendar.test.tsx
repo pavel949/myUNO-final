@@ -93,14 +93,19 @@ const props = {
 };
 
 describe('one calendar surface with mode-specific safe actions', () => {
-  it('keeps MC occupancy in their authorized project/org scope and hides staff-only stay navigation', () => {
+  it('keeps MC occupancy in scope and opens the canonical booking from the calendar', () => {
     render(<UnifiedStayCalendar {...props} mode="mc" organizationId="org-a"/>);
     expect(screen.queryByRole('link', { name: /Stay operations/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc');
     fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/mc/properties/unit-a');
-    expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Open booking details/ }).getAttribute('href'))
+      .toBe('/ops/stays/booking-a');
+    expect(screen.getByText('Confirmed booking')).toBeTruthy();
+    expect(screen.getByText('Dates locked')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Manage block/ }).getAttribute('href'))
+      .toContain('tab=calendar');
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('mc=1');
     // Navigation stays on the same canonical board and retains organization.
@@ -116,7 +121,7 @@ describe('one calendar surface with mode-specific safe actions', () => {
     expect(screen.getByRole('link', { name: /Stay operations/ }).getAttribute('href'))
       .toBe('/ops/stays');
     fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
-    expect(screen.getByRole('link', { name: /Open canonical stay/ }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: /Open booking details/ }).getAttribute('href'))
       .toBe('/ops/stays/booking-a');
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/ops/calendar/unit-a');

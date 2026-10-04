@@ -42,6 +42,7 @@ export default async function OperatingSpacesPage() {
     'staff.spaces.team': 'team members',
     'staff.spaces.open': 'Open workspace →',
     'staff.spaces.empty': 'No operating spaces are assigned to this account.',
+    'staff.spaces.manage': 'Manage spaces',
   });
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
@@ -59,6 +60,9 @@ export default async function OperatingSpacesPage() {
         <p className="mt-8 max-w-2xl text-body text-text-secondary">
           {labels['staff.spaces.subtitle']}
         </p>
+        {user.isAdmin&&<Link href="/ops/spaces/manage" className="mt-12 inline-flex rounded-md border border-border-line bg-surface-paper px-14 py-8 text-small font-semibold text-brand-andaman">
+          {labels['staff.spaces.manage']} →
+        </Link>}
       </header>
 
       {!spaces.length ? (

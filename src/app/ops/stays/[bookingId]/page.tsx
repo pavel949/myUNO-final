@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess, hasProjectDepartmentAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectDepartmentAccess, hasStaffUnitAccess } from '@/app/libs/projectScope';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import StayActions from '@/components/ops/StayActions';
@@ -31,8 +32,21 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   if(!booking)notFound();
   const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
   const mcAccess=await hasManagedUnitMcAccess(user,{projectId:booking.projectId,unitId:booking.unitId});
-  if(!access.some(Boolean)&&!mcAccess)notFound();
-  const canSeeFinance=access[4]||mcAccess;
+  const exactStaffAccess=hasStaffUnitAccess(user,{projectId:booking.projectId,unitId:booking.unitId});
+  const [spaceReservations,spaceFrontDesk,spacePayment,spaceGuestComms]=exactStaffAccess
+    ? await Promise.all([
+        passesOperatingSpaceUnitCapability(user,booking.unitId,'manage_reservations'),
+        passesOperatingSpaceUnitCapability(user,booking.unitId,'manage_front_desk'),
+        passesOperatingSpaceUnitCapability(user,booking.unitId,'record_payment'),
+        passesOperatingSpaceUnitCapability(user,booking.unitId,'manage_guest_communications'),
+      ])
+    : [false,false,false,false];
+  const canManageReservations=access[0]||mcAccess||(exactStaffAccess&&spaceReservations);
+  const canManageFrontDesk=access[1]||mcAccess||(exactStaffAccess&&spaceFrontDesk);
+  const canRecordMoney=access[4]||mcAccess||(exactStaffAccess&&spacePayment);
+  const canCommunicate=access[3]||mcAccess||(exactStaffAccess&&spaceGuestComms);
+  if(!access.some(Boolean)&&!mcAccess&&!exactStaffAccess)notFound();
+  const canSeeFinance=access[4]||mcAccess||canRecordMoney;
   const canSeeInternalCrm=access.some(Boolean)&&!mcAccess;
   const [completedProjectStays,openGuestIssues]=await Promise.all([
     prisma.booking.count({
@@ -218,13 +232,13 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
             <div><p className="text-small text-text-secondary">{labels['staff.stay_360.open_issues']}</p><p className="font-semibold">{openGuestIssues}</p></div>
             {canSeeInternalCrm&&booking.guestIdentity.crmProfile&&<div><p className="text-small text-text-secondary">{labels['staff.stay_360.crm_stage']}</p><p className="font-semibold capitalize">{booking.guestIdentity.crmProfile.lifecycleStage.replace(/_/g,' ')}</p></div>}
           </div>
-          <Link href={`/ops/stays/${encodeURIComponent(booking.id)}/conversation`} className="mt-16 inline-flex rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">
+          {canCommunicate&&<Link href={`/ops/stays/${encodeURIComponent(booking.id)}/conversation`} className="mt-16 inline-flex rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">
             {labels['staff.stay_360.conversation']} →
-          </Link>
+          </Link>}
         </section>
         <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
           guestName={guestName} unitName={booking.unit.name}
-          canRecordMoney={canSeeFinance} canManageReservations={access[0]||mcAccess} canManageFrontDesk={access[1]||mcAccess}
+          canRecordMoney={canRecordMoney} canManageReservations={canManageReservations} canManageFrontDesk={canManageFrontDesk}
           labels={labels}/>
       </div>
       {canSeeFinance && <section className="rounded-lg border border-border-line bg-surface-paper p-20">

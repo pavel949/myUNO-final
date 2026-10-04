@@ -32,6 +32,7 @@ export default async function ProjectCategoryPage({
     'project_category.size': '{count} sqm',
     'project_category.view_unit': 'View exact home →',
     'project_category.gallery': 'Category gallery',
+    'project_category.representative_media': 'Representative room-type photos',
   });
 
   return <main className="min-h-screen bg-surface-ivory">
@@ -67,10 +68,15 @@ export default async function ProjectCategoryPage({
     <section className="mx-auto max-w-6xl px-24 py-40">
       <h2 className="mb-20 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.units']}</h2>
       <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
-        {units.map(unit => <Link key={unit.id} href={`/units/${unit.id}`} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card">
+        {units.map(unit => <Link key={unit.id} href={`/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card">
           {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="aspect-video bg-surface-muted"/>}
           <div className="p-16">
             <p className="text-small text-brand-andaman">{category.name}</p>
+            {unit.photoScope === 'room_type' ? (
+              <p className="mt-4 text-small text-text-secondary">
+                {labels['project_category.representative_media']}
+              </p>
+            ) : null}
             <h3 className="mt-4 font-semibold text-text-ink">{unit.name}</h3>
             <div className="mt-8 flex flex-wrap gap-8 text-small text-text-secondary">
               <span>{labels['project_category.guests'].replace('{count}',String(unit.maxGuests))}</span>

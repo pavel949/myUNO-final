@@ -5,6 +5,7 @@ import { recordCashPayment } from '@/modules/finance';
 import { notifyBookingConfirmed } from '@/app/libs/bookingConfirmed';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canOperateBookingAsStaff, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 /**
  * POST /api/bookings/[id]/record-cash-payment
@@ -74,6 +75,10 @@ export async function POST(
     });
     if (!canOperateBookingAsStaff(access)) {
       throw createPublicError('Access denied.', 403);
+    }
+
+    if (access.isStaff && !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'record_payment'))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     if (booking.status !== 'pending_payment') {

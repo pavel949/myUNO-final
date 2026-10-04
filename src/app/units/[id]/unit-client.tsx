@@ -26,6 +26,7 @@ interface Unit {
   projectId: string;
   inventoryCategory?: { id: string; categoryKey: string; name: string } | null;
   project?: { id: string; name: string };
+  photoScope?: 'exact_unit' | 'room_type';
 }
 
 interface PriceBreakdown {
@@ -47,6 +48,7 @@ export interface UnitDetailLabels {
   backToResults: string;
   onMyUno: string;
   showAllPhotos: string;
+  representativeMedia: string;
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
@@ -244,6 +246,11 @@ export default function UnitDetailClient({
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
             />
+            {unit.photoScope === 'room_type' ? (
+              <p className="mt-8 text-small text-text-secondary">
+                {labels.representativeMedia}
+              </p>
+            ) : null}
             <div className="mt-32">
               <h1 className="font-display text-display font-semibold text-text-ink mb-4">
                 {unit.name}

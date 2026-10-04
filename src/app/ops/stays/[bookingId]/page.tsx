@@ -210,6 +210,9 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
               {canSeeFinance && <span>{amount(change.priceDeltaThb)}</span>}
             </div>
             <p className="mt-2 text-caption text-text-secondary">{labels['staff.stay_360.changed_by']} {[change.actor.firstName,change.actor.lastName].filter(Boolean).join(' ')}</p>
+            {(change.oldValue!=null||change.newValue!=null) && <p className="mt-2 break-words text-caption text-text-secondary">
+              {change.oldValue!=null ? JSON.stringify(change.oldValue) : '—'} → {change.newValue!=null ? JSON.stringify(change.newValue) : '—'}
+            </p>}
           </li>)}</ul>}
       </section>
     </div>

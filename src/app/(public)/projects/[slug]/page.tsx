@@ -15,6 +15,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
+import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,6 +110,12 @@ export default async function ProjectLandingPage({
     'project_page.units.view': 'View home →',
     'project_page.units.representative_media': 'Representative room-type photos',
     'project_page.units.empty': 'No accommodation is currently available for online booking.',
+    'project_page.commercial.title': 'Ways to own or live here',
+    'project_page.commercial.body': 'Verified homes appear here only when the relevant listing authority and property media are ready.',
+    'project_page.commercial.buy': 'Homes for sale',
+    'project_page.commercial.rent': 'Long-term rentals',
+    'project_page.commercial.count': '{count} available',
+    'project_page.commercial.view': 'View available homes →',
     'project_page.owner_intake.title': 'Own or manage a home here?',
     'project_page.owner_intake.body': 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
     'project_page.owner_intake.cta': 'Add your home →',
@@ -161,7 +168,7 @@ export default async function ProjectLandingPage({
     ...serviceCategoryLabels,
   });
 
-  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine] = await Promise.all([
+  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = await Promise.all([
     resolveKey(project.areaLabelKey),
     resolveKey(project.descriptionKey),
     resolveKey(project.handbookKey),
@@ -169,7 +176,13 @@ export default async function ProjectLandingPage({
     resolveKey(`project.${project.slug}.shuttle_schedule`),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
     resolveKey(`project.${project.slug}.licence`),
+    listPublicCommercialHomes(prisma).catch(() => []),
   ]);
+  const projectCommercialHomes = allCommercialHomes.filter(
+    (home) => home.project.id === project.id
+  );
+  const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
+  const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
 
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
@@ -316,6 +329,53 @@ export default async function ProjectLandingPage({
           />
         </div>
       </section>}
+
+      {(buyHomeCount > 0 || rentHomeCount > 0) ? (
+        <section className="mx-auto max-w-6xl px-24 py-40">
+          <div className="rounded-2xl border border-border-line bg-surface-paper p-24 md:p-32">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink">
+              {labels['project_page.commercial.title']}
+            </h2>
+            <p className="mt-8 max-w-3xl text-body text-text-secondary">
+              {labels['project_page.commercial.body']}
+            </p>
+            <div className="mt-24 grid gap-16 md:grid-cols-2">
+              {buyHomeCount > 0 ? (
+                <Link
+                  href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
+                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                >
+                  <p className="font-display text-heading-3 font-semibold text-text-ink">
+                    {labels['project_page.commercial.buy']}
+                  </p>
+                  <p className="mt-8 text-small text-text-secondary">
+                    {labels['project_page.commercial.count'].replace('{count}', String(buyHomeCount))}
+                  </p>
+                  <p className="mt-12 text-small font-semibold text-brand-andaman">
+                    {labels['project_page.commercial.view']}
+                  </p>
+                </Link>
+              ) : null}
+              {rentHomeCount > 0 ? (
+                <Link
+                  href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
+                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                >
+                  <p className="font-display text-heading-3 font-semibold text-text-ink">
+                    {labels['project_page.commercial.rent']}
+                  </p>
+                  <p className="mt-8 text-small text-text-secondary">
+                    {labels['project_page.commercial.count'].replace('{count}', String(rentHomeCount))}
+                  </p>
+                  <p className="mt-12 text-small font-semibold text-brand-andaman">
+                    {labels['project_page.commercial.view']}
+                  </p>
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}

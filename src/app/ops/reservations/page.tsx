@@ -44,6 +44,7 @@ export default async function ReservationDesk({
         user,
         spaceUnitIds,
         ['reservations','front_desk','guest_care','finance'],
+        spaceId,
       );
   if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 

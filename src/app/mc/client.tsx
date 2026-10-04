@@ -970,13 +970,13 @@ export function MCDashboardClient({
               </div>
               <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
                 {[
-                  ['requests', labels['mc.workspace.requests']],
-                  ['pending_payment', labels['mc.workspace.pending_payments']],
-                  ['arrivals', labels['mc.workspace.arrivals']],
-                  ['in_house', labels['mc.workspace.in_house']],
-                  ['departures', labels['mc.workspace.departures']],
-                  ['all', labels['mc.workspace.all_reservations']],
-                ].map(([key, label]) => (
+                  ['requests', labels['mc.workspace.requests'], bookings.filter((booking) => booking.status === 'requested').length],
+                  ['pending_payment', labels['mc.workspace.pending_payments'], pendingPayments.length],
+                  ['arrivals', labels['mc.workspace.arrivals'], arrivalsToday],
+                  ['in_house', labels['mc.workspace.in_house'], inHouseNow],
+                  ['departures', labels['mc.workspace.departures'], departuresToday],
+                  ['all', labels['mc.workspace.all_reservations'], bookings.length],
+                ].map(([key, label, count]) => (
                   <button
                     key={key}
                     type="button"
@@ -987,7 +987,7 @@ export function MCDashboardClient({
                         : 'border-border-line bg-surface-paper text-text-secondary hover:text-text-ink'
                     }`}
                   >
-                    {label}
+                    {label} <span className="ml-4 tabular-nums">({count})</span>
                   </button>
                 ))}
               </div>
@@ -997,6 +997,33 @@ export function MCDashboardClient({
                 <p className="text-small text-state-error">{bookingError}</p>
               </div>
             )}
+            <div className="mb-12 grid gap-8 md:grid-cols-3">
+              <input
+                type="search"
+                value={bookingSearch}
+                onChange={(event) => setBookingSearch(event.target.value)}
+                placeholder={labels['mc.bookings.search']}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+              />
+              <select
+                value={bookingUnitFilter}
+                onChange={(event) => setBookingUnitFilter(event.target.value)}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+                aria-label={labels['mc.bookings.filter_unit']}
+              >
+                <option value="">{labels['mc.bookings.all_units']}</option>
+                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+              </select>
+              <select
+                value={bookingChannelFilter}
+                onChange={(event) => setBookingChannelFilter(event.target.value)}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+                aria-label={labels['mc.bookings.filter_channel']}
+              >
+                <option value="">{labels['mc.bookings.all_channels']}</option>
+                {bookingChannels.map((channel) => <option key={channel} value={channel}>{channel.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1015,7 +1042,17 @@ export function MCDashboardClient({
                     {visibleBookings.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center p-24 text-text-secondary">
-                          {labels['mc.bookings.empty']}
+                          {reservationView === 'requests'
+                            ? labels['mc.bookings.empty_requests']
+                            : reservationView === 'pending_payment'
+                              ? labels['mc.bookings.empty_payments']
+                              : reservationView === 'arrivals'
+                                ? labels['mc.bookings.empty_arrivals']
+                                : reservationView === 'in_house'
+                                  ? labels['mc.bookings.empty_in_house']
+                                  : reservationView === 'departures'
+                                    ? labels['mc.bookings.empty_departures']
+                                    : labels['mc.bookings.empty']}
                         </td>
                       </tr>
                     ) : (
@@ -1027,7 +1064,9 @@ export function MCDashboardClient({
                             </Link>
                           </td>
                           <td className="p-16 text-body text-text-ink">
-                            {booking.guestIdentity.firstName}
+                            <Link href={`/ops/stays/${encodeURIComponent(booking.id)}`} className="font-semibold hover:text-brand-andaman hover:underline">
+                              {booking.guestIdentity.firstName} {booking.guestIdentity.lastName || ''}
+                            </Link>
                             {booking.guests[0]?.nationality && (
                               <span className="text-small text-text-secondary ml-8">
                                 ({booking.guests[0].nationality})
@@ -1040,8 +1079,9 @@ export function MCDashboardClient({
                           <td className="p-16 text-small text-text-secondary">
                             {formatBangkokDate(booking.endDate)}
                           </td>
-                          <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
+                          <td className="p-16 text-body text-text-ink tabular-nums">
+                            <p className="font-semibold">฿{booking.totalThb.toLocaleString()}</p>
+                            {booking.balanceDueThb > 0 && <p className="mt-2 text-caption text-state-warning">{labels['mc.bookings.due']} ฿{booking.balanceDueThb.toLocaleString()}</p>}
                           </td>
                           <td className="p-16">
                             <span
@@ -1053,8 +1093,12 @@ export function MCDashboardClient({
                             </span>
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
-                                {labels['mc.bookings.request_expires']}:{' '}
-                                {formatBangkokDateTime(booking.requestExpiresAt)}
+                                {labels['mc.bookings.request_expires']}: {formatBangkokDateTime(booking.requestExpiresAt)}
+                              </p>
+                            ) : null}
+                            {booking.status === 'pending_payment' && booking.holdExpiresAt ? (
+                              <p className="text-caption text-state-warning mt-4">
+                                {labels['mc.bookings.hold_expires']}: {formatBangkokDateTime(booking.holdExpiresAt)}
                               </p>
                             ) : null}
                           </td>
@@ -1065,6 +1109,11 @@ export function MCDashboardClient({
                                 {labels['mc.bookings.open_booking']} →
                               </Link>
                             </div>
+                            {bookingFeedback[booking.id] && (
+                              <p role={bookingFeedback[booking.id].kind === 'error' ? 'alert' : 'status'} className={`mt-6 text-caption ${bookingFeedback[booking.id].kind === 'error' ? 'text-state-error' : 'text-emerald-800'}`}>
+                                {bookingFeedback[booking.id].message}
+                              </p>
+                            )}
                           </td>
                         </tr>
                       ))

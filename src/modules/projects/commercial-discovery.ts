@@ -146,19 +146,10 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       bedrooms: row.bedrooms,
       bathrooms: row.bathrooms,
       sizeSqm: row.sizeSqm,
-      imageUrl:
-        row.media.find((link) => link.mediaId === row.coverMediaId)?.media.storageKey ??
-        media.urls[0] ??
-        null,
-      images: (() => {
-        const cover =
-          row.media.find((link) => link.mediaId === row.coverMediaId)?.media.storageKey ??
-          media.urls[0] ??
-          null;
-        return cover
-          ? [cover, ...media.urls.filter((url) => url !== cover)]
-          : media.urls;
-      })(),
+      imageUrl: media.coverUrl,
+      images: media.coverUrl
+        ? [media.coverUrl, ...media.urls.filter((url) => url !== media.coverUrl)]
+        : media.urls,
       intents,
       priceThb,
     }];

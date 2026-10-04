@@ -20,6 +20,7 @@ async function authorizedSpaceUnitIds(
     user,
     spaceIds,
     ['maintenance','housekeeping','front_desk','reservations'],
+    operatingSpaceId,
   );
 }
 

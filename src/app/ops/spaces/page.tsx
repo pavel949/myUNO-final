@@ -60,7 +60,7 @@ export default async function OperatingSpacesPage() {
         <p className="mt-8 max-w-2xl text-body text-text-secondary">
           {labels['staff.spaces.subtitle']}
         </p>
-        {user.isAdmin&&<Link href="/ops/spaces/manage" className="mt-12 inline-flex rounded-md border border-border-line bg-surface-paper px-14 py-8 text-small font-semibold text-brand-andaman">
+        {user.isAdmin&&<Link href="/ops/spaces/manage" className="mt-12 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-brand-andaman">
           {labels['staff.spaces.manage']} →
         </Link>}
       </header>

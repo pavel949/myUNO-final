@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
+import { filterOperationalRecipients } from '@/modules/booking/operational-recipients';
 
 /**
  * Proactive operational alert for a newly-created instant booking that is
@@ -54,7 +55,12 @@ export async function notifyBookingPendingPayment(
       },
       select: { identityId: true },
     });
-    const opsRecipients = new Set(opsRoles.map((row) => row.identityId));
+    const opsRecipients = new Set(await filterOperationalRecipients(
+      db,
+      booking.unitId,
+      opsRoles.map((row) => row.identityId),
+      ["record_payment","manage_reservations"]
+    ));
     const mcRecipients = new Set<string>();
 
     const engagement = await db.unitEngagement.findFirst({

@@ -229,7 +229,7 @@ export function MCDashboardClient({
   const [bookingSearch, setBookingSearch] = useState('');
   const [bookingUnitFilter, setBookingUnitFilter] = useState('');
   const [bookingChannelFilter, setBookingChannelFilter] = useState('');
-  const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
+  const [bookingDateFilter, setBookingDateFilter] = useState('');
   const [busyTicketId, setBusyTicketId] = useState<string | null>(null);
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [busyServiceOrderId, setBusyServiceOrderId] = useState<string | null>(null);
@@ -510,43 +510,13 @@ export function MCDashboardClient({
     }
 
     if (booking.status === 'pending_payment') {
-      const receiptRef = (bookingReceipts[booking.id] || '').trim();
       return (
-        <div className="flex items-center gap-8">
-          <input
-            type="text"
-            value={bookingReceipts[booking.id] || ''}
-            onChange={(event) =>
-              setBookingReceipts((previous) => ({
-                ...previous,
-                [booking.id]: event.target.value,
-              }))
-            }
-            placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-            style={{ width: '140px' }}
-          />
-          <Button
-            size="sm"
-            variant="sun"
-            onClick={() => {
-              if (!receiptRef) return;
-              if (
-                window.confirm(
-                  fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.balanceDueThb.toLocaleString(),
-                  })
-                )
-              ) {
-                void postBookingAction(booking.id, 'record-cash-payment', { receiptRef });
-              }
-            }}
-            isLoading={busyBookingId === booking.id}
-            disabled={!receiptRef}
-          >
-            {labels['mc.bookings.record_cash']}
-          </Button>
-        </div>
+        <Link
+          href={`/ops/stays/${encodeURIComponent(booking.id)}`}
+          className="inline-flex min-h-36 items-center rounded-md bg-brand-deep px-12 text-small font-semibold text-white"
+        >
+          {labels['mc.bookings.record_payment']}
+        </Link>
       );
     }
 
@@ -615,6 +585,11 @@ export function MCDashboardClient({
     if (!statusMatches) return false;
     if (bookingUnitFilter && booking.unit.id !== bookingUnitFilter) return false;
     if (bookingChannelFilter && booking.channel !== bookingChannelFilter) return false;
+    if (bookingDateFilter) {
+      const dayStart = new Date(bookingDateFilter + 'T00:00:00.000Z');
+      const dayEnd = new Date(dayStart); dayEnd.setUTCDate(dayEnd.getUTCDate()+1);
+      if (!(new Date(booking.startDate) < dayEnd && new Date(booking.endDate) > dayStart)) return false;
+    }
     const needle = bookingSearch.trim().toLocaleLowerCase();
     if (!needle) return true;
     return [
@@ -992,12 +967,7 @@ export function MCDashboardClient({
                 ))}
               </div>
             </div>
-            {bookingError && (
-              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
-                <p className="text-small text-state-error">{bookingError}</p>
-              </div>
-            )}
-            <div className="mb-12 grid gap-8 md:grid-cols-3">
+            <div className="mb-12 grid gap-8 md:grid-cols-2 xl:grid-cols-4">
               <input
                 type="search"
                 value={bookingSearch}
@@ -1023,6 +993,13 @@ export function MCDashboardClient({
                 <option value="">{labels['mc.bookings.all_channels']}</option>
                 {bookingChannels.map((channel) => <option key={channel} value={channel}>{channel.replace(/_/g, ' ')}</option>)}
               </select>
+              <input
+                type="date"
+                value={bookingDateFilter}
+                onChange={(event) => setBookingDateFilter(event.target.value)}
+                aria-label={labels['mc.bookings.filter_date']}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+              />
             </div>
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
@@ -1099,6 +1076,7 @@ export function MCDashboardClient({
                             {booking.status === 'pending_payment' && booking.holdExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
                                 {labels['mc.bookings.hold_expires']}: {formatBangkokDateTime(booking.holdExpiresAt)}
+                                {' · '}{Math.max(0,Math.ceil((new Date(booking.holdExpiresAt).getTime()-Date.now())/60000))} {labels['mc.bookings.minutes_remaining']}
                               </p>
                             ) : null}
                           </td>

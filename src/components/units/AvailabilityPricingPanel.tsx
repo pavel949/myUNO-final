@@ -39,6 +39,14 @@ interface RuleRow {
 
 type Labels = Record<string, string>;
 
+function nextCalendarDay(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value + 'T00:00:00.000Z');
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
 export default function AvailabilityPricingPanel({
   unitId,
   labels,
@@ -219,6 +227,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="endDate"
               type="date"
+              defaultValue={nextCalendarDay(initialDate)}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -248,6 +257,7 @@ export default function AvailabilityPricingPanel({
             {busy === 'block' ? labels['staff.calendar.saving'] : labels['staff.calendar.add_block']}
           </Button>
         </form>
+        <p className="mt-8 text-caption text-text-secondary">{labels['staff.calendar.end_exclusive_hint']}</p>
       </section>
 
       {/* Pricing overrides */}
@@ -315,8 +325,8 @@ export default function AvailabilityPricingPanel({
                 nightlyThb: Math.round(Number(nightlyBaht) * 100),
                 label: label || undefined,
               })
-            ).then(() => {
-              (event.currentTarget as HTMLFormElement).reset();
+            ).then((saved) => {
+              if (saved) (event.currentTarget as HTMLFormElement).reset();
             });
           }}
         >
@@ -335,6 +345,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="endDate"
               type="date"
+              defaultValue={nextCalendarDay(initialDate)}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -361,6 +372,7 @@ export default function AvailabilityPricingPanel({
             {busy === 'rule' ? labels['staff.calendar.saving'] : labels['staff.calendar.add_rule']}
           </Button>
         </form>
+        <p className="mt-8 text-caption text-text-secondary">{labels['staff.calendar.end_exclusive_hint']}</p>
       </section>
     </div>
   );

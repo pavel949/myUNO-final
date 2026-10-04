@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createRoleAssignment } from '@/test/util';
 import * as bookingService from './booking.service';
 import { getInStayHomeSpace } from './home-space.service';
+import { projectCalendarCell } from './calendar-projection';
+import * as financeService from '@/modules/finance';
 
 describe('booking.service — integration tests', () => {
   beforeEach(async () => {
@@ -141,6 +143,110 @@ describe('booking.service — integration tests', () => {
       await expect(
         bookingService.approveBookingRequest(db, { bookingId: second.id })
       ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    });
+  });
+
+  describe('Airbnb-style instant booking happy path', () => {
+    it('locks dates, alerts the host, opens as a hold, then becomes confirmed after payment', async () => {
+      const project = await createProject({ status: 'live' });
+      const unit = await createUnit({
+        projectId: project.id,
+        status: 'live',
+        instantBook: true,
+      });
+      const guest = await createIdentity({ firstName: 'Guest', lastName: 'One' });
+      const host = await createIdentity({ firstName: 'Host', lastName: 'One' });
+      const cashier = await createIdentity({ firstName: 'Cashier', lastName: 'One' });
+
+      await createRoleAssignment({
+        identityId: host.id,
+        role: 'onsite_host',
+        scopeType: 'project',
+        projectId: project.id,
+      });
+
+      const startDate = new Date('2026-11-10T00:00:00.000Z');
+      const endDate = new Date('2026-11-14T00:00:00.000Z');
+      const booking = await bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: guest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate,
+        endDate,
+        adults: 2,
+        children: 0,
+        totalThb: 420_000,
+        instantBook: true,
+        holdMinutes: 30,
+      });
+
+      expect(booking.status).toBe('pending_payment');
+      expect(booking.holdExpiresAt).toBeDefined();
+
+      const hostAlert = await db.notification.findFirst({
+        where: {
+          identityId: host.id,
+          type: 'stay_new_booking_ops',
+          titleKey: 'notify.stay_payment_pending_ops.title',
+        },
+      });
+      expect(hostAlert).not.toBeNull();
+      expect(JSON.stringify(hostAlert?.params)).toContain('/ops/stays/');
+
+      const holdCell = projectCalendarCell([{
+        id: booking.id,
+        unitId: unit.id,
+        kind: 'booking',
+        status: booking.status,
+        startDate: booking.startDate.toISOString().slice(0, 10),
+        endDate: booking.endDate.toISOString().slice(0, 10),
+        holdExpiresAt: booking.holdExpiresAt?.toISOString() ?? null,
+      }], unit.id, '2026-11-10', new Date());
+      expect(holdCell).toMatchObject({ state: 'hold', blocking: true });
+      expect(holdCell.entryIds).toContain(booking.id);
+
+      const secondGuest = await createIdentity({ firstName: 'Guest', lastName: 'Two' });
+      await expect(bookingService.createBooking(db, {
+        unitId: unit.id,
+        projectId: project.id,
+        guestIdentityId: secondGuest.id,
+        bookingType: 'guest_stay',
+        channel: 'direct',
+        startDate: new Date('2026-11-11T00:00:00.000Z'),
+        endDate: new Date('2026-11-13T00:00:00.000Z'),
+        adults: 1,
+        children: 0,
+        totalThb: 100_000,
+        instantBook: true,
+      })).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+
+      const payment = await financeService.recordCashPayment(db, {
+        purpose: 'stay',
+        bookingId: booking.id,
+        payerIdentityId: guest.id,
+        amountThb: booking.totalThb,
+        receivedByIdentityId: cashier.id,
+        receiptRef: 'AIRBNB-HAPPY-PATH',
+      });
+      expect(payment.status).toBe('succeeded');
+
+      const confirmed = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
+      expect(confirmed.status).toBe('confirmed');
+      expect(confirmed.holdExpiresAt).toBeNull();
+
+      const confirmedCell = projectCalendarCell([{
+        id: confirmed.id,
+        unitId: confirmed.unitId,
+        kind: 'booking',
+        status: confirmed.status,
+        startDate: confirmed.startDate.toISOString().slice(0, 10),
+        endDate: confirmed.endDate.toISOString().slice(0, 10),
+        holdExpiresAt: null,
+      }], unit.id, '2026-11-10', new Date());
+      expect(confirmedCell).toMatchObject({ state: 'confirmed', blocking: true });
+      expect(confirmedCell.entryIds).toContain(confirmed.id);
     });
   });
 

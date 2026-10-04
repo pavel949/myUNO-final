@@ -227,6 +227,19 @@ export async function recordCashPayment(
   if (result.booking && bookingId) {
     if (purpose === 'stay') {
       await ensureDepositPreauthOnStayConfirmed(db, bookingId, result.booking.unitId).catch(() => null);
+      try {
+        const scoped = await getBookingThreadParticipants(db, bookingId);
+        const thread = await findOrCreateThread(db, {
+          contextType: 'booking',
+          contextId: bookingId,
+          projectId: result.booking.projectId,
+          participantIdentityIds: scoped.participantIdentityIds,
+          participantRoles: scoped.participantRoles,
+        });
+        await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
+      } catch (error) {
+        console.error('Cash payment committed but booking thread sync failed:', error);
+      }
     }
     await track(db, 'stay_payment_succeeded', {
       bookingId, unitId: result.booking.unitId, projectId: result.booking.projectId,

@@ -9,6 +9,7 @@ import { getChannelHealthForUnits } from '@/modules/integrations';
 import { getLabels } from '@/lib/i18n';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import { computeCanonicalCalendarRates } from '@/modules/core';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,8 +53,10 @@ export default async function MCPropertyWorkspace({
       id: true, name: true, projectId: true, status: true, assetStatus: true,
       bedrooms: true, bathrooms: true, maxGuests: true, sizeSqm: true, floor: true,
       addressSupplement: true, minNights: true, instantBook: true,
-      project: { select: { name: true } },
-      inventoryCategory: { select: { id: true, name: true, baseNightlyThb: true } },
+      project: { select: { name: true, coverMediaId: true, _count: { select: { media: true } } } },
+      inventoryCategory: { select: { id: true, name: true, baseNightlyThb: true, coverMediaId: true, _count: { select: { media: true } } } },
+      coverMediaId: true,
+      _count: { select: { media: true } },
       owner: { select: { id: true, firstName: true, lastName: true } },
       engagements: {
         where: { status: 'active' },
@@ -77,7 +80,7 @@ export default async function MCPropertyWorkspace({
   const recentStart = new Date(now); recentStart.setDate(recentStart.getDate() - 30);
   const futureEnd = new Date(now); futureEnd.setDate(futureEnd.getDate() + 90);
 
-  const [readinessMap, channelMap, bookings, tasks, tickets, statements, ledger, audit, calendarLabels] = await Promise.all([
+  const [readinessMap, channelMap, bookings, tasks, tickets, pricingRules, statements, ledger, audit, calendarLabels] = await Promise.all([
     getUnitReadinessMap(prisma, [unit.id]),
     getChannelHealthForUnits(prisma, [unit.id]),
     prisma.booking.findMany({
@@ -103,6 +106,11 @@ export default async function MCPropertyWorkspace({
       where: { unitId: unit.id, status: { in: ['open','acknowledged','in_progress','waiting_reporter'] } },
       select: { id: true, title: true, priority: true, status: true, createdAt: true },
       orderBy: { createdAt: 'desc' }, take: 20,
+    }),
+    prisma.pricingRule.findMany({
+      where: { unitId: unit.id, endDate: { gte: now } },
+      select: { id: true, startDate: true, endDate: true, nightlyThb: true, label: true, minNightsOverride: true },
+      orderBy: { startDate: 'asc' }, take: 20,
     }),
     prisma.ownerStatement.findMany({
       where: { unitId: unit.id },
@@ -130,6 +138,22 @@ export default async function MCPropertyWorkspace({
     .filter(b => ['pending_payment','confirmed','checked_in'].includes(b.status))
     .reduce((sum,b) => sum + Math.max(0,b.balanceDueThb),0);
   const activeEngagement = unit.engagements[0];
+  const currentBookings = bookings.filter(b => b.startDate <= now && b.endDate > now && !['cancelled','declined'].includes(b.status));
+  const upcomingBookings = bookings.filter(b => b.startDate > now && !['cancelled','declined'].includes(b.status));
+  const pastBookings = bookings.filter(b => b.endDate <= now || ['checked_out','completed'].includes(b.status));
+  const cancelledBookings = bookings.filter(b => ['cancelled','declined'].includes(b.status));
+  const bookingGroups = [
+    ['Current',currentBookings],
+    ['Upcoming',upcomingBookings],
+    ['Past',pastBookings],
+    ['Cancelled / declined',cancelledBookings],
+  ] as const;
+  const activeRule = pricingRules.find(rule => rule.startDate <= now && rule.endDate > now);
+  const nextRule = pricingRules.find(rule => rule.startDate > now);
+  const rateStart = new Date(now); rateStart.setUTCHours(0,0,0,0);
+  const rateEnd = new Date(rateStart); rateEnd.setUTCDate(rateEnd.getUTCDate()+1);
+  const ratePreview = tab==='rates' ? await computeCanonicalCalendarRates(prisma,unit.id,rateStart,rateEnd,1) : null;
+  const todayRate = ratePreview?.lines[0] ?? null;
   const attentionDeadline = new Date(now.getTime() + 3 * 60 * 60 * 1000);
   const expiringRequests = bookings.filter(b => b.status==='requested' && b.requestExpiresAt && b.requestExpiresAt <= attentionDeadline);
   const expiringHolds = bookings.filter(b => b.status==='pending_payment' && b.holdExpiresAt && b.holdExpiresAt <= attentionDeadline);
@@ -222,12 +246,23 @@ export default async function MCPropertyWorkspace({
         <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} initialDate={focusDate} />
       </div>}
 
-      {tab==='reservations' && <section className="space-y-12">
+      {tab==='reservations' && <section className="space-y-16">
         <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/mc" className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
-        {bookings.length===0?<div className={card}>No bookings in the working window.</div>:bookings.map(b=><article key={b.id} className={card}>
-          <div className="flex flex-wrap items-center justify-between gap-8"><div><p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p><p className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.channel} · {b.status.replace(/_/g,' ')}</p></div><div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div></div>
-          <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open canonical stay →</Link>
-        </article>)}
+        {bookings.length===0?<div className={card}>No stays from {bangkokDate(recentStart)} to {bangkokDate(futureEnd)}.</div>:
+          bookingGroups.map(([group,items]) => items.length ? <section key={group}>
+            <h3 className="mb-8 text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{group} · {items.length}</h3>
+            <div className="space-y-8">{items.map(b=><article key={b.id} className={card}>
+              <div className="flex flex-wrap items-center justify-between gap-8">
+                <div>
+                  <p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p>
+                  <p className={small}>{bangkokDate(b.startDate)} → {bangkokDate(b.endDate)} · {b.channel.replace(/_/g,' ')}</p>
+                  <span className={pill}>{b.status.replace(/_/g,' ')}</span>
+                </div>
+                <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div>
+              </div>
+              <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open booking →</Link>
+            </article>)}</div>
+          </section> : null)}
       </section>}
 
       {tab==='operations' && <div className="grid gap-16 xl:grid-cols-2">
@@ -235,7 +270,19 @@ export default async function MCPropertyWorkspace({
         <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><Link key={t.id} href={`/tickets/${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {bangkokDateTime(t.createdAt)}</p></Link>):<p className={small}>No open issues.</p>}</div></section>
       </div>}
 
-      {tab==='rates' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Rates & restrictions</h2><p className="mt-8 text-body text-text-secondary">Category base rate remains canonical; unit rules are explicit overrides.</p><div className="mt-12 grid gap-8 md:grid-cols-3"><div><p className={small}>Category base</p><p className="font-semibold">{money(unit.inventoryCategory?.baseNightlyThb)}</p></div><div><p className={small}>Minimum stay</p><p className="font-semibold">{unit.minNights} nights</p></div><div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant':'Request'}</p></div></div><Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link></section>}
+      {tab==='rates' && <section className={card}>
+        <h2 className="font-display text-heading-2 font-semibold">Rates & restrictions</h2>
+        <p className="mt-8 text-body text-text-secondary">The canonical quote engine determines the effective sell rate; unit rules are explicit overrides.</p>
+        <div className="mt-12 grid gap-8 md:grid-cols-3">
+          <div><p className={small}>Effective today</p><p className="font-semibold">{todayRate?money(todayRate.nightlyThb):'Unavailable'}</p><p className={small}>{todayRate?.source.replace(/_/g,' ')||'Quote unavailable'}</p></div>
+          <div><p className={small}>Category base</p><p className="font-semibold">{money(unit.inventoryCategory?.baseNightlyThb)}</p><p className={small}>Currency · THB</p></div>
+          <div><p className={small}>Minimum stay</p><p className="font-semibold">{activeRule?.minNightsOverride??unit.minNights} nights</p><p className={small}>{activeRule?'Current unit override':'Property default'}</p></div>
+          <div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant book':'Request to book'}</p><p className={small}>{unit.instantBook?'Guest can hold inventory immediately while paying.':'Host approval is required before dates are held.'}</p></div>
+          <div><p className={small}>Current rule</p><p className="font-semibold">{activeRule?money(activeRule.nightlyThb):'None'}</p><p className={small}>{activeRule?.label||'No unit-specific override today'}</p></div>
+          <div><p className={small}>Next rule</p><p className="font-semibold">{nextRule?bangkokDate(nextRule.startDate):'—'}</p><p className={small}>{nextRule?money(nextRule.nightlyThb)+(nextRule.label?' · '+nextRule.label:''):'No upcoming override'}</p></div>
+        </div>
+        <Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link>
+      </section>}
 
       {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12">
         <div className="flex flex-wrap items-center justify-between gap-8"><p className="font-semibold capitalize">{row.channel.replace(/_/g,' ')}</p><span className={pill}>{row.state.replace(/_/g,' ')}</span></div>
@@ -257,7 +304,17 @@ export default async function MCPropertyWorkspace({
 
       {tab==='property' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Canonical property record</h2><div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4"><div><p className={small}>Bedrooms</p><p className="font-semibold">{unit.bedrooms}</p></div><div><p className={small}>Bathrooms</p><p className="font-semibold">{unit.bathrooms}</p></div><div><p className={small}>Guests</p><p className="font-semibold">{unit.maxGuests}</p></div><div><p className={small}>Size</p><p className="font-semibold">{unit.sizeSqm||'—'} sqm</p></div><div><p className={small}>Floor</p><p className="font-semibold">{unit.floor||'—'}</p></div><div><p className={small}>Status</p><p className="font-semibold">{unit.status}</p></div><div><p className={small}>Asset status</p><p className="font-semibold">{unit.assetStatus}</p></div><div><p className={small}>Location</p><p className="font-semibold">{unit.addressSupplement}</p></div></div><Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Edit canonical record →</Link></section>}
 
-      {tab==='media' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Media</h2><p className="mt-8 text-body text-text-secondary">Unit gallery uses the canonical three-level project/category/unit media model.</p><Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open unit gallery editor →</Link></section>}
+      {tab==='media' && <section className={card}>
+        <h2 className="font-display text-heading-2 font-semibold">Media</h2>
+        <p className="mt-8 text-body text-text-secondary">Public presentation composes canonical project, category and unit galleries without duplicating files.</p>
+        <div className="mt-12 grid gap-8 sm:grid-cols-3">
+          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Project gallery</p><p className="font-semibold">{unit.project._count.media} photos</p><p className={small}>{unit.project.coverMediaId?'Cover set':'Cover missing'}</p></div>
+          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Category gallery</p><p className="font-semibold">{unit.inventoryCategory?unit.inventoryCategory._count.media:0} photos</p><p className={small}>{unit.inventoryCategory?.coverMediaId?'Cover set':'Cover missing'}</p></div>
+          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Unit gallery</p><p className="font-semibold">{unit._count.media} photos</p><p className={small}>{unit.coverMediaId?'Cover set':'Cover missing'}</p></div>
+        </div>
+        {(unit._count.media===0||!unit.coverMediaId) && <p className="mt-12 rounded-md bg-amber-50 p-12 text-small text-amber-900">Unit presentation is incomplete. Add exact-unit photos and choose a cover before publishing.</p>}
+        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage media →</Link>
+      </section>}
 
       {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{bangkokDateTime(a.at)} ICT · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}
     </div>

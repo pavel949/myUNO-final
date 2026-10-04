@@ -67,11 +67,15 @@ A public Project Space still requires `Project.status = live`. Media readiness n
 
 Within a public project:
 - Project gallery is rendered only from project-scoped presentation media.
+- Stay availability appears only when media-ready stay inventory exists.
+- Buy and long-term-rent entry points appear only when canonical commercial/legal eligibility returns verified exact-unit homes.
 - Category cards are shown only when representative category media is ready.
 - Unit cards contain only media-ready units.
 - Hotel room representative media is labelled.
 - Unit links preserve project context.
 - Exact-unit and type-level media are never silently relabelled as one another.
+- Sale and long-term-rent detail pages use the complete exact-unit gallery, not only a cover image.
+- Condominium Project Space is presented as a general property portal rather than forced into resort-only wording/schema.
 
 ## Verification gates
 

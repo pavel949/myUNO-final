@@ -51,6 +51,10 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
     'staff.finance.statements':'Owner statements',
     'staff.finance.no_ledger':'No ledger entries in this scope.',
     'staff.finance.no_statements':'No owner statements in this scope.',
+    'staff.finance.revenue':'Revenue',
+    'staff.finance.costs':'Costs',
+    'staff.finance.noi':'NOI',
+    'staff.finance.owner_share':'Owner',
     'ops.costs.title':'Record a cost','ops.costs.back':'← Workspace',
     'ops.costs.intro':'Costs recorded here appear on the owner statement for that unit.',
     'ops.costs.unit':'Unit','ops.costs.type':'Type','ops.costs.amount':'Amount (฿)',
@@ -86,7 +90,7 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
         <div className="mt-12 space-y-8">{statements.length?statements.map(item=><article key={item.id} className="rounded-md bg-surface-ivory p-12">
           <p className="font-semibold">{item.unit.project.name} · {item.unit.name}</p>
           <p className="text-small text-text-secondary">{item.periodStart.toISOString().slice(0,10)} → {item.periodEnd.toISOString().slice(0,10)} · {item.status}</p>
-          <p className="mt-4 text-small">Revenue {money(item.grossRevenueTh)} · Costs {money(item.totalCostsTh)} · NOI {money(item.noiTh)} · Owner {money(item.ownerShareTh)}</p>
+          <p className="mt-4 text-small">{labels['staff.finance.revenue']} {money(item.grossRevenueTh)} · {labels['staff.finance.costs']} {money(item.totalCostsTh)} · {labels['staff.finance.noi']} {money(item.noiTh)} · {labels['staff.finance.owner_share']} {money(item.ownerShareTh)}</p>
         </article>):<p className="text-text-secondary">{labels['staff.finance.no_statements']}</p>}</div>
       </section>
     </div>

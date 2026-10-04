@@ -39,11 +39,15 @@ interface Booking {
   startDate: Date;
   endDate: Date;
   totalThb: number;
+  balanceDueThb: number;
   status: string;
+  channel: string;
   requestExpiresAt?: Date | string | null;
+  holdExpiresAt?: Date | string | null;
   guestIdentity: {
     id: string;
     firstName: string;
+    lastName?: string;
   };
   unit: {
     id: string;
@@ -221,6 +225,10 @@ export function MCDashboardClient({
   const [feeReportError, setFeeReportError] = useState<string | null>(null);
   const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingFeedback, setBookingFeedback] = useState<Record<string, { kind: 'success' | 'error'; message: string }>>({});
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingUnitFilter, setBookingUnitFilter] = useState('');
+  const [bookingChannelFilter, setBookingChannelFilter] = useState('');
   const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
   const [busyTicketId, setBusyTicketId] = useState<string | null>(null);
   const [ticketError, setTicketError] = useState<string | null>(null);
@@ -372,11 +380,24 @@ export function MCDashboardClient({
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.error || labels['mc.bookings.error_generic']);
       }
+      const successMessage =
+        path === 'record-cash-payment'
+          ? labels['mc.bookings.payment_recorded']
+          : path === 'respond'
+            ? labels['mc.bookings.request_updated']
+            : labels['mc.bookings.updated'];
+      setBookingFeedback((previous) => ({
+        ...previous,
+        [bookingId]: { kind: 'success', message: successMessage },
+      }));
       router.refresh();
     } catch (error) {
-      setBookingError(
-        error instanceof Error ? error.message : labels['mc.bookings.error_generic']
-      );
+      const message = error instanceof Error ? error.message : labels['mc.bookings.error_generic'];
+      setBookingError(message);
+      setBookingFeedback((previous) => ({
+        ...previous,
+        [bookingId]: { kind: 'error', message },
+      }));
     } finally {
       setBusyBookingId(null);
     }
@@ -513,7 +534,7 @@ export function MCDashboardClient({
               if (
                 window.confirm(
                   fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
+                    amount: booking.balanceDueThb.toLocaleString(),
                   })
                 )
               ) {

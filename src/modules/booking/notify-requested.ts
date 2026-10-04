@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
+import { filterOperationalRecipients } from '@/modules/booking/operational-recipients';
 import { satangToBaht } from '@/lib/money';
 
 /**
@@ -54,7 +55,12 @@ export async function notifyBookingRequested(
       select: { identityId: true },
     });
 
-    const opsRecipients = new Set(opsRoles.map((role) => role.identityId));
+    const opsRecipients = new Set(await filterOperationalRecipients(
+      db,
+      booking.unitId,
+      opsRoles.map((role) => role.identityId),
+      ["manage_reservations"]
+    ));
     const mcRecipients = new Set<string>();
 
     const mcEngagement = await db.unitEngagement.findFirst({

@@ -24,6 +24,12 @@ function money(satang: number | null | undefined) {
 function date(value: Date | null | undefined) {
   return value ? value.toISOString().slice(0, 10) : '—';
 }
+function bangkokDate(value: Date | null | undefined) {
+  return value ? value.toLocaleDateString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'numeric'}) : '—';
+}
+function bangkokDateTime(value: Date | null | undefined) {
+  return value ? value.toLocaleString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}) : '—';
+}
 function tabHref(unitId: string, tab: Tab, focusDate?: string) {
   const q = new URLSearchParams({ tab });
   if (focusDate) q.set('date', focusDate);
@@ -78,7 +84,8 @@ export default async function MCPropertyWorkspace({
       where: { unitId: unit.id, endDate: { gte: recentStart }, startDate: { lte: futureEnd } },
       select: {
         id: true, status: true, channel: true, startDate: true, endDate: true,
-        totalThb: true, balanceDueThb: true, checkedInAt: true, checkedOutAt: true,
+        totalThb: true, balanceDueThb: true, requestExpiresAt: true, holdExpiresAt: true,
+        checkedInAt: true, checkedOutAt: true,
         guestIdentity: { select: { firstName: true, lastName: true } },
       },
       orderBy: { startDate: 'asc' }, take: 40,
@@ -123,6 +130,11 @@ export default async function MCPropertyWorkspace({
     .filter(b => ['pending_payment','confirmed','checked_in'].includes(b.status))
     .reduce((sum,b) => sum + Math.max(0,b.balanceDueThb),0);
   const activeEngagement = unit.engagements[0];
+  const attentionDeadline = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const expiringRequests = bookings.filter(b => b.status==='requested' && b.requestExpiresAt && b.requestExpiresAt <= attentionDeadline);
+  const expiringHolds = bookings.filter(b => b.status==='pending_payment' && b.holdExpiresAt && b.holdExpiresAt <= attentionDeadline);
+  const arrivalToday = bookings.find(b => b.status==='confirmed' && bangkokDate(b.startDate)===bangkokDate(now));
+  const hasArrivalReadinessRisk = Boolean(arrivalToday && readiness.state!=='ready');
 
   const card = 'rounded-xl border border-border-line bg-surface-paper p-16';
   const small = 'text-small text-text-secondary';
@@ -136,7 +148,7 @@ export default async function MCPropertyWorkspace({
             <Link href="/mc" className="text-small font-semibold text-brand-andaman">← Today</Link>
             <div className="mt-8 flex flex-wrap items-center gap-8">
               <p className="text-small font-semibold uppercase tracking-[0.12em] text-brand-andaman">Property Workspace</p>
-              {focusDate && <span className={pill}>Context date · {focusDate}</span>}
+              {focusDate && <span className={pill}>Context date · {new Date(focusDate+'T00:00:00.000Z').toLocaleDateString('en-GB',{timeZone:'UTC',weekday:'short',day:'2-digit',month:'short'})}</span>}
             </div>
             <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{unit.name}</h1>
             <p className="mt-4 text-body text-text-secondary">{unit.project.name}{unit.inventoryCategory ? ' · '+unit.inventoryCategory.name : ''}</p>
@@ -148,22 +160,33 @@ export default async function MCPropertyWorkspace({
         </div>
       </header>
 
-      <nav className="mb-20 overflow-x-auto border-b border-border-line">
-        <div className="flex min-w-max gap-4">
-          {TABS.map(item => <Link key={item} href={tabHref(unit.id,item,focusDate)}
-            className={`px-12 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
-            {item}
-          </Link>)}
+      <nav className="mb-20 overflow-x-auto border-b border-border-line" aria-label="Property workspace">
+        <div className="flex min-w-max items-end gap-12">
+          {[
+            ['Operate',['overview','calendar','reservations','operations']],
+            ['Commercial',['rates','channels','financials']],
+            ['Property',['owner','property','media','activity']],
+          ].map(([group,items]) => <div key={String(group)} className="flex items-end gap-2">
+            <span className="px-4 pb-8 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary">{group}</span>
+            {(items as readonly Tab[]).map(item => <Link key={item} href={tabHref(unit.id,item,focusDate)}
+              className={`px-10 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
+              {item}
+            </Link>)}
+          </div>)}
         </div>
       </nav>
 
       {tab==='overview' && <div className="space-y-20">
         <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-5">
-          <div className={card}><p className={small}>Current stay</p><p className="mt-4 font-semibold">{activeBooking ? activeBooking.guestIdentity.firstName+' '+activeBooking.guestIdentity.lastName : 'Vacant'}</p></div>
-          <div className={card}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></div>
-          <div className={card}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></div>
-          <div className={card}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></div>
-          <div className={card}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{nextBooking ? date(nextBooking.startDate) : '—'}</p><p className={small}>{nextBooking?.status.replace(/_/g,' ') || 'No upcoming stay'}</p></div>
+          {activeBooking ? <Link href={`/ops/stays/${activeBooking.id}`} className={card+' transition hover:border-brand-andaman'}>
+            <p className={small}>Current stay</p><p className="mt-4 font-semibold">{activeBooking.guestIdentity.firstName} {activeBooking.guestIdentity.lastName}</p>
+            <p className={small}>{bangkokDate(activeBooking.startDate)} → {bangkokDate(activeBooking.endDate)} · {activeBooking.status.replace(/_/g,' ')}</p>
+          </Link> : <div className={card}><p className={small}>Current stay</p><p className="mt-4 font-semibold">Vacant</p></div>}
+          <Link href={tabHref(unit.id,'operations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></Link>
+          <Link href={tabHref(unit.id,'channels',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></Link>
+          <Link href={tabHref(unit.id,'reservations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></Link>
+          {nextBooking ? <Link href={`/ops/stays/${nextBooking.id}`} className={card+' transition hover:border-brand-andaman'}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{bangkokDate(nextBooking.startDate)}</p><p className={small}>{nextBooking.guestIdentity.firstName} {nextBooking.guestIdentity.lastName} · {nextBooking.status.replace(/_/g,' ')}</p></Link>
+            : <div className={card}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">—</p><p className={small}>No upcoming stay</p></div>}
         </section>
         <section className="grid gap-16 xl:grid-cols-2">
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Requires attention</h2><div className="mt-12 space-y-8">
@@ -171,7 +194,10 @@ export default async function MCPropertyWorkspace({
             {channel.state!=='healthy' && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'channels',focusDate)}>Channel health · {channel.state.replace(/_/g,' ')} →</Link>}
             {upcomingBalance>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'reservations',focusDate)}>Outstanding guest payments · {money(upcomingBalance)} →</Link>}
             {tickets.length>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'operations',focusDate)}>Open issues · {tickets.length} →</Link>}
-            {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && tickets.length===0 && <p className={small}>No operational exceptions.</p>}
+            {expiringRequests.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={tabHref(unit.id,'reservations',focusDate)}>Booking requests expiring soon · {expiringRequests.length} →</Link>}
+            {expiringHolds.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={tabHref(unit.id,'reservations',focusDate)}>Payment holds expiring soon · {expiringHolds.length} →</Link>}
+            {hasArrivalReadinessRisk && <Link className="block rounded-md bg-red-50 p-12" href={tabHref(unit.id,'operations',focusDate)}>Arrival today · property not ready →</Link>}
+            {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && tickets.length===0 && expiringRequests.length===0 && expiringHolds.length===0 && !hasArrivalReadinessRisk && <p className={small}>No operational exceptions.</p>}
           </div></div>
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Quick actions</h2><div className="mt-12 grid gap-8 sm:grid-cols-2">
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={tabHref(unit.id,'calendar',focusDate)}>Block dates / rate override →</Link>
@@ -205,26 +231,35 @@ export default async function MCPropertyWorkspace({
       </section>}
 
       {tab==='operations' && <div className="grid gap-16 xl:grid-cols-2">
-        <section className={card}><div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Tasks</h2><Link href={`/ops/tasks?mc=1&unitId=${unit.id}`} className="text-small font-semibold text-brand-andaman">Task queue →</Link></div><div className="mt-12 space-y-8">{tasks.length?tasks.map(t=><div key={t.id} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{t.title||t.taskType.replace(/_/g,' ')}</p><p className={small}>{t.status.replace(/_/g,' ')} · due {date(t.dueAt)} · {t.priority}{t.blocksInventory?' · blocks inventory':''}</p></div>):<p className={small}>No open operational tasks.</p>}</div></section>
-        <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><div key={t.id} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {date(t.createdAt)}</p></div>):<p className={small}>No open issues.</p>}</div></section>
+        <section className={card}><div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Tasks</h2><Link href={`/ops/tasks?mc=1&unitId=${unit.id}`} className="text-small font-semibold text-brand-andaman">Task queue →</Link></div><div className="mt-12 space-y-8">{tasks.length?tasks.map(t=><Link key={t.id} href={`/ops/tasks?mc=1&unitId=${unit.id}#task-${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title||t.taskType.replace(/_/g,' ')}</p><p className={small}>{t.status.replace(/_/g,' ')} · due {bangkokDateTime(t.dueAt)} · {t.priority}{t.blocksInventory?' · blocks inventory':''}</p></Link>):<p className={small}>No open operational tasks.</p>}</div></section>
+        <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><Link key={t.id} href={`/tickets/${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {bangkokDateTime(t.createdAt)}</p></Link>):<p className={small}>No open issues.</p>}</div></section>
       </div>}
 
       {tab==='rates' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Rates & restrictions</h2><p className="mt-8 text-body text-text-secondary">Category base rate remains canonical; unit rules are explicit overrides.</p><div className="mt-12 grid gap-8 md:grid-cols-3"><div><p className={small}>Category base</p><p className="font-semibold">{money(unit.inventoryCategory?.baseNightlyThb)}</p></div><div><p className={small}>Minimum stay</p><p className="font-semibold">{unit.minNights} nights</p></div><div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant':'Request'}</p></div></div><Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link></section>}
 
-      {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{row.channel}</p><p className={small}>{row.state.replace(/_/g,' ')} · A:{String(row.availability)} R:{String(row.rates)} I:{String(row.restrictions)}</p></div>):<p className={small}>No channel mapping. Inventory is manual-only.</p>}</div></section>}
+      {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12">
+        <div className="flex flex-wrap items-center justify-between gap-8"><p className="font-semibold capitalize">{row.channel.replace(/_/g,' ')}</p><span className={pill}>{row.state.replace(/_/g,' ')}</span></div>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3 text-small">
+          <p><span className="text-text-secondary">Availability</span><br/><span className="font-semibold">{row.availability==='push'?'✓ Live':row.availability==='ical'?'iCal sync':'Manual'}</span></p>
+          <p><span className="text-text-secondary">Rates</span><br/><span className="font-semibold">{row.rates==='push'?'✓ Live':'Manual'}</span></p>
+          <p><span className="text-text-secondary">Restrictions</span><br/><span className="font-semibold">{row.restrictions==='push'?'✓ Live':'Manual'}</span></p>
+        </div>
+        {'lastSyncAt' in row && row.lastSyncAt ? <p className={small+' mt-8'}>Last synced {bangkokDateTime(new Date(row.lastSyncAt))}</p> : null}
+        {'error' in row && row.error ? <p className="mt-6 text-small text-state-error">{String(row.error)}</p> : null}
+      </div>):<p className={small}>No channel mapping. Inventory is manual-only.</p>}</div></section>}
 
       {tab==='financials' && <div className="grid gap-16 xl:grid-cols-2">
         <section className={card}><h2 className="font-display text-heading-2 font-semibold">Owner statements</h2><div className="mt-12 space-y-8">{statements.length?statements.map(s=><div key={s.id} className="rounded-md bg-surface-ivory p-12"><p className="font-semibold">{date(s.periodStart)} → {date(s.periodEnd)} · {s.status}</p><p className={small}>Revenue {money(s.grossRevenueTh)} · Costs {money(s.totalCostsTh)} · NOI {money(s.noiTh)} · Owner {money(s.ownerShareTh)}</p></div>):<p className={small}>No statements.</p>}</div></section>
         <section className={card}><h2 className="font-display text-heading-2 font-semibold">Ledger</h2><div className="mt-12 space-y-8">{ledger.length?ledger.map(l=><div key={l.id}><p className="font-semibold">{money(l.amountThb)} · {l.entryType.replace(/_/g,' ')}</p><p className={small}>{date(l.occurredOn)} · {l.description}</p></div>):<p className={small}>No ledger entries.</p>}</div></section>
       </div>}
 
-      {tab==='owner' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Owner & management mandate</h2><div className="mt-12 grid gap-12 md:grid-cols-2"><div><p className={small}>Owner</p><p className="font-semibold">{unit.owner ? [unit.owner.firstName,unit.owner.lastName].filter(Boolean).join(' ') : 'Not assigned'}</p></div><div><p className={small}>Management organization</p><p className="font-semibold">{activeEngagement?.managementOrg?.name||'—'}</p></div><div><p className={small}>Engagement</p><p className="font-semibold">{activeEngagement?.engagementType.replace(/_/g,' ')||'—'}</p></div><div><p className={small}>Mandate period</p><p className="font-semibold">{activeEngagement ? date(activeEngagement.startsOn)+' → '+date(activeEngagement.endsOn) : '—'}</p></div><div><p className={small}>Fee override</p><p className="font-semibold">{activeEngagement?.feeOverridePct ? String(activeEngagement.feeOverridePct)+'%' : '—'}</p></div><div><p className={small}>NOI cap</p><p className="font-semibold">{money(activeEngagement?.noiCapAnnualThb)}</p></div></div></section>}
+      {tab==='owner' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Owner & management mandate</h2><div className="mt-12 grid gap-12 md:grid-cols-2"><div><p className={small}>Owner</p><p className="font-semibold">{unit.owner ? [unit.owner.firstName,unit.owner.lastName].filter(Boolean).join(' ') : 'Not assigned'}</p></div><div><p className={small}>Management organization</p><p className="font-semibold">{activeEngagement?.managementOrg?.name||'—'}</p></div><div><p className={small}>Engagement</p><p className="font-semibold">{activeEngagement?.engagementType.replace(/_/g,' ')||'—'}</p></div><div><p className={small}>Mandate period</p><p className="font-semibold">{activeEngagement ? date(activeEngagement.startsOn)+' → '+date(activeEngagement.endsOn) : '—'}</p></div><div><p className={small}>Fee override</p><p className="font-semibold">{activeEngagement?.feeOverridePct != null ? String(activeEngagement.feeOverridePct)+'%' : '—'}</p></div><div><p className={small}>NOI cap</p><p className="font-semibold">{activeEngagement?.noiCapAnnualThb == null ? 'No cap' : money(activeEngagement.noiCapAnnualThb)}</p></div></div></section>}
 
       {tab==='property' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Canonical property record</h2><div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4"><div><p className={small}>Bedrooms</p><p className="font-semibold">{unit.bedrooms}</p></div><div><p className={small}>Bathrooms</p><p className="font-semibold">{unit.bathrooms}</p></div><div><p className={small}>Guests</p><p className="font-semibold">{unit.maxGuests}</p></div><div><p className={small}>Size</p><p className="font-semibold">{unit.sizeSqm||'—'} sqm</p></div><div><p className={small}>Floor</p><p className="font-semibold">{unit.floor||'—'}</p></div><div><p className={small}>Status</p><p className="font-semibold">{unit.status}</p></div><div><p className={small}>Asset status</p><p className="font-semibold">{unit.assetStatus}</p></div><div><p className={small}>Location</p><p className="font-semibold">{unit.addressSupplement}</p></div></div><Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Edit canonical record →</Link></section>}
 
       {tab==='media' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Media</h2><p className="mt-8 text-body text-text-secondary">Unit gallery uses the canonical three-level project/category/unit media model.</p><Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open unit gallery editor →</Link></section>}
 
-      {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{a.at.toISOString().replace('T',' ').slice(0,16)} · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}
+      {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{bangkokDateTime(a.at)} ICT · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}
     </div>
   </main>;
 }

@@ -176,11 +176,9 @@ export default async function ProjectLandingPage({
     resolveKey(`project.${project.slug}.shuttle_schedule`),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
     resolveKey(`project.${project.slug}.licence`),
-    listPublicCommercialHomes(prisma).catch(() => []),
+    listPublicCommercialHomes(prisma, undefined, undefined, project.id).catch(() => []),
   ]);
-  const projectCommercialHomes = allCommercialHomes.filter(
-    (home) => home.project.id === project.id
-  );
+  const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
 

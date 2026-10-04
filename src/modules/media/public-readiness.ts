@@ -28,6 +28,7 @@ export type GalleryReadiness = {
   photoCount: number;
   coverMediaId: string | null;
   coverReady: boolean;
+  coverUrl: string | null;
   invalidMediaIds: string[];
   blockers: string[];
   warnings: string[];
@@ -76,9 +77,10 @@ export function assessGalleryReadiness(input: {
   }
 
   const coverMediaId = input.coverMediaId ?? null;
-  const coverReady = Boolean(
-    coverMediaId && valid.some((link) => link.mediaId === coverMediaId)
-  );
+  const coverLink = coverMediaId
+    ? valid.find((link) => link.mediaId === coverMediaId)
+    : undefined;
+  const coverReady = Boolean(coverLink);
   const blockers: string[] = [];
   const warnings: string[] = [];
 
@@ -96,6 +98,7 @@ export function assessGalleryReadiness(input: {
     photoCount: valid.length,
     coverMediaId,
     coverReady,
+    coverUrl: coverLink?.media.storageKey ?? null,
     invalidMediaIds,
     blockers,
     warnings,

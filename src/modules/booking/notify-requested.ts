@@ -83,6 +83,7 @@ export async function notifyBookingRequested(
 
     opsRecipients.delete(booking.guestIdentityId);
     mcRecipients.delete(booking.guestIdentityId);
+    for (const identityId of opsRecipients) mcRecipients.delete(identityId);
 
     const opsUrl = `${baseUrl}/ops/requests?projectId=${encodeURIComponent(booking.projectId)}`;
     const mcUrl = mcEngagement?.managementOrgId

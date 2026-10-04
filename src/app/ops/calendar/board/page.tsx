@@ -283,6 +283,9 @@ export default async function UnifiedStayCalendarPage({
     booking.id, {
       id: booking.id, kind: 'booking' as const, status: booking.status,
       channel: booking.channel,
+      startDate: booking.startDate.toISOString().slice(0, 10),
+      endDate: booking.endDate.toISOString().slice(0, 10),
+      holdExpiresAt: booking.holdExpiresAt?.toISOString() ?? null,
       // MC's shared calendar exposes occupancy, not unrelated guest identity.
       label: mcMode ? 'Reservation' :
         [booking.guestIdentity.firstName, booking.guestIdentity.lastName].filter(Boolean).join(' ') || 'Reservation',
@@ -290,7 +293,10 @@ export default async function UnifiedStayCalendarPage({
   ]));
   const blockDetails = Object.fromEntries(blocks.map((block) => [
     block.id, { id: block.id, kind: 'block' as const, status: block.reason,
-      channel: null, label: mcMode ? block.reason.replace(/_/g, ' ') :
+      channel: null,
+      startDate: block.startDate.toISOString().slice(0, 10),
+      endDate: block.endDate.toISOString().slice(0, 10),
+      label: mcMode ? block.reason.replace(/_/g, ' ') :
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar

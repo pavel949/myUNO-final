@@ -12,10 +12,8 @@ async function scope(spaceId:string){
   if(!space||space.status!=='active')return {error:NextResponse.json({error:'Operating space not found'},{status:404})};
   if(!user.isAdmin){
     const membership=await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-    const allowed=membership?.active&&(
-      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_tasks')||
-      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_maintenance')
-    );
+    const allowed=membership?.active&&
+      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_incidents');
     if(!allowed)return {error:NextResponse.json({error:'Forbidden'},{status:403})};
   }
   const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);

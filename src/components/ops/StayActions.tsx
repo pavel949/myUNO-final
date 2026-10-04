@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

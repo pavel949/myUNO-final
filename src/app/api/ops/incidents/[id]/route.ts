@@ -13,10 +13,8 @@ export async function PATCH(req:NextRequest,{params}:{params:{id:string}}){
   if(!spaceId)return NextResponse.json({error:'spaceId required'},{status:400});
   if(!user.isAdmin){
     const membership=await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-    const allowed=membership?.active&&(
-      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_tasks')||
-      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_maintenance')
-    );
+    const allowed=membership?.active&&
+      await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_incidents');
     if(!allowed)return NextResponse.json({error:'Forbidden'},{status:403});
   }
   const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);

@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import {
+  db,
+  resetDb,
+  createIdentity,
+  createProject,
+  createUnit,
+  makeProjectPublicMediaReady,
+} from '@/test/util';
 import { seedConfig } from '@/modules/config';
 
 const session: { identityId: string } = { identityId: '' };
@@ -42,6 +49,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
     const admin = await createIdentity({ isAdmin: true });
     const guest = await createIdentity();
     projectId = project.id;
+    await makeProjectPublicMediaReady(projectId);
     adminId = admin.id;
     guestId = guest.id;
     session.identityId = adminId;

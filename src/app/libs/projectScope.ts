@@ -90,6 +90,19 @@ export async function hasManagedUnitMcAccess(
   return Boolean(engagement);
 }
 
+export function hasStaffUnitAccess(
+  user: CurrentUser,
+  input: { projectId: string | null; unitId: string }
+): boolean {
+  if (user.isAdmin) return true;
+  if (!input.projectId) return false;
+  return user.roles.some((assignment) =>
+    STAFF_ROLES.has(assignment.role) &&
+    assignment.projectId === input.projectId &&
+    (!assignment.unitId || assignment.unitId === input.unitId)
+  );
+}
+
 export function hasProjectStaffAccess(user: CurrentUser, projectId: string | null): boolean {
   if (user.isAdmin) {
     return true;

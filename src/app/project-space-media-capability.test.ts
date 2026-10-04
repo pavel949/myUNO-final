@@ -18,7 +18,7 @@ describe('capability-led Project Space media contract', () => {
 
   it('lets one Project Space expose only the commercial capabilities it actually has', () => {
     const project = source('src/app/(public)/projects/[slug]/page.tsx');
-    expect(project).toContain('listPublicCommercialHomes(prisma)');
+    expect(project).toContain('listPublicCommercialHomes(prisma, undefined, undefined, project.id)');
     expect(project).toContain('/homes?intent=buy&projectId=');
     expect(project).toContain('/homes?intent=rent&projectId=');
     expect(project).toContain('<SearchBar');

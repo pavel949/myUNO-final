@@ -51,6 +51,30 @@ describe('thread.service — integration tests', () => {
       expect(second.created).toBe(false);
       expect(await db.threadParticipant.count({where:{threadId:first.id,identityId:operator.id}})).toBe(1);
     });
+
+    it('removes a revoked operator from an existing booking thread on scope refresh', async () => {
+      const project=await createProject();
+      const guest=await createIdentity();
+      const operator=await createIdentity();
+      const unit=await createUnit({projectId:project.id});
+      const booking=await createBooking({projectId:project.id,unitId:unit.id,guestIdentityId:guest.id,status:'confirmed'});
+      const role=await createRoleAssignment({identityId:operator.id,role:'onsite_host',scopeType:'unit',projectId:project.id,unitId:unit.id});
+      const scopedBefore=await threadService.getBookingThreadParticipants(db,booking.id);
+      const thread=await threadService.findOrCreateThread(db,{
+        contextType:'booking',contextId:booking.id,projectId:project.id,
+        participantIdentityIds:scopedBefore.participantIdentityIds,participantRoles:scopedBefore.participantRoles,
+      });
+      expect(await db.threadParticipant.count({where:{threadId:thread.id,identityId:operator.id}})).toBe(1);
+
+      await db.roleAssignment.update({where:{id:role.id},data:{status:'revoked'}});
+      const scopedAfter=await threadService.getBookingThreadParticipants(db,booking.id);
+      await threadService.findOrCreateThread(db,{
+        contextType:'booking',contextId:booking.id,projectId:project.id,
+        participantIdentityIds:scopedAfter.participantIdentityIds,participantRoles:scopedAfter.participantRoles,
+      });
+      expect(await db.threadParticipant.count({where:{threadId:thread.id,identityId:operator.id}})).toBe(0);
+      expect(await db.threadParticipant.count({where:{threadId:thread.id,identityId:guest.id}})).toBe(1);
+    });
   });
 
   describe('findOrCreateThread', () => {

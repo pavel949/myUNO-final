@@ -124,7 +124,7 @@ export async function notifyBookingConfirmed(
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
       end_date: booking.endDate.toISOString().slice(0, 10),
-      total_thb: booking.totalThb.toLocaleString(),
+      total_thb: Math.round(booking.totalThb / 100).toLocaleString(),
     };
 
     await createNotification(db, {

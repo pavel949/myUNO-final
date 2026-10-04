@@ -42,7 +42,7 @@ export async function notifyBookingRequested(
       type: 'stay_request_placed',
       titleKey: 'notify.stay_request_placed.title',
       bodyKey: 'notify.stay_request_placed.body',
-      params,
+      params: baseParams,
     });
 
     const opsRoles = await db.roleAssignment.findMany({

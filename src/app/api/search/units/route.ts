@@ -14,6 +14,10 @@ import {
   boundsWhere,
 } from '@/modules/browse';
 import { listAreas, collectDescendantIds } from '@/modules/projects';
+import {
+  assessGalleryReadiness,
+  assessUnitMediaReadiness,
+} from '@/modules/media/public-readiness';
 
 /**
  * GET /api/search/units
@@ -227,6 +231,71 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Public Stay Search must never surface a home whose gallery is not
+    // commercially presentable. This is the same truthful media rule used by
+    // onboarding and public project/unit pages: private villas/condos require
+    // exact-unit media; hotel rooms may use a room-type gallery.
+    const mediaCandidates = await prisma.unit.findMany({
+      where,
+      select: {
+        id: true,
+        accommodationType: true,
+        coverMediaId: true,
+        project: { select: { projectType: true } },
+        media: {
+          orderBy: { sort: 'asc' },
+          include: {
+            media: {
+              select: {
+                id: true,
+                storageKey: true,
+                kind: true,
+                mimeType: true,
+                encrypted: true,
+                sizeBytes: true,
+              },
+            },
+          },
+        },
+        inventoryCategory: {
+          select: {
+            coverMediaId: true,
+            galleryMedia: {
+              orderBy: { sort: 'asc' },
+              include: {
+                media: {
+                  select: {
+                    id: true,
+                    storageKey: true,
+                    kind: true,
+                    mimeType: true,
+                    encrypted: true,
+                  sizeBytes: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const mediaEligibleUnitIds = mediaCandidates
+      .filter((unit) => assessUnitMediaReadiness({
+        projectType: unit.project.projectType,
+        accommodationType: unit.accommodationType,
+        unitCoverMediaId: unit.coverMediaId,
+        unitMedia: unit.media,
+        categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+        categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
+      }).ready)
+      .map((unit) => unit.id);
+
+    const existingIdFilter =
+      where.id && typeof where.id === 'object' && !Array.isArray(where.id)
+        ? where.id
+        : {};
+    where.id = { ...existingIdFilter, in: mediaEligibleUnitIds };
+
     // Commercially unapproved imported inventory is an unavailable search
     // candidate, not a reason to fail the whole public discovery request.
     // Unexpected calculator/database failures must still surface as errors.
@@ -267,6 +336,22 @@ export async function GET(req: NextRequest) {
               status: true,
               baseNightlyThb: true,
               minNights: true,
+              coverMediaId: true,
+              galleryMedia: {
+                orderBy: { sort: 'asc' },
+                include: {
+                  media: {
+                    select: {
+                      id: true,
+                      storageKey: true,
+                      kind: true,
+                      mimeType: true,
+                      encrypted: true,
+                    sizeBytes: true,
+                    },
+                  },
+                },
+              },
             },
           },
           baseNightlyThb: true,
@@ -287,7 +372,16 @@ export async function GET(req: NextRequest) {
       const grouped = new Map<string, GroupedCategory>();
       for (const unit of categoryUnits) {
         const category = unit.inventoryCategory;
-        const key = category?.categoryKey || unit.categoryKey;
+        // Category booking sells the type, not a specific unit. It therefore
+        // requires its own representative gallery; exact-unit photos cannot
+        // silently stand in for missing type photography.
+        if (!category) continue;
+        const categoryMedia = assessGalleryReadiness({
+          coverMediaId: category.coverMediaId,
+          links: category.galleryMedia,
+        });
+        if (!categoryMedia.ready) continue;
+        const key = category.categoryKey;
         if (!key) continue;
         const mapKey = category ? `id:${category.id}` : `legacy:${key}`;
         const canonicalBase = category?.baseNightlyThb ?? unit.baseNightlyThb;

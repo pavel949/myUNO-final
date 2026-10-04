@@ -6,12 +6,19 @@ import {
   createUnit,
   createIdentity,
   createBooking,
+  makeProjectPublicMediaReady,
 } from '@/test/util';
 import {
   listPublicProjects,
   getPublicProjectBySlug,
   listPublicUnitIds,
 } from './public.service';
+
+async function createProjectWithMedia(options: Parameters<typeof createProject>[0] = {}) {
+  const project = await createProject(options);
+  await makeProjectPublicMediaReady(project.id);
+  return project;
+}
 
 describe('Projects public read seam (discovery pages)', () => {
   beforeEach(async () => {
@@ -20,15 +27,15 @@ describe('Projects public read seam (discovery pages)', () => {
 
   describe('listPublicProjects', () => {
     it('returns only live projects', async () => {
-      await createProject({ slug: 'draft-p', status: 'draft' });
-      await createProject({ slug: 'live-p', status: 'live' });
+      await createProjectWithMedia({ slug: 'draft-p', status: 'draft' });
+      await createProjectWithMedia({ slug: 'live-p', status: 'live' });
 
       const projects = await listPublicProjects();
       expect(projects.map((p) => p.slug)).toEqual(['live-p']);
     });
 
     it('counts only live units and computes the from-price over them', async () => {
-      const project = await createProject({ slug: 'live-p', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'live-p', status: 'live' });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 3000 });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 2500 });
       await createUnit({ projectId: project.id, status: 'draft', baseNightlyThb: 100 });
@@ -39,7 +46,7 @@ describe('Projects public read seam (discovery pages)', () => {
     });
 
     it('returns a null from-price when a live project has no live units', async () => {
-      await createProject({ slug: 'empty-p', status: 'live' });
+      await createProjectWithMedia({ slug: 'empty-p', status: 'live' });
 
       const [card] = await listPublicProjects();
       expect(card.liveUnitCount).toBe(0);
@@ -53,12 +60,32 @@ describe('Projects public read seam (discovery pages)', () => {
     });
 
     it('returns null for non-live projects so drafts never leak', async () => {
-      await createProject({ slug: 'draft-p', status: 'draft' });
+      await createProjectWithMedia({ slug: 'draft-p', status: 'draft' });
       expect(await getPublicProjectBySlug('draft-p')).toBeNull();
     });
 
+    it('keeps a live but media-incomplete unit out of Project Space and sitemap', async () => {
+      const project = await createProjectWithMedia({ slug: 'media-gated-p', status: 'live' });
+      const hidden = await createUnit({
+        projectId: project.id,
+        status: 'live',
+        name: 'No photos',
+        publicMediaReady: false,
+      });
+      const visible = await createUnit({
+        projectId: project.id,
+        status: 'live',
+        name: 'Ready home',
+      });
+
+      const detail = await getPublicProjectBySlug(project.slug);
+      expect(detail?.units.map((unit) => unit.id)).toEqual([visible.id]);
+      expect(detail?.units.map((unit) => unit.id)).not.toContain(hidden.id);
+      expect(await listPublicUnitIds()).toEqual([visible.id]);
+    });
+
     it('returns the live project with only its live units, cheapest first', async () => {
-      const project = await createProject({ slug: 'live-p', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'live-p', status: 'live' });
       await createUnit({
         projectId: project.id,
         status: 'live',
@@ -82,7 +109,7 @@ describe('Projects public read seam (discovery pages)', () => {
 
   describe('categories & reviews on the landing payload (LY-5)', () => {
     it('a live unit receives a canonical category even without a hand-built catalog', async () => {
-      const project = await createProject({ slug: 'plain-p', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'plain-p', status: 'live' });
       const unit = await createUnit({ projectId: project.id, status: 'live' });
 
       const detail = await getPublicProjectBySlug('plain-p');
@@ -96,7 +123,7 @@ describe('Projects public read seam (discovery pages)', () => {
     });
 
     it('builds category cards from canonical inventory categories', async () => {
-      const project = await createProject({ slug: 'resort-p', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'resort-p', status: 'live' });
       const category = await prisma.inventoryCategory.create({
         data: {
           projectId: project.id,
@@ -135,8 +162,8 @@ describe('Projects public read seam (discovery pages)', () => {
     });
 
     it('exposes only published stay reviews of this project, first name only', async () => {
-      const project = await createProject({ slug: 'reviewed-p', status: 'live' });
-      const otherProject = await createProject({ status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'reviewed-p', status: 'live' });
+      const otherProject = await createProjectWithMedia({ status: 'live' });
       const unit = await createUnit({ projectId: project.id, status: 'live' });
       const otherUnit = await createUnit({ projectId: otherProject.id, status: 'live' });
       const guest = await createIdentity({ firstName: 'Anna' });
@@ -203,7 +230,7 @@ describe('Projects public read seam (discovery pages)', () => {
 
   describe('commercial and source-authority visibility across public surfaces', () => {
     it('does not count sale-only and lease-only units as bookable stays', async () => {
-      const project = await createProject({ slug: 'mixed-commercial', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'mixed-commercial', status: 'live' });
       await prisma.project.update({ where: { id: project.id }, data: { projectType: 'condominium' } });
       const sale = await createUnit({ projectId: project.id, status: 'live', name: 'Sale only' });
       const lease = await createUnit({ projectId: project.id, status: 'live', name: 'Lease only' });
@@ -222,7 +249,7 @@ describe('Projects public read seam (discovery pages)', () => {
     });
 
     it('excludes source-owned inventory from the project page and sitemap until signed cutover', async () => {
-      const project = await createProject({ slug: 'source-project', status: 'live' });
+      const project = await createProjectWithMedia({ slug: 'source-project', status: 'live' });
       const sourceUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Protected source' });
       const localUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Local unit' });
       const source = await prisma.externalSystem.create({ data: {
@@ -244,8 +271,8 @@ describe('Projects public read seam (discovery pages)', () => {
 
   describe('listPublicUnitIds', () => {
     it('lists only live units inside live projects', async () => {
-      const live = await createProject({ slug: 'live-p', status: 'live' });
-      const draft = await createProject({ slug: 'draft-p', status: 'draft' });
+      const live = await createProjectWithMedia({ slug: 'live-p', status: 'live' });
+      const draft = await createProjectWithMedia({ slug: 'draft-p', status: 'draft' });
       const visible = await createUnit({ projectId: live.id, status: 'live' });
       await createUnit({ projectId: live.id, status: 'draft' });
       await createUnit({ projectId: draft.id, status: 'live' });

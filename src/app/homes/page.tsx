@@ -29,7 +29,12 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
   const intent: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const destination = getDestination();
   const [allHomes, labels] = await Promise.all([
-    listPublicCommercialHomes(prisma, intent).catch(() => []),
+    listPublicCommercialHomes(
+      prisma,
+      intent,
+      undefined,
+      searchParams?.projectId
+    ).catch(() => []),
     getLabels({
       'homes.kicker': 'myUNO · REAL ESTATE',
       'homes.inquiry.buy': `I am looking to purchase a property in ${destination.name}.`,
@@ -88,7 +93,11 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
   });
 
   const areas = [...new Set(allHomes.map((home) => home.project.areaSlug).filter((value): value is string => Boolean(value)))].sort();
-  const modeLink = (value: HomeIntent) => '/homes?intent=' + value;
+  const modeLink = (value: HomeIntent) => {
+    const params = new URLSearchParams({ intent: value });
+    if (searchParams?.projectId) params.set('projectId', searchParams.projectId);
+    return '/homes?' + params.toString();
+  };
 
   return <main className="min-h-screen bg-surface-ivory">
     <section className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">

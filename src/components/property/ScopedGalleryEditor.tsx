@@ -1,10 +1,22 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  assessGalleryReadiness,
+  MIN_PUBLIC_GALLERY_PHOTOS,
+  RECOMMENDED_PUBLIC_GALLERY_PHOTOS,
+} from '@/modules/media/public-readiness';
 
 type Scope = 'project' | 'category' | 'unit';
-type Asset = { id: string; storageKey: string; mimeType: string; kind: string };
+type Asset = {
+  id: string;
+  storageKey: string;
+  mimeType: string;
+  kind: string;
+  encrypted: boolean;
+  sizeBytes: number;
+};
 type Link = { mediaId: string; sort: number; media: Asset };
 type Gallery = { coverMediaId: string | null; galleryMedia?: Link[]; media?: Link[] };
 type Target = { id: string; name: string; scope: Scope };
@@ -37,8 +49,28 @@ export default function ScopedGalleryEditor({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [failedMediaIds, setFailedMediaIds] = useState<Set<string>>(new Set());
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
   const galleryUrl = endpoint(target);
+  const readiness = useMemo(
+    () =>
+      assessGalleryReadiness({
+        coverMediaId: cover,
+        links: items.map((item, index) => ({
+          mediaId: item.mediaId,
+          sort: index,
+          media: item.media,
+        })),
+      }),
+    [cover, items]
+  );
+  const effectiveReady = readiness.ready && failedMediaIds.size === 0;
+  const scopeExplanation =
+    target.scope === 'project'
+      ? 'Shared property spaces: facade, grounds, lobby and common facilities.'
+      : target.scope === 'category'
+        ? 'Representative room or villa type: layout, bedroom arrangement and type-level character.'
+        : 'Exact physical home: its real view, fit-out, rooms and distinguishing details.';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +79,7 @@ export default function ScopedGalleryEditor({
       if (!res.ok) throw new Error('Could not load gallery');
       const gallery = await res.json() as Gallery;
       const links = gallery.galleryMedia ?? gallery.media ?? [];
+      setFailedMediaIds(new Set());
       setItems(links.map(link => ({ mediaId: link.mediaId, media: link.media })));
       setCover(gallery.coverMediaId);
     } catch (error) {
@@ -116,6 +149,44 @@ export default function ScopedGalleryEditor({
         </label>
       </div>
     </div>
+    <div className="rounded-lg border border-border-line bg-surface-paper p-16">
+      <div className="flex flex-wrap items-start justify-between gap-12">
+        <div>
+          <p className="text-small font-semibold text-text-ink">{scopeExplanation}</p>
+          <p className="mt-4 text-small text-text-secondary">
+            Public minimum: {MIN_PUBLIC_GALLERY_PHOTOS} valid photos + a cover from this gallery.
+            Recommended: {RECOMMENDED_PUBLIC_GALLERY_PHOTOS}+ photos.
+          </p>
+        </div>
+        <span
+          className={
+            effectiveReady
+              ? 'rounded-full bg-state-success-soft px-12 py-8 text-small font-semibold text-state-success'
+              : 'rounded-full bg-state-warning-soft px-12 py-8 text-small font-semibold text-state-warning'
+          }
+        >
+          {effectiveReady ? 'Ready for public use' : 'Not media-ready'}
+        </span>
+      </div>
+      {!effectiveReady ? (
+        <p className="mt-8 text-small text-text-secondary">
+          {readiness.photoCount < MIN_PUBLIC_GALLERY_PHOTOS
+            ? `Add ${MIN_PUBLIC_GALLERY_PHOTOS - readiness.photoCount} more valid photo(s). `
+            : ''}
+          {!readiness.coverReady ? 'Choose a cover from this gallery. ' : ''}
+          {readiness.invalidMediaIds.length > 0
+            ? 'Replace unsupported or non-public media assets. '
+            : ''}
+          {failedMediaIds.size > 0
+            ? `${failedMediaIds.size} image file(s) failed to load from storage.`
+            : ''}
+        </p>
+      ) : readiness.photoCount < RECOMMENDED_PUBLIC_GALLERY_PHOTOS ? (
+        <p className="mt-8 text-small text-text-secondary">
+          Ready, but add {RECOMMENDED_PUBLIC_GALLERY_PHOTOS - readiness.photoCount} more photo(s) for a stronger listing.
+        </p>
+      ) : null}
+    </div>
     <div className="flex flex-wrap items-center justify-between gap-12">
       <div><h3 className="font-semibold">{target.name} · {items.length} {labels['admin.gallery.photos']}</h3>
         <p className="text-small text-text-secondary">{labels['admin.gallery.hint']}</p></div>
@@ -139,7 +210,22 @@ export default function ScopedGalleryEditor({
       <div className="grid gap-12 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item, index) => <article key={item.mediaId} className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="h-[192px] w-full object-cover" src={item.media.storageKey} alt={`Photo ${index + 1} of ${target.name}`}/>
+          <img
+            className="h-[192px] w-full object-cover"
+            src={item.media.storageKey}
+            alt={`Photo ${index + 1} of ${target.name}`}
+            onError={() =>
+              setFailedMediaIds((current) => new Set(current).add(item.mediaId))
+            }
+            onLoad={() =>
+              setFailedMediaIds((current) => {
+                if (!current.has(item.mediaId)) return current;
+                const next = new Set(current);
+                next.delete(item.mediaId);
+                return next;
+              })
+            }
+          />
           <div className="p-12 space-y-8">
             <div className="flex items-center justify-between">
               <span className="text-small">{index + 1} / {items.length}</span>

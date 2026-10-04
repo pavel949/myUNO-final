@@ -125,6 +125,38 @@ describe('GET /api/search/units — category grouping & filters (LY-6)', () => {
  * own pages returned 404. Two reads of one fact disagreeing, with the
  * guest-facing one still selling.
  */
+describe('GET /api/search/units — public media eligibility', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('excludes a live unit that has no truthful public gallery', async () => {
+    const project = await createProject({ status: 'live' });
+    const hidden = await createUnit({
+      projectId: project.id,
+      name: 'Media-incomplete',
+      status: 'live',
+      maxGuests: 4,
+      publicMediaReady: false,
+    });
+    const visible = await createUnit({
+      projectId: project.id,
+      name: 'Media-ready',
+      status: 'live',
+      maxGuests: 4,
+    });
+
+    const response = await GET(
+      makeRequest({ projectId: project.id, adultsCount: '2' })
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.units.map((unit: { id: string }) => unit.id)).toEqual([visible.id]);
+    expect(body.units.map((unit: { id: string }) => unit.id)).not.toContain(hidden.id);
+    expect(body.total).toBe(1);
+  });
+});
+
 describe('GET /api/search/units — a unit is only as public as its project', () => {
   async function projectWithLiveUnit(status: 'live' | 'draft' | 'archived', slug: string) {
     const project = await createProject({ slug, status });

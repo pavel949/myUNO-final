@@ -190,10 +190,10 @@ export default async function MCPropertyWorkspace({
             ['Operate',['overview','calendar','reservations','operations']],
             ['Commercial',['rates','channels','financials']],
             ['Property',['owner','property','media','activity']],
-          ].map(([group,items]) => <div key={String(group)} className="flex items-end gap-2">
+          ].map(([group,items]) => <div key={String(group)} className="flex items-end gap-4">
             <span className="px-4 pb-8 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary">{group}</span>
             {(items as readonly Tab[]).map(item => <Link key={item} href={tabHref(unit.id,item,focusDate)}
-              className={`px-10 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
+              className={`px-12 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
               {item}
             </Link>)}
           </div>)}
@@ -286,13 +286,13 @@ export default async function MCPropertyWorkspace({
 
       {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12">
         <div className="flex flex-wrap items-center justify-between gap-8"><p className="font-semibold capitalize">{row.channel.replace(/_/g,' ')}</p><span className={pill}>{row.state.replace(/_/g,' ')}</span></div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-3 text-small">
+        <div className="mt-8 grid gap-8 sm:grid-cols-3 text-small">
           <p><span className="text-text-secondary">Availability</span><br/><span className="font-semibold">{row.availability==='push'?'✓ Live':row.availability==='ical'?'iCal sync':'Manual'}</span></p>
           <p><span className="text-text-secondary">Rates</span><br/><span className="font-semibold">{row.rates==='push'?'✓ Live':'Manual'}</span></p>
           <p><span className="text-text-secondary">Restrictions</span><br/><span className="font-semibold">{row.restrictions==='push'?'✓ Live':'Manual'}</span></p>
         </div>
         {'lastSyncAt' in row && row.lastSyncAt ? <p className={small+' mt-8'}>Last synced {bangkokDateTime(new Date(row.lastSyncAt))}</p> : null}
-        {'error' in row && row.error ? <p className="mt-6 text-small text-state-error">{String(row.error)}</p> : null}
+        {'error' in row && row.error ? <p className="mt-8 text-small text-state-error">{String(row.error)}</p> : null}
       </div>):<p className={small}>No channel mapping. Inventory is manual-only.</p>}</div></section>}
 
       {tab==='financials' && <div className="grid gap-16 xl:grid-cols-2">

@@ -92,10 +92,10 @@ export default async function ProjectLandingPage({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
-    'project_page.styles.title': 'Three styles, one resort',
-    'project_page.categories.title': 'Villa categories',
+    'project_page.styles.title': 'Property styles',
+    'project_page.categories.title': 'Accommodation categories',
     'project_page.categories.from_night': 'from ฿{price} / night',
-    'project_page.categories.villas_count': '{count} villas',
+    'project_page.categories.villas_count': '{count} homes',
     'project_page.longstay.title': 'Long stays',
     'project_page.longstay.body': 'Stay a month or a season: flat monthly rates for 28+ nights, with housekeeping and concierge included.',
     'project_page.longstay.from_month': 'from ฿{price} / month',
@@ -257,7 +257,8 @@ export default async function ProjectLandingPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': project.projectType === 'resort' || project.projectType === 'villa_estate' ? 'Resort' :
-      project.projectType === 'hotel' ? 'Hotel' : 'LodgingBusiness',
+      project.projectType === 'hotel' ? 'Hotel' :
+        project.projectType === 'condominium' ? 'ApartmentComplex' : 'Place',
     name: project.name,
     address: project.address,
     ...(hasVerifiedPin ? { geo: {

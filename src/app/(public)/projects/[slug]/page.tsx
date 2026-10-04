@@ -92,10 +92,10 @@ export default async function ProjectLandingPage({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
-    'project_page.styles.title': 'Property styles',
-    'project_page.categories.title': 'Accommodation categories',
+    'project_page.styles.generic_title': 'Property styles',
+    'project_page.categories.generic_title': 'Accommodation categories',
     'project_page.categories.from_night': 'from ฿{price} / night',
-    'project_page.categories.villas_count': '{count} homes',
+    'project_page.categories.homes_count': '{count} homes',
     'project_page.longstay.title': 'Long stays',
     'project_page.longstay.body': 'Stay a month or a season: flat monthly rates for 28+ nights, with housekeeping and concierge included.',
     'project_page.longstay.from_month': 'from ฿{price} / month',
@@ -385,7 +385,7 @@ export default async function ProjectLandingPage({
           {styleKeys.length > 1 ? (
             <>
               <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-                {labels['project_page.styles.title']}
+                {labels['project_page.styles.generic_title']}
               </h2>
               <div className="flex flex-wrap gap-16 mb-40">
                 {styleKeys.map((styleKey) => (
@@ -400,7 +400,7 @@ export default async function ProjectLandingPage({
             </>
           ) : null}
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
-            {labels['project_page.categories.title']}
+            {labels['project_page.categories.generic_title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.categories.map((category) => (
@@ -430,7 +430,7 @@ export default async function ProjectLandingPage({
                   </p>
                 ) : null}
                 <p className="text-small text-text-secondary mb-12">
-                  {labels['project_page.categories.villas_count'].replace(
+                  {labels['project_page.categories.homes_count'].replace(
                     '{count}',
                     String(category.unitCount)
                   )}

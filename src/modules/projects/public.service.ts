@@ -173,11 +173,12 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     ? await tMany(prisma, publicCopyKeys, locale)
     : {};
 
-  return projects.map((p) => {
+  return projects.flatMap((p) => {
     const projectMedia = assessGalleryReadiness({
       coverMediaId: p.coverMediaId,
       links: p.galleryMedia,
     });
+    if (!projectMedia.ready) return [];
     const eligibleUnits = p.units.filter((unit) =>
       assessUnitMediaReadiness({
         projectType: unit.project.projectType,
@@ -188,7 +189,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
         categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
       }).ready
     );
-    return {
+    return [{
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -206,7 +207,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
       ...amenity,
       name: publicCopy[`project_amenity.${amenity.id}.name`] || amenity.name,
     })),
-    };
+    }];
   });
 }
 
@@ -270,6 +271,7 @@ export async function getPublicProjectBySlug(
     coverMediaId: project.coverMediaId,
     links: project.galleryMedia,
   });
+  if (!projectMedia.ready) return null;
 
   const [categories, reviews, amenities] = await Promise.all([
     buildPublicCategories(project.id, project.slug, eligibleUnits.map(({ unit }) => unit)),

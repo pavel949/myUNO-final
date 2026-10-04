@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { filterOperationalRecipients } from '@/modules/booking/operational-recipients';
 import { createNotification } from '@/modules/comms';
 import { sendEmail } from '@/modules/auth';
 import { getLabels } from '@/lib/i18n';
@@ -39,7 +40,12 @@ async function notifyOpsNewBooking(
     select: { identityId: true },
   });
 
-  const opsRecipients = new Set(opsRoles.map((role) => role.identityId));
+  const opsRecipients = new Set(await filterOperationalRecipients(
+    db,
+    booking.unitId,
+    opsRoles.map((role) => role.identityId),
+    ["manage_front_desk","manage_reservations","manage_guest_communications"]
+  ));
   const mcRecipients = new Set<string>();
 
   const mcEngagement = await db.unitEngagement.findFirst({

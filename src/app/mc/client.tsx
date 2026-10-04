@@ -224,7 +224,7 @@ export function MCDashboardClient({
   const [feeReportLoading, setFeeReportLoading] = useState(false);
   const [feeReportError, setFeeReportError] = useState<string | null>(null);
   const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
-  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [, setBookingError] = useState<string | null>(null);
   const [bookingFeedback, setBookingFeedback] = useState<Record<string, { kind: 'success' | 'error'; message: string }>>({});
   const [bookingSearch, setBookingSearch] = useState('');
   const [bookingUnitFilter, setBookingUnitFilter] = useState('');

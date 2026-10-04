@@ -48,6 +48,7 @@ export default function ScopedGalleryEditor({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [failedMediaIds, setFailedMediaIds] = useState<Set<string>>(new Set());
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
   const galleryUrl = endpoint(target);
   const readiness = useMemo(
@@ -62,6 +63,7 @@ export default function ScopedGalleryEditor({
       }),
     [cover, items]
   );
+  const effectiveReady = readiness.ready && failedMediaIds.size === 0;
   const scopeExplanation =
     target.scope === 'project'
       ? 'Shared property spaces: facade, grounds, lobby and common facilities.'
@@ -76,6 +78,7 @@ export default function ScopedGalleryEditor({
       if (!res.ok) throw new Error('Could not load gallery');
       const gallery = await res.json() as Gallery;
       const links = gallery.galleryMedia ?? gallery.media ?? [];
+      setFailedMediaIds(new Set());
       setItems(links.map(link => ({ mediaId: link.mediaId, media: link.media })));
       setCover(gallery.coverMediaId);
     } catch (error) {
@@ -161,17 +164,20 @@ export default function ScopedGalleryEditor({
               : 'rounded-full bg-state-warning-soft px-12 py-6 text-small font-semibold text-state-warning'
           }
         >
-          {readiness.ready ? 'Ready for public use' : 'Not media-ready'}
+          {effectiveReady ? 'Ready for public use' : 'Not media-ready'}
         </span>
       </div>
-      {!readiness.ready ? (
+      {!effectiveReady ? (
         <p className="mt-8 text-small text-text-secondary">
           {readiness.photoCount < MIN_PUBLIC_GALLERY_PHOTOS
             ? `Add ${MIN_PUBLIC_GALLERY_PHOTOS - readiness.photoCount} more valid photo(s). `
             : ''}
           {!readiness.coverReady ? 'Choose a cover from this gallery. ' : ''}
           {readiness.invalidMediaIds.length > 0
-            ? 'Replace unsupported or non-public media assets.'
+            ? 'Replace unsupported or non-public media assets. '
+            : ''}
+          {failedMediaIds.size > 0
+            ? `${failedMediaIds.size} image file(s) failed to load from storage.`
             : ''}
         </p>
       ) : readiness.photoCount < RECOMMENDED_PUBLIC_GALLERY_PHOTOS ? (
@@ -203,7 +209,22 @@ export default function ScopedGalleryEditor({
       <div className="grid gap-12 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item, index) => <article key={item.mediaId} className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="h-[192px] w-full object-cover" src={item.media.storageKey} alt={`Photo ${index + 1} of ${target.name}`}/>
+          <img
+            className="h-[192px] w-full object-cover"
+            src={item.media.storageKey}
+            alt={`Photo ${index + 1} of ${target.name}`}
+            onError={() =>
+              setFailedMediaIds((current) => new Set(current).add(item.mediaId))
+            }
+            onLoad={() =>
+              setFailedMediaIds((current) => {
+                if (!current.has(item.mediaId)) return current;
+                const next = new Set(current);
+                next.delete(item.mediaId);
+                return next;
+              })
+            }
+          />
           <div className="p-12 space-y-8">
             <div className="flex items-center justify-between">
               <span className="text-small">{index + 1} / {items.length}</span>

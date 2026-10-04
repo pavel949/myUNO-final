@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
 import RecordCostClient from '@/app/ops/costs/record-cost-client';
+import OwnerStatementGenerator from './owner-statement-generator';
 
 export const dynamic='force-dynamic';
 
@@ -25,7 +26,12 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
   const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);
   const unitIds=user.isAdmin?spaceUnitIds:await getAuthorizedOperationalUnitIds(user,spaceUnitIds,['finance','reservations']);
   if(!unitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
-  const canRecord=user.isAdmin||await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'record_expense');
+  const [canRecord,canGenerate]=user.isAdmin
+    ? [true,true]
+    : await Promise.all([
+        hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'record_expense'),
+        hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'generate_owner_report'),
+      ]);
   const [units,ledger,statements]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:unitIds}},
@@ -55,6 +61,16 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
     'staff.finance.costs':'Costs',
     'staff.finance.noi':'NOI',
     'staff.finance.owner_share':'Owner',
+    'staff.finance.generate_statement':'Generate owner statement',
+    'staff.finance.generate_hint':'Create the draft owner statement from canonical bookings, payments, ledger costs and the active management engagement.',
+    'staff.finance.statement_error':'Could not generate the owner statement.',
+    'staff.finance.statement_created':'Draft owner statement created.',
+    'staff.finance.property':'Property',
+    'staff.finance.choose_property':'Choose property',
+    'staff.finance.period_start':'Period start',
+    'staff.finance.period_end':'Period end',
+    'staff.finance.generate':'Generate draft',
+    'staff.finance.generating':'Generating…',
     'ops.costs.title':'Record a cost','ops.costs.back':'← Workspace',
     'ops.costs.intro':'Costs recorded here appear on the owner statement for that unit.',
     'ops.costs.unit':'Unit','ops.costs.type':'Type','ops.costs.amount':'Amount (฿)',
@@ -73,6 +89,7 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
       <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['staff.finance.title']}</h1>
       <p className="mt-8 text-body text-text-secondary">{space.name} · {labels['staff.finance.subtitle']}</p>
     </header>
+    {canGenerate&&<OwnerStatementGenerator spaceId={spaceId} units={units.map(u=>({id:u.id,name:u.name,projectName:u.project.name}))} labels={labels}/>}
     {canRecord&&<RecordCostClient embedded units={units.map(u=>({id:u.id,name:u.name,projectName:u.project.name}))}
       recent={ledger.filter(item=>['cleaning_cost','maintenance_cost','consumables_cost','utilities_cost','adjustment'].includes(item.entryType)&&item.description).slice(0,10).map(item=>({
         id:item.id,entryType:item.entryType,amountThb:item.amountThb,occurredOn:item.occurredOn.toISOString().slice(0,10),

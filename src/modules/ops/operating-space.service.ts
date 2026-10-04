@@ -7,6 +7,8 @@ export const OPERATING_SPACE_CAPABILITIES = [
   'assign_tasks',
   'manage_housekeeping',
   'manage_maintenance',
+  'manage_incidents',
+  'manage_guest_communications',
   'manage_pricing',
   'manage_availability',
   'view_finance',

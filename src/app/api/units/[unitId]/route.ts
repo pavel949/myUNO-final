@@ -206,18 +206,7 @@ export async function GET(
         : null,
       project: { id: project.id, name: project.name },
     };
-    const coverUrl = mediaReadiness.urls.find((url) => {
-      if (mediaReadiness.photoScope === 'exact_unit') {
-        return unit.media.some(
-          (link) => link.mediaId === unit.coverMediaId && link.media.storageKey === url
-        );
-      }
-      return unit.inventoryCategory?.galleryMedia.some(
-        (link) =>
-          link.mediaId === unit.inventoryCategory?.coverMediaId &&
-          link.media.storageKey === url
-      );
-    }) ?? mediaReadiness.urls[0];
+    const coverUrl = mediaReadiness.coverUrl;
 
     return NextResponse.json({
       ...publicUnit,

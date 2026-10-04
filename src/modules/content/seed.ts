@@ -43,6 +43,9 @@ const COMMON_KEYS: KeyDef[] = [
   { key: 'project_page.commercial.rent', namespace: 'project_page', description: 'Project Space long-term rent capability label', en: 'Long-term rentals', ru: 'Долгосрочная аренда', th: 'เช่าระยะยาว', status: 'needs_review' },
   { key: 'project_page.commercial.count', namespace: 'project_page', description: 'Project Space commercial availability count', en: '{count} available', ru: 'Доступно: {count}', th: 'ว่าง {count} รายการ', status: 'needs_review' },
   { key: 'project_page.commercial.view', namespace: 'project_page', description: 'Project Space commercial capability CTA', en: 'View available homes →', ru: 'Посмотреть доступные объекты →', th: 'ดูบ้านที่พร้อมให้บริการ →', status: 'needs_review' },
+  { key: 'project_page.styles.generic_title', namespace: 'project_page', description: 'Project Space: neutral property styles heading', en: 'Property styles', ru: 'Типы недвижимости', th: 'รูปแบบที่พัก', status: 'needs_review' },
+  { key: 'project_page.categories.generic_title', namespace: 'project_page', description: 'Project Space: neutral accommodation categories heading', en: 'Accommodation categories', ru: 'Категории размещения', th: 'ประเภทที่พัก', status: 'needs_review' },
+  { key: 'project_page.categories.homes_count', namespace: 'project_page', description: 'Project Space: neutral category unit count', en: '{count} homes', ru: '{count} объектов', th: '{count} ที่พัก', status: 'needs_review' },
   // Actions
   {
     key: 'common.action.save',

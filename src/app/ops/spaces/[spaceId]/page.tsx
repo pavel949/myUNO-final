@@ -132,7 +132,7 @@ export default async function OperatingSpaceHome({
     ...(can('manage_tasks') ? [[labels['staff.space.tasks_link'], '/ops/tasks?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_housekeeping') ? [[labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_maintenance') ? [[labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)]] : []),
-    ...(can('manage_tasks') || can('manage_maintenance') ? [[labels['staff.space.incidents'], '/ops/incidents?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_incidents') ? [[labels['staff.space.incidents'], '/ops/incidents?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_pricing') || can('manage_availability') ? [[labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_team') ? [[labels['staff.space.team'], '/ops/spaces/' + encodeURIComponent(space.id) + '/access']] : []),
     ...(can('view_finance') ? [[labels['staff.space.finance'], '/ops/finance?spaceId=' + encodeURIComponent(space.id)]] : []),

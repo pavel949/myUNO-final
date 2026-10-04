@@ -53,8 +53,8 @@ export default async function MCPropertyWorkspace({
       id: true, name: true, projectId: true, status: true, assetStatus: true,
       bedrooms: true, bathrooms: true, maxGuests: true, sizeSqm: true, floor: true,
       addressSupplement: true, minNights: true, instantBook: true,
-      project: { select: { name: true, coverMediaId: true, _count: { select: { media: true } } } },
-      inventoryCategory: { select: { id: true, name: true, baseNightlyThb: true, coverMediaId: true, _count: { select: { media: true } } } },
+      project: { select: { name: true, coverMediaId: true, _count: { select: { galleryMedia: true } } } },
+      inventoryCategory: { select: { id: true, name: true, baseNightlyThb: true, coverMediaId: true, _count: { select: { galleryMedia: true } } } },
       coverMediaId: true,
       _count: { select: { media: true } },
       owner: { select: { id: true, firstName: true, lastName: true } },
@@ -311,8 +311,8 @@ export default async function MCPropertyWorkspace({
         <h2 className="font-display text-heading-2 font-semibold">Media</h2>
         <p className="mt-8 text-body text-text-secondary">Public presentation composes canonical project, category and unit galleries without duplicating files.</p>
         <div className="mt-12 grid gap-8 sm:grid-cols-3">
-          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Project gallery</p><p className="font-semibold">{unit.project._count.media} photos</p><p className={small}>{unit.project.coverMediaId?'Cover set':'Cover missing'}</p></div>
-          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Category gallery</p><p className="font-semibold">{unit.inventoryCategory?unit.inventoryCategory._count.media:0} photos</p><p className={small}>{unit.inventoryCategory?.coverMediaId?'Cover set':'Cover missing'}</p></div>
+          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Project gallery</p><p className="font-semibold">{unit.project._count.galleryMedia} photos</p><p className={small}>{unit.project.coverMediaId?'Cover set':'Cover missing'}</p></div>
+          <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Category gallery</p><p className="font-semibold">{unit.inventoryCategory?unit.inventoryCategory._count.galleryMedia:0} photos</p><p className={small}>{unit.inventoryCategory?.coverMediaId?'Cover set':'Cover missing'}</p></div>
           <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Unit gallery</p><p className="font-semibold">{unit._count.media} photos</p><p className={small}>{unit.coverMediaId?'Cover set':'Cover missing'}</p></div>
         </div>
         {(unit._count.media===0||!unit.coverMediaId) && <p className="mt-12 rounded-md bg-amber-50 p-12 text-small text-amber-900">Unit presentation is incomplete. Add exact-unit photos and choose a cover before publishing.</p>}

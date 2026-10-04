@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { resolveBookingAccess, canOperateBookingAsStaff } from '@/app/libs/bookingAccess';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 import { findOrCreateThread, getBookingThreadParticipants } from '@/modules/comms';
 
 export const dynamic='force-dynamic';
@@ -23,6 +24,10 @@ export default async function BookingConversationRedirect({
     ownerIdentityId:booking.unit.ownerIdentityId,
   });
   if(!canOperateBookingAsStaff(access))notFound();
+  if(
+    access.isStaff &&
+    !(await passesOperatingSpaceUnitCapability(user,booking.unitId,'manage_guest_communications'))
+  )notFound();
 
   const scoped=await getBookingThreadParticipants(prisma,booking.id);
   const thread=await findOrCreateThread(prisma,{

@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
+import { assessGalleryReadiness } from '@/modules/media/public-readiness';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -77,14 +78,28 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       status: 'live', assetStatus: { not: 'suspended' },
       project: { status: 'live' },
       commercialOfferings: { some: { status: 'active', offeringType: { in: kinds } } },
-      OR: [{ coverMediaId: { not: null } }, { media: { some: {} } }],
+      // Exact sale/lease inventory must carry its own truthful gallery. The
+      // detailed readiness check below enforces cover membership and photo
+      // quality; this coarse filter only avoids loading obviously empty rows.
+      coverMediaId: { not: null },
+      media: { some: {} },
     },
     select: {
       id: true, name: true, unitType: true, bedrooms: true, bathrooms: true, sizeSqm: true,
       permittedUseConfirmedAt: true,
       project: { select: { id: true, name: true, slug: true, area: { select: { slug: true } } } },
-      coverMedia: { select: { storageKey: true } },
-      media: { take: 1, orderBy: { sort: 'asc' }, select: { media: { select: { storageKey: true } } } },
+      coverMediaId: true,
+      coverMedia: {
+        select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+      },
+      media: {
+        orderBy: { sort: 'asc' },
+        include: {
+          media: {
+            select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+          },
+        },
+      },
       regulatoryCredentials: { select: {
         credentialType: true, status: true, verificationStatus: true,
         evidenceMediaId: true, expiryDate: true, effectiveDate: true,
@@ -101,6 +116,12 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
   });
   const now = new Date();
   return rows.flatMap(row => {
+    const media = assessGalleryReadiness({
+      coverMediaId: row.coverMediaId,
+      links: row.media,
+    });
+    if (!media.ready) return [];
+
     const intents = eligiblePublicHomeIntents({
       credentials: row.regulatoryCredentials,
       permittedUseConfirmedAt: row.permittedUseConfirmedAt,
@@ -124,7 +145,10 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       bedrooms: row.bedrooms,
       bathrooms: row.bathrooms,
       sizeSqm: row.sizeSqm,
-      imageUrl: row.coverMedia?.storageKey ?? row.media[0]?.media.storageKey ?? null,
+      imageUrl:
+        row.media.find((link) => link.mediaId === row.coverMediaId)?.media.storageKey ??
+        media.urls[0] ??
+        null,
       intents,
       priceThb,
     }];

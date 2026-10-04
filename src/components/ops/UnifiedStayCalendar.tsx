@@ -478,7 +478,7 @@ export default function UnifiedStayCalendar(props: Props) {
             {props.rates[inspect.id]?.byDate[selected.date]
               ? <span className="font-semibold text-text-ink">
                   ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString()}
-                  {' · '}{props.rates[inspect.id].byDate[selected.date].source}
+                  {' · '}{rateSourceLabel(props.rates[inspect.id].byDate[selected.date].source)}
                 </span>
               : <span className="font-semibold text-amber-900">{props.rates[inspect.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']}</span>}
           </div>

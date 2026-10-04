@@ -4,6 +4,7 @@ import { track } from '@/modules/analytics';
 import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
 
 /**
  * GET /api/units/[unitId]
@@ -75,20 +76,33 @@ export async function GET(
             name: true,
             status: true,
             minNights: true,
-            coverMedia: { select: { storageKey: true } },
+            coverMediaId: true,
+            coverMedia: {
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+            },
             galleryMedia: {
               orderBy: { sort: 'asc' },
-              select: { media: { select: { storageKey: true } } },
+              include: {
+                media: {
+                  select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+                },
+              },
             },
           },
         },
         project: {
           select: { id: true, name: true, status: true, projectType: true },
         },
-        coverMedia: { select: { storageKey: true } },
+        coverMedia: {
+          select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+        },
         media: {
           orderBy: { sort: 'asc' },
-          select: { media: { select: { id: true, storageKey: true } } },
+          include: {
+            media: {
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+            },
+          },
         },
       },
     });
@@ -156,39 +170,59 @@ export async function GET(
       identityId: viewer?.identityId,
     });
 
+    const mediaReadiness = assessUnitMediaReadiness({
+      projectType: unit.project.projectType,
+      accommodationType: unit.accommodationType,
+      unitCoverMediaId: unit.coverMediaId,
+      unitMedia: unit.media,
+      categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+      categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
+    });
+    if (!mediaReadiness.ready) {
+      // A live database row is not automatically a guest-ready listing.
+      // Search and public project/unit pages use the same media gate, so a
+      // media-incomplete asset cannot be deep-linked around discovery.
+      return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+    }
+
     const {
       status: _status,
       assetStatus: _assetStatus,
-      coverMedia,
-      media,
+      coverMedia: _coverMedia,
+      media: _media,
       commercialOfferings: _commercialOfferings,
       project,
       ...rest
     } = unit;
     const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
-    const gallery = media.map((m) => m.media.storageKey);
-    const exactCover = coverMedia?.storageKey || gallery[0] || null;
-    // Representative hotel-room photos may be used when the individual room
-    // has no exact-unit media. Private villas and condos never inherit another
-    // unit's photograph, even when they share the same inventory category.
-    const isRoomType = project.projectType === 'hotel' ||
-      unit.accommodationType === 'hotel_room';
-    const representative = isRoomType && gallery.length === 0 && !exactCover
-      ? unit.inventoryCategory?.galleryMedia.map(m => m.media.storageKey) ?? []
-      : [];
-    const representativeCover = isRoomType && gallery.length === 0 && !exactCover
-      ? unit.inventoryCategory?.coverMedia?.storageKey ?? representative[0] ?? null
-      : null;
-    const selected = representative.length ? representative : gallery;
-    const cover = exactCover || representativeCover;
+    const coverUrl = mediaReadiness.urls.find((url) => {
+      if (mediaReadiness.photoScope === 'exact_unit') {
+        return unit.media.some(
+          (link) => link.mediaId === unit.coverMediaId && link.media.storageKey === url
+        );
+      }
+      return unit.inventoryCategory?.galleryMedia.some(
+        (link) =>
+          link.mediaId === unit.inventoryCategory?.coverMediaId &&
+          link.media.storageKey === url
+      );
+    }) ?? mediaReadiness.urls[0];
+
     return NextResponse.json({
       ...publicUnit,
       // Money boundary: all *Thb integer fields stay in satang until the final
       // rendering component. Date-aware pricing below remains a legacy baht DTO.
       baseNightlyThb: publicUnit.baseNightlyThb,
       pricing,
-      photoScope: representativeCover ? 'room_type' : exactCover ? 'exact_unit' : 'none',
-      images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,
+      photoScope: mediaReadiness.photoScope,
+      mediaReadiness: {
+        ready: true,
+        photoCount: mediaReadiness.photoCount,
+        representative: mediaReadiness.representative,
+      },
+      images: coverUrl
+        ? [coverUrl, ...mediaReadiness.urls.filter((url) => url !== coverUrl)]
+        : mediaReadiness.urls,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

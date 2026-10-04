@@ -513,7 +513,7 @@ export function MCDashboardClient({
       return (
         <Link
           href={`/ops/stays/${encodeURIComponent(booking.id)}`}
-          className="inline-flex min-h-36 items-center rounded-md bg-brand-deep px-12 text-small font-semibold text-white"
+          className="inline-flex min-h-40 items-center rounded-md bg-brand-deep px-12 text-small font-semibold text-white"
         >
           {labels['mc.bookings.record_payment']}
         </Link>
@@ -1374,7 +1374,7 @@ export function MCDashboardClient({
                     String(feeReport.periodEnd)
                   )}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-44 mb-32">
                   <HeroNumber
                     value={formatThb(feeReport.summaryThb.grossAmount)}
                     label={labels['mc.reports.gross']}

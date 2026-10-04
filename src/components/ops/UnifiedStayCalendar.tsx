@@ -441,6 +441,14 @@ export default function UnifiedStayCalendar(props: Props) {
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
           <Link
+            href={props.mode==='mc'
+              ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({tab:'calendar',date:selected.date}).toString()
+              : '/ops/calendar/'+encodeURIComponent(inspect.id)}
+            className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman"
+          >
+            {props.labels['staff.unified_calendar.manage_block']} →
+          </Link>
+          <Link
             href={'/ops/tasks?'+new URLSearchParams({
               unitId: inspect.id,
               ...(props.mode==='mc' ? { mc:'1' } : {}),

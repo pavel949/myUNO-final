@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { people } from '@/modules/core';
+import { findOrCreateThread, getBookingThreadParticipants } from '@/modules/comms';
 import {
   OPERATING_SPACE_CAPABILITIES,
   hasOperatingSpaceCapability,
@@ -24,6 +25,33 @@ async function authorize(spaceId: string) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
   return { user, space };
+}
+
+async function resyncBookingThreadsForUnits(unitIds: string[]) {
+  if (!unitIds.length) return;
+  const bookings = await prisma.booking.findMany({
+    where: {
+      unitId: { in: unitIds },
+      status: { in: ['requested','pending_payment','confirmed','checked_in'] },
+    },
+    select: { id: true, projectId: true },
+    take: 500,
+  });
+  for (const booking of bookings) {
+    const existing = await prisma.thread.findFirst({
+      where: { contextType: 'booking', contextId: booking.id },
+      select: { id: true },
+    });
+    if (!existing) continue;
+    const scoped = await getBookingThreadParticipants(prisma, booking.id);
+    await findOrCreateThread(prisma, {
+      contextType: 'booking',
+      contextId: booking.id,
+      projectId: booking.projectId,
+      participantIdentityIds: scoped.participantIdentityIds,
+      participantRoles: scoped.participantRoles,
+    });
+  }
 }
 
 export async function GET(_: NextRequest, { params }: { params: { spaceId: string } }) {
@@ -190,6 +218,7 @@ export async function POST(req: NextRequest, { params }: { params: { spaceId: st
         });
       }
     }
+    await resyncBookingThreadsForUnits(Array.from(new Set([...requestedUnitIds,...removedUnitIds])));
     return NextResponse.json({ success: true });
   }
 
@@ -225,6 +254,7 @@ export async function POST(req: NextRequest, { params }: { params: { spaceId: st
         });
       }
     }
+    await resyncBookingThreadsForUnits(spaceUnitIds);
     return NextResponse.json({ success: true });
   }
 

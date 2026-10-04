@@ -3,6 +3,8 @@ import type { PrismaClient } from '@prisma/client';
 export const OPERATING_SPACE_CAPABILITIES = [
   'view_calendar',
   'manage_reservations',
+  'manage_front_desk',
+  'record_payment',
   'manage_tasks',
   'assign_tasks',
   'manage_housekeeping',

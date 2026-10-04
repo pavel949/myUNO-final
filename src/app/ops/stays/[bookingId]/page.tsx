@@ -195,7 +195,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
               <span className="font-semibold">{p.method.replace(/_/g,' ')} · {p.status.replace(/_/g,' ')} {p.receiptRef??''}</span>
               <span>{amount(p.amountThb)}</span>
             </div>
-            <p className="mt-2 text-caption text-text-secondary">
+            <p className="mt-4 text-caption text-text-secondary">
               {formatBangkok(p.receivedAt||p.succeededAt||p.createdAt)}
               {p.receivedBy ? ' · '+labels['staff.stay_360.received_by']+' '+[p.receivedBy.firstName,p.receivedBy.lastName].filter(Boolean).join(' ') : ''}
             </p>
@@ -209,8 +209,8 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
               <span className="font-semibold">{formatBangkok(change.createdAt)} · {change.changeType.replace(/_/g,' ')}</span>
               {canSeeFinance && <span>{amount(change.priceDeltaThb)}</span>}
             </div>
-            <p className="mt-2 text-caption text-text-secondary">{labels['staff.stay_360.changed_by']} {[change.actor.firstName,change.actor.lastName].filter(Boolean).join(' ')}</p>
-            {(change.oldValue!=null||change.newValue!=null) && <p className="mt-2 break-words text-caption text-text-secondary">
+            <p className="mt-4 text-caption text-text-secondary">{labels['staff.stay_360.changed_by']} {[change.actor.firstName,change.actor.lastName].filter(Boolean).join(' ')}</p>
+            {(change.oldValue!=null||change.newValue!=null) && <p className="mt-4 break-words text-caption text-text-secondary">
               {change.oldValue!=null ? JSON.stringify(change.oldValue) : '—'} → {change.newValue!=null ? JSON.stringify(change.newValue) : '—'}
             </p>}
           </li>)}</ul>}

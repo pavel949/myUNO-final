@@ -33,6 +33,7 @@ export default async function HousekeepingBoard({searchParams}:{searchParams?:{s
         user,
         spaceUnitIds,
         ['housekeeping','front_desk','maintenance','guest_care','reservations'],
+        spaceId,
       );
   if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 

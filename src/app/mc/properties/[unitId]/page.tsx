@@ -155,7 +155,7 @@ export default async function MCPropertyWorkspace({
       <nav className="mb-20 overflow-x-auto border-b border-border-line">
         <div className="flex min-w-max gap-4">
           {TABS.map(item => <Link key={item} href={tabHref(unit.id,item,focusDate)}
-            className={`px-12 py-10 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
+            className={`px-12 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
             {item}
           </Link>)}
         </div>
@@ -194,8 +194,8 @@ export default async function MCPropertyWorkspace({
           <Link href={`/mc/units/${unit.id}`} className="rounded-md border border-border-line px-16 py-12 text-small font-semibold">Manage availability & pricing</Link>
         </div>
         <div className="mt-20 grid gap-12 md:grid-cols-2">
-          <div><h3 className="font-semibold">Upcoming blocks</h3><div className="mt-8 space-y-6">{blocks.length?blocks.map(b=><p key={b.id} className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.reason.replace(/_/g,' ')}{b.note?' · '+b.note:''}</p>):<p className={small}>No future blocks.</p>}</div></div>
-          <div><h3 className="font-semibold">Upcoming rate overrides</h3><div className="mt-8 space-y-6">{rules.length?rules.map(r=><p key={r.id} className={small}>{date(r.startDate)} → {date(r.endDate)} · {money(r.nightlyThb)}{r.minNightsOverride?' · min '+r.minNightsOverride+' nights':''}</p>):<p className={small}>No future overrides.</p>}</div></div>
+          <div><h3 className="font-semibold">Upcoming blocks</h3><div className="mt-8 space-y-8">{blocks.length?blocks.map(b=><p key={b.id} className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.reason.replace(/_/g,' ')}{b.note?' · '+b.note:''}</p>):<p className={small}>No future blocks.</p>}</div></div>
+          <div><h3 className="font-semibold">Upcoming rate overrides</h3><div className="mt-8 space-y-8">{rules.length?rules.map(r=><p key={r.id} className={small}>{date(r.startDate)} → {date(r.endDate)} · {money(r.nightlyThb)}{r.minNightsOverride?' · min '+r.minNightsOverride+' nights':''}</p>):<p className={small}>No future overrides.</p>}</div></div>
         </div>
       </section>}
 
@@ -203,7 +203,7 @@ export default async function MCPropertyWorkspace({
         <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/ops/reservations" className="text-small font-semibold text-brand-andaman">All reservations →</Link></div>
         {bookings.length===0?<div className={card}>No bookings in the working window.</div>:bookings.map(b=><article key={b.id} className={card}>
           <div className="flex flex-wrap items-center justify-between gap-8"><div><p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p><p className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.channel} · {b.status.replace(/_/g,' ')}</p></div><div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div></div>
-          <Link href={`/ops/stays/${b.id}`} className="mt-10 inline-flex text-small font-semibold text-brand-andaman">Open canonical stay →</Link>
+          <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open canonical stay →</Link>
         </article>)}
       </section>}
 

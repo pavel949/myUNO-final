@@ -102,10 +102,10 @@ describe('one calendar surface with mode-specific safe actions', () => {
       .toContain('/mc/properties/unit-a');
     expect(screen.getByRole('link', { name: /Open booking details/ }).getAttribute('href'))
       .toBe('/ops/stays/booking-a');
-    expect(screen.getByText('Confirmed booking')).toBeTruthy();
+    expect(screen.getAllByText('Confirmed booking').length).toBeGreaterThan(0);
     expect(screen.getByText('Dates locked')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Manage block/ }).getAttribute('href'))
-      .toContain('tab=calendar');
+    expect(screen.getByText('Booking already locks inventory')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Manage block/ })).toBeNull();
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('mc=1');
     // Navigation stays on the same canonical board and retains organization.
@@ -125,7 +125,7 @@ describe('one calendar surface with mode-specific safe actions', () => {
       .toBe('/ops/stays/booking-a');
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
       .toContain('/ops/calendar/unit-a');
-    expect(screen.getByText(/category_season/)).toBeTruthy();
+    expect(screen.getByText(/Seasonal rate/)).toBeTruthy();
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('/ops/tasks?unitId=unit-a');
   });

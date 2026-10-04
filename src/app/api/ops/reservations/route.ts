@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
 import {
   attachBookingToReservationGroup,
   createBooking,
@@ -16,39 +15,17 @@ async function authorizedUnitIds(
 ) {
   const spaceUnitIds = await getOperatingSpaceUnitIds(prisma, operatingSpaceId);
   if (user.isAdmin) return spaceUnitIds;
-
-  const canManage = await hasOperatingSpaceCapability(
+  if (!(await hasOperatingSpaceCapability(
     prisma,
     operatingSpaceId,
     user.identityId,
     'manage_reservations',
+  ))) return [];
+  return getAuthorizedOperationalUnitIds(
+    user,
+    spaceUnitIds,
+    ['reservations','front_desk','guest_care','finance'],
   );
-  if (!canManage) return [];
-
-  const staffProjectIds = await getDepartmentProjectIds(user, [
-    'reservations', 'front_desk', 'guest_care', 'finance',
-  ]);
-  const mcIds = new Set<string>();
-  for (const scope of getMCProjectScopes(user)) {
-    const managed = await getMCManagedUnits(
-      prisma,
-      user.identityId,
-      scope.projectId,
-      scope.organizationId,
-    );
-    for (const unit of managed) mcIds.add(unit.id);
-  }
-
-  return (await prisma.unit.findMany({
-    where: {
-      id: { in: spaceUnitIds },
-      OR: [
-        ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
-        ...(mcIds.size ? [{ id: { in: Array.from(mcIds) } }] : []),
-      ],
-    },
-    select: { id: true },
-  })).map((unit) => unit.id);
 }
 
 export async function POST(request: NextRequest) {

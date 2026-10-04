@@ -128,8 +128,10 @@ export default async function MCPropertyWorkspace({
   const readiness = readinessMap[unit.id] ?? { state: 'ready', openTaskCount: 0 };
   const channel = channelMap[unit.id] ?? { state: 'manual_only', rows: [] };
   const activeBooking = bookings.find(b => b.startDate <= now && b.endDate > now && ['confirmed','checked_in'].includes(b.status));
-  const nextBooking = bookings.find(b => b.startDate > now && ['requested','pending_payment','confirmed'].includes(b.status));
-  const upcomingBalance = bookings.reduce((sum,b) => sum + Math.max(0,b.balanceDueThb),0);
+  const nextBooking = bookings.find(b => b.startDate > now && ['confirmed','checked_in'].includes(b.status));
+  const upcomingBalance = bookings
+    .filter(b => ['pending_payment','confirmed','checked_in'].includes(b.status))
+    .reduce((sum,b) => sum + Math.max(0,b.balanceDueThb),0);
   const activeEngagement = unit.engagements[0];
 
   const card = 'rounded-xl border border-border-line bg-surface-paper p-16';

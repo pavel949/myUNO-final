@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { hasProjectDepartmentAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasProjectDepartmentAccess, hasProjectStaffAccess, hasStaffUnitAccess } from '@/app/libs/projectScope';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
@@ -59,6 +60,13 @@ export async function POST(
     if (!allowed || (hasProjectStaffAccess(user,booking.projectId) && !user.isAdmin &&
       !(await hasProjectDepartmentAccess(user,booking.projectId,'reservations')))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (
+      !user.isAdmin &&
+      hasStaffUnitAccess(user,{projectId:booking.projectId,unitId:booking.unitId}) &&
+      !(await passesOperatingSpaceUnitCapability(user,booking.unitId,'manage_reservations'))
+    ) {
+      return NextResponse.json({ error: 'Reservation capability required' }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));

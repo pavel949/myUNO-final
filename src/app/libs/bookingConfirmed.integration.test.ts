@@ -48,6 +48,7 @@ describe('notifyBookingConfirmed', () => {
       where: { identityId: guest.id, type: 'stay_confirmed' },
     });
     expect(guestAlert?.titleKey).toBe('notify.stay_confirmed.title');
+    expect(JSON.stringify(guestAlert?.params)).toContain('"total_thb":"5,000"');
 
     const ownerAlert = await db.notification.findFirst({
       where: { identityId: owner.id, type: 'stay_confirmed' },

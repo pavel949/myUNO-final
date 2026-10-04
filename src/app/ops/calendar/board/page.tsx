@@ -25,6 +25,10 @@ interface CalendarSearchParams {
   unitId?: string;
   start?: string;
   days?: string;
+  search?: string;
+  inventory?: string;
+  readiness?: string;
+  channel?: string;
 }
 export default async function UnifiedStayCalendarPage({
   searchParams,
@@ -319,6 +323,10 @@ export default async function UnifiedStayCalendarPage({
     }))}
     allUnits={categoryUnits.map((unit) => ({ id: unit.id, name: unit.name }))}
     projectId={projectId} categoryId={categoryId} unitId={unitId}
+    initialSearch={typeof searchParams?.search==='string'?searchParams.search:''}
+    initialInventoryFilter={['all','available','occupied','holds','blocked','not_sellable'].includes(searchParams?.inventory||'') ? searchParams!.inventory! : 'all'}
+    initialReadinessFilter={['all','ready','attention'].includes(searchParams?.readiness||'') ? searchParams!.readiness! : 'all'}
+    initialChannelFilter={['all','healthy','attention'].includes(searchParams?.channel||'') ? searchParams!.channel! : 'all'}
     cells={cells} entries={{ ...bookingDetails, ...blockDetails }}
     rates={Object.fromEntries(Object.entries(calendarRatesByUnit).map(([id, result]) => [
       id,

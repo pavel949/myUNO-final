@@ -27,7 +27,7 @@ export async function notifyBookingRequested(
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const totalBaht = satangToBaht(booking.totalThb);
-    const params = {
+    const baseParams = {
       booking_id: booking.id,
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
@@ -35,8 +35,6 @@ export async function notifyBookingRequested(
       total_thb: totalBaht.toLocaleString(),
       request_hours: String(requestHours),
       guest_name: `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`.trim(),
-      ops_requests_url: `${baseUrl}/ops/requests`,
-      mc_requests_url: `${baseUrl}/mc/requests`,
     };
 
     await createNotification(db, {
@@ -56,7 +54,8 @@ export async function notifyBookingRequested(
       select: { identityId: true },
     });
 
-    const recipients = new Set(opsRoles.map((role) => role.identityId));
+    const opsRecipients = new Set(opsRoles.map((role) => role.identityId));
+    const mcRecipients = new Set<string>();
 
     const mcEngagement = await db.unitEngagement.findFirst({
       where: {
@@ -78,23 +77,38 @@ export async function notifyBookingRequested(
         select: { identityId: true },
       });
       for (const member of mcMembers) {
-        recipients.add(member.identityId);
+        mcRecipients.add(member.identityId);
       }
     }
 
-    recipients.delete(booking.guestIdentityId);
+    opsRecipients.delete(booking.guestIdentityId);
+    mcRecipients.delete(booking.guestIdentityId);
 
-    await Promise.all(
-      [...recipients].map((identityId) =>
+    const opsUrl = `${baseUrl}/ops/requests?projectId=${encodeURIComponent(booking.projectId)}`;
+    const mcUrl = mcEngagement?.managementOrgId
+      ? `${baseUrl}/mc/requests?projectId=${encodeURIComponent(booking.projectId)}&organizationId=${encodeURIComponent(mcEngagement.managementOrgId)}`
+      : `${baseUrl}/mc/requests?projectId=${encodeURIComponent(booking.projectId)}`;
+
+    await Promise.all([
+      ...[...opsRecipients].map((identityId) =>
         createNotification(db, {
           identityId,
           type: 'stay_request_received',
           titleKey: 'notify.stay_request_received.title',
           bodyKey: 'notify.stay_request_received.body',
-          params,
+          params: { ...baseParams, ops_requests_url: opsUrl, mc_requests_url: opsUrl },
         }).catch(() => null)
-      )
-    );
+      ),
+      ...[...mcRecipients].map((identityId) =>
+        createNotification(db, {
+          identityId,
+          type: 'stay_request_received',
+          titleKey: 'notify.stay_request_received.title',
+          bodyKey: 'notify.stay_request_received.body',
+          params: { ...baseParams, ops_requests_url: mcUrl, mc_requests_url: mcUrl },
+        }).catch(() => null)
+      ),
+    ]);
   } catch (error) {
     console.error('[bookingRequested] fan-out failed (non-blocking):', error);
   }

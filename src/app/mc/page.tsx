@@ -138,6 +138,8 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.workspace.view_all_calendar': 'View all in calendar',
     'mc.workspace.no_properties': 'No managed properties in this scope.',
     'mc.workspace.add_property': 'Add property',
+    'mc.workspace.add_project': 'Add project / complex',
+    'mc.workspace.add_project_hint': 'Propose a condominium, resort, villa estate or standalone complex. myUNO checks duplicates and location before a canonical Project is created.',
     'mc.workspace.add_property_hint': 'Add a home or submit one on behalf of an owner. The property stays draft until verification and activation checks are complete.',
     'mc.workspace.channel_issues': 'Channel issues',
     'mc.workspace.payment_issues': 'Payment issues',

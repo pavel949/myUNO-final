@@ -695,9 +695,18 @@ export function MCDashboardClient({
               <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
-              <Link href={`/mc?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}#managed-properties`} className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('overview');
+                  window.requestAnimationFrame(() => {
+                    document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
                 {labels['mc.workspace.portfolio']}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('service_orders')}
@@ -836,7 +845,7 @@ export function MCDashboardClient({
                   </Link>
                 </div>
                 <div className="mt-16 grid gap-12 sm:grid-cols-2 xl:grid-cols-4">
-                  <button type="button" onClick={() => { setReservationView('all'); setActiveTab('bookings'); }} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                  <button type="button" onClick={() => { setReservationView('pending_payment'); setActiveTab('bookings'); }} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
                     <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_payments']}</p>
                     <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{pendingPayments.length}</p>
                     <p className="mt-8 text-small text-text-secondary">{pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']}</p>

@@ -596,23 +596,36 @@ export function MCDashboardClient({
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
   const visibleBookings = bookings.filter((booking) => {
-    if (reservationView === 'all') return true;
-    if (reservationView === 'requests') {
-      return booking.status === 'requested';
-    }
-    if (reservationView === 'pending_payment') {
-      return booking.status === 'pending_payment';
-    }
-    if (reservationView === 'arrivals') {
-      return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
-    }
-    if (reservationView === 'departures') {
-      return isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status);
-    }
-    const start = new Date(booking.startDate);
-    const end = new Date(booking.endDate);
-    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+    const statusMatches =
+      reservationView === 'all'
+        ? true
+        : reservationView === 'requests'
+          ? booking.status === 'requested'
+          : reservationView === 'pending_payment'
+            ? booking.status === 'pending_payment'
+            : reservationView === 'arrivals'
+              ? isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
+              : reservationView === 'departures'
+                ? isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status)
+                : (() => {
+                    const start = new Date(booking.startDate);
+                    const end = new Date(booking.endDate);
+                    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+                  })();
+    if (!statusMatches) return false;
+    if (bookingUnitFilter && booking.unit.id !== bookingUnitFilter) return false;
+    if (bookingChannelFilter && booking.channel !== bookingChannelFilter) return false;
+    const needle = bookingSearch.trim().toLocaleLowerCase();
+    if (!needle) return true;
+    return [
+      booking.id,
+      booking.unit.name,
+      booking.guestIdentity.firstName,
+      booking.guestIdentity.lastName || '',
+      booking.channel,
+    ].join(' ').toLocaleLowerCase().includes(needle);
   });
+  const bookingChannels = Array.from(new Set(bookings.map((booking) => booking.channel))).sort();
 
   return (
     <main className="min-h-screen bg-surface-ivory">

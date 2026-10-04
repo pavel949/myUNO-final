@@ -107,6 +107,7 @@ export default async function ProjectLandingPage({
     'project_page.units.guests': 'up to {count} guests',
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
+    'project_page.units.representative_media': 'Representative room-type photos',
     'project_page.units.empty': 'No accommodation is currently available for online booking.',
     'project_page.owner_intake.title': 'Own or manage a home here?',
     'project_page.owner_intake.body': 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
@@ -441,7 +442,7 @@ export default async function ProjectLandingPage({
             {project.units.map((unit) => (
               <Link
                 key={unit.id}
-                href={`/units/${unit.id}`}
+                href={`/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {unit.coverUrl ? (
@@ -456,6 +457,11 @@ export default async function ProjectLandingPage({
                   <div className="w-full h-44 bg-surface-ivory" />
                 )}
                 <div className="p-24">
+                  {unit.photoScope === 'room_type' ? (
+                    <p className="mb-8 text-small font-medium text-brand-andaman">
+                      {labels['project_page.units.representative_media']}
+                    </p>
+                  ) : null}
                   <h3 className="text-heading-3 font-bold text-text-ink mb-8">{unit.name}</h3>
                   <p className="text-small text-text-secondary mb-12">
                     {labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms))}

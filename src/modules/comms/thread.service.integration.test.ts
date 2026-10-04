@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createBooking, createRoleAssignment } from '@/test/util';
 import * as threadService from './thread.service';
 
 describe('thread.service — integration tests', () => {
@@ -9,6 +9,48 @@ describe('thread.service — integration tests', () => {
 
   afterEach(async () => {
     await resetDb();
+  });
+
+  describe('booking thread scope', () => {
+    it('includes exact booking operators and excludes unrelated global staff', async () => {
+      const [project,otherProject]=await Promise.all([createProject(),createProject({name:'Other'})]);
+      const guest=await createIdentity();
+      const unit=await createUnit({projectId:project.id});
+      const booking=await createBooking({projectId:project.id,unitId:unit.id,guestIdentityId:guest.id,status:'confirmed'});
+      const unitHost=await createIdentity();
+      const projectOps=await createIdentity();
+      const unrelated=await createIdentity();
+
+      await createRoleAssignment({identityId:unitHost.id,role:'onsite_host',scopeType:'unit',projectId:project.id,unitId:unit.id});
+      await createRoleAssignment({identityId:projectOps.id,role:'staff_ops',scopeType:'project',projectId:project.id});
+      await createRoleAssignment({identityId:unrelated.id,role:'staff_ops',scopeType:'project',projectId:otherProject.id});
+
+      const scoped=await threadService.getBookingThreadParticipants(db,booking.id);
+      expect(scoped.participantIdentityIds).toContain(guest.id);
+      expect(scoped.participantIdentityIds).toContain(unitHost.id);
+      expect(scoped.participantIdentityIds).toContain(projectOps.id);
+      expect(scoped.participantIdentityIds).not.toContain(unrelated.id);
+    });
+
+    it('adds newly authorized operators to an existing canonical booking thread without duplicating it', async () => {
+      const project=await createProject();
+      const guest=await createIdentity();
+      const operator=await createIdentity();
+      const unit=await createUnit({projectId:project.id});
+      const booking=await createBooking({projectId:project.id,unitId:unit.id,guestIdentityId:guest.id,status:'confirmed'});
+      const first=await threadService.findOrCreateThread(db,{
+        contextType:'booking',contextId:booking.id,projectId:project.id,participantIdentityIds:[guest.id],
+      });
+      await createRoleAssignment({identityId:operator.id,role:'onsite_host',scopeType:'unit',projectId:project.id,unitId:unit.id});
+      const scoped=await threadService.getBookingThreadParticipants(db,booking.id);
+      const second=await threadService.findOrCreateThread(db,{
+        contextType:'booking',contextId:booking.id,projectId:project.id,
+        participantIdentityIds:scoped.participantIdentityIds,participantRoles:scoped.participantRoles,
+      });
+      expect(second.id).toBe(first.id);
+      expect(second.created).toBe(false);
+      expect(await db.threadParticipant.count({where:{threadId:first.id,identityId:operator.id}})).toBe(1);
+    });
   });
 
   describe('findOrCreateThread', () => {

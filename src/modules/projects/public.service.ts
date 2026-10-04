@@ -45,7 +45,6 @@ export interface PublicProjectCategory {
   monthlyFromThb: number | null;
   coverUrl: string | null;
   galleryUrls: string[];
-  photoScope?: 'exact_unit' | 'room_type';
 }
 
 export interface PublicProjectReview {
@@ -89,6 +88,7 @@ export interface PublicProjectUnit {
   instantBook: boolean;
   coverUrl: string | null;
   galleryUrls: string[];
+  photoScope?: 'exact_unit' | 'room_type';
 }
 
 export interface PublicProjectDetail {

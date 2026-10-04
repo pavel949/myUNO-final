@@ -1,5 +1,10 @@
 import type { PrismaClient } from '@prisma/client';
 import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
+import {
+  assessGalleryReadiness,
+  assessUnitMediaReadiness,
+  publicMediaReadinessMessage,
+} from '@/modules/media/public-readiness';
 
 export type ReadinessSeverity = 'blocker' | 'warning';
 
@@ -34,15 +39,19 @@ export async function getPropertyReadiness(
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
-      galleryMedia: true,
-      inventoryCategories: true,
+      galleryMedia: { include: { media: true }, orderBy: { sort: 'asc' } },
+      inventoryCategories: {
+        include: {
+          galleryMedia: { include: { media: true }, orderBy: { sort: 'asc' } },
+        },
+      },
       orgRoles: true,
       ratePlans: true,
       integrationAccounts: true,
       regulatoryCredentials: true,
       units: {
         include: {
-          media: true,
+          media: { include: { media: true }, orderBy: { sort: 'asc' } },
           sleepingSpaces: { include: { beds: true } },
           engagements: { where: { status: 'active' } },
           complianceRecords: true,
@@ -51,7 +60,11 @@ export async function getPropertyReadiness(
           roleAssignments: { where: { status: 'active' } },
           integrationAccounts: true,
           commercialOfferings: { include: { channelMappings: true } },
-          inventoryCategory: { include: { galleryMedia: true } },
+          inventoryCategory: {
+            include: {
+              galleryMedia: { include: { media: true }, orderBy: { sort: 'asc' } },
+            },
+          },
         },
       },
     },
@@ -95,11 +108,35 @@ export async function getPropertyReadiness(
 
   if (!project.areaId) add('blocker', 'project.area', 'Select a canonical area.');
   if (!project.descriptionKey) add('blocker', 'project.description', 'Add the project description key.');
-  if (!project.coverMediaId && project.galleryMedia.length === 0) {
-    add('blocker', 'project.media', 'Upload at least one project photo and choose a cover.');
+  const projectMedia = assessGalleryReadiness({
+    coverMediaId: project.coverMediaId,
+    links: project.galleryMedia,
+  });
+  if (!projectMedia.ready) {
+    add(
+      'blocker',
+      'project.media',
+      `Project gallery: ${publicMediaReadinessMessage(projectMedia)}`,
+      { href: `/app/admin/projects/${project.id}/media` }
+    );
   }
   if (project.inventoryCategories.length === 0) {
     add('blocker', 'project.categories', 'Create at least one inventory category.');
+  } else {
+    for (const category of project.inventoryCategories.filter((item) => item.status === 'live')) {
+      const categoryMedia = assessGalleryReadiness({
+        coverMediaId: category.coverMediaId,
+        links: category.galleryMedia,
+      });
+      if (!categoryMedia.ready) {
+        add(
+          'blocker',
+          `category.media.${category.id}`,
+          `${category.name}: ${publicMediaReadinessMessage(categoryMedia)}`,
+          { href: `/app/admin/projects/${project.id}/media?select=category:${category.id}` }
+        );
+      }
+    }
   }
   if (project.amenityKeys.length === 0 && project.facilities.length === 0) {
     add('warning', 'project.amenities', 'Add shared project amenities or facilities so guests know what is available on site.');
@@ -155,16 +192,27 @@ export async function getPropertyReadiness(
     if (unit.amenityKeys.length === 0 && unit.unitFeatures.length === 0) {
       add('warning', 'unit.amenities', 'Add amenities or features that belong to this specific home.', options);
     }
-    // Hotel rooms may use representative category media; private condos and
-    // villas need genuine media of the exact physical unit.
-    const representativeRoom = project.projectType === 'hotel' || unit.accommodationType === 'hotel_room';
-    const ownMediaReady = Boolean(unit.coverMediaId) && unit.media.length >= 3;
-    const categoryMediaReady = Boolean(unit.inventoryCategory?.coverMediaId) &&
-      (unit.inventoryCategory?.galleryMedia.length ?? 0) >= 3;
-    if (!ownMediaReady && !(representativeRoom && categoryMediaReady)) {
-      add('blocker', 'unit.media', representativeRoom
-        ? 'Add three room-type photos with a cover or photograph this room individually.'
-        : 'Add at least three exact-unit photos and choose a cover.', options);
+    // Public accommodation media follows one truthful rule everywhere:
+    // private villas/condos require exact-unit photos; hotel rooms may use the
+    // representative room-type gallery. The same helper is used by search and
+    // public project/unit read models so readiness cannot drift from discovery.
+    const unitMedia = assessUnitMediaReadiness({
+      projectType: project.projectType,
+      accommodationType: unit.accommodationType,
+      unitCoverMediaId: unit.coverMediaId,
+      unitMedia: unit.media,
+      categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+      categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
+    });
+    if (!unitMedia.ready) {
+      add(
+        'blocker',
+        'unit.media',
+        project.projectType === 'hotel' || unit.accommodationType === 'hotel_room'
+          ? 'Add three valid room-type photos with a cover or photograph this room individually.'
+          : 'Add at least three valid exact-unit photos and choose a cover.',
+        { ...options, href: `/app/admin/projects/${project.id}/media?select=unit:${unit.id}` }
+      );
     }
     if (hasStayOffering && (unit.sleepingSpaces.length === 0 || !unit.sleepingSpaces.some((space) => space.beds.length > 0))) {
       add('blocker', 'unit.sleeping', 'Describe sleeping spaces and beds.', options);

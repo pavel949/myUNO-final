@@ -25,6 +25,7 @@ describe('public media readiness', () => {
     });
     expect(ready.ready).toBe(true);
     expect(ready.photoCount).toBe(MIN_PUBLIC_GALLERY_PHOTOS);
+    expect(ready.coverUrl).toBe('https://cdn.example.com/a.jpg');
 
     const missingCover = assessGalleryReadiness({
       coverMediaId: null,

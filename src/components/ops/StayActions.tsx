@@ -1,4 +1,3 @@
-/* eslint-disable local-rules/no-literal-ui-text */
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -40,11 +39,11 @@ export default function StayActions({
     <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.actions']}</h2>
     <p className="mt-4 text-small text-text-secondary">
       {status==='pending_payment'
-        ? 'Payment is the next required step. Confirming payment will change the booking to Confirmed.'
+        ? labels['staff.stay_360.pending_next']
         : status==='confirmed'
-          ? 'Payment is confirmed. The next operational step is guest check-in.'
+          ? labels['staff.stay_360.confirmed_next']
           : status==='checked_in'
-            ? 'The guest is in house. Complete checkout when the stay ends.'
+            ? labels['staff.stay_360.in_house_next']
             : labels['staff.stay_360.warning']}
     </p>
     <p className="my-12 text-small text-text-secondary">{labels['staff.stay_360.warning']}</p>
@@ -63,10 +62,10 @@ export default function StayActions({
         <button type="button" disabled={busy||!receipt.trim()||balanceSatang<0}
           onClick={()=>run('record-cash-payment',{receiptRef:receipt.trim()})}
           className="w-full rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
-          Confirm payment & booking
+          {labels['staff.stay_360.confirm_payment']}
         </button>
         <p className="text-small text-text-secondary">
-          Amount to confirm: ฿{(Math.max(0,balanceSatang)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+          {labels['staff.stay_360.amount_to_confirm']}: ฿{(Math.max(0,balanceSatang)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
         </p>
       </div>}
       {canCheckIn&&<button type="button" disabled={busy} onClick={()=>run('checkin')}

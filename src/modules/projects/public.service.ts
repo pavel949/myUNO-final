@@ -120,11 +120,11 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     where: { status: 'live' },
     orderBy: { createdAt: 'asc' },
     include: {
-      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       galleryMedia: {
         orderBy: { sort: 'asc' },
         include: {
-          media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+          media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
         },
       },
       area: { select: { nameKey: true } },
@@ -144,7 +144,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
           media: {
             orderBy: { sort: 'asc' },
             include: {
-              media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+              media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
             },
           },
           baseNightlyThb: true,
@@ -155,7 +155,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
               galleryMedia: {
                 orderBy: { sort: 'asc' },
                 include: {
-                  media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+                  media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
                 },
               },
             },
@@ -220,19 +220,19 @@ export async function getPublicProjectBySlug(
     where: { slug },
     include: {
       area: { select: { nameKey: true, descriptionKey: true } },
-      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       galleryMedia: {
         orderBy: { sort: 'asc' },
-        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
       },
       units: {
         where: publicStayUnitWhere(excludedIds),
         orderBy: { baseNightlyThb: 'asc' },
         include: {
-          coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+          coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
           media: {
             orderBy: { sort: 'asc' },
-            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
           },
           inventoryCategory: {
             select: {
@@ -242,10 +242,10 @@ export async function getPublicProjectBySlug(
               minNights: true,
               status: true,
               coverMediaId: true,
-              coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+              coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
               galleryMedia: {
                 orderBy: { sort: 'asc' },
-                include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+                include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
               },
             },
           },
@@ -347,10 +347,10 @@ async function buildPublicCategories(
       bedrooms: true,
       baseNightlyThb: true,
       coverMediaId: true,
-      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       galleryMedia: {
         orderBy: { sort: 'asc' },
-        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
       },
     },
   });
@@ -441,10 +441,10 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
   const unit = await prisma.unit.findFirst({
     where: { id, ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
     include: {
-      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+      coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       media: {
         orderBy: { sort: 'asc' },
-        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
       },
       inventoryCategory: {
         select: {
@@ -453,10 +453,10 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
           minNights: true,
           status: true,
           coverMediaId: true,
-          coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } },
+          coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
           galleryMedia: {
             orderBy: { sort: 'asc' },
-            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
           },
         },
       },
@@ -525,14 +525,14 @@ export async function listPublicUnitIds(): Promise<string[]> {
       project: { select: { projectType: true } },
       media: {
         orderBy: { sort: 'asc' },
-        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+        include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
       },
       inventoryCategory: {
         select: {
           coverMediaId: true,
           galleryMedia: {
             orderBy: { sort: 'asc' },
-            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true } } },
+            include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
           },
         },
       },

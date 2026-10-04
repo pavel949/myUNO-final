@@ -69,6 +69,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (body.operatingSpaceId && body.assignedIdentityId) {
+      const member = await prisma.operatingSpaceMember.findFirst({
+        where: {
+          operatingSpaceId: body.operatingSpaceId,
+          identityId: body.assignedIdentityId,
+          active: true,
+        },
+        select: { id: true },
+      });
+      if (!member) return NextResponse.json({ error: 'Assignee is outside this operating space' }, { status: 400 });
+    }
+    if (body.operatingSpaceId && body.assignedTeamId) {
+      const team = await prisma.operatingTeam.findFirst({
+        where: { id: body.assignedTeamId, operatingSpaceId: body.operatingSpaceId, active: true },
+        select: { id: true },
+      });
+      if (!team) return NextResponse.json({ error: 'Team is outside this operating space' }, { status: 400 });
+    }
+
     const task = await createOperationalTask(prisma, {
       projectId: unit.projectId,
       unitId: unit.id,

@@ -19,8 +19,8 @@ export default function OwnerStatementGenerator({spaceId,units,labels}:{spaceId:
  return <form onSubmit={submit} className="rounded-xl border border-border-line bg-surface-paper p-20">
   <h2 className="font-display text-heading-2 font-semibold">{labels['staff.finance.generate_statement']}</h2>
   <p className="mt-4 text-small text-text-secondary">{labels['staff.finance.generate_hint']}</p>
-  {error&&<div role="alert" className="mt-12 rounded-md border border-red-300 bg-red-50 p-10 text-small text-red-900">{error}</div>}
-  {notice&&<div role="status" className="mt-12 rounded-md border border-emerald-200 bg-emerald-50 p-10 text-small text-emerald-900">{notice}</div>}
+  {error&&<div role="alert" className="mt-12 rounded-md border border-red-300 bg-red-50 p-8 text-small text-red-900">{error}</div>}
+  {notice&&<div role="status" className="mt-12 rounded-md border border-emerald-200 bg-emerald-50 p-8 text-small text-emerald-900">{notice}</div>}
   <div className="mt-12 grid gap-8 md:grid-cols-3">
    <label className="text-small font-semibold">{labels['staff.finance.property']}
     <select name="unitId" required className="mt-4 h-40 w-full rounded-md border border-border-line px-12"><option value="">{labels['staff.finance.choose_property']}</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.projectName} · {unit.name}</option>)}</select>
@@ -28,6 +28,6 @@ export default function OwnerStatementGenerator({spaceId,units,labels}:{spaceId:
    <label className="text-small font-semibold">{labels['staff.finance.period_start']}<input name="periodStart" type="date" required className="mt-4 h-40 w-full rounded-md border border-border-line px-12"/></label>
    <label className="text-small font-semibold">{labels['staff.finance.period_end']}<input name="periodEnd" type="date" required className="mt-4 h-40 w-full rounded-md border border-border-line px-12"/></label>
   </div>
-  <button disabled={busy} className="mt-12 rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">{busy?labels['staff.finance.generating']:labels['staff.finance.generate']}</button>
+  <button disabled={busy} className="mt-12 rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white disabled:opacity-50">{busy?labels['staff.finance.generating']:labels['staff.finance.generate']}</button>
  </form>;
 }

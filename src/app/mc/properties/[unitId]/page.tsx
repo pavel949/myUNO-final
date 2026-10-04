@@ -201,7 +201,7 @@ export default async function MCPropertyWorkspace({
             <Link href={`/mc/calendar?projectId=${unit.projectId}&unitId=${unit.id}${focusDate?'&start='+focusDate:''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
           </div>
         </section>
-        <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} />
+        <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} initialDate={focusDate} />
       </div>}
 
       {tab==='reservations' && <section className="space-y-12">

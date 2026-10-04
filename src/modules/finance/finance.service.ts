@@ -1,5 +1,5 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
-import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
+import { findOrCreateThread, getBookingThreadParticipants, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
@@ -552,10 +552,13 @@ export async function verifyAndConfirm(
   if (result.stayBooking && confirmed.purpose === 'stay') {
     await ensureDepositPreauthOnStayConfirmed(db, result.stayBooking.id, result.stayBooking.unitId).catch(() => null);
     try {
+      const scoped = await getBookingThreadParticipants(db, result.stayBooking.id);
       const thread = await findOrCreateThread(db, {
-        contextType: 'booking', contextId: result.stayBooking.id,
+        contextType: 'booking',
+        contextId: result.stayBooking.id,
         projectId: result.stayBooking.projectId,
-        participantIdentityIds: [result.stayBooking.guestIdentityId],
+        participantIdentityIds: scoped.participantIdentityIds,
+        participantRoles: scoped.participantRoles,
       });
       await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
     } catch (err) {

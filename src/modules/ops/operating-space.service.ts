@@ -116,6 +116,31 @@ export async function hasOperatingSpaceCapability(
   return membership.capabilities.includes(capability);
 }
 
+export async function hasOperatingSpaceMembershipForUnit(
+  db: PrismaClient,
+  unitId: string,
+  identityId: string,
+) {
+  const membership = await db.operatingSpaceMember.findFirst({
+    where: {
+      identityId,
+      active: true,
+      operatingSpace: {
+        status: 'active',
+        units: {
+          some: {
+            unitId,
+            active: true,
+            OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+          },
+        },
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(membership);
+}
+
 export async function hasOperatingSpaceCapabilityForUnit(
   db: PrismaClient,
   unitId: string,

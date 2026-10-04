@@ -352,7 +352,7 @@ export default function UnifiedStayCalendar(props: Props) {
         <div className="space-y-8">
           {rows.length===0 ? <div className="p-12 text-small text-text-secondary">
             <p>{props.units.length ? 'No properties match the current filters.' : props.labels['staff.unified_calendar.empty']}</p>
-            {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-6 font-semibold text-brand-andaman underline">Clear filters</button>}
+            {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-8 font-semibold text-brand-andaman underline">Clear filters</button>}
           </div> :
             rows.map((unit)=>{
               const cell=(props.cells[unit.id]||[])[mobileIndex];
@@ -399,7 +399,7 @@ export default function UnifiedStayCalendar(props: Props) {
             <tbody>
               {rows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">
                 <p>{props.units.length ? 'No properties match the current filters.' : props.labels['staff.unified_calendar.empty']}</p>
-                {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-6 font-semibold text-brand-andaman underline">Clear filters</button>}
+                {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-8 font-semibold text-brand-andaman underline">Clear filters</button>}
               </td></tr> :
                 rows.map((unit)=><tr key={unit.id}>
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
@@ -451,12 +451,12 @@ export default function UnifiedStayCalendar(props: Props) {
           <button type="button" onClick={()=>setSelected(null)} aria-label="Close details" className="rounded-md border border-border-line px-12 py-8">×</button>
         </div>
         <div className="my-12 flex flex-wrap items-center gap-8">
-          <span className={'rounded-full px-10 py-4 text-small font-semibold '+stateClass[selected.cell.state]}>
+          <span className={'rounded-full px-12 py-4 text-small font-semibold '+stateClass[selected.cell.state]}>
             {stateLabel[selected.cell.state]}
           </span>
           <span className={selected.cell.blocking || !inspect.sellable
-            ? 'rounded-full bg-slate-900 px-10 py-4 text-small font-semibold text-white'
-            : 'rounded-full bg-emerald-50 px-10 py-4 text-small font-semibold text-emerald-900'}>
+            ? 'rounded-full bg-slate-900 px-12 py-4 text-small font-semibold text-white'
+            : 'rounded-full bg-emerald-50 px-12 py-4 text-small font-semibold text-emerald-900'}>
             {selected.cell.blocking ? 'Dates locked' : !inspect.sellable ? 'Not on sale' : 'Dates still sellable'}
           </span>
         </div>
@@ -498,7 +498,7 @@ export default function UnifiedStayCalendar(props: Props) {
                 <span className="font-semibold">{item.label}</span>
                 <span className="rounded-full bg-surface-paper px-8 py-4 text-[11px] font-semibold text-text-secondary">{(item.channel||item.status).replace(/_/g,' ')}</span>
               </div>
-              {item.startDate && item.endDate && <p className="mt-6 text-[11px] text-text-secondary">
+              {item.startDate && item.endDate && <p className="mt-8 text-[11px] text-text-secondary">
                 {item.startDate} → {item.endDate}
               </p>}
               {item.status==='pending_payment' && item.holdExpiresAt && <p className="mt-4 text-[11px] font-semibold text-amber-900">

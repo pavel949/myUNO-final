@@ -15,6 +15,7 @@ type Asset = {
   mimeType: string;
   kind: string;
   encrypted: boolean;
+  sizeBytes: number;
 };
 type Link = { mediaId: string; sort: number; media: Asset };
 type Gallery = { coverMediaId: string | null; galleryMedia?: Link[]; media?: Link[] };

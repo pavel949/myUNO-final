@@ -67,10 +67,40 @@ export async function getBookingThreadParticipants(
   const departmentsByIdentity = new Map(
     permissionRows.map((row) => [row.identityId, row.departments])
   );
-  const messagingDepartments = new Set([
-    'reservations', 'front_desk', 'guest_care', 'housekeeping', 'maintenance',
-  ]);
+  const staffIdentityIds = Array.from(new Set(staffAssignments.map((assignment) => assignment.identityId)));
+  const governedMemberships = staffIdentityIds.length
+    ? await db.operatingSpaceMember.findMany({
+        where: {
+          identityId: { in: staffIdentityIds },
+          active: true,
+          operatingSpace: {
+            status: 'active',
+            units: {
+              some: {
+                unitId: booking.unitId,
+                active: true,
+                OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+              },
+            },
+          },
+        },
+        select: { identityId: true, capabilities: true },
+      })
+    : [];
+  const governedByIdentity = new Map<string, string[][]>();
+  for (const member of governedMemberships) {
+    const rows = governedByIdentity.get(member.identityId) || [];
+    rows.push(member.capabilities);
+    governedByIdentity.set(member.identityId, rows);
+  }
+  const messagingDepartments = new Set(['reservations', 'front_desk', 'guest_care']);
   for (const assignment of staffAssignments) {
+    const governed = governedByIdentity.get(assignment.identityId);
+    if (
+      governed?.length &&
+      !governed.some((capabilities) => capabilities.includes('manage_guest_communications'))
+    ) continue;
+
     const configured = departmentsByIdentity.get(assignment.identityId);
     const allowed =
       Boolean(assignment.unitId) ||

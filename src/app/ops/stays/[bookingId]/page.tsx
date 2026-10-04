@@ -69,11 +69,28 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
         ← {labels['staff.stay_360.back']}
       </Link>
       <header className="rounded-lg border border-border-line bg-surface-paper p-24">
-        <p className="text-kicker font-semibold tracking-widest text-brand-andaman">{labels['staff.stay_360.booking']} · {booking.id}</p>
-        <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.stay_360.title']}</h1>
-        <p className="mt-8 text-body text-text-secondary">
-          {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-12">
+          <div>
+            <p className="text-kicker font-semibold tracking-widest text-brand-andaman">{labels['staff.stay_360.booking']} · {booking.id}</p>
+            <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.stay_360.title']}</h1>
+            <p className="mt-8 text-body text-text-secondary">
+              {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-4">
+            <span className={booking.status==='confirmed'
+              ? 'rounded-full bg-emerald-100 px-12 py-4 text-small font-semibold text-emerald-900'
+              : booking.status==='pending_payment'
+                ? 'rounded-full bg-amber-100 px-12 py-4 text-small font-semibold text-amber-900'
+                : booking.status==='checked_in'
+                  ? 'rounded-full bg-teal-100 px-12 py-4 text-small font-semibold text-teal-900'
+                  : 'rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold text-text-ink'}>
+              {booking.status.replace(/_/g,' ')}
+            </span>
+            {booking.status==='pending_payment' && <span className="text-small text-text-secondary">Dates are locked while payment is pending.</span>}
+            {booking.status==='confirmed' && <span className="text-small text-text-secondary">Booking confirmed. Inventory remains reserved.</span>}
+          </div>
+        </div>
       </header>
       {canSeeFinance && <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
         {[

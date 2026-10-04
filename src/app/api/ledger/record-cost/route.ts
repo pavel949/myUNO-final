@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 import { can } from '@/modules/core';
 import { recordCost } from '@/modules/finance';
 import { LedgerEntryType } from '@prisma/client';
@@ -54,15 +56,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
     }
 
-    if (
-      !(await can({
-        identity,
-        action: 'money:record_costs_on_units',
-        requiredAccess: 'allow',
-        resource: { projectId: unit.projectId, unitId },
-      }))
-    ) {
+    const legacyAllowed = await can({
+      identity,
+      action: 'money:record_costs_on_units',
+      requiredAccess: 'allow',
+      resource: { projectId: unit.projectId, unitId },
+    });
+    const exactOperationalAccess = await getAuthorizedOperationalUnitIds(
+      user,
+      [unitId],
+      ['finance'],
+    );
+    if (!legacyAllowed && !exactOperationalAccess.includes(unitId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (!(await passesOperatingSpaceUnitCapability(user, unitId, 'record_expense'))) {
+      return NextResponse.json({ error: 'Expense capability required' }, { status: 403 });
     }
 
     const entry = await recordCost(prisma, {

@@ -1028,7 +1028,7 @@ export function MCDashboardClient({
                             <div className="flex flex-wrap items-center gap-8">
                               {actionForBooking(booking)}
                               <Link href={`/ops/stays/${encodeURIComponent(booking.id)}`} className="text-small font-semibold text-brand-andaman hover:underline">
-                                Open booking →
+                                {labels['mc.bookings.open_booking']} →
                               </Link>
                             </div>
                           </td>

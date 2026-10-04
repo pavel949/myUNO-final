@@ -17,6 +17,7 @@ import {
 import { checkInBooking } from '@/modules/booking';
 import { createNotification } from '@/modules/comms';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 export async function POST(
   req: NextRequest,
@@ -53,6 +54,10 @@ export async function POST(
       return NextResponse.json(
         { error: 'Only guest, staff, or management company can check in' },
         { status: 403 }
+
+    if (access.isStaff && !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'manage_front_desk'))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
       );
     }
 

@@ -429,9 +429,11 @@ export default function UnifiedStayCalendar(props: Props) {
               <span className="font-semibold">{item.label}</span>
               <span className="ml-8 text-text-secondary">{item.channel||item.status}</span>
               {item.kind === 'booking' ?
-                props.mode === 'mc' ? null :
                 <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
-                <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
+                <Link href={props.mode==='mc'
+                  ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({tab:'calendar',date:selected.date}).toString()
+                  : '/ops/calendar/'+encodeURIComponent(inspect.id)}
+                  className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">

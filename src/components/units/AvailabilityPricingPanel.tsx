@@ -53,6 +53,7 @@ export default function AvailabilityPricingPanel({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -80,6 +81,7 @@ export default function AvailabilityPricingPanel({
   const act = async (key: string, fn: () => Promise<Response>) => {
     setBusy(key);
     setActionError(null);
+    setActionSuccess(null);
     try {
       const response = await fn();
       if (!response.ok) {
@@ -87,6 +89,8 @@ export default function AvailabilityPricingPanel({
         throw new Error(data?.error || labels['staff.calendar.error_generic']);
       }
       await load();
+      window.dispatchEvent(new Event('myuno:calendar-changed'));
+      setActionSuccess(labels['staff.calendar.saved']);
       return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : labels['staff.calendar.error_generic']);
@@ -124,6 +128,11 @@ export default function AvailabilityPricingPanel({
           <p className="text-body text-state-error">{actionError}</p>
         </div>
       )}
+      {actionSuccess && (
+        <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-16">
+          <p className="text-body font-medium text-emerald-900">{actionSuccess}</p>
+        </div>
+      )}
 
       {/* Availability blocks */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
@@ -151,13 +160,14 @@ export default function AvailabilityPricingPanel({
                   size="sm"
                   variant="destructive"
                   disabled={busy === b.id}
-                  onClick={() =>
-                    act(b.id, () =>
+                  onClick={() => {
+                    if (!window.confirm(labels['staff.calendar.confirm_unblock'])) return;
+                    void act(b.id, () =>
                       fetch(`/api/units/${unitId}/availability-blocks/${b.id}`, {
                         method: 'DELETE',
                       })
-                    )
-                  }
+                    );
+                  }}
                 >
                   {busy === b.id
                     ? labels['staff.calendar.saving']
@@ -178,6 +188,10 @@ export default function AvailabilityPricingPanel({
             const reason = String(form.get('reason') || '') as ManualReason;
             const note = String(form.get('note') || '').trim();
             if (!startDate || !endDate) return;
+            if (new Date(endDate) <= new Date(startDate)) {
+              setActionError(labels['staff.calendar.date_error']);
+              return;
+            }
             act('block', () =>
               post(`/api/units/${unitId}/availability-blocks`, {
                 startDate,
@@ -287,6 +301,10 @@ export default function AvailabilityPricingPanel({
             const nightlyBaht = String(form.get('nightlyBaht') || '').trim();
             const label = String(form.get('label') || '').trim();
             if (!startDate || !endDate || !nightlyBaht) return;
+            if (new Date(endDate) <= new Date(startDate)) {
+              setActionError(labels['staff.calendar.date_error']);
+              return;
+            }
             act('rule', () =>
               post(`/api/units/${unitId}/pricing-rules`, {
                 startDate,

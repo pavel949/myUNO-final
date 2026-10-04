@@ -97,13 +97,13 @@ export async function listPublicCommercialHomes(
       project: { select: { id: true, name: true, slug: true, area: { select: { slug: true } } } },
       coverMediaId: true,
       coverMedia: {
-        select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+        select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
       },
       media: {
         orderBy: { sort: 'asc' },
         include: {
           media: {
-            select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+            select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
           },
         },
       },

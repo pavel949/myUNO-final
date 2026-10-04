@@ -192,7 +192,7 @@ export function MCDashboardClient({
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
   const [reservationView, setReservationView] = useState<
-    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+    'requests' | 'pending_payment' | 'arrivals' | 'in_house' | 'departures' | 'all'
   >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
@@ -561,7 +561,10 @@ export function MCDashboardClient({
   const visibleBookings = bookings.filter((booking) => {
     if (reservationView === 'all') return true;
     if (reservationView === 'requests') {
-      return ['requested', 'pending_payment'].includes(booking.status);
+      return booking.status === 'requested';
+    }
+    if (reservationView === 'pending_payment') {
+      return booking.status === 'pending_payment';
     }
     if (reservationView === 'arrivals') {
       return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
@@ -788,7 +791,10 @@ export function MCDashboardClient({
                       <button
                         key={String(label)}
                         type="button"
-                        onClick={() => setActiveTab(target as typeof activeTab)}
+                        onClick={() => {
+                          if (String(label) === labels['mc.workspace.pending_payments']) setReservationView('pending_payment');
+                          setActiveTab(target as typeof activeTab);
+                        }}
                         className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-8 text-left hover:border-brand-andaman"
                       >
                         <span className="text-small text-text-ink">{label}</span>
@@ -906,6 +912,7 @@ export function MCDashboardClient({
               <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
                 {[
                   ['requests', labels['mc.workspace.requests']],
+                  ['pending_payment', labels['mc.workspace.pending_payments']],
                   ['arrivals', labels['mc.workspace.arrivals']],
                   ['in_house', labels['mc.workspace.in_house']],
                   ['departures', labels['mc.workspace.departures']],
@@ -992,7 +999,14 @@ export function MCDashboardClient({
                               </p>
                             ) : null}
                           </td>
-                          <td className="p-16">{actionForBooking(booking)}</td>
+                          <td className="p-16">
+                            <div className="flex flex-wrap items-center gap-8">
+                              {actionForBooking(booking)}
+                              <Link href={`/ops/stays/${encodeURIComponent(booking.id)}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                                Open booking →
+                              </Link>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}

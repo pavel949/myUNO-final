@@ -33,6 +33,16 @@ interface KeyDef {
 
 const COMMON_KEYS: KeyDef[] = [
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
+  { key: 'homes.detail.show_all_photos', namespace: 'homes', description: 'Commercial home detail: show all photos', en: 'Show all {count} photos', ru: 'Показать все фото ({count})', th: 'ดูรูปทั้งหมด {count} รูป', status: 'needs_review' },
+  { key: 'listing.representative_media', namespace: 'listing', description: 'Stay detail: representative room-type media disclosure', en: 'Representative room-type photography. The exact room is assigned from this category.', ru: 'Фотографии показывают тип номера. Конкретный номер назначается из этой категории.', th: 'รูปภาพเป็นตัวแทนของประเภทห้อง ห้องจริงจะถูกจัดจากประเภทนี้', status: 'needs_review' },
+  { key: 'project_category.representative_media', namespace: 'project_category', description: 'Project category unit card: representative media disclosure', en: 'Representative room-type photos', ru: 'Представительные фото типа номера', th: 'รูปตัวอย่างประเภทห้อง', status: 'needs_review' },
+  { key: 'project_page.units.representative_media', namespace: 'project_page', description: 'Project unit card: representative media disclosure', en: 'Representative room-type photos', ru: 'Представительные фото типа номера', th: 'รูปตัวอย่างประเภทห้อง', status: 'needs_review' },
+  { key: 'project_page.commercial.title', namespace: 'project_page', description: 'Project Space commercial capabilities heading', en: 'Ways to own or live here', ru: 'Как купить или жить здесь', th: 'ทางเลือกในการเป็นเจ้าของหรืออยู่อาศัยที่นี่', status: 'needs_review' },
+  { key: 'project_page.commercial.body', namespace: 'project_page', description: 'Project Space commercial capabilities body', en: 'Verified homes appear here only when the relevant listing authority and property media are ready.', ru: 'Здесь показываются только проверенные объекты с подтверждёнными полномочиями на публикацию и готовыми материалами.', th: 'จะแสดงเฉพาะบ้านที่ผ่านการตรวจสอบเมื่อสิทธิ์ในการลงประกาศและสื่อของทรัพย์สินพร้อมแล้ว', status: 'needs_review' },
+  { key: 'project_page.commercial.buy', namespace: 'project_page', description: 'Project Space buy capability label', en: 'Homes for sale', ru: 'Объекты на продажу', th: 'บ้านสำหรับขาย', status: 'needs_review' },
+  { key: 'project_page.commercial.rent', namespace: 'project_page', description: 'Project Space long-term rent capability label', en: 'Long-term rentals', ru: 'Долгосрочная аренда', th: 'เช่าระยะยาว', status: 'needs_review' },
+  { key: 'project_page.commercial.count', namespace: 'project_page', description: 'Project Space commercial availability count', en: '{count} available', ru: 'Доступно: {count}', th: 'ว่าง {count} รายการ', status: 'needs_review' },
+  { key: 'project_page.commercial.view', namespace: 'project_page', description: 'Project Space commercial capability CTA', en: 'View available homes →', ru: 'Посмотреть доступные объекты →', th: 'ดูบ้านที่พร้อมให้บริการ →', status: 'needs_review' },
   // Actions
   {
     key: 'common.action.save',

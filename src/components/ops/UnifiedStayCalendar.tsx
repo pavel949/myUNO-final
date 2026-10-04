@@ -28,7 +28,16 @@ interface UnitRow {
     error: string | null;
   }>;
 }
-interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
+interface EntryDetail {
+  id: string;
+  kind: 'booking' | 'block';
+  status: string;
+  channel: string | null;
+  label: string;
+  startDate?: string;
+  endDate?: string;
+  holdExpiresAt?: string | null;
+}
 type Props = {
   mode?: 'staff' | 'mc'; organizationId?: string;
   labels: Record<string, string>;
@@ -442,6 +451,12 @@ export default function UnifiedStayCalendar(props: Props) {
                 <span className="font-semibold">{item.label}</span>
                 <span className="rounded-full bg-surface-paper px-8 py-4 text-[11px] font-semibold text-text-secondary">{(item.channel||item.status).replace(/_/g,' ')}</span>
               </div>
+              {item.startDate && item.endDate && <p className="mt-6 text-[11px] text-text-secondary">
+                {item.startDate} → {item.endDate}
+              </p>}
+              {item.status==='pending_payment' && item.holdExpiresAt && <p className="mt-4 text-[11px] font-semibold text-amber-900">
+                Hold until {new Date(item.holdExpiresAt).toLocaleString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
+              </p>}
               {item.kind === 'booking' ?
                 <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">Open booking details →</Link> :
                 <Link href={props.mode==='mc'

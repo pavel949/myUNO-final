@@ -18,6 +18,7 @@ export interface PublicCommercialHome {
   bathrooms: number;
   sizeSqm: number | null;
   imageUrl: string | null;
+  images: string[];
   intents: HomeIntent[];
   priceThb: Partial<Record<HomeIntent, number>>;
 }
@@ -149,6 +150,15 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
         row.media.find((link) => link.mediaId === row.coverMediaId)?.media.storageKey ??
         media.urls[0] ??
         null,
+      images: (() => {
+        const cover =
+          row.media.find((link) => link.mediaId === row.coverMediaId)?.media.storageKey ??
+          media.urls[0] ??
+          null;
+        return cover
+          ? [cover, ...media.urls.filter((url) => url !== cover)]
+          : media.urls;
+      })(),
       intents,
       priceThb,
     }];

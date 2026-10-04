@@ -6,6 +6,7 @@ import { getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules
 import {
   attachBookingToReservationGroup,
   createBooking,
+  findAvailableUnitsForCategory,
   resolveCancellationPolicy,
 } from '@/modules/booking';
 
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as {
       operatingSpaceId?: string;
       unitId?: string;
+      inventoryCategoryId?: string;
+      inventoryTarget?: string;
       guestIdentityId?: string;
       startDate?: string;
       endDate?: string;
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !body.operatingSpaceId ||
-      !body.unitId ||
+      !body.inventoryTarget ||
       !body.guestIdentityId ||
       !body.startDate ||
       !body.endDate
@@ -59,13 +62,47 @@ export async function POST(request: NextRequest) {
     }
 
     const allowedUnitIds = await authorizedUnitIds(user, body.operatingSpaceId);
-    if (!allowedUnitIds.includes(body.unitId)) {
+    const target = body.inventoryTarget || '';
+    const [targetType,targetId] = target.split(':',2);
+    if (!['unit','category'].includes(targetType) || !targetId) {
+      return NextResponse.json({ error: 'Invalid inventory target' }, { status: 400 });
+    }
+
+    const startDate = new Date(body.startDate + 'T00:00:00.000Z');
+    const endDate = new Date(body.endDate + 'T00:00:00.000Z');
+    if (
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime()) ||
+      endDate <= startDate
+    ) {
+      return NextResponse.json({ error: 'Invalid dates' }, { status: 400 });
+    }
+
+    let allocatedUnitId = targetType === 'unit' ? targetId : '';
+    if (targetType === 'category') {
+      const category = await prisma.inventoryCategory.findUnique({
+        where: { id: targetId },
+        select: { id: true, projectId: true, categoryKey: true, status: true },
+      });
+      if (!category || category.status !== 'live') {
+        return NextResponse.json({ error: 'Category is not bookable' }, { status: 409 });
+      }
+      const available = await findAvailableUnitsForCategory(
+        prisma, category.projectId, category.categoryKey, startDate, endDate,
+      );
+      const authorized = available.find((candidate) => allowedUnitIds.includes(candidate.id));
+      if (!authorized) {
+        return NextResponse.json({ error: 'No available authorized property in this category' }, { status: 409 });
+      }
+      allocatedUnitId = authorized.id;
+    }
+    if (!allowedUnitIds.includes(allocatedUnitId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const [unit, guest] = await Promise.all([
       prisma.unit.findUnique({
-        where: { id: body.unitId },
+        where: { id: allocatedUnitId },
         select: {
           id: true,
           projectId: true,
@@ -101,16 +138,6 @@ export async function POST(request: NextRequest) {
       if (!group) {
         return NextResponse.json({ error: 'Reservation group does not match guest or space' }, { status: 409 });
       }
-    }
-
-    const startDate = new Date(body.startDate + 'T00:00:00.000Z');
-    const endDate = new Date(body.endDate + 'T00:00:00.000Z');
-    if (
-      Number.isNaN(startDate.getTime()) ||
-      Number.isNaN(endDate.getTime()) ||
-      endDate <= startDate
-    ) {
-      return NextResponse.json({ error: 'Invalid dates' }, { status: 400 });
     }
 
     const policy = await resolveCancellationPolicy(

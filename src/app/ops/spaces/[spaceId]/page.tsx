@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, OPERATING_SPACE_CAPABILITIES } from '@/modules/ops';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,12 +27,25 @@ export default async function OperatingSpaceHome({
   });
   if (!space || space.status !== 'active') notFound();
 
-  if (!user.isAdmin) {
-    const membership = await getOperatingSpaceMembership(prisma, space.id, user.identityId);
-    if (!membership?.active) redirect('/ops/spaces');
-  }
+  const membership = user.isAdmin
+    ? null
+    : await getOperatingSpaceMembership(prisma, space.id, user.identityId);
+  if (!user.isAdmin && !membership?.active) redirect('/ops/spaces');
 
-  const unitIds = await getOperatingSpaceUnitIds(prisma, space.id);
+  const spaceUnitIds = await getOperatingSpaceUnitIds(prisma, space.id);
+  const unitIds = user.isAdmin
+    ? spaceUnitIds
+    : await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['reservations','front_desk','housekeeping','maintenance','guest_care','pricing','finance'],
+      );
+  if (!unitIds.length && !user.isAdmin) redirect('/ops/spaces');
+
+  const capabilities = new Set<string>(
+    user.isAdmin ? OPERATING_SPACE_CAPABILITIES : (membership?.capabilities ?? [])
+  );
+  const can = (capability: string) => user.isAdmin || capabilities.has(capability);
   const now = new Date();
   const day = new Intl.DateTimeFormat('en-CA', {
     timeZone: space.timezone,
@@ -98,6 +112,8 @@ export default async function OperatingSpaceHome({
     'staff.space.team': 'Team',
     'staff.space.finance': 'Finance & reports',
     'staff.space.channels': 'Channels',
+    'staff.space.tasks_link': 'Tasks',
+    'staff.space.incidents': 'Incidents',
     'staff.space.scope_hint': 'All actions stay within this operating space and continue to use canonical Unit, Booking, Pricing and Finance records.',
   });
 
@@ -111,15 +127,17 @@ export default async function OperatingSpaceHome({
   ] as const;
 
   const links = [
-    [labels['staff.space.calendar'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.reservations'], '/ops/reservations?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.team'], '/ops/spaces/' + encodeURIComponent(space.id) + '/access'],
-    [labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
-  ] as const;
+    ...(can('view_calendar') ? [[labels['staff.space.calendar'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_reservations') ? [[labels['staff.space.reservations'], '/ops/reservations?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_tasks') ? [[labels['staff.space.tasks_link'], '/ops/tasks?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_housekeeping') ? [[labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_maintenance') ? [[labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_tasks') || can('manage_maintenance') ? [[labels['staff.space.incidents'], '/ops/incidents?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_pricing') || can('manage_availability') ? [[labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_team') ? [[labels['staff.space.team'], '/ops/spaces/' + encodeURIComponent(space.id) + '/access']] : []),
+    ...(can('view_finance') ? [[labels['staff.space.finance'], '/ops/finance?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_channels') ? [[labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id) + '&channel=attention']] : []),
+  ];
 
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-7xl space-y-24">

@@ -116,6 +116,46 @@ export async function hasOperatingSpaceCapability(
   return membership.capabilities.includes(capability);
 }
 
+export async function hasOperatingSpaceCapabilityForUnit(
+  db: PrismaClient,
+  unitId: string,
+  identityId: string,
+  capability: OperatingSpaceCapability,
+) {
+  const memberships = await db.operatingSpaceMember.findMany({
+    where: {
+      identityId,
+      active: true,
+      capabilities: { has: capability },
+      operatingSpace: {
+        status: 'active',
+        units: {
+          some: {
+            unitId,
+            active: true,
+            OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+          },
+        },
+      },
+    },
+    select: { id: true },
+    take: 1,
+  });
+  return memberships.length > 0;
+}
+
+export async function hasAnyOperatingSpaceCapability(
+  db: PrismaClient,
+  operatingSpaceId: string,
+  identityId: string,
+  capabilities: readonly OperatingSpaceCapability[],
+) {
+  for (const capability of capabilities) {
+    if (await hasOperatingSpaceCapability(db, operatingSpaceId, identityId, capability)) return true;
+  }
+  return false;
+}
+
 export async function assertOperatingSpaceCapability(
   db: PrismaClient,
   operatingSpaceId: string,

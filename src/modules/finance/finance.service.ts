@@ -4,6 +4,7 @@ import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
+import { recordConfirmedStayInCrm } from '@/modules/crm';
 
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
@@ -240,6 +241,12 @@ export async function recordCashPayment(
       } catch (error) {
         console.error('Cash payment committed but booking thread sync failed:', error);
       }
+      await recordConfirmedStayInCrm(db, {
+        identityId: result.booking.guestIdentityId,
+        bookingId,
+        projectId: result.booking.projectId,
+        unitId: result.booking.unitId,
+      }).catch((error) => console.error('Cash payment committed but CRM lifecycle sync failed:', error));
     }
     await track(db, 'stay_payment_succeeded', {
       bookingId, unitId: result.booking.unitId, projectId: result.booking.projectId,
@@ -577,6 +584,12 @@ export async function verifyAndConfirm(
     } catch (err) {
       console.error('Failed to create booking thread:', err);
     }
+    await recordConfirmedStayInCrm(db, {
+      identityId: result.stayBooking.guestIdentityId,
+      bookingId: result.stayBooking.id,
+      projectId: result.stayBooking.projectId,
+      unitId: result.stayBooking.unitId,
+    }).catch((error) => console.error('Card payment committed but CRM lifecycle sync failed:', error));
   }
 
   if (result.serviceOrderToPay) {

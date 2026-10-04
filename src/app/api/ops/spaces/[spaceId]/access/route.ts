@@ -58,21 +58,20 @@ export async function GET(_: NextRequest, { params }: { params: { spaceId: strin
     }),
   ]);
   const identities = members.map((member) => member.identityId);
-  const unitRoles = identities.length && unitIds.length ? await prisma.roleAssignment.findMany({
+  const assignments = identities.length && unitIds.length ? await prisma.operatingSpaceMemberUnit.findMany({
     where: {
+      operatingSpaceId: params.spaceId,
       identityId: { in: identities },
-      role: 'onsite_host',
-      status: 'active',
       unitId: { in: unitIds },
+      active: true,
     },
     select: { identityId: true, unitId: true },
   }) : [];
   const unitIdsByIdentity = new Map<string, string[]>();
-  for (const role of unitRoles) {
-    if (!role.unitId) continue;
-    const list = unitIdsByIdentity.get(role.identityId) || [];
-    list.push(role.unitId);
-    unitIdsByIdentity.set(role.identityId, list);
+  for (const assignment of assignments) {
+    const list = unitIdsByIdentity.get(assignment.identityId) || [];
+    list.push(assignment.unitId);
+    unitIdsByIdentity.set(assignment.identityId, list);
   }
   return NextResponse.json({
     capabilities: OPERATING_SPACE_CAPABILITIES,
@@ -136,16 +135,42 @@ export async function POST(req: NextRequest, { params }: { params: { spaceId: st
         },
         update: { capabilities: requestedCapabilities, active: true },
       });
-      await tx.roleAssignment.updateMany({
+      await tx.operatingSpaceMemberUnit.updateMany({
         where: {
+          operatingSpaceId: params.spaceId,
           identityId,
-          role: 'onsite_host',
-          unitId: { in: spaceUnitIds.filter((id) => !requestedUnitIds.includes(id)) },
-          status: 'active',
+          unitId: { notIn: requestedUnitIds },
+          active: true,
         },
-        data: { status: 'revoked' },
+        data: { active: false },
       });
+      for (const unitId of requestedUnitIds) {
+        await tx.operatingSpaceMemberUnit.upsert({
+          where: {
+            operatingSpaceId_identityId_unitId: {
+              operatingSpaceId: params.spaceId,
+              identityId,
+              unitId,
+            },
+          },
+          create: { operatingSpaceId: params.spaceId, identityId, unitId, active: true },
+          update: { active: true },
+        });
+      }
     });
+
+    const removedUnitIds = spaceUnitIds.filter((unitId) => !requestedUnitIds.includes(unitId));
+    for (const unitId of removedUnitIds) {
+      const stillNeeded = await prisma.operatingSpaceMemberUnit.count({
+        where: { identityId, unitId, active: true },
+      });
+      if (stillNeeded === 0) {
+        await prisma.roleAssignment.updateMany({
+          where: { identityId, role: 'onsite_host', unitId, status: 'active' },
+          data: { status: 'revoked' },
+        });
+      }
+    }
 
     for (const unitId of requestedUnitIds) {
       const unit = await prisma.unit.findUnique({ where: { id: unitId }, select: { projectId: true } });
@@ -173,13 +198,13 @@ export async function POST(req: NextRequest, { params }: { params: { spaceId: st
     if (!identityId) return NextResponse.json({ error: 'identityId required' }, { status: 400 });
     const spaceUnitIds = await getOperatingSpaceUnitIds(prisma, params.spaceId);
     await prisma.$transaction([
+      prisma.operatingSpaceMemberUnit.updateMany({
+        where: { operatingSpaceId: params.spaceId, identityId, active: true },
+        data: { active: false },
+      }),
       prisma.operatingSpaceMember.updateMany({
         where: { operatingSpaceId: params.spaceId, identityId },
         data: { active: false },
-      }),
-      prisma.roleAssignment.updateMany({
-        where: { identityId, role: 'onsite_host', unitId: { in: spaceUnitIds }, status: 'active' },
-        data: { status: 'revoked' },
       }),
       prisma.operatingTeamMember.updateMany({
         where: {
@@ -189,6 +214,17 @@ export async function POST(req: NextRequest, { params }: { params: { spaceId: st
         data: { active: false },
       }),
     ]);
+    for (const unitId of spaceUnitIds) {
+      const stillNeeded = await prisma.operatingSpaceMemberUnit.count({
+        where: { identityId, unitId, active: true },
+      });
+      if (stillNeeded === 0) {
+        await prisma.roleAssignment.updateMany({
+          where: { identityId, role: 'onsite_host', unitId, status: 'active' },
+          data: { status: 'revoked' },
+        });
+      }
+    }
     return NextResponse.json({ success: true });
   }
 

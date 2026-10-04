@@ -742,15 +742,17 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
-                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
-                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
-                    ].map(([label, value, hint]) => (
-                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint'], 'arrivals'],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint'], 'departures'],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint'], 'in_house'],
+                    ].map(([label, value, hint, view]) => (
+                      <button key={String(label)} type="button"
+                        onClick={() => { setReservationView(view as typeof reservationView); setActiveTab('bookings'); }}
+                        className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman">
                         <p className="text-small font-semibold text-text-ink">{label}</p>
                         <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -878,7 +880,9 @@ export function MCDashboardClient({
                       visibleBookings.map((booking) => (
                         <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
-                            {booking.unit.name}
+                            <Link href={`/mc/properties/${encodeURIComponent(booking.unit.id)}?tab=overview&date=${encodeURIComponent(new Date(booking.startDate).toISOString().slice(0,10))}`} className="hover:text-brand-andaman hover:underline">
+                              {booking.unit.name}
+                            </Link>
                           </td>
                           <td className="p-16 text-body text-text-ink">
                             {booking.guestIdentity.firstName}
@@ -965,7 +969,7 @@ export function MCDashboardClient({
                       </Link>
                     </div>
                     <p className="text-small text-text-secondary">
-                      {ticket.unit.name} · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
+                      <Link href={`/mc/properties/${encodeURIComponent(ticket.unit.id)}?tab=operations`} className="font-semibold text-brand-andaman hover:underline">{ticket.unit.name}</Link> · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
                     </p>
                     <div className="mt-12 flex flex-wrap items-center gap-8">
                       {ticket.assigneeIdentityId !== dashboard.identityId && (

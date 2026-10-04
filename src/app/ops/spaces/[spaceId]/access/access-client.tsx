@@ -28,7 +28,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
 
   const load=useCallback(async()=>{
     setError('');
-    const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{cache:'no-store'});
+    const response=await fetch(`/api/ops/spaces/${encodeURIComponent(spaceId)}/access`,{cache:'no-store'});
     const body=await response.json().catch(()=>null);
     if(!response.ok){setError(body?.error||labels['staff.space_access.error']);return;}
     setData(body as Payload);
@@ -42,7 +42,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
   const saveMember=async(event:FormEvent)=>{
     event.preventDefault();setBusy(true);setError('');setNotice('');
     try{
-      const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{
+      const response=await fetch(`/api/ops/spaces/${encodeURIComponent(spaceId)}/access`,{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({action:'upsert_member',email,capabilities:selectedCaps,unitIds:selectedUnits}),
       });
@@ -64,7 +64,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
     if(!window.confirm(labels['staff.space_access.remove_confirm']))return;
     setBusy(true);setError('');setNotice('');
     try{
-      const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{
+      const response=await fetch(`/api/ops/spaces/${encodeURIComponent(spaceId)}/access`,{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({action:'remove_member',identityId:member.identityId}),
       });
@@ -78,7 +78,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
   const createTeam=async(event:FormEvent)=>{
     event.preventDefault();setBusy(true);setError('');setNotice('');
     try{
-      const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{
+      const response=await fetch(`/api/ops/spaces/${encodeURIComponent(spaceId)}/access`,{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({action:'create_team',name:teamName,teamType}),
       });
@@ -94,7 +94,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
     const memberIdentityIds=checked?Array.from(new Set([...current,identityId])):current.filter(id=>id!==identityId);
     setBusy(true);setError('');setNotice('');
     try{
-      const response=await fetch('/api/ops/spaces/'+encodeURIComponent(spaceId)+'/access',{
+      const response=await fetch(`/api/ops/spaces/${encodeURIComponent(spaceId)}/access`,{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({action:'set_team_members',teamId:team.id,memberIdentityIds}),
       });
@@ -119,14 +119,14 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
           className="mt-4 h-44 w-full max-w-xl rounded-md border border-border-line px-12"/>
       </label>
 
-      <div className="mt-20 grid gap-20 xl:grid-cols-2">
+      <div className="mt-40 grid gap-20 xl:grid-cols-2">
         <section>
           <div className="flex items-center justify-between gap-8">
             <h3 className="font-semibold">{labels['staff.space_access.capabilities']}</h3>
             <button type="button" className="text-small text-brand-andaman underline"
               onClick={()=>setSelectedCaps(data?.capabilities||[])}>{labels['staff.space_access.select_all']}</button>
           </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          <div className="mt-8 grid gap-8 sm:grid-cols-2">
             {(data?.capabilities||[]).map(capability=><label key={capability} className="flex items-start gap-8 rounded-md bg-surface-ivory p-8 text-small">
               <input type="checkbox" checked={selectedCaps.includes(capability)}
                 onChange={()=>toggle(selectedCaps,capability,setSelectedCaps)}/>
@@ -149,7 +149,7 @@ export default function OperatingSpaceAccessClient({spaceId,labels}:{spaceId:str
           </div>
         </section>
       </div>
-      <button disabled={busy||!email||!selectedUnits.length} className="mt-20 rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">
+      <button disabled={busy||!email||!selectedUnits.length} className="mt-40 rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white disabled:opacity-50">
         {busy?labels['staff.space_access.saving']:labels['staff.space_access.save_member']}
       </button>
     </form>

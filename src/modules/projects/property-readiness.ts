@@ -120,6 +120,23 @@ export async function getPropertyReadiness(
       { href: `/app/admin/projects/${project.id}/media` }
     );
   }
+  if (projectMedia.ready && project.units.length > 0) {
+    const exactUnitMediaIds = new Set(
+      project.units.flatMap((unit) => unit.media.map((link) => link.mediaId))
+    );
+    const projectOnlyPhotoCount = project.galleryMedia.filter(
+      (link) => !exactUnitMediaIds.has(link.mediaId)
+    ).length;
+    if (project.galleryMedia.length > 0 && projectOnlyPhotoCount === 0) {
+      add(
+        'warning',
+        'project.media_provenance',
+        'Project gallery is composed entirely of exact-unit media. Curate project/common-area photography so the portal does not present villa photos as shared property context.',
+        { href: `/app/admin/projects/${project.id}/media` }
+      );
+    }
+  }
+
   if (project.inventoryCategories.length === 0) {
     add('blocker', 'project.categories', 'Create at least one inventory category.');
   } else {

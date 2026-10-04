@@ -23,7 +23,7 @@ export default function IncidentsClient({spaceId,units,members,incidents,labels}
   setBusy(id);setError('');setNotice('');
   const resolutionNotes=status==='resolved'?window.prompt(labels['staff.incidents.resolve_prompt'])||'':'';
   if(status==='resolved'&&!resolutionNotes.trim()){setBusy('');return;}
-  const response=await fetch('/api/ops/incidents/'+encodeURIComponent(id),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({spaceId,status,resolutionNotes})});
+  const response=await fetch(`/api/ops/incidents/${encodeURIComponent(id)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({spaceId,status,resolutionNotes})});
   const body=await response.json().catch(()=>null);setBusy('');
   if(!response.ok){setError(body?.error||labels['staff.incidents.error']);return;}
   setNotice(labels['staff.incidents.updated']);router.refresh();
@@ -40,12 +40,12 @@ export default function IncidentsClient({spaceId,units,members,incidents,labels}
     <select name="assignedToIdentityId" className="h-40 rounded-md border border-border-line px-12"><option value="">{labels['staff.incidents.unassigned']}</option>{members.map(m=><option key={m.identityId} value={m.identityId}>{m.name}</option>)}</select>
    </div>
    <textarea required name="description" rows={3} placeholder={labels['staff.incidents.description']} className="mt-8 w-full rounded-md border border-border-line p-12"/>
-   <button disabled={busy==='create'} className="mt-8 rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50">{busy==='create'?labels['staff.incidents.saving']:labels['staff.incidents.create']}</button>
+   <button disabled={busy==='create'} className="mt-8 rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white disabled:opacity-50">{busy==='create'?labels['staff.incidents.saving']:labels['staff.incidents.create']}</button>
   </form>
   <section className="space-y-8"><h2 className="font-display text-heading-2 font-semibold">{labels['staff.incidents.open']}</h2>
    {!incidents.length?<p className="rounded-xl border border-border-line bg-surface-paper p-20 text-text-secondary">{labels['staff.incidents.empty']}</p>:
     incidents.map(item=><article key={item.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
-     <div className="flex flex-wrap items-start justify-between gap-8"><div><p className="font-semibold">{item.unit.project.name} · {item.unit.name}</p><p className="mt-2 text-small text-text-secondary">{item.incidentType} · {item.severity} · {new Date(item.createdAt).toLocaleString('en-GB',{timeZone:'Asia/Bangkok'})}</p></div><span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold">{item.status.replace(/_/g,' ')}</span></div>
+     <div className="flex flex-wrap items-start justify-between gap-8"><div><p className="font-semibold">{item.unit.project.name} · {item.unit.name}</p><p className="mt-4 text-small text-text-secondary">{item.incidentType} · {item.severity} · {new Date(item.createdAt).toLocaleString('en-GB',{timeZone:'Asia/Bangkok'})}</p></div><span className="rounded-full bg-surface-ivory px-8 py-4 text-small font-semibold">{item.status.replace(/_/g,' ')}</span></div>
      <p className="mt-8 text-body">{item.description}</p>
      {item.assignedTo&&<p className="mt-4 text-small text-text-secondary">{labels['staff.incidents.assigned']}: {item.assignedTo.firstName} {item.assignedTo.lastName}</p>}
      <div className="mt-12 flex flex-wrap gap-8">{item.status==='open'&&<button disabled={busy===item.id} onClick={()=>void transition(item.id,'acknowledged')} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">{labels['staff.incidents.ack']}</button>}

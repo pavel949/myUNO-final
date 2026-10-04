@@ -41,8 +41,8 @@ describe('project-level team isolation',()=>{
   it('keeps management-company unit authority tied to the active engagement organization',async()=>{
     const [project,identity,owner]=await Promise.all([createProject(),createIdentity(),createIdentity()]);
     const [orgA,orgB]=await Promise.all([
-      db.organization.create({data:{name:'MC A',orgType:'management_company',projectId:project.id,contactEmail:'mca@example.com'}}),
-      db.organization.create({data:{name:'MC B',orgType:'management_company',projectId:project.id,contactEmail:'mcb@example.com'}}),
+      db.organization.create({data:{name:'MC A',orgType:'management_company',projectId:project.id,contactEmail:'mca@example.com',contactPhone:'+66000000001'}}),
+      db.organization.create({data:{name:'MC B',orgType:'management_company',projectId:project.id,contactEmail:'mcb@example.com',contactPhone:'+66000000002'}}),
     ]);
     const [unitA,unitB]=await Promise.all([
       createUnit({projectId:project.id,ownerIdentityId:owner.id,name:'A'}),

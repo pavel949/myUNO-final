@@ -123,7 +123,17 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   });
   const paid=booking.payments.filter(p=>p.status==='succeeded').reduce((s,p)=>s+p.amountThb,0);
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const statusLabel=labels['staff.stay_360.status.'+booking.status]||booking.status.replace(/_/g,' ');
+  const statusLabel = booking.status==='requested'
+    ? labels['staff.stay_360.status.requested']
+    : booking.status==='pending_payment'
+      ? labels['staff.stay_360.status.pending_payment']
+      : booking.status==='confirmed'
+        ? labels['staff.stay_360.status.confirmed']
+        : booking.status==='checked_in'
+          ? labels['staff.stay_360.status.checked_in']
+          : booking.status==='checked_out'
+            ? labels['staff.stay_360.status.checked_out']
+            : booking.status.replace(/_/g,' ');
   const formatBangkok=(value:Date)=>value.toLocaleString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
   const nights=Math.max(0,Math.round((booking.endDate.getTime()-booking.startDate.getTime())/86400000));
   const guestName=[booking.guestIdentity.firstName,booking.guestIdentity.lastName].filter(Boolean).join(' ');

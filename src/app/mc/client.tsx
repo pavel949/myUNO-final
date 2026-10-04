@@ -844,12 +844,23 @@ export function MCDashboardClient({
                     <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.managed_properties']}</h2>
                     <p className="mt-4 max-w-3xl text-small text-text-secondary">{labels['mc.workspace.managed_properties_hint']}</p>
                   </div>
-                  <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="text-small font-semibold text-brand-andaman hover:underline">
-                    {labels['mc.workspace.view_all_calendar']} →
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-8">
+                    <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
+                      + {labels['mc.workspace.add_property']}
+                    </Link>
+                    <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                      {labels['mc.workspace.view_all_calendar']} →
+                    </Link>
+                  </div>
                 </div>
                 {units.length === 0 ? (
-                  <p className="mt-16 text-small text-text-secondary">{labels['mc.workspace.no_properties']}</p>
+                  <div className="mt-16 rounded-lg border border-dashed border-border-line bg-surface-ivory p-20">
+                    <p className="font-semibold text-text-ink">{labels['mc.workspace.no_properties']}</p>
+                    <p className="mt-4 text-small text-text-secondary">{labels['mc.workspace.add_property_hint']}</p>
+                    <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="mt-12 inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
+                      + {labels['mc.workspace.add_property']}
+                    </Link>
+                  </div>
                 ) : (
                   <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
                     {units.map((unit) => (

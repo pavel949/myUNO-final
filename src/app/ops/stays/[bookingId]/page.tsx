@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import StayActions from '@/components/ops/StayActions';
@@ -25,8 +25,12 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   });
   if(!booking)notFound();
   const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
-  if(!access.some(Boolean))notFound();
-  const canSeeFinance=access[4];
+  const mcAccess=await hasManagedUnitMcAccess(user,{projectId:booking.projectId,unitId:booking.unitId});
+  if(!access.some(Boolean)&&!mcAccess)notFound();
+  const canSeeFinance=access[4]||mcAccess;
+  const backHref=mcAccess&&!access.some(Boolean)
+    ? '/mc/properties/'+encodeURIComponent(booking.unitId)+'?tab=reservations'
+    : '/ops/stays';
   const labels=await getLabels({
     'staff.stay_360.title':'Stay 360',
     'staff.stay_360.back':'Stay operations',
@@ -61,7 +65,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-5xl space-y-24">
-      <Link href="/ops/stays" className="text-small font-semibold text-brand-andaman">
+      <Link href={backHref} className="text-small font-semibold text-brand-andaman">
         ← {labels['staff.stay_360.back']}
       </Link>
       <header className="rounded-lg border border-border-line bg-surface-paper p-24">
@@ -98,7 +102,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           </p>}
         </section>
         <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
-          canRecordMoney={canSeeFinance} canManageReservations={access[0]} canManageFrontDesk={access[1]}
+          canRecordMoney={canSeeFinance} canManageReservations={access[0]||mcAccess} canManageFrontDesk={access[1]||mcAccess}
           labels={labels}/>
       </div>
       {canSeeFinance && <section className="rounded-lg border border-border-line bg-surface-paper p-20">

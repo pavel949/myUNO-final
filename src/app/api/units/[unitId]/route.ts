@@ -79,13 +79,13 @@ export async function GET(
             minNights: true,
             coverMediaId: true,
             coverMedia: {
-              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
             },
             galleryMedia: {
               orderBy: { sort: 'asc' },
               include: {
                 media: {
-                  select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+                  select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
                 },
               },
             },
@@ -95,13 +95,13 @@ export async function GET(
           select: { id: true, name: true, status: true, projectType: true },
         },
         coverMedia: {
-          select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+          select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
         },
         media: {
           orderBy: { sort: 'asc' },
           include: {
             media: {
-              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true },
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
             },
           },
         },

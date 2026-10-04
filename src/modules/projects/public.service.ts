@@ -196,7 +196,11 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
     areaName: p.area?.nameKey ? (publicCopy[p.area.nameKey] || null) : null,
     descriptionKey: p.descriptionKey,
     coverUrl: projectMedia.ready
-      ? projectMedia.urls.find((url, index) => p.galleryMedia[index]?.mediaId === p.coverMediaId) ?? projectMedia.urls[0] ?? null
+      ? p.galleryMedia.find(
+          (link) =>
+            link.mediaId === p.coverMediaId &&
+            projectMedia.urls.includes(link.media.storageKey)
+        )?.media.storageKey ?? projectMedia.urls[0] ?? null
       : null,
     liveUnitCount: eligibleUnits.length,
     fromNightlyThb: eligibleUnits.length

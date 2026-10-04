@@ -17,10 +17,8 @@ export default async function IncidentsPage({searchParams}:{searchParams?:{space
  if(!space||space.status!=='active')redirect('/ops/spaces');
  if(!user.isAdmin){
   const membership=await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-  const allowed=membership?.active&&(
-    await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_tasks')||
-    await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_maintenance')
-  );
+  const allowed=membership?.active&&
+    await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_incidents');
   if(!allowed)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
  }
  const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);

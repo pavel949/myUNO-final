@@ -16,7 +16,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
       refundAccruedThb:true,channel:true,projectId:true,unitId:true,guestNote:true,
       unit:{select:{name:true,inventoryCategory:{select:{name:true}}}},
       project:{select:{name:true}},
-      guestIdentity:{select:{firstName:true,lastName:true}},
+      guestIdentity:{select:{id:true,firstName:true,lastName:true,crmProfile:{select:{lifecycleStage:true}}}},
       payments:{select:{
         id:true,status:true,amountThb:true,method:true,receiptRef:true,createdAt:true,receivedAt:true,succeededAt:true,
         receivedBy:{select:{firstName:true,lastName:true}},
@@ -33,6 +33,23 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   const mcAccess=await hasManagedUnitMcAccess(user,{projectId:booking.projectId,unitId:booking.unitId});
   if(!access.some(Boolean)&&!mcAccess)notFound();
   const canSeeFinance=access[4]||mcAccess;
+  const canSeeInternalCrm=access.some(Boolean)&&!mcAccess;
+  const [completedProjectStays,openGuestIssues]=await Promise.all([
+    prisma.booking.count({
+      where:{
+        guestIdentityId:booking.guestIdentity.id,
+        projectId:booking.projectId,
+        status:{in:['checked_out','completed']},
+      },
+    }),
+    prisma.ticket.count({
+      where:{
+        projectId:booking.projectId,
+        raisedByIdentityId:booking.guestIdentity.id,
+        status:{in:['open','acknowledged','in_progress','waiting_reporter']},
+      },
+    }),
+  ]);
   const backHref=mcAccess&&!access.some(Boolean)
     ? '/mc/properties/'+encodeURIComponent(booking.unitId)+'?tab=reservations'
     : '/ops/stays';
@@ -65,6 +82,11 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
     'staff.stay_360.actions':'Next action',
     'staff.stay_360.warning':'Payment or refund changes require a verified financial transaction.',
     'staff.stay_360.guest_note':'Guest note',
+    'staff.stay_360.conversation':'Guest conversation',
+    'staff.stay_360.guest_context':'Guest relationship',
+    'staff.stay_360.completed_stays':'Completed stays in this project',
+    'staff.stay_360.open_issues':'Open guest issues',
+    'staff.stay_360.crm_stage':'CRM lifecycle',
     'staff.stay_360.pending_inventory':'Dates are locked while payment is pending.',
     'staff.stay_360.confirmed_inventory':'Booking confirmed. Inventory remains reserved.',
     'staff.stay_360.pending_next':'Payment is the next required step. Confirming payment will change the booking to Confirmed.',
@@ -191,6 +213,14 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           {booking.guestNote&&<p className="mt-16 text-small text-text-secondary">
             {labels['staff.stay_360.guest_note']}: {booking.guestNote}
           </p>}
+          <div className="mt-16 grid gap-8 border-t border-border-line pt-16 sm:grid-cols-2">
+            <div><p className="text-small text-text-secondary">{labels['staff.stay_360.completed_stays']}</p><p className="font-semibold">{completedProjectStays}</p></div>
+            <div><p className="text-small text-text-secondary">{labels['staff.stay_360.open_issues']}</p><p className="font-semibold">{openGuestIssues}</p></div>
+            {canSeeInternalCrm&&booking.guestIdentity.crmProfile&&<div><p className="text-small text-text-secondary">{labels['staff.stay_360.crm_stage']}</p><p className="font-semibold capitalize">{booking.guestIdentity.crmProfile.lifecycleStage.replace(/_/g,' ')}</p></div>}
+          </div>
+          <Link href={`/ops/stays/${encodeURIComponent(booking.id)}/conversation`} className="mt-16 inline-flex rounded-md border border-border-line px-12 py-8 text-small font-semibold text-brand-andaman">
+            {labels['staff.stay_360.conversation']} →
+          </Link>
         </section>
         <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
           guestName={guestName} unitName={booking.unit.name}

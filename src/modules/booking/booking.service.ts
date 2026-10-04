@@ -3,6 +3,7 @@ import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
+import { notifyBookingPendingPayment } from './notify-pending-payment';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
 import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
@@ -415,6 +416,10 @@ export async function createBooking(
   }).catch(() => null);
 
   // Track request event if this is a request-to-book
+  if (instantBook) {
+    await notifyBookingPendingPayment(db, booking.id).catch(() => null);
+  }
+
   if (!instantBook) {
     await track(db, 'stay_booking_requested', {
       bookingId: booking.id,

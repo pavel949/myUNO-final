@@ -14,6 +14,7 @@ const photo = (id: string) => ({
     kind: 'photo',
     mimeType: 'image/jpeg',
     encrypted: false,
+    sizeBytes: 1024,
   },
 });
 
@@ -42,7 +43,7 @@ describe('public media readiness', () => {
     expect(foreignCover.blockers).toContain('cover_not_in_gallery');
   });
 
-  it('rejects encrypted or unsupported assets from a public gallery', () => {
+  it('rejects encrypted, unsupported or empty assets from a public gallery', () => {
     const encrypted = photo('secret');
     encrypted.media.encrypted = true;
     const readiness = assessGalleryReadiness({
@@ -52,6 +53,15 @@ describe('public media readiness', () => {
     expect(readiness.ready).toBe(false);
     expect(readiness.invalidMediaIds).toEqual(['secret']);
     expect(readiness.blockers).toContain('invalid_public_media');
+
+    const empty = photo('empty');
+    empty.media.sizeBytes = 0;
+    const emptyReadiness = assessGalleryReadiness({
+      coverMediaId: 'a',
+      links: [photo('a'), photo('b'), empty],
+    });
+    expect(emptyReadiness.ready).toBe(false);
+    expect(emptyReadiness.invalidMediaIds).toContain('empty');
   });
 
   it('never uses category photos as exact-unit photos for private villas or condos', () => {

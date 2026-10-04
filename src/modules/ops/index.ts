@@ -76,6 +76,7 @@ export {
   getOperatingSpaceMembership,
   hasOperatingSpaceCapability,
   hasOperatingSpaceCapabilityForUnit,
+  hasOperatingSpaceMembershipForUnit,
   hasAnyOperatingSpaceCapability,
   assertOperatingSpaceCapability,
   type OperatingSpaceCapability,

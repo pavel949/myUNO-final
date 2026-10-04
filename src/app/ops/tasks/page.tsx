@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds, getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getMCManagedUnits } from '@/modules/projects';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, listOperationalTasks } from '@/modules/ops';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, hasOperatingSpaceCapability, listOperationalTasks } from '@/modules/ops';
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
 import OperationalTaskCreateForm from '@/components/ops/OperationalTaskCreateForm';
 
@@ -21,7 +21,12 @@ export default async function OperationalTasksPage({
   const spaceMembership = requestedSpaceId && !user.isAdmin
     ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
     : null;
-  if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
+  if (requestedSpaceId && !user.isAdmin) {
+    if (!spaceMembership?.active) redirect('/ops/spaces');
+    if (!(await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'manage_tasks'))) {
+      redirect('/ops/spaces/' + encodeURIComponent(requestedSpaceId));
+    }
+  }
   const spaceUnitIds = requestedSpaceId
     ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
     : [];
@@ -67,16 +72,11 @@ export default async function OperationalTasksPage({
   }
 
   const authorizedSpaceUnitIds = requestedSpaceId && !user.isAdmin
-    ? (await prisma.unit.findMany({
-        where: {
-          id: { in: spaceUnitIds },
-          OR: [
-            ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
-            ...(mcManagedUnitIds.size ? [{ id: { in: Array.from(mcManagedUnitIds) } }] : []),
-          ],
-        },
-        select: { id: true },
-      })).map((unit) => unit.id)
+    ? await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['housekeeping','front_desk','maintenance','guest_care','reservations'],
+      )
     : spaceUnitIds;
   if (requestedSpaceId && !user.isAdmin && !authorizedSpaceUnitIds.length) redirect('/ops/spaces');
 

@@ -162,9 +162,19 @@ export async function findOrCreateThread(
   });
 
   if (existingThread) {
-    // Idempotent by context, but participant scope may evolve when a team
-    // changes. Upsert only explicitly authorized participants; never widen a
-    // thread through a global staff role.
+    // Booking threads are an authorization projection, not an append-only ACL.
+    // When team/unit access changes, remove identities that are no longer in
+    // the freshly resolved authorized participant set.
+    if (contextType === 'booking') {
+      await db.threadParticipant.deleteMany({
+        where: {
+          threadId: existingThread.id,
+          identityId: { notIn: participantIdentityIds },
+        },
+      });
+    }
+    // Idempotent by context, and participant scope may evolve when a team
+    // changes. Upsert only explicitly authorized participants.
     for (const identityId of participantIdentityIds) {
       await db.threadParticipant.upsert({
         where: {

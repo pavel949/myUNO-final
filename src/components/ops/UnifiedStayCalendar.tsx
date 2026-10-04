@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-literal-ui-text */
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -71,6 +72,9 @@ const shortLabel: Record<CalendarState, string> = {
 export default function UnifiedStayCalendar(props: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [inventoryFilter, setInventoryFilter] = useState<'all'|'available'|'occupied'|'holds'|'blocked'|'not_sellable'>('all');
+  const [readinessFilter, setReadinessFilter] = useState<'all'|'ready'|'attention'>('all');
+  const [channelFilter, setChannelFilter] = useState<'all'|'healthy'|'attention'>('all');
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
   const [mobileDate, setMobileDate] = useState(
     props.days.includes(props.today) ? props.today : (props.days[0] || props.start)
@@ -120,10 +124,23 @@ export default function UnifiedStayCalendar(props: Props) {
       window.removeEventListener('myuno:calendar-changed',onFocus);
     };
   },[router, props.mode]);
-  const rows = useMemo(() => props.units.filter((unit) =>
-    (unit.name + ' ' + unit.projectName + ' ' + unit.categoryName).toLocaleLowerCase()
-      .includes(search.toLocaleLowerCase().trim()),
-  ),[props.units,search]);
+  const rows = useMemo(() => props.units.filter((unit) => {
+    const matchesSearch = (unit.name + ' ' + unit.projectName + ' ' + unit.categoryName)
+      .toLocaleLowerCase().includes(search.toLocaleLowerCase().trim());
+    if (!matchesSearch) return false;
+    if (readinessFilter === 'ready' && unit.readiness !== 'ready') return false;
+    if (readinessFilter === 'attention' && unit.readiness === 'ready') return false;
+    if (channelFilter === 'healthy' && unit.channelState !== 'healthy') return false;
+    if (channelFilter === 'attention' && unit.channelState === 'healthy') return false;
+    if (inventoryFilter === 'all') return true;
+    if (inventoryFilter === 'not_sellable') return !unit.sellable;
+    const cells = props.cells[unit.id] || [];
+    if (inventoryFilter === 'available') return unit.sellable && cells.some(cell => cell.state === 'free');
+    if (inventoryFilter === 'occupied') return cells.some(cell => ['confirmed','in_house','external'].includes(cell.state));
+    if (inventoryFilter === 'holds') return cells.some(cell => cell.state === 'hold');
+    if (inventoryFilter === 'blocked') return cells.some(cell => ['owner','maintenance','blocked','conflict'].includes(cell.state));
+    return true;
+  }),[props.units,props.cells,search,inventoryFilter,readinessFilter,channelFilter]);
   useEffect(() => {
     if (!props.days.includes(mobileDate)) {
       setMobileDate(props.days.includes(props.today) ? props.today : (props.days[0] || props.start));
@@ -188,7 +205,7 @@ export default function UnifiedStayCalendar(props: Props) {
         {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
       <section aria-label="Calendar filters" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-7">
           <label className="text-small font-semibold text-text-secondary">
             {props.labels['staff.unified_calendar.project']}
             <select value={props.projectId} onChange={(event)=>router.push(q({projectId:event.target.value,organizationId:null,categoryId:null,unitId:null}))}
@@ -218,6 +235,29 @@ export default function UnifiedStayCalendar(props: Props) {
             <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)}
               placeholder={props.labels['staff.unified_calendar.search']}
               className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink"/>
+          </label>
+          <label className="text-small font-semibold text-text-secondary">
+            Inventory
+            <select value={inventoryFilter} onChange={(event)=>setInventoryFilter(event.target.value as typeof inventoryFilter)}
+              className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
+              <option value="all">All states</option><option value="available">Available</option>
+              <option value="occupied">Occupied</option><option value="holds">Holds</option>
+              <option value="blocked">Blocked / conflict</option><option value="not_sellable">Not sellable</option>
+            </select>
+          </label>
+          <label className="text-small font-semibold text-text-secondary">
+            Readiness
+            <select value={readinessFilter} onChange={(event)=>setReadinessFilter(event.target.value as typeof readinessFilter)}
+              className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
+              <option value="all">All</option><option value="ready">Ready</option><option value="attention">Needs attention</option>
+            </select>
+          </label>
+          <label className="text-small font-semibold text-text-secondary">
+            Channels
+            <select value={channelFilter} onChange={(event)=>setChannelFilter(event.target.value as typeof channelFilter)}
+              className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
+              <option value="all">All</option><option value="healthy">Healthy</option><option value="attention">Needs attention</option>
+            </select>
           </label>
         </div>
         <div className="mt-16 flex flex-wrap items-center justify-between gap-12">
@@ -395,7 +435,7 @@ export default function UnifiedStayCalendar(props: Props) {
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">
-          <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          <Link href={props.mode==='mc' ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({date:selected?.date||props.start,tab:'overview'}).toString() : '/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
           <Link

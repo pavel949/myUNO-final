@@ -676,7 +676,7 @@ export function MCDashboardClient({
               <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
-              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <Link href={`/mc?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}#managed-properties`} className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
                 {labels['mc.workspace.portfolio']}
               </Link>
               <button
@@ -726,6 +726,24 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
+              <div className="mb-16">
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.portfolio_pulse']}</p>
+                <div className="mt-8 grid grid-cols-2 gap-8 sm:grid-cols-3 xl:grid-cols-6">
+                  {[
+                    [labels['mc.stats.units'], units.length],
+                    [labels['mc.workspace.arrivals'], arrivalsToday],
+                    [labels['mc.workspace.departures'], departuresToday],
+                    [labels['mc.attention.requests'], requestedBookings],
+                    [labels['mc.workspace.payment_issues'], pendingPayments.length],
+                    [labels['mc.workspace.channel_issues'], icalConflicts.length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-12">
+                      <p className="text-caption text-text-secondary">{label}</p>
+                      <p className="mt-4 font-display text-heading-2 font-semibold tabular-nums text-text-ink">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
@@ -742,15 +760,17 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
-                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
-                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
-                    ].map(([label, value, hint]) => (
-                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint'], 'arrivals'],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint'], 'departures'],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint'], 'in_house'],
+                    ].map(([label, value, hint, view]) => (
+                      <button key={String(label)} type="button"
+                        onClick={() => { setReservationView(view as typeof reservationView); setActiveTab('bookings'); }}
+                        className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman">
                         <p className="text-small font-semibold text-text-ink">{label}</p>
                         <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -794,19 +814,77 @@ export function MCDashboardClient({
                   </Link>
                 </div>
                 <div className="mt-16 grid gap-12 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    [labels['mc.workspace.health_payments'], pendingPayments.length, pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_channels'], icalConflicts.length, icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_issues'], dashboard.openTicketsCount, dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_services'], actionableServiceOrders, actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
-                  ].map(([label, count, status]) => (
-                    <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
-                      <p className="text-small font-semibold text-text-ink">{label}</p>
-                      <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{count}</p>
-                      <p className="mt-8 text-small text-text-secondary">{status}</p>
-                    </div>
-                  ))}
+                  <button type="button" onClick={() => { setReservationView('all'); setActiveTab('bookings'); }} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_payments']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{pendingPayments.length}</p>
+                    <p className="mt-8 text-small text-text-secondary">{pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']}</p>
+                  </button>
+                  <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_channels']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{icalConflicts.length}</p>
+                    <p className="mt-8 text-small text-text-secondary">{icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']}</p>
+                  </Link>
+                  <button type="button" onClick={() => setActiveTab('tickets')} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_issues']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{dashboard.openTicketsCount}</p>
+                    <p className="mt-8 text-small text-text-secondary">{dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']}</p>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('service_orders')} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_services']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{actionableServiceOrders}</p>
+                    <p className="mt-8 text-small text-text-secondary">{actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']}</p>
+                  </button>
                 </div>
+              </div>
+
+              <div id="managed-properties" className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20 scroll-mt-24">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.portfolio']}</p>
+                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.managed_properties']}</h2>
+                    <p className="mt-4 max-w-3xl text-small text-text-secondary">{labels['mc.workspace.managed_properties_hint']}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-8">
+                    <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
+                      + {labels['mc.workspace.add_property']}
+                    </Link>
+                    <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                      + {labels['mc.workspace.add_project']}
+                    </Link>
+                    <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                      {labels['mc.workspace.view_all_calendar']} →
+                    </Link>
+                  </div>
+                </div>
+                {units.length === 0 ? (
+                  <div className="mt-16 rounded-lg border border-dashed border-border-line bg-surface-ivory p-20">
+                    <p className="font-semibold text-text-ink">{labels['mc.workspace.no_properties']}</p>
+                    <p className="mt-4 text-small text-text-secondary">{labels['mc.workspace.add_property_hint']}</p>
+                    <div className="mt-12 flex flex-wrap gap-8">
+                      <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
+                        + {labels['mc.workspace.add_property']}
+                      </Link>
+                      <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                        + {labels['mc.workspace.add_project']}
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
+                    {units.map((unit) => (
+                      <Link key={unit.id} href={`/mc/properties/${encodeURIComponent(unit.id)}?tab=overview`} className="rounded-lg border border-border-line bg-surface-ivory p-16 transition hover:border-brand-andaman hover:bg-surface-paper">
+                        <div className="flex items-start justify-between gap-8">
+                          <div>
+                            <p className="font-semibold text-text-ink">{unit.name}</p>
+                            <p className="mt-4 text-small text-text-secondary">{statusLabel(unit.status)}</p>
+                          </div>
+                          <span className="text-small font-semibold text-brand-andaman">{labels['mc.workspace.open_property']} →</span>
+                        </div>
+                        <p className="mt-12 text-small text-text-secondary">฿{unit.baseNightlyThb.toLocaleString()} {labels['mc.units.per_night']}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -878,7 +956,9 @@ export function MCDashboardClient({
                       visibleBookings.map((booking) => (
                         <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
-                            {booking.unit.name}
+                            <Link href={`/mc/properties/${encodeURIComponent(booking.unit.id)}?tab=overview&date=${encodeURIComponent(new Date(booking.startDate).toISOString().slice(0,10))}`} className="hover:text-brand-andaman hover:underline">
+                              {booking.unit.name}
+                            </Link>
                           </td>
                           <td className="p-16 text-body text-text-ink">
                             {booking.guestIdentity.firstName}
@@ -965,7 +1045,7 @@ export function MCDashboardClient({
                       </Link>
                     </div>
                     <p className="text-small text-text-secondary">
-                      {ticket.unit.name} · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
+                      <Link href={`/mc/properties/${encodeURIComponent(ticket.unit.id)}?tab=operations`} className="font-semibold text-brand-andaman hover:underline">{ticket.unit.name}</Link> · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
                     </p>
                     <div className="mt-12 flex flex-wrap items-center gap-8">
                       {ticket.assigneeIdentityId !== dashboard.identityId && (

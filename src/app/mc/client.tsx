@@ -848,6 +848,9 @@ export function MCDashboardClient({
                     <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
                       + {labels['mc.workspace.add_property']}
                     </Link>
+                    <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                      + {labels['mc.workspace.add_project']}
+                    </Link>
                     <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="text-small font-semibold text-brand-andaman hover:underline">
                       {labels['mc.workspace.view_all_calendar']} →
                     </Link>
@@ -857,9 +860,14 @@ export function MCDashboardClient({
                   <div className="mt-16 rounded-lg border border-dashed border-border-line bg-surface-ivory p-20">
                     <p className="font-semibold text-text-ink">{labels['mc.workspace.no_properties']}</p>
                     <p className="mt-4 text-small text-text-secondary">{labels['mc.workspace.add_property_hint']}</p>
-                    <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="mt-12 inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
-                      + {labels['mc.workspace.add_property']}
-                    </Link>
+                    <div className="mt-12 flex flex-wrap gap-8">
+                      <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white">
+                        + {labels['mc.workspace.add_property']}
+                      </Link>
+                      <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-10 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                        + {labels['mc.workspace.add_project']}
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">

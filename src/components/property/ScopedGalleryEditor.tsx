@@ -9,7 +9,13 @@ import {
 } from '@/modules/media/public-readiness';
 
 type Scope = 'project' | 'category' | 'unit';
-type Asset = { id: string; storageKey: string; mimeType: string; kind: string };
+type Asset = {
+  id: string;
+  storageKey: string;
+  mimeType: string;
+  kind: string;
+  encrypted: boolean;
+};
 type Link = { mediaId: string; sort: number; media: Asset };
 type Gallery = { coverMediaId: string | null; galleryMedia?: Link[]; media?: Link[] };
 type Target = { id: string; name: string; scope: Scope };
@@ -51,10 +57,7 @@ export default function ScopedGalleryEditor({
         links: items.map((item, index) => ({
           mediaId: item.mediaId,
           sort: index,
-          media: {
-            ...item.media,
-            encrypted: false,
-          },
+          media: item.media,
         })),
       }),
     [cover, items]

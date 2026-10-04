@@ -94,8 +94,8 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
                   : 'rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold text-text-ink'}>
               {booking.status.replace(/_/g,' ')}
             </span>
-            {booking.status==='pending_payment' && <span className="text-small text-text-secondary">Dates are locked while payment is pending.</span>}
-            {booking.status==='confirmed' && <span className="text-small text-text-secondary">Booking confirmed. Inventory remains reserved.</span>}
+            {booking.status==='pending_payment' && <span className="text-small text-text-secondary">{labels['staff.stay_360.pending_inventory']}</span>}
+            {booking.status==='confirmed' && <span className="text-small text-text-secondary">{labels['staff.stay_360.confirmed_inventory']}</span>}
           </div>
         </div>
       </header>

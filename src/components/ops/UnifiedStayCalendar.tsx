@@ -108,7 +108,7 @@ export default function UnifiedStayCalendar(props: Props) {
   };
   const refresh = () => {
     router.refresh();
-    setRefreshRequestedAt(new Date().toLocaleTimeString());
+    setRefreshRequestedAt(new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}));
   };
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -184,15 +184,32 @@ export default function UnifiedStayCalendar(props: Props) {
     if (cell.state==='hold') holds++;
     if (cell.state==='conflict') conflicts++;
   }
-  const stats=[['Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
+  const stats=[['Homes',String(rows.length)], ['Available nights',String(available)],
     [props.labels['staff.unified_calendar.not_sellable'],String(rows.filter(unit=>!unit.sellable).length)],
-    [props.labels['staff.unified_calendar.booked'],String(booked)], [props.labels['staff.unified_calendar.holds'],String(holds)],
+    ['Booked nights',String(booked)], ['Payment hold nights',String(holds)],
     [props.labels['staff.unified_calendar.ready'],String(rows.filter(unit=>unit.readiness==='ready').length)],
     [props.labels['staff.unified_calendar.readiness'],String(rows.filter(unit=>unit.readiness!=='ready').length)],
     [props.labels['staff.unified_calendar.arrivals'],String(props.arrivals)],
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
   const channelAttention = rows.filter((unit) => unit.channelState !== 'healthy').length;
   const inspect=selected && props.units.find((unit)=>unit.id===selected.unitId);
+  const clearOperationalFilters=()=>{
+    setSearch('');
+    setInventoryFilter('all');
+    setReadinessFilter('all');
+    setChannelFilter('all');
+  };
+  const rateSourceLabel=(source:string)=>({
+    category_season:'Seasonal rate',
+    category_base:'Category base rate',
+    unit_override:'Property override',
+    pricing_rule:'Pricing rule',
+    base:'Base rate',
+  } as Record<string,string>)[source]||source.replace(/_/g,' ');
+  const remainingMinutes=(value?:string|null)=>{
+    if(!value)return null;
+    return Math.max(0,Math.ceil((new Date(value).getTime()-Date.now())/60000));
+  };
   return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
     <div className="mx-auto max-w-[1600px] space-y-24">
       <header className="flex flex-wrap items-start justify-between gap-16">
@@ -240,7 +257,7 @@ export default function UnifiedStayCalendar(props: Props) {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-7">
           <label className="text-small font-semibold text-text-secondary">
             {props.labels['staff.unified_calendar.project']}
-            <select value={props.projectId} onChange={(event)=>router.push(q({projectId:event.target.value,organizationId:null,categoryId:null,unitId:null}))}
+            <select value={props.projectId} onChange={(event)=>router.push(q({projectId:event.target.value,organizationId:props.mode==='mc'?(props.organizationId||null):null,categoryId:null,unitId:null}))}
               className="mt-4 h-40 w-full rounded-md border border-border-line bg-white px-12 text-text-ink">
               <option value="">{props.labels['staff.unified_calendar.all_projects']}</option>
               {props.projects.map((item)=><option value={item.id} key={item.id}>{item.name}</option>)}
@@ -333,7 +350,10 @@ export default function UnifiedStayCalendar(props: Props) {
             className="rounded-md border border-border-line px-12 py-8 text-small font-semibold disabled:opacity-40">→</button>
         </div>
         <div className="space-y-8">
-          {rows.length===0 ? <p className="p-12 text-small text-text-secondary">{props.labels['staff.unified_calendar.empty']}</p> :
+          {rows.length===0 ? <div className="p-12 text-small text-text-secondary">
+            <p>{props.units.length ? 'No properties match the current filters.' : props.labels['staff.unified_calendar.empty']}</p>
+            {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-6 font-semibold text-brand-andaman underline">Clear filters</button>}
+          </div> :
             rows.map((unit)=>{
               const cell=(props.cells[unit.id]||[])[mobileIndex];
               if (!cell) return null;
@@ -377,7 +397,10 @@ export default function UnifiedStayCalendar(props: Props) {
               </th>)}
             </tr></thead>
             <tbody>
-              {rows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">{props.labels['staff.unified_calendar.empty']}</td></tr> :
+              {rows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">
+                <p>{props.units.length ? 'No properties match the current filters.' : props.labels['staff.unified_calendar.empty']}</p>
+                {props.units.length>0 && <button type="button" onClick={clearOperationalFilters} className="mt-6 font-semibold text-brand-andaman underline">Clear filters</button>}
+              </td></tr> :
                 rows.map((unit)=><tr key={unit.id}>
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
                     <span className="block font-semibold text-text-ink">{unit.name}</span>
@@ -395,7 +418,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       ? props.labels['staff.unified_calendar.not_sellable']
                       : stateLabel[cell.state];
                     const rateLabel=rate
-                      ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString()+' · '+rate.source
+                      ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString()+' · '+rateSourceLabel(rate.source)
                       : (props.rates[unit.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']);
                     return <td key={day} className="border-b border-l border-border-line p-[2px]">
                       <button type="button"
@@ -440,6 +463,7 @@ export default function UnifiedStayCalendar(props: Props) {
         {selected.cell.state==='request' && <p className="mb-12 text-small text-text-secondary">A guest has requested these dates, but inventory remains available until the request is approved.</p>}
         {selected.cell.state==='hold' && <p className="mb-12 text-small text-text-secondary">Payment is pending. These dates are temporarily held and cannot be sold to another guest.</p>}
         {selected.cell.state==='confirmed' && <p className="mb-12 text-small text-text-secondary">Payment/confirmation is complete. These dates are reserved for this booking.</p>}
+        {selected.cell.state==='conflict' && <p className="mb-12 rounded-md bg-red-50 p-12 text-small text-red-900">Multiple blocking records overlap this night. Review every entry below before reopening inventory.</p>}
         <div className="mb-12 grid gap-8 sm:grid-cols-3">
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.readiness']}</span>
@@ -479,6 +503,7 @@ export default function UnifiedStayCalendar(props: Props) {
               </p>}
               {item.status==='pending_payment' && item.holdExpiresAt && <p className="mt-4 text-[11px] font-semibold text-amber-900">
                 Hold until {new Date(item.holdExpiresAt).toLocaleString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
+                {remainingMinutes(item.holdExpiresAt)!=null ? ' · expires in '+remainingMinutes(item.holdExpiresAt)+' min' : ''}
               </p>}
               {item.kind === 'booking' ?
                 <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">Open booking details →</Link> :

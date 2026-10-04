@@ -57,6 +57,26 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(await getPublicProjectBySlug('draft-p')).toBeNull();
     });
 
+    it('keeps a live but media-incomplete unit out of Project Space and sitemap', async () => {
+      const project = await createProject({ slug: 'media-gated-p', status: 'live' });
+      const hidden = await createUnit({
+        projectId: project.id,
+        status: 'live',
+        name: 'No photos',
+        publicMediaReady: false,
+      });
+      const visible = await createUnit({
+        projectId: project.id,
+        status: 'live',
+        name: 'Ready home',
+      });
+
+      const detail = await getPublicProjectBySlug(project.slug);
+      expect(detail?.units.map((unit) => unit.id)).toEqual([visible.id]);
+      expect(detail?.units.map((unit) => unit.id)).not.toContain(hidden.id);
+      expect(await listPublicUnitIds()).toEqual([visible.id]);
+    });
+
     it('returns the live project with only its live units, cheapest first', async () => {
       const project = await createProject({ slug: 'live-p', status: 'live' });
       await createUnit({

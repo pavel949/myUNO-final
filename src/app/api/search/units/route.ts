@@ -252,6 +252,7 @@ export async function GET(req: NextRequest) {
                 kind: true,
                 mimeType: true,
                 encrypted: true,
+                sizeBytes: true,
               },
             },
           },

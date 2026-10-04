@@ -11,6 +11,7 @@ import {
 } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 /**
  * POST /api/bookings/[id]/check-out
@@ -44,6 +45,10 @@ export async function POST(
     });
     if (!canRecordStayTransition(access)) {
       throw createPublicError('Access denied.', 403);
+    }
+
+    if (access.isStaff && !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'manage_front_desk'))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Through the booking module rather than an inline update: the state

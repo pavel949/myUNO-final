@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { OperationalTaskType } from '@prisma/client';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import {
   createPreventiveMaintenancePlan,
@@ -9,7 +9,6 @@ import {
   getOperatingSpaceUnitIds,
   hasOperatingSpaceCapability,
 } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
 
 async function authorizedSpaceUnitIds(
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
@@ -17,23 +16,11 @@ async function authorizedSpaceUnitIds(
 ) {
   const spaceIds=await getOperatingSpaceUnitIds(prisma,operatingSpaceId);
   if(user.isAdmin)return spaceIds;
-
-  const staffProjectIds=await getDepartmentProjectIds(user,['maintenance','housekeeping','front_desk','reservations']);
-  const mcIds=new Set<string>();
-  for(const scope of getMCProjectScopes(user)){
-    const units=await getMCManagedUnits(prisma,user.identityId,scope.projectId,scope.organizationId);
-    for(const unit of units)mcIds.add(unit.id);
-  }
-  return (await prisma.unit.findMany({
-    where:{
-      id:{in:spaceIds},
-      OR:[
-        ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
-        ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
-      ],
-    },
-    select:{id:true},
-  })).map(unit=>unit.id);
+  return getAuthorizedOperationalUnitIds(
+    user,
+    spaceIds,
+    ['maintenance','housekeeping','front_desk','reservations'],
+  );
 }
 
 export async function GET(req:NextRequest){
@@ -73,6 +60,10 @@ export async function POST(req:NextRequest){
   if(!user.isAdmin){
     const can=await hasOperatingSpaceCapability(prisma,body.operatingSpaceId,user.identityId,'manage_maintenance');
     if(!can)return NextResponse.json({error:'Forbidden'},{status:403});
+  }
+  if(!user.isAdmin&&(body.assignedIdentityId||body.assignedTeamId)){
+    const canAssign=await hasOperatingSpaceCapability(prisma,body.operatingSpaceId,user.identityId,'assign_tasks');
+    if(!canAssign)return NextResponse.json({error:'Assignment forbidden'},{status:403});
   }
 
   const allowed=await authorizedSpaceUnitIds(user,body.operatingSpaceId);

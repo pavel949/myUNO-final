@@ -37,6 +37,15 @@ export default function StayActions({
   const canCheckOut=status==='checked_in'&&canManageFrontDesk;
   return <section className="rounded-lg border border-border-line bg-surface-paper p-20" aria-label={labels['staff.stay_360.actions']}>
     <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.actions']}</h2>
+    <p className="mt-4 text-small text-text-secondary">
+      {status==='pending_payment'
+        ? 'Payment is the next required step. Confirming payment will change the booking to Confirmed.'
+        : status==='confirmed'
+          ? 'Payment is confirmed. The next operational step is guest check-in.'
+          : status==='checked_in'
+            ? 'The guest is in house. Complete checkout when the stay ends.'
+            : labels['staff.stay_360.warning']}
+    </p>
     <p className="my-12 text-small text-text-secondary">{labels['staff.stay_360.warning']}</p>
     {message&&<p role={failed?'alert':'status'} className={'mb-12 rounded-md p-12 text-small '+(failed?'bg-red-50 text-red-800':'bg-emerald-50 text-emerald-800')}>{message}</p>}
     <div className="flex flex-col gap-12">
@@ -53,8 +62,11 @@ export default function StayActions({
         <button type="button" disabled={busy||!receipt.trim()||balanceSatang<0}
           onClick={()=>run('record-cash-payment',{receiptRef:receipt.trim()})}
           className="w-full rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
-          {labels['staff.stay_360.cash']}
+          Confirm payment & booking
         </button>
+        <p className="text-small text-text-secondary">
+          Amount to confirm: ฿{(Math.max(0,balanceSatang)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+        </p>
       </div>}
       {canCheckIn&&<button type="button" disabled={busy} onClick={()=>run('checkin')}
         className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">

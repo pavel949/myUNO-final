@@ -57,7 +57,9 @@ export async function POST(
     // version dropped.
     let updated;
     try {
-      updated = await checkOutBooking(prisma, booking.id);
+      updated = await checkOutBooking(prisma, booking.id, new Date(), {
+        actorIdentityId: user.identityId,
+      });
     } catch (error) {
       throw createPublicError(
         `invalid request: ${error instanceof Error ? error.message : 'booking is not checked in'}`,

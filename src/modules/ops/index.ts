@@ -75,6 +75,8 @@ export {
   getOperatingSpaceUnitIds,
   getOperatingSpaceMembership,
   hasOperatingSpaceCapability,
+  hasOperatingSpaceCapabilityForUnit,
+  hasAnyOperatingSpaceCapability,
   assertOperatingSpaceCapability,
   type OperatingSpaceCapability,
 } from './operating-space.service';

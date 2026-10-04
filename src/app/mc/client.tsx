@@ -18,6 +18,7 @@ import {
 } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
+import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
 
 interface Unit {
   id: string;
@@ -173,6 +174,26 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   const end = new Date(periodEnd);
   end.setUTCDate(end.getUTCDate() - 1);
   return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
+}
+
+function formatBangkokDate(value: Date | string): string {
+  return new Date(value).toLocaleDateString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatBangkokDateTime(value: Date | string): string {
+  return new Date(value).toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }
 
 export function MCDashboardClient({
@@ -536,15 +557,10 @@ export function MCDashboardClient({
     return <span className="text-small text-text-secondary">—</span>;
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayBangkok = bangkokCalendarDay();
 
-  const isSameLocalDay = (value: Date | string) => {
-    const date = new Date(value);
-    return date >= today && date < tomorrow;
-  };
+  const isSameLocalDay = (value: Date | string) =>
+    bangkokCalendarDay(new Date(value)) === todayBangkok;
 
   const arrivalsToday = bookings.filter(
     (booking) => isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
@@ -976,10 +992,10 @@ export function MCDashboardClient({
                             )}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
+                            {formatBangkokDate(booking.startDate)}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
+                            {formatBangkokDate(booking.endDate)}
                           </td>
                           <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
                             ฿{booking.totalThb.toLocaleString()}
@@ -995,7 +1011,7 @@ export function MCDashboardClient({
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                                {formatBangkokDateTime(booking.requestExpiresAt)}
                               </p>
                             ) : null}
                           </td>

@@ -11,7 +11,7 @@ import type { CalendarEntry } from '@/modules/booking/calendar-projection';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { computeCanonicalCalendarRates } from '@/modules/core';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, getUnitReadinessMap, hasOperatingSpaceCapability } from '@/modules/ops';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, getUnitReadinessMap, hasAnyOperatingSpaceCapability } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +43,12 @@ export default async function UnifiedStayCalendarPage({
     : null;
   if (requestedSpaceId && !user.isAdmin) {
     if (!spaceMembership?.active) redirect('/ops/spaces');
-    if (!(await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'view_calendar'))) {
+    if (!(await hasAnyOperatingSpaceCapability(
+      prisma,
+      requestedSpaceId,
+      user.identityId,
+      ['view_calendar','manage_pricing','manage_availability','manage_channels'],
+    ))) {
       redirect('/ops/spaces/' + encodeURIComponent(requestedSpaceId));
     }
   }

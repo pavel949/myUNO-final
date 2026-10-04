@@ -15,6 +15,7 @@ export type MediaAssetLike = {
   kind: string;
   mimeType: string;
   encrypted: boolean;
+  sizeBytes: number;
 };
 
 export type GalleryLinkLike = {
@@ -46,7 +47,9 @@ function validPublicPhoto(asset: MediaAssetLike): boolean {
     asset.encrypted === false &&
     PUBLIC_PHOTO_MIME_TYPES.includes(asset.mimeType as (typeof PUBLIC_PHOTO_MIME_TYPES)[number]) &&
     typeof asset.storageKey === 'string' &&
-    asset.storageKey.trim().length > 0
+    asset.storageKey.trim().length > 0 &&
+    Number.isFinite(asset.sizeBytes) &&
+    asset.sizeBytes > 0
   );
 }
 

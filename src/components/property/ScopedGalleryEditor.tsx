@@ -159,7 +159,7 @@ export default function ScopedGalleryEditor({
         </div>
         <span
           className={
-            readiness.ready
+            effectiveReady
               ? 'rounded-full bg-state-success-soft px-12 py-6 text-small font-semibold text-state-success'
               : 'rounded-full bg-state-warning-soft px-12 py-6 text-small font-semibold text-state-warning'
           }

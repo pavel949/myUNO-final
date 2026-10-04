@@ -200,7 +200,7 @@ export default async function MCPropertyWorkspace({
       </section>}
 
       {tab==='reservations' && <section className="space-y-12">
-        <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/ops/reservations" className="text-small font-semibold text-brand-andaman">All reservations →</Link></div>
+        <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/mc" className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
         {bookings.length===0?<div className={card}>No bookings in the working window.</div>:bookings.map(b=><article key={b.id} className={card}>
           <div className="flex flex-wrap items-center justify-between gap-8"><div><p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p><p className={small}>{date(b.startDate)} → {date(b.endDate)} · {b.channel} · {b.status.replace(/_/g,' ')}</p></div><div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div></div>
           <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open canonical stay →</Link>

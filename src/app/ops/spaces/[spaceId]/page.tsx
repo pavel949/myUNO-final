@@ -116,7 +116,7 @@ export default async function OperatingSpaceHome({
     [labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
-    [labels['staff.space.team'], '/ops/team?spaceId=' + encodeURIComponent(space.id)],
+    [labels['staff.space.team'], '/ops/spaces/' + encodeURIComponent(space.id) + '/access'],
     [labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)],
     [labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
   ] as const;

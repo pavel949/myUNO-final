@@ -181,6 +181,7 @@ export default async function MCPortalPage({ searchParams }: MCPortalPageProps) 
     'mc.bookings.amount': 'Amount',
     'mc.bookings.status': 'Status',
     'mc.bookings.actions': 'Actions',
+    'mc.bookings.open_booking': 'Open booking',
     'mc.bookings.record_cash': 'Record cash',
     'mc.bookings.receipt_placeholder': 'Receipt / чек №',
     'mc.bookings.confirm_cash': 'Confirm ฿{amount} received',

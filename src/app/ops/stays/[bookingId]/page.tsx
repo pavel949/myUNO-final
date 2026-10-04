@@ -60,6 +60,13 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
     'staff.stay_360.actions':'Next action',
     'staff.stay_360.warning':'Payment or refund changes require a verified financial transaction.',
     'staff.stay_360.guest_note':'Guest note',
+    'staff.stay_360.pending_inventory':'{labels['staff.stay_360.pending_inventory']}',
+    'staff.stay_360.confirmed_inventory':'{labels['staff.stay_360.confirmed_inventory']}',
+    'staff.stay_360.pending_next':'Payment is the next required step. Confirming payment will change the booking to Confirmed.',
+    'staff.stay_360.confirmed_next':'Payment is confirmed. The next operational step is guest check-in.',
+    'staff.stay_360.in_house_next':'The guest is in house. Complete checkout when the stay ends.',
+    'staff.stay_360.confirm_payment':'Confirm payment & booking',
+    'staff.stay_360.amount_to_confirm':'Amount to confirm',
   });
   const paid=booking.payments.filter(p=>p.status==='succeeded').reduce((s,p)=>s+p.amountThb,0);
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});

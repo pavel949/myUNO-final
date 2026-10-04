@@ -100,7 +100,7 @@ export default async function OperatingFinancePage({searchParams}:{searchParams?
         <div className="mt-12 space-y-8">{ledger.length?ledger.map(item=><article key={item.id} className="border-b border-border-line pb-8 last:border-0">
           <div className="flex justify-between gap-8"><p className="font-semibold">{item.entryType.replace(/_/g,' ')}</p><p className="font-semibold">{money(item.amountThb)}</p></div>
           <p className="text-small text-text-secondary">{item.unit?.project.name} · {item.unit?.name} · {item.occurredOn.toLocaleDateString('en-GB',{timeZone:'Asia/Bangkok'})}</p>
-          {item.description&&<p className="mt-2 text-small">{item.description}</p>}
+          {item.description&&<p className="mt-4 text-small">{item.description}</p>}
         </article>):<p className="text-text-secondary">{labels['staff.finance.no_ledger']}</p>}</div>
       </section>
       <section className="rounded-xl border border-border-line bg-surface-paper p-20"><h2 className="font-display text-heading-2 font-semibold">{labels['staff.finance.statements']}</h2>

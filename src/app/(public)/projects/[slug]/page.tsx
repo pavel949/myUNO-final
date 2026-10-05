@@ -571,7 +571,17 @@ export default async function ProjectLandingPage({
                       {labels['project_page.units.representative_media']}
                     </p>
                   ) : null}
-                  <h3 className="text-heading-3 font-bold text-text-ink mb-8">{unit.name}</h3>
+                  <h3 className="text-heading-3 font-bold text-text-ink mb-4">{unit.name}</h3>
+                  {unit.titleKey && editorialCopy[unit.titleKey] ? (
+                    <p className="mb-8 text-small font-semibold text-brand-andaman">
+                      {editorialCopy[unit.titleKey]}
+                    </p>
+                  ) : null}
+                  {unit.descriptionKey && editorialCopy[unit.descriptionKey] ? (
+                    <p className="mb-12 line-clamp-3 text-small leading-relaxed text-text-secondary">
+                      {editorialCopy[unit.descriptionKey]}
+                    </p>
+                  ) : null}
                   {(unit.bedrooms > 0 || unit.bathrooms > 0 || unit.maxGuests > 0) ? (
                     <p className="text-small text-text-secondary mb-12">
                       {[

@@ -79,10 +79,30 @@ function oceanstoneScope(item: YandexItem): { scope: Scope; id: string } {
   return { scope: 'unit', id: OCEANSTONE_UNIT_ID };
 }
 
-async function currentCount(scope: Scope, id: string): Promise<number> {
-  return scope === 'unit'
-    ? db.unitMedia.count({ where: { unitId: id } })
-    : db.projectMedia.count({ where: { projectId: id } });
+async function mappedAssetId(sourceUrl: string, path: string): Promise<string | null> {
+  const externalId = `${sourceUrl}#${path}`;
+  const rows = await db.$queryRaw<Array<{ internal_id: string }>>`
+    select internal_id
+    from external_mapping
+    where external_system_id = 'yandex-public-managed-media'
+      and entity_type = 'media_asset'
+      and external_id = ${externalId}
+    limit 1
+  `;
+  return rows[0]?.internal_id ?? null;
+}
+
+async function registerAssetSource(mediaId: string, source: Source, item: YandexItem) {
+  const externalId = `${source.publicUrl}#${item.path}`;
+  await db.$executeRaw`
+    insert into external_mapping
+      (id, created_at, updated_at, external_system_id, entity_type, internal_id, external_id, external_version, last_seen_at, metadata)
+    values
+      (gen_random_uuid()::text, now(), now(), 'yandex-public-managed-media', 'media_asset', ${mediaId}, ${externalId}, 1, now(),
+       jsonb_build_object('source_folder', ${source.publicUrl}, 'source_path', ${item.path}, 'source_name', ${item.name}))
+    on conflict (external_system_id, entity_type, external_id)
+    do update set updated_at = now(), internal_id = excluded.internal_id, last_seen_at = now(), metadata = excluded.metadata
+  `;
 }
 
 async function attach(scope: Scope, id: string, mediaId: string, sort: number) {
@@ -129,11 +149,6 @@ async function run() {
     }
 
     for (const bucket of buckets.values()) {
-      const existing = await currentCount(bucket.scope, bucket.id);
-      if (existing && !replaceExisting) {
-        console.log(`SKIP existing gallery ${bucket.scope}:${bucket.id}: ${existing} rows`);
-        continue;
-      }
       if (replaceExisting && apply) {
         if (bucket.scope === 'unit') {
           await db.unitMedia.deleteMany({ where: { unitId: bucket.id } });
@@ -151,18 +166,27 @@ async function run() {
       let sort = 0;
       for (const item of selected) {
         if (!item.file || !item.mime_type) continue;
-        const response = await fetch(item.file);
-        if (!response.ok) throw new Error(`download failed ${response.status} ${item.path}`);
-        const buffer = Buffer.from(await response.arrayBuffer());
-        const safePrefix = source.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const asset = await storeMedia(db, {
-          buffer,
-          mimeType: item.mime_type,
-          kind: 'photo',
-          uploadedByIdentityId: SYSTEM_IDENTITY_ID,
-          fileName: `${safePrefix}-${sort}-${item.name}`,
-        });
-        await attach(bucket.scope, bucket.id, asset.id, sort++);
+
+        let mediaId = await mappedAssetId(source.publicUrl, item.path);
+        if (!mediaId) {
+          const response = await fetch(item.file);
+          if (!response.ok) throw new Error(`download failed ${response.status} ${item.path}`);
+          const buffer = Buffer.from(await response.arrayBuffer());
+          const safePrefix = source.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const asset = await storeMedia(db, {
+            buffer,
+            mimeType: item.mime_type,
+            kind: 'photo',
+            uploadedByIdentityId: SYSTEM_IDENTITY_ID,
+            fileName: `${safePrefix}-${sort}-${item.name}`,
+          });
+          mediaId = asset.id;
+          await registerAssetSource(mediaId, source, item);
+        } else {
+          console.log(`REUSE ${item.path} -> ${mediaId}`);
+        }
+
+        await attach(bucket.scope, bucket.id, mediaId, sort++);
       }
     }
   }

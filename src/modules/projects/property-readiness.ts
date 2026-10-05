@@ -78,11 +78,14 @@ export async function getPropertyReadiness(
         where: { entity_type: 'unit',
           internal_id: { in: project.units.map(unit => unit.id) },
           externalSystem: { system_key: 'layantara_os' } },
-        select: { internal_id: true, externalSystem: { select: { config: true } } },
+        select: { internal_id: true, metadata: true, externalSystem: { select: { config: true } } },
       })
     : [];
-  const sourceConfigByUnit = new Map(sourceMappings.map(mapping =>
-    [mapping.internal_id, mapping.externalSystem.config] as const
+  const sourceMappingByUnit = new Map(sourceMappings.map(mapping =>
+    [mapping.internal_id, {
+      config: mapping.externalSystem.config,
+      metadata: mapping.metadata,
+    }] as const
   ));
 
   const blockers: PropertyReadinessItem[] = [];
@@ -108,6 +111,13 @@ export async function getPropertyReadiness(
 
   if (!project.areaId) add('blocker', 'project.area', 'Select a canonical area.');
   if (!project.descriptionKey) add('blocker', 'project.description', 'Add the project description key.');
+  const latitude = Number(project.latitude);
+  const longitude = Number(project.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      latitude === 0 || longitude === 0 ||
+      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    add('blocker', 'project.location', 'Set verified, non-zero project coordinates.');
+  }
   const projectMedia = assessGalleryReadiness({
     coverMediaId: project.coverMediaId,
     links: project.galleryMedia,
@@ -181,13 +191,21 @@ export async function getPropertyReadiness(
   for (const unit of project.units) {
     const href = `/app/admin/units/${unit.id}`;
     const options = { scope: 'unit' as const, unitId: unit.id, unitName: unit.name, href };
-    if (sourceConfigByUnit.has(unit.id)) {
-      const raw = sourceConfigByUnit.get(unit.id);
-      const config = typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-        ? raw as Record<string, unknown> : {};
+    if (sourceMappingByUnit.has(unit.id)) {
+      const source = sourceMappingByUnit.get(unit.id)!;
+      const rawConfig = source.config;
+      const config = typeof rawConfig === 'object' && rawConfig !== null && !Array.isArray(rawConfig)
+        ? rawConfig as Record<string, unknown> : {};
+      const rawMetadata = source.metadata;
+      const metadata = typeof rawMetadata === 'object' && rawMetadata !== null && !Array.isArray(rawMetadata)
+        ? rawMetadata as Record<string, unknown> : {};
       if (config.bookingAuthority !== 'myuno' || config.cutoverVerified !== true) {
         add('blocker', 'unit.source_authority',
           'Layantara source calendar remains authoritative; signed cutover is required.', options);
+      }
+      if (metadata.specification_verification !== 'confirmed') {
+        add('blocker', 'unit.source_specification',
+          'Confirm the physical villa specification against the Layantara source crosswalk before publication.', options);
       }
       const canonicalStay = unit.commercialOfferings.find(offering =>
         offering.offeringType === 'short_term_stay');

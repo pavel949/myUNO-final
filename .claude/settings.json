@@ -20,7 +20,8 @@
       "Bash(git branch:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr list:*)",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Bash(npm run agents:guard:test:*)"
     ],
     "ask": [
       "Bash(git push:*)",
@@ -29,6 +30,9 @@
       "Bash(vercel:*)"
     ],
     "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(chmod 777:*)",
       "Bash(npx prisma db push:*)",
       "Bash(npx prisma migrate reset:*)",
       "Bash(supabase db push:*)",
@@ -45,7 +49,11 @@
       {
         "matcher": "Bash|mcp__.*[Ss]upabase.*",
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/guard.mjs", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guard.mjs",
+            "timeout": 10
+          }
         ]
       }
     ]

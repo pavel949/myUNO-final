@@ -17,6 +17,7 @@
     "db:seed:registries": "tsx prisma/seed-registries.ts",
     "audit:inventory": "node scripts/audit-platform-inventory.mjs",
     "audit:inventory:test": "node --test scripts/audit-platform-inventory.test.mjs",
+    "agents:guard:test": "node --test .claude/hooks/guard.test.mjs",
     "layantara:cutover:test": "node --test scripts/layantara-cutover-gate.test.mjs"
   },
   "prisma": {

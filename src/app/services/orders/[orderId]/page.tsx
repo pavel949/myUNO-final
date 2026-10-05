@@ -229,7 +229,7 @@ export default async function ServiceOrderDetailPage({
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <Breadcrumb items={breadcrumbs} />
       <div className="p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
@@ -239,8 +239,8 @@ export default async function ServiceOrderDetailPage({
           </div>
         )}
         {/* Header */}
-        <div className="mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+        <div className="stitch-hero mb-24">
+          <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">
             {labels['service-order.detail.title']}
           </h1>
           <div className="flex items-center gap-16 mb-16">
@@ -274,7 +274,7 @@ export default async function ServiceOrderDetailPage({
         </div>
 
         {/* SA-4: status journey — placed → paid → accepted → fulfilled */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="stitch-panel mb-24 p-24">
           <ol className="flex flex-wrap items-center gap-8">
             {timeline.steps.map((step, i) => (
               <li key={step.key} className="flex items-center gap-8">
@@ -303,7 +303,7 @@ export default async function ServiceOrderDetailPage({
         </div>
 
         {/* Service Details */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="stitch-panel mb-24 p-24">
           <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
             {order.service.title}
           </h2>
@@ -316,7 +316,7 @@ export default async function ServiceOrderDetailPage({
 
         {/* Scheduling */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-24">
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['service-order.detail.scheduled_start']}
             </p>
@@ -324,7 +324,7 @@ export default async function ServiceOrderDetailPage({
               {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
             </p>
           </div>
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['service-order.detail.scheduled_end']}
             </p>
@@ -335,7 +335,7 @@ export default async function ServiceOrderDetailPage({
         </div>
 
         {/* Pricing */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="stitch-panel mb-24 p-24">
           <p className="text-small text-text-secondary mb-8">
             {labels['service-order.detail.pricing']}
           </p>
@@ -355,7 +355,7 @@ export default async function ServiceOrderDetailPage({
         </div>
 
         {/* Payment Status */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="stitch-panel mb-24 p-24">
           <p className="text-small text-text-secondary mb-8">
             {labels['service-order.detail.payment_status']}
           </p>

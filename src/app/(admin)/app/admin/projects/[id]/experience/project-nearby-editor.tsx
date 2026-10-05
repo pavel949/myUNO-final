@@ -50,7 +50,7 @@ export default function ProjectNearbyEditor({
   }, [places, query]);
 
   async function refresh(select?: string | null) {
-    const response = await fetch('/api/admin/projects/' + projectId + '/places', { cache: 'no-store' });
+    const response = await fetch(`/api/admin/projects/${projectId}/places`, { cache: 'no-store' });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       setMessage(data?.error || 'Could not load nearby places.');
@@ -65,7 +65,7 @@ export default function ProjectNearbyEditor({
     setBusy(true);
     setMessage(null);
     const form = new FormData(event.currentTarget);
-    const response = await fetch('/api/admin/projects/' + projectId + '/places', {
+    const response = await fetch(`/api/admin/projects/${projectId}/places`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -92,9 +92,7 @@ export default function ProjectNearbyEditor({
     setBusy(true);
     setMessage(null);
     const form = new FormData(event.currentTarget);
-    const response = await fetch(
-      '/api/admin/projects/' + projectId + '/places/' + selected.id,
-      {
+    const response = await fetch(`/api/admin/projects/${projectId}/places/${selected.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,8 +111,7 @@ export default function ProjectNearbyEditor({
           published: form.get('published') === 'on',
           sort: form.get('sort'),
         }),
-      }
-    );
+    });
     const data = await response.json().catch(() => null);
     if (response.ok) {
       await refresh(selected.id);
@@ -128,10 +125,9 @@ export default function ProjectNearbyEditor({
   async function deletePlace() {
     if (!selected || !window.confirm('Delete ' + selected.name + ' from this project?')) return;
     setBusy(true);
-    const response = await fetch(
-      '/api/admin/projects/' + projectId + '/places/' + selected.id,
-      { method: 'DELETE' }
-    );
+    const response = await fetch(`/api/admin/projects/${projectId}/places/${selected.id}`, {
+      method: 'DELETE',
+    });
     if (response.ok) {
       const nextId = places.find((place) => place.id !== selected.id)?.id ?? null;
       await refresh(nextId);

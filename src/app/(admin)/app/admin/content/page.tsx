@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import ContentAdminClient from './content-client';
@@ -42,9 +43,14 @@ export default async function AdminContentPage({
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-        {labels['admin.content.title']}
-      </h1>
+      <div className="mb-24 flex flex-wrap items-center justify-between gap-12">
+        <h1 className="font-display text-display-xl font-semibold text-text-ink">
+          {labels['admin.content.title']}
+        </h1>
+        <Link href="/app/admin/content/homepage" className="rounded-lg border border-border-line px-16 py-10 font-semibold text-brand-andaman">
+          Homepage placements
+        </Link>
+      </div>
       <ContentAdminClient
         namespaces={namespaces.map((ns) => ({
           namespace: ns.namespace,

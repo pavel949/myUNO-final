@@ -232,9 +232,9 @@ export default function UnitDetailClient({
   }
 
   return (
-    <div className="min-h-screen bg-surface-ivory p-16 md:p-32 pb-96 lg:pb-32">
+    <div className="stitch-workspace p-16 pb-96 md:p-32 lg:pb-32">
       <div className="mx-auto max-w-content">
-        <p className="mb-16">
+        <p className="mb-20 inline-flex rounded-lg border border-border-line bg-surface-paper px-12 py-8 shadow-sm">
           <Link
             href={backToSearch}
             className="text-brand-andaman font-semibold hover:underline"
@@ -242,7 +242,7 @@ export default function UnitDetailClient({
             {labels.backToResults}
           </Link>
         </p>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-40">
+        <div className="grid grid-cols-1 gap-32 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-48">
           <div className="lg:col-span-2">
             <UnitPhotoMosaic
               images={unit.images ?? []}
@@ -316,7 +316,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-96 rounded-xl border border-border-line bg-surface-paper p-24 shadow-card">
+            <div className="sticky top-96 rounded-2xl border border-border-line bg-surface-paper p-24 shadow-float">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote
@@ -341,7 +341,7 @@ export default function UnitDetailClient({
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>
               ) : (
-                <div className="border border-border-line rounded-sm mb-20">
+                <div className="mb-20 overflow-hidden rounded-xl border border-border-line bg-surface-ivory/70">
                   <div className="grid grid-cols-2">
                     <div className="p-12 border-r border-border-line">
                       <p className="text-small text-text-stone m-0 mb-4">{labels.checkIn}</p>
@@ -422,7 +422,7 @@ export default function UnitDetailClient({
         </div>
       </div>
       {breakdown && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface-paper border-t border-border-line px-16 py-12 flex items-center justify-between gap-16">
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-16 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur-xl lg:hidden">
           <MoneyAmount
             satang={Math.round((breakdown.total || 0) * 100)}
             className="text-title font-semibold"

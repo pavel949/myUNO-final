@@ -278,7 +278,7 @@ export default function UnitDetailClient({
                   <span className="text-text-stone-2">· {labels.onMyUno}</span>
                 </p>
               )}
-              <div className="flex flex-wrap gap-12 mb-32">
+              <div className="flex flex-wrap gap-12 mb-20">
                 <Chip variant="neutral">
                   {fill(labels.guestsCount, { count: unit.maxGuests || 2 })}
                 </Chip>
@@ -290,12 +290,22 @@ export default function UnitDetailClient({
                 <Chip variant="neutral">
                   {fill(labels.minNightsCount, { count: unit.minNights || 1 })}
                 </Chip>
-                {unit.amenityKeys?.slice(0, 3).map((key) => (
-                  <Chip key={key} variant="neutral">
-                    {labels.amenityLabels[key] || key}
+                {(unit.grossAreaSqm || unit.sizeSqm) ? (
+                  <Chip variant="neutral">
+                    {String(unit.grossAreaSqm || unit.sizeSqm)} m²
                   </Chip>
-                ))}
+                ) : null}
+                {unit.floor ? <Chip variant="neutral">Floor {unit.floor}</Chip> : null}
               </div>
+              {(unit.views?.length || unit.unitFeatures?.length) ? (
+                <div className="mb-24 flex flex-wrap gap-8">
+                  {[...(unit.views ?? []), ...(unit.unitFeatures ?? [])].map((fact) => (
+                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small capitalize text-text-secondary">
+                      {fact.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               {unit.description ? (
                 <p className="text-body text-text-ink mb-32 max-w-[720px] leading-relaxed">
                   {unit.description}

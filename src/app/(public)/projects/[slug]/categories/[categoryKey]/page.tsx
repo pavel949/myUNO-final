@@ -112,8 +112,19 @@ export default async function ProjectCategoryPage({
             ) : null}
             <div className="mt-8 flex flex-wrap gap-8 text-small text-text-secondary">
               {unit.maxGuests > 0 ? <span>{labels['project_category.guests'].replace('{count}',String(unit.maxGuests))}</span> : null}
-              {unit.sizeSqm ? <span>{labels['project_category.size'].replace('{count}',String(unit.sizeSqm))}</span> : null}
+              {(unit.grossAreaSqm || unit.sizeSqm) ? (
+                <span>{labels['project_category.size'].replace('{count}',String(unit.grossAreaSqm || unit.sizeSqm))}</span>
+              ) : null}
             </div>
+            {(unit.views.length > 0 || unit.unitFeatures.length > 0) ? (
+              <div className="mt-8 flex flex-wrap gap-6">
+                {[...unit.views, ...unit.unitFeatures].slice(0, 4).map((fact) => (
+                  <span key={fact} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] capitalize text-text-secondary">
+                    {fact.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             {!unit.bookable ? <p className="mt-8 text-small text-text-secondary">{labels['project_category.pending']}</p> : null}
             <p className="mt-12 text-small font-semibold text-brand-andaman">{unit.bookable ? labels['project_category.view_unit'] : labels['project_category.inquiry_unit']}</p>
           </div>

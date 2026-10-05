@@ -583,7 +583,7 @@ export default function OpsBoardClient({
         )}
       />
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel p-24 mb-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.service_pending_cash']}
         </h2>
@@ -630,7 +630,7 @@ export default function OpsBoardClient({
         )}
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel p-24 mb-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.tickets_title']}
         </h2>

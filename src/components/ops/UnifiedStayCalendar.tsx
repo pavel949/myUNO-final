@@ -48,15 +48,15 @@ type Props = {
   arrivals: number; departures: number;
 };
 const stateClass: Record<CalendarState, string> = {
-  free: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800',
+  free: 'bg-surface-mint hover:bg-brand-andaman/10 text-brand-andaman',
   request: 'bg-sky-50 hover:bg-sky-100 text-sky-800',
-  hold: 'bg-amber-100 hover:bg-amber-200 text-amber-900',
-  confirmed: 'bg-teal-600 hover:bg-teal-700 text-white',
-  in_house: 'bg-teal-800 hover:bg-teal-900 text-white',
-  past: 'bg-slate-100 text-slate-500',
+  hold: 'bg-brand-sun/25 hover:bg-brand-sun/40 text-brand-deep',
+  confirmed: 'bg-brand-andaman hover:bg-brand-andaman/90 text-white',
+  in_house: 'bg-brand-deep hover:bg-brand-deep/90 text-white',
+  past: 'bg-surface-sand text-text-secondary',
   owner: 'bg-violet-100 hover:bg-violet-200 text-violet-900',
   maintenance: 'bg-orange-100 hover:bg-orange-200 text-orange-900',
-  external: 'bg-indigo-100 hover:bg-indigo-200 text-indigo-900',
+  external: 'bg-brand-sun hover:bg-brand-sun/90 text-brand-deep',
   blocked: 'bg-slate-200 hover:bg-slate-300 text-slate-800',
   conflict: 'bg-red-600 hover:bg-red-700 text-white',
 };
@@ -148,14 +148,14 @@ export default function UnifiedStayCalendar(props: Props) {
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
   const channelAttention = rows.filter((unit) => unit.channelState !== 'healthy').length;
   const inspect=selected && props.units.find((unit)=>unit.id===selected.unitId);
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-[1600px] space-y-24">
-      <header className="flex flex-wrap items-start justify-between gap-16">
+      <header className="stitch-panel flex flex-wrap items-start justify-between gap-16 p-24">
         <div className="space-y-8">
           <Link href={props.mode==='mc' ? '/mc' : '/ops'} className="text-small font-semibold text-brand-andaman hover:underline">
             {props.labels['staff.unified_calendar.back']}
           </Link>
-          <p className="text-kicker font-bold tracking-widest text-brand-andaman">
+          <p className="stitch-kicker">
             {props.labels['staff.unified_calendar.kicker']}
           </p>
           <h1 className="font-display text-display-xl font-semibold text-text-ink">
@@ -164,10 +164,10 @@ export default function UnifiedStayCalendar(props: Props) {
           <p className="max-w-2xl text-body text-text-secondary">{props.labels['staff.unified_calendar.subtitle']}</p>
         </div>
         <div className="flex flex-col items-end gap-8">
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-12 py-4 text-small font-semibold text-emerald-900">
+          <span className="rounded-full border border-brand-andaman/20 bg-surface-mint px-12 py-4 text-small font-semibold text-brand-andaman">
             {props.labels['staff.unified_calendar.source']}
           </span>
-          {props.mode!=='mc' && <Link href="/ops/stays" className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          {props.mode!=='mc' && <Link href="/ops/stays" className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {props.labels['staff.unified_calendar.work_queue']}
           </Link>}
           <button type="button" onClick={refresh} className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:bg-surface-ivory">
@@ -178,9 +178,9 @@ export default function UnifiedStayCalendar(props: Props) {
       </header>
 
       <section aria-label="Calendar summary" className="grid grid-cols-2 gap-8 md:grid-cols-3 xl:grid-cols-6">
-        {stats.map(([label,value]) => <div key={label} className="rounded-lg border border-border-line bg-surface-paper p-16">
+        {stats.map(([label,value]) => <div key={label} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
-          <p className="mt-4 font-display text-heading-2 font-bold text-text-ink">{value}</p>
+          <p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{value}</p>
         </div>)}
       </section>
       {conflicts>0 && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-16 text-red-900">
@@ -189,7 +189,7 @@ export default function UnifiedStayCalendar(props: Props) {
       {channelAttention>0 && <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-16 text-amber-950">
         {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
-      <section aria-label="Calendar filters" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
+      <section aria-label="Calendar filters" className="stitch-panel p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
           <label className="text-small font-semibold text-text-secondary">
             {props.labels['staff.unified_calendar.project']}
@@ -247,7 +247,7 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>
       </section>
 
-      <section aria-label="Mobile occupancy agenda" className="rounded-lg border border-border-line bg-surface-paper p-12 md:hidden">
+      <section aria-label="Mobile occupancy agenda" className="stitch-panel p-12 md:hidden">
         <div className="mb-12 flex items-center justify-between gap-8">
           <button type="button" disabled={mobileIndex<=0}
             onClick={()=>mobileIndex>0 && setMobileDate(props.days[mobileIndex-1])}
@@ -295,14 +295,14 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>
       </section>
 
-      <section aria-label="Unified occupancy grid" className="hidden overflow-hidden rounded-lg border border-border-line bg-surface-paper md:block">
+      <section aria-label="Unified occupancy grid" className="hidden overflow-hidden stitch-panel md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-small" style={{minWidth:Math.max(780,220+props.days.length*52)}}>
-            <thead><tr>
-              <th scope="col" className="sticky left-0 z-20 w-[220px] border-b border-r border-border-line bg-surface-paper p-12 text-left text-text-ink">{props.labels['staff.unified_calendar.project_home']}</th>
+            <thead className="bg-surface-mint"><tr>
+              <th scope="col" className="sticky left-0 z-20 w-[220px] border-b border-r border-border-line bg-surface-mint p-12 text-left text-kicker uppercase tracking-wider text-text-secondary">{props.labels['staff.unified_calendar.project_home']}</th>
               {props.days.map((day)=><th key={day} scope="col"
-                className={day===props.today?'border-b border-l border-emerald-300 bg-emerald-100 p-8 text-center text-emerald-900':'border-b border-l border-border-line bg-surface-ivory p-8 text-center text-text-secondary'}>
-                <span className="block font-semibold">{day.slice(8)}</span>
+                className={day===props.today?'border-b border-l border-brand-deep bg-brand-deep p-8 text-center text-white':'border-b border-l border-border-line bg-surface-mint p-8 text-center text-text-secondary'}>
+                <span className="block font-semibold font-tabular">{day.slice(8)}</span>
                 <span className="block text-[10px]">{new Date(day+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'})}</span>
               </th>)}
             </tr></thead>
@@ -332,9 +332,9 @@ export default function UnifiedStayCalendar(props: Props) {
                         aria-label={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
                         title={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
                         onClick={()=>setSelected({unitId:unit.id,date:day,cell})}
-                        className={'h-48 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                        className={'h-48 w-full rounded-md text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
                         <span className="block">{!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}</span>
-                        <span className="block text-[9px] font-medium opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}</span>
+                        <span className="block text-[9px] font-medium font-tabular opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}</span>
                       </button>
                     </td>;
                   })}
@@ -350,7 +350,7 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>
       </section>
       {selected && inspect && <aside role="region" aria-label={props.labels['staff.unified_calendar.inspect']}
-        className="rounded-lg border border-border-line bg-surface-paper p-20">
+        className="stitch-panel p-20">
         <div className="flex items-center justify-between gap-12">
           <div><p className="text-kicker font-semibold text-brand-andaman">{props.labels['staff.unified_calendar.inspect']}</p>
             <h2 className="font-display text-heading-3 font-semibold text-text-ink">{inspect.name} · {selected.date}</h2>
@@ -397,7 +397,7 @@ export default function UnifiedStayCalendar(props: Props) {
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">
-          <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          <Link href={(props.mode==='mc'?'/mc/units/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
           <Link

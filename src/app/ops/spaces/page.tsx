@@ -44,13 +44,13 @@ export default async function OperatingSpacesPage() {
     'staff.spaces.empty': 'No operating spaces are assigned to this account.',
   });
 
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-6xl space-y-24">
       <header>
         <Link href="/ops" className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['staff.spaces.back']}
         </Link>
-        <p className="mt-16 text-kicker font-bold tracking-widest text-brand-andaman">
+        <p className="mt-16 stitch-kicker">
           {labels['staff.spaces.kicker']}
         </p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">
@@ -68,7 +68,7 @@ export default async function OperatingSpacesPage() {
       ) : (
         <section className="grid gap-16 md:grid-cols-2 xl:grid-cols-3">
           {spaces.map((space) => (
-            <article key={space.id} className="rounded-xl border border-border-line bg-surface-paper p-20">
+            <article key={space.id} className="stitch-panel p-20">
               <p className="text-small font-semibold text-brand-andaman">{space.key}</p>
               <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{space.name}</h2>
               <div className="mt-16 grid grid-cols-2 gap-8">
@@ -82,7 +82,7 @@ export default async function OperatingSpacesPage() {
                 </div>
               </div>
               <Link href={'/ops/spaces/' + encodeURIComponent(space.id)}
-                className="mt-20 inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+                className="mt-20 inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
                 {labels['staff.spaces.open']}
               </Link>
             </article>

@@ -48,7 +48,7 @@ export default function ManualReservationForm({
     router.refresh();
   }
 
-  return <form onSubmit={submit} className="space-y-12 rounded-xl border border-border-line bg-surface-paper p-16">
+  return <form onSubmit={submit} className="space-y-12 stitch-panel p-16">
     <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.create']}</h2>
     <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.unit']}
@@ -87,7 +87,7 @@ export default function ManualReservationForm({
     </div>
     <textarea name="guestNote" placeholder={labels['reservations.note']} className="min-h-20 w-full rounded-md border border-border-line p-12"/>
     <div className="flex items-center gap-12">
-      <button disabled={busy} className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+      <button disabled={busy} className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
         {busy?labels['reservations.creating']:labels['reservations.create_action']}
       </button>
       {error?<span role="alert" className="text-small text-red-700">{error}</span>:null}

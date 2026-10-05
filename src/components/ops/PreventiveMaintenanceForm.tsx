@@ -21,7 +21,7 @@ export default function PreventiveMaintenanceForm({
     if(!response.ok){setError(body.error||'Plan creation failed');setBusy(false);return;}
     event.currentTarget.reset();setBusy(false);router.refresh();
   }
-  return <form onSubmit={submit} className="grid gap-12 rounded-xl border border-border-line bg-surface-paper p-16 md:grid-cols-2 xl:grid-cols-4">
+  return <form onSubmit={submit} className="grid gap-12 stitch-panel p-16 md:grid-cols-2 xl:grid-cols-4">
     <input required name="title" placeholder={labels['staff.maintenance.plan_title']} className="h-44 rounded-md border border-border-line px-12"/>
     <select name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.maintenance.all_homes']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
     <input required name="frequencyDays" type="number" min="1" defaultValue="90" className="h-44 rounded-md border border-border-line px-12"/>

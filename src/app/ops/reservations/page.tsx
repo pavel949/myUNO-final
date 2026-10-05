@@ -166,12 +166,12 @@ export default async function ReservationDesk({
     spaceId,...(value?{status:value}:{}),
   }).toString();
 
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-7xl space-y-20">
       <header>
         <Link href={'/ops/spaces/'+encodeURIComponent(spaceId)}
           className="text-small font-semibold text-brand-andaman">{labels['reservations.back']}</Link>
-        <p className="mt-16 text-kicker font-bold tracking-widest text-brand-andaman">{labels['reservations.kicker']}</p>
+        <p className="mt-16 stitch-kicker">{labels['reservations.kicker']}</p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['reservations.title']}</h1>
         <p className="mt-8 text-body text-text-secondary">{labels['reservations.subtitle']}</p>
       </header>
@@ -182,9 +182,9 @@ export default async function ReservationDesk({
           [labels['reservations.arrivals'],arrivals],
           [labels['reservations.requests'],requests],
           [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString(UI_LOCALE)],
-        ].map(([label,value])=><div key={String(label)} className="rounded-xl border border-border-line bg-surface-paper p-16">
+        ].map(([label,value])=><div key={String(label)} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
-          <p className="mt-4 font-display text-heading-2 font-bold">{value}</p>
+          <p className="mt-4 font-display text-heading-2 font-bold font-tabular">{value}</p>
         </div>)}
       </section>
 
@@ -199,7 +199,7 @@ export default async function ReservationDesk({
         </Link>)}
       </nav>
 
-      <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+      <section className="overflow-hidden stitch-panel">
         {bookings.map(booking=>{
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
           return <article key={booking.id} className="grid gap-12 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
@@ -218,7 +218,7 @@ export default async function ReservationDesk({
       <section>
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.groups']}</h2>
         <div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
-          {groups.map(group=><article key={group.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
+          {groups.map(group=><article key={group.id} className="stitch-panel p-16">
             <p className="font-display text-heading-3 font-semibold">{group.title||group.id.slice(0,8)}</p>
             <p className="mt-4 text-small text-text-secondary">{group.guest.firstName} {group.guest.lastName}</p>
             <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString(UI_LOCALE))}</p>

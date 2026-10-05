@@ -21,7 +21,7 @@ CREATE TABLE "homepage_placement" (
     CONSTRAINT "homepage_placement_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "homepage_placement_destination_key_section_key_status_position_idx"
+CREATE INDEX "homepage_placement_destination_key_section_key_status_posit_idx"
 ON "homepage_placement"("destination_key", "section_key", "status", "position");
 
 CREATE INDEX "homepage_placement_entity_type_entity_id_idx"

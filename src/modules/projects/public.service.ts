@@ -315,7 +315,11 @@ export async function getPublicProjectBySlug(
     buildPublicCategories(project.id, project.slug, eligibleUnits.map(({ unit }) => unit)),
     buildPublicReviews(project.id),
     listPublicProjectAmenities(prisma, project.id, locale),
-    listProjectNearbyPlaces(prisma, project.id, Number(project.latitude), Number(project.longitude)),
+    listProjectNearbyPlaces(prisma, project.id, Number(project.latitude), Number(project.longitude))
+      .catch((error) => {
+        console.error('[project] nearby-place layer unavailable; rendering portal without nearby places', error);
+        return [];
+      }),
   ]);
 
   return {

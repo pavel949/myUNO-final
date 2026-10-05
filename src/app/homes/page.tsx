@@ -155,7 +155,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       <nav aria-label={labels['homes.title']} className="stitch-segmented mb-24 flex-wrap">
         {(['buy','rent'] as const).map(mode =>
           <Link key={mode} href={modeLink(mode)} aria-current={intent===mode?'page':undefined}
-            className={'rounded-lg border px-20 py-[10px] text-small font-semibold transition '+
+            className={'rounded-lg border px-20 py-12 text-small font-semibold transition '+
               (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper text-text-ink')}>
             {mode==='buy'?labels['homes.buy']:labels['homes.rent']}
           </Link>)}
@@ -243,7 +243,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {homes.map(home => {
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
-                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[4px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
                 {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
                   className="h-full min-h-[220px] w-full object-cover" /> :
                   <div className="min-h-[220px] bg-surface-ivory"/>}

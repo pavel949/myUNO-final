@@ -65,7 +65,6 @@ export interface UnitDetailLabels {
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
-  sizeUnit: string;
   floor: string;
   notChargedYet: string;
   fewerGuests: string;
@@ -220,7 +219,7 @@ export default function UnitDetailClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <p className="text-body text-text-secondary text-center">{labels.loading}</p>
       </div>
     );
@@ -228,7 +227,7 @@ export default function UnitDetailClient({
 
   if (!unit) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <div className="max-w-4xl mx-auto">
           <div className="bg-state-error/10 border border-state-error rounded-lg p-16">
             <p className="text-body text-state-error">{error || labels.notFound}</p>
@@ -246,7 +245,7 @@ export default function UnitDetailClient({
   return (
     <div className="stitch-workspace p-16 pb-96 md:p-32 lg:pb-32">
       <div className="mx-auto max-w-content">
-        <p className="mb-20 inline-flex rounded-lg border border-border-line bg-surface-paper px-12 py-8 shadow-sm">
+        <p className="mb-20 inline-flex rounded-full border border-border-line bg-surface-paper px-16 py-8 shadow-card">
           <Link
             href={backToSearch}
             className="text-brand-andaman font-semibold hover:underline"
@@ -266,8 +265,8 @@ export default function UnitDetailClient({
                 {labels.representativeMedia}
               </p>
             ) : null}
-            <div className="mt-32">
-              <h1 className="font-display text-display font-semibold text-text-ink mb-4">
+            <div className="stitch-panel mt-32 p-20 md:p-32">
+              <h1 className="font-display text-display font-semibold tracking-[-0.02em] text-brand-deep mb-4">
                 {unit.name}
               </h1>
               {unit.marketingTitle ? (
@@ -296,7 +295,7 @@ export default function UnitDetailClient({
                 </Chip>
                 {(unit.grossAreaSqm || unit.sizeSqm) ? (
                   <Chip variant="neutral">
-                    {String(unit.grossAreaSqm || unit.sizeSqm)} {labels.sizeUnit}
+                    {String(unit.grossAreaSqm || unit.sizeSqm)} m²
                   </Chip>
                 ) : null}
                 {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}
@@ -304,7 +303,7 @@ export default function UnitDetailClient({
               {(unit.viewLabels?.length || unit.featureLabels?.length) ? (
                 <div className="mb-24 flex flex-wrap gap-8">
                   {[...(unit.viewLabels ?? []), ...(unit.featureLabels ?? [])].map((fact) => (
-                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-[10px] py-[6px] text-small text-text-secondary">
+                    <span key={fact} className="rounded-full border border-brand-sun/40 bg-surface-sand px-12 py-8 text-small text-text-ink">
                       {fact}
                     </span>
                   ))}
@@ -316,7 +315,7 @@ export default function UnitDetailClient({
                 </p>
               ) : null}
               {unit.amenityKeys && unit.amenityKeys.length > 0 && (
-                <div className="mb-32">
+                <div className="stitch-panel-soft mb-32 p-20">
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
                     {labels.amenitiesTitle}
                   </p>
@@ -345,7 +344,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-96 rounded-2xl border border-border-line bg-surface-paper p-24 shadow-float">
+            <div className="stitch-panel sticky top-96 p-24 shadow-float">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote
@@ -370,7 +369,7 @@ export default function UnitDetailClient({
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>
               ) : (
-                <div className="mb-20 overflow-hidden rounded-xl border border-border-line bg-surface-ivory/70">
+                <div className="mb-20 overflow-hidden rounded-xl border border-border-line bg-surface-sand/60">
                   <div className="grid grid-cols-2">
                     <div className="p-12 border-r border-border-line">
                       <p className="text-small text-text-stone m-0 mb-4">{labels.checkIn}</p>

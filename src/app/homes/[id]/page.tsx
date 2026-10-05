@@ -88,11 +88,11 @@ export default async function CommercialHomePage({ params, searchParams }: {
     const value = searchParams?.[key];
     if (value) backParams.set(key, value);
   }
-  return <main className="min-h-screen bg-surface-ivory">
+  return <main className="stitch-workspace">
     <div className="mx-auto max-w-5xl px-20 py-32 md:px-32">
       <Link href={'/homes?'+backParams.toString()} className="text-small font-semibold text-brand-andaman">← {labels['homes.detail.back']}</Link>
       <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman">{home.project.name}</p>
-      <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{home.name}</h1>
+      <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{home.name}</h1>
       <div className="mt-24">
         <UnitPhotoMosaic
           images={home.images}
@@ -103,13 +103,13 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <div className="mt-24 grid gap-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div>
           <div className="grid grid-cols-2 gap-12 md:grid-cols-3">
-            <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+            <div className="stitch-panel-soft p-20">
               <p className="text-small text-text-secondary">{labels['homes.detail.bedrooms']}</p><strong>{home.bedrooms}</strong>
             </div>
-            <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+            <div className="stitch-panel-soft p-20">
               <p className="text-small text-text-secondary">{labels['homes.detail.bathrooms']}</p><strong>{home.bathrooms}</strong>
             </div>
-            {home.sizeSqm ? <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+            {home.sizeSqm ? <div className="stitch-panel-soft p-20">
               <p className="text-small text-text-secondary">{labels['homes.detail.size']}</p><strong>{home.sizeSqm} {labels['homes.detail.size_unit']}</strong>
             </div> : null}
           </div>
@@ -146,7 +146,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
           </div>
         </div>
 
-        <aside className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card lg:sticky lg:top-96">
+        <aside className="stitch-panel p-20 lg:sticky lg:top-96">
           <p className="text-kicker uppercase text-brand-andaman">{home.project.name}</p>
           <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">
             {intent === 'buy' ? labels['homes.detail.buy'] : labels['homes.detail.rent']}

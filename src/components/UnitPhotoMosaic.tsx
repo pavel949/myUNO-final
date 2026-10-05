@@ -49,7 +49,7 @@ export function UnitPhotoMosaic({
 
   if (!cover) {
     return (
-      <div className="aspect-[4/3] bg-gradient-to-br from-brand-andaman to-brand-deep rounded-lg" />
+      <div className="aspect-[4/3] bg-gradient-to-br from-brand-andaman to-brand-deep rounded-2xl" />
     );
   }
 
@@ -57,15 +57,15 @@ export function UnitPhotoMosaic({
     <div>
       {/* Desktop: the five-up mosaic. */}
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-8">
-        <div className="col-span-2 row-span-2 relative aspect-[4/3] overflow-hidden rounded-l-lg">
+        <div className="col-span-2 row-span-2 relative aspect-[4/3] overflow-hidden rounded-l-2xl">
           <Image src={cover} alt={alt} fill className="object-cover" priority />
         </div>
         {thumbs.map((src, index) => (
           <div
             key={src}
             className={`relative aspect-[4/3] overflow-hidden ${
-              index === 1 ? 'rounded-tr-lg' : ''
-            } ${index === 3 ? 'rounded-br-lg' : ''}`}
+              index === 1 ? 'rounded-tr-2xl' : ''
+            } ${index === 3 ? 'rounded-br-2xl' : ''}`}
           >
             <Image src={src} alt={alt} fill className="object-cover" />
           </div>
@@ -77,7 +77,7 @@ export function UnitPhotoMosaic({
         <div
           ref={trackRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-lg
+          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-2xl
                      [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           aria-label={alt}
         >
@@ -103,7 +103,7 @@ export function UnitPhotoMosaic({
                 than being a number only a sighted guest benefits from. */}
             <span
               aria-live="polite"
-              className="px-12 py-4 rounded-full bg-[rgba(22,33,31,0.6)] text-surface-ivory text-small"
+              className="px-12 py-4 rounded-full bg-brand-deep/70 backdrop-blur-sm text-surface-ivory text-small"
             >
               {current + 1} / {images.length}
             </span>
@@ -129,7 +129,7 @@ export function UnitPhotoMosaic({
       {expanded && rest.length > 0 && (
         <div className="mt-12 hidden md:grid grid-cols-2 md:grid-cols-4 gap-8">
           {rest.map((src, index) => (
-            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-sm">
+            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
               <Image
                 src={src}
                 alt={`${alt} (${index + 6}/${images.length})`}

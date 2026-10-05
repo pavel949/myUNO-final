@@ -11,6 +11,9 @@ export {
   confirmBooking,
   cancelBooking,
   checkInBooking,
+  assessCheckIn,
+  CheckInBlockedError,
+  type CheckInBlockCode,
   checkOutBooking,
   completeBooking,
   requestExtension,
@@ -52,6 +55,7 @@ export {
   computeRefundAmount,
   DEFAULT_POLICIES,
   resolveCancellationPolicy,
+  resolveStayCancellationPolicy,
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';
@@ -101,3 +105,16 @@ export {
   attachBookingToReservationGroup,
   removeBookingFromReservationGroup,
 } from './reservation-group.service';
+
+export {
+  projectCalendar,
+  projectCalendarCell,
+  calendarDays,
+  shiftCalendarDay,
+  validCalendarDay,
+  bangkokCalendarDay,
+  coversCalendarDay,
+  type CalendarCell,
+  type CalendarEntry,
+  type CalendarState,
+} from './calendar-projection';

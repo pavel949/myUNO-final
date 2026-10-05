@@ -15,6 +15,15 @@ describe('PMS readiness lifecycle', () => {
         projectId: 'project-a',
         guestIdentityId: 'guest-a',
         status: 'confirmed',
+        // A stay in progress with its party registered, so the registration
+        // gate (assessCheckIn) passes and the test isolates unit readiness.
+        startDate: new Date('2026-10-01T00:00:00Z'),
+        endDate: new Date('2026-10-05T00:00:00Z'),
+        adults: 1,
+        children: 0,
+        infants: 0,
+        guests: [{ nationality: 'RU', passportNumber: 'enc:P1' }],
+        project: { timezone: 'Asia/Bangkok' },
       }),
       update: vi.fn(),
     };

@@ -65,12 +65,23 @@ describe('booking ops route authorization for management company scope', () => {
       },
     });
 
+    // A stay that is in progress today, with its party registered, so the
+    // check-in rule (assessCheckIn) is satisfied and the test isolates the
+    // authorization question.
+    const today = new Date();
+    const utcDay = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
     const checkInBooking = await createBooking({
       unitId,
       projectId,
       guestIdentityId: guest.id,
       status: 'confirmed',
       verificationStatus: 'not_required',
+      startDate: new Date(utcDay - 86_400_000),
+      endDate: new Date(utcDay + 2 * 86_400_000),
+      adults: 1,
+    });
+    await db.bookingGuest.create({
+      data: { bookingId: checkInBooking.id, fullName: 'enc:Lead', nationality: 'RU', passportNumber: 'enc:P1', isLead: true },
     });
     checkInBookingId = checkInBooking.id;
 

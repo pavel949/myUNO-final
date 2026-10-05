@@ -153,6 +153,8 @@ export interface UnitFactoryOpts {
   ownerIdentityId?: string;
   name?: string;
   status?: 'draft' | 'mobilizing' | 'live' | 'paused' | 'offboarded';
+  /** Create a live unit WITHOUT the default active stay offering (gate tests). */
+  withoutStayOffering?: boolean;
   baseNightlyThb?: number;
   maxGuests?: number;
   minNights?: number;
@@ -376,6 +378,13 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
       status,
     },
   });
+  // A live unit is sellable only through an active stay offering (canonical
+  // contract invariant 3). Tests about the gate itself opt out.
+  if (status === 'live' && !opts.withoutStayOffering) {
+    await db.commercialOffering.create({
+      data: { unitId: unit.id, offeringType: 'short_term_stay', status: 'active' },
+    });
+  }
 
   if (status === 'live' && opts.publicMediaReady !== false) {
     if (category) await makeCategoryPublicMediaReady(category.id);

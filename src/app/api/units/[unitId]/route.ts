@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
+import { resolveStayCancellationPolicy } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
 
@@ -77,6 +78,8 @@ export async function GET(
             name: true,
             status: true,
             minNights: true,
+            baseNightlyThb: true,
+            cancellationPolicyKey: true,
             coverMediaId: true,
             coverMedia: {
               select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
@@ -130,10 +133,17 @@ export async function GET(
       vatTax: number;
       total: number;
       minNights: number;
-      cancellationPolicyKey: string;
+      cancellationPolicyKey: string | null;
       isAvailable: boolean;
       availableCapacity: number;
     } | null = null;
+
+    // The policy the booking will snapshot (BAR plan > category > unit >
+    // configured default): the page must show exactly what the guest is
+    // bound by, never a "flexible" placeholder.
+    const stayPolicyKey = await resolveStayCancellationPolicy(prisma, { unitId: unit.id })
+      .then(policy => policy.name)
+      .catch(() => null);
 
     if (startDate && endDate) {
       // Never quote with the legacy effective-offer calculator: it has
@@ -157,7 +167,7 @@ export async function GET(
         total: toBaht(breakdown.total_thb),
         minNights: breakdown.commercialTerms?.minimumNights ??
           unit.inventoryCategory?.minNights ?? unit.minNights,
-        cancellationPolicyKey: unit.cancellationPolicyKey ?? 'flexible',
+        cancellationPolicyKey: stayPolicyKey,
         isAvailable,
         availableCapacity: isAvailable ? 1 : 0,
       };
@@ -214,6 +224,11 @@ export async function GET(
       // Money boundary: all *Thb integer fields stay in satang until the final
       // rendering component. Date-aware pricing below remains a legacy baht DTO.
       baseNightlyThb: publicUnit.baseNightlyThb,
+      // The canonical base (InventoryCategory) for the headline when no dates
+      // are chosen. With dates, the headline uses `pricing.averageNightly`,
+      // the same calculator the booking charges with.
+      baseRateSatang: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
+      cancellationPolicyKey: stayPolicyKey,
       pricing,
       photoScope: mediaReadiness.photoScope,
       mediaReadiness: {

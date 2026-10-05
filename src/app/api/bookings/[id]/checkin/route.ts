@@ -14,9 +14,19 @@ import {
   formatCheckInChecklistNotes,
   type CheckInChecklistItem,
 } from '@/modules/ops';
-import { checkInBooking } from '@/modules/booking';
+import type { PrismaClient } from '@prisma/client';
+import { checkInBooking, CheckInBlockedError } from '@/modules/booking';
+import { getLabels } from '@/lib/i18n';
 import { createNotification } from '@/modules/comms';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+
+const CHECK_IN_BLOCK_LABELS = {
+  'booking.checkin.blocked.not_confirmed': 'Only a confirmed booking can be checked in.',
+  'booking.checkin.blocked.before_arrival': 'Check-in opens on the arrival date.',
+  'booking.checkin.blocked.after_departure': 'The stay has ended; this booking can no longer be checked in.',
+  'booking.checkin.blocked.guests_incomplete': 'Register every guest in the party (adults, children and infants) before check-in.',
+  'booking.checkin.blocked.passport_missing': 'Every foreign guest needs a passport number on file before check-in (TM30).',
+};
 
 export async function POST(
   req: NextRequest,
@@ -56,17 +66,33 @@ export async function POST(
       );
     }
 
-    // The transition itself belongs to the booking module, not to this route.
-    // It used to be repeated here as a status check plus an inline update, which
-    // meant the state machine in booking.service.ts was tested while this was
-    // the code that actually ran — two implementations, one of them unverified.
-    // Going through the service also emits `stay_checked_in`, which the inline
-    // version silently omitted.
+    // The transition itself belongs to the booking module, not to this route,
+    // and so does the rule deciding whether it may happen (`assessCheckIn`:
+    // inside the stay window, full party registered, passports for foreign
+    // guests). The TM30 filings are created in the SAME transaction: check-in
+    // starts the 24h immigration clock, so a check-in whose filings could not
+    // be created must not commit (it used to log the failure and carry on).
     let checkedInAt: Date;
     try {
-      const checkedIn = await checkInBooking(prisma, params.id);
-      checkedInAt = checkedIn.checkedInAt ?? new Date();
+      checkedInAt = await prisma.$transaction(async (tx) => {
+        const db = tx as unknown as PrismaClient;
+        const checkedIn = await checkInBooking(db, params.id);
+        for (const guest of booking.guests) {
+          if (guest.nationality && guest.nationality.trim().toUpperCase() !== 'TH') {
+            await createTm30Filing(db, { bookingId: booking.id, bookingGuestId: guest.id });
+          }
+        }
+        return checkedIn.checkedInAt ?? new Date();
+      });
     } catch (error) {
+      if (error instanceof CheckInBlockedError) {
+        const labels = await getLabels(CHECK_IN_BLOCK_LABELS);
+        return NextResponse.json(
+          { error: labels[`booking.checkin.blocked.${error.code}`], code: error.code },
+          { status: 409 }
+        );
+      }
+      // The unit itself is not ready for occupancy (readiness gate).
       const coded = error as Error & { code?: string; blockers?: unknown[] };
       if (coded?.code === 'UNIT_NOT_READY') {
         return NextResponse.json(
@@ -82,21 +108,6 @@ export async function POST(
         { error: error instanceof Error ? error.message : 'Cannot check in this booking' },
         { status: 400 }
       );
-    }
-
-    // Create TM30 filing for each foreign guest (not Thai nationals)
-    for (const guest of booking.guests) {
-      if (guest.nationality && guest.nationality !== 'TH') {
-        try {
-          await createTm30Filing(prisma, {
-            bookingId: booking.id,
-            bookingGuestId: guest.id,
-          });
-        } catch (error) {
-          // Log but don't fail check-in; TM30 can be manually filed
-          console.error(`Failed to create TM30 filing for guest ${guest.id}:`, error);
-        }
-      }
     }
 
     // Optional condition report payload from staff check-in flow (F-OPS-1)
@@ -156,7 +167,9 @@ export async function POST(
       {
         success: true,
         checkedInAt,
-        tm30FilingsCreated: booking.guests.filter((g) => g.nationality !== 'TH').length,
+        tm30FilingsCreated: booking.guests.filter(
+          (g) => g.nationality && g.nationality.trim().toUpperCase() !== 'TH'
+        ).length,
       },
       { status: 200 }
     );

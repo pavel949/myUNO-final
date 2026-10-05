@@ -222,6 +222,7 @@ describe('GET /api/units/[unitId] — truthful gallery scope', () => {
       projectId: project.id,
       status: 'live',
       publicMediaReady: false,
+      withoutStayOffering: true,
     });
     await db.commercialOffering.create({ data: {
       projectId: project.id, unitId: unit.id,

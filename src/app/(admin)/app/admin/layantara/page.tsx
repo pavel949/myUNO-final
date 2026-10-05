@@ -5,7 +5,22 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
-const PROJECT_ID = 'layantara-project-328e43e8-942d-432a-a2a1-6ded9cbfb7de';
+const SOURCE_SYSTEM_KEY = 'layantara_os';
+
+/**
+ * The project this source feeds is whichever project its mapped villas belong
+ * to — read from the ExternalRecordLink rows, never a hard-coded id, so the
+ * page works in every environment and for a re-imported project.
+ */
+async function resolveSourceProjectId(): Promise<string | null> {
+  const link = await prisma.externalMapping.findFirst({
+    where: { entity_type: 'unit', externalSystem: { system_key: SOURCE_SYSTEM_KEY } },
+    select: { internal_id: true },
+  });
+  if (!link) return null;
+  const unit = await prisma.unit.findUnique({ where: { id: link.internal_id }, select: { projectId: true } });
+  return unit?.projectId ?? null;
+}
 
 type SourceAudit = { source_table:string; source_count:number; copied_count:number; verified:boolean };
 type SourceState = { state:string; occupancy_kind:string; n:bigint };
@@ -16,19 +31,23 @@ export default async function LayantaraOperationsPage() {
   if (!user) redirect('/login?next=/app/admin/layantara');
   if (!user.isAdmin) redirect('/');
 
+  const projectId = await resolveSourceProjectId();
+  const scoped = <T,>(query: (id: string) => Promise<T>, empty: T) => (projectId ? query(projectId) : Promise.resolve(empty));
+
   // Only aggregates are shown here: no guest names, passport, finance details or
   // secret source payloads are exposed to browser clients.
   const [audit, sourceStates, specifications, mapped, blockers, unitCount, categoryCount, bookings, project, labels] =
     await Promise.all([
-      prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`,
-      prisma.$queryRaw<SourceState[]>`SELECT payload->>'state' AS state, payload->>'occupancy_kind' AS occupancy_kind, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'operational_occupancies' GROUP BY 1,2 ORDER BY 1,2`,
-      prisma.$queryRaw<Verification[]>`SELECT payload->>'specification_verification_status' AS specification, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'villa_master_crosswalk' GROUP BY 1 ORDER BY 1`,
-      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:'layantara_os'}}}),
-      prisma.blockedDate.count({where:{unit:{projectId:PROJECT_ID},externalRef:{startsWith:'layantara:occupancy:'}}}),
-      prisma.unit.count({where:{projectId:PROJECT_ID}}),
-      prisma.inventoryCategory.count({where:{projectId:PROJECT_ID}}),
-      prisma.booking.count({where:{projectId:PROJECT_ID}}),
-      prisma.project.findUnique({where:{id:PROJECT_ID},select:{name:true,status:true}}),
+      // The source snapshot schema exists only where the import ran.
+      prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`.catch(() => [] as SourceAudit[]),
+      prisma.$queryRaw<SourceState[]>`SELECT payload->>'state' AS state, payload->>'occupancy_kind' AS occupancy_kind, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'operational_occupancies' GROUP BY 1,2 ORDER BY 1,2`.catch(() => [] as SourceState[]),
+      prisma.$queryRaw<Verification[]>`SELECT payload->>'specification_verification_status' AS specification, count(*)::bigint AS n FROM layantara_copy.source_row WHERE source_table = 'villa_master_crosswalk' GROUP BY 1 ORDER BY 1`.catch(() => [] as Verification[]),
+      prisma.externalMapping.count({where:{entity_type:'unit',externalSystem:{system_key:SOURCE_SYSTEM_KEY}}}),
+      scoped(id => prisma.blockedDate.count({where:{unit:{projectId:id},externalRef:{startsWith:'layantara:occupancy:'}}}), 0),
+      scoped(id => prisma.unit.count({where:{projectId:id}}), 0),
+      scoped(id => prisma.inventoryCategory.count({where:{projectId:id}}), 0),
+      scoped(id => prisma.booking.count({where:{projectId:id}}), 0),
+      scoped(id => prisma.project.findUnique({where:{id},select:{name:true,status:true}}), null),
       getLabels({
         'admin.layantara.title':'Layan Tara Villas · operations',
         'admin.layantara.subtitle':'Portfolio overview · categories, villas, calendar and stay operations.',
@@ -72,10 +91,10 @@ export default async function LayantaraOperationsPage() {
       <p className="max-w-3xl text-body text-text-secondary">{labels['admin.layantara.subtitle']}</p>
       <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-12 py-4 text-small font-semibold text-amber-900">{labels['admin.layantara.draft']}</span>
       <div className="flex flex-wrap gap-8">
-        <Link className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white" href={'/ops/calendar/board?projectId='+PROJECT_ID}>{labels['admin.layantara.calendar']}</Link>
+        <Link className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white" href={projectId ? '/ops/calendar/board?projectId='+projectId : '/ops/calendar/board'}>{labels['admin.layantara.calendar']}</Link>
         <Link className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink" href="/app/admin/units">{labels['admin.layantara.inventory']}</Link>
         <Link className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink" href="/app/admin/bookings">{labels['admin.layantara.bookings']}</Link>
-        <Link className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink" href={'/ops?projectId='+PROJECT_ID}>{labels['admin.layantara.ops']}</Link>
+        <Link className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink" href={projectId ? '/ops?projectId='+projectId : '/ops'}>{labels['admin.layantara.ops']}</Link>
       </div>
     </header>
     <section className="grid grid-cols-2 gap-12 md:grid-cols-3">

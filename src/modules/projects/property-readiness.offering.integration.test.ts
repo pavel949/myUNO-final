@@ -14,7 +14,7 @@ describe('property readiness respects commercial offering type', () => {
       where: { id: project.id },
       data: { projectType: 'condominium' },
     });
-    const unit = await createUnit({ projectId: project.id, status: 'live' });
+    const unit = await createUnit({ withoutStayOffering: true, projectId: project.id, status: 'live' });
     if (offeringType) {
       await db.commercialOffering.create({
         data: { unitId: unit.id, offeringType, status },

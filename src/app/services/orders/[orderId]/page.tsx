@@ -1,5 +1,4 @@
 import { notFound, redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -11,6 +10,7 @@ import OrderRatingPanel from './order-rating-panel';
 import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
+import { getServiceOrderCustomerView } from '@/modules/services';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +49,7 @@ interface ServiceOrderDetail {
   project: {
     id: string;
     name: string;
-  };
+  } | null;
   unit: { id: string; name: string; addressSupplement: string | null } | null;
   orderer: {
     id: string;
@@ -82,26 +82,13 @@ export default async function ServiceOrderDetailPage({
 
   const { orderId } = params;
 
-  let order: ServiceOrderDetail | null = null;
-  try {
-    // Forward the caller's cookies — the detail API authenticates with them;
-    // a bare server-side fetch would always 401 and soft-404 this page.
-    const res = await fetch(`/api/service-orders/${orderId}/detail`, {
-      cache: 'no-store',
-      headers: { cookie: cookies().toString() },
-    });
-    if (res.ok) {
-      order = await res.json();
-    } else if (res.status === 403) {
-      notFound();
-    }
-  } catch {
-    // Order fetch failed
-  }
-
-  if (!order) {
+  // Read through the services module directly: a server-side fetch of our own
+  // API with a relative URL cannot resolve, which left this page always 404.
+  const result = await getServiceOrderCustomerView(prisma, orderId, user.identityId);
+  if (result.kind !== 'ok') {
     notFound();
   }
+  const order: ServiceOrderDetail = result.order;
 
   const labels = await getLabels({
     'service-order.breadcrumb_home': 'Home',

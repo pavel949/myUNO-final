@@ -26,8 +26,6 @@ export {
 export * as people from './people.service';
 
 export {
-  getApplicableSeasonMarkup,
-  getApplicableNightlyPrice,
   isActiveHold,
   checkAvailability,
   getUnitBlockedDates,

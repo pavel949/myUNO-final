@@ -13,7 +13,14 @@ export const REGULATORY_CREDENTIAL_TYPES = [
   'hotel_business_license',
   'accommodation_exemption',
   'title_legal_use',
+  // Documented authority to market and sell a specific unit (owner's signed
+  // sale mandate). The public "buy" listing requires it beside title legal-use
+  // (commercial-discovery.ts); before it was recordable here, no unit could
+  // ever be listed for sale.
+  'sale_authority',
 ] as const;
+/** Credential types that only mean something on one physical unit. */
+export const UNIT_ONLY_CREDENTIAL_TYPES: readonly RegulatoryCredentialType[] = ['sale_authority'];
 export type RegulatoryCredentialType = (typeof REGULATORY_CREDENTIAL_TYPES)[number];
 
 export const REGULATORY_CREDENTIAL_STATUSES = ['active', 'expired', 'revoked', 'pending'] as const;
@@ -81,6 +88,12 @@ export async function createRegulatoryCredential(
   assertCredentialType(input.credentialType);
   assertScopeLevel(input.scopeLevel);
   if (input.status) assertStatus(input.status);
+
+  if (UNIT_ONLY_CREDENTIAL_TYPES.includes(input.credentialType) && input.scopeLevel !== 'unit') {
+    // The sale gate reads the unit's own credentials; a project-wide sale
+    // authority would be stored and then silently never count.
+    throw new Error(`Credential type "${input.credentialType}" must be recorded on a single unit`);
+  }
 
   if (input.scopeLevel === 'unit') {
     if (!input.unitId) throw new Error('scopeLevel "unit" requires unitId');

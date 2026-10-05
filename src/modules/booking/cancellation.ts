@@ -111,6 +111,77 @@ export async function resolveCancellationPolicy(
 }
 
 /**
+ * The cancellation policy a stay is actually sold under — ONE answer for the
+ * unit page, the review page the guest consents on, and the booking snapshot.
+ *
+ * Precedence follows the canonical pricing graph: the active BAR RatePlan
+ * (unit, then category, then project scope), then the InventoryCategory, then
+ * the legacy Unit field, then the configured default. Before this, the booking
+ * snapshotted only the Unit field (a copy of the category's policy taken when
+ * the unit was written), while the unit and review pages fell back to a
+ * hard-coded "Flexible cancellation" label — a guest could consent to
+ * "flexible" and be bound by the configured default ("moderate").
+ */
+export async function resolveStayCancellationPolicy(
+  db: PrismaClient,
+  target: { unitId: string } | { inventoryCategoryId: string }
+): Promise<CancellationPolicy> {
+  let projectId: string;
+  let unitId: string | null = null;
+  let categoryId: string | null;
+  let unitKey: string | null = null;
+  let categoryKey: string | null = null;
+
+  if ('unitId' in target) {
+    const unit = await db.unit.findUnique({
+      where: { id: target.unitId },
+      select: {
+        id: true, projectId: true, inventoryCategoryId: true, cancellationPolicyKey: true,
+        inventoryCategory: { select: { cancellationPolicyKey: true } },
+      },
+    });
+    if (!unit) throw new Error(`Unit ${target.unitId} not found`);
+    projectId = unit.projectId;
+    unitId = unit.id;
+    categoryId = unit.inventoryCategoryId;
+    unitKey = unit.cancellationPolicyKey;
+    categoryKey = unit.inventoryCategory?.cancellationPolicyKey ?? null;
+  } else {
+    const category = await db.inventoryCategory.findUnique({
+      where: { id: target.inventoryCategoryId },
+      select: { id: true, projectId: true, cancellationPolicyKey: true },
+    });
+    if (!category) throw new Error(`Inventory category ${target.inventoryCategoryId} not found`);
+    projectId = category.projectId;
+    categoryId = category.id;
+    categoryKey = category.cancellationPolicyKey;
+  }
+
+  const barPlans = await db.ratePlan.findMany({
+    where: {
+      code: 'BAR',
+      status: 'active',
+      OR: [
+        ...(unitId ? [{ unitId }] : []),
+        ...(categoryId ? [{ categoryId }] : []),
+        { projectId, unitId: null, categoryId: null },
+      ],
+    },
+    select: { unitId: true, categoryId: true, cancellationPolicyKey: true },
+  });
+  const planKey =
+    barPlans.find(plan => unitId && plan.unitId === unitId)?.cancellationPolicyKey ??
+    barPlans.find(plan => categoryId && plan.categoryId === categoryId)?.cancellationPolicyKey ??
+    barPlans.find(plan => !plan.unitId && !plan.categoryId)?.cancellationPolicyKey ??
+    null;
+
+  return resolveCancellationPolicy(db, planKey || categoryKey || unitKey, {
+    projectId,
+    ...(unitId ? { unitId } : {}),
+  });
+}
+
+/**
  * The doc 04 §5 default policy *shapes*, kept as documentation and test
  * fixtures. Runtime booking snapshots MUST use resolveCancellationPolicy —
  * the configuration layer is the source of truth, so founder edits to

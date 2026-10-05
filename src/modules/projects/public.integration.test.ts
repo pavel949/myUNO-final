@@ -232,9 +232,9 @@ describe('Projects public read seam (discovery pages)', () => {
     it('does not count sale-only and lease-only units as bookable stays', async () => {
       const project = await createProjectWithMedia({ slug: 'mixed-commercial', status: 'live' });
       await prisma.project.update({ where: { id: project.id }, data: { projectType: 'condominium' } });
-      const sale = await createUnit({ projectId: project.id, status: 'live', name: 'Sale only' });
-      const lease = await createUnit({ projectId: project.id, status: 'live', name: 'Lease only' });
-      const stay = await createUnit({ projectId: project.id, status: 'live', name: 'Stay' });
+      const sale = await createUnit({ withoutStayOffering: true, projectId: project.id, status: 'live', name: 'Sale only' });
+      const lease = await createUnit({ withoutStayOffering: true, projectId: project.id, status: 'live', name: 'Lease only' });
+      const stay = await createUnit({ withoutStayOffering: true, projectId: project.id, status: 'live', name: 'Stay' });
       await prisma.commercialOffering.createMany({ data: [
         { unitId: sale.id, offeringType: 'sale', status: 'active' },
         { unitId: lease.id, offeringType: 'long_term_rental', status: 'active' },

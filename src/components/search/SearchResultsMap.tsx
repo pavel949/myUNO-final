@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+// MapLibre is bundled (pinned in package.json) and loaded on demand, so the
+// search page never depends on a third-party CDN being up or allowed by CSP.
+type MapLibre = typeof import('maplibre-gl');
 
 export interface SearchMapProject {
   id: string;
@@ -27,6 +32,7 @@ export function SearchResultsMap({
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
+  const libRef = useRef<MapLibre | null>(null);
   const markerRefs = useRef<Map<string, { marker: any; element: HTMLElement }>>(new Map());
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -44,22 +50,9 @@ export function SearchResultsMap({
 
   useEffect(() => {
     let cancelled = false;
-    const cssId = 'myuno-maplibre-css';
-    if (!document.getElementById(cssId)) {
-      const link = document.createElement('link');
-      link.id = cssId;
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
-      document.head.appendChild(link);
-    }
-
-    const start = () => {
+    const start = (maplibregl: MapLibre) => {
       if (cancelled || !containerRef.current || mapRef.current) return;
-      const maplibregl = (window as any).maplibregl;
-      if (!maplibregl) {
-        setFailed(true);
-        return;
-      }
+      libRef.current = maplibregl;
 
       const map = new maplibregl.Map({
         container: containerRef.current,
@@ -67,7 +60,7 @@ export function SearchResultsMap({
         zoom: 10.2,
         minZoom: 8,
         maxZoom: 17,
-        attributionControl: true,
+        // Default attribution control (OSM credit) stays on.
         style: {
           version: 8,
           sources: {
@@ -101,24 +94,11 @@ export function SearchResultsMap({
       mapRef.current = map;
     };
 
-    if ((window as any).maplibregl) {
-      start();
-    } else {
-      const scriptId = 'myuno-maplibre-js';
-      const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
-      if (existing) {
-        existing.addEventListener('load', start, { once: true });
-        existing.addEventListener('error', () => setFailed(true), { once: true });
-      } else {
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
-        script.async = true;
-        script.onload = start;
-        script.onerror = () => setFailed(true);
-        document.head.appendChild(script);
-      }
-    }
+    import('maplibre-gl')
+      .then((mod) => start((mod.default ?? mod) as MapLibre))
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
 
     return () => {
       cancelled = true;
@@ -127,7 +107,7 @@ export function SearchResultsMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    const maplibregl = (window as any).maplibregl;
+    const maplibregl = libRef.current;
     if (!ready || !map || !maplibregl) return;
 
     for (const entry of markerRefs.current.values()) entry.marker.remove();

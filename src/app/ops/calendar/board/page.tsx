@@ -6,8 +6,8 @@ import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import {
   bangkokCalendarDay, calendarDays, projectCalendar, shiftCalendarDay, validCalendarDay,
-} from '@/modules/booking/calendar-projection';
-import type { CalendarEntry } from '@/modules/booking/calendar-projection';
+} from '@/modules/booking';
+import type { CalendarEntry } from '@/modules/booking';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { computeCanonicalCalendarRates } from '@/modules/core';

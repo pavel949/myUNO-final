@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NextRequest } from 'next/server';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   db,
   resetDb,
@@ -9,26 +8,20 @@ import {
 } from '@/test/util';
 import { seedConfig } from '@/modules/config';
 import * as serviceService from '@/modules/services';
+import { getServiceOrderCustomerView } from './service-order-customer-view';
 
-const mockGetCurrentUser = vi.fn();
-vi.mock('@/app/actions/getCurrentUser', () => ({
-  getCurrentUser: () => mockGetCurrentUser(),
-}));
-
-vi.mock('@/lib/prisma', async () => {
-  const util = await import('@/test/util');
-  return { prisma: util.db };
-});
-
-import { GET } from './route';
-
-describe('GET /api/service-orders/[id]/detail — the rating affordance (S6)', () => {
+/**
+ * The orderer's view of a service order, shared by the order page. These
+ * tests moved here from the retired /api/service-orders/[id]/detail route:
+ * the page reads the module directly (a server-side relative fetch of its own
+ * API could not resolve and left the page permanently 404).
+ */
+describe('getServiceOrderCustomerView — the rating affordance (S6) and scoping', () => {
   let orderer: Awaited<ReturnType<typeof createIdentity>>;
   let orderId: string;
 
   beforeEach(async () => {
     await resetDb();
-    mockGetCurrentUser.mockReset();
     await seedConfig(db);
 
     orderer = await createIdentity();
@@ -69,33 +62,22 @@ describe('GET /api/service-orders/[id]/detail — the rating affordance (S6)', (
     orderId = order.id;
   });
 
-  function detailReq() {
-    return new NextRequest(`http://localhost/api/service-orders/${orderId}/detail`);
-  }
-
-  function asOrderer() {
-    mockGetCurrentUser.mockResolvedValue({
-      identityId: orderer.id,
-      email: orderer.email,
-      firstName: 'T',
-      lastName: 'U',
-      isAdmin: false,
-      roles: [],
-    });
+  async function view(identityId = orderer.id) {
+    const result = await getServiceOrderCustomerView(db, orderId, identityId);
+    if (result.kind !== 'ok') throw new Error('expected the order view, got ' + result.kind);
+    return result.order;
   }
 
   it('reports the order as rated once it has been, so the surface stops offering a second review', async () => {
-    asOrderer();
-
-    const before = await (await GET(detailReq(), { params: { id: orderId } })).json();
+    const before = await view();
     expect(before.rated).toBe(false);
 
     await serviceService.rateServiceOrder(db, orderId, orderer.id, 4);
 
-    const after = await (await GET(detailReq(), { params: { id: orderId } })).json();
+    const after = await view();
     expect(after.rated).toBe(true);
 
-    // The route the surface would have called refuses a second review, which is
+    // The rating route refuses a second review, which is
     // why `rated` has to gate the button rather than the user discovering it.
     await expect(
       serviceService.rateServiceOrder(db, orderId, orderer.id, 1)
@@ -114,8 +96,13 @@ describe('GET /api/service-orders/[id]/detail — the rating affordance (S6)', (
       },
     });
 
-    asOrderer();
-    const detail = await (await GET(detailReq(), { params: { id: orderId } })).json();
+    const detail = await view();
     expect(detail.rated).toBe(false);
+  });
+
+  it("refuses another identity's order and reports a missing one as not found", async () => {
+    const other = await createIdentity();
+    expect((await getServiceOrderCustomerView(db, orderId, other.id)).kind).toBe('forbidden');
+    expect((await getServiceOrderCustomerView(db, 'missing-order', orderer.id)).kind).toBe('not_found');
   });
 });

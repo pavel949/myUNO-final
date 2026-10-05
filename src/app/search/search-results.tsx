@@ -25,6 +25,7 @@ interface Unit {
 }
 
 interface CategoryCard {
+  inventory_category_id: string;
   category_key: string;
   label: string;
   available_count: number;
@@ -283,10 +284,14 @@ export default function SearchResults({
     [units]
   );
 
-  const handleBookCategory = (categoryKey: string) => {
+  // Category booking is addressed by the canonical InventoryCategory id: the
+  // review page quotes and signs only for that id. Sending the legacy
+  // categoryKey here left the guest on a review page with no price and a
+  // Confirm button that could never enable.
+  const handleBookCategory = (inventoryCategoryId: string) => {
     if (!startDate || !endDate || !projectId) return;
     const next = new URLSearchParams({
-      categoryKey,
+      inventoryCategoryId,
       projectId,
       startDate,
       endDate,
@@ -451,7 +456,7 @@ export default function SearchResults({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
               {categories.map((category) => (
                 <div
-                  key={category.category_key}
+                  key={category.inventory_category_id}
                   className="bg-surface-paper border border-border-line rounded-xl p-16"
                 >
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
@@ -467,7 +472,7 @@ export default function SearchResults({
                   </p>
                   <button
                     type="button"
-                    onClick={() => handleBookCategory(category.category_key)}
+                    onClick={() => handleBookCategory(category.inventory_category_id)}
                     className="w-full bg-brand-andaman text-surface-ivory rounded-sm h-48 font-semibold hover:opacity-90 transition"
                   >
                     {labels.categoryBook}

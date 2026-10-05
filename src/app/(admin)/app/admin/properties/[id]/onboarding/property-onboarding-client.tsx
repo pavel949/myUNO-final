@@ -131,6 +131,13 @@ function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: stri
         <Button type="button" disabled={Boolean(offering?.status === 'active')} onClick={() =>
           submit(unitPropertyDetailsPath(unit.id), { action: 'stay_offering', status: 'active' })
         }>Enable short stay</Button>
+        {(['sale', 'long_term_rental'] as const).map(offeringType => {
+          const current = unit.commercialOfferings.find(row => row.offeringType === offeringType);
+          const active = current?.status === 'active';
+          return <Button key={offeringType} type="button" variant="secondary" onClick={() =>
+            submit(unitPropertyDetailsPath(unit.id), { action: 'commercial_offering', offeringType, status: active ? 'paused' : 'active' })
+          }>{offeringType === 'sale' ? (active ? 'Pause sale' : 'Offer for sale') : (active ? 'Pause long-term rent' : 'Offer long-term rent')}</Button>;
+        })}
       </div>;
     })}
     {units.length === 0 && <p className="text-small text-text-secondary">Create a home first.</p>}

@@ -15,8 +15,24 @@ import {
   removePricingRule,
   getUnitPricingRules,
   checkAvailability,
-  getApplicableNightlyPrice,
 } from './availability.service';
+import { computeCanonicalPriceBreakdown as computePriceBreakdown } from './canonical-pricing.service';
+
+// The legacy calculator these tests were written against is deleted (audit
+// P2 #13: it was exported and tested but no caller used it). They now pin
+// the CANONICAL engine every quote and booking goes through.
+async function getApplicableNightlyPrice(client: typeof db, date: Date, unitId: string): Promise<number> {
+  const unit = await client.unit.findUnique({
+    where: { id: unitId },
+    select: { minNights: true, inventoryCategory: { select: { minNights: true } } },
+  });
+  if (!unit) throw new Error(`Unit ${unitId} not found`);
+  const nights = Math.max(1, unit.inventoryCategory?.minNights ?? unit.minNights ?? 1);
+  const end = new Date(date.getTime() + nights * 86_400_000);
+  const quote = await computePriceBreakdown(client, unitId, date, end, 1);
+  return quote.lines[0].nightly_thb;
+}
+
 
 /**
  * F-OPS-4, Q53: staff can manually block a unit's calendar or set a one-off
@@ -34,7 +50,7 @@ describe('manual availability & pricing overrides', () => {
     await resetDb();
     const project = await createProject();
     const owner = await createIdentity();
-    const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+    const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id, baseNightlyThb: 250000 });
     unitId = unit.id;
     projectId = project.id;
     staffId = (await createIdentity()).id;
@@ -204,5 +220,37 @@ describe('manual availability & pricing overrides', () => {
       expect(rules).toHaveLength(2);
       expect(rules[0].startDate.getTime()).toBeGreaterThan(rules[1].startDate.getTime());
     });
+  });
+});
+
+describe('pricing override units-error guard (audit P1 #8)', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('refuses an override a hundred times off the base rate — baht typed as satang', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 1300600 });
+    // ฿130.06 entered for a ฿13,006 villa: the exact case the audit reproduced.
+    await expect(
+      createPricingRule(db, {
+        unitId: unit.id,
+        startDate: new Date('2026-12-01'),
+        endDate: new Date('2026-12-04'),
+        nightlyThb: 13006,
+      })
+    ).rejects.toThrow(/outside 1\/10\.\.10x of the base rate/);
+  });
+
+  it('accepts a genuine seasonal override within the band', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 1300600 });
+    const rule = await createPricingRule(db, {
+      unitId: unit.id,
+      startDate: new Date('2026-12-20'),
+      endDate: new Date('2027-01-05'),
+      nightlyThb: 2500000,
+    });
+    expect(rule.nightlyThb).toBe(2500000);
   });
 });

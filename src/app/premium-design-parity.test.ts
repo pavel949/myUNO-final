@@ -126,7 +126,8 @@ describe('premium design-system surface parity', () => {
     expect(map).toContain('onBoundsChange');
     expect(map).toContain('tile.openstreetmap.org');
     const middleware = source('src/middleware.ts');
-    expect(middleware).toContain('https://unpkg.com');
+    // MapLibre is bundled; no third-party script or style origin is allowed.
+    expect(middleware).not.toContain('https://unpkg.com');
     expect(middleware).toContain('https://tile.openstreetmap.org');
     expect(middleware).toContain("worker-src 'self' blob:");
   });

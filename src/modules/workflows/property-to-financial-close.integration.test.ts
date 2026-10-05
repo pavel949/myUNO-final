@@ -29,7 +29,7 @@ describe('canonical property → booking → operations → financial close', ()
       firstName: admin.firstName, lastName: admin.lastName, roles: [],
     });
     const project = await createProject({ status: 'live' });
-    const unit = await createUnit({
+    const unit = await createUnit({ withoutStayOffering: true,
       projectId: project.id, ownerIdentityId: owner.id,
       categoryKey: 'two_bedroom', name: 'Villa G6', status: 'live',
       baseNightlyThb: 200_00, instantBook: true,
@@ -80,7 +80,13 @@ describe('canonical property → booking → operations → financial close', ()
     });
     expect(revenue).toHaveLength(1);
     expect(revenue[0].amountThb).toBe(booking.totalThb);
-    await checkInBooking(db, booking.id);
+    await db.bookingGuest.createMany({
+      data: [
+        { bookingId: booking.id, fullName: 'enc:Lead', nationality: 'RU', passportNumber: 'enc:P1', isLead: true },
+        { bookingId: booking.id, fullName: 'enc:Partner', nationality: 'RU', passportNumber: 'enc:P2' },
+      ],
+    });
+    await checkInBooking(db, booking.id, new Date(booking.startDate.getTime() + 8 * 3600_000));
     await checkOutBooking(db, booking.id);
     await completeBooking(db, booking.id);
 

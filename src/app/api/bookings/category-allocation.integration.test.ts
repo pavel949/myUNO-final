@@ -190,6 +190,9 @@ describe('category booking falls through to the next villa', () => {
       2
     );
 
+    // Replace villa B's default stay offering with one carrying a published
+    // tariff grid that prices it above the accepted quote.
+    await db.commercialOffering.deleteMany({ where: { unitId: b.id, offeringType: 'short_term_stay' } });
     await db.commercialOffering.create({
       data: {
         projectId,

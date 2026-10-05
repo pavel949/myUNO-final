@@ -25,6 +25,8 @@ interface Unit {
   cancellationPolicyKey?: string;
   projectId: string;
   inventoryCategory?: { id: string; categoryKey: string; name: string } | null;
+  /** Canonical category base rate, satang. */
+  baseRateSatang?: number;
   project?: { id: string; name: string };
   photoScope?: 'exact_unit' | 'room_type';
 }
@@ -65,8 +67,9 @@ export interface UnitDetailLabels {
   bedrooms: string;
   bathrooms: string;
   cancellationPolicy: string;
-  cancellationDefault: string;
   perNight: string;
+  averageForDates: string;
+  baseRateNote: string;
   priceNights: string;
   discountLongStay: string;
   discountEarlyBird: string;
@@ -297,29 +300,43 @@ export default function UnitDetailClient({
                   </div>
                 </div>
               )}
-              <p className="font-display text-kicker uppercase text-brand-sun mb-16">
-                {labels.cancellationPolicy}
-              </p>
-              <p className="text-body text-text-stone mb-32">
-                {(unit.cancellationPolicyKey && labels.policyLabels[unit.cancellationPolicyKey]) ||
-                  unit.cancellationPolicyKey ||
-                  labels.cancellationDefault}
-              </p>
+              {/* The resolved policy the booking will snapshot. No policy
+                  resolved = no claim: never a "flexible" placeholder. */}
+              {unit.cancellationPolicyKey && (
+                <>
+                  <p className="font-display text-kicker uppercase text-brand-sun mb-16">
+                    {labels.cancellationPolicy}
+                  </p>
+                  <p className="text-body text-text-stone mb-32">
+                    {labels.policyLabels[unit.cancellationPolicyKey] || unit.cancellationPolicyKey}
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
           <div className="lg:col-span-1">
             <div className="sticky top-96 rounded-xl border border-border-line bg-surface-paper p-24 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
-                {/* Already satang — getPublicUnitById returns the column
-                    unchanged. The x100 that was here made it 100x too
-                    high (T-071). */}
+                {/* The headline must match what the guest will be charged:
+                    with dates it is the average night of the live quote
+                    (breakdown is baht at this boundary); without dates it is
+                    the canonical category base rate, labelled as such. It
+                    used to show the legacy unit field (฿9,393) beside a
+                    quote of ฿13,006/night. */}
                 <MoneyAmount
-                  satang={unit.baseNightlyThb || 0}
+                  satang={
+                    breakdown && breakdown.nights > 0
+                      ? Math.round((breakdown.subtotal * 100) / breakdown.nights)
+                      : unit.baseRateSatang ?? unit.baseNightlyThb ?? 0
+                  }
                   className="text-display font-semibold"
                 />
                 <span className="text-body text-text-stone">{labels.perNight}</span>
               </div>
+              <p className="-mt-12 mb-20 text-small text-text-stone">
+                {breakdown && breakdown.nights > 0 ? labels.averageForDates : labels.baseRateNote}
+              </p>
 
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>

@@ -50,7 +50,7 @@ describe('canonical calendar rate parity', () => {
     };
     const db: any = {
       unit: { findUnique: vi.fn().mockResolvedValue(unit) },
-      commercialOffering: { findMany: vi.fn().mockResolvedValue([]) },
+      commercialOffering: { findMany: vi.fn().mockResolvedValue([{ offeringType: 'short_term_stay', status: 'active', pricingTerms: {} }]) },
       ratePlan: { findFirst: vi.fn().mockResolvedValue(null) },
       pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
     };
@@ -98,7 +98,7 @@ describe('canonical calendar rate parity', () => {
     };
     const db: any = {
       unit: { findUnique: vi.fn().mockResolvedValue(unit) },
-      commercialOffering: { findMany: vi.fn().mockResolvedValue([]) },
+      commercialOffering: { findMany: vi.fn().mockResolvedValue([{ offeringType: 'short_term_stay', status: 'active', pricingTerms: {} }]) },
       ratePlan: { findFirst: vi.fn().mockResolvedValue(null) },
       pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
     };

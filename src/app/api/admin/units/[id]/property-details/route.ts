@@ -120,6 +120,35 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           });
       return NextResponse.json(offering, { status: existing ? 200 : 201 });
     }
+    if (body.action === 'commercial_offering') {
+      // Sale and long-term rental are commercial uses of the same physical
+      // unit (CANONICAL_PROPERTY_DATA_ARCHITECTURE layer 2). Activating one
+      // here does not publish it by itself: /homes still requires verified
+      // title + sale authority (sale) or an evidenced mandate + permitted use
+      // (rent) — commercial-discovery.ts. Before this action there was no
+      // way to activate either, so no unit could reach the public listings.
+      const offeringType = body.offeringType;
+      const status = body.status ?? 'active';
+      if (!['sale', 'long_term_rental'].includes(offeringType)) {
+        return NextResponse.json({ error: 'offeringType must be sale or long_term_rental' }, { status: 400 });
+      }
+      if (!['active', 'paused', 'draft'].includes(status)) {
+        return NextResponse.json({ error: 'Invalid offering status' }, { status: 400 });
+      }
+      const unit = await prisma.unit.findUnique({ where: { id: params.id }, select: { id: true } });
+      if (!unit) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+      if (offeringType === 'long_term_rental' && status === 'active' && (await layantaraAuthority(params.id)).linked) {
+        // Occupancy of a source-linked unit is owned by its PMS; a lease
+        // cannot be sold against it here.
+        return NextResponse.json({ error: 'source_owned_occupancy' }, { status: 409 });
+      }
+      const offering = await prisma.commercialOffering.upsert({
+        where: { unitId_offeringType: { unitId: params.id, offeringType } },
+        create: { unitId: params.id, offeringType, status },
+        update: { status },
+      });
+      return NextResponse.json(offering);
+    }
     if (body.action === 'channel_mapping') {
       if (body.syncState === 'ari_push') throw new Error('ARI push cannot be marked manually; connect a verified ARI provider first');
       const requestedType = body.offeringType || 'short_term_stay';

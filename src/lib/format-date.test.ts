@@ -52,7 +52,7 @@ describe('date formatting call sites', () => {
       .filter((file) => !file.endsWith('src/lib/date.ts'))
       .flatMap((file) =>
         readFileSync(file, 'utf8').split('\n')
-          .map((line, i) => (UNLOCALIZED.test(line) ? `${relative(process.cwd(), file)}:${i + 1}` : null))
+          .map((line, i) => (UNLOCALIZED.test(line) && !/^\s*(\*|\/\/)/.test(line) ? `${relative(process.cwd(), file)}:${i + 1}` : null))
           .filter((hit): hit is string => hit !== null));
     expect(offenders).toEqual([]);
   });

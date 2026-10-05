@@ -73,6 +73,9 @@ body {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+  }
+}
+
 .font-tabular {
   font-variant-numeric: tabular-nums;
 }

@@ -39,7 +39,7 @@ export const AnnouncementsSection = React.forwardRef<HTMLDivElement, Announcemen
             return (
               <div
                 key={announcement.id}
-                className="bg-surface-paper border border-border-line rounded-md p-16"
+                className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-16"
               >
                 <div className="flex flex-wrap items-center gap-8 mb-8">
                   <h3 className="text-body font-semibold text-text-ink m-0">

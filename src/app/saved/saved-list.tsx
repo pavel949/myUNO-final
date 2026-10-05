@@ -42,7 +42,7 @@ export default function SavedList({ entries, labels }: {
   }
 
   if (!items.length) return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+    <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32 text-center">
       <p className="text-body text-text-ink mb-16">{labels.emptyTitle}</p>
       <p className="text-small text-text-secondary mb-24">{labels.emptyHint}</p>
       <Link href="/search" className="inline-flex items-center justify-center h-48 px-24 bg-brand-andaman text-surface-ivory rounded-sm font-semibold hover:opacity-90 transition">
@@ -56,7 +56,7 @@ export default function SavedList({ entries, labels }: {
     <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
       {items.map(entry => {
         const nightly = entry.unit.inventoryCategory?.baseNightlyThb ?? entry.unit.baseNightlyThb;
-        return <li key={entry.id} className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
+        return <li key={entry.id} className="bg-surface-paper border border-border-line rounded-2xl shadow-card overflow-hidden">
           <Link href={`/units/${entry.unit.id}`} className="block hover:shadow-card transition-shadow">
             {entry.unit.coverMedia ? <Image src={entry.unit.coverMedia.storageKey} alt={entry.unit.name} width={640} height={360} className="aspect-video w-full object-cover" /> : <div className="aspect-video bg-gradient-to-br from-brand-andaman to-brand-andaman-dark" />}
             <div className="p-16 pb-8">

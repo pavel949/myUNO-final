@@ -79,6 +79,20 @@ export async function POST(request: NextRequest) {
         select: { id: true },
       });
       if (!member) return NextResponse.json({ error: 'Assignee is outside this operating space' }, { status: 400 });
+      const explicitAssignments = await prisma.operatingSpaceMemberUnit.findMany({
+        where: {
+          operatingSpaceId: body.operatingSpaceId,
+          identityId: body.assignedIdentityId,
+          active: true,
+        },
+        select: { unitId: true },
+      });
+      if (
+        explicitAssignments.length > 0 &&
+        !explicitAssignments.some((assignment) => assignment.unitId === body.unitId)
+      ) {
+        return NextResponse.json({ error: 'Assignee is not authorized for this property' }, { status: 400 });
+      }
     }
     if (body.operatingSpaceId && body.assignedTeamId) {
       const team = await prisma.operatingTeam.findFirst({

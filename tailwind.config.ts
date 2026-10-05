@@ -76,8 +76,8 @@ const config: Config = {
         full: '9999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(22, 33, 31, 0.06)',
-        float: '0 8px 24px rgba(14, 79, 75, 0.16)',
+        card: '0 4px 20px -2px rgba(17, 56, 46, 0.06)',
+        float: '0 10px 30px -4px rgba(17, 56, 46, 0.12)',
       },
       transitionDuration: {
         micro: '150ms',

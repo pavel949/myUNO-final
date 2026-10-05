@@ -582,14 +582,24 @@ export default async function ProjectLandingPage({
                       {editorialCopy[unit.descriptionKey]}
                     </p>
                   ) : null}
-                  {(unit.bedrooms > 0 || unit.bathrooms > 0 || unit.maxGuests > 0) ? (
+                  {(unit.bedrooms > 0 || unit.bathrooms > 0 || unit.maxGuests > 0 || unit.grossAreaSqm || unit.sizeSqm) ? (
                     <p className="text-small text-text-secondary mb-12">
                       {[
                         unit.bedrooms > 0 ? labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms)) : null,
                         unit.bathrooms > 0 ? labels['project_page.units.bathrooms'].replace('{count}', String(unit.bathrooms)) : null,
                         unit.maxGuests > 0 ? labels['project_page.units.guests'].replace('{count}', String(unit.maxGuests)) : null,
+                        unit.grossAreaSqm ? `${unit.grossAreaSqm.toLocaleString(UI_LOCALE)} m²` : unit.sizeSqm ? `${unit.sizeSqm.toLocaleString(UI_LOCALE)} m²` : null,
                       ].filter(Boolean).join(' · ')}
                     </p>
+                  ) : null}
+                  {(unit.views.length > 0 || unit.unitFeatures.length > 0) ? (
+                    <div className="mb-12 flex flex-wrap gap-6">
+                      {[...unit.views, ...unit.unitFeatures].slice(0, 4).map((fact) => (
+                        <span key={fact} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] capitalize text-text-secondary">
+                          {fact.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
                   ) : null}
                   {unit.bookable && unit.baseNightlyThb > 0 ? (
                     <p className="text-body text-text-ink font-semibold mb-12">

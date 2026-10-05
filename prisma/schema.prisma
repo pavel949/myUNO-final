@@ -996,6 +996,7 @@ model Project {
   roleAssignments       RoleAssignment[]          @relation("projectScope")
   galleryMedia          ProjectMedia[]
   amenities             ProjectAmenity[]
+  nearbyPlaces          ProjectNearbyPlace[]
   organizations         Organization[]
   orgRoles              ProjectOrganizationRole[]
   commercialOfferings   CommercialOffering[]
@@ -1991,6 +1992,35 @@ model ProjectMedia {
 
   @@id([projectId, mediaId])
   @@map("project_media")
+}
+
+model ProjectNearbyPlace {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId        String   @map("project_id")
+  slug             String
+  name             String
+  categoryKey      String   @default("other") @map("category_key")
+  shortDescription String?  @map("short_description")
+  address          String?
+  latitude         Decimal? @db.Decimal(9, 6)
+  longitude        Decimal? @db.Decimal(9, 6)
+  /// Manual fallback used only when a coordinate-derived distance is unavailable.
+  distanceMeters   Int?     @map("distance_meters")
+  walkingMinutes   Int?     @map("walking_minutes")
+  drivingMinutes   Int?     @map("driving_minutes")
+  externalUrl      String?  @map("external_url")
+  isFeatured       Boolean  @default(false) @map("is_featured")
+  published        Boolean  @default(false)
+  sort             Int      @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, slug])
+  @@index([projectId, published, sort])
+  @@map("project_nearby_place")
 }
 
 model ProjectAmenity {

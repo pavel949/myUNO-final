@@ -4,6 +4,7 @@ import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-aut
 import { categoryEditorialKeys } from './project-editorial';
 import { tMany, type Locale } from '@/modules/content';
 import { listPublicProjectAmenities } from './project-amenities.service';
+import { listProjectNearbyPlaces } from './project-nearby.service';
 import {
   assessGalleryReadiness,
   assessUnitMediaReadiness,
@@ -111,6 +112,7 @@ export interface PublicProjectDetail {
   categories: PublicProjectCategory[];
   reviews: PublicProjectReviews;
   amenities: Awaited<ReturnType<typeof listPublicProjectAmenities>>;
+  nearbyPlaces: Awaited<ReturnType<typeof listProjectNearbyPlaces>>;
 }
 
 /** All live projects, for the /projects hub and the sitemap. */
@@ -273,10 +275,11 @@ export async function getPublicProjectBySlug(
   });
   if (!projectMedia.ready) return null;
 
-  const [categories, reviews, amenities] = await Promise.all([
+  const [categories, reviews, amenities, nearbyPlaces] = await Promise.all([
     buildPublicCategories(project.id, project.slug, eligibleUnits.map(({ unit }) => unit)),
     buildPublicReviews(project.id),
     listPublicProjectAmenities(prisma, project.id, locale),
+    listProjectNearbyPlaces(prisma, project.id, Number(project.latitude), Number(project.longitude)),
   ]);
 
   return {
@@ -313,6 +316,7 @@ export async function getPublicProjectBySlug(
     categories,
     reviews,
     amenities,
+    nearbyPlaces,
   };
 }
 

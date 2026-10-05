@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProjectAmenityOpsActor, getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
 import ProjectExperienceClient from './project-experience-client';
+import ProjectNearbyEditor from './project-nearby-editor';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 import ProjectStoryEditor from '@/components/projects/ProjectStoryEditor';
 import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '@/modules/projects';
@@ -22,6 +23,15 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
     where: { id: params.id },
     select: {
       id: true, name: true, slug: true, descriptionKey: true, handbookKey: true,
+      nearbyPlaces: {
+        orderBy: [{ isFeatured: 'desc' }, { sort: 'asc' }, { name: 'asc' }],
+        select: {
+          id: true, slug: true, name: true, categoryKey: true, shortDescription: true,
+          address: true, latitude: true, longitude: true, distanceMeters: true,
+          walkingMinutes: true, drivingMinutes: true, externalUrl: true,
+          isFeatured: true, published: true, sort: true,
+        },
+      },
       amenities: {
         include: {
           coverMedia: { select: { storageKey: true } },
@@ -57,7 +67,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
         <p className="mt-12 text-kicker uppercase text-brand-andaman">Project Experience</p>
         <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
-          Manage everything guests can use inside this project: pools, gyms, cinema rooms, sauna, coworking, shuttle, clubs and any custom facility. Marketplace concierge services remain separate and global.
+          Build the public Project Portal from canonical project data: story, facilities, food and beverage, guest-use rules and nearby places. Marketplace services remain on the shared myUNO service network.
         </p>
       </div>
       <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-16 py-12 font-semibold text-brand-andaman">Preview portal</Link>
@@ -65,6 +75,14 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />
       <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
+      <ProjectNearbyEditor
+        projectId={project.id}
+        initialPlaces={project.nearbyPlaces.map(place => ({
+          ...place,
+          latitude: place.latitude === null ? null : Number(place.latitude),
+          longitude: place.longitude === null ? null : Number(place.longitude),
+        }))}
+      />
     </div>
   </main>;
 }

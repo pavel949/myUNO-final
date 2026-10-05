@@ -143,6 +143,8 @@ export { listPublicProjectAmenities, getPublicProjectAmenityBySlug, projectAmeni
 
 export { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from './project-experience';
 
+export { listProjectNearbyPlaces, projectNearbyPlaceData, nearbyPlaceSlug, distanceMetersBetween, PROJECT_NEARBY_CATEGORIES, type PublicProjectNearbyPlace } from './project-nearby.service';
+
 export { createProjectAmenityReservation, cancelOwnProjectAmenityReservation, type AmenityReservationPolicy } from './project-amenity-reservations.service';
 
 export { getPublicProjectPassport, type PublicProjectPassport, type PassportEvidenceStatus } from './passport.service';

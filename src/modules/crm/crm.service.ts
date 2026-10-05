@@ -51,6 +51,7 @@ export interface PublicLeadInput {
   sourceMedium?: string;
   sourceCampaign?: string;
   referrerIdentityId?: string;
+  projectId?: string;
 }
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -321,7 +322,7 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
         touchType: 'lead_creation',
         source,
         medium: 'website',
-        metadata: { audience: input.audience },
+        metadata: { audience: input.audience, ...(input.projectId ? { projectId: input.projectId } : {}) },
       },
     });
 
@@ -343,6 +344,7 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
       (await tx.crmOpportunity.create({
         data: {
           identityId: identity.id,
+          projectId: input.projectId,
           type,
           title: `${input.audience}: ${fullName}`,
           source,
@@ -361,7 +363,9 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
         completedAt: new Date(),
         metadata: existingPropertySubmission
           ? { source, audience: input.audience, linkedToExistingPropertySubmission: true }
-          : undefined,
+          : input.projectId
+            ? { source, audience: input.audience, projectId: input.projectId }
+            : undefined,
       },
     });
     return { identityId: identity.id, opportunityId: opportunity.id };

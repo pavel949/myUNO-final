@@ -8,8 +8,9 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
+import ProjectNearbySection from '@/components/projects/ProjectNearbySection';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
-import { categoryEditorialKeys } from '@/modules/projects';
+import { categoryEditorialKeys, listProjectNearbyPlaces } from '@/modules/projects';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,13 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     'project_page.amenities.included': 'Included',
     'project_page.amenities.free': 'Free',
     'project_page.amenities.booking_required': 'Booking required',
+    'project_page.nearby.kicker': 'Around the project',
+    'project_page.nearby.title': 'What is nearby',
+    'project_page.nearby.body': 'Useful places around the residence, with distance and travel estimates where available.',
+    'project_page.nearby.distance': '{distance} away',
+    'project_page.nearby.walk': '{minutes} min walk',
+    'project_page.nearby.drive': '{minutes} min drive',
+    'project_page.nearby.open_map': 'Open map →',
   });
   const prefix = `project.${project.slug}.editorial.`;
   const fields = ['eyebrow', 'headline', 'lead', 'benefits.title',
@@ -83,6 +91,13 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     groupsCta: '', // No booking action in a draft preview.
   };
   const photoCount = project.inventoryCategories.reduce((n,c) => n+c.units.reduce((m,u) => m+u._count.media,0),0);
+  const nearbyPlaces = await listProjectNearbyPlaces(
+    prisma,
+    project.id,
+    Number(project.latitude),
+    Number(project.longitude),
+    { publishedOnly: false }
+  );
   const amenities = project.amenities.map(row => ({
     id: row.id, slug: row.slug, name: row.name, categoryKey: row.categoryKey,
     shortDescription: row.shortDescription, description: row.description, iconKey: row.iconKey,
@@ -138,6 +153,18 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
         included: labels['project_page.amenities.included'],
         free: labels['project_page.amenities.free'],
         bookingRequired: labels['project_page.amenities.booking_required'],
+      }}
+    />
+    <ProjectNearbySection
+      places={nearbyPlaces}
+      labels={{
+        kicker: labels['project_page.nearby.kicker'],
+        title: labels['project_page.nearby.title'],
+        body: labels['project_page.nearby.body'],
+        distance: labels['project_page.nearby.distance'],
+        walk: labels['project_page.nearby.walk'],
+        drive: labels['project_page.nearby.drive'],
+        openMap: labels['project_page.nearby.open_map'],
       }}
     />
     <section className="mx-auto max-w-6xl px-24 py-48">

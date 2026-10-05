@@ -152,3 +152,18 @@ No code fork is required. A new Project receives:
 8. Owner/MC/resident/staff roles scoped to the same Project ID.
 
 Layantara is therefore the first populated example of the same reusable Project Space contract, not a separate application model.
+
+
+## Canonical Project Portal locality layer (2026-10-05)
+
+The client-facing Project Space remains the canonical Project Portal at `/projects/[slug]`; no parallel portal or duplicate booking model is introduced.
+
+- Homepage `ProjectCard` links continue to open the canonical Project Space.
+- Stay availability stays on the canonical search/quote/booking path and is scoped by `projectId`.
+- Project story and positioning remain `ContentKey/Translation` data.
+- On-property facilities, including restaurants, bars, cafes, breakfast, kitchens, lounges and other food-and-beverage facilities, remain `ProjectAmenity` records with open category keys.
+- Bookable/orderable food, chef, grocery, dining-assistance, transfers, wellness and experiences remain canonical `Service` / `ServiceProject` marketplace offers. They are not copied into Project content.
+- Nearby beaches, restaurants, shops, attractions, schools, medical points and transport are canonical descriptive `ProjectNearbyPlace` records. They never grant supply, booking availability, pricing authority or operating authority.
+- Public nearby distance is calculated from verified project/place coordinates when possible. A manually entered distance is only a fallback; optional walking/driving minutes are clearly estimates.
+- Project Experience admin is the content assembly surface for story, amenities/F&B and nearby places; Project Services remains the shared marketplace configuration surface.
+- Public project inquiries reuse `POST /api/leads`; the validated `projectId` is written onto the CRM opportunity so the relationship is project-scoped without duplicating the Identity or CRM model.

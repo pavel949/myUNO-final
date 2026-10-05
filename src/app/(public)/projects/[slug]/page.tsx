@@ -10,6 +10,9 @@ import { t, tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarketplace';
 import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
+import ProjectNearbySection from '@/components/projects/ProjectNearbySection';
+import ProjectPortalNav from '@/components/projects/ProjectPortalNav';
+import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { prisma } from '@/lib/prisma';
 import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
@@ -135,6 +138,20 @@ export default async function ProjectLandingPage({
     'project.services.from': 'from ฿{price}',
     'project_page.location.title': 'Location',
     'project_page.location.open_map': 'Open in maps →',
+    'project_page.nearby.kicker': 'Around the project',
+    'project_page.nearby.title': 'What is nearby',
+    'project_page.nearby.body': 'Useful places around the residence, with distance and travel estimates where available.',
+    'project_page.nearby.distance': '{distance} away',
+    'project_page.nearby.walk': '{minutes} min walk',
+    'project_page.nearby.drive': '{minutes} min drive',
+    'project_page.nearby.open_map': 'Open map →',
+    'project_page.nav.stay': 'Stay',
+    'project_page.nav.homes': 'Homes',
+    'project_page.nav.amenities': 'Amenities',
+    'project_page.nav.services': 'Services',
+    'project_page.nav.nearby': 'Nearby',
+    'project_page.nav.location': 'Location',
+    'project_page.nav.contact': 'Ask us',
     'project_page.rules.title': 'House rules',
     'project_page.shuttle.title': 'Shuttle & transport',
     'project_page.handbook.title': 'Living here',
@@ -268,6 +285,16 @@ export default async function ProjectLandingPage({
     ...(story ? { description: story.slice(0, 300) } : {}),
   };
 
+  const portalNavItems = [
+    ...(project.units.length > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
+    ...(project.units.length > 0 || buyHomeCount > 0 || rentHomeCount > 0 ? [{ href: '#homes', label: labels['project_page.nav.homes'] }] : []),
+    ...(project.amenities.length > 0 ? [{ href: '#amenities', label: labels['project_page.nav.amenities'] }] : []),
+    ...(services.length > 0 ? [{ href: '#services', label: labels['project_page.nav.services'] }] : []),
+    ...(project.nearbyPlaces.length > 0 ? [{ href: '#nearby', label: labels['project_page.nav.nearby'] }] : []),
+    { href: '#location', label: labels['project_page.nav.location'] },
+    { href: '#lead-form', label: labels['project_page.nav.contact'] },
+  ];
+
   return (
     <main className="min-h-screen bg-surface-ivory">
       <script
@@ -308,10 +335,12 @@ export default async function ProjectLandingPage({
         </section>
       ) : null}
 
+      <ProjectPortalNav items={portalNavItems} />
+
       <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
-      {project.units.length > 0 && <section className="bg-surface-ivory py-40 px-24">
+      {project.units.length > 0 && <section id="availability" className="bg-surface-ivory py-40 px-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}
@@ -330,7 +359,7 @@ export default async function ProjectLandingPage({
       </section>}
 
       {(buyHomeCount > 0 || rentHomeCount > 0) ? (
-        <section className="mx-auto max-w-6xl px-24 py-40">
+        <section id="homes" className="mx-auto max-w-6xl px-24 py-40">
           <div className="rounded-2xl border border-border-line bg-surface-paper p-24 md:p-32">
             <h2 className="font-display text-heading-2 font-semibold text-text-ink">
               {labels['project_page.commercial.title']}
@@ -488,7 +517,7 @@ export default async function ProjectLandingPage({
       ) : null}
 
       {/* Units grid */}
-      <section className="max-w-6xl mx-auto py-64 px-24">
+      <section id={(buyHomeCount > 0 || rentHomeCount > 0) ? undefined : 'homes'} className="max-w-6xl mx-auto py-64 px-24">
         <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
           {labels['project_page.units.title']}
         </h2>
@@ -613,7 +642,7 @@ export default async function ProjectLandingPage({
       ) : null}
 
       {/* Location */}
-      <section className="max-w-4xl mx-auto py-64 px-24">
+      <section id="location" className="max-w-4xl mx-auto py-64 px-24">
         <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
           {labels['project_page.location.title']}
         </h2>
@@ -627,6 +656,21 @@ export default async function ProjectLandingPage({
           {labels['project_page.location.open_map']}
         </a>
       </section>
+
+      <ProjectNearbySection
+        places={project.nearbyPlaces}
+        labels={{
+          kicker: labels['project_page.nearby.kicker'],
+          title: labels['project_page.nearby.title'],
+          body: labels['project_page.nearby.body'],
+          distance: labels['project_page.nearby.distance'],
+          walk: labels['project_page.nearby.walk'],
+          drive: labels['project_page.nearby.drive'],
+          openMap: labels['project_page.nearby.open_map'],
+        }}
+      />
+
+      <LeadFormSection audience="renters" projectId={project.id} />
 
       {/* Handbook teaser */}
       {handbookTeaser ? (

@@ -13,6 +13,8 @@ export interface ServiceCardData {
   providerVetted: boolean;
   basePriceThb: number | null;
   coverUrl: string | null;
+  /** Catalogue category; picks a matching illustrative photo when there is no cover. */
+  categoryKey?: string | null;
 }
 
 export interface ServiceCardLabels {
@@ -32,7 +34,7 @@ export function ServiceCard({
   href?: string;
   children?: ReactNode;
 }) {
-  const image = servicePresentationImage(service.id, service.coverUrl);
+  const image = servicePresentationImage(service.id, service.coverUrl, service.categoryKey);
   const content = (
     <>
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-deep">

@@ -25,9 +25,15 @@ export default async function ProjectCategoryPage({
   const unitEditorialKeys = units.flatMap(unit =>
     [unit.titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key))
   );
+  const unitFactKeys = units.flatMap(unit => [
+    ...unit.views.map(view => `catalog.views.${view}.label`),
+    ...unit.unitFeatures
+      .filter(feature => /^[a-z0-9_]+$/.test(feature))
+      .map(feature => `catalog.unit_features.${feature}.label`),
+  ]);
   const copy = await tMany(
     prisma,
-    [category.titleKey, category.descriptionKey, ...unitEditorialKeys],
+    [category.titleKey, category.descriptionKey, ...unitEditorialKeys, ...unitFactKeys],
     locale
   );
   const labels = await getLabels({
@@ -116,11 +122,22 @@ export default async function ProjectCategoryPage({
                 <span>{labels['project_category.size'].replace('{count}',String(unit.grossAreaSqm || unit.sizeSqm))}</span>
               ) : null}
             </div>
-            {(unit.views.length > 0 || unit.unitFeatures.length > 0) ? (
+            {(unit.views.length > 0 || unit.unitFeatures.some(feature => /^[a-z0-9_]+$/.test(feature))) ? (
               <div className="mt-8 flex flex-wrap gap-6">
-                {[...unit.views, ...unit.unitFeatures].slice(0, 4).map((fact) => (
-                  <span key={fact} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] capitalize text-text-secondary">
-                    {fact.replace(/_/g, ' ')}
+                {[
+                  ...unit.views.map(view => ({
+                    key: `view:${view}`,
+                    label: copy[`catalog.views.${view}.label`] || view.replace(/_/g, ' '),
+                  })),
+                  ...unit.unitFeatures
+                    .filter(feature => /^[a-z0-9_]+$/.test(feature))
+                    .map(feature => ({
+                      key: `feature:${feature}`,
+                      label: copy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' '),
+                    })),
+                ].slice(0, 4).map((fact) => (
+                  <span key={fact.key} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] text-text-secondary">
+                    {fact.label}
                   </span>
                 ))}
               </div>

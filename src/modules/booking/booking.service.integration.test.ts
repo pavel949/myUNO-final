@@ -1039,6 +1039,53 @@ describe('booking.service — integration tests', () => {
       expect(checkedOut.checkedOutAt).toBeDefined();
     });
 
+    it('routes turnover tasks into the operator operating space and teams', async () => {
+      const project=await createProject();
+      const unit=await createUnit(project.id);
+      const guest=await createIdentity();
+      const operator=await createIdentity();
+      const org=await db.organization.create({data:{
+        name:'Turnover Ops',orgType:'management_company',projectId:project.id,
+        contactEmail:'turnover@example.com',contactPhone:'+66000000004',
+      }});
+      const space=await db.operatingSpace.create({data:{key:'turnover-space',name:'Turnover Space',organizationId:org.id}});
+      await db.operatingSpaceUnit.create({data:{operatingSpaceId:space.id,unitId:unit.id}});
+      await db.operatingSpaceMember.create({data:{
+        operatingSpaceId:space.id,identityId:operator.id,
+        capabilities:['manage_front_desk','manage_housekeeping','manage_tasks'],
+      }});
+      await db.operatingSpaceMemberUnit.create({data:{
+        operatingSpaceId:space.id,identityId:operator.id,unitId:unit.id,
+      }});
+      const housekeeping=await db.operatingTeam.create({data:{
+        operatingSpaceId:space.id,name:'Housekeeping',teamType:'housekeeping',
+      }});
+      const operations=await db.operatingTeam.create({data:{
+        operatingSpaceId:space.id,name:'Operations',teamType:'operations',
+      }});
+
+      const booking=await bookingService.createBooking(db,{
+        unitId:unit.id,projectId:project.id,guestIdentityId:guest.id,
+        bookingType:'guest_stay',channel:'direct',
+        startDate:new Date('2026-08-01'),endDate:new Date('2026-08-05'),
+        adults:2,children:0,totalThb:8000,instantBook:true,
+      });
+      await db.booking.update({where:{id:booking.id},data:{status:'checked_in',checkedInAt:new Date()}});
+      await bookingService.checkOutBooking(db,booking.id,new Date('2026-08-05T03:00:00.000Z'),{
+        actorIdentityId:operator.id,
+      });
+
+      const tasks=await db.operationalTask.findMany({
+        where:{bookingId:booking.id},
+        orderBy:{taskType:'asc'},
+      });
+      expect(tasks).toHaveLength(2);
+      const cleaning=tasks.find(task=>task.taskType==='turnover_cleaning');
+      const inspection=tasks.find(task=>task.taskType==='turnover_inspection');
+      expect(cleaning).toMatchObject({operatingSpaceId:space.id,assignedTeamId:housekeeping.id,status:'assigned'});
+      expect(inspection).toMatchObject({operatingSpaceId:space.id,assignedTeamId:operations.id,status:'assigned'});
+    });
+
     it('rejects check-out when not checked-in', async () => {
       const project = await createProject();
       const unit = await createUnit(project.id);

@@ -68,6 +68,13 @@ export async function POST(req:NextRequest){
         select:{id:true,unitId:true,active:true},
       });
       const selected=new Set(unitIds);
+      const removedUnitIds=existing.filter(row=>row.active&&!selected.has(row.unitId)).map(row=>row.unitId);
+      if(removedUnitIds.length){
+        await tx.operatingSpaceMemberUnit.updateMany({
+          where:{operatingSpaceId:space.id,unitId:{in:removedUnitIds},active:true},
+          data:{active:false},
+        });
+      }
       for(const row of existing){
         if(!selected.has(row.unitId)&&row.active){
           await tx.operatingSpaceUnit.update({where:{id:row.id},data:{active:false,endsOn:new Date()}});
@@ -86,9 +93,25 @@ export async function POST(req:NextRequest){
         create:{operatingSpaceId:space.id,identityId:auth.user!.identityId,capabilities:[...OPERATING_SPACE_CAPABILITIES],active:true},
         update:{capabilities:[...OPERATING_SPACE_CAPABILITIES],active:true},
       });
-      return space;
+      return {space,removedUnitIds};
     });
-    return NextResponse.json({space:result},{status:body?.id?200:201});
+    for(const unitId of result.removedUnitIds){
+      const memberAssignments=await prisma.operatingSpaceMemberUnit.findMany({
+        where:{unitId,active:true},
+        select:{identityId:true},
+      });
+      const stillNeeded=new Set(memberAssignments.map(row=>row.identityId));
+      const roles=await prisma.roleAssignment.findMany({
+        where:{unitId,role:'onsite_host',status:'active'},
+        select:{id:true,identityId:true},
+      });
+      for(const role of roles){
+        if(!stillNeeded.has(role.identityId)){
+          await prisma.roleAssignment.update({where:{id:role.id},data:{status:'revoked'}});
+        }
+      }
+    }
+    return NextResponse.json({space:result.space},{status:body?.id?200:201});
   }catch(error){
     const message=error instanceof Error?error.message:'Operating space update failed';
     const status=/unique/i.test(message)?409:400;

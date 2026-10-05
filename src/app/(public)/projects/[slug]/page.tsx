@@ -120,8 +120,10 @@ export default async function ProjectLandingPage({
     'project_page.units.guests': 'up to {count} guests',
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
+    'project_page.units.inquiry': 'Ask about this home →',
+    'project_page.units.details_pending': 'Details and booking terms are being completed. You can already ask about this home.',
     'project_page.units.representative_media': 'Representative room-type photos',
-    'project_page.units.empty': 'No accommodation is currently available for online booking.',
+    'project_page.units.empty': 'No homes have been published in this residence yet.',
     'project_page.commercial.title': 'Ways to own or live here',
     'project_page.commercial.body': 'Verified homes appear here only when the relevant listing authority and property media are ready.',
     'project_page.commercial.buy': 'Homes for sale',
@@ -207,6 +209,7 @@ export default async function ProjectLandingPage({
   const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
+  const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
 
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
@@ -296,7 +299,7 @@ export default async function ProjectLandingPage({
 
   const projectInquiryAudience: 'renters' = 'renters';
   const portalNavItems = [
-    ...(project.units.length > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
+    ...(bookableStayCount > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
     ...(project.units.length > 0 || buyHomeCount > 0 || rentHomeCount > 0 ? [{ href: '#homes', label: labels['project_page.nav.homes'] }] : []),
     ...(project.amenities.length > 0 ? [{ href: '#amenities', label: labels['project_page.nav.amenities'] }] : []),
     ...(services.length > 0 ? [{ href: '#services', label: labels['project_page.nav.services'] }] : []),
@@ -350,7 +353,7 @@ export default async function ProjectLandingPage({
       <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
-      {project.units.length > 0 && <section id="availability" className="border-y border-border-line bg-surface-paper px-24 py-40">
+      {bookableStayCount > 0 && <section id="availability" className="border-y border-border-line bg-surface-paper px-24 py-40">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}
@@ -540,7 +543,9 @@ export default async function ProjectLandingPage({
             {project.units.map((unit) => (
               <Link
                 key={unit.id}
-                href={`/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`}
+                href={unit.bookable
+                  ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
+                  : '#lead-form'}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {unit.coverUrl ? (
@@ -552,7 +557,9 @@ export default async function ProjectLandingPage({
                     className="w-full h-44 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-44 bg-surface-ivory" />
+                  <div className="flex h-44 items-center justify-center bg-surface-ivory px-16 text-center text-small text-text-secondary">
+                    {labels['project_page.units.details_pending']}
+                  </div>
                 )}
                 <div className="p-24">
                   {unit.photoScope === 'room_type' ? (
@@ -561,21 +568,29 @@ export default async function ProjectLandingPage({
                     </p>
                   ) : null}
                   <h3 className="text-heading-3 font-bold text-text-ink mb-8">{unit.name}</h3>
-                  <p className="text-small text-text-secondary mb-12">
-                    {labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms))}
-                    {' · '}
-                    {labels['project_page.units.bathrooms'].replace('{count}', String(unit.bathrooms))}
-                    {' · '}
-                    {labels['project_page.units.guests'].replace('{count}', String(unit.maxGuests))}
-                  </p>
-                  <p className="text-body text-text-ink font-semibold mb-12">
-                    {labels['project_page.units.per_night'].replace(
-                      '{price}',
-                      satangToThb(unit.baseNightlyThb)
-                    )}
-                  </p>
+                  {(unit.bedrooms > 0 || unit.bathrooms > 0 || unit.maxGuests > 0) ? (
+                    <p className="text-small text-text-secondary mb-12">
+                      {[
+                        unit.bedrooms > 0 ? labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms)) : null,
+                        unit.bathrooms > 0 ? labels['project_page.units.bathrooms'].replace('{count}', String(unit.bathrooms)) : null,
+                        unit.maxGuests > 0 ? labels['project_page.units.guests'].replace('{count}', String(unit.maxGuests)) : null,
+                      ].filter(Boolean).join(' · ')}
+                    </p>
+                  ) : null}
+                  {unit.bookable && unit.baseNightlyThb > 0 ? (
+                    <p className="text-body text-text-ink font-semibold mb-12">
+                      {labels['project_page.units.per_night'].replace(
+                        '{price}',
+                        satangToThb(unit.baseNightlyThb)
+                      )}
+                    </p>
+                  ) : (
+                    <p className="mb-12 text-small text-text-secondary">
+                      {labels['project_page.units.details_pending']}
+                    </p>
+                  )}
                   <span className="text-brand-andaman font-semibold text-small">
-                    {labels['project_page.units.view']}
+                    {unit.bookable ? labels['project_page.units.view'] : labels['project_page.units.inquiry']}
                   </span>
                 </div>
               </Link>

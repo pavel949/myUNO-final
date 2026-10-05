@@ -95,7 +95,7 @@ export default async function OpsMobilizationUnitPage({
   const backHref = opsHref('/ops', opsContext.activeProjectId);
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['staff.ops.mobilization_back']}

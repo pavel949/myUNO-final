@@ -88,7 +88,7 @@ export default async function OpsClaimsPage({ searchParams }: OpsClaimsPageProps
   const switcherBasePath = '/ops/claims';
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-display text-display-xl font-semibold text-text-ink">

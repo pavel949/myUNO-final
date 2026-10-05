@@ -41,7 +41,7 @@ export default async function ProjectTeamPage() {
     'ops.team.assigned': 'Onsite host access assigned.',
     'ops.team.revoked': 'Project access revoked.',
   });
-  return <main className="min-h-screen bg-surface-ivory px-16 py-32 md:px-32">
+  return <main className="stitch-workspace px-16 py-32 md:px-32">
     <div className="mx-auto max-w-4xl">
       <Link href="/ops" className="text-brand-andaman">{labels['ops.team.back']}</Link>
       <h1 className="mt-12 font-display text-display-xl text-text-ink">{labels['ops.team.title']}</h1>

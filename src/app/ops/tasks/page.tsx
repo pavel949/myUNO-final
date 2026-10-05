@@ -150,7 +150,7 @@ export default async function OperationalTasksPage({
     statuses: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'],
   });
 
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-5xl">
       <div className="mb-24">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">{labels['staff.tasks.back']}</Link>

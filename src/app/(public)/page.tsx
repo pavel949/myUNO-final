@@ -283,7 +283,7 @@ export default async function LandingPage({
     ),
   ];
 
-  const featuredProjects = projects.slice(0, 5);
+  const featuredProjects = projects.slice(0, 8);
   const serviceGroups = groupServicesBySituation(services, 2);
   const intents = ['stay', 'monthly', 'buy'] as const;
   const perIntent = <T,>(build: (intent: (typeof intents)[number]) => T) =>

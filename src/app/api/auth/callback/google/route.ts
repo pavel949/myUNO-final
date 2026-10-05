@@ -53,6 +53,18 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
   const cookieState = request.cookies.get('google_oauth_state')?.value;
+  const rawNext = request.cookies.get('google_oauth_next')?.value;
+  let safeNext = '';
+  if (rawNext) {
+    try {
+      const decodedNext = decodeURIComponent(rawNext);
+      if (decodedNext.startsWith('/') && !decodedNext.startsWith('//')) {
+        safeNext = decodedNext;
+      }
+    } catch {
+      safeNext = '';
+    }
+  }
   const clearOauthState = {
     path: '/',
     maxAge: 0,
@@ -64,6 +76,7 @@ export async function GET(request: NextRequest) {
       new URL(`/login?error=${encodeURIComponent(reason)}`, request.nextUrl.origin)
     );
     response.cookies.set('google_oauth_state', '', clearOauthState);
+    response.cookies.set('google_oauth_next', '', clearOauthState);
     return response;
   };
 
@@ -159,14 +172,18 @@ export async function GET(request: NextRequest) {
     // Step 5: Create session
     const sessionToken = await createSessionToken(identity.id);
 
-    // Step 6: Redirect to app with session cookie
-    const response = NextResponse.redirect(new URL('/app', request.nextUrl.origin));
+    // Step 6: Return to the interrupted booking flow when OAuth started from
+    // Booking Review; otherwise use the ordinary authenticated landing.
+    const response = NextResponse.redirect(
+      new URL(safeNext || '/app', request.nextUrl.origin)
+    );
     response.cookies.set(
       SESSION_COOKIE_NAME,
       sessionToken,
       sessionCookieOptions()
     );
     response.cookies.set('google_oauth_state', '', clearOauthState);
+    response.cookies.set('google_oauth_next', '', clearOauthState);
 
     return response;
   } catch (error) {

@@ -2199,6 +2199,28 @@ model Translation {
   @@map("translation")
 }
 
+model HomepagePlacement {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  destinationKey String   @map("destination_key")
+  locale         String?
+  sectionKey     String   @map("section_key")
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id")
+  query          Json?    @db.JsonB
+  position       Int      @default(0)
+  visibleFrom    DateTime? @map("visible_from")
+  visibleUntil   DateTime? @map("visible_until")
+  status         String   @default("active")
+  editorialReason String? @map("editorial_reason")
+
+  @@index([destinationKey, sectionKey, status, position])
+  @@index([entityType, entityId])
+  @@map("homepage_placement")
+}
+
 // --- Notifications & messaging ---
 
 model Notification {

@@ -228,10 +228,17 @@ export default async function ProjectLandingPage({
   const unitEditorialKeys = project.units.flatMap(unit =>
     [unit.titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key))
   );
+  const unitFactKeys = project.units.flatMap(unit => [
+    ...unit.views.map(view => `catalog.views.${view}.label`),
+    ...unit.unitFeatures
+      .filter(feature => /^[a-z0-9_]+$/.test(feature))
+      .map(feature => `catalog.unit_features.${feature}.label`),
+  ]);
   const editorialCopy = await tMany(prisma, [
     ...editorialKeys,
     ...categoryDescriptionKeys,
     ...unitEditorialKeys,
+    ...unitFactKeys,
     ...(project.areaNameKey ? [project.areaNameKey] : []),
     ...(project.areaDescriptionKey ? [project.areaDescriptionKey] : []),
   ], locale);
@@ -592,11 +599,22 @@ export default async function ProjectLandingPage({
                       ].filter(Boolean).join(' · ')}
                     </p>
                   ) : null}
-                  {(unit.views.length > 0 || unit.unitFeatures.length > 0) ? (
+                  {(unit.views.length > 0 || unit.unitFeatures.some(feature => /^[a-z0-9_]+$/.test(feature))) ? (
                     <div className="mb-12 flex flex-wrap gap-6">
-                      {[...unit.views, ...unit.unitFeatures].slice(0, 4).map((fact) => (
-                        <span key={fact} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] capitalize text-text-secondary">
-                          {fact.replace(/_/g, ' ')}
+                      {[
+                        ...unit.views.map(view => ({
+                          key: `view:${view}`,
+                          label: editorialCopy[`catalog.views.${view}.label`] || view.replace(/_/g, ' '),
+                        })),
+                        ...unit.unitFeatures
+                          .filter(feature => /^[a-z0-9_]+$/.test(feature))
+                          .map(feature => ({
+                            key: `feature:${feature}`,
+                            label: editorialCopy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' '),
+                          })),
+                      ].slice(0, 4).map((fact) => (
+                        <span key={fact.key} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] text-text-secondary">
+                          {fact.label}
                         </span>
                       ))}
                     </div>

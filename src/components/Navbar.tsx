@@ -147,7 +147,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     : [];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-line bg-surface-paper/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border-line bg-surface-ivory/85 backdrop-blur-xl">
       <nav className="mx-auto flex min-h-64 max-w-7xl items-center justify-between gap-16 px-20 py-8 md:px-32">
         <div className="flex min-w-0 items-center gap-32 xl:gap-40">
           <Link
@@ -228,7 +228,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <>
               <details className="relative">
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
-                  {user.firstName} · My myUNO
+                  {user.firstName} · {labels.myUno}
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
@@ -344,7 +344,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
           {user ? (
             <>
-              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">My myUNO</p>
+              <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.myUno}</p>
               <div className="flex flex-col">
                 {userLinks.map((link) => (
                   <Link

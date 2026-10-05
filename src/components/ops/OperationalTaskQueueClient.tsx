@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -82,15 +84,15 @@ export default function OperationalTaskQueueClient({
               {task.title || task.taskType.replace(/_/g, ' ')}
             </h2>
             <p className="mt-4 text-small text-text-secondary">
-              {labels['staff.tasks.due']} {new Date(task.dueAt).toLocaleString()} · {task.status.replace(/_/g, ' ')}
+              {labels['staff.tasks.due']} {new Date(task.dueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · {task.status.replace(/_/g, ' ')}
               {task.assignee ? ' · ' + task.assignee.firstName + ' ' + task.assignee.lastName : ''}
               {task.assignedTeam ? ' · ' + task.assignedTeam.name : ''}
             </p>
             {(task.priority || task.blocksInventory || task.estimatedCostSatang != null || task.actualCostSatang != null) && <p className="mt-4 text-small text-text-secondary">
               {task.priority ? task.priority : ''}
               {task.blocksInventory ? ' · blocks inventory' : ''}
-              {task.estimatedCostSatang != null ? ' · est ฿' + Math.round(task.estimatedCostSatang/100).toLocaleString() : ''}
-              {task.actualCostSatang != null ? ' · actual ฿' + Math.round(task.actualCostSatang/100).toLocaleString() : ''}
+              {task.estimatedCostSatang != null ? ' · est ฿' + Math.round(task.estimatedCostSatang/100).toLocaleString(UI_LOCALE) : ''}
+              {task.actualCostSatang != null ? ' · actual ฿' + Math.round(task.actualCostSatang/100).toLocaleString(UI_LOCALE) : ''}
             </p>}
           </div>
           <div className="flex flex-wrap gap-8">

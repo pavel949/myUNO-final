@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
@@ -84,11 +86,20 @@ export interface SortOption {
   label: string;
 }
 
+/** "10 нояб." / "Nov 10" — never the raw ISO date. Fixed noon avoids timezone day-shift. */
+function formatStayDate(value: string, locale: string): string {
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+}
+
 export default function SearchResults({
+  locale = 'en',
   labels,
   sortOptions,
   typeOptions,
 }: {
+  locale?: string;
   labels: SearchResultsLabels;
   sortOptions: SortOption[];
   typeOptions: { key: string; label: string }[];
@@ -330,8 +341,8 @@ export default function SearchResults({
           <div className="flex flex-wrap items-center justify-between gap-16 mb-24">
             <p className="text-body text-text-secondary">
               {fill(labels.resultsSummary, {
-                from: startDate as string,
-                to: endDate as string,
+                from: formatStayDate(startDate as string, locale),
+                to: formatStayDate(endDate as string, locale),
                 guests: Number(adults) + Number(children),
               })}
             </p>
@@ -389,7 +400,7 @@ export default function SearchResults({
                       else next.delete('minPrice');
                     })
                   }
-                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                  className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
               <label className="text-small text-text-stone">
@@ -404,7 +415,7 @@ export default function SearchResults({
                       else next.delete('maxPrice');
                     })
                   }
-                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                  className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
               {(bedrooms || unitTypes || minPrice || maxPrice) && (
@@ -467,7 +478,7 @@ export default function SearchResults({
                   </p>
                   <p className="font-display text-title font-semibold text-brand-andaman mb-12 tabular-nums">
                     {fill(labels.categoryFrom, {
-                      price: Math.round(category.from_nightly_thb / 100).toLocaleString(),
+                      price: Math.round(category.from_nightly_thb / 100).toLocaleString(UI_LOCALE),
                     })}
                   </p>
                   <button

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -206,7 +208,7 @@ export default function TicketDetailClient({
         <div>
           <dt className="text-small text-text-secondary">{labels['tickets.detail.created_at']}</dt>
           <dd className="text-body text-text-ink">
-            {new Date(ticket.createdAt).toLocaleString()}
+            {new Date(ticket.createdAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
           </dd>
         </div>
       </dl>
@@ -276,7 +278,7 @@ export default function TicketDetailClient({
                   {eventText(event, labels, ticket.status)}
                 </p>
                 <p className="text-small text-text-secondary">
-                  {new Date(event.createdAt).toLocaleString()}
+                  {new Date(event.createdAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                   {event.actorName ? ` · ${event.actorName}` : ''}
                 </p>
               </li>

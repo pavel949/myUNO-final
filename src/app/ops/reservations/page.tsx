@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import type { BookingStatus } from '@prisma/client';
 import { redirect } from 'next/navigation';
@@ -180,7 +181,7 @@ export default async function ReservationDesk({
           [labels['reservations.total'],bookings.length],
           [labels['reservations.arrivals'],arrivals],
           [labels['reservations.requests'],requests],
-          [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString()],
+          [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString(UI_LOCALE)],
         ].map(([label,value])=><div key={String(label)} className="rounded-xl border border-border-line bg-surface-paper p-16">
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-4 font-display text-heading-2 font-bold">{value}</p>
@@ -208,7 +209,7 @@ export default async function ReservationDesk({
             </div>
             <div><p className="text-small text-text-secondary">{booking.status.replace(/_/g,' ')}</p><p>{booking.channel}</p></div>
             <div><p>{booking.startDate.toISOString().slice(0,10)}</p><p className="text-small text-text-secondary">→ {booking.endDate.toISOString().slice(0,10)}</p></div>
-            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p></div>
+            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString(UI_LOCALE)}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString(UI_LOCALE)}</p></div>
             <div><Link href={'/ops/stays/'+encodeURIComponent(booking.id)} className="text-small font-semibold text-brand-andaman">{labels['reservations.open']}</Link></div>
           </article>;
         })}
@@ -220,7 +221,7 @@ export default async function ReservationDesk({
           {groups.map(group=><article key={group.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
             <p className="font-display text-heading-3 font-semibold">{group.title||group.id.slice(0,8)}</p>
             <p className="mt-4 text-small text-text-secondary">{group.guest.firstName} {group.guest.lastName}</p>
-            <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString())}</p>
+            <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString(UI_LOCALE))}</p>
             <div className="mt-8 flex flex-wrap gap-4">{group.bookings.map(b=><span key={b.id} className="rounded-full bg-surface-ivory px-8 py-4 text-small">{b.unit.project.name} · {b.unit.name}</span>)}</div>
           </article>)}
         </div>

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useEffect, useState } from 'react';
 
 type Labels = Record<string, string>;
@@ -49,7 +51,7 @@ const STATUS_TONE: Record<string, string> = {
 const NET_TONE = 'text-brand-andaman';
 
 function formatBaht(satang: number) {
-  return (satang / 100).toLocaleString(undefined, {
+  return (satang / 100).toLocaleString(UI_LOCALE, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
@@ -59,7 +61,7 @@ function formatPeriod(start: string, end: string) {
   const s = new Date(start);
   const e = new Date(end);
   e.setUTCDate(e.getUTCDate() - 1);
-  return `${s.toLocaleDateString()} — ${e.toLocaleDateString()}`;
+  return `${s.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} — ${e.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`;
 }
 
 function FigureRow({
@@ -219,7 +221,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
                       {formatBaht(payout.amountThb)}
                     </td>
                     <td className="text-body py-12 pr-16 whitespace-nowrap">
-                      {new Date(payout.executedOn).toLocaleDateString()}
+                      {new Date(payout.executedOn).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                     </td>
                     <td className="text-body py-12 pr-16">{payout.reference}</td>
                     <td className="text-body py-12">

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import React from 'react';
 
@@ -243,7 +245,7 @@ export default function Project360Client({
                     <td className="py-12 pr-12">{category.unitCount}</td>
                     <td className="py-12 pr-12">{category.bedrooms} / {category.bathrooms}</td>
                     <td className="py-12 pr-12">{category.maxGuests}</td>
-                    <td className="py-12 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
+                    <td className="py-12 pr-12">฿{category.baseNightlyThb.toLocaleString(UI_LOCALE)}</td>
                     <td className="py-12">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
                   </tr>
                 ))}

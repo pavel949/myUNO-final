@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -199,7 +201,7 @@ export default function ThreadClient({
                 </p>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-8">
                   <p className={`text-small ${mine ? 'text-on-dark-muted' : 'text-text-stone'}`}>
-                    {new Date(message.createdAt).toLocaleString()}
+                    {new Date(message.createdAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                   </p>
                   {isStaff && !mine && message.sender ? (
                     <button

@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 /**
  * Format a service's base price for display on the service detail page
  * (F-SVC-1). `basePriceThb` is satang (THB × 100) straight from the DB via
@@ -9,6 +10,6 @@ export function formatServicePriceLabel(
   priceModel: string,
   basePriceThb: number
 ): string {
-  const baht = (basePriceThb / 100).toLocaleString();
+  const baht = (basePriceThb / 100).toLocaleString(UI_LOCALE);
   return priceModel === 'fixed' ? `฿${baht}` : `from ฿${baht}`;
 }

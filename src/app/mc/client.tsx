@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -172,7 +174,7 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   const start = new Date(periodStart);
   const end = new Date(periodEnd);
   end.setUTCDate(end.getUTCDate() - 1);
-  return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
+  return `${start.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} — ${end.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`;
 }
 
 export function MCDashboardClient({
@@ -311,7 +313,7 @@ export function MCDashboardClient({
         labels['mc.reports.export.fee_amount'],
       ],
       ...feeReport.feeLines.map((line) => [
-        new Date(line.date).toLocaleDateString(),
+        new Date(line.date).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ }),
         line.type,
         line.unitName || '',
         line.description,
@@ -492,7 +494,7 @@ export function MCDashboardClient({
               if (
                 window.confirm(
                   fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
+                    amount: booking.totalThb.toLocaleString(UI_LOCALE),
                   })
                 )
               ) {
@@ -889,13 +891,13 @@ export function MCDashboardClient({
                             )}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
+                            {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
+                            {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                           </td>
                           <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
+                            ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
                           </td>
                           <td className="p-16">
                             <span
@@ -908,7 +910,7 @@ export function MCDashboardClient({
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                                {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                               </p>
                             ) : null}
                           </td>
@@ -1068,8 +1070,8 @@ export function MCDashboardClient({
                             : labels['mc.service_orders.unknown_orderer']}
                         </p>
                         <p className="text-small text-text-secondary mt-4">
-                          {new Date(order.scheduledStart).toLocaleString()} · ฿
-                          {order.totalThb.toLocaleString()}
+                          {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+                          {order.totalThb.toLocaleString(UI_LOCALE)}
                         </p>
                         {order.noteToProvider && (
                           <p className="text-small text-text-secondary mt-4">
@@ -1110,7 +1112,7 @@ export function MCDashboardClient({
                               if (
                                 window.confirm(
                                   fill(labels['mc.service_orders.confirm_cash'], {
-                                    amount: order.totalThb.toLocaleString(),
+                                    amount: order.totalThb.toLocaleString(UI_LOCALE),
                                   })
                                 )
                               ) {

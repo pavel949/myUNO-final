@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
 import { satangToBaht } from '@/lib/money';
@@ -37,7 +38,7 @@ export async function notifyRequestReminder(
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
       end_date: booking.endDate.toISOString().slice(0, 10),
-      total_thb: totalBaht.toLocaleString(),
+      total_thb: totalBaht.toLocaleString(UI_LOCALE),
       request_hours: String(requestHours),
       hours_remaining: String(hoursRemaining),
       guest_name: `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`.trim(),

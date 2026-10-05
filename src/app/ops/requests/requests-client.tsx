@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import Link from 'next/link';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
@@ -74,14 +76,14 @@ export default function OpsRequestsClient({
                     {' · '}
                   </>
                 ) : null}
-                {new Date(request.startDate).toLocaleDateString()} —{' '}
-                {new Date(request.endDate).toLocaleDateString()} · {party}{' '}
+                {new Date(request.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
+                {new Date(request.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {party}{' '}
                 {labels['staff.ops.guest'].toLowerCase()}
               </p>
               {request.requestExpiresAt ? (
                 <p className="text-small text-state-warning mt-4">
                   {labels['staff.ops.request_expires']}:{' '}
-                  {new Date(request.requestExpiresAt).toLocaleString()}
+                  {new Date(request.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                 </p>
               ) : null}
               <BookingRequestInboxDetails

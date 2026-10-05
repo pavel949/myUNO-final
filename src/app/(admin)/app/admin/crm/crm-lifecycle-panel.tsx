@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 
 interface PipelineProfile {
@@ -112,7 +114,7 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
               <p className="text-caption opacity-80">{stageLabel(stage.stage)}</p>
               <p className="text-heading-3 font-bold">{stage.count}</p>
               <p className="text-small opacity-80">
-                ฿{stage.totalValue.toLocaleString()}
+                ฿{stage.totalValue.toLocaleString(UI_LOCALE)}
               </p>
             </button>
           ))}
@@ -135,7 +137,7 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
                 ?.profiles.map((profile) => (
                   <tr key={profile.id} className="border-t border-border-line">
                     <td className="p-12">{profile.email || '—'}</td>
-                    <td className="p-12">฿{profile.totalValue.toLocaleString()}</td>
+                    <td className="p-12">฿{profile.totalValue.toLocaleString(UI_LOCALE)}</td>
                     <td className="p-12">{profile.leadScore ?? '—'}</td>
                     <td className="p-12">
                       <select

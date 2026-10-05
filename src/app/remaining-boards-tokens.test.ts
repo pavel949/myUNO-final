@@ -89,10 +89,10 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
 
   it('defines the andaman wash the live chips already use', () => {
     expect(tokens).toContain("'andaman-soft'");
-    expect(tokens).toContain('#E3ECEA');
+    expect(tokens).toContain('#E9F1EE');
     // `andaman-soft` is an alias of state.info-soft rather than a second
-    // value — the point of the token module is that #E3ECEA is written once.
-    expect(tokens.match(/#E3ECEA/g)).toHaveLength(1);
+    // value — the point of the token module is that #E9F1EE is written once.
+    expect(tokens.match(/#E9F1EE/g)).toHaveLength(1);
   });
 
   it('restyles inbox, thread, integrations, apply, and onboarding on existing data', () => {

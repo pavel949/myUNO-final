@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -83,7 +85,7 @@ export default function ServicesAdminClient({
               <span className="text-text-secondary font-normal"> · {service.providerName}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(service.createdAt).toLocaleDateString()}
+              {new Date(service.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
             </p>
           </div>
           <span

@@ -1,3 +1,4 @@
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -253,7 +254,7 @@ export default async function ProjectLandingPage({
   }
   const styleKeys = [...new Set(project.categories.map((c) => c.styleKey).filter(Boolean))] as string[];
   const monthlyCategories = project.categories.filter((c) => c.monthlyFromThb !== null);
-  const satangToThb = (satang: number) => Math.round(satang / 100).toLocaleString();
+  const satangToThb = (satang: number) => Math.round(satang / 100).toLocaleString(UI_LOCALE);
 
   // Long-stay requests go to the project's concierge WhatsApp (config);
   // without a number the CTA falls back to the guests page.
@@ -724,7 +725,7 @@ export default async function ProjectLandingPage({
                 ) : null}
                 <p className="text-small text-text-secondary">
                   {review.authorFirstName} ·{' '}
-                  {new Date(review.createdAt).toLocaleDateString()}
+                  {new Date(review.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                 </p>
                 {review.reply ? (
                   <p className="text-small text-text-secondary mt-12 pl-12 border-l-2 border-border-line">

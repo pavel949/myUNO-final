@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -131,11 +133,11 @@ export default function AdminServiceOrdersClient({ labels }: { labels: Labels })
                   <td className="px-16 py-12 text-text-secondary">{order.providerName}</td>
                   <td className="px-16 py-12 text-text-secondary">
                     {order.scheduledStart
-                      ? new Date(order.scheduledStart).toLocaleString()
+                      ? new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })
                       : '—'}
                   </td>
                   <td className="px-16 py-12 text-text-ink">
-                    ฿{(order.totalThb / 100).toLocaleString()}
+                    ฿{(order.totalThb / 100).toLocaleString(UI_LOCALE)}
                   </td>
                   <td className="px-16 py-12 text-text-secondary">{statusLabel(order.status)}</td>
                   <td className="px-16 py-12">

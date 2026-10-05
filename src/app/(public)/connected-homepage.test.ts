@@ -49,7 +49,7 @@ describe('connected public homepage', () => {
   });
   it('keeps a shared header/footer with account role links', () => {
     expect(navbar).toContain('roleLinks');
-    expect(navbar).toContain('My myUNO');
+    expect(navbar).toContain('labels.myUno');
     expect(footer).toContain("href: '/developers'");
     expect(footer).toContain("href: '/legal/privacy'");
   });

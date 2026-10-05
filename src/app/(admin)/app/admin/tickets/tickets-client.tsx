@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -199,7 +201,7 @@ export default function AdminTicketsClient({
                   <p className="text-caption text-text-secondary mt-4">
                     {ticket.categoryKey} · {ticket.priority}
                     {ticket.slaDueAt
-                      ? ` · ${labels['admin.tickets.sla_due']} ${new Date(ticket.slaDueAt).toLocaleString()}`
+                      ? ` · ${labels['admin.tickets.sla_due']} ${new Date(ticket.slaDueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}`
                       : ''}
                   </p>
                 </div>

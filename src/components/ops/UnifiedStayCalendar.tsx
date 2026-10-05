@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -89,7 +91,7 @@ export default function UnifiedStayCalendar(props: Props) {
   };
   const refresh = () => {
     router.refresh();
-    setRefreshRequestedAt(new Date().toLocaleTimeString());
+    setRefreshRequestedAt(new Date().toLocaleTimeString(UI_LOCALE, { timeZone: APP_TZ }));
   };
   useEffect(() => {
     // Periodic revalidation is a fallback, not a claimed external push subscription.
@@ -285,7 +287,7 @@ export default function UnifiedStayCalendar(props: Props) {
                     {state}
                   </span>
                   <span className="mt-4 block text-[10px] font-semibold text-text-secondary">
-                    {rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString() : '—'}
+                    {rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}
                   </span>
                 </span>
               </button>;
@@ -323,7 +325,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       ? props.labels['staff.unified_calendar.not_sellable']
                       : stateLabel[cell.state];
                     const rateLabel=rate
-                      ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString()+' · '+rate.source
+                      ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE)+' · '+rate.source
                       : (props.rates[unit.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']);
                     return <td key={day} className="border-b border-l border-border-line p-[2px]">
                       <button type="button"
@@ -332,7 +334,7 @@ export default function UnifiedStayCalendar(props: Props) {
                         onClick={()=>setSelected({unitId:unit.id,date:day,cell})}
                         className={'h-48 w-full rounded-sm text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
                         <span className="block">{!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}</span>
-                        <span className="block text-[9px] font-medium opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString() : '—'}</span>
+                        <span className="block text-[9px] font-medium opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}</span>
                       </button>
                     </td>;
                   })}
@@ -369,7 +371,7 @@ export default function UnifiedStayCalendar(props: Props) {
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.effective_rate']}</span>
             {props.rates[inspect.id]?.byDate[selected.date]
               ? <span className="font-semibold text-text-ink">
-                  ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString()}
+                  ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString(UI_LOCALE)}
                   {' · '}{props.rates[inspect.id].byDate[selected.date].source}
                 </span>
               : <span className="font-semibold text-amber-900">{props.rates[inspect.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']}</span>}

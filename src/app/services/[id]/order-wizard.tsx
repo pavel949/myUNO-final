@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -271,14 +273,14 @@ export default function OrderWizard({
               {labels['services.wizard.total_preview']}
             </span>
             <span className="text-heading-3 font-bold text-brand-andaman">
-              ฿{previewThb.toLocaleString()}
+              ฿{previewThb.toLocaleString(UI_LOCALE)}
             </span>
           </div>
         )}
         {error && <p className="text-small text-state-error">{error}</p>}
         <Button onClick={placeOrder} isLoading={busy} disabled={!when} fullWidth>
           {previewThb !== null
-            ? fill(labels['services.wizard.place'], { total: previewThb.toLocaleString() })
+            ? fill(labels['services.wizard.place'], { total: previewThb.toLocaleString(UI_LOCALE) })
             : labels['services.wizard.place_no_total']}
         </Button>
       </div>

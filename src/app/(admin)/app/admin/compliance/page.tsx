@@ -1,3 +1,4 @@
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
@@ -228,11 +229,11 @@ export default async function AdminCompliancePage({
                         </span>
                       </td>
                       <td className="text-body py-12 pr-16 whitespace-nowrap">
-                        {filing.dueAt.toLocaleString()}
+                        {filing.dueAt.toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                         {filing.filedAt && (
                           <span className="text-caption text-text-secondary block">
                             {labels['admin.compliance.tm30_filed']}:{' '}
-                            {filing.filedAt.toLocaleString()}
+                            {filing.filedAt.toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                           </span>
                         )}
                       </td>
@@ -282,7 +283,7 @@ export default async function AdminCompliancePage({
                     {record.projectName} ·{' '}
                     {recordStatusLabel(record.status, labels)}
                     {record.expiresOn
-                      ? ` · ${labels['admin.compliance.records_expires']} ${record.expiresOn.toLocaleDateString()}`
+                      ? ` · ${labels['admin.compliance.records_expires']} ${record.expiresOn.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`
                       : ''}
                   </p>
                 </div>
@@ -335,7 +336,7 @@ export default async function AdminCompliancePage({
             {overview.retention.lastJobCompletedAt
               ? `${labels['admin.compliance.retention_last_run']}: ${new Date(
                   overview.retention.lastJobCompletedAt
-                ).toLocaleString()}`
+                ).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}`
               : labels['admin.compliance.retention_never']}
           </li>
         </ul>

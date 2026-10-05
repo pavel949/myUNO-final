@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { StatTile } from '@/components';
@@ -23,7 +25,7 @@ interface CrmDashboardPanelProps {
 }
 
 function formatThb(value: number): string {
-  return `฿${value.toLocaleString()}`;
+  return `฿${value.toLocaleString(UI_LOCALE)}`;
 }
 
 export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {
@@ -135,7 +137,7 @@ export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {
                 {task.dueAt && (
                   <span className="text-text-secondary">
                     {' '}
-                    · {new Date(task.dueAt).toLocaleDateString()}
+                    · {new Date(task.dueAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                   </span>
                 )}
               </li>

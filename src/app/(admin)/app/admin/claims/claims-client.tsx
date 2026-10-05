@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -23,7 +25,7 @@ interface Claim {
  * shown as ฿125,050.
  */
 const baht = (satang: number) =>
-  `฿${(satang / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `฿${(satang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ClaimsAdminClient({
   claims,

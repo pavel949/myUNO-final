@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
@@ -203,7 +205,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
               <tbody>
                 {data.unmatchedPayments.map((payment) => (
                   <tr key={payment.id} className="border-b border-border-line last:border-b-0">
-                    <td className="px-12 py-8 text-text-ink">{`฿${payment.amountThb.toLocaleString()}`}</td>
+                    <td className="px-12 py-8 text-text-ink">{`฿${payment.amountThb.toLocaleString(UI_LOCALE)}`}</td>
                     <td className="px-12 py-8 capitalize text-text-ink">{payment.method}</td>
                     <td className="px-12 py-8 capitalize text-text-ink">{payment.purpose}</td>
                     <td className="px-12 py-8 text-text-ink">{payment.payer}</td>
@@ -219,7 +221,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       </span>
                     </td>
                     <td className="px-12 py-8 text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString()}
+                      {new Date(payment.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                     </td>
                   </tr>
                 ))}
@@ -245,7 +247,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                     <p className="text-small text-text-secondary">
                       {labels['finance.reconciliation.refund_amount']}
                     </p>
-                    <p className="text-body font-bold text-text-ink">{`฿${refund.refundAmount.toLocaleString()}`}</p>
+                    <p className="text-body font-bold text-text-ink">{`฿${refund.refundAmount.toLocaleString(UI_LOCALE)}`}</p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">
@@ -264,7 +266,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       {labels['finance.reconciliation.col_created']}
                     </p>
                     <p className="text-body text-text-ink">
-                      {new Date(refund.createdAt).toLocaleDateString()}
+                      {new Date(refund.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                     </p>
                   </div>
                 </div>
@@ -329,7 +331,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                     <td className="px-12 py-8 font-medium capitalize text-text-ink">
                       {payout.payeeType}
                     </td>
-                    <td className="px-12 py-8 font-bold text-text-ink">{`฿${payout.amountThb.toLocaleString()}`}</td>
+                    <td className="px-12 py-8 font-bold text-text-ink">{`฿${payout.amountThb.toLocaleString(UI_LOCALE)}`}</td>
                     <td className="px-12 py-8 font-mono text-small text-text-ink">{payout.reference}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.executedOn}</td>
                     <td className="px-12 py-8 text-text-ink">{payout.recordedBy}</td>

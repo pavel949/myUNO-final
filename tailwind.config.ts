@@ -46,9 +46,9 @@ const config: Config = {
       },
       fontSize: {
         // Typography (doc 06 §2.2)
-        'display-hero': ['52px', { lineHeight: '56px', letterSpacing: '-2%' }],
-        'display-hero-lg': ['72px', { lineHeight: '76px', letterSpacing: '-2%' }],
-        'display-xl': ['40px', { lineHeight: '44px', letterSpacing: '-1%' }],
+        'display-hero': ['36px', { lineHeight: '44px', letterSpacing: '-2%' }],
+        'display-hero-lg': ['56px', { lineHeight: '64px', letterSpacing: '-2%' }],
+        'display-xl': ['32px', { lineHeight: '40px', letterSpacing: '-1%' }],
         'display': ['28px', { lineHeight: '34px' }],
         'title': ['20px', { lineHeight: '26px', fontWeight: '600' }],
         'subtitle': ['16px', { lineHeight: '24px', fontWeight: '500' }],
@@ -76,8 +76,8 @@ const config: Config = {
         full: '9999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(22, 33, 31, 0.06)',
-        float: '0 8px 24px rgba(14, 79, 75, 0.16)',
+        card: '0 4px 20px -2px rgba(17, 56, 46, 0.06)',
+        float: '0 10px 30px -4px rgba(17, 56, 46, 0.12)',
       },
       transitionDuration: {
         micro: '150ms',

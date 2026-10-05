@@ -1,0 +1,978 @@
+// ============================================================================
+// myUNO Destination Living & Hospitality OS — Production-Ready Seed Script
+// Target: prisma/seed.ts (TypeScript / Prisma Client)
+// Schema: myUNO_schema.prisma (v2.4-canonical)
+// Data: Canonical Flagships (The Title Legendary & Layantara Private Residences)
+// ============================================================================
+
+import {
+  PrismaClient,
+  UserRole,
+  IdentityProvider,
+  DestinationStatus,
+  ProjectType,
+  MandateType,
+  MandateStatus,
+  OfferingType,
+  PriceCalculationMode,
+  BookingStatus,
+  PaymentStatus,
+  PaymentGateway,
+  CleanlinessStatus,
+  RoomOccupancyStatus,
+  MaintenancePriority,
+  MaintenanceStatus,
+  ServiceCategory,
+  ServiceOrderStatus,
+  BrokerDealStage,
+  LedgerTransactionType,
+} from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting myUNO Database Seeding...');
+
+  // --------------------------------------------------------------------------
+  // 0. CLEANUP (Optional / Idempotent Reset)
+  // --------------------------------------------------------------------------
+  console.log('🧹 Purging existing operational & inventory data...');
+  await prisma.folioLineItem.deleteMany();
+  await prisma.guestFolio.deleteMany();
+  await prisma.cleaningInspection.deleteMany();
+  await prisma.housekeepingTask.deleteMany();
+  await prisma.maintenanceTicket.deleteMany();
+  await prisma.agentDeal.deleteMany();
+  await prisma.ledgerTransaction.deleteMany();
+  await prisma.serviceOrder.deleteMany();
+  await prisma.serviceCatalogItem.deleteMany();
+  await prisma.vendorPartner.deleteMany();
+  await prisma.booking.deleteMany();
+  await prisma.commercialOffering.deleteMany();
+  await prisma.unit.deleteMany();
+  await prisma.inventoryCategory.deleteMany();
+  await prisma.operatingMandate.deleteMany();
+  await prisma.project.deleteMany();
+  await prisma.destinationArea.deleteMany();
+  await prisma.destination.deleteMany();
+  await prisma.payoutAccount.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.user.deleteMany();
+
+  // --------------------------------------------------------------------------
+  // 1. GEOGRAPHY: DESTINATIONS & AREAS (Phuket, Bang Tao, Layan)
+  // --------------------------------------------------------------------------
+  console.log('📍 Seeding Destinations & Areas...');
+
+  const phuket = await prisma.destination.create({
+    data: {
+      slug: 'phuket',
+      nameRu: 'Пхукет',
+      nameEn: 'Phuket',
+      countryCode: 'TH',
+      currencyCode: 'THB',
+      timeZone: 'Asia/Bangkok',
+      status: DestinationStatus.ACTIVE,
+      lat: 7.9843,
+      lng: 98.3307,
+      supportDeskEmail: 'concierge.phuket@myuno.living',
+      supportDeskPhone: '+66 76 900 100',
+    },
+  });
+
+  const bangTao = await prisma.destinationArea.create({
+    data: {
+      destinationId: phuket.id,
+      slug: 'bang-tao',
+      nameRu: 'Банг Тао',
+      nameEn: 'Bang Tao',
+      descriptionRu: 'Золотой треугольник Пхукета: 8 км песчаного пляжа, пляжные клубы Catch и Maya, развитая отельная инфраструктура Laguna Phuket.',
+      descriptionEn: 'The Golden Mile of Phuket: 8 km stretch of sand, premier beach clubs Catch & Maya, world-class Laguna golf resorts.',
+    },
+  });
+
+  const layan = await prisma.destinationArea.create({
+    data: {
+      destinationId: phuket.id,
+      slug: 'layan',
+      nameRu: 'Лаян',
+      nameEn: 'Layan',
+      descriptionRu: 'Уединенный северный залив, вековые сосновые рощи, национальный парк Сиринат и уединенные приватные виллы.',
+      descriptionEn: 'Exclusive northern enclave nestled alongside Sirinat National Park pine groves and bespoke private pool sanctuaries.',
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 2. USERS: RBAC ACCOUNTS (SuperAdmin, Hotel Manager, Owner, Guest, Agent, Vendors)
+  // --------------------------------------------------------------------------
+  console.log('👥 Seeding RBAC Users & Personas...');
+
+  // 2.1 Super Admin (Executive & Founder)
+  const superAdmin = await prisma.user.create({
+    data: {
+      email: 'alex.os@myuno.living',
+      phoneNumber: '+66829900101',
+      firstName: 'Александр',
+      lastName: 'Ветров',
+      role: UserRole.SUPER_ADMIN,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.2 Hotel Manager / Duty Operations Manager
+  const hotelManager = await prisma.user.create({
+    data: {
+      email: 'narayan.k@myuno.living',
+      phoneNumber: '+66829900102',
+      firstName: 'Нараян',
+      lastName: 'Капур',
+      role: UserRole.HOTEL_MANAGER,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.3 Front Desk & Night Auditor
+  const frontDesk = await prisma.user.create({
+    data: {
+      email: 'frontdesk.legendary@myuno.living',
+      phoneNumber: '+66829900103',
+      firstName: 'Анан',
+      lastName: 'Прасерт',
+      role: UserRole.FRONT_DESK,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.4 Housekeeping Supervisor & Staff
+  const cleanSupervisor = await prisma.user.create({
+    data: {
+      email: 'clean.supervisor@myuno.living',
+      phoneNumber: '+66829900104',
+      firstName: 'Мали',
+      lastName: 'Суванна',
+      role: UserRole.CLEAN_SUPERVISOR,
+      identityProvider: IdentityProvider.PHONE_SMS,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  const housekeeper = await prisma.user.create({
+    data: {
+      email: 'housekeeper.nong@myuno.living',
+      phoneNumber: '+66829900105',
+      firstName: 'Нонг',
+      lastName: 'Пенг',
+      role: UserRole.HOUSEKEEPER,
+      identityProvider: IdentityProvider.PHONE_SMS,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.5 Maintenance Engineer
+  const engineer = await prisma.user.create({
+    data: {
+      email: 'tech.support@myuno.living',
+      phoneNumber: '+66829900106',
+      firstName: 'Чатри',
+      lastName: 'Сириват',
+      role: UserRole.MAINTENANCE_ENGINEER,
+      identityProvider: IdentityProvider.PHONE_SMS,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.6 Unit Owner / Real Estate Investor (Owner of #F-302)
+  const ownerSergey = await prisma.user.create({
+    data: {
+      email: 'sergey.investor@gmail.com',
+      phoneNumber: '+79161122334',
+      firstName: 'Сергей',
+      lastName: 'Воронов',
+      role: UserRole.OWNER,
+      identityProvider: IdentityProvider.GOOGLE,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      passportNumber: '75N829104',
+      passportCountry: 'RU',
+      isVerified: true,
+    },
+  });
+
+  // Payout Account for Owner Sergey (Kasikornbank & USDT)
+  await prisma.payoutAccount.create({
+    data: {
+      userId: ownerSergey.id,
+      bankName: 'Kasikornbank (K-Bank)',
+      accountNumber: '048-2-94819-1',
+      accountHolderName: 'SERGEY VORONOV',
+      currency: 'THB',
+      cryptoWalletUsdt: '0x88921B593C29bDaF4e24D7033B49772Ff05781a9',
+      isDefault: true,
+    },
+  });
+
+  // 2.7 Key Guest (Alexey Smirnov - Booking #UN-84920)
+  const guestAlexey = await prisma.user.create({
+    data: {
+      email: 'alexey.smirnov@yandex.ru',
+      phoneNumber: '+79168801234',
+      firstName: 'Алексей',
+      lastName: 'Смирнов',
+      role: UserRole.GUEST,
+      identityProvider: IdentityProvider.PHONE_SMS,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      passportNumber: '72N492019',
+      passportCountry: 'RU',
+      isVerified: true,
+    },
+  });
+
+  // 2.8 Real Estate Agent / Broker
+  const agentVictor = await prisma.user.create({
+    data: {
+      email: 'victor.broker@phuketrealty.pro',
+      phoneNumber: '+66810023456',
+      firstName: 'Виктор',
+      lastName: 'Самойлов',
+      role: UserRole.AGENT,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  // 2.9 Accredited Vendor Partners
+  const vendorChefUser = await prisma.user.create({
+    data: {
+      email: 'chef.somchai@andamanmasters.com',
+      phoneNumber: '+66839001122',
+      firstName: 'Сомчай',
+      lastName: 'Тан',
+      role: UserRole.VENDOR_PARTNER,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  const vendorChef = await prisma.vendorPartner.create({
+    data: {
+      userId: vendorChefUser.id,
+      companyName: 'Andaman Culinary Masters Ltd.',
+      brandTitleRu: 'Andaman Culinary Masters · Шеф Сомчай Тан',
+      serviceCategory: ServiceCategory.PRIVATE_CHEF,
+      isAccredited: true,
+      commissionRatePct: 20.0, // 80% шефу, 20% myUNO
+      rating: 4.95,
+      completedOrdersCount: 142,
+      payoutIbanOrPromptPay: 'PromptPay: 0839001122',
+    },
+  });
+
+  const vendorCarUser = await prisma.user.create({
+    data: {
+      email: 'dispatch@siamluxuryfleet.com',
+      phoneNumber: '+66897711234',
+      firstName: 'Киттипонг',
+      lastName: 'Вонг',
+      role: UserRole.VENDOR_PARTNER,
+      identityProvider: IdentityProvider.EMAIL_OTP,
+      locale: 'ru',
+      currencyPreference: 'THB',
+      isVerified: true,
+    },
+  });
+
+  const vendorCar = await prisma.vendorPartner.create({
+    data: {
+      userId: vendorCarUser.id,
+      companyName: 'Siam Luxury Fleet & Concierge',
+      brandTitleRu: 'Siam Luxury Fleet (Премиум авто без залога паспорта)',
+      serviceCategory: ServiceCategory.RENTAL_CAR,
+      isAccredited: true,
+      commissionRatePct: 20.0,
+      rating: 4.88,
+      completedOrdersCount: 289,
+      payoutIbanOrPromptPay: 'Bangkok Bank: 918-0-12849-3',
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 3. FLAGSHIP PROJECTS: THE TITLE LEGENDARY & LAYANTARA
+  // --------------------------------------------------------------------------
+  console.log('🏢 Seeding Flagship Projects & Mandates...');
+
+  // 3.1 Project 1: The Title Legendary Bang Tao
+  const titleLegendary = await prisma.project.create({
+    data: {
+      destinationId: phuket.id,
+      areaId: bangTao.id,
+      slug: 'the-title-legendary',
+      name: 'The Title Legendary Bang Tao',
+      projectType: ProjectType.RESORT_CONDOMINIUM,
+      descriptionRu: 'Флагманский курортный комплекс премиум-класса в 350 метрах от лазурного побережья Банг Тао. 4 инфинити-бассейна, водопады, фитнес-центр, коворкинг и приватные сады.',
+      descriptionEn: 'Premier resort-style condominium 350 meters from Bang Tao Beach. Features 4 lagoon infinity pools, lush garden walkways, cinema and 24/7 concierge.',
+      address: '99/1 Moo 5, Soi Cherngtalay 14, Choeng Thale, Thalang District, Phuket 83110',
+      coverImageUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1600&q=85',
+      galleryUrls: [
+        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80',
+      ],
+      totalFloors: 8,
+      distanceToBeachMeters: 350,
+      hasPool: true,
+      hasGym: true,
+      hasReception24h: true,
+      saltoKsInstallation: true,
+      isPublished: true,
+    },
+  });
+
+  // Operating Mandate: The Title Legendary (Exclusive Units Pool)
+  await prisma.operatingMandate.create({
+    data: {
+      projectId: titleLegendary.id,
+      mandateType: MandateType.EXCLUSIVE_UNITS_MANAGEMENT,
+      status: MandateStatus.ACTIVE,
+      managedUnitsCount: 52, // 52 эксклюзивных апартамента под управлением myUNO
+      revenueShareOwnerPct: 80.0,
+      revenueShareMyUnoPct: 20.0,
+      contractSignedDate: new Date('2025-11-01'),
+      validUntilDate: new Date('2028-11-01'),
+      slaResponseMinutes: 3,
+    },
+  });
+
+  // 3.2 Project 2: Layantara Private Pool Residences
+  const layantara = await prisma.project.create({
+    data: {
+      destinationId: phuket.id,
+      areaId: layan.id,
+      slug: 'layantara',
+      name: 'Layantara Private Pool Residences',
+      projectType: ProjectType.VILLA_COMMUNITY,
+      descriptionRu: 'Закрытый бутик-комплекс приватных вилл с персональными бассейнами, окруженный реликтовым сосновым лесом национального парка Сиринат и лагуной Лаян.',
+      descriptionEn: 'Ultra-luxury private sanctuary consisting of 18 bespoke private pool villas nestled against protected nature reserves.',
+      address: '28/4 Moo 6, Layan Beach Road, Choeng Thale, Thalang District, Phuket 83110',
+      coverImageUrl: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1600&q=85',
+      galleryUrls: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+      ],
+      totalFloors: 2,
+      distanceToBeachMeters: 600,
+      hasPool: true,
+      hasGym: true,
+      hasReception24h: true,
+      saltoKsInstallation: true,
+      isPublished: true,
+    },
+  });
+
+  // Operating Mandate: Layantara (Full Building / Resort Management)
+  await prisma.operatingMandate.create({
+    data: {
+      projectId: layantara.id,
+      mandateType: MandateType.FULL_BUILDING_MANAGEMENT,
+      status: MandateStatus.ACTIVE,
+      managedUnitsCount: 18,
+      revenueShareOwnerPct: 80.0,
+      revenueShareMyUnoPct: 20.0,
+      contractSignedDate: new Date('2025-06-15'),
+      validUntilDate: new Date('2029-06-15'),
+      slaResponseMinutes: 3,
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 4. INVENTORY CATEGORIES & CANONICAL UNITS (e.g. #F-302, #Villa-04)
+  // --------------------------------------------------------------------------
+  console.log('🛏️ Seeding Inventory Categories & Units (#F-302)...');
+
+  // 4.1 Categories for The Title Legendary
+  const cat1BrLuxury = await prisma.inventoryCategory.create({
+    data: {
+      projectId: titleLegendary.id,
+      nameRu: '1-Bedroom Luxury Pool & Garden Suite',
+      nameEn: '1-Bedroom Luxury Pool & Garden Suite',
+      bedrooms: 1,
+      bathrooms: 1,
+      maxGuests: 3,
+      areaSquareMeters: 54.0,
+      baseNightlyThb: 12450.0,
+      representativeImages: [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
+      ],
+    },
+  });
+
+  const cat2BrPenthouse = await prisma.inventoryCategory.create({
+    data: {
+      projectId: titleLegendary.id,
+      nameRu: '2-Bedroom Grand Penthouse with Jacuzzi Terrace',
+      nameEn: '2-Bedroom Grand Penthouse with Jacuzzi Terrace',
+      bedrooms: 2,
+      bathrooms: 2,
+      maxGuests: 5,
+      areaSquareMeters: 115.0,
+      baseNightlyThb: 24800.0,
+      representativeImages: [
+        'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=80',
+      ],
+    },
+  });
+
+  // 4.2 Category for Layantara
+  const catVilla3Br = await prisma.inventoryCategory.create({
+    data: {
+      projectId: layantara.id,
+      nameRu: '3-Bedroom Royal Sanctuary Pool Villa',
+      nameEn: '3-Bedroom Royal Sanctuary Pool Villa',
+      bedrooms: 3,
+      bathrooms: 4,
+      maxGuests: 8,
+      areaSquareMeters: 380.0,
+      baseNightlyThb: 48000.0,
+      representativeImages: [
+        'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80',
+      ],
+    },
+  });
+
+  // 4.3 CANONICAL UNIT: #F-302 (Featured Unit across all designs)
+  const unitF302 = await prisma.unit.create({
+    data: {
+      projectId: titleLegendary.id,
+      categoryId: cat1BrLuxury.id,
+      ownerId: ownerSergey.id,
+      unitNumber: 'F-302',
+      building: 'Корпус F (Pool View & Executive)',
+      floor: 3,
+      bedrooms: 1,
+      bathrooms: 1,
+      areaSqm: 54.0,
+      viewType: 'Панорамный вид на инфинити-бассейн и тропический сад',
+      cleanlinessStatus: CleanlinessStatus.CLEAN,
+      occupancyStatus: RoomOccupancyStatus.OCCUPIED, // Алексей Смирнов проживает сейчас
+      smartLockType: 'SALTO_KS',
+      smartLockDeviceId: 'SL-KS-F302-8921',
+      smartLockBatteryPct: 94,
+      hvacType: 'DAIKIN_VRV',
+      hvacGatewayId: 'DKN-VRV-GW-F302',
+      actualPhotos: [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80',
+      ],
+      floorPlanUrl: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80',
+      isVerifiedByMyUno: true,
+      isPublished: true,
+      tm30PropertyCode: 'TM30-TH-PHK-84920',
+    },
+  });
+
+  // 4.4 Additional Units for Tape Chart (Корпуса F, E, D)
+  const unitF101 = await prisma.unit.create({
+    data: {
+      projectId: titleLegendary.id,
+      categoryId: cat1BrLuxury.id,
+      unitNumber: 'F-101',
+      building: 'Корпус F',
+      floor: 1,
+      bedrooms: 1,
+      bathrooms: 1,
+      areaSqm: 48.0,
+      viewType: 'Прямой выход к бассейну (Ground Swim-up)',
+      cleanlinessStatus: CleanlinessStatus.CLEAN,
+      occupancyStatus: RoomOccupancyStatus.VACANT,
+      smartLockType: 'SALTO_KS',
+      smartLockDeviceId: 'SL-KS-F101-4412',
+      smartLockBatteryPct: 98,
+      isVerifiedByMyUno: true,
+      isPublished: true,
+    },
+  });
+
+  const unitE204 = await prisma.unit.create({
+    data: {
+      projectId: titleLegendary.id,
+      categoryId: cat1BrLuxury.id,
+      unitNumber: 'E-204',
+      building: 'Корпус E',
+      floor: 2,
+      bedrooms: 1,
+      bathrooms: 1,
+      areaSqm: 45.0,
+      viewType: 'Garden View',
+      cleanlinessStatus: CleanlinessStatus.DIRTY,
+      occupancyStatus: RoomOccupancyStatus.VACANT,
+      smartLockType: 'SALTO_KS',
+      smartLockDeviceId: 'SL-KS-E204-7719',
+      smartLockBatteryPct: 88,
+      isVerifiedByMyUno: true,
+      isPublished: true,
+    },
+  });
+
+  const unitE402 = await prisma.unit.create({
+    data: {
+      projectId: titleLegendary.id,
+      categoryId: cat1BrLuxury.id,
+      unitNumber: 'E-402',
+      building: 'Корпус E',
+      floor: 4,
+      bedrooms: 1,
+      bathrooms: 1,
+      areaSqm: 38.0,
+      viewType: 'Mountain View',
+      cleanlinessStatus: CleanlinessStatus.OUT_OF_ORDER,
+      occupancyStatus: RoomOccupancyStatus.BLOCKED_MAINTENANCE,
+      smartLockType: 'SALTO_KS',
+      smartLockDeviceId: 'SL-KS-E402-9912',
+      smartLockBatteryPct: 79,
+      isVerifiedByMyUno: true,
+      isPublished: false,
+    },
+  });
+
+  // Canonical Villa at Layantara
+  const unitVilla04 = await prisma.unit.create({
+    data: {
+      projectId: layantara.id,
+      categoryId: catVilla3Br.id,
+      unitNumber: 'Villa 04',
+      building: 'North Forest Enclave',
+      floor: 2,
+      bedrooms: 3,
+      bathrooms: 4,
+      areaSqm: 380.0,
+      viewType: 'Приватный тропический сад, лагуна и 18м инфинити-бассейн',
+      cleanlinessStatus: CleanlinessStatus.CLEAN,
+      occupancyStatus: RoomOccupancyStatus.VACANT,
+      smartLockType: 'SALTO_KS',
+      smartLockDeviceId: 'SL-KS-V04-3310',
+      smartLockBatteryPct: 96,
+      hvacType: 'DAIKIN_VRV',
+      hvacGatewayId: 'DKN-VRV-V04',
+      isVerifiedByMyUno: true,
+      isPublished: true,
+      tm30PropertyCode: 'TM30-TH-LYN-00104',
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 5. COMMERCIAL OFFERINGS (Tri-Intent: Stay, Long-Term, Buy/ROI)
+  // --------------------------------------------------------------------------
+  console.log('💎 Seeding Commercial Offerings (Tri-Intent)...');
+
+  // 5.1 Holiday Rental Offering for #F-302 (Total Price Display)
+  const offeringF302Stay = await prisma.commercialOffering.create({
+    data: {
+      unitId: unitF302.id,
+      offeringType: OfferingType.HOLIDAY_RENTAL,
+      priceCalculationMode: PriceCalculationMode.TOTAL_TRANSPARENT_QUOTE,
+      baseNightlyRateThb: 12450.0,
+      minStayNights: 2,
+      cleaningFeeThb: 1500.0,
+      serviceFeePercent: 5.0,
+      refundableDepositThb: 10000.0,
+      isActive: true,
+      instantBookable: true,
+    },
+  });
+
+  // 5.2 Long-Term Lease Offering for #F-302
+  await prisma.commercialOffering.create({
+    data: {
+      unitId: unitF302.id,
+      offeringType: OfferingType.LONG_TERM_LEASE,
+      priceCalculationMode: PriceCalculationMode.MONTHLY_PLUS_UTILITIES,
+      monthlyRentThb: 95000.0,
+      minLeaseMonths: 3,
+      utilitiesIncluded: false,
+      depositMonthsCount: 2,
+      isActive: true,
+      instantBookable: false,
+    },
+  });
+
+  // 5.3 Investment Sale Offering for #F-302
+  await prisma.commercialOffering.create({
+    data: {
+      unitId: unitF302.id,
+      offeringType: OfferingType.SALE_INVESTMENT,
+      priceCalculationMode: PriceCalculationMode.CAPITAL_PURCHASE,
+      salePriceThb: 14200000.0, // ฿14.2M
+      projectedNetRoiPct: 8.4,  // 8.4% Net Yield
+      ownershipType: 'FREEHOLD',
+      isActive: true,
+      instantBookable: false,
+    },
+  });
+
+  // 5.4 Villa 04 Offerings (Layantara)
+  await prisma.commercialOffering.create({
+    data: {
+      unitId: unitVilla04.id,
+      offeringType: OfferingType.HOLIDAY_RENTAL,
+      priceCalculationMode: PriceCalculationMode.TOTAL_TRANSPARENT_QUOTE,
+      baseNightlyRateThb: 48000.0,
+      minStayNights: 3,
+      cleaningFeeThb: 4500.0,
+      serviceFeePercent: 5.0,
+      refundableDepositThb: 30000.0,
+      isActive: true,
+      instantBookable: true,
+    },
+  });
+
+  await prisma.commercialOffering.create({
+    data: {
+      unitId: unitVilla04.id,
+      offeringType: OfferingType.SALE_INVESTMENT,
+      priceCalculationMode: PriceCalculationMode.CAPITAL_PURCHASE,
+      salePriceThb: 45000000.0, // ฿45M
+      projectedNetRoiPct: 7.9,
+      ownershipType: 'LEASEHOLD',
+      isActive: true,
+      instantBookable: false,
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 6. CANONICAL BOOKING: #UN-84920 (Alexey Smirnov, In-House, Voucher & PIN)
+  // --------------------------------------------------------------------------
+  console.log('🎟️ Seeding Canonical Booking #UN-84920 with Salto KS & Folio...');
+
+  const bookingSmirnov = await prisma.booking.create({
+    data: {
+      bookingNumber: 'UN-84920',
+      guestId: guestAlexey.id,
+      unitId: unitF302.id,
+      offeringId: offeringF302Stay.id,
+      checkInDate: new Date('2026-11-20'),
+      checkOutDate: new Date('2026-11-23'),
+      adultsCount: 2,
+      childrenCount: 0,
+      totalNights: 3,
+      // Total Price Display Math:
+      baseAccommodationThb: 37350.0, // 3 ночи * ฿12,450
+      cleaningFeeThb: 1500.0,
+      serviceFeeThb: 1867.5,
+      taxesVatThb: 2766.23,
+      refundableDepositThb: 10000.0,
+      totalAmountThb: 37350.0, // Баланс проживания в фолио (депозит отдельно холд)
+      status: BookingStatus.CHECKED_IN,
+      paymentStatus: PaymentStatus.CAPTURED,
+      paymentGateway: PaymentGateway.STRIPE,
+      stripePaymentIntentId: 'pi_3Q84920_myuno_live',
+      // Digital Voucher & Hardware Pin
+      digitalVoucherCode: 'VCHR-F302-84920',
+      saltoPinCode: '928401', // Канонический PIN из всех экранов
+      saltoAccessGranted: true,
+      wifiSsid: 'TheTitle_F302_5G',
+      wifiPassword: 'legendary2026',
+      qrVoucherPayload: 'MYUNO://VOUCHER/VCHR-F302-84920?pin=928401&unit=F302&exp=2026-11-23',
+      tm30RegistrationNumber: 'TM30-TH-940212',
+      tm30ApprovedAt: new Date('2026-11-20T14:30:00Z'),
+    },
+  });
+
+  // Guest Folio for Booking #UN-84920
+  const folioSmirnov = await prisma.guestFolio.create({
+    data: {
+      bookingId: bookingSmirnov.id,
+      folioNumber: 'FOL-UN84920',
+      totalChargesThb: 48850.0,
+      totalPaymentsThb: 48850.0,
+      balanceDueThb: 0.0,
+      isClosedAtCheckout: false,
+    },
+  });
+
+  // Folio Line Items
+  await prisma.folioLineItem.createMany({
+    data: [
+      {
+        folioId: folioSmirnov.id,
+        description: 'Проживание: 3 ночи (20 Ноя — 23 Ноя 2026) #F-302',
+        amountThb: 37350.0,
+        isDebit: true,
+        category: 'ROOM',
+        postedAt: new Date('2026-11-20T15:00:00Z'),
+      },
+      {
+        folioId: folioSmirnov.id,
+        description: 'Оплата проживания (Stripe Card •••• 4242)',
+        amountThb: 37350.0,
+        isDebit: false,
+        category: 'ROOM',
+        postedAt: new Date('2026-11-20T15:02:00Z'),
+      },
+      {
+        folioId: folioSmirnov.id,
+        description: 'Возвратный гарантийный депозит (Авторизация)',
+        amountThb: 10000.0,
+        isDebit: true,
+        category: 'DEPOSIT',
+        postedAt: new Date('2026-11-20T15:05:00Z'),
+      },
+      {
+        folioId: folioSmirnov.id,
+        description: 'Холд депозита (Stripe Pre-Auth)',
+        amountThb: 10000.0,
+        isDebit: false,
+        category: 'DEPOSIT',
+        postedAt: new Date('2026-11-20T15:05:00Z'),
+      },
+      {
+        folioId: folioSmirnov.id,
+        description: 'Консьерж: Приватный сет-ужин от шеф-повара Сомчая Тана (#SRV-9042)',
+        amountThb: 11500.0,
+        isDebit: true,
+        category: 'CONCIERGE_SERVICE',
+        postedAt: new Date('2026-11-21T18:00:00Z'),
+      },
+      {
+        folioId: folioSmirnov.id,
+        description: 'Оплата ужина гостем (Apple Pay)',
+        amountThb: 11500.0,
+        isDebit: false,
+        category: 'CONCIERGE_SERVICE',
+        postedAt: new Date('2026-11-21T18:05:00Z'),
+      },
+    ],
+  });
+
+  // --------------------------------------------------------------------------
+  // 7. CONCIERGE SERVICES CATALOG & ACTIVE ORDER #SRV-9042
+  // --------------------------------------------------------------------------
+  console.log('🍽️ Seeding Concierge Services & Active Order #SRV-9042...');
+
+  // 7.1 Catalog Item: Private Chef
+  const serviceChefDinner = await prisma.serviceCatalogItem.create({
+    data: {
+      vendorId: vendorChef.id,
+      category: ServiceCategory.PRIVATE_CHEF,
+      titleRu: 'Персональный шеф-повар на виллу: Тайский премиум сет из морепродуктов',
+      titleEn: 'Private Villa Chef: Royal Thai Seafood Degustation',
+      descriptionRu: 'Эксклюзивный ужин из 5 подач от шефа Сомчая Тана. Свежайшие андаманские тигровые креветки, лобстер, суп Том Ям на кокосовом молоке и манго стики райс. Все закупки и сервировка включены.',
+      priceThb: 11500.0,
+      priceUnit: 'PER_DINNER',
+      leadTimeHours: 24,
+      instantConfirm: true,
+      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+      isActive: true,
+    },
+  });
+
+  // 7.2 Catalog Item: Rental Car (Porsche Macan)
+  const servicePorscheMacan = await prisma.serviceCatalogItem.create({
+    data: {
+      vendorId: vendorCar.id,
+      category: ServiceCategory.RENTAL_CAR,
+      titleRu: 'Porsche Macan GTS (Белый) — Доставка к резиденции без залога паспорта',
+      titleEn: 'Porsche Macan GTS (White) — Zero Passport Hold Delivery',
+      descriptionRu: 'Спортивный компактный кроссовер 440 л.с., панорамная крыша, идеален для поездок по острову. Полная страховка первого класса (First Class Comprehensive Insurance), возвратный депозит на карте.',
+      priceThb: 8500.0,
+      priceUnit: 'PER_DAY',
+      leadTimeHours: 12,
+      instantConfirm: true,
+      imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+      isActive: true,
+    },
+  });
+
+  // 7.3 Canonical Service Order #SRV-9042 (Live Tracking on Mobile Screen 10)
+  const orderChef = await prisma.serviceOrder.create({
+    data: {
+      orderNumber: 'SRV-9042',
+      bookingId: bookingSmirnov.id,
+      guestId: guestAlexey.id,
+      vendorId: vendorChef.id,
+      serviceItemId: serviceChefDinner.id,
+      status: ServiceOrderStatus.EN_ROUTE, // Шеф в пути с закупленными продуктами
+      scheduledFor: new Date('2026-11-21T19:30:00Z'),
+      guestNotes: 'Пожалуйста, умеренная острота (Medium Spicy), у одного гостя аллергия на арахис.',
+      totalPriceThb: 11500.0,
+      vendorShareThb: 9200.0, // 80% шефу
+      myUnoFeeThb: 2300.0,    // 20% myUNO
+      assignedStaffName: 'Шеф Сомчай Тан',
+      assignedStaffPhone: '+66 83 900 1122',
+      liveLocationLat: 7.9892,
+      liveLocationLng: 98.3120, // В 12 минутах от комплекса The Title
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 8. PMS OPERATIONS: HOUSEKEEPING, INSPECTIONS & MAINTENANCE
+  // --------------------------------------------------------------------------
+  console.log('🧹 Seeding PMS Operations (Housekeeping Task, 8-Zone Inspection, Work Order)...');
+
+  // 8.1 Housekeeping Task & Clean Inspection for #F-302
+  const taskF302 = await prisma.housekeepingTask.create({
+    data: {
+      unitId: unitF302.id,
+      housekeeperId: housekeeper.id,
+      scheduledDate: new Date('2026-11-20'),
+      priority: 3, // VIP Arrival
+      isCompleted: true,
+      startedAt: new Date('2026-11-20T10:00:00Z'),
+      completedAt: new Date('2026-11-20T11:45:00Z'),
+      cleanType: 'CHECKOUT_CLEAN',
+    },
+  });
+
+  await prisma.cleaningInspection.create({
+    data: {
+      taskId: taskF302.id,
+      unitId: unitF302.id,
+      inspectorId: cleanSupervisor.id,
+      passed: true,
+      bedroomPassed: true,
+      bathroomPassed: true,
+      kitchenPassed: true,
+      terracePoolPassed: true,
+      photoProofUrls: [
+        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80',
+      ],
+      notes: 'Стандарт 8 зон myUNO Clean выполнен на 100%. Комплект косметики Acqua di Parma выставлен, текстиль 400TC заправлен без складок.',
+      inspectedAt: new Date('2026-11-20T12:15:00Z'),
+    },
+  });
+
+  // 8.2 Maintenance Work Order for Unit #E-402 (Air Conditioning)
+  await prisma.maintenanceTicket.create({
+    data: {
+      ticketNumber: 'MNT-2026-104',
+      unitId: unitE402.id,
+      reporterId: frontDesk.id,
+      assigneeId: engineer.id,
+      title: 'Кондиционер VRV Daikin: вибрация внешнего блока на террасе',
+      description: 'Гость жаловался на посторонний шум при работе ночного бесшумного режима. Требуется балансировка инвертора компрессора и замена демпфирующих подушек.',
+      priority: MaintenancePriority.HIGH,
+      status: MaintenanceStatus.IN_PROGRESS,
+      photoAttachmentUrls: [
+        'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
+      ],
+      estimatedCostThb: 3800.0,
+      isOodCaused: true, // Привело к выводу юнита в статус OOD / Ремонт
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 9. AGENT CRM DEAL & COMMISSION CLEARING
+  // --------------------------------------------------------------------------
+  console.log('💼 Seeding Agent CRM Deal & White-Label Pipeline...');
+
+  await prisma.agentDeal.create({
+    data: {
+      agentId: agentVictor.id,
+      unitId: unitF302.id,
+      clientName: 'Виктор Самойлов (клиент: Денис Соколов)',
+      clientPhone: '+79257778899',
+      clientEmail: 'sokolov.invest@mail.ru',
+      stage: BrokerDealStage.VIEWING_SCHEDULED,
+      dealType: OfferingType.SALE_INVESTMENT,
+      dealValueThb: 14200000.0, // ฿14.2M
+      commissionRatePct: 3.0,   // 3%
+      commissionTotalThb: 426000.0, // ฿426,000
+      isWhiteLabelShared: true,
+      notes: 'Клиент посмотрел White-Label презентацию юнита #F-302, интересуется чистым Net Yield 8.4% годовых и контрактом myUNO на 3 года.',
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // 10. SUPERADMIN LEDGER TRANSACTIONS & 80/20 SPLIT ENGINE
+  // --------------------------------------------------------------------------
+  console.log('⚖️ Seeding SuperAdmin Financial Ledger & 80/20 Split Transactions...');
+
+  // 10.1 Booking Revenue Split (80% Owner / 20% myUNO)
+  await prisma.ledgerTransaction.create({
+    data: {
+      transactionRef: 'LEDGER-2026-94810',
+      bookingId: bookingSmirnov.id,
+      transactionType: LedgerTransactionType.GUEST_BOOKING_PAYMENT,
+      grossAmountThb: 37350.0,
+      ownerShareThb: 29880.0,    // 80% Сергею Воронову
+      platformShareThb: 7470.0,  // 20% myUNO Operating Commission
+      vendorOrBrokerFee: 0.0,
+      paymentStatus: PaymentStatus.CAPTURED,
+      clearedAt: new Date('2026-11-20T15:02:00Z'),
+    },
+  });
+
+  // 10.2 Concierge Order Split (80% Chef / 20% myUNO)
+  await prisma.ledgerTransaction.create({
+    data: {
+      transactionRef: 'LEDGER-2026-94815',
+      serviceOrderId: orderChef.id,
+      transactionType: LedgerTransactionType.VENDOR_PAYOUT,
+      grossAmountThb: 11500.0,
+      ownerShareThb: 0.0,
+      platformShareThb: 2300.0,  // 20% комиссия платформы
+      vendorOrBrokerFee: 9200.0, // 80% выплата шефу Сомчаю Тану
+      paymentStatus: PaymentStatus.AUTHORIZED,
+      clearedAt: null, // Будет выплачено после завершения услуги
+    },
+  });
+
+  // 10.3 Audit Log Action
+  await prisma.auditLog.create({
+    data: {
+      userId: superAdmin.id,
+      action: 'SYSTEM_BOOTSTRAP_COMPLETE',
+      entityType: 'OperatingMandate',
+      entityId: titleLegendary.id,
+      diffJson: {
+        status: 'BOOTSTRAPPED',
+        projects: ['the-title-legendary', 'layantara'],
+        managedUnits: 70,
+        activeBookings: 1,
+      },
+      ipAddress: '127.0.0.1',
+    },
+  });
+
+  console.log('✅ myUNO Database Seeding Completed Successfully!');
+  console.log('📊 Summary:');
+  console.log('   - 1 Destination (Phuket), 2 Areas (Bang Tao, Layan)');
+  console.log('   - 2 Flagship Projects: The Title Legendary & Layantara');
+  console.log('   - 8 System Users (Admin, Hotel Manager, Owner, Guest, Agent, Staff, Vendors)');
+  console.log('   - Canonical Unit #F-302 with Salto KS IoT & 3 Commercial Offerings');
+  console.log('   - Booking #UN-84920 (Guest Alexey Smirnov, Salto PIN 928401, Folio closed balance)');
+  console.log('   - Concierge Order #SRV-9042 (Live Tracking Chef Somchai Tan)');
+  console.log('   - PMS Housekeeping & High-priority Maintenance Ticket MNT-2026-104');
+  console.log('   - Financial Ledger with automated 80/20 Revenue Split');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Seeding failed:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

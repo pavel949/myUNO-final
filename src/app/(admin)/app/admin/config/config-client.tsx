@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -179,7 +181,7 @@ export default function ConfigAdminClient({
                   {historyRows.map((row) => (
                     <li key={row.id} className="bg-surface-ivory rounded-sm p-12">
                       <p className="text-text-secondary">
-                        {new Date(row.createdAt).toLocaleString()}
+                        {new Date(row.createdAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                         {row.changedBy
                           ? ` · ${row.changedBy.firstName} ${row.changedBy.lastName}`
                           : ''}

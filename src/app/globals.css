@@ -7,11 +7,12 @@ html {
   --font-outfit: 'Outfit Variable', sans-serif;
   --font-manrope: 'Manrope Variable', sans-serif;
   --font-noto-thai: 'Noto Sans Thai Variable', sans-serif;
+  --font-serif-cyr: 'Source Serif 4 Variable', Georgia, serif;
   --font-display-active: var(--font-outfit);
 }
 
 html[lang='ru'] {
-  --font-display-active: var(--font-manrope);
+  --font-display-active: var(--font-serif-cyr);
 }
 
 html[lang='th'] {
@@ -19,7 +20,7 @@ html[lang='th'] {
 }
 
 body {
-  @apply bg-surface-ivory text-text-ink font-sans;
+  @apply bg-surface-mint text-text-ink font-sans;
 }
 
 /*
@@ -55,4 +56,8 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
 }

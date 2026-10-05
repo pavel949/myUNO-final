@@ -1,3 +1,4 @@
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -320,7 +321,7 @@ export default async function ServiceOrderDetailPage({
               {labels['service-order.detail.scheduled_start']}
             </p>
             <p className="text-body font-semibold text-text-ink">
-              {new Date(order.scheduledStart).toLocaleString()}
+              {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
             </p>
           </div>
           <div className="bg-surface-paper border border-border-line rounded-lg p-24">
@@ -328,7 +329,7 @@ export default async function ServiceOrderDetailPage({
               {labels['service-order.detail.scheduled_end']}
             </p>
             <p className="text-body font-semibold text-text-ink">
-              {new Date(order.scheduledEnd).toLocaleString()}
+              {new Date(order.scheduledEnd).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
             </p>
           </div>
         </div>
@@ -388,7 +389,7 @@ export default async function ServiceOrderDetailPage({
                       </p>
                     </div>
                     <span className="text-small text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString()}
+                      {new Date(payment.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                     </span>
                   </div>
                   {payment.receiptNumber && (

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
@@ -104,7 +106,7 @@ export default function TicketsListClient({
                   <p className="text-small text-text-secondary">
                     {ticket.place}
                     {ticket.place ? ' · ' : ''}
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    {new Date(ticket.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                   </p>
                 </div>
                 <div className="flex items-center gap-12">

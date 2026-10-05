@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
@@ -266,7 +268,7 @@ export default function ComplianceChecklistsClient({
                     {row.templateName} · {row.templateFrequency}
                   </td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(row.dueDate).toLocaleDateString()}
+                    {new Date(row.dueDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                   </td>
                   <td className="p-12 text-text-secondary">
                     {row.passed === null

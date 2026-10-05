@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -167,8 +169,8 @@ export default function CheckoutClient({
                   {labels['payments.checkout.dates_label']}
                 </span>
                 <span className="text-text-ink">
-                  {new Date(session.booking.startDate).toLocaleDateString()} —{' '}
-                  {new Date(session.booking.endDate).toLocaleDateString()}
+                  {new Date(session.booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
+                  {new Date(session.booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                 </span>
               </div>
             )}
@@ -187,7 +189,7 @@ export default function CheckoutClient({
                     {labels['payments.checkout.dates_label']}
                   </span>
                   <span className="text-text-ink">
-                    {new Date(session.serviceOrder.scheduledStart).toLocaleString()}
+                    {new Date(session.serviceOrder.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                   </span>
                 </div>
               </>
@@ -195,7 +197,7 @@ export default function CheckoutClient({
             <div className="flex justify-between text-body font-semibold pt-8 border-t border-border-line">
               <span className="text-text-ink">{labels['payments.checkout.amount_label']}</span>
               <span className="font-display text-title text-brand-andaman tabular-nums">
-                ฿{session.amountThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ฿{session.amountThb.toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2  })}
               </span>
             </div>
           </div>

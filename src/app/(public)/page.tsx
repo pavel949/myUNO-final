@@ -301,7 +301,7 @@ export default async function LandingPage({
   const linkMore = 'shrink-0 text-body font-semibold text-brand-andaman hover:underline';
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="min-h-screen bg-surface-mint">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
@@ -467,7 +467,7 @@ export default async function LandingPage({
           </div>
         </section>
 
-        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="offers-heading">
+        <section className="bg-surface-mint py-56 md:py-96" aria-labelledby="offers-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
             <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.offers.kicker']}</p>
             <HomeOffersRail
@@ -539,7 +539,7 @@ export default async function LandingPage({
       </section>
 
       {areas.length ? (
-        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="areas-heading">
+        <section className="bg-surface-mint py-56 md:py-96" aria-labelledby="areas-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
             <div className={sectionHead}>
               <div className="max-w-2xl">

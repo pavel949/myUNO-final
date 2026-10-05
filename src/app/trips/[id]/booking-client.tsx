@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -162,7 +164,7 @@ export default function BookingDetailClient({
     const paid = booking.payments.some((p) => p.status === 'succeeded');
     const message = paid
       ? fill(labels['booking.detail.cancel_confirm'], {
-          refund: (booking.refundPreviewThb ?? 0).toLocaleString(),
+          refund: (booking.refundPreviewThb ?? 0).toLocaleString(UI_LOCALE),
         })
       : labels['booking.detail.cancel_confirm_unpaid'];
     if (!window.confirm(message)) return;
@@ -380,7 +382,7 @@ export default function BookingDetailClient({
             <div>
               <p className="text-small text-text-secondary">{labels['booking.detail.check_in']}</p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.startDate).toLocaleDateString()}
+                {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
               </p>
             </div>
             <div>
@@ -388,7 +390,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.check_out']}
               </p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.endDate).toLocaleDateString()}
+                {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
               </p>
             </div>
             <div>
@@ -400,7 +402,7 @@ export default function BookingDetailClient({
             <div>
               <p className="text-small text-text-secondary">{labels['booking.detail.total']}</p>
               <p className="text-body font-semibold text-brand-andaman">
-                ฿{booking.totalThb.toLocaleString()}
+                ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
               </p>
             </div>
           </div>
@@ -464,7 +466,7 @@ export default function BookingDetailClient({
               </p>
               {booking.createdAt && (
                 <p className="text-small text-text-secondary">
-                  {new Date(booking.createdAt).toLocaleDateString()}
+                  {new Date(booking.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                 </p>
               )}
             </div>
@@ -482,7 +484,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkin'] || 'Check-in'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.startDate).toLocaleDateString()}
+                {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
               </p>
             </div>}
             {stayStartedOrConfirmed && <div className="relative">
@@ -491,7 +493,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkout'] || 'Check-out'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.endDate).toLocaleDateString()}
+                {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
               </p>
             </div>}
           </div>
@@ -786,7 +788,7 @@ export default function BookingDetailClient({
             </h2>
             <p className="text-body text-text-secondary mb-12">
               {fill(labels['booking.detail.deposit_claim_body'], {
-                amount: booking.depositClaim.claimedAmountThb.toLocaleString(),
+                amount: booking.depositClaim.claimedAmountThb.toLocaleString(UI_LOCALE),
                 description: booking.depositClaim.description,
               })}
             </p>
@@ -961,7 +963,7 @@ export default function BookingDetailClient({
             ) : (booking.refundAccruedThb ?? 0) > 0 ? (
               <p className="text-body text-text-secondary">
                 {fill(labels['booking.detail.cancelled_note'], {
-                  refund: (booking.refundAccruedThb ?? 0).toLocaleString(),
+                  refund: (booking.refundAccruedThb ?? 0).toLocaleString(UI_LOCALE),
                 })}
               </p>
             ) : (

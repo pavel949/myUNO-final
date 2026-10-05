@@ -123,7 +123,7 @@ export default async function ProjectCategoryPage({
               ) : null}
             </div>
             {(unit.views.length > 0 || unit.unitFeatures.some(feature => /^[a-z0-9_]+$/.test(feature))) ? (
-              <div className="mt-8 flex flex-wrap gap-6">
+              <div className="mt-8 flex flex-wrap gap-8">
                 {[
                   ...unit.views.map(view => ({
                     key: `view:${view}`,

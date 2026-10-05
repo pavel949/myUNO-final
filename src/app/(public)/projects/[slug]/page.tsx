@@ -345,7 +345,7 @@ export default async function ProjectLandingPage({
           <div className="flex min-h-[320px] flex-col justify-end p-24 text-white md:min-h-[440px] md:p-40">
             <div className="flex flex-wrap gap-8">
               {areaLabel ? (
-                <span className="rounded-full bg-white/15 px-12 py-4 text-small font-semibold text-white backdrop-blur">{areaLabel}</span>
+                <span className="rounded-full bg-surface-paper/20 px-12 py-4 text-small font-semibold text-surface-paper backdrop-blur">{areaLabel}</span>
               ) : null}
               {editorial.eyebrow ? (
                 <span className="rounded-full bg-brand-sun px-12 py-4 text-small font-semibold text-brand-deep">{editorial.eyebrow}</span>

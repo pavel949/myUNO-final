@@ -87,6 +87,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       'homes.deposit': 'Deposit',
       'homes.available_from': 'Available from',
       'homes.responsibility_unit': 'This home is managed by {org}',
+      'homes.detail.months_unit': '{count} months',
     }),
   ]);
 
@@ -159,47 +160,22 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
           </Link>)}
       </nav>
 
-      <form method="get" className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-16 md:p-20">
+      <form method="get" className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-16 shadow-card md:p-20">
         <input type="hidden" name="intent" value={intent} />
+        {searchParams?.projectId && <input type="hidden" name="projectId" value={searchParams.projectId} />}
         <div className="flex items-center justify-between gap-16">
           <h2 className="font-display text-title font-semibold text-text-ink">{labels['homes.filters']}</h2>
           <Link href={modeLink(intent)} className="text-small font-semibold text-brand-andaman hover:underline">
             {labels['homes.clear_filters']}
           </Link>
         </div>
-        <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-5">
           <label className="text-small text-text-secondary">
             {labels['homes.area_filter']}
             <select name="area" defaultValue={area} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
               <option value="">{labels['homes.all_areas']}</option>
               {areas.map((slug) => <option key={slug} value={slug}>{slug}</option>)}
             </select>
-          </label>
-          <label className="text-small text-text-secondary">
-            {labels['homes.type_filter']}
-            <select name="type" defaultValue={type} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
-              <option value="">{labels['homes.all_types']}</option>
-              <option value="condo">{labels['homes.type.condo']}</option>
-              <option value="villa">{labels['homes.type.villa']}</option>
-              <option value="townhouse">{labels['homes.type.townhouse']}</option>
-            </select>
-          </label>
-          <label className="text-small text-text-secondary">
-            {labels['homes.bedrooms_filter']}
-            {searchParams?.projectId && <input type="hidden" name="projectId" value={searchParams.projectId} />}
-            <input name="bedrooms" type="number" min="0" defaultValue={searchParams?.bedrooms || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
-          </label>
-          <label className="text-small text-text-secondary">
-            {labels['homes.min_area']}
-            <input name="minArea" type="number" min="0" defaultValue={searchParams?.minArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
-          </label>
-          <label className="text-small text-text-secondary">
-            {labels['homes.max_area']}
-            <input name="maxArea" type="number" min="0" defaultValue={searchParams?.maxArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
-          </label>
-          <label className="text-small text-text-secondary">
-            {labels['homes.min_price']}
-            <input name="minPrice" type="number" min="0" step="1000" defaultValue={searchParams?.minPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
           {intent === 'rent' ? <>
             <label className="text-small text-text-secondary">
@@ -227,48 +203,104 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {labels['homes.apply_filters']} →
           </button>
         </div>
+        <details className="mt-16 border-t border-border-line pt-16">
+          <summary className="cursor-pointer text-small font-semibold text-brand-andaman">{labels['homes.filters']}</summary>
+          <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-small text-text-secondary">
+              {labels['homes.type_filter']}
+              <select name="type" defaultValue={type} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
+                <option value="">{labels['homes.all_types']}</option>
+                <option value="condo">{labels['homes.type.condo']}</option>
+                <option value="villa">{labels['homes.type.villa']}</option>
+                <option value="townhouse">{labels['homes.type.townhouse']}</option>
+              </select>
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.bedrooms_filter']}
+              <input name="bedrooms" type="number" min="0" defaultValue={searchParams?.bedrooms || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.min_area']}
+              <input name="minArea" type="number" min="0" defaultValue={searchParams?.minArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.max_area']}
+              <input name="maxArea" type="number" min="0" defaultValue={searchParams?.maxArea || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.min_price']}
+              <input name="minPrice" type="number" min="0" step="1000" defaultValue={searchParams?.minPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+          </div>
+        </details>
         <p className="mt-12 text-small text-text-secondary">{labels['homes.price_note']}</p>
       </form>
 
-      {homes.length ? <div className="grid gap-20 sm:grid-cols-2 lg:grid-cols-3">
-        {homes.map(home => {
-          const price = home.priceThb[intent] ?? null;
-          return <Link href={detailHref(home.id)} key={home.id}
-            className="group overflow-hidden rounded-xl border border-border-line bg-surface-paper hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
-            {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
-              className="aspect-[3/2] w-full object-cover" /> :
-              <div className="aspect-[3/2] bg-surface-ivory"/>}
-            <div className="space-y-8 p-20">
-              <p className="text-small text-brand-andaman">{home.project.name}</p>
-              <h2 className="font-display text-heading-3 font-semibold text-text-ink">{home.name}</h2>
-              <p className="text-small text-text-secondary">
-                {home.bedrooms} {labels['homes.bedrooms']} · {home.bathrooms} {labels['homes.bathrooms']}
-                {home.sizeSqm ? ' · '+home.sizeSqm+' '+labels['homes.area'] : ''}
-              </p>
-              <p className="text-small font-semibold text-text-ink">
-                {price !== null
-                  ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString()
-                  : labels['homes.price']}
-              </p>
-              {intent === 'rent' && home.leaseTerms ? (
-                <p className="text-micro text-text-secondary">
-                  {home.leaseTerms.minimumLeaseMonths ? labels['homes.minimum_term'] + ': ' + home.leaseTerms.minimumLeaseMonths + ' mo' : ''}
-                  {home.leaseTerms.securityDepositMonths ? ' · ' + labels['homes.deposit'] + ': ' + home.leaseTerms.securityDepositMonths + ' mo' : ''}
-                  {home.leaseTerms.availableFrom ? ' · ' + labels['homes.available_from'] + ': ' + home.leaseTerms.availableFrom : ''}
-                </p>
-              ) : null}
-              {home.responsibility.verified && home.responsibility.organizationName ? (
-                <p className="text-micro font-medium text-brand-andaman">
-                  {labels['homes.responsibility_unit'].replace('{org}', home.responsibility.organizationName)}
-                </p>
-              ) : null}
-              <span className="inline-block text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>
-            </div>
-          </Link>;
-        })}
-      </div> : <div role="status" className="rounded-xl border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
-        {labels['homes.empty']}
-      </div>}
+      <div className="grid gap-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <div>
+          {homes.length ? <div className="grid gap-16">
+            {homes.map(home => {
+              const price = home.priceThb[intent] ?? null;
+              return <Link href={detailHref(home.id)} key={home.id}
+                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[260px_minmax(0,1fr)]">
+                {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
+                  className="h-full min-h-[220px] w-full object-cover" /> :
+                  <div className="min-h-[220px] bg-surface-ivory"/>}
+                <div className="flex min-w-0 flex-col justify-between p-20">
+                  <div>
+                    <p className="text-small font-semibold text-brand-andaman">{home.project.name}</p>
+                    <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">{home.name}</h2>
+                    <p className="mt-8 text-small text-text-secondary">
+                      {home.bedrooms} {labels['homes.bedrooms']} · {home.bathrooms} {labels['homes.bathrooms']}
+                      {home.sizeSqm ? ' · '+home.sizeSqm+' '+labels['homes.area'] : ''}
+                    </p>
+                    {intent === 'rent' && home.leaseTerms ? (
+                      <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+                        {home.leaseTerms.minimumLeaseMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.minimum_term']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</span> : null}
+                        {home.leaseTerms.securityDepositMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.deposit']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.securityDepositMonths))}</span> : null}
+                        {home.leaseTerms.availableFrom ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.available_from']}: {home.leaseTerms.availableFrom}</span> : null}
+                      </div>
+                    ) : null}
+                    {home.responsibility.verified && home.responsibility.organizationName ? (
+                      <p className="mt-12 text-micro font-medium text-brand-andaman">
+                        {labels['homes.responsibility_unit'].replace('{org}', home.responsibility.organizationName)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="mt-20 flex flex-wrap items-end justify-between gap-12 border-t border-border-line pt-16">
+                    <p className="font-display text-body-strong font-semibold text-text-ink">
+                      {price !== null
+                        ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString()
+                        : labels['homes.price']}
+                    </p>
+                    <span className="text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>
+                  </div>
+                </div>
+              </Link>;
+            })}
+          </div> : <div role="status" className="rounded-xl border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
+            {labels['homes.empty']}
+          </div>}
+        </div>
+
+        <aside className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card lg:sticky lg:top-96">
+          <p className="text-kicker uppercase text-brand-andaman">{labels['homes.filters']}</p>
+          <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{labels['homes.contact']}</h2>
+          <dl className="mt-20 space-y-12 text-small">
+            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.area_filter']}</dt><dd className="text-right font-semibold text-text-ink">{area || labels['homes.all_areas']}</dd></div>
+            {intent === 'rent' ? <>
+              <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.move_in']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.moveIn || '—'}</dd></div>
+              <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.lease_term']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.leaseTermMonths || '—'}</dd></div>
+              <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.pets']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.pets === 'yes' ? labels['homes.pets_yes'] : searchParams?.pets === 'no' ? labels['homes.pets_no'] : labels['homes.pets_any']}</dd></div>
+            </> : null}
+            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.max_price']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.maxPrice ? '฿'+Number(searchParams.maxPrice).toLocaleString() : '—'}</dd></div>
+          </dl>
+          <p className="mt-20 border-t border-border-line pt-16 text-small text-text-secondary">{labels['homes.price_note']}</p>
+          <a href="#lead-form" className="mt-20 flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep">
+            {labels['homes.contact']} →
+          </a>
+        </aside>
+      </div>
     </div>
 
     <section aria-label={labels['homes.contact']}>

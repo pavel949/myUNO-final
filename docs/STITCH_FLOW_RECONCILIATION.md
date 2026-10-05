@@ -2,6 +2,19 @@
 
 Date: 2026-10-05
 
+## Attachment scope note (2026-10-05)
+
+The Stitch attachment available in this implementation pass contains exactly two rendered sources: `myuno_long_term_living_1` and `myuno_long_term_living_2`. Therefore the evidence-backed design comparison in this pass is limited to the long-term living catalogue/search/detail composition. Broader operational rows below come from the existing myUNO architecture audit and must not be read as flows proven by this specific attachment.
+
+For the two attached screens, the supported design takeaways are:
+- a compact lease-first filter deck;
+- horizontal residence result cards;
+- lease/deposit/availability facts visible before opening a residence;
+- a contextual right rail;
+- clear separation of discovery, residence detail and enquiry actions.
+
+The following visible Stitch claims are **not adopted without canonical evidence**: escrow guarantees, blanket 24/7 legal support, universal agency-licence claims, no-markup claims, and synthetic first-payment totals.
+
 ## Purpose
 
 The Stitch package is a design and flow reference, not a replacement data model. Existing canonical myUNO business rules, authority gates, pricing, availability, media readiness, RBAC and audit boundaries remain authoritative.

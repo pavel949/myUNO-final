@@ -185,6 +185,8 @@ const API_ENTRY_POINTS = new Set([
   '/api/cron/check-tm30-escalations',
   '/api/cron/check-verification-deadlines',
   '/api/cron/expire-service-orders',
+  // One-off resumable managed-media ingestion, invoked externally with CRON_SECRET.
+  '/api/cron/import-managed-yandex-media',
   '/api/cron/retention-jobs',
   '/api/cron/rollup-metrics',
   '/api/cron/run-all',

@@ -48,7 +48,7 @@ export default async function AdminContentPage({
         <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['admin.content.title']}
         </h1>
-        <Link href="/app/admin/content/homepage" className="rounded-lg border border-border-line px-16 py-10 font-semibold text-brand-andaman">
+        <Link href="/app/admin/content/homepage" className="rounded-lg border border-border-line px-16 py-8 font-semibold text-brand-andaman">
           {labels['admin.content.homepage_placements']}
         </Link>
       </div>

@@ -6,7 +6,7 @@ const source = (path: string) => readFileSync(join(process.cwd(), path), 'utf8')
 const landing = source('src/app/(public)/page.tsx');
 const discovery = source('src/components/home/HomeFinder.tsx');
 const rail = source('src/components/home/HomeOffersRail.tsx');
-const intentState = source('src/components/home/HomeIntentProvider.tsx');
+const intentState = source('src/components/home/home-intent.ts');
 const navbar = source('src/components/Navbar.tsx');
 const footer = source('src/components/Footer.tsx');
 

@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOME_INTENTS, homeCatalogHref, useHomeIntent, type HomeIntent } from './HomeIntentProvider';
+import { useHomeIntent } from './HomeIntentProvider';
+import { HOME_INTENTS, homeCatalogHref, type HomeIntent } from './home-intent';
 import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 const IMAGE_SIZES = '(max-width: 768px) 280px, (max-width: 1024px) 50vw, 33vw';

@@ -13,6 +13,14 @@ describe('optional public presentation layers', () => {
     expect(placementRead).toContain('return [];');
   });
 
+  it('versions the homepage cache with the current read-model shape', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/modules/home/public-homepage.service.ts'),
+      'utf8',
+    );
+    expect(source).toContain("['public-homepage-v4']");
+  });
+
   it('cannot take a project portal down when nearby-place storage is unavailable', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/modules/projects/public.service.ts'),
@@ -21,5 +29,13 @@ describe('optional public presentation layers', () => {
     const nearbyRead = source.slice(source.indexOf('listProjectNearbyPlaces('));
     expect(nearbyRead).toContain('.catch((error) =>');
     expect(nearbyRead).toContain('return [];');
+  });
+
+  it('tolerates a stale cached project without responsibility metadata', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/components/ProjectCard.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('project.responsibility?.verified');
   });
 });

@@ -313,7 +313,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
 
   it('uses one validated seasonal tariff for public quote and server booking, not the category base', async () => {
     const cat = await category('priced_2br', '3500', 1);
-    const unit = await createUnit({
+    const unit = await createUnit({ withoutStayOffering: true,
       projectId, categoryKey: cat.categoryKey, status: 'live',
       baseNightlyThb: 350_000, instantBook: true,
     });
@@ -352,7 +352,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
 
   it('uses the published monthly grid without stacking the default LOS discount', async () => {
     const cat = await category('long_stay_2br', '3500');
-    const unit = await createUnit({ projectId, categoryKey: cat.categoryKey,
+    const unit = await createUnit({ withoutStayOffering: true, projectId, categoryKey: cat.categoryKey,
       status: 'live', baseNightlyThb: 350_000 });
     const canonicalTerms = (mode: string, value: number) => ({
       quoteEngine: 'canonical_tariff_grid_v1', taxPolicyVerified: true,

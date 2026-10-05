@@ -17,14 +17,9 @@ describe('sale authority → public buy listing', () => {
   async function saleReadyUnit() {
     const admin = await createIdentity({ isAdmin: true });
     const project = await createProject({ status: 'live' });
+    // The factory gives a live unit a publicly ready gallery (cover included),
+    // which the public listing requires.
     const unit = await createUnit({ projectId: project.id, status: 'live' });
-    const cover = await db.mediaAsset.create({
-      data: {
-        kind: 'photo', storageKey: 'https://example.com/cover.jpg', mimeType: 'image/jpeg',
-        sizeBytes: 1, encrypted: false, uploadedByIdentityId: admin.id,
-      },
-    });
-    await db.unit.update({ where: { id: unit.id }, data: { coverMediaId: cover.id } });
     return { admin, project, unit };
   }
 

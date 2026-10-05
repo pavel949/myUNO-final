@@ -3,7 +3,7 @@
  * Every money field on the order (totalThb, refundAccruedThb,
  * payments[].amountThb, priceBreakdown's *_thb entries) is satang
  * (THB × 100) straight from the DB — the detail API
- * (src/app/api/service-orders/[id]/detail/route.ts) is a straight
+ * (services.getServiceOrderCustomerView) is a straight
  * passthrough. Convert to baht only here, at final render
  * (CLAUDE.md "Money rules").
  */

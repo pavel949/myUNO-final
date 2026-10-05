@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { MANAGED_YANDEX_SOURCES, importManagedYandexBatch } from '../src/modules/media';
+import { MANAGED_YANDEX_SOURCES, importManagedYandexBatch } from '@/modules/media';
 
 const db = new PrismaClient();
 

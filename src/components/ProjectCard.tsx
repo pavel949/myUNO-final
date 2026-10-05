@@ -8,6 +8,8 @@ export interface ProjectCardLabels {
   fromPrice?: string;
   noPhoto: string;
   view?: string;
+  responsibilityProject?: string;
+  responsibilitySelected?: string;
 }
 
 export function ProjectCard({
@@ -59,6 +61,15 @@ export function ProjectCard({
         {project.featuredAmenities.length > 0 ? (
           <p className="mt-8 line-clamp-1 text-small text-white/75">
             {project.featuredAmenities.slice(0, 3).map((item) => item.name).join(' · ')}
+          </p>
+        ) : null}
+
+        {project.responsibility.verified && project.responsibility.organizationName ? (
+          <p className="mt-8 text-small font-medium text-white/85">
+            {(project.responsibility.scope === 'project'
+              ? labels.responsibilityProject
+              : labels.responsibilitySelected
+            )?.replace('{org}', project.responsibility.organizationName)}
           </p>
         ) : null}
 

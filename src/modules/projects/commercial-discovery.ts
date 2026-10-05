@@ -8,6 +8,7 @@ import {
   type LongTermLeaseSearch,
   type LongTermLeaseTerms,
 } from './long-term-lease';
+import { resolveUnitResponsibility, type PublicResponsibility } from './public-responsibility';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -28,6 +29,7 @@ export interface PublicCommercialHome {
   intents: HomeIntent[];
   priceThb: Partial<Record<HomeIntent, number>>;
   leaseTerms: LongTermLeaseTerms | null;
+  responsibility: PublicResponsibility;
 }
 
 const kinds = ['sale', 'long_term_rental'];
@@ -120,7 +122,13 @@ export async function listPublicCommercialHomes(
         evidenceMediaId: true, expiryDate: true, effectiveDate: true,
       } },
       complianceRecords: { select: { recordType: true, status: true } },
-      engagements: { select: { status: true, mandateMediaId: true, startsOn: true, endsOn: true } },
+      engagements: { select: {
+        status: true,
+        mandateMediaId: true,
+        startsOn: true,
+        endsOn: true,
+        managementOrg: { select: { name: true, status: true } },
+      } },
       commercialOfferings: {
         where: { offeringType: { in: kinds } },
         select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
@@ -172,6 +180,7 @@ export async function listPublicCommercialHomes(
       intents,
       priceThb,
       leaseTerms,
+      responsibility: resolveUnitResponsibility(row.engagements, now),
     }];
   });
 }

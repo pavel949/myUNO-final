@@ -225,9 +225,13 @@ export default async function ProjectLandingPage({
   const locale = getRequestLocale();
   const editorialKeys = editorialFields.map(field => editorialPrefix + field);
   const categoryDescriptionKeys = project.categories.flatMap(category => [category.titleKey, category.descriptionKey]);
+  const unitEditorialKeys = project.units.flatMap(unit =>
+    [unit.titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key))
+  );
   const editorialCopy = await tMany(prisma, [
     ...editorialKeys,
     ...categoryDescriptionKeys,
+    ...unitEditorialKeys,
     ...(project.areaNameKey ? [project.areaNameKey] : []),
     ...(project.areaDescriptionKey ? [project.areaDescriptionKey] : []),
   ], locale);

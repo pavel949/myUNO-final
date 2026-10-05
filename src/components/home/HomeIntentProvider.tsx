@@ -34,6 +34,9 @@ export interface HomeSearchState {
   unitType: string;
   bedrooms: string;
   budget: string;
+  moveIn: string;
+  leaseTermMonths: string;
+  pets: 'any' | 'yes' | 'no';
 }
 
 const DEFAULT_SEARCH: HomeSearchState = {
@@ -44,6 +47,9 @@ const DEFAULT_SEARCH: HomeSearchState = {
   unitType: '',
   bedrooms: '',
   budget: '',
+  moveIn: '',
+  leaseTermMonths: '',
+  pets: 'any',
 };
 
 interface HomeIntentState {
@@ -131,5 +137,10 @@ export function homeCatalogHref(
   if (search.unitType) params.set('type', search.unitType);
   if (search.bedrooms) params.set('bedrooms', search.bedrooms);
   if (search.budget) params.set('maxPrice', search.budget);
+  if (intent === 'monthly') {
+    if (search.moveIn) params.set('moveIn', search.moveIn);
+    if (search.leaseTermMonths) params.set('leaseTermMonths', search.leaseTermMonths);
+    if (search.pets !== 'any') params.set('pets', search.pets);
+  }
   return `/homes?${params.toString()}`;
 }

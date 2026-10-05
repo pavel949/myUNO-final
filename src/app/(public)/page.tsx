@@ -57,6 +57,12 @@ export default async function LandingPage({
       'landing.search.check_out': 'Check-out',
       'landing.search.adults': 'Adults',
       'landing.search.children': 'Children',
+      'landing.hp.finder.move_in': 'Move-in',
+      'landing.hp.finder.lease_term': 'Lease term, months',
+      'landing.hp.finder.pets': 'Pets',
+      'landing.hp.finder.pets.any': 'Any',
+      'landing.hp.finder.pets.yes': 'Pet-friendly only',
+      'landing.hp.finder.pets.no': 'No pets needed',
       'home.discovery.error': 'Choose valid arrival and departure dates.',
       'landing.services.vetted': 'Vetted',
       'landing.services.from': 'From',
@@ -105,6 +111,8 @@ export default async function LandingPage({
       'landing.hp.complexes.homes': '{count} homes',
       'landing.hp.complexes.no_photo': 'Illustrative image',
       'landing.hp.complexes.view': 'Open complex',
+      'landing.hp.complexes.responsibility_project': 'Operations managed by {org}',
+      'landing.hp.complexes.responsibility_selected': 'Selected homes managed by {org}',
       'landing.hp.complexes.empty': 'Complexes are being prepared for publication.',
       'landing.hp.offers.kicker': 'Find your home',
       'landing.hp.offers.title.stay': 'Homes for your holiday',
@@ -353,6 +361,14 @@ export default async function LandingPage({
                   adults: labels['landing.search.adults'],
                   children: labels['landing.search.children'],
                   datesError: labels['home.discovery.error'],
+                  moveIn: labels['landing.hp.finder.move_in'],
+                  leaseTerm: labels['landing.hp.finder.lease_term'],
+                  pets: labels['landing.hp.finder.pets'],
+                  petOptions: {
+                    any: labels['landing.hp.finder.pets.any'],
+                    yes: labels['landing.hp.finder.pets.yes'],
+                    no: labels['landing.hp.finder.pets.no'],
+                  },
                   filters: {
                     more: labels['landing.hp.finder.filters.more'],
                     type: labels['landing.hp.finder.filters.type'],
@@ -431,6 +447,8 @@ export default async function LandingPage({
                         homes: labels['landing.hp.complexes.homes'],
                         noPhoto: labels['landing.hp.complexes.no_photo'],
                         view: labels['landing.hp.complexes.view'],
+                        responsibilityProject: labels['landing.hp.complexes.responsibility_project'],
+                        responsibilitySelected: labels['landing.hp.complexes.responsibility_selected'],
                       }}
                     />
                   </div>

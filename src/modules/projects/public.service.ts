@@ -9,6 +9,11 @@ import {
   assessGalleryReadiness,
   assessUnitMediaReadiness,
 } from '@/modules/media/public-readiness';
+import {
+  resolveProjectResponsibility,
+  resolveUnitResponsibility,
+  type PublicResponsibility,
+} from './public-responsibility';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
 function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
@@ -73,6 +78,7 @@ export interface PublicProjectCard {
   liveUnitCount: number;
   fromNightlyThb: number | null;
   featuredAmenities: Array<{ id: string; slug: string; name: string; iconKey: string | null }>;
+  responsibility: PublicResponsibility;
 }
 
 export interface PublicProjectUnit {
@@ -130,6 +136,15 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
         },
       },
       area: { select: { nameKey: true } },
+      orgRoles: {
+        select: {
+          roleKey: true,
+          effectiveFrom: true,
+          effectiveTo: true,
+          provenance: true,
+          organization: { select: { name: true, status: true } },
+        },
+      },
       amenities: {
         where: { published: true, isFeatured: true },
         select: { id: true, slug: true, name: true, iconKey: true },
@@ -150,6 +165,15 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
             },
           },
           baseNightlyThb: true,
+          engagements: {
+            select: {
+              status: true,
+              mandateMediaId: true,
+              startsOn: true,
+              endsOn: true,
+              managementOrg: { select: { name: true, status: true } },
+            },
+          },
           inventoryCategory: {
             select: {
               baseNightlyThb: true,
@@ -191,6 +215,17 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
         categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
       }).ready
     );
+    const managedUnits = eligibleUnits.flatMap((unit) => {
+      const responsibility = resolveUnitResponsibility(unit.engagements);
+      return responsibility.verified && responsibility.organizationName
+        ? [{ organizationName: responsibility.organizationName }]
+        : [];
+    });
+    const responsibility = resolveProjectResponsibility(
+      p.orgRoles,
+      managedUnits,
+      eligibleUnits.length,
+    );
     return [{
     id: p.id,
     slug: p.slug,
@@ -209,6 +244,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
       ...amenity,
       name: publicCopy[`project_amenity.${amenity.id}.name`] || amenity.name,
     })),
+    responsibility,
     }];
   });
 }

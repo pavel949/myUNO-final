@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
 
 export const dynamic='force-dynamic';
 
@@ -15,35 +14,28 @@ export default async function HousekeepingBoard({searchParams}:{searchParams?:{s
   const spaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';
   if(!spaceId)redirect('/ops/spaces');
   const membership=user.isAdmin?null:await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-  if(!user.isAdmin&&!membership?.active)redirect('/ops/spaces');
+  if(!user.isAdmin){
+    if(!membership?.active)redirect('/ops/spaces');
+    if(!(await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_housekeeping'))){
+      redirect('/ops/spaces/'+encodeURIComponent(spaceId));
+    }
+  }
 
-  const [space,spaceUnitIds,staffProjectIds]=await Promise.all([
+  const [space,spaceUnitIds]=await Promise.all([
     prisma.operatingSpace.findUnique({where:{id:spaceId},select:{id:true,name:true,status:true}}),
     getOperatingSpaceUnitIds(prisma,spaceId),
-    getDepartmentProjectIds(user,['housekeeping','front_desk','maintenance','guest_care','reservations']),
   ]);
   if(!space||space.status!=='active')redirect('/ops/spaces');
 
-  let authorizedUnitIds=spaceUnitIds;
-  if(!user.isAdmin){
-    const mcScopes=getMCProjectScopes(user);
-    const mcIds=new Set<string>();
-    for(const scope of mcScopes){
-      const units=await getMCManagedUnits(prisma,user.identityId,scope.projectId,scope.organizationId);
-      for(const unit of units)mcIds.add(unit.id);
-    }
-    authorizedUnitIds=(await prisma.unit.findMany({
-      where:{
-        id:{in:spaceUnitIds},
-        OR:[
-          ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
-          ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
-        ],
-      },
-      select:{id:true},
-    })).map(u=>u.id);
-  }
-  if(!authorizedUnitIds.length)redirect('/ops/spaces');
+  const authorizedUnitIds=user.isAdmin
+    ? spaceUnitIds
+    : await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['housekeeping','front_desk','maintenance','guest_care','reservations'],
+        spaceId,
+      );
+  if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 
   const now=new Date();
   const units=await prisma.unit.findMany({

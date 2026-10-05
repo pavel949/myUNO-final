@@ -54,6 +54,7 @@ export async function fetchMCDashboard(projectId: string, organizationId: string
     const bookings = (bookingsRaw as any[]).map((booking) => ({
       ...booking,
       totalThb: booking.totalThb / 100,
+      balanceDueThb: booking.balanceDueThb / 100,
     }));
     const tickets = ticketsRaw as any;
     const serviceOrders = (serviceOrdersRaw as any[]).map((order) => ({

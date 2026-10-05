@@ -20,6 +20,7 @@ export {
 
 export {
   findOrCreateThread,
+  getBookingThreadParticipants,
   sendMessage,
   markThreadRead,
   getThreadsForIdentity,

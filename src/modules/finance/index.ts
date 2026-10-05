@@ -99,3 +99,9 @@ export {
 export { processOpnEvent, type OpnWebhookEvent } from './provider-webhook.service';
 
 export { getPaymentProvider } from './providers';
+
+export {
+  generateOwnerStatement,
+  OwnerStatementGenerationError,
+  type GenerateOwnerStatementInput,
+} from './owner-statement.service';

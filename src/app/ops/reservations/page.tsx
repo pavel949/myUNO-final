@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { BookingStatus } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import {
@@ -10,7 +10,6 @@ import {
   getOperatingSpaceUnitIds,
   hasOperatingSpaceCapability,
 } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
 import ManualReservationForm from '@/components/ops/ManualReservationForm';
 import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
 
@@ -33,37 +32,23 @@ export default async function ReservationDesk({
   if(!user.isAdmin){
     const membership=await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
     if(!membership?.active)redirect('/ops/spaces');
+    if(!(await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_reservations'))){
+      redirect('/ops/spaces/'+encodeURIComponent(spaceId));
+    }
   }
 
   const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);
-  let authorizedUnitIds=spaceUnitIds;
-  if(!user.isAdmin){
-    const staffProjectIds=await getDepartmentProjectIds(user,[
-      'reservations','front_desk','guest_care','finance',
-    ]);
-    const mcIds=new Set<string>();
-    for(const scope of getMCProjectScopes(user)){
-      const managed=await getMCManagedUnits(
-        prisma,user.identityId,scope.projectId,scope.organizationId,
+  const authorizedUnitIds=user.isAdmin
+    ? spaceUnitIds
+    : await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['reservations','front_desk','guest_care','finance'],
+        spaceId,
       );
-      for(const unit of managed)mcIds.add(unit.id);
-    }
-    authorizedUnitIds=(await prisma.unit.findMany({
-      where:{
-        id:{in:spaceUnitIds},
-        OR:[
-          ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
-          ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
-        ],
-      },
-      select:{id:true},
-    })).map(unit=>unit.id);
-  }
-  if(!authorizedUnitIds.length)redirect('/ops/spaces');
+  if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 
-  const canManage=user.isAdmin||await hasOperatingSpaceCapability(
-    prisma,spaceId,user.identityId,'manage_reservations',
-  );
+  const canManage=true;
 
   const allowedStatuses: BookingStatus[]=[
     'requested','pending_payment','confirmed','checked_in','checked_out','completed','cancelled',
@@ -75,7 +60,11 @@ export default async function ReservationDesk({
   const [units,guests,groups,bookings]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds},status:{not:'offboarded'}},
-      select:{id:true,name:true,instantBook:true,project:{select:{name:true}}},
+      select:{
+        id:true,name:true,instantBook:true,
+        inventoryCategory:{select:{id:true,name:true,projectId:true,categoryKey:true}},
+        project:{select:{id:true,name:true}},
+      },
       orderBy:[{project:{name:'asc'}},{name:'asc'}],
     }),
     prisma.identity.findMany({
@@ -135,7 +124,9 @@ export default async function ReservationDesk({
     'reservations.create_action':'Create reservation',
     'reservations.creating':'Creating…',
     'reservations.create_failed':'Reservation creation failed',
-    'reservations.unit':'Property',
+    'reservations.unit':'Inventory',
+    'reservations.categories':'Categories',
+    'reservations.exact_units':'Exact properties',
     'reservations.guest':'Guest',
     'reservations.group':'Group',
     'reservations.no_group':'No group',
@@ -188,7 +179,19 @@ export default async function ReservationDesk({
       </section>
 
       {canManage?<ReservationGroupForm operatingSpaceId={spaceId} guests={guests} labels={labels}/>:null}
-      {canManage?<ManualReservationForm operatingSpaceId={spaceId} units={units} guests={guests} groups={groups.map(g=>({id:g.id,title:g.title,guestIdentityId:g.guestIdentityId}))} labels={labels}/>:null}
+      {canManage?<ManualReservationForm
+        operatingSpaceId={spaceId}
+        units={units}
+        categories={Array.from(new Map(
+          units.filter(unit=>unit.inventoryCategory).map(unit=>[
+            unit.inventoryCategory!.id,
+            {id:unit.inventoryCategory!.id,name:unit.inventoryCategory!.name,project:{id:unit.project.id,name:unit.project.name}},
+          ])
+        ).values())}
+        guests={guests}
+        groups={groups.map(g=>({id:g.id,title:g.title,guestIdentityId:g.guestIdentityId}))}
+        labels={labels}
+      />:null}
 
       <nav className="flex flex-wrap gap-8">
         <Link href={statusHref('')} className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small">{labels['reservations.all']}</Link>

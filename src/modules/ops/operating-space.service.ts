@@ -3,10 +3,14 @@ import type { PrismaClient } from '@prisma/client';
 export const OPERATING_SPACE_CAPABILITIES = [
   'view_calendar',
   'manage_reservations',
+  'manage_front_desk',
+  'record_payment',
   'manage_tasks',
   'assign_tasks',
   'manage_housekeeping',
   'manage_maintenance',
+  'manage_incidents',
+  'manage_guest_communications',
   'manage_pricing',
   'manage_availability',
   'view_finance',
@@ -114,6 +118,71 @@ export async function hasOperatingSpaceCapability(
   );
   if (!membership?.active || membership.operatingSpace.status !== 'active') return false;
   return membership.capabilities.includes(capability);
+}
+
+export async function hasOperatingSpaceMembershipForUnit(
+  db: PrismaClient,
+  unitId: string,
+  identityId: string,
+) {
+  const membership = await db.operatingSpaceMember.findFirst({
+    where: {
+      identityId,
+      active: true,
+      operatingSpace: {
+        status: 'active',
+        units: {
+          some: {
+            unitId,
+            active: true,
+            OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+          },
+        },
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(membership);
+}
+
+export async function hasOperatingSpaceCapabilityForUnit(
+  db: PrismaClient,
+  unitId: string,
+  identityId: string,
+  capability: OperatingSpaceCapability,
+) {
+  const memberships = await db.operatingSpaceMember.findMany({
+    where: {
+      identityId,
+      active: true,
+      capabilities: { has: capability },
+      operatingSpace: {
+        status: 'active',
+        units: {
+          some: {
+            unitId,
+            active: true,
+            OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+          },
+        },
+      },
+    },
+    select: { id: true },
+    take: 1,
+  });
+  return memberships.length > 0;
+}
+
+export async function hasAnyOperatingSpaceCapability(
+  db: PrismaClient,
+  operatingSpaceId: string,
+  identityId: string,
+  capabilities: readonly OperatingSpaceCapability[],
+) {
+  for (const capability of capabilities) {
+    if (await hasOperatingSpaceCapability(db, operatingSpaceId, identityId, capability)) return true;
+  }
+  return false;
 }
 
 export async function assertOperatingSpaceCapability(

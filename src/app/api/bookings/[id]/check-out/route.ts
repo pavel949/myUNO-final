@@ -11,6 +11,7 @@ import {
 } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 /**
  * POST /api/bookings/[id]/check-out
@@ -46,13 +47,19 @@ export async function POST(
       throw createPublicError('Access denied.', 403);
     }
 
+    if (access.isStaff && !(await passesOperatingSpaceUnitCapability(user, booking.unitId, 'manage_front_desk'))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Through the booking module rather than an inline update: the state
     // machine is the tested definition of this transition, and it also records
     // `checkedOutAt` and emits `stay_checked_out`, both of which the inline
     // version dropped.
     let updated;
     try {
-      updated = await checkOutBooking(prisma, booking.id);
+      updated = await checkOutBooking(prisma, booking.id, new Date(), {
+        actorIdentityId: user.identityId,
+      });
     } catch (error) {
       throw createPublicError(
         `invalid request: ${error instanceof Error ? error.message : 'booking is not checked in'}`,

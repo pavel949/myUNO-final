@@ -39,18 +39,29 @@ interface RuleRow {
 
 type Labels = Record<string, string>;
 
+function nextCalendarDay(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value + 'T00:00:00.000Z');
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
 export default function AvailabilityPricingPanel({
   unitId,
   labels,
+  initialDate,
 }: {
   unitId: string;
   labels: Labels;
+  initialDate?: string;
 }) {
   const [blocks, setBlocks] = useState<BlockRow[] | null>(null);
   const [rules, setRules] = useState<RuleRow[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -78,6 +89,7 @@ export default function AvailabilityPricingPanel({
   const act = async (key: string, fn: () => Promise<Response>) => {
     setBusy(key);
     setActionError(null);
+    setActionSuccess(null);
     try {
       const response = await fn();
       if (!response.ok) {
@@ -85,6 +97,8 @@ export default function AvailabilityPricingPanel({
         throw new Error(data?.error || labels['staff.calendar.error_generic']);
       }
       await load();
+      window.dispatchEvent(new Event('myuno:calendar-changed'));
+      setActionSuccess(labels['staff.calendar.saved']);
       return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : labels['staff.calendar.error_generic']);
@@ -122,6 +136,11 @@ export default function AvailabilityPricingPanel({
           <p className="text-body text-state-error">{actionError}</p>
         </div>
       )}
+      {actionSuccess && (
+        <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-16">
+          <p className="text-body font-medium text-emerald-900">{actionSuccess}</p>
+        </div>
+      )}
 
       {/* Availability blocks */}
       <section className="bg-surface-paper border border-border-line rounded-lg p-24">
@@ -149,13 +168,14 @@ export default function AvailabilityPricingPanel({
                   size="sm"
                   variant="destructive"
                   disabled={busy === b.id}
-                  onClick={() =>
-                    act(b.id, () =>
+                  onClick={() => {
+                    if (!window.confirm(labels['staff.calendar.confirm_unblock'])) return;
+                    void act(b.id, () =>
                       fetch(`/api/units/${unitId}/availability-blocks/${b.id}`, {
                         method: 'DELETE',
                       })
-                    )
-                  }
+                    );
+                  }}
                 >
                   {busy === b.id
                     ? labels['staff.calendar.saving']
@@ -176,6 +196,10 @@ export default function AvailabilityPricingPanel({
             const reason = String(form.get('reason') || '') as ManualReason;
             const note = String(form.get('note') || '').trim();
             if (!startDate || !endDate) return;
+            if (new Date(endDate) <= new Date(startDate)) {
+              setActionError(labels['staff.calendar.date_error']);
+              return;
+            }
             act('block', () =>
               post(`/api/units/${unitId}/availability-blocks`, {
                 startDate,
@@ -193,6 +217,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="startDate"
               type="date"
+              defaultValue={initialDate || ''}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -202,6 +227,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="endDate"
               type="date"
+              defaultValue={nextCalendarDay(initialDate)}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -231,6 +257,7 @@ export default function AvailabilityPricingPanel({
             {busy === 'block' ? labels['staff.calendar.saving'] : labels['staff.calendar.add_block']}
           </Button>
         </form>
+        <p className="mt-8 text-caption text-text-secondary">{labels['staff.calendar.end_exclusive_hint']}</p>
       </section>
 
       {/* Pricing overrides */}
@@ -284,6 +311,10 @@ export default function AvailabilityPricingPanel({
             const nightlyBaht = String(form.get('nightlyBaht') || '').trim();
             const label = String(form.get('label') || '').trim();
             if (!startDate || !endDate || !nightlyBaht) return;
+            if (new Date(endDate) <= new Date(startDate)) {
+              setActionError(labels['staff.calendar.date_error']);
+              return;
+            }
             act('rule', () =>
               post(`/api/units/${unitId}/pricing-rules`, {
                 startDate,
@@ -294,8 +325,8 @@ export default function AvailabilityPricingPanel({
                 nightlyThb: Math.round(Number(nightlyBaht) * 100),
                 label: label || undefined,
               })
-            ).then(() => {
-              (event.currentTarget as HTMLFormElement).reset();
+            ).then((saved) => {
+              if (saved) (event.currentTarget as HTMLFormElement).reset();
             });
           }}
         >
@@ -304,6 +335,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="startDate"
               type="date"
+              defaultValue={initialDate || ''}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -313,6 +345,7 @@ export default function AvailabilityPricingPanel({
             <input
               name="endDate"
               type="date"
+              defaultValue={nextCalendarDay(initialDate)}
               required
               className="block h-40 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
@@ -339,6 +372,7 @@ export default function AvailabilityPricingPanel({
             {busy === 'rule' ? labels['staff.calendar.saving'] : labels['staff.calendar.add_rule']}
           </Button>
         </form>
+        <p className="mt-8 text-caption text-text-secondary">{labels['staff.calendar.end_exclusive_hint']}</p>
       </section>
     </div>
   );

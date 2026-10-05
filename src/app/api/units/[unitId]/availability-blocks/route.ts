@@ -9,6 +9,7 @@ import {
   type ManualBlockReason,
 } from '@/modules/core';
 import { logAudit } from '@/modules/audit';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 /**
  * GET /api/units/[unitId]/availability-blocks
@@ -46,7 +47,7 @@ async function loadIdentityAndUnit(unitId: string) {
   if (!unit) {
     return { error: NextResponse.json({ error: 'Unit not found' }, { status: 404 }) } as const;
   }
-  return { identity, unit, actorIdentityId: identity.id } as const;
+  return { user, identity, unit, actorIdentityId: identity.id } as const;
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { unitId: string } }) {
@@ -80,7 +81,7 @@ export async function GET(_req: NextRequest, { params }: { params: { unitId: str
 export async function POST(req: NextRequest, { params }: { params: { unitId: string } }) {
   const loaded = await loadIdentityAndUnit(params.unitId);
   if ('error' in loaded) return loaded.error;
-  const { identity, unit, actorIdentityId } = loaded;
+  const { user, identity, unit, actorIdentityId } = loaded;
 
   const allowed = await can({
     identity,
@@ -90,6 +91,9 @@ export async function POST(req: NextRequest, { params }: { params: { unitId: str
   });
   if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  if (!(await passesOperatingSpaceUnitCapability(user, unit.id, 'manage_availability'))) {
+    return NextResponse.json({ error: 'Availability capability required' }, { status: 403 });
   }
 
   try {

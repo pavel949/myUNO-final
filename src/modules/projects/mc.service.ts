@@ -133,8 +133,11 @@ export async function getMCBookings(
       startDate: true,
       endDate: true,
       totalThb: true,
+      balanceDueThb: true,
       status: true,
+      channel: true,
       requestExpiresAt: true,
+      holdExpiresAt: true,
       adults: true,
       children: true,
       guestIdentity: {

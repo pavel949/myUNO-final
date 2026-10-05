@@ -14,6 +14,13 @@ describe('Reservation Desk canonical model', () => {
     expect(schema).not.toContain('model GroupBooking {');
   });
 
+  it('allocates category reservations onto an available authorized physical unit', () => {
+    expect(manualRoute).toContain('findAvailableUnitsForCategory');
+    expect(manualRoute).toContain("targetType === 'category'");
+    expect(manualRoute).toContain('allowedUnitIds.includes(candidate.id)');
+    expect(manualRoute).toContain('allocatedUnitId');
+  });
+
   it('keeps each child booking on its physical unit and canonical booking writer', () => {
     expect(manualRoute).toContain('createBooking(prisma');
     expect(manualRoute).not.toContain('prisma.booking.create(');

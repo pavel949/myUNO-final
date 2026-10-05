@@ -48,6 +48,7 @@ describe('notifyBookingConfirmed', () => {
       where: { identityId: guest.id, type: 'stay_confirmed' },
     });
     expect(guestAlert?.titleKey).toBe('notify.stay_confirmed.title');
+    expect(JSON.stringify(guestAlert?.params)).toContain('"total_thb":"5,000"');
 
     const ownerAlert = await db.notification.findFirst({
       where: { identityId: owner.id, type: 'stay_confirmed' },
@@ -60,6 +61,7 @@ describe('notifyBookingConfirmed', () => {
     expect(opsAlert).not.toBeNull();
     expect(opsAlert?.titleKey).toBe('notify.stay_new_booking_ops.title');
     expect(opsAlert?.bodyKey).toBe('notify.stay_new_booking_ops.body');
+    expect(JSON.stringify(opsAlert?.params)).toContain('/ops/stays/');
   });
 
   it('includes MC members when the unit is via_management_company (N-03)', async () => {
@@ -105,5 +107,7 @@ describe('notifyBookingConfirmed', () => {
     });
     expect(mcAlert).not.toBeNull();
     expect(mcAlert?.bodyKey).toBe('notify.stay_new_booking_ops.body');
+    expect(JSON.stringify(mcAlert?.params)).toContain('/mc/properties/');
+    expect(JSON.stringify(mcAlert?.params)).toContain('tab=reservations');
   });
 });

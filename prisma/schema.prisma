@@ -1027,6 +1027,7 @@ model Project {
 model Unit {
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
   operatingSpaces OperatingSpaceUnit[]
+  operatingSpaceMemberAssignments OperatingSpaceMemberUnit[]
   accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -3830,10 +3831,30 @@ model OperatingSpaceMember {
 
   operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
   identity       Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  unitAssignments OperatingSpaceMemberUnit[]
 
   @@unique([operatingSpaceId, identityId])
   @@index([identityId, active])
   @@map("operating_space_member")
+}
+
+model OperatingSpaceMemberUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String  @map("operating_space_id")
+  identityId       String  @map("identity_id")
+  unitId           String  @map("unit_id")
+  active           Boolean @default(true)
+
+  member OperatingSpaceMember @relation(fields: [operatingSpaceId, identityId], references: [operatingSpaceId, identityId], onDelete: Cascade)
+  unit   Unit                 @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingSpaceId, identityId, unitId])
+  @@index([identityId, unitId, active])
+  @@index([operatingSpaceId, active])
+  @@map("operating_space_member_unit")
 }
 
 model OperatingTeam {

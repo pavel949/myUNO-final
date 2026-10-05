@@ -31,4 +31,6 @@ export const RESERVATION_DESK_KEYS = [
   {key:'reservations.all',namespace:'reservations',description:'All statuses filter',en:'All',ru:'Все',th:'ทั้งหมด',status:'needs_review' as const},
   {key:'reservations.paid',namespace:'reservations',description:'Paid amount label',en:'Paid',ru:'Оплачено',th:'ชำระแล้ว',status:'needs_review' as const},
   {key:'reservations.group_summary',namespace:'reservations',description:'Reservation group summary',en:'{count} reservations · ฿{amount}',ru:'Бронирований: {count} · ฿{amount}',th:'{count} การจอง · ฿{amount}',status:'needs_review' as const},
+  {key:'reservations.categories',namespace:'reservations',description:'Category inventory group',en:'Categories',ru:'Категории',th:'หมวดหมู่',status:'needs_review' as const},
+  {key:'reservations.exact_units',namespace:'reservations',description:'Exact unit inventory group',en:'Exact properties',ru:'Конкретные объекты',th:'ทรัพย์สินเฉพาะ',status:'needs_review' as const},
 ] as const;

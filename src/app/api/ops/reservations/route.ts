@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
 import {
   attachBookingToReservationGroup,
   createBooking,
+  findAvailableUnitsForCategory,
   resolveCancellationPolicy,
 } from '@/modules/booking';
 
@@ -16,39 +16,18 @@ async function authorizedUnitIds(
 ) {
   const spaceUnitIds = await getOperatingSpaceUnitIds(prisma, operatingSpaceId);
   if (user.isAdmin) return spaceUnitIds;
-
-  const canManage = await hasOperatingSpaceCapability(
+  if (!(await hasOperatingSpaceCapability(
     prisma,
     operatingSpaceId,
     user.identityId,
     'manage_reservations',
+  ))) return [];
+  return getAuthorizedOperationalUnitIds(
+    user,
+    spaceUnitIds,
+    ['reservations','front_desk','guest_care','finance'],
+    operatingSpaceId,
   );
-  if (!canManage) return [];
-
-  const staffProjectIds = await getDepartmentProjectIds(user, [
-    'reservations', 'front_desk', 'guest_care', 'finance',
-  ]);
-  const mcIds = new Set<string>();
-  for (const scope of getMCProjectScopes(user)) {
-    const managed = await getMCManagedUnits(
-      prisma,
-      user.identityId,
-      scope.projectId,
-      scope.organizationId,
-    );
-    for (const unit of managed) mcIds.add(unit.id);
-  }
-
-  return (await prisma.unit.findMany({
-    where: {
-      id: { in: spaceUnitIds },
-      OR: [
-        ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
-        ...(mcIds.size ? [{ id: { in: Array.from(mcIds) } }] : []),
-      ],
-    },
-    select: { id: true },
-  })).map((unit) => unit.id);
 }
 
 export async function POST(request: NextRequest) {
@@ -59,6 +38,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as {
       operatingSpaceId?: string;
       unitId?: string;
+      inventoryCategoryId?: string;
+      inventoryTarget?: string;
       guestIdentityId?: string;
       startDate?: string;
       endDate?: string;
@@ -72,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !body.operatingSpaceId ||
-      !body.unitId ||
+      !body.inventoryTarget ||
       !body.guestIdentityId ||
       !body.startDate ||
       !body.endDate
@@ -81,13 +62,47 @@ export async function POST(request: NextRequest) {
     }
 
     const allowedUnitIds = await authorizedUnitIds(user, body.operatingSpaceId);
-    if (!allowedUnitIds.includes(body.unitId)) {
+    const target = body.inventoryTarget || '';
+    const [targetType,targetId] = target.split(':',2);
+    if (!['unit','category'].includes(targetType) || !targetId) {
+      return NextResponse.json({ error: 'Invalid inventory target' }, { status: 400 });
+    }
+
+    const startDate = new Date(body.startDate + 'T00:00:00.000Z');
+    const endDate = new Date(body.endDate + 'T00:00:00.000Z');
+    if (
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime()) ||
+      endDate <= startDate
+    ) {
+      return NextResponse.json({ error: 'Invalid dates' }, { status: 400 });
+    }
+
+    let allocatedUnitId = targetType === 'unit' ? targetId : '';
+    if (targetType === 'category') {
+      const category = await prisma.inventoryCategory.findUnique({
+        where: { id: targetId },
+        select: { id: true, projectId: true, categoryKey: true, status: true },
+      });
+      if (!category || category.status !== 'live') {
+        return NextResponse.json({ error: 'Category is not bookable' }, { status: 409 });
+      }
+      const available = await findAvailableUnitsForCategory(
+        prisma, category.projectId, category.categoryKey, startDate, endDate,
+      );
+      const authorized = available.find((candidate) => allowedUnitIds.includes(candidate.id));
+      if (!authorized) {
+        return NextResponse.json({ error: 'No available authorized property in this category' }, { status: 409 });
+      }
+      allocatedUnitId = authorized.id;
+    }
+    if (!allowedUnitIds.includes(allocatedUnitId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const [unit, guest] = await Promise.all([
       prisma.unit.findUnique({
-        where: { id: body.unitId },
+        where: { id: allocatedUnitId },
         select: {
           id: true,
           projectId: true,
@@ -123,16 +138,6 @@ export async function POST(request: NextRequest) {
       if (!group) {
         return NextResponse.json({ error: 'Reservation group does not match guest or space' }, { status: 409 });
       }
-    }
-
-    const startDate = new Date(body.startDate + 'T00:00:00.000Z');
-    const endDate = new Date(body.endDate + 'T00:00:00.000Z');
-    if (
-      Number.isNaN(startDate.getTime()) ||
-      Number.isNaN(endDate.getTime()) ||
-      endDate <= startDate
-    ) {
-      return NextResponse.json({ error: 'Invalid dates' }, { status: 400 });
     }
 
     const policy = await resolveCancellationPolicy(

@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { filterOperationalRecipients } from '@/modules/booking/operational-recipients';
 import { createNotification } from '@/modules/comms';
 import { sendEmail } from '@/modules/auth';
 import { getLabels } from '@/lib/i18n';
@@ -28,7 +29,6 @@ async function notifyOpsNewBooking(
     guest_name: booking.guestIdentity
       ? `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`.trim()
       : '',
-    admin_bookings_url: `${baseUrl}/app/admin/bookings`,
   };
 
   const opsRoles = await db.roleAssignment.findMany({
@@ -40,7 +40,13 @@ async function notifyOpsNewBooking(
     select: { identityId: true },
   });
 
-  const recipients = new Set(opsRoles.map((role) => role.identityId));
+  const opsRecipients = new Set(await filterOperationalRecipients(
+    db,
+    booking.unitId,
+    opsRoles.map((role) => role.identityId),
+    ["manage_front_desk","manage_reservations","manage_guest_communications"]
+  ));
+  const mcRecipients = new Set<string>();
 
   const mcEngagement = await db.unitEngagement.findFirst({
     where: {
@@ -62,23 +68,37 @@ async function notifyOpsNewBooking(
       select: { identityId: true },
     });
     for (const member of mcMembers) {
-      recipients.add(member.identityId);
+      mcRecipients.add(member.identityId);
     }
   }
 
-  recipients.delete(booking.guestIdentityId);
+  opsRecipients.delete(booking.guestIdentityId);
+  mcRecipients.delete(booking.guestIdentityId);
+  for (const identityId of opsRecipients) mcRecipients.delete(identityId);
 
-  await Promise.all(
-    [...recipients].map((identityId) =>
+  const opsBookingUrl = `${baseUrl}/ops/stays/${encodeURIComponent(booking.id)}`;
+  const mcBookingUrl = `${baseUrl}/mc/properties/${encodeURIComponent(booking.unitId)}?tab=reservations`;
+
+  await Promise.all([
+    ...[...opsRecipients].map((identityId) =>
       createNotification(db, {
         identityId,
         type: 'stay_new_booking_ops',
         titleKey: 'notify.stay_new_booking_ops.title',
         bodyKey: 'notify.stay_new_booking_ops.body',
-        params,
+        params: { ...params, admin_bookings_url: opsBookingUrl, booking_url: opsBookingUrl },
       }).catch(() => null)
-    )
-  );
+    ),
+    ...[...mcRecipients].map((identityId) =>
+      createNotification(db, {
+        identityId,
+        type: 'stay_new_booking_ops',
+        titleKey: 'notify.stay_new_booking_ops.title',
+        bodyKey: 'notify.stay_new_booking_ops.body',
+        params: { ...params, admin_bookings_url: mcBookingUrl, booking_url: mcBookingUrl },
+      }).catch(() => null)
+    ),
+  ]);
 }
 
 /**
@@ -110,7 +130,7 @@ export async function notifyBookingConfirmed(
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
       end_date: booking.endDate.toISOString().slice(0, 10),
-      total_thb: booking.totalThb.toLocaleString(),
+      total_thb: Math.round(booking.totalThb / 100).toLocaleString(),
     };
 
     await createNotification(db, {

@@ -18,6 +18,8 @@ import { CONSOLIDATED_RELEASE_KEYS } from './consolidated-release.seed';
 import { PMS_RELEASE_KEYS } from './pms-release.seed';
 import { OPERATING_SPACE_KEYS } from './operating-space.seed';
 import { RESERVATION_DESK_KEYS } from './reservation-desk.seed';
+import { PMS_OPERATIONS_KEYS } from './pms-operations.seed';
+import { PMS_COMPLETION_KEYS } from './pms-completion.seed';
 
 interface KeyDef {
   key: string;
@@ -1533,6 +1535,8 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'notify.stay_confirmed.owner_body', namespace: 'notify', description: 'Notification body: stay confirmed (owner)', en: '{unit_name} is booked {start_date} — {end_date} for ฿{total_thb}.', ru: '{unit_name} забронирован {start_date} — {end_date} на сумму ฿{total_thb}.', th: '{unit_name} ถูกจอง {start_date} — {end_date} รวม ฿{total_thb}', status: NR },
   { key: 'notify.stay_new_booking_ops.title', namespace: 'notify', description: 'N-03 ops alert: new confirmed booking', en: 'New confirmed booking', ru: 'Новое подтверждённое бронирование', th: 'การจองยืนยันใหม่', status: NR },
   { key: 'notify.stay_new_booking_ops.body', namespace: 'notify', description: 'N-03 ops alert body: guest, dates, total', en: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb}. Open the bookings board to prepare arrival.', ru: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb}. Откройте доску бронирований для подготовки заезда.', th: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb} เปิดบอร์ดการจองเพื่อเตรียมการมาถึง', status: NR },
+  { key: 'notify.stay_payment_pending_ops.title', namespace: 'notify', description: 'Ops/MC alert: instant booking is holding inventory pending payment', en: 'New booking — payment pending', ru: 'Новое бронирование — ожидается оплата', th: 'การจองใหม่ — รอการชำระเงิน', status: NR },
+  { key: 'notify.stay_payment_pending_ops.body', namespace: 'notify', description: 'Ops/MC alert body: live payment hold', en: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb}. Dates are on hold while payment is pending. Open booking: {booking_url}', ru: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb}. Даты удерживаются до оплаты. Открыть бронирование: {booking_url}', th: '{unit_name}: {guest_name}, {start_date} — {end_date}, ฿{total_thb} วันที่ถูกพักไว้ระหว่างรอชำระเงิน เปิดการจอง: {booking_url}', status: NR },
   { key: 'notify.stay_owner_stay_booked.title', namespace: 'notify', description: 'N-17 ops alert: owner stay booked', en: 'Owner stay booked', ru: 'Владелец забронировал проживание', th: 'เจ้าของจองเข้าพักแล้ว', status: NR },
   { key: 'notify.stay_owner_stay_booked.body', namespace: 'notify', description: 'N-17 ops body: owner, unit, dates, turnover hint', en: '{owner_name} booked an owner stay at {unit_name} ({start_date} — {end_date}). Schedule turnover cleaning from the ops board.', ru: '{owner_name} забронировал проживание в {unit_name} ({start_date} — {end_date}). Запланируйте уборку после выезда на доске ops.', th: '{owner_name} จองเข้าพักเจ้าของที่ {unit_name} ({start_date} — {end_date}) จัดตารางทำความสะอาดหลังออกจากบอร์ด ops', status: NR },
   { key: 'notify.stay_request_placed.title', namespace: 'notify', description: 'N-33 guest alert: request submitted', en: 'Request sent', ru: 'Запрос отправлен', th: 'ส่งคำขอแล้ว', status: NR },
@@ -4478,7 +4482,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS, ...PMS_OPERATIONS_KEYS, ...PMS_COMPLETION_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.

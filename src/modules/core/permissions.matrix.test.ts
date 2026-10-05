@@ -70,7 +70,7 @@ const MATRIX_CAPABILITIES = [
     expected: {
       admin: true,
       staff_ops: true,
-      onsite_host: false,
+      onsite_host: true,
       owner: true, // read-only
       guest: false,
       resident: false,

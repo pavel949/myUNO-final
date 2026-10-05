@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
+import { getAuthorizedOperationalUnitIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
+import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
 import PreventiveMaintenanceForm from '@/components/ops/PreventiveMaintenanceForm';
 
 export const dynamic='force-dynamic';
@@ -17,34 +16,28 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
   if(!spaceId)redirect('/ops/spaces');
 
   const membership=user.isAdmin?null:await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-  if(!user.isAdmin&&!membership?.active)redirect('/ops/spaces');
+  if(!user.isAdmin){
+    if(!membership?.active)redirect('/ops/spaces');
+    if(!(await hasOperatingSpaceCapability(prisma,spaceId,user.identityId,'manage_maintenance'))){
+      redirect('/ops/spaces/'+encodeURIComponent(spaceId));
+    }
+  }
 
-  const [space,spaceUnitIds,staffProjectIds]=await Promise.all([
+  const [space,spaceUnitIds]=await Promise.all([
     prisma.operatingSpace.findUnique({where:{id:spaceId},select:{id:true,name:true,status:true}}),
     getOperatingSpaceUnitIds(prisma,spaceId),
-    getDepartmentProjectIds(user,['maintenance','housekeeping','front_desk','reservations']),
   ]);
   if(!space||space.status!=='active')redirect('/ops/spaces');
 
-  let authorizedUnitIds=spaceUnitIds;
-  if(!user.isAdmin){
-    const mcIds=new Set<string>();
-    for(const scope of getMCProjectScopes(user)){
-      const managed=await getMCManagedUnits(prisma,user.identityId,scope.projectId,scope.organizationId);
-      for(const unit of managed)mcIds.add(unit.id);
-    }
-    authorizedUnitIds=(await prisma.unit.findMany({
-      where:{
-        id:{in:spaceUnitIds},
-        OR:[
-          ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
-          ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
-        ],
-      },
-      select:{id:true},
-    })).map(unit=>unit.id);
-  }
-  if(!authorizedUnitIds.length)redirect('/ops/spaces');
+  const authorizedUnitIds=user.isAdmin
+    ? spaceUnitIds
+    : await getAuthorizedOperationalUnitIds(
+        user,
+        spaceUnitIds,
+        ['maintenance','housekeeping','front_desk','reservations'],
+        spaceId,
+      );
+  if(!authorizedUnitIds.length)redirect('/ops/spaces/'+encodeURIComponent(spaceId));
 
   const labels=await getLabels({
     'staff.maintenance.title':'Maintenance',

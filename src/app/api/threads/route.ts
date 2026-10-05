@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { findOrCreateThread, sendMessage, getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
+import { findOrCreateThread, getBookingThreadParticipants, sendMessage, getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
 import { createDirectInquiry } from '@/modules/analytics';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { t } from '@/modules/content';
@@ -110,18 +110,10 @@ export async function POST(req: NextRequest) {
       }
       projectId = booking.projectId;
 
-      const staff = await prisma.roleAssignment.findMany({
-        where: { role: 'staff_ops', status: 'active' },
-        select: { identityId: true },
-        distinct: ['identityId'],
-      });
-      for (const member of staff) {
-        participantIds.add(member.identityId);
-        participantRoles[member.identityId] = 'staff_ops';
-      }
-      if (booking.unit?.ownerIdentityId) {
-        participantIds.add(booking.unit.ownerIdentityId);
-        participantRoles[booking.unit.ownerIdentityId] = 'owner';
+      const scoped = await getBookingThreadParticipants(prisma, contextId);
+      for (const identityId of scoped.participantIdentityIds) {
+        participantIds.add(identityId);
+        participantRoles[identityId] = scoped.participantRoles[identityId] || 'participant';
       }
     } else {
       if (contextType === 'unit') {

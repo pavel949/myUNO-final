@@ -57,7 +57,7 @@ export default function McRequestsClient({
                 <span className="text-text-secondary font-normal">
                   {' · '}
                   <Link
-                    href={`/mc/units/${request.unitId}`}
+                    href={`/mc/properties/${request.unitId}?tab=reservations`}
                     className="text-brand-andaman hover:underline"
                   >
                     {request.unitName}

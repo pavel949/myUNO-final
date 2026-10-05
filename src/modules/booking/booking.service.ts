@@ -3,6 +3,7 @@ import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
+import { notifyBookingPendingPayment } from './notify-pending-payment';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown } from '@/modules/core';
 import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
@@ -415,6 +416,10 @@ export async function createBooking(
   }).catch(() => null);
 
   // Track request event if this is a request-to-book
+  if (instantBook) {
+    await notifyBookingPendingPayment(db, booking.id).catch(() => null);
+  }
+
   if (!instantBook) {
     await track(db, 'stay_booking_requested', {
       bookingId: booking.id,
@@ -727,7 +732,8 @@ export async function checkInBooking(
 export async function checkOutBooking(
   db: PrismaClient,
   bookingId: string,
-  checkedOutAt: Date = new Date()
+  checkedOutAt: Date = new Date(),
+  context: { actorIdentityId?: string } = {}
 ) {
   const booking = await db.booking.findUnique({ where: { id: bookingId } });
   if (!booking) {
@@ -737,6 +743,49 @@ export async function checkOutBooking(
   if (booking.status !== 'checked_in') {
     throw new Error(`Cannot check out booking with status ${booking.status}`);
   }
+
+  const operatorSpaces = context.actorIdentityId
+    ? await db.operatingSpaceMemberUnit.findMany({
+        where: {
+          identityId: context.actorIdentityId,
+          unitId: booking.unitId,
+          active: true,
+          member: { active: true },
+        },
+        select: { operatingSpaceId: true },
+      })
+    : [];
+  let turnoverSpaceId = operatorSpaces.length === 1 ? operatorSpaces[0].operatingSpaceId : null;
+  if (!turnoverSpaceId) {
+    const unitSpaces = await db.operatingSpaceUnit.findMany({
+      where: {
+        unitId: booking.unitId,
+        active: true,
+        OR: [{ endsOn: null }, { endsOn: { gt: checkedOutAt } }],
+        operatingSpace: { status: 'active' },
+      },
+      select: { operatingSpaceId: true },
+    });
+    if (unitSpaces.length === 1) turnoverSpaceId = unitSpaces[0].operatingSpaceId;
+  }
+  const turnoverTeams = turnoverSpaceId
+    ? await db.operatingTeam.findMany({
+        where: {
+          operatingSpaceId: turnoverSpaceId,
+          active: true,
+          teamType: { in: ['housekeeping','operations'] },
+        },
+        select: { id: true, teamType: true },
+        orderBy: { name: 'asc' },
+      })
+    : [];
+  const cleaningTeamId =
+    turnoverTeams.find((team) => team.teamType === 'housekeeping')?.id ??
+    turnoverTeams.find((team) => team.teamType === 'operations')?.id ??
+    null;
+  const inspectionTeamId =
+    turnoverTeams.find((team) => team.teamType === 'operations')?.id ??
+    cleaningTeamId;
 
   // State transition and turnover obligations commit atomically. A failed task
   // write must never leave a checked-out stay with no readiness work behind it.
@@ -762,11 +811,18 @@ export async function checkOutBooking(
           projectId: updated.projectId,
           unitId: updated.unitId,
           bookingId: updated.id,
+          operatingSpaceId: turnoverSpaceId,
+          assignedTeamId: taskType === 'turnover_cleaning' ? cleaningTeamId : inspectionTeamId,
           taskType,
-          status: 'planned',
+          status: (taskType === 'turnover_cleaning' ? cleaningTeamId : inspectionTeamId) ? 'assigned' : 'planned',
           dueAt: checkedOutAt,
         },
-        update: { dueAt: checkedOutAt },
+        update: {
+          dueAt: checkedOutAt,
+          ...(turnoverSpaceId ? { operatingSpaceId: turnoverSpaceId } : {}),
+          ...(taskType === 'turnover_cleaning' && cleaningTeamId ? { assignedTeamId: cleaningTeamId, status: 'assigned' } : {}),
+          ...(taskType === 'turnover_inspection' && inspectionTeamId ? { assignedTeamId: inspectionTeamId, status: 'assigned' } : {}),
+        },
       })
     ));
     return updated;

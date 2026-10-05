@@ -25,7 +25,7 @@ import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/u
  */
 describe('the fee-model boundary (Q37)', () => {
   const routeSource = readFileSync(
-    join(process.cwd(), 'src/app/api/admin/statements/generate/route.ts'),
+    join(process.cwd(), 'src/modules/finance/owner-statement.service.ts'),
     'utf8'
   );
 
@@ -39,8 +39,8 @@ describe('the fee-model boundary (Q37)', () => {
       // change reads contract.managementFeeBasis here instead, the owner's share
       // silently starts coming from a different document than doc 10 names.
       for (const branch of [
-        "engagement.engagementType === 'direct_managed'",
-        "engagement.engagementType === 'via_management_company'",
+        "engagement.engagementType==='direct_managed'",
+        "engagement.engagementType==='via_management_company'",
       ]) {
         expect(routeSource).toContain(branch);
       }
@@ -59,7 +59,7 @@ describe('the fee-model boundary (Q37)', () => {
     it('takes the performance fee from the contract, and only from there', () => {
       expect(routeSource).toContain('contract?.performanceFeeRate');
       // No default: a unit without a performance-fee contract earns none.
-      expect(routeSource).toContain('performanceFeeEnabled: true');
+      expect(routeSource).toContain("performanceFeeEnabled:true");
     });
 
     it('never reads EarnedFee — the statement computes, it does not sum accruals', () => {

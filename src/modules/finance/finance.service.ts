@@ -1,9 +1,10 @@
 import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
-import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
+import { findOrCreateThread, getBookingThreadParticipants, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
+import { recordConfirmedStayInCrm } from '@/modules/crm';
 
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
@@ -227,6 +228,25 @@ export async function recordCashPayment(
   if (result.booking && bookingId) {
     if (purpose === 'stay') {
       await ensureDepositPreauthOnStayConfirmed(db, bookingId, result.booking.unitId).catch(() => null);
+      try {
+        const scoped = await getBookingThreadParticipants(db, bookingId);
+        const thread = await findOrCreateThread(db, {
+          contextType: 'booking',
+          contextId: bookingId,
+          projectId: result.booking.projectId,
+          participantIdentityIds: scoped.participantIdentityIds,
+          participantRoles: scoped.participantRoles,
+        });
+        await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
+      } catch (error) {
+        console.error('Cash payment committed but booking thread sync failed:', error);
+      }
+      await recordConfirmedStayInCrm(db, {
+        identityId: result.booking.guestIdentityId,
+        bookingId,
+        projectId: result.booking.projectId,
+        unitId: result.booking.unitId,
+      }).catch((error) => console.error('Cash payment committed but CRM lifecycle sync failed:', error));
     }
     await track(db, 'stay_payment_succeeded', {
       bookingId, unitId: result.booking.unitId, projectId: result.booking.projectId,
@@ -552,15 +572,24 @@ export async function verifyAndConfirm(
   if (result.stayBooking && confirmed.purpose === 'stay') {
     await ensureDepositPreauthOnStayConfirmed(db, result.stayBooking.id, result.stayBooking.unitId).catch(() => null);
     try {
+      const scoped = await getBookingThreadParticipants(db, result.stayBooking.id);
       const thread = await findOrCreateThread(db, {
-        contextType: 'booking', contextId: result.stayBooking.id,
+        contextType: 'booking',
+        contextId: result.stayBooking.id,
         projectId: result.stayBooking.projectId,
-        participantIdentityIds: [result.stayBooking.guestIdentityId],
+        participantIdentityIds: scoped.participantIdentityIds,
+        participantRoles: scoped.participantRoles,
       });
       await addSystemMessage(db, thread.id, 'Booking confirmed. Payment received.');
     } catch (err) {
       console.error('Failed to create booking thread:', err);
     }
+    await recordConfirmedStayInCrm(db, {
+      identityId: result.stayBooking.guestIdentityId,
+      bookingId: result.stayBooking.id,
+      projectId: result.stayBooking.projectId,
+      unitId: result.stayBooking.unitId,
+    }).catch((error) => console.error('Card payment committed but CRM lifecycle sync failed:', error));
   }
 
   if (result.serviceOrderToPay) {

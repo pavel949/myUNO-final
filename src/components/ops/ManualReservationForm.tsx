@@ -3,15 +3,17 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Unit={id:string;name:string;project:{name:string};instantBook:boolean};
+type Unit={id:string;name:string;project:{id:string;name:string};instantBook:boolean;inventoryCategory?:{id:string;name:string;projectId:string;categoryKey:string}|null};
+type Category={id:string;name:string;project:{id:string;name:string}};
 type Guest={id:string;firstName:string;lastName:string;email:string|null;phone:string|null};
 type Group={id:string;title:string|null;guestIdentityId:string};
 
 export default function ManualReservationForm({
-  operatingSpaceId,units,guests,groups,labels,
+  operatingSpaceId,units,categories,guests,groups,labels,
 }:{
   operatingSpaceId:string;
   units:Unit[];
+  categories:Category[];
   guests:Guest[];
   groups:Group[];
   labels:Record<string,string>;
@@ -29,7 +31,7 @@ export default function ManualReservationForm({
       headers:{'content-type':'application/json'},
       body:JSON.stringify({
         operatingSpaceId,
-        unitId:String(data.get('unitId')||''),
+        inventoryTarget:String(data.get('inventoryTarget')||''),
         guestIdentityId:String(data.get('guestIdentityId')||''),
         reservationGroupId:String(data.get('reservationGroupId')||'')||undefined,
         startDate:String(data.get('startDate')||''),
@@ -52,9 +54,14 @@ export default function ManualReservationForm({
     <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.create']}</h2>
     <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.unit']}
-        <select required name="unitId" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-12">
+        <select required name="inventoryTarget" className="mt-4 h-44 w-full rounded-md border border-border-line bg-white px-12">
           <option value="">{labels['reservations.select']}</option>
-          {units.map(unit=><option key={unit.id} value={unit.id}>{unit.project.name} · {unit.name}</option>)}
+          {categories.length>0&&<optgroup label={labels['reservations.categories']}>
+            {categories.map(category=><option key={'category:'+category.id} value={'category:'+category.id}>{category.project.name} · {category.name}</option>)}
+          </optgroup>}
+          <optgroup label={labels['reservations.exact_units']}>
+            {units.map(unit=><option key={'unit:'+unit.id} value={'unit:'+unit.id}>{unit.project.name} · {unit.name}</option>)}
+          </optgroup>
         </select>
       </label>
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.guest']}

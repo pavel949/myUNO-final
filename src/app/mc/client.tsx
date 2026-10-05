@@ -18,6 +18,7 @@ import {
 } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
+import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
 
 interface Unit {
   id: string;
@@ -38,11 +39,15 @@ interface Booking {
   startDate: Date;
   endDate: Date;
   totalThb: number;
+  balanceDueThb: number;
   status: string;
+  channel: string;
   requestExpiresAt?: Date | string | null;
+  holdExpiresAt?: Date | string | null;
   guestIdentity: {
     id: string;
     firstName: string;
+    lastName?: string;
   };
   unit: {
     id: string;
@@ -175,6 +180,26 @@ function formatReportPeriod(periodStart: string, periodEnd: string): string {
   return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
 }
 
+function formatBangkokDate(value: Date | string): string {
+  return new Date(value).toLocaleDateString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatBangkokDateTime(value: Date | string): string {
+  return new Date(value).toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
 export function MCDashboardClient({
   dashboard,
   units,
@@ -192,15 +217,19 @@ export function MCDashboardClient({
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
   const [reservationView, setReservationView] = useState<
-    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+    'requests' | 'pending_payment' | 'arrivals' | 'in_house' | 'departures' | 'all'
   >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
   const [feeReportLoading, setFeeReportLoading] = useState(false);
   const [feeReportError, setFeeReportError] = useState<string | null>(null);
   const [busyBookingId, setBusyBookingId] = useState<string | null>(null);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingReceipts, setBookingReceipts] = useState<Record<string, string>>({});
+  const [, setBookingError] = useState<string | null>(null);
+  const [bookingFeedback, setBookingFeedback] = useState<Record<string, { kind: 'success' | 'error'; message: string }>>({});
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingUnitFilter, setBookingUnitFilter] = useState('');
+  const [bookingChannelFilter, setBookingChannelFilter] = useState('');
+  const [bookingDateFilter, setBookingDateFilter] = useState('');
   const [busyTicketId, setBusyTicketId] = useState<string | null>(null);
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [busyServiceOrderId, setBusyServiceOrderId] = useState<string | null>(null);
@@ -351,11 +380,24 @@ export function MCDashboardClient({
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.error || labels['mc.bookings.error_generic']);
       }
+      const successMessage =
+        path === 'record-cash-payment'
+          ? labels['mc.bookings.payment_recorded']
+          : path === 'respond'
+            ? labels['mc.bookings.request_updated']
+            : labels['mc.bookings.updated'];
+      setBookingFeedback((previous) => ({
+        ...previous,
+        [bookingId]: { kind: 'success', message: successMessage },
+      }));
       router.refresh();
     } catch (error) {
-      setBookingError(
-        error instanceof Error ? error.message : labels['mc.bookings.error_generic']
-      );
+      const message = error instanceof Error ? error.message : labels['mc.bookings.error_generic'];
+      setBookingError(message);
+      setBookingFeedback((previous) => ({
+        ...previous,
+        [bookingId]: { kind: 'error', message },
+      }));
     } finally {
       setBusyBookingId(null);
     }
@@ -468,43 +510,13 @@ export function MCDashboardClient({
     }
 
     if (booking.status === 'pending_payment') {
-      const receiptRef = (bookingReceipts[booking.id] || '').trim();
       return (
-        <div className="flex items-center gap-8">
-          <input
-            type="text"
-            value={bookingReceipts[booking.id] || ''}
-            onChange={(event) =>
-              setBookingReceipts((previous) => ({
-                ...previous,
-                [booking.id]: event.target.value,
-              }))
-            }
-            placeholder={labels['mc.bookings.receipt_placeholder']}
-            className="h-40 px-12 rounded-sm bg-surface-paper border border-border-line text-small text-text-ink focus:border-brand-andaman focus:outline-none"
-            style={{ width: '140px' }}
-          />
-          <Button
-            size="sm"
-            variant="sun"
-            onClick={() => {
-              if (!receiptRef) return;
-              if (
-                window.confirm(
-                  fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
-                  })
-                )
-              ) {
-                void postBookingAction(booking.id, 'record-cash-payment', { receiptRef });
-              }
-            }}
-            isLoading={busyBookingId === booking.id}
-            disabled={!receiptRef}
-          >
-            {labels['mc.bookings.record_cash']}
-          </Button>
-        </div>
+        <Link
+          href={`/ops/stays/${encodeURIComponent(booking.id)}`}
+          className="inline-flex min-h-40 items-center rounded-md bg-brand-deep px-12 text-small font-semibold text-white"
+        >
+          {labels['mc.bookings.record_payment']}
+        </Link>
       );
     }
 
@@ -536,15 +548,10 @@ export function MCDashboardClient({
     return <span className="text-small text-text-secondary">—</span>;
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayBangkok = bangkokCalendarDay();
 
-  const isSameLocalDay = (value: Date | string) => {
-    const date = new Date(value);
-    return date >= today && date < tomorrow;
-  };
+  const isSameLocalDay = (value: Date | string) =>
+    bangkokCalendarDay(new Date(value)) === todayBangkok;
 
   const arrivalsToday = bookings.filter(
     (booking) => isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
@@ -559,20 +566,41 @@ export function MCDashboardClient({
   }).length;
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
   const visibleBookings = bookings.filter((booking) => {
-    if (reservationView === 'all') return true;
-    if (reservationView === 'requests') {
-      return ['requested', 'pending_payment'].includes(booking.status);
+    const statusMatches =
+      reservationView === 'all'
+        ? true
+        : reservationView === 'requests'
+          ? booking.status === 'requested'
+          : reservationView === 'pending_payment'
+            ? booking.status === 'pending_payment'
+            : reservationView === 'arrivals'
+              ? isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
+              : reservationView === 'departures'
+                ? isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status)
+                : (() => {
+                    const start = new Date(booking.startDate);
+                    const end = new Date(booking.endDate);
+                    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+                  })();
+    if (!statusMatches) return false;
+    if (bookingUnitFilter && booking.unit.id !== bookingUnitFilter) return false;
+    if (bookingChannelFilter && booking.channel !== bookingChannelFilter) return false;
+    if (bookingDateFilter) {
+      const dayStart = new Date(bookingDateFilter + 'T00:00:00.000Z');
+      const dayEnd = new Date(dayStart); dayEnd.setUTCDate(dayEnd.getUTCDate()+1);
+      if (!(new Date(booking.startDate) < dayEnd && new Date(booking.endDate) > dayStart)) return false;
     }
-    if (reservationView === 'arrivals') {
-      return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
-    }
-    if (reservationView === 'departures') {
-      return isSameLocalDay(booking.endDate) && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status);
-    }
-    const start = new Date(booking.startDate);
-    const end = new Date(booking.endDate);
-    return start <= new Date() && end > new Date() && booking.status === 'checked_in';
+    const needle = bookingSearch.trim().toLocaleLowerCase();
+    if (!needle) return true;
+    return [
+      booking.id,
+      booking.unit.name,
+      booking.guestIdentity.firstName,
+      booking.guestIdentity.lastName || '',
+      booking.channel,
+    ].join(' ').toLocaleLowerCase().includes(needle);
   });
+  const bookingChannels = Array.from(new Set(bookings.map((booking) => booking.channel))).sort();
 
   return (
     <main className="min-h-screen bg-surface-ivory">
@@ -676,9 +704,18 @@ export function MCDashboardClient({
               <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
-              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('overview');
+                  window.requestAnimationFrame(() => {
+                    document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
                 {labels['mc.workspace.portfolio']}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('service_orders')}
@@ -726,6 +763,24 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
+              <div className="mb-16">
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.portfolio_pulse']}</p>
+                <div className="mt-8 grid grid-cols-2 gap-8 sm:grid-cols-3 xl:grid-cols-6">
+                  {[
+                    [labels['mc.stats.units'], units.length],
+                    [labels['mc.workspace.arrivals'], arrivalsToday],
+                    [labels['mc.workspace.departures'], departuresToday],
+                    [labels['mc.attention.requests'], requestedBookings],
+                    [labels['mc.workspace.payment_issues'], pendingPayments.length],
+                    [labels['mc.workspace.channel_issues'], icalConflicts.length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-lg border border-border-line bg-surface-paper p-12">
+                      <p className="text-caption text-text-secondary">{label}</p>
+                      <p className="mt-4 font-display text-heading-2 font-semibold tabular-nums text-text-ink">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
                 <div className="rounded-lg border border-border-line bg-surface-paper p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
@@ -742,15 +797,17 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
-                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
-                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
-                    ].map(([label, value, hint]) => (
-                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint'], 'arrivals'],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint'], 'departures'],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint'], 'in_house'],
+                    ].map(([label, value, hint, view]) => (
+                      <button key={String(label)} type="button"
+                        onClick={() => { setReservationView(view as typeof reservationView); setActiveTab('bookings'); }}
+                        className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman">
                         <p className="text-small font-semibold text-text-ink">{label}</p>
                         <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -768,7 +825,10 @@ export function MCDashboardClient({
                       <button
                         key={String(label)}
                         type="button"
-                        onClick={() => setActiveTab(target as typeof activeTab)}
+                        onClick={() => {
+                          if (String(label) === labels['mc.workspace.pending_payments']) setReservationView('pending_payment');
+                          setActiveTab(target as typeof activeTab);
+                        }}
                         className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-8 text-left hover:border-brand-andaman"
                       >
                         <span className="text-small text-text-ink">{label}</span>
@@ -794,19 +854,77 @@ export function MCDashboardClient({
                   </Link>
                 </div>
                 <div className="mt-16 grid gap-12 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    [labels['mc.workspace.health_payments'], pendingPayments.length, pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_channels'], icalConflicts.length, icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_issues'], dashboard.openTicketsCount, dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
-                    [labels['mc.workspace.health_services'], actionableServiceOrders, actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']],
-                  ].map(([label, count, status]) => (
-                    <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
-                      <p className="text-small font-semibold text-text-ink">{label}</p>
-                      <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{count}</p>
-                      <p className="mt-8 text-small text-text-secondary">{status}</p>
-                    </div>
-                  ))}
+                  <button type="button" onClick={() => { setReservationView('pending_payment'); setActiveTab('bookings'); }} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_payments']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{pendingPayments.length}</p>
+                    <p className="mt-8 text-small text-text-secondary">{pendingPayments.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']}</p>
+                  </button>
+                  <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_channels']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{icalConflicts.length}</p>
+                    <p className="mt-8 text-small text-text-secondary">{icalConflicts.length ? labels['mc.workspace.action_required'] : labels['mc.workspace.clear']}</p>
+                  </Link>
+                  <button type="button" onClick={() => setActiveTab('tickets')} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_issues']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{dashboard.openTicketsCount}</p>
+                    <p className="mt-8 text-small text-text-secondary">{dashboard.openTicketsCount ? labels['mc.workspace.review'] : labels['mc.workspace.clear']}</p>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('service_orders')} className="rounded-md bg-surface-ivory p-16 text-left hover:ring-1 hover:ring-brand-andaman">
+                    <p className="text-small font-semibold text-text-ink">{labels['mc.workspace.health_services']}</p>
+                    <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{actionableServiceOrders}</p>
+                    <p className="mt-8 text-small text-text-secondary">{actionableServiceOrders ? labels['mc.workspace.review'] : labels['mc.workspace.clear']}</p>
+                  </button>
                 </div>
+              </div>
+
+              <div id="managed-properties" className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20 scroll-mt-44">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.portfolio']}</p>
+                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.managed_properties']}</h2>
+                    <p className="mt-4 max-w-3xl text-small text-text-secondary">{labels['mc.workspace.managed_properties_hint']}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-8">
+                    <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+                      + {labels['mc.workspace.add_property']}
+                    </Link>
+                    <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                      + {labels['mc.workspace.add_project']}
+                    </Link>
+                    <Link href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                      {labels['mc.workspace.view_all_calendar']} →
+                    </Link>
+                  </div>
+                </div>
+                {units.length === 0 ? (
+                  <div className="mt-16 rounded-lg border border-dashed border-border-line bg-surface-ivory p-20">
+                    <p className="font-semibold text-text-ink">{labels['mc.workspace.no_properties']}</p>
+                    <p className="mt-4 text-small text-text-secondary">{labels['mc.workspace.add_property_hint']}</p>
+                    <div className="mt-12 flex flex-wrap gap-8">
+                      <Link href={`/property/onboard?kind=management&operatingModel=via_management_company&projectId=${encodeURIComponent(activeContext?.projectId || '')}`} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+                        + {labels['mc.workspace.add_property']}
+                      </Link>
+                      <Link href="/property/onboard?kind=resort&operatingModel=via_management_company" className="inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:border-brand-andaman">
+                        + {labels['mc.workspace.add_project']}
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
+                    {units.map((unit) => (
+                      <Link key={unit.id} href={`/mc/properties/${encodeURIComponent(unit.id)}?tab=overview`} className="rounded-lg border border-border-line bg-surface-ivory p-16 transition hover:border-brand-andaman hover:bg-surface-paper">
+                        <div className="flex items-start justify-between gap-8">
+                          <div>
+                            <p className="font-semibold text-text-ink">{unit.name}</p>
+                            <p className="mt-4 text-small text-text-secondary">{statusLabel(unit.status)}</p>
+                          </div>
+                          <span className="text-small font-semibold text-brand-andaman">{labels['mc.workspace.open_property']} →</span>
+                        </div>
+                        <p className="mt-12 text-small text-text-secondary">฿{unit.baseNightlyThb.toLocaleString()} {labels['mc.units.per_night']}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -827,12 +945,13 @@ export function MCDashboardClient({
               </div>
               <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
                 {[
-                  ['requests', labels['mc.workspace.requests']],
-                  ['arrivals', labels['mc.workspace.arrivals']],
-                  ['in_house', labels['mc.workspace.in_house']],
-                  ['departures', labels['mc.workspace.departures']],
-                  ['all', labels['mc.workspace.all_reservations']],
-                ].map(([key, label]) => (
+                  ['requests', labels['mc.workspace.requests'], bookings.filter((booking) => booking.status === 'requested').length],
+                  ['pending_payment', labels['mc.workspace.pending_payments'], pendingPayments.length],
+                  ['arrivals', labels['mc.workspace.arrivals'], arrivalsToday],
+                  ['in_house', labels['mc.workspace.in_house'], inHouseNow],
+                  ['departures', labels['mc.workspace.departures'], departuresToday],
+                  ['all', labels['mc.workspace.all_reservations'], bookings.length],
+                ].map(([key, label, count]) => (
                   <button
                     key={key}
                     type="button"
@@ -843,16 +962,45 @@ export function MCDashboardClient({
                         : 'border-border-line bg-surface-paper text-text-secondary hover:text-text-ink'
                     }`}
                   >
-                    {label}
+                    {label} <span className="ml-4 tabular-nums">({count})</span>
                   </button>
                 ))}
               </div>
             </div>
-            {bookingError && (
-              <div className="mb-16 bg-state-error-soft border border-state-error rounded-lg p-12">
-                <p className="text-small text-state-error">{bookingError}</p>
-              </div>
-            )}
+            <div className="mb-12 grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+              <input
+                type="search"
+                value={bookingSearch}
+                onChange={(event) => setBookingSearch(event.target.value)}
+                placeholder={labels['mc.bookings.search']}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+              />
+              <select
+                value={bookingUnitFilter}
+                onChange={(event) => setBookingUnitFilter(event.target.value)}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+                aria-label={labels['mc.bookings.filter_unit']}
+              >
+                <option value="">{labels['mc.bookings.all_units']}</option>
+                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+              </select>
+              <select
+                value={bookingChannelFilter}
+                onChange={(event) => setBookingChannelFilter(event.target.value)}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+                aria-label={labels['mc.bookings.filter_channel']}
+              >
+                <option value="">{labels['mc.bookings.all_channels']}</option>
+                {bookingChannels.map((channel) => <option key={channel} value={channel}>{channel.replace(/_/g, ' ')}</option>)}
+              </select>
+              <input
+                type="date"
+                value={bookingDateFilter}
+                onChange={(event) => setBookingDateFilter(event.target.value)}
+                aria-label={labels['mc.bookings.filter_date']}
+                className="h-40 rounded-md border border-border-line bg-surface-paper px-12 text-small text-text-ink"
+              />
+            </div>
             <div className="bg-surface-paper border border-border-line rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -871,17 +1019,31 @@ export function MCDashboardClient({
                     {visibleBookings.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center p-24 text-text-secondary">
-                          {labels['mc.bookings.empty']}
+                          {reservationView === 'requests'
+                            ? labels['mc.bookings.empty_requests']
+                            : reservationView === 'pending_payment'
+                              ? labels['mc.bookings.empty_payments']
+                              : reservationView === 'arrivals'
+                                ? labels['mc.bookings.empty_arrivals']
+                                : reservationView === 'in_house'
+                                  ? labels['mc.bookings.empty_in_house']
+                                  : reservationView === 'departures'
+                                    ? labels['mc.bookings.empty_departures']
+                                    : labels['mc.bookings.empty']}
                         </td>
                       </tr>
                     ) : (
                       visibleBookings.map((booking) => (
                         <tr key={booking.id} className="border-b border-border-line hover:bg-surface-ivory">
                           <td className="p-16 text-body font-semibold text-text-ink">
-                            {booking.unit.name}
+                            <Link href={`/mc/properties/${encodeURIComponent(booking.unit.id)}?tab=overview&date=${encodeURIComponent(new Date(booking.startDate).toISOString().slice(0,10))}`} className="hover:text-brand-andaman hover:underline">
+                              {booking.unit.name}
+                            </Link>
                           </td>
                           <td className="p-16 text-body text-text-ink">
-                            {booking.guestIdentity.firstName}
+                            <Link href={`/ops/stays/${encodeURIComponent(booking.id)}`} className="font-semibold hover:text-brand-andaman hover:underline">
+                              {booking.guestIdentity.firstName} {booking.guestIdentity.lastName || ''}
+                            </Link>
                             {booking.guests[0]?.nationality && (
                               <span className="text-small text-text-secondary ml-8">
                                 ({booking.guests[0].nationality})
@@ -889,13 +1051,14 @@ export function MCDashboardClient({
                             )}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
+                            {formatBangkokDate(booking.startDate)}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
+                            {formatBangkokDate(booking.endDate)}
                           </td>
-                          <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
+                          <td className="p-16 text-body text-text-ink tabular-nums">
+                            <p className="font-semibold">฿{booking.totalThb.toLocaleString()}</p>
+                            {booking.balanceDueThb > 0 && <p className="mt-4 text-caption text-state-warning">{labels['mc.bookings.due']} ฿{booking.balanceDueThb.toLocaleString()}</p>}
                           </td>
                           <td className="p-16">
                             <span
@@ -907,12 +1070,29 @@ export function MCDashboardClient({
                             </span>
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
-                                {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                                {labels['mc.bookings.request_expires']}: {formatBangkokDateTime(booking.requestExpiresAt)}
+                              </p>
+                            ) : null}
+                            {booking.status === 'pending_payment' && booking.holdExpiresAt ? (
+                              <p className="text-caption text-state-warning mt-4">
+                                {labels['mc.bookings.hold_expires']}: {formatBangkokDateTime(booking.holdExpiresAt)}
+                                {' · '}{Math.max(0,Math.ceil((new Date(booking.holdExpiresAt).getTime()-Date.now())/60000))} {labels['mc.bookings.minutes_remaining']}
                               </p>
                             ) : null}
                           </td>
-                          <td className="p-16">{actionForBooking(booking)}</td>
+                          <td className="p-16">
+                            <div className="flex flex-wrap items-center gap-8">
+                              {actionForBooking(booking)}
+                              <Link href={`/ops/stays/${encodeURIComponent(booking.id)}`} className="text-small font-semibold text-brand-andaman hover:underline">
+                                {labels['mc.bookings.open_booking']} →
+                              </Link>
+                            </div>
+                            {bookingFeedback[booking.id] && (
+                              <p role={bookingFeedback[booking.id].kind === 'error' ? 'alert' : 'status'} className={`mt-8 text-caption ${bookingFeedback[booking.id].kind === 'error' ? 'text-state-error' : 'text-emerald-800'}`}>
+                                {bookingFeedback[booking.id].message}
+                              </p>
+                            )}
+                          </td>
                         </tr>
                       ))
                     )}
@@ -965,7 +1145,7 @@ export function MCDashboardClient({
                       </Link>
                     </div>
                     <p className="text-small text-text-secondary">
-                      {ticket.unit.name} · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
+                      <Link href={`/mc/properties/${encodeURIComponent(ticket.unit.id)}?tab=operations`} className="font-semibold text-brand-andaman hover:underline">{ticket.unit.name}</Link> · {labels['mc.tickets.reported_by']} {ticket.raisedBy.firstName}
                     </p>
                     <div className="mt-12 flex flex-wrap items-center gap-8">
                       {ticket.assigneeIdentityId !== dashboard.identityId && (
@@ -1194,7 +1374,7 @@ export function MCDashboardClient({
                     String(feeReport.periodEnd)
                   )}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-44 mb-32">
                   <HeroNumber
                     value={formatThb(feeReport.summaryThb.grossAmount)}
                     label={labels['mc.reports.gross']}

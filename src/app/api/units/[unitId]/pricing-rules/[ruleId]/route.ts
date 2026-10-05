@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can, removePricingRule } from '@/modules/core';
 import { logAudit } from '@/modules/audit';
+import { passesOperatingSpaceUnitCapability } from '@/app/libs/operatingSpaceGuard';
 
 /**
  * DELETE /api/units/[unitId]/pricing-rules/[ruleId]
@@ -39,6 +40,9 @@ export async function DELETE(
   });
   if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  if (!(await passesOperatingSpaceUnitCapability(user, unit.id, 'manage_pricing'))) {
+    return NextResponse.json({ error: 'Pricing capability required' }, { status: 403 });
   }
 
   // Scoped to the unit in the path rather than fetched-then-checked.

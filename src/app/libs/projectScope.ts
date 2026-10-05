@@ -90,6 +90,19 @@ export async function hasManagedUnitMcAccess(
   return Boolean(engagement);
 }
 
+export function hasStaffUnitAccess(
+  user: CurrentUser,
+  input: { projectId: string | null; unitId: string }
+): boolean {
+  if (user.isAdmin) return true;
+  if (!input.projectId) return false;
+  return user.roles.some((assignment) =>
+    STAFF_ROLES.has(assignment.role) &&
+    assignment.projectId === input.projectId &&
+    (!assignment.unitId || assignment.unitId === input.unitId)
+  );
+}
+
 export function hasProjectStaffAccess(user: CurrentUser, projectId: string | null): boolean {
   if (user.isAdmin) {
     return true;
@@ -163,6 +176,110 @@ export async function hasProjectDepartmentAccess(
 
 /** Include only properties where the staff member has an active role AND at least
  * one of the requested departmental capabilities. */
+
+/**
+ * Resolve the exact physical units this operator may touch inside a candidate
+ * set. This is the canonical operational intersection used by PMS surfaces:
+ *
+ *   candidate scope (OperatingSpace / route)
+ *   ∩ project or unit staff grants
+ *   ∪ active MC-managed units covered by the member's organization grant.
+ *
+ * Unit-scoped staff grants intentionally do not widen project access.
+ */
+export async function getAuthorizedOperationalUnitIds(
+  user: CurrentUser,
+  candidateUnitIds: readonly string[],
+  departments: readonly string[] = [],
+  operatingSpaceId?: string,
+): Promise<string[]> {
+  const uniqueCandidates = Array.from(new Set(candidateUnitIds.filter(Boolean)));
+  if (!uniqueCandidates.length) return [];
+  if (user.isAdmin) return uniqueCandidates;
+
+  const candidateSet = new Set(uniqueCandidates);
+  const exactStaffUnitIds = new Set(
+    user.roles
+      .filter((assignment) => STAFF_ROLES.has(assignment.role) && Boolean(assignment.unitId))
+      .map((assignment) => assignment.unitId as string)
+      .filter((unitId) => candidateSet.has(unitId))
+  );
+
+  const projectIds = await getDepartmentProjectIds(user, departments);
+  if (projectIds.length) {
+    const projectUnits = await prisma.unit.findMany({
+      where: { id: { in: uniqueCandidates }, projectId: { in: projectIds } },
+      select: { id: true },
+    });
+    for (const unit of projectUnits) exactStaffUnitIds.add(unit.id);
+  }
+
+  const mcScopes = getMCProjectScopes(user);
+  if (mcScopes.length) {
+    const candidates = await prisma.unit.findMany({
+      where: { id: { in: uniqueCandidates } },
+      select: { id: true, projectId: true },
+    });
+    const orgsByProject = new Map<string, string[]>();
+    for (const scope of mcScopes) {
+      const list = orgsByProject.get(scope.projectId) || [];
+      list.push(scope.organizationId);
+      orgsByProject.set(scope.projectId, list);
+    }
+    const eligibleIds = candidates
+      .filter((unit) => orgsByProject.has(unit.projectId))
+      .map((unit) => unit.id);
+    if (eligibleIds.length) {
+      const engagements = await prisma.unitEngagement.findMany({
+        where: {
+          unitId: { in: eligibleIds },
+          engagementType: 'via_management_company',
+          status: 'active',
+          managementOrgId: { not: null },
+        },
+        select: { unitId: true, managementOrgId: true, unit: { select: { projectId: true } } },
+      });
+      for (const engagement of engagements) {
+        if (
+          engagement.managementOrgId &&
+          orgsByProject.get(engagement.unit.projectId)?.includes(engagement.managementOrgId)
+        ) exactStaffUnitIds.add(engagement.unitId);
+      }
+    }
+  }
+
+  let authorized = uniqueCandidates.filter((unitId) => exactStaffUnitIds.has(unitId));
+
+  if (operatingSpaceId) {
+    const membership = await prisma.operatingSpaceMember.findUnique({
+      where: {
+        operatingSpaceId_identityId: {
+          operatingSpaceId,
+          identityId: user.identityId,
+        },
+      },
+      select: { active: true },
+    });
+    if (membership?.active) {
+      const explicitAssignments = await prisma.operatingSpaceMemberUnit.findMany({
+        where: {
+          operatingSpaceId,
+          identityId: user.identityId,
+          active: true,
+          unitId: { in: uniqueCandidates },
+        },
+        select: { unitId: true },
+      });
+      if (explicitAssignments.length) {
+        const explicit = new Set(explicitAssignments.map((row) => row.unitId));
+        authorized = authorized.filter((unitId) => explicit.has(unitId));
+      }
+    }
+  }
+
+  return authorized;
+}
+
 export async function getDepartmentProjectIds(
   user: CurrentUser,
   departments: readonly string[],

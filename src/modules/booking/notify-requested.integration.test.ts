@@ -54,6 +54,7 @@ describe('notifyBookingRequested', () => {
     });
     expect(opsAlert).not.toBeNull();
     expect(opsAlert?.titleKey).toBe('notify.stay_request_received.title');
+    expect(JSON.stringify(opsAlert?.params)).toContain('/ops/requests?projectId=');
   });
 
   it('includes MC members for via_management_company units (N-34)', async () => {
@@ -99,5 +100,7 @@ describe('notifyBookingRequested', () => {
     });
     expect(mcAlert).not.toBeNull();
     expect(mcAlert?.bodyKey).toBe('notify.stay_request_received.body');
+    expect(JSON.stringify(mcAlert?.params)).toContain('/mc/requests?projectId=');
+    expect(JSON.stringify(mcAlert?.params)).toContain('organizationId=');
   });
 });

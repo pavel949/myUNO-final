@@ -17,6 +17,141 @@ export interface SendMessageInput {
   messageKind?: MessageKind;
 }
 
+export async function getBookingThreadParticipants(
+  db: PrismaClient,
+  bookingId: string
+): Promise<{ participantIdentityIds: string[]; participantRoles: Record<string, string> }> {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      projectId: true,
+      unitId: true,
+      guestIdentityId: true,
+      unit: {
+        select: {
+          ownerIdentityId: true,
+          engagements: {
+            where: { status: 'active' },
+            select: { engagementType: true, managementOrgId: true },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+  if (!booking) throw new Error('BOOKING_NOT_FOUND');
+
+  const ids = new Set<string>([booking.guestIdentityId]);
+  const roles: Record<string, string> = { [booking.guestIdentityId]: 'guest' };
+
+  const staffAssignments = await db.roleAssignment.findMany({
+    where: {
+      status: 'active',
+      role: { in: ['staff_ops', 'onsite_host'] },
+      OR: [
+        { unitId: booking.unitId },
+        { projectId: booking.projectId, unitId: null },
+      ],
+    },
+    select: { identityId: true, unitId: true, projectId: true, role: true },
+  });
+  const projectStaffIds = Array.from(new Set(
+    staffAssignments.filter((assignment) => !assignment.unitId).map((assignment) => assignment.identityId)
+  ));
+  const permissionRows = projectStaffIds.length
+    ? await db.projectStaffPermission.findMany({
+        where: { projectId: booking.projectId, identityId: { in: projectStaffIds } },
+        select: { identityId: true, departments: true },
+      })
+    : [];
+  const departmentsByIdentity = new Map(
+    permissionRows.map((row) => [row.identityId, row.departments])
+  );
+  const staffIdentityIds = Array.from(new Set(staffAssignments.map((assignment) => assignment.identityId)));
+  const governedMemberships = staffIdentityIds.length
+    ? await db.operatingSpaceMember.findMany({
+        where: {
+          identityId: { in: staffIdentityIds },
+          active: true,
+          operatingSpace: {
+            status: 'active',
+            units: {
+              some: {
+                unitId: booking.unitId,
+                active: true,
+                OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+              },
+            },
+          },
+        },
+        select: {
+          identityId: true,
+          capabilities: true,
+          unitAssignments: {
+            where: { unitId: booking.unitId, active: true },
+            select: { id: true },
+          },
+        },
+      })
+    : [];
+  const governedByIdentity = new Map<string, Array<{capabilities:string[];hasUnit:boolean}>>();
+  for (const member of governedMemberships) {
+    const rows = governedByIdentity.get(member.identityId) || [];
+    rows.push({
+      capabilities: member.capabilities,
+      hasUnit: member.unitAssignments.length > 0,
+    });
+    governedByIdentity.set(member.identityId, rows);
+  }
+  const messagingDepartments = new Set(['reservations', 'front_desk', 'guest_care']);
+  for (const assignment of staffAssignments) {
+    const governed = governedByIdentity.get(assignment.identityId);
+    if (
+      governed?.length &&
+      !governed.some((scope) =>
+        scope.hasUnit && scope.capabilities.includes('manage_guest_communications')
+      )
+    ) continue;
+
+    const configured = departmentsByIdentity.get(assignment.identityId);
+    const allowed =
+      Boolean(assignment.unitId) ||
+      !configured ||
+      configured.some((department) => messagingDepartments.has(department));
+    if (!allowed) continue;
+    ids.add(assignment.identityId);
+    roles[assignment.identityId] = assignment.role;
+  }
+
+  const engagement = booking.unit.engagements[0];
+  if (engagement?.engagementType === 'via_management_company' && engagement.managementOrgId) {
+    const mcMembers = await db.roleAssignment.findMany({
+      where: {
+        role: 'mc_member',
+        status: 'active',
+        projectId: booking.projectId,
+        organizationId: engagement.managementOrgId,
+      },
+      select: { identityId: true },
+    });
+    for (const member of mcMembers) {
+      ids.add(member.identityId);
+      roles[member.identityId] = 'mc_member';
+    }
+  } else if (
+    engagement?.engagementType === 'owner_direct' &&
+    booking.unit.ownerIdentityId
+  ) {
+    ids.add(booking.unit.ownerIdentityId);
+    roles[booking.unit.ownerIdentityId] = 'owner';
+  }
+
+  return {
+    participantIdentityIds: Array.from(ids),
+    participantRoles: roles,
+  };
+}
+
 /**
  * Find or create a thread by context (idempotent).
  * For booking context: guest + ops host/staff
@@ -39,7 +174,37 @@ export async function findOrCreateThread(
   });
 
   if (existingThread) {
-    // Idempotent: thread already exists
+    // Booking threads are an authorization projection, not an append-only ACL.
+    // When team/unit access changes, remove identities that are no longer in
+    // the freshly resolved authorized participant set.
+    if (contextType === 'booking') {
+      await db.threadParticipant.deleteMany({
+        where: {
+          threadId: existingThread.id,
+          identityId: { notIn: participantIdentityIds },
+        },
+      });
+    }
+    // Idempotent by context, and participant scope may evolve when a team
+    // changes. Upsert only explicitly authorized participants.
+    for (const identityId of participantIdentityIds) {
+      await db.threadParticipant.upsert({
+        where: {
+          threadId_identityId: {
+            threadId: existingThread.id,
+            identityId,
+          },
+        },
+        create: {
+          threadId: existingThread.id,
+          identityId,
+          participantRole: participantRoles[identityId] || 'participant',
+        },
+        update: {
+          participantRole: participantRoles[identityId] || 'participant',
+        },
+      });
+    }
     return { id: existingThread.id, created: false };
   }
 

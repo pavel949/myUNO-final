@@ -108,6 +108,94 @@ export async function ensureCrmProfile(
   });
 }
 
+export async function recordConfirmedStayInCrm(
+  db: PrismaClient,
+  input: { identityId: string; bookingId: string; projectId: string; unitId: string }
+) {
+  const now = new Date();
+  return db.$transaction(async (tx) => {
+    const existing = await tx.crmProfile.findUnique({
+      where: { identityId: input.identityId },
+      select: { id: true, lifecycleStage: true, guestSince: true },
+    });
+    const profile = existing ?? await ensureCrmProfile(tx, input.identityId, {
+      lifecycleStage: 'guest',
+      source: 'confirmed_stay',
+    });
+
+    const previousStayCount = await tx.booking.count({
+      where: {
+        guestIdentityId: input.identityId,
+        id: { not: input.bookingId },
+        status: { in: ['confirmed','checked_in','checked_out','completed'] },
+      },
+    });
+
+    const protectedStages: CrmLifecycleStage[] = ['buyer','investor','owner','managed','seller'];
+    let nextStage: CrmLifecycleStage | null = null;
+    if (!protectedStages.includes(profile.lifecycleStage)) {
+      if (profile.lifecycleStage === 'guest' && previousStayCount > 0) nextStage = 'repeat';
+      else if (['contact','prospect','former_client'].includes(profile.lifecycleStage)) nextStage = 'guest';
+    }
+
+    if (nextStage && nextStage !== profile.lifecycleStage) {
+      await tx.crmProfile.update({
+        where: { identityId: input.identityId },
+        data: {
+          lifecycleStage: nextStage,
+          lifecycleChangedAt: now,
+          lifecycleChangeReason: 'Confirmed stay',
+          guestSince: profile.guestSince ?? now,
+          lastInteractionAt: now,
+        },
+      });
+      await tx.lifecycleTransitionLog.create({
+        data: {
+          profileId: profile.id,
+          fromStage: profile.lifecycleStage,
+          toStage: nextStage,
+          reason: 'Confirmed stay',
+        },
+      });
+    } else {
+      await tx.crmProfile.update({
+        where: { identityId: input.identityId },
+        data: {
+          guestSince: profile.guestSince ?? now,
+          lastInteractionAt: now,
+        },
+      });
+    }
+
+    const existingActivity = await tx.crmActivity.findFirst({
+      where: {
+        identityId: input.identityId,
+        type: 'system',
+        metadata: { path: ['bookingId'], equals: input.bookingId },
+      },
+      select: { id: true },
+    });
+    if (!existingActivity) {
+      await tx.crmActivity.create({
+        data: {
+          identityId: input.identityId,
+          type: 'system',
+          status: 'completed',
+          subject: 'Stay confirmed',
+          completedAt: now,
+          metadata: {
+            bookingId: input.bookingId,
+            projectId: input.projectId,
+            unitId: input.unitId,
+          },
+        },
+      });
+    }
+
+    return tx.crmProfile.findUniqueOrThrow({ where: { identityId: input.identityId } });
+  });
+}
+
 export async function createOpportunity(db: PrismaClient, input: OpportunityInput) {
   const title = cleanRequired(input.title, 'title', 240);
   const source = cleanRequired(input.source, 'source', 120);

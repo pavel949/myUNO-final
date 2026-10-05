@@ -5,6 +5,7 @@ export {
   createOpportunity,
   ensureCrmProfile,
   getPipeline,
+  recordConfirmedStayInCrm,
   transitionOpportunity,
 } from './crm.service';
 export {

@@ -20,7 +20,7 @@ type Placement = {
 type Candidate = { id: string; label: string; type: string };
 
 const field = 'mt-4 h-44 w-full rounded-lg border border-border-line bg-surface-paper px-12 text-text-ink';
-const textarea = 'mt-4 min-h-88 w-full rounded-lg border border-border-line bg-surface-paper p-12 text-text-ink';
+const textarea = 'mt-4 min-h-96 w-full rounded-lg border border-border-line bg-surface-paper p-12 text-text-ink';
 
 export default function HomepagePlacementClient({
   initialPlacements,
@@ -182,7 +182,7 @@ export default function HomepagePlacementClient({
       {selected ? <section className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-12">
           <div><p className="text-kicker uppercase text-brand-andaman">Selected placement</p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
-          <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-10 font-semibold text-state-error disabled:opacity-50">Delete</button>
+          <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-8 font-semibold text-state-error disabled:opacity-50">Delete</button>
         </div>
         <form key={selected.id} onSubmit={savePlacement} className="mt-16">{editorFields(selected)}
           <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">Save placement</button>

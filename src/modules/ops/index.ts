@@ -53,3 +53,28 @@ export {
   formatCheckOutChecklistNotes,
   type CheckOutChecklistItem,
 } from './check-out-checklist';
+
+export {
+  ensureTurnoverTasksForCheckout,
+  assertUnitReadyForCheckIn,
+  transitionOperationalTask,
+  getUnitReadinessMap,
+  listOperationalTasks,
+  createOperationalTask,
+  createPreventiveMaintenancePlan,
+  generateDuePreventiveMaintenanceTasks,
+  type UnitReadinessState,
+  type CreateOperationalTaskInput,
+  type CreatePreventiveMaintenancePlanInput,
+} from './operational-task.service';
+
+
+export {
+  OPERATING_SPACE_CAPABILITIES,
+  listOperatingSpacesForIdentity,
+  getOperatingSpaceUnitIds,
+  getOperatingSpaceMembership,
+  hasOperatingSpaceCapability,
+  assertOperatingSpaceCapability,
+  type OperatingSpaceCapability,
+} from './operating-space.service';

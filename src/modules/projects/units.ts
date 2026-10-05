@@ -116,7 +116,7 @@ async function ensureLegacyStayOffering(unitId: string): Promise<void> {
   if (!unit || unit.status !== 'live' || unit.project.projectType) return;
   if (unit.commercialOfferings.length > 0) return;
   await prisma.commercialOffering.create({
-    data: { unitId, offeringType: 'short_stay', status: 'active' },
+    data: { unitId, offeringType: 'short_term_stay', status: 'active' },
   });
 }
 

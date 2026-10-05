@@ -161,6 +161,8 @@ export interface UnitFactoryOpts {
   instantBook?: boolean;
   categoryKey?: string;
   bedrooms?: number;
+  /** Live public fixtures default to media-ready. Set false to test a media blocker. */
+  publicMediaReady?: boolean;
 }
 
 /**
@@ -224,6 +226,111 @@ async function ensureFactoryCategory(opts: {
   return category;
 }
 
+async function ensureFactoryMediaUploader() {
+  const email = 'public-media-fixture@example.com';
+  const existing = await db.identity.findUnique({ where: { email } });
+  if (existing) return existing;
+  return db.identity.create({
+    data: {
+      firstName: 'Media',
+      lastName: 'Fixture',
+      email,
+      status: 'active',
+      preferredLocale: 'en',
+    },
+  });
+}
+
+async function createFactoryPhotos(prefix: string, count = 3) {
+  const uploader = await ensureFactoryMediaUploader();
+  return Promise.all(
+    Array.from({ length: count }, (_, index) =>
+      db.mediaAsset.create({
+        data: {
+          storageKey: `https://cdn.example.test/${prefix}-${index + 1}.jpg`,
+          kind: 'photo',
+          mimeType: 'image/jpeg',
+          sizeBytes: 1024,
+          encrypted: false,
+          uploadedByIdentityId: uploader.id,
+        },
+      })
+    )
+  );
+}
+
+export async function makeCategoryPublicMediaReady(categoryId: string) {
+  const category = await db.inventoryCategory.findUnique({
+    where: { id: categoryId },
+    select: { id: true, coverMediaId: true, galleryMedia: { select: { mediaId: true } } },
+  });
+  if (!category) throw new Error(`Category ${categoryId} not found`);
+  if (category.coverMediaId && category.galleryMedia.length >= 3) return;
+
+  const photos = await createFactoryPhotos(`category-${categoryId}`);
+  await db.$transaction([
+    ...photos.map((asset, index) =>
+      db.inventoryCategoryMedia.upsert({
+        where: { categoryId_mediaId: { categoryId, mediaId: asset.id } },
+        create: { categoryId, mediaId: asset.id, sort: index },
+        update: { sort: index },
+      })
+    ),
+    db.inventoryCategory.update({
+      where: { id: categoryId },
+      data: { coverMediaId: photos[0].id },
+    }),
+  ]);
+}
+
+export async function makeUnitPublicMediaReady(unitId: string) {
+  const unit = await db.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, coverMediaId: true, media: { select: { mediaId: true } } },
+  });
+  if (!unit) throw new Error(`Unit ${unitId} not found`);
+  if (unit.coverMediaId && unit.media.length >= 3) return;
+
+  const photos = await createFactoryPhotos(`unit-${unitId}`);
+  await db.$transaction([
+    ...photos.map((asset, index) =>
+      db.unitMedia.upsert({
+        where: { unitId_mediaId: { unitId, mediaId: asset.id } },
+        create: { unitId, mediaId: asset.id, sort: index },
+        update: { sort: index },
+      })
+    ),
+    db.unit.update({
+      where: { id: unitId },
+      data: { coverMediaId: photos[0].id },
+    }),
+  ]);
+}
+
+export async function makeProjectPublicMediaReady(projectId: string) {
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, coverMediaId: true, galleryMedia: { select: { mediaId: true } } },
+  });
+  if (!project) throw new Error(`Project ${projectId} not found`);
+  if (project.coverMediaId && project.galleryMedia.length >= 3) return;
+
+  const photos = await createFactoryPhotos(`project-${projectId}`);
+  await db.$transaction([
+    ...photos.map((asset, index) =>
+      db.projectMedia.upsert({
+        where: { projectId_mediaId: { projectId, mediaId: asset.id } },
+        create: { projectId, mediaId: asset.id, sort: index },
+        update: { sort: index },
+      })
+    ),
+    db.project.update({
+      where: { id: projectId },
+      data: { coverMediaId: photos[0].id },
+    }),
+  ]);
+}
+
 export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {}) {
   const opts = typeof projectIdOrOpts === 'string'
     ? { projectId: projectIdOrOpts }
@@ -275,9 +382,16 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
   // contract invariant 3). Tests about the gate itself opt out.
   if (status === 'live' && !opts.withoutStayOffering) {
     await db.commercialOffering.create({
-      data: { unitId: unit.id, offeringType: 'short_stay', status: 'active' },
+      data: { unitId: unit.id, offeringType: 'short_term_stay', status: 'active' },
     });
   }
+
+  if (status === 'live' && opts.publicMediaReady !== false) {
+    if (category) await makeCategoryPublicMediaReady(category.id);
+    await makeUnitPublicMediaReady(unit.id);
+    return db.unit.findUniqueOrThrow({ where: { id: unit.id } });
+  }
+
   return unit;
 }
 

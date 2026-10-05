@@ -28,6 +28,7 @@ interface Unit {
   /** Canonical category base rate, satang. */
   baseRateSatang?: number;
   project?: { id: string; name: string };
+  photoScope?: 'exact_unit' | 'room_type';
 }
 
 interface PriceBreakdown {
@@ -49,6 +50,7 @@ export interface UnitDetailLabels {
   backToResults: string;
   onMyUno: string;
   showAllPhotos: string;
+  representativeMedia: string;
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
@@ -231,7 +233,7 @@ export default function UnitDetailClient({
 
   return (
     <div className="min-h-screen bg-surface-ivory p-16 md:p-32 pb-96 lg:pb-32">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto max-w-content">
         <p className="mb-16">
           <Link
             href={backToSearch}
@@ -247,6 +249,11 @@ export default function UnitDetailClient({
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
             />
+            {unit.photoScope === 'room_type' ? (
+              <p className="mt-8 text-small text-text-secondary">
+                {labels.representativeMedia}
+              </p>
+            ) : null}
             <div className="mt-32">
               <h1 className="font-display text-display font-semibold text-text-ink mb-4">
                 {unit.name}
@@ -309,7 +316,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24 sticky top-96 shadow-card">
+            <div className="sticky top-96 rounded-xl border border-border-line bg-surface-paper p-24 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote
@@ -394,7 +401,7 @@ export default function UnitDetailClient({
               </p>
 
               {error && (
-                <div className="bg-state-error/10 border border-state-error rounded-lg p-12 mb-16">
+                <div className="bg-state-error/10 border border-state-error rounded-xl p-12 mb-16">
                   <p className="text-small text-state-error">{error}</p>
                 </div>
               )}

@@ -83,7 +83,8 @@ export async function computeCanonicalPriceBreakdown(
   checkOutDate: Date,
   guestCount: number,
   bookingDate: Date = new Date(),
-  pets: number = 0
+  pets: number = 0,
+  options: { calendarProjection?: boolean } = {}
 ): Promise<PriceBreakdown> {
   const unit = await db.unit.findUnique({
     where: { id: unitId },
@@ -131,7 +132,7 @@ export async function computeCanonicalPriceBreakdown(
   // whatever its project's type. This used to apply only to typed projects,
   // so every live unit of an untyped (legacy) project was bookable with no
   // offering at all — 5 of 5 live production units on 2026-10-01, backfilled
-  // by migration 20261001120000_backfill_stay_offerings. Draft units stay
+  // by migration 20261005120000_backfill_stay_offerings. Draft units stay
   // quotable for admin previews.
   if ((unit.status === 'live' || unit.project.projectType) && !stayOffers.some(offer =>
     ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')) {
@@ -162,7 +163,8 @@ export async function computeCanonicalPriceBreakdown(
     // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
     // discount. A draft/unverified monthly offer cannot be silently substituted
     // by an arbitrary 20% nightly discount.
-    const mode: TariffMode = nights >= 30 ? 'monthly' : 'daily';
+    const mode: TariffMode =
+      options.calendarProjection ? 'daily' : nights >= 30 ? 'monthly' : 'daily';
     if (mode === 'monthly' && monthlyGrid === null)
       throw new Error('Validated monthly tariff is required for this stay');
     const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
@@ -188,7 +190,7 @@ export async function computeCanonicalPriceBreakdown(
       commercialTerms = resolveSourceBookingTerms(
         rules, mode, arrivalRate.seasonCode,
       );
-      if (nights < commercialTerms.minimumNights)
+      if (!options.calendarProjection && nights < commercialTerms.minimumNights)
         throw new Error('Stay length below booking-policy minimum of ' +
           commercialTerms.minimumNights);
     }
@@ -241,7 +243,7 @@ export async function computeCanonicalPriceBreakdown(
   const canonicalMinNights =
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
   const minNights = arrivalRule?.minNightsOverride ?? canonicalMinNights;
-  if (nights < minNights) {
+  if (!options.calendarProjection && nights < minNights) {
     throw new Error(`Stay length ${nights} nights is below minimum of ${minNights}`);
   }
 
@@ -296,7 +298,11 @@ export async function computeCanonicalPriceBreakdown(
   }
 
   let monthlyApplied = false;
-  if (nights >= 28 && nightMonthlyRates.every((m) => typeof m === 'number')) {
+  if (
+    !options.calendarProjection &&
+    nights >= 28 &&
+    nightMonthlyRates.every((m) => typeof m === 'number')
+  ) {
     monthlyApplied = true;
     subtotal = 0;
     for (let i = 0; i < lines.length; i++) {
@@ -356,4 +362,52 @@ export async function computeCanonicalPriceBreakdown(
     occupancy_tax_thb: occupancyTax,
     total_thb: total,
   };
+}
+
+
+export interface CanonicalCalendarRateLine {
+  date: string;
+  nightlyThb: number;
+  source: PriceBreakdown['lines'][number]['applied_from'];
+}
+
+/**
+ * Calendar pricing is a read projection of the exact booking quote engine.
+ * It never re-implements rate precedence. If the selected date range is not a
+ * valid quote (for example minimum stay), callers receive the reason rather
+ * than a fabricated nightly price.
+ */
+export async function computeCanonicalCalendarRates(
+  db: PrismaClient,
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+  guestCount: number = 1,
+  bookingDate: Date = new Date()
+): Promise<{ lines: CanonicalCalendarRateLine[]; error: string | null }> {
+  try {
+    const quote = await computeCanonicalPriceBreakdown(
+      db,
+      unitId,
+      startDate,
+      endDate,
+      guestCount,
+      bookingDate,
+      0,
+      { calendarProjection: true }
+    );
+    return {
+      lines: quote.lines.map((line) => ({
+        date: line.date,
+        nightlyThb: line.nightly_thb,
+        source: line.applied_from,
+      })),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      lines: [],
+      error: error instanceof Error ? error.message : 'Pricing unavailable',
+    };
+  }
 }

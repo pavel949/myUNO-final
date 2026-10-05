@@ -6,9 +6,28 @@ vi.mock('@/lib/prisma', async () => {
   const util = await import('@/test/util');
   return { prisma: util.db };
 });
-vi.mock('@/app/libs/onboardingGuard', () => ({
-  requireAdmin: async () => ({ ok: true }),
-}));
+vi.mock('@/app/libs/managedMediaGuard', async () => {
+  const util = await import('@/test/util');
+  return {
+    managedMediaAccess: async () => {
+      const actor = await util.db.identity.findFirst({ where: { isAdmin: true } });
+      return actor
+        ? { user: { identityId: actor.id, isAdmin: true } }
+        : { error: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) };
+    },
+    assertPublicPhoto: async (mediaAssetId: string) => Boolean(
+      await util.db.mediaAsset.findFirst({
+        where: {
+          id: mediaAssetId,
+          kind: 'photo',
+          encrypted: false,
+          mimeType: { in: ['image/jpeg', 'image/png', 'image/webp'] },
+        },
+        select: { id: true },
+      })
+    ),
+  };
+});
 
 import { GET, POST, PATCH, DELETE } from './route';
 

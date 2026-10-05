@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
+import { assertCommercialOfferingReadyForActivation } from '@/modules/onboarding';
 
 /**
  * A mapped Layantara home remains source-owned until independently verified
@@ -20,13 +21,24 @@ async function layantaraAuthority(unitId: string): Promise<{ linked: boolean; ve
     safe.bookingAuthority === 'myuno' && safe.cutoverVerified === true };
 }
 
-async function findExistingStayOffering(unitId: string, preferCanonical: boolean) {
+async function findExistingStayOffering(unitId: string) {
   const offers = await prisma.commercialOffering.findMany({
     where: { unitId, offeringType: { in: ['short_term_stay', 'short_stay'] } },
     orderBy: { createdAt: 'asc' },
   });
-  return offers.find(offer => offer.offeringType ===
-    (preferCanonical ? 'short_term_stay' : 'short_stay')) ?? offers[0] ?? null;
+  const canonical = offers.find(offer => offer.offeringType === 'short_term_stay') ?? null;
+  const legacy = offers.find(offer => offer.offeringType === 'short_stay') ?? null;
+  if (canonical && legacy) {
+    throw new Error('duplicate_stay_offering_records');
+  }
+  if (canonical) return canonical;
+  if (!legacy) return null;
+  // One-time in-place normalization keeps the offering ID and all channel
+  // mappings while removing the legacy vocabulary from future writes.
+  return prisma.commercialOffering.update({
+    where: { id: legacy.id },
+    data: { offeringType: 'short_term_stay' },
+  });
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -72,13 +84,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
       if (!unit) return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
       const authority = await layantaraAuthority(params.id);
-      const status = body.status ?? (authority.linked ? 'draft' : 'active');
+      const status = body.status ?? 'draft';
       if (!['active', 'paused', 'draft'].includes(status)) {
         return NextResponse.json({ error: 'Invalid stay offering status' }, { status: 400 });
       }
       // Read the canonical offer first on source-linked units; historical
       // short_stay offers remain accessible for legacy non-Layantara units.
-      const existing = await findExistingStayOffering(params.id, authority.linked);
+      const existing = await findExistingStayOffering(params.id);
       if (status === 'active' && authority.linked) {
         if (!authority.verified) return NextResponse.json(
           { error: 'source_calendar_cutover_required' }, { status: 409 });
@@ -94,11 +106,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           return NextResponse.json({ error: 'verified_pricing_required' }, { status: 409 });
         }
       }
+      if (status === 'active') {
+        await assertCommercialOfferingReadyForActivation(
+          prisma,
+          params.id,
+          'short_term_stay',
+        );
+      }
       const offering = existing
         ? await prisma.commercialOffering.update({ where: { id: existing.id }, data: { status } })
         : await prisma.commercialOffering.create({
-            data: { unitId: params.id,
-              offeringType: authority.linked ? 'short_term_stay' : 'short_stay', status },
+            data: { unitId: params.id, offeringType: 'short_term_stay', status },
           });
       return NextResponse.json(offering, { status: existing ? 200 : 201 });
     }
@@ -133,23 +151,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     if (body.action === 'channel_mapping') {
       if (body.syncState === 'ari_push') throw new Error('ARI push cannot be marked manually; connect a verified ARI provider first');
-      const authority = await layantaraAuthority(params.id);
-      const requestedType = body.offeringType || (authority.linked ? 'short_term_stay' : 'short_stay');
+      const requestedType = body.offeringType || 'short_term_stay';
       const stayType = requestedType === 'short_stay' || requestedType === 'short_term_stay';
-      const offeringType = authority.linked && stayType ? 'short_term_stay' : requestedType;
-      const existingOffering = body.offeringId
+      const offeringType = stayType ? 'short_term_stay' : requestedType;
+      let existingOffering = body.offeringId
         ? await prisma.commercialOffering.findFirst({ where: { id: body.offeringId, unitId: params.id } })
         : stayType
-          ? await findExistingStayOffering(params.id, authority.linked)
+          ? await findExistingStayOffering(params.id)
           : await prisma.commercialOffering.findFirst({
               where: { unitId: params.id, offeringType },
               orderBy: { createdAt: 'asc' },
             });
       if (body.offeringId && !existingOffering) throw new Error('Offering does not belong to this unit');
+      if (existingOffering?.offeringType === 'short_stay') {
+        existingOffering = await findExistingStayOffering(params.id);
+      }
       // Mapping a channel must not activate a source-owned Layantara offer.
       const offering = existingOffering || await prisma.commercialOffering.create({
         data: { unitId: params.id, offeringType,
-          status: authority.linked ? 'draft' : 'active' },
+          status: stayType ? 'draft' : 'active' },
       });
       const mapping = await prisma.channelMapping.upsert({
         where: { offeringId_channel: { offeringId: offering.id, channel: body.channel } },

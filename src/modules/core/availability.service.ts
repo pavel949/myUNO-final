@@ -88,31 +88,32 @@ function seasonDuration(date: Date, season: SeasonPeriod): number {
  * config.get() so project/unit overrides win over the global default.
  * More specific (shorter) ranges win on overlap.
  */
+function selectApplicableSeason(
+  seasons: SeasonPeriod[] | null | undefined,
+  date: Date
+): SeasonPeriod | null {
+  if (!Array.isArray(seasons) || seasons.length === 0) return null;
+
+  let bestMatch: SeasonPeriod | null = null;
+  let bestDuration = Infinity;
+  for (const season of seasons) {
+    if (!isDateInSeason(date, season)) continue;
+    const duration = seasonDuration(date, season);
+    if (duration < bestDuration) {
+      bestMatch = season;
+      bestDuration = duration;
+    }
+  }
+  return bestMatch;
+}
+
 export async function getApplicableSeason(
   db: PrismaClient,
   date: Date,
   scope?: PricingScope
 ): Promise<SeasonPeriod | null> {
   const seasons = await getConfig(db, 'pricing.season.calendar', scope);
-
-  if (!Array.isArray(seasons) || seasons.length === 0) {
-    return null;
-  }
-
-  let bestMatch: SeasonPeriod | null = null;
-  let bestDuration = Infinity;
-
-  for (const season of seasons) {
-    if (isDateInSeason(date, season)) {
-      const duration = seasonDuration(date, season);
-      if (duration < bestDuration) {
-        bestMatch = season;
-        bestDuration = duration;
-      }
-    }
-  }
-
-  return bestMatch;
+  return selectApplicableSeason(Array.isArray(seasons) ? seasons : [], date);
 }
 
 /**

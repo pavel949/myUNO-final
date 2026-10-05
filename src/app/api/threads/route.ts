@@ -124,6 +124,20 @@ export async function POST(req: NextRequest) {
         participantRoles[booking.unit.ownerIdentityId] = 'owner';
       }
     } else {
+      if (contextType === 'unit') {
+        if (!contextId) {
+          throw createPublicError('invalid request: contextId is required', 400);
+        }
+        const unit = await prisma.unit.findUnique({
+          where: { id: contextId },
+          select: { projectId: true, ownerIdentityId: true },
+        });
+        if (!unit || unit.ownerIdentityId !== user.identityId) {
+          throw createPublicError('not found', 404);
+        }
+        projectId = unit.projectId;
+      }
+
       const admins = await prisma.identity.findMany({
         where: { isAdmin: true, status: 'active' },
         select: { id: true },
@@ -135,7 +149,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { id: threadId } = await findOrCreateThread(prisma, {
-      contextType: contextType === 'booking' ? 'booking' : 'general',
+      contextType:
+        contextType === 'booking' ? 'booking' : contextType === 'unit' ? 'unit' : 'general',
       contextId,
       projectId,
       participantIdentityIds: Array.from(participantIds),

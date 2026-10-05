@@ -159,7 +159,8 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contextType: 'general',
+        contextType: 'unit',
+        contextId: unit.id,
         intent: 'sell_interest',
       }),
     });
@@ -189,6 +190,34 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
             </p>
           </div>
           <Sparkline values={sparkline} max={1} title={labels['owner.units.last30']} />
+        </div>
+
+        <div className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-20">
+          <div className="flex flex-col gap-4">
+            <p className="text-kicker font-semibold uppercase tracking-[0.18em] text-brand-andaman">
+              {labels['owner.digital_twin.kicker']}
+            </p>
+            <p className="text-body text-text-secondary">
+              {labels['owner.digital_twin.subtitle']}
+            </p>
+          </div>
+          <div className="mt-16 flex flex-wrap gap-8">
+            <a href="#performance" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
+              {labels['owner.digital_twin.performance']}
+            </a>
+            <a href="#money" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
+              {labels['owner.digital_twin.money']}
+            </a>
+            <a href="#operations" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
+              {labels['owner.digital_twin.operations']}
+            </a>
+            <Link href={`/property/listings/${unit.id}`} className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
+              {labels['owner.digital_twin.record']}
+            </Link>
+            <a href="#decisions" className="rounded-full border border-border-line px-16 py-8 text-small font-semibold text-text-ink">
+              {labels['owner.digital_twin.decisions']}
+            </a>
+          </div>
         </div>
 
         {activeStay ? (
@@ -239,7 +268,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-20 mb-40">
+        <div id="performance" className="grid grid-cols-1 md:grid-cols-2 gap-20 mb-40 scroll-mt-24">
           <StatTile
             label={labels['owner.dashboard.occupancy_this_month']}
             value={`${summary.occupancyThisMonth} ${labels['owner.stats.nights']}`}
@@ -329,6 +358,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
         )}
 
         <div className="space-y-32">
+          <div id="money" className="scroll-mt-24" />
           {contractLoading ? (
             <p className="text-small text-text-secondary">{labels['owner.contract.loading']}</p>
           ) : contract ? (
@@ -378,7 +408,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
             </div>
           ) : null}
 
-          <div>
+          <div id="operations" className="scroll-mt-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.sections.bookings']}
             </h2>
@@ -480,7 +510,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
             />
           </div>
 
-          <div>
+          <div id="decisions" className="scroll-mt-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.actions.title']}
             </h2>
@@ -493,6 +523,11 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
               <Link href={serviceHref} className="flex-1">
                 <Button variant="secondary" size="md" fullWidth>
                   {labels['owner.actions.book_service']}
+                </Button>
+              </Link>
+              <Link href={`/property/listings/${unit.id}`} className="flex-1">
+                <Button variant="secondary" size="md" fullWidth>
+                  {labels['owner.digital_twin.open_record']}
                 </Button>
               </Link>
             </div>

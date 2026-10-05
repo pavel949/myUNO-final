@@ -1,5 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
-import { checkVerificationDeadlines, checkTm30Escalations } from '@/modules/ops';
+import {
+  checkVerificationDeadlines,
+  checkTm30Escalations,
+  generateDuePreventiveMaintenanceTasks,
+} from '@/modules/ops';
 import { runRetentionJobs } from '@/modules/core';
 import { rollupMetricsDaily, detectBuyerSignals } from '@/modules/analytics';
 import {
@@ -151,6 +155,18 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
  * iCal is last: each feed may block for 15s, and that must not starve
  * hold expiry or TM30 on the same invocation.
  */
+export async function runPreventiveMaintenanceJob(db: PrismaClient) {
+  return runRegisteredJob(
+    db,
+    JOB_KEYS.preventiveMaintenance,
+    async () => {
+      const generated = await generateDuePreventiveMaintenanceTasks(db);
+      return { generated: generated.length };
+    },
+    (r) => `${r.generated} preventive maintenance tasks generated`
+  );
+}
+
 export async function runDepositReleaseJob(db: PrismaClient) {
   return runRegisteredJob(
     db,
@@ -210,6 +226,9 @@ export async function runNightlyJobs(db: PrismaClient): Promise<JobDispatchResul
 
   const deposits = await runDepositReleaseJob(db);
   mark(results, JOB_KEYS.depositRelease, deposits.ok, deposits.summary);
+
+  const preventive = await runPreventiveMaintenanceJob(db);
+  mark(results, JOB_KEYS.preventiveMaintenance, preventive.ok, preventive.summary);
 
   return results;
 }

@@ -218,7 +218,12 @@ describe('GET /api/units/[unitId] — truthful gallery scope', () => {
     const actor = await createIdentity();
     const project = await createProject({ status: 'live' });
     await db.project.update({ where: { id: project.id }, data: { projectType } });
-    const unit = await createUnit({ projectId: project.id, status: 'live', withoutStayOffering: true });
+    const unit = await createUnit({
+      projectId: project.id,
+      status: 'live',
+      publicMediaReady: false,
+      withoutStayOffering: true,
+    });
     await db.commercialOffering.create({ data: {
       projectId: project.id, unitId: unit.id,
       offeringType: 'short_stay', status: 'active',
@@ -226,14 +231,17 @@ describe('GET /api/units/[unitId] — truthful gallery scope', () => {
     const category = await db.inventoryCategory.findUniqueOrThrow({
       where: { id: unit.inventoryCategoryId! },
     });
-    const asset = await db.mediaAsset.create({ data: {
+    const assets = await Promise.all([1, 2, 3].map((index) => db.mediaAsset.create({ data: {
       uploadedByIdentityId: actor.id, kind: 'photo', mimeType: 'image/jpeg',
-      sizeBytes: 12, storageKey: 'https://example.com/representative.jpg',
-    } });
-    await db.inventoryCategoryMedia.create({ data: {
-      categoryId: category.id, mediaId: asset.id, sort: 0,
-    } });
-    await db.inventoryCategory.update({ where: { id: category.id }, data: { coverMediaId: asset.id } });
+      sizeBytes: 12, storageKey: `https://example.com/representative-${index}.jpg`,
+    } })));
+    await Promise.all(assets.map((asset, sort) => db.inventoryCategoryMedia.create({ data: {
+      categoryId: category.id, mediaId: asset.id, sort,
+    } })));
+    await db.inventoryCategory.update({
+      where: { id: category.id },
+      data: { coverMediaId: assets[0].id },
+    });
     return unit;
   }
 
@@ -243,15 +251,16 @@ describe('GET /api/units/[unitId] — truthful gallery scope', () => {
     const body = await result.json();
     expect(result.status).toBe(200);
     expect(body.photoScope).toBe('room_type');
-    expect(body.images).toEqual(['https://example.com/representative.jpg']);
+    expect(body.images).toEqual([
+      'https://example.com/representative-1.jpg',
+      'https://example.com/representative-2.jpg',
+      'https://example.com/representative-3.jpg',
+    ]);
   });
 
   it('does not impersonate a private resort villa with category photos', async () => {
     const unit = await roomWithCategoryPhoto('resort');
     const result = await GET(makeRequest(), { params: { unitId: unit.id } });
-    const body = await result.json();
-    expect(result.status).toBe(200);
-    expect(body.photoScope).toBe('none');
-    expect(body.images).toEqual([]);
+    expect(result.status).toBe(404);
   });
 });

@@ -9,7 +9,13 @@ import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectMediaPage({ params }: { params: { id: string } }) {
+export default async function ProjectMediaPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { select?: string };
+}) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/media'));
   const actor = await getProjectExperienceActor(params.id);
@@ -58,6 +64,7 @@ export default async function ProjectMediaPage({ params }: { params: { id: strin
       projectName={project.name}
       categories={project.inventoryCategories}
       units={project.units}
+      initialSelection={searchParams?.select}
       labels={labels}
     />
   </main>;

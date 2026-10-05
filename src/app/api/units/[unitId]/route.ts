@@ -5,6 +5,7 @@ import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { resolveStayCancellationPolicy } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
 
 /**
  * GET /api/units/[unitId]
@@ -66,6 +67,7 @@ export async function GET(
         minNights: true,
         instantBook: true,
         cancellationPolicyKey: true,
+        coverMediaId: true,
         status: true,
         assetStatus: true,
         commercialOfferings: { select: { offeringType: true, status: true } },
@@ -78,20 +80,33 @@ export async function GET(
             minNights: true,
             baseNightlyThb: true,
             cancellationPolicyKey: true,
-            coverMedia: { select: { storageKey: true } },
+            coverMediaId: true,
+            coverMedia: {
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+            },
             galleryMedia: {
               orderBy: { sort: 'asc' },
-              select: { media: { select: { storageKey: true } } },
+              include: {
+                media: {
+                  select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+                },
+              },
             },
           },
         },
         project: {
           select: { id: true, name: true, status: true, projectType: true },
         },
-        coverMedia: { select: { storageKey: true } },
+        coverMedia: {
+          select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+        },
         media: {
           orderBy: { sort: 'asc' },
-          select: { media: { select: { id: true, storageKey: true } } },
+          include: {
+            media: {
+              select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+            },
+          },
         },
       },
     });
@@ -166,31 +181,44 @@ export async function GET(
       identityId: viewer?.identityId,
     });
 
+    const mediaReadiness = assessUnitMediaReadiness({
+      projectType: unit.project.projectType,
+      accommodationType: unit.accommodationType,
+      unitCoverMediaId: unit.coverMediaId,
+      unitMedia: unit.media,
+      categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+      categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
+    });
+    if (!mediaReadiness.ready) {
+      // A live database row is not automatically a guest-ready listing.
+      // Search and public project/unit pages use the same media gate, so a
+      // media-incomplete asset cannot be deep-linked around discovery.
+      return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+    }
+
     const {
       status: _status,
       assetStatus: _assetStatus,
-      coverMedia,
-      media,
+      coverMedia: _coverMedia,
+      media: _media,
       commercialOfferings: _commercialOfferings,
+      inventoryCategory,
       project,
       ...rest
     } = unit;
-    const publicUnit = { ...rest, project: { id: project.id, name: project.name } };
-    const gallery = media.map((m) => m.media.storageKey);
-    const exactCover = coverMedia?.storageKey || gallery[0] || null;
-    // Representative hotel-room photos may be used when the individual room
-    // has no exact-unit media. Private villas and condos never inherit another
-    // unit's photograph, even when they share the same inventory category.
-    const isRoomType = project.projectType === 'hotel' ||
-      unit.accommodationType === 'hotel_room';
-    const representative = isRoomType && gallery.length === 0 && !exactCover
-      ? unit.inventoryCategory?.galleryMedia.map(m => m.media.storageKey) ?? []
-      : [];
-    const representativeCover = isRoomType && gallery.length === 0 && !exactCover
-      ? unit.inventoryCategory?.coverMedia?.storageKey ?? representative[0] ?? null
-      : null;
-    const selected = representative.length ? representative : gallery;
-    const cover = exactCover || representativeCover;
+    const publicUnit = {
+      ...rest,
+      inventoryCategory: inventoryCategory
+        ? {
+            id: inventoryCategory.id,
+            categoryKey: inventoryCategory.categoryKey,
+            name: inventoryCategory.name,
+          }
+        : null,
+      project: { id: project.id, name: project.name },
+    };
+    const coverUrl = mediaReadiness.coverUrl;
+
     return NextResponse.json({
       ...publicUnit,
       // Money boundary: all *Thb integer fields stay in satang until the final
@@ -202,8 +230,15 @@ export async function GET(
       baseRateSatang: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
       cancellationPolicyKey: stayPolicyKey,
       pricing,
-      photoScope: representativeCover ? 'room_type' : exactCover ? 'exact_unit' : 'none',
-      images: cover ? [cover, ...selected.filter(g => g !== cover)] : selected,
+      photoScope: mediaReadiness.photoScope,
+      mediaReadiness: {
+        ready: true,
+        photoCount: mediaReadiness.photoCount,
+        representative: mediaReadiness.representative,
+      },
+      images: coverUrl
+        ? [coverUrl, ...mediaReadiness.urls.filter((url) => url !== coverUrl)]
+        : mediaReadiness.urls,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

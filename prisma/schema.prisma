@@ -753,6 +753,11 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  reservationGroupsAsGuest   ReservationGroup[] @relation("reservationGroupGuest")
+  reservationGroupsCreated   ReservationGroup[] @relation("reservationGroupCreator")
+  preventiveMaintenancePlansAssigned PreventiveMaintenancePlan[] @relation("preventivePlanAssignee")
+  operatingSpaceMemberships OperatingSpaceMember[]
+  operatingTeamMemberships OperatingTeamMember[]
   teamPermissions ProjectStaffPermission[]
   unitAccessUpdates UnitAccessInstruction[]
   id        String   @id @default(uuid())
@@ -858,6 +863,7 @@ model Identity {
   regulatoryCredentialsVerified RegulatoryCredential[]        @relation("credentialVerifier")
 
   @@map("identity")
+  operationalTasksAssigned OperationalTask[] @relation("operationalTaskAssignee")
 }
 
 model AuthAccount {
@@ -928,6 +934,7 @@ model Area {
 }
 
 model Project {
+  preventiveMaintenancePlans PreventiveMaintenancePlan[]
   teamPermissions ProjectStaffPermission[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -996,6 +1003,7 @@ model Project {
   inventoryCategories   InventoryCategory[]
   ratePlans             RatePlan[]
   bookings              Booking[]
+  operationalTasks       OperationalTask[]
   ledgerEntries         LedgerEntry[]
   threads               Thread[]
   tickets               Ticket[]
@@ -1017,6 +1025,8 @@ model Project {
 }
 
 model Unit {
+  preventiveMaintenancePlans PreventiveMaintenancePlan[]
+  operatingSpaces OperatingSpaceUnit[]
   accessInstruction UnitAccessInstruction?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -1083,6 +1093,7 @@ model Unit {
   blockedDates                 BlockedDate[]
   pricingRules                 PricingRule[]
   bookings                     Booking[]
+  operationalTasks             OperationalTask[]
   ledgerEntries                LedgerEntry[]
   tickets                      Ticket[]
   serviceOrders                ServiceOrder[]
@@ -1152,7 +1163,31 @@ model PricingRule {
   @@map("pricing_rule")
 }
 
+model ReservationGroup {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  guestIdentityId     String  @map("guest_identity_id")
+  createdByIdentityId String? @map("created_by_identity_id")
+  operatingSpaceId    String? @map("operating_space_id")
+  title               String?
+  status              String  @default("active")
+  currency            String  @default("THB")
+  notes               String?
+
+  guest          Identity        @relation("reservationGroupGuest", fields: [guestIdentityId], references: [id], onDelete: Restrict)
+  createdBy      Identity?       @relation("reservationGroupCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  operatingSpace OperatingSpace? @relation(fields: [operatingSpaceId], references: [id], onDelete: SetNull)
+  bookings       Booking[]
+
+  @@index([guestIdentityId, status])
+  @@index([operatingSpaceId, status])
+  @@map("reservation_group")
+}
+
 model Booking {
+  reservationGroupId String? @map("reservation_group_id")
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1189,6 +1224,7 @@ model Booking {
   internalNote               String?            @map("internal_note")
 
   // Relations
+  reservationGroup ReservationGroup? @relation(fields: [reservationGroupId], references: [id], onDelete: SetNull)
   unit             Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   guestIdentity    Identity            @relation(name: "bookingGuest", fields: [guestIdentityId], references: [id])
@@ -1201,6 +1237,7 @@ model Booking {
   amenityReservations ProjectAmenityReservation[]
   tm30Filings      Tm30Filing[]
   conditionReports ConditionReport[]
+  operationalTasks OperationalTask[]
   depositClaims    DepositClaim[]
   depositPreauth   DepositPreauth?
   analyticsEvents  AnalyticsEvent[]
@@ -1209,6 +1246,7 @@ model Booking {
   reschedules BookingReschedule[]
 
   @@unique([externalRef, channel])
+  @@index([reservationGroupId])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])
   @@index([projectId])
@@ -1551,6 +1589,7 @@ model UnitEngagement {
 }
 
 model Organization {
+  operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1851,6 +1890,7 @@ model RoleAssignment {
 }
 
 model MediaAsset {
+  operationalTaskMedia OperationalTaskMedia[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -2239,6 +2279,128 @@ model Message {
 
   @@index([threadId, createdAt])
   @@map("message")
+}
+
+enum OperationalTaskType {
+  turnover_cleaning
+  turnover_inspection
+  maintenance_followup
+  preventive_maintenance
+  deep_cleaning
+  restocking
+  guest_request
+  prearrival
+  owner_request
+  utilities
+  pool
+  garden
+  pest_control
+  compliance
+  custom
+}
+
+enum OperationalTaskStatus {
+  planned
+  assigned
+  in_progress
+  inspected
+  blocked
+  ready
+  cancelled
+}
+
+model OperationalTask {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projectId                  String                @map("project_id")
+  unitId                     String                @map("unit_id")
+  bookingId                  String?               @map("booking_id")
+  operatingSpaceId           String?               @map("operating_space_id")
+  assignedTeamId             String?               @map("assigned_team_id")
+  preventiveMaintenancePlanId String?              @map("preventive_maintenance_plan_id")
+  taskType                   OperationalTaskType   @map("task_type")
+  status                     OperationalTaskStatus @default(planned)
+  title                      String?
+  description                String?
+  priority                   String                @default("normal")
+  dueAt                      DateTime              @map("due_at")
+  assignedIdentityId         String?               @map("assigned_identity_id")
+  estimatedCostSatang        Int?                  @map("estimated_cost_satang")
+  actualCostSatang           Int?                  @map("actual_cost_satang")
+  blocksInventory            Boolean               @default(false) @map("blocks_inventory")
+  startedAt                  DateTime?             @map("started_at")
+  inspectedAt                DateTime?             @map("inspected_at")
+  readyAt                    DateTime?             @map("ready_at")
+  completedAt                DateTime?             @map("completed_at")
+  notes                      String?
+
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit            Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assignee        Identity? @relation("operationalTaskAssignee", fields: [assignedIdentityId], references: [id], onDelete: SetNull)
+  operatingSpace  OperatingSpace? @relation(fields: [operatingSpaceId], references: [id], onDelete: SetNull)
+  assignedTeam    OperatingTeam? @relation(fields: [assignedTeamId], references: [id], onDelete: SetNull)
+  preventivePlan  PreventiveMaintenancePlan? @relation(fields: [preventiveMaintenancePlanId], references: [id], onDelete: SetNull)
+  media           OperationalTaskMedia[]
+
+  @@unique([bookingId, taskType])
+  @@index([projectId, status, dueAt])
+  @@index([unitId, status, dueAt])
+  @@index([assignedIdentityId, status, dueAt])
+  @@index([operatingSpaceId, status, dueAt])
+  @@index([assignedTeamId, status, dueAt])
+  @@index([preventiveMaintenancePlanId, dueAt])
+  @@map("operational_task")
+}
+
+model OperationalTaskMedia {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  operationalTaskId String @map("operational_task_id")
+  mediaAssetId      String @map("media_asset_id")
+  sortOrder         Int    @default(0) @map("sort_order")
+
+  task  OperationalTask @relation(fields: [operationalTaskId], references: [id], onDelete: Cascade)
+  media MediaAsset      @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@unique([operationalTaskId, mediaAssetId])
+  @@index([mediaAssetId])
+  @@map("operational_task_media")
+}
+
+model PreventiveMaintenancePlan {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId       String              @map("operating_space_id")
+  projectId              String?             @map("project_id")
+  unitId                 String?             @map("unit_id")
+  assignedTeamId         String?             @map("assigned_team_id")
+  assignedIdentityId     String?             @map("assigned_identity_id")
+  taskType               OperationalTaskType @default(preventive_maintenance) @map("task_type")
+  title                  String
+  description            String?
+  frequencyDays          Int                 @map("frequency_days")
+  nextDueAt              DateTime            @map("next_due_at")
+  lastGeneratedAt        DateTime?           @map("last_generated_at")
+  estimatedCostSatang    Int?                @map("estimated_cost_satang")
+  blocksInventory        Boolean             @default(false) @map("blocks_inventory")
+  active                 Boolean             @default(true)
+
+  operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  project        Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unit           Unit?          @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  assignedTeam   OperatingTeam? @relation(fields: [assignedTeamId], references: [id], onDelete: SetNull)
+  assignee       Identity?      @relation("preventivePlanAssignee", fields: [assignedIdentityId], references: [id], onDelete: SetNull)
+  tasks          OperationalTask[]
+
+  @@index([operatingSpaceId, active, nextDueAt])
+  @@index([unitId, active, nextDueAt])
+  @@map("preventive_maintenance_plan")
 }
 
 model Ticket {
@@ -3611,4 +3773,101 @@ model UnitAccessInstruction {
   unit Unit @relation(fields:[unitId], references:[id], onDelete:Cascade, onUpdate:NoAction)
   updatedBy Identity @relation(fields:[updatedById], references:[id], onDelete:NoAction, onUpdate:NoAction)
   @@map("unit_access_instruction")
+}
+
+
+model OperatingSpace {
+  reservationGroups ReservationGroup[]
+  operationalTasks OperationalTask[]
+  preventiveMaintenancePlans PreventiveMaintenancePlan[]
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  key            String @unique
+  name           String
+  organizationId String @map("organization_id")
+  timezone       String @default("Asia/Bangkok")
+  status         String @default("active")
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  units        OperatingSpaceUnit[]
+  members      OperatingSpaceMember[]
+  teams        OperatingTeam[]
+
+  @@index([organizationId, status])
+  @@map("operating_space")
+}
+
+model OperatingSpaceUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String   @map("operating_space_id")
+  unitId           String   @map("unit_id")
+  active           Boolean  @default(true)
+  startsOn         DateTime @default(now()) @map("starts_on")
+  endsOn           DateTime? @map("ends_on")
+
+  operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  unit           Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingSpaceId, unitId])
+  @@index([unitId, active])
+  @@map("operating_space_unit")
+}
+
+model OperatingSpaceMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String   @map("operating_space_id")
+  identityId       String   @map("identity_id")
+  capabilities     String[] @default([])
+  active           Boolean  @default(true)
+
+  operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  identity       Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingSpaceId, identityId])
+  @@index([identityId, active])
+  @@map("operating_space_member")
+}
+
+model OperatingTeam {
+  operationalTasks OperationalTask[]
+  preventiveMaintenancePlans PreventiveMaintenancePlan[]
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  operatingSpaceId String @map("operating_space_id")
+  name             String
+  teamType         String @map("team_type")
+  active           Boolean @default(true)
+
+  operatingSpace OperatingSpace       @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
+  members        OperatingTeamMember[]
+
+  @@unique([operatingSpaceId, name])
+  @@index([operatingSpaceId, teamType, active])
+  @@map("operating_team")
+}
+
+model OperatingTeamMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  operatingTeamId String @map("operating_team_id")
+  identityId      String @map("identity_id")
+  active          Boolean @default(true)
+
+  operatingTeam OperatingTeam @relation(fields: [operatingTeamId], references: [id], onDelete: Cascade)
+  identity      Identity      @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([operatingTeamId, identityId])
+  @@index([identityId, active])
+  @@map("operating_team_member")
 }

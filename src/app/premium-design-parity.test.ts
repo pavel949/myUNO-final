@@ -26,25 +26,91 @@ describe('premium design-system surface parity', () => {
   it('exposes the benchmark-aligned public discovery surfaces', () => {
     const navbar = source('src/components/Navbar.tsx');
     const footer = source('src/components/Footer.tsx');
-    for (const route of ['/search', '/homes?intent=rent', '/homes?intent=buy', '/sell', '/projects', '/services']) {
+    for (const route of ['/homes?intent=buy', '/search', '/sell', '/rent-out', '/manage']) {
       expect(navbar).toContain(route);
     }
+    expect(navbar).toContain('/homes?intent=rent');
+    expect(navbar).toContain('/projects');
+    expect(navbar).toContain('/services');
     expect(navbar).toContain('/areas');
     expect(footer).toContain('/areas');
+    expect(navbar).toContain('/desks');
+    expect(footer).toContain('/desks');
+    expect(source('src/app/(public)/desks/page.tsx')).toContain('GLOBAL_DESKS');
+    expect(source('src/app/(public)/desks/[slug]/page.tsx')).toContain('getGlobalDesk');
     expect(source('src/app/areas/page.tsx')).toContain('listBrowsableAreas(prisma)');
     expect(source('src/app/areas/[slug]/page.tsx')).toContain('getAreaForBrowse(prisma');
     expect(source('src/app/(public)/help/page.tsx')).toContain("'/tickets'");
+    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('/property/onboard?kind=home&offers=short_stay,monthly,yearly');
+    expect(source('src/app/(public)/sell/page.tsx')).toContain('/property/onboard?offers=sale');
+    expect(source('src/app/(public)/rent-out/page.tsx')).toContain('href="/manage"');
+    expect(source('src/app/(public)/manage/page.tsx')).toContain('href="#lead-form"');
+    const onboardPage = source('src/app/property/onboard/page.tsx');
+    expect(onboardPage).toContain("params.set('offers'");
+    expect(onboardPage).toContain("params.set('operatingModel'");
     expect(source('src/app/(public)/projects/[slug]/passport/page.tsx')).toContain('getPublicProjectPassport(prisma');
   });
 
   it('keeps the homepage conversion sequence grounded in canonical data', () => {
     const home = source('src/app/(public)/page.tsx');
-    expect(home).toContain('listPublicProjects()');
-    expect(home).toContain('listPublicCommercialHomes(prisma)');
-    expect(home).toContain('listPublicMarketplaceServices(prisma, locale');
-    expect(home).toContain("landing.start.title");
-    expect(home).toContain("href: '/sell'");
+    expect(home).toContain('getPublicHomepageData(locale)');
+    const readModel = source('src/modules/home/public-homepage.service.ts');
+    expect(readModel).toContain('listPublicProjects(locale)');
+    expect(readModel).toContain('listPublicCommercialHomes(prisma)');
+    expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
+    expect(home).not.toContain('id="start-heading"');
+    const discovery = source('src/components/DiscoverySearch.tsx');
+    // Consumer search is deliberately Stay / Monthly / Buy; supplier intents live beside it on the homepage.
+    expect(discovery).toContain("{ id: 'stay', title: labels.stay }");
+    expect(discovery).toContain("{ id: 'monthly', title: labels.monthly }");
+    expect(discovery).toContain("{ id: 'buy', title: labels.buy }");
+    expect(discovery).toContain("router.push('/homes?' + params.toString())");
+    expect(home).toContain('href="/sell"');
+    expect(home).toContain('href="/rent-out"');
+    expect(home).toContain('href="/manage"');
+    expect(home).toContain("landing.units.title");
+    expect(home).toContain("landing.areas.title");
+    expect(home).toContain('GLOBAL_DESKS.map');
     expect(home).not.toContain('bg-white');
+  });
+
+  it('keeps the homepage on the canonical typography, width and colour system', () => {
+    const home = source('src/app/(public)/page.tsx');
+    const search = source('src/components/DiscoverySearch.tsx');
+    const footer = source('src/components/Footer.tsx');
+    const globals = source('src/app/globals.css');
+    const tailwind = source('tailwind.config.ts');
+
+    expect(home).toContain('max-w-content');
+    expect(home).toContain('text-display-hero');
+    expect(home).toContain('md:text-display-hero-lg');
+    expect(home).not.toContain('max-w-7xl');
+    expect(home).not.toContain('text-[clamp(');
+    expect(home).not.toMatch(/\/(?:15|18|62|68|88)(?=[\"'\s])/);
+    expect(search).not.toContain('bg-white');
+    expect(footer).toContain('bg-brand-deep');
+    expect(footer).not.toContain('bg-text-ink');
+    expect(globals).toContain("html[lang='ru']");
+    expect(globals).toContain("html[lang='th']");
+    expect(tailwind).toContain("'var(--font-display-active)'");
+  });
+
+  it('keeps Vacation Rental and MC operations on one connected UX model', () => {
+    const home = source('src/app/(public)/page.tsx');
+    const rentOut = source('src/app/(public)/rent-out/page.tsx');
+    const mc = source('src/app/mc/client.tsx');
+
+    expect(home).toContain("landing.vacation.title");
+    expect(home).toContain('href="/rent-out"');
+    expect(rentOut).toContain('copy.goalShort');
+    expect(rentOut).toContain('copy.howEligibility');
+    expect(rentOut).toContain('/property/onboard?kind=home&offers=short_stay,monthly,yearly');
+
+    expect(mc).toContain('/mc/calendar?projectId=');
+    expect(mc).toContain('/ops/tasks?mc=1');
+    expect(mc).toContain('reservationView');
+    expect(mc).not.toContain('MonthHeatStrip');
+    expect(mc).not.toContain("activeTab === 'calendar'");
   });
 
   it('keeps list and map search on one canonical search contract', () => {
@@ -79,6 +145,9 @@ describe('premium design-system surface parity', () => {
     const sitemap = source('src/app/sitemap.ts');
     expect(sitemap).toContain('${base}/help');
     expect(sitemap).toContain('/passport');
+    expect(sitemap).toContain('${base}/desks');
+    expect(sitemap).toContain('${base}/rent-out');
+    expect(sitemap).toContain('${base}/manage');
   });
 
   it('keeps seller intake on the shared lead pipeline rather than a second CRM', () => {

@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { updateUnit, getUnitDetail } from '@/modules/projects';
 import { can } from '@/modules/core';
@@ -29,10 +30,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     requiredAccess: 'allow',
     resource: { projectId: context.unit.projectId, unitId: context.unit.id },
   });
-  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const selfListing = await hasSelfListingAccess(context.user.identityId, params.id);
+  if (!allowed && !selfListing) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const isMc = context.user.roles.some((role) => role.role === 'mc_member');
   const hasStaff = context.user.roles.some((role) => role.role === 'staff_ops' && role.projectId === context.unit.projectId && (!role.unitId || role.unitId === params.id));
-  if (!context.identity.isAdmin && !hasStaff && (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
+  if (!context.identity.isAdmin && !selfListing && !hasStaff && (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

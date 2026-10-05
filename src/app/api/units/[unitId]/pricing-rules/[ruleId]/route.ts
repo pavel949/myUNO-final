@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -36,7 +37,7 @@ export async function DELETE(
     requiredAccess: 'allow',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed) {
+  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

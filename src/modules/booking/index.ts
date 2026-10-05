@@ -101,6 +101,12 @@ export {
 } from './revenue-tariff-engine';
 
 export {
+  createReservationGroup,
+  attachBookingToReservationGroup,
+  removeBookingFromReservationGroup,
+} from './reservation-group.service';
+
+export {
   projectCalendar,
   projectCalendarCell,
   calendarDays,

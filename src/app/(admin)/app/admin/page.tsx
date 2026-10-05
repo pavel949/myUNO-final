@@ -34,8 +34,8 @@ export default async function AdminDashboardPage() {
   );
 
   const labels = await getLabels({
-    'admin.dashboard.title': 'Portfolio overview',
-    'admin.dashboard.attention_title': 'Needs attention',
+    'admin.dashboard.title': 'Needs attention',
+    'admin.dashboard.attention_title': 'Exceptions requiring action',
     'admin.dashboard.attention_hint': 'Open the source workspace to resolve each item. Counts are platform-wide.',
     'admin.dashboard.pending_payment_action': 'Bookings awaiting payment',
     'admin.dashboard.open_tickets_action': 'Active guest and property tickets',

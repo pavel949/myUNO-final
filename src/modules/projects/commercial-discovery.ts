@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
+import { assessGalleryReadiness } from '@/modules/media/public-readiness';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -11,15 +12,37 @@ export type HomeIntent = 'buy' | 'rent';
 export interface PublicCommercialHome {
   id: string;
   name: string;
-  project: { name: string; slug: string };
+  project: { id: string; name: string; slug: string; areaSlug: string | null };
+  unitType: 'villa' | 'condo' | 'townhouse';
   bedrooms: number;
   bathrooms: number;
   sizeSqm: number | null;
   imageUrl: string | null;
+  images: string[];
   intents: HomeIntent[];
+  priceThb: Partial<Record<HomeIntent, number>>;
 }
 
 const kinds = ['sale', 'long_term_rental'];
+
+export function publicOfferingPriceThb(
+  offeringType: string,
+  pricingTerms: unknown,
+): { intent: HomeIntent; amountThb: number } | null {
+  if (!pricingTerms || typeof pricingTerms !== 'object' || Array.isArray(pricingTerms)) return null;
+  const terms = pricingTerms as Record<string, unknown>;
+  const numeric = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  if (offeringType === 'sale') {
+    const amount = numeric(terms.askingPriceThb);
+    return amount ? { intent: 'buy', amountThb: amount } : null;
+  }
+  if (offeringType === 'long_term_rental') {
+    const amount = numeric(terms.monthlyRentThb) ?? numeric(terms.monthlyThb);
+    return amount ? { intent: 'rent', amountThb: amount } : null;
+  }
+  return null;
+}
 type Credential = {
   credentialType: string; status: string; verificationStatus: string;
   evidenceMediaId: string | null; expiryDate: Date | null; effectiveDate: Date | null;
@@ -48,22 +71,42 @@ export function eligiblePublicHomeIntents(input: {
   return result;
 }
 
-export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeIntent, unitId?: string): Promise<PublicCommercialHome[]> {
+export async function listPublicCommercialHomes(
+  db: PrismaClient,
+  intent?: HomeIntent,
+  unitId?: string,
+  projectId?: string,
+): Promise<PublicCommercialHome[]> {
   const sourceExcluded = new Set(await allExcludedSourceControlledUnitIds(db));
   const rows = await db.unit.findMany({
     where: {
       ...(unitId ? { id: unitId } : {}),
+      ...(projectId ? { projectId } : {}),
       status: 'live', assetStatus: { not: 'suspended' },
       project: { status: 'live' },
       commercialOfferings: { some: { status: 'active', offeringType: { in: kinds } } },
-      OR: [{ coverMediaId: { not: null } }, { media: { some: {} } }],
+      // Exact sale/lease inventory must carry its own truthful gallery. The
+      // detailed readiness check below enforces cover membership and photo
+      // quality; this coarse filter only avoids loading obviously empty rows.
+      coverMediaId: { not: null },
+      media: { some: {} },
     },
     select: {
-      id: true, name: true, bedrooms: true, bathrooms: true, sizeSqm: true,
+      id: true, name: true, unitType: true, bedrooms: true, bathrooms: true, sizeSqm: true,
       permittedUseConfirmedAt: true,
-      project: { select: { name: true, slug: true } },
-      coverMedia: { select: { storageKey: true } },
-      media: { take: 1, orderBy: { sort: 'asc' }, select: { media: { select: { storageKey: true } } } },
+      project: { select: { id: true, name: true, slug: true, area: { select: { slug: true } } } },
+      coverMediaId: true,
+      coverMedia: {
+        select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+      },
+      media: {
+        orderBy: { sort: 'asc' },
+        include: {
+          media: {
+            select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
+          },
+        },
+      },
       regulatoryCredentials: { select: {
         credentialType: true, status: true, verificationStatus: true,
         evidenceMediaId: true, expiryDate: true, effectiveDate: true,
@@ -72,14 +115,20 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       engagements: { select: { status: true, mandateMediaId: true, startsOn: true, endsOn: true } },
       commercialOfferings: {
         where: { offeringType: { in: kinds } },
-        select: { offeringType: true, status: true },
+        select: { offeringType: true, status: true, pricingTerms: true },
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-    take: unitId ? 1 : 200,
+    take: unitId ? 1 : projectId ? 100 : 200,
   });
   const now = new Date();
   return rows.flatMap(row => {
+    const media = assessGalleryReadiness({
+      coverMediaId: row.coverMediaId,
+      links: row.media,
+    });
+    if (!media.ready) return [];
+
     const intents = eligiblePublicHomeIntents({
       credentials: row.regulatoryCredentials,
       permittedUseConfirmedAt: row.permittedUseConfirmedAt,
@@ -89,11 +138,26 @@ export async function listPublicCommercialHomes(db: PrismaClient, intent?: HomeI
       sourceBookingOwned: sourceExcluded.has(row.id),
     }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
+    const priceThb: Partial<Record<HomeIntent, number>> = {};
+    for (const offering of row.commercialOfferings) {
+      if (offering.status !== 'active') continue;
+      const normalized = publicOfferingPriceThb(offering.offeringType, offering.pricingTerms);
+      if (normalized) priceThb[normalized.intent] = normalized.amountThb;
+    }
     return [{
-      id: row.id, name: row.name, project: row.project,
-      bedrooms: row.bedrooms, bathrooms: row.bathrooms, sizeSqm: row.sizeSqm,
-      imageUrl: row.coverMedia?.storageKey ?? row.media[0]?.media.storageKey ?? null,
+      id: row.id,
+      name: row.name,
+      project: { id: row.project.id, name: row.project.name, slug: row.project.slug, areaSlug: row.project.area?.slug ?? null },
+      unitType: row.unitType,
+      bedrooms: row.bedrooms,
+      bathrooms: row.bathrooms,
+      sizeSqm: row.sizeSqm,
+      imageUrl: media.coverUrl,
+      images: media.coverUrl
+        ? [media.coverUrl, ...media.urls.filter((url) => url !== media.coverUrl)]
+        : media.urls,
       intents,
+      priceThb,
     }];
   });
 }

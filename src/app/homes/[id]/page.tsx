@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
@@ -29,6 +29,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
     'homes.detail.buy': 'Purchase enquiry',
     'homes.detail.rent': 'Long-term rental enquiry',
     'homes.detail.legal': 'Listing authority has been reviewed for this commercial mode. Legal title, contract and transaction details must be confirmed during due diligence.',
+    'homes.detail.show_all_photos': 'Show all {count} photos',
   });
   const inquiry = (intent === 'buy' ? labels['homes.detail.inquiry.buy'] : labels['homes.detail.inquiry.rent'])+
     ': '+home.name+' / '+home.project.name+' ('+home.id+'). '+labels['homes.detail.inquiry.prompt'];
@@ -37,8 +38,13 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <Link href={'/homes?intent='+intent} className="text-small font-semibold text-brand-andaman">← {labels['homes.detail.back']}</Link>
       <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman">{home.project.name}</p>
       <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{home.name}</h1>
-      {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={1200} height={760}
-        className="mt-24 aspect-[16/10] w-full rounded-xl object-cover"/> : null}
+      <div className="mt-24">
+        <UnitPhotoMosaic
+          images={home.images}
+          alt={home.name}
+          showAllLabel={labels['homes.detail.show_all_photos'].replace('{count}', String(home.images.length))}
+        />
+      </div>
       <div className="mt-24 grid grid-cols-2 gap-12 md:grid-cols-3">
         <div className="rounded-lg border border-border-line bg-surface-paper p-20">
           <p className="text-small text-text-secondary">{labels['homes.detail.bedrooms']}</p><strong>{home.bedrooms}</strong>

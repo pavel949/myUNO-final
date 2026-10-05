@@ -1,6 +1,6 @@
 # myUNO Managed Portfolio OS — canonical operating contract
 
-Status: architecture and initial read-only manager calendar. The implementation at /mc/portfolio is the first slice, not a claim of complete PMS readiness.
+Status: shared read-only operational calendar implemented at /ops/calendar/board. Legacy /mc/calendar and /mc/portfolio entry points redirect into this projection; canonical unit-level availability/pricing screens remain the only write path. This is not a claim that every PMS overlay or production cutover gate is complete.
 
 ## The operating model
 
@@ -45,20 +45,29 @@ The authoritative sellability predicate is the existing booking/availability ser
 6. Team: organization, project and optionally unit scope; explicit permission matrix and actor audit. Owner and external manager onboarding does not grant admin.
 7. Reconciliation: occupancy, paid and unpaid, booking-vs-block conflicts, imports-vs-direct bookings, OTA sync lag, unmapped units, stale rates, mandate expiry.
 
-## Specific existing gaps at audit (main 559fdc90, 2026-09-30)
+## Current implementation status (2026-10-02)
 
-- /mc/calendar is a unit picker, not a portfolio grid. /ops/calendar is likewise a category/unit picker. Existing /mc client derives a heat strip from a limited 50-booking list and browser-local dates: that is an overview visual, **not** authoritative occupancy.
-- /mc dashboard resolves exactly one project+organization pair at a time. Managers of multiple condominiums cannot see their full assigned portfolio in one calendar.
-- Unit calendar already has AvailabilityPricingPanel, iCal conflict and integration status; reuse it as the mutation path. Do not introduce a second editor.
-- Availability's existing check considers BlockedDate, confirmed/checked-in Booking, and unexpired pending_payment hold. The new portfolio projection distinguishes requests and historical occupancy explicitly.
-- Legacy nightly price resolution uses Unit.baseNightlyThb/category config, while onboarding exposes InventoryCategory/RatePlan. Final rate parity and a single effective quote still need a separate integration and acceptance test.
-- RoleAssignment is checked again at read time on the new page, paired to active UnitEngagement. This protects against stale session scopes.
+- /ops/calendar and both MC calendar entry points converge on the same 7/14/30-day projection over canonical Booking and BlockedDate rows.
+- MC mode can span every authorized project while still deriving each visible unit from a matching active RoleAssignment + via-management-company UnitEngagement; project switching does not widen unit authority.
+- Desktop uses the sticky horizontal project/category/unit grid; mobile defaults to a day agenda instead of rendering a 30-column grid.
+- Unit calendar already has AvailabilityPricingPanel, iCal conflict and integration status and remains the mutation path; the shared portfolio view stays read-only.
+- Availability continues to treat BlockedDate, confirmed/checked-in Booking and unexpired pending_payment holds as the sellability inputs; requests and historical occupancy remain visually distinct.
+- Remaining product work is narrower: housekeeping/readiness overlays, effective-rate parity with the canonical quote engine, channel-sync health/ARI evidence, and the full multi-role production smoke matrix.
+- RoleAssignment is checked again at read time, paired to active UnitEngagement, protecting against stale session scope.
+
+## PMS release slice — readiness, rates and channel health (2026-10-02)
+
+- **Housekeeping/readiness:** checkout atomically creates canonical `OperationalTask` rows for turnover cleaning and inspection. Open required turnover tasks block the next check-in. The unified calendar projects readiness; writes happen in the scoped `/ops/tasks` queue.
+- **Effective daily rate:** the calendar calls `computeCanonicalCalendarRates`, which delegates to the same `computeCanonicalPriceBreakdown` used by booking. The calendar does not own a rate formula or writable rate table.
+- **Channel health:** `ChannelMapping + IntegrationAccount` are projected as availability/rates/restrictions capabilities. iCal is availability-import only and is never labelled ARI. A channel is `healthy` only when a trusted adapter has written `syncState=ari_push`, all A/R/I capabilities are declared, and the last successful sync is fresh.
+- **External boundary:** no OTA ARI provider is fabricated by myUNO. Until a real provider adapter/credentials write verified `ari_push` state, the PMS remains fail-closed and warns operators that external rates/restrictions/inventory require manual handling.
+- **Security:** `operational_task` is server-only, RLS-enabled, and denied to PUBLIC/anon/authenticated Data API roles. MC task reads/writes are further bounded to actively managed units.
 
 ## Delivery gates
 
-A. Initial slice: scoped cross-project read-only occupancy grid under /mc/portfolio, canonical booking/block/rule projections, links into existing unit editor; no schema migration or booking mutation.
-B. Shared server PortfolioScope query and guards for staff/MC; director cross-portfolio grants; explicit unit access for condo manager.
-C. Shared calendar data contract powering /mc and /ops, reservations drilldowns, category grid, full-day mobile mode and realtime refresh. Decommission booking-list heat-strip as an authority.
+A. Complete: shared cross-project read-only occupancy grid, canonical booking/block projection and links into existing unit editor; no second calendar store.
+B. Complete for calendar reads: staff/MC scope guards and cross-project MC projection with per-unit engagement enforcement.
+C. Complete for calendar shell: one shared /mc + /ops data contract, reservation drilldowns for staff, category/unit filters, 7/14/30 ranges, mobile day agenda and periodic/event-cursor refresh. Legacy MC calendar surfaces now redirect to it.
 D. Task/readiness overlays and writes through existing stay/Ticket/BlockedDate workflows; audit and conflict resolution.
 E. Pricing effective-rate parity and channel-sync health; test across all tariffs, currencies, promotions and unit/category rates.
 F. QA with two disjoint managers, owner, reception and admin, including cross-scope denial, expired hold, end-exclusive checkout, overnight timezone, concurrent writes, OTA conflict, refund and check-in/out. Production activation only after migration/reconciliation and live smoke tests.

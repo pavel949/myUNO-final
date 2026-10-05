@@ -1,3 +1,4 @@
+import { hasSelfListingAccess } from './supplierListingAccess';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
@@ -20,7 +21,8 @@ export async function managedMediaAccess(scope: { projectId: string; unitId?: st
   const mc = scope.unitId ? await hasManagedUnitMcAccess(user, {
     projectId: scope.projectId, unitId: scope.unitId,
   }) : false;
-  if (!user.isAdmin && !staff && !mc) {
+  const selfListing = scope.unitId ? await hasSelfListingAccess(user.identityId, scope.unitId) : false;
+  if (!user.isAdmin && !staff && !mc && !selfListing) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;
   }
   return { user } as const;
@@ -29,7 +31,7 @@ export async function managedMediaAccess(scope: { projectId: string; unitId?: st
 export async function assertPublicPhoto(mediaAssetId: unknown, actorId: string, isAdmin: boolean) {
   if (typeof mediaAssetId !== 'string' || !mediaAssetId) return false;
   const asset = await prisma.mediaAsset.findFirst({
-    where: { id: mediaAssetId, kind: 'photo', encrypted: false, mimeType: { in: ['image/jpeg', 'image/png', 'image/webp'] },
+    where: { id: mediaAssetId, kind: 'photo', encrypted: false, sizeBytes: { gt: 0 }, mimeType: { in: ['image/jpeg', 'image/png', 'image/webp'] },
       ...(!isAdmin ? { uploadedByIdentityId: actorId } : {}) },
     select: { id: true },
   });

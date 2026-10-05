@@ -15,6 +15,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
+import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,10 +92,10 @@ export default async function ProjectLandingPage({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
-    'project_page.styles.title': 'Three styles, one resort',
-    'project_page.categories.title': 'Villa categories',
+    'project_page.styles.generic_title': 'Property styles',
+    'project_page.categories.generic_title': 'Accommodation categories',
     'project_page.categories.from_night': 'from ฿{price} / night',
-    'project_page.categories.villas_count': '{count} villas',
+    'project_page.categories.homes_count': '{count} homes',
     'project_page.longstay.title': 'Long stays',
     'project_page.longstay.body': 'Stay a month or a season: flat monthly rates for 28+ nights, with housekeeping and concierge included.',
     'project_page.longstay.from_month': 'from ฿{price} / month',
@@ -107,7 +108,14 @@ export default async function ProjectLandingPage({
     'project_page.units.guests': 'up to {count} guests',
     'project_page.units.per_night': '฿{price} / night',
     'project_page.units.view': 'View home →',
+    'project_page.units.representative_media': 'Representative room-type photos',
     'project_page.units.empty': 'No accommodation is currently available for online booking.',
+    'project_page.commercial.title': 'Ways to own or live here',
+    'project_page.commercial.body': 'Verified homes appear here only when the relevant listing authority and property media are ready.',
+    'project_page.commercial.buy': 'Homes for sale',
+    'project_page.commercial.rent': 'Long-term rentals',
+    'project_page.commercial.count': '{count} available',
+    'project_page.commercial.view': 'View available homes →',
     'project_page.owner_intake.title': 'Own or manage a home here?',
     'project_page.owner_intake.body': 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
     'project_page.owner_intake.cta': 'Add your home →',
@@ -160,7 +168,7 @@ export default async function ProjectLandingPage({
     ...serviceCategoryLabels,
   });
 
-  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine] = await Promise.all([
+  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = await Promise.all([
     resolveKey(project.areaLabelKey),
     resolveKey(project.descriptionKey),
     resolveKey(project.handbookKey),
@@ -168,7 +176,11 @@ export default async function ProjectLandingPage({
     resolveKey(`project.${project.slug}.shuttle_schedule`),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
     resolveKey(`project.${project.slug}.licence`),
+    listPublicCommercialHomes(prisma, undefined, undefined, project.id).catch(() => []),
   ]);
+  const projectCommercialHomes = allCommercialHomes;
+  const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
+  const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
 
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
@@ -243,7 +255,8 @@ export default async function ProjectLandingPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': project.projectType === 'resort' || project.projectType === 'villa_estate' ? 'Resort' :
-      project.projectType === 'hotel' ? 'Hotel' : 'LodgingBusiness',
+      project.projectType === 'hotel' ? 'Hotel' :
+        project.projectType === 'condominium' ? 'ApartmentComplex' : 'Place',
     name: project.name,
     address: project.address,
     ...(hasVerifiedPin ? { geo: {
@@ -316,6 +329,53 @@ export default async function ProjectLandingPage({
         </div>
       </section>}
 
+      {(buyHomeCount > 0 || rentHomeCount > 0) ? (
+        <section className="mx-auto max-w-6xl px-24 py-40">
+          <div className="rounded-2xl border border-border-line bg-surface-paper p-24 md:p-32">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink">
+              {labels['project_page.commercial.title']}
+            </h2>
+            <p className="mt-8 max-w-3xl text-body text-text-secondary">
+              {labels['project_page.commercial.body']}
+            </p>
+            <div className="mt-24 grid gap-16 md:grid-cols-2">
+              {buyHomeCount > 0 ? (
+                <Link
+                  href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
+                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                >
+                  <p className="font-display text-heading-3 font-semibold text-text-ink">
+                    {labels['project_page.commercial.buy']}
+                  </p>
+                  <p className="mt-8 text-small text-text-secondary">
+                    {labels['project_page.commercial.count'].replace('{count}', String(buyHomeCount))}
+                  </p>
+                  <p className="mt-12 text-small font-semibold text-brand-andaman">
+                    {labels['project_page.commercial.view']}
+                  </p>
+                </Link>
+              ) : null}
+              {rentHomeCount > 0 ? (
+                <Link
+                  href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
+                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                >
+                  <p className="font-display text-heading-3 font-semibold text-text-ink">
+                    {labels['project_page.commercial.rent']}
+                  </p>
+                  <p className="mt-8 text-small text-text-secondary">
+                    {labels['project_page.commercial.count'].replace('{count}', String(rentHomeCount))}
+                  </p>
+                  <p className="mt-12 text-small font-semibold text-brand-andaman">
+                    {labels['project_page.commercial.view']}
+                  </p>
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}
       {project.categories.length > 0 ? (
@@ -323,7 +383,7 @@ export default async function ProjectLandingPage({
           {styleKeys.length > 1 ? (
             <>
               <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-                {labels['project_page.styles.title']}
+                {labels['project_page.styles.generic_title']}
               </h2>
               <div className="flex flex-wrap gap-16 mb-40">
                 {styleKeys.map((styleKey) => (
@@ -338,7 +398,7 @@ export default async function ProjectLandingPage({
             </>
           ) : null}
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
-            {labels['project_page.categories.title']}
+            {labels['project_page.categories.generic_title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
             {project.categories.map((category) => (
@@ -368,7 +428,7 @@ export default async function ProjectLandingPage({
                   </p>
                 ) : null}
                 <p className="text-small text-text-secondary mb-12">
-                  {labels['project_page.categories.villas_count'].replace(
+                  {labels['project_page.categories.homes_count'].replace(
                     '{count}',
                     String(category.unitCount)
                   )}
@@ -441,7 +501,7 @@ export default async function ProjectLandingPage({
             {project.units.map((unit) => (
               <Link
                 key={unit.id}
-                href={`/units/${unit.id}`}
+                href={`/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`}
                 className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
               >
                 {unit.coverUrl ? (
@@ -456,6 +516,11 @@ export default async function ProjectLandingPage({
                   <div className="w-full h-44 bg-surface-ivory" />
                 )}
                 <div className="p-24">
+                  {unit.photoScope === 'room_type' ? (
+                    <p className="mb-8 text-small font-medium text-brand-andaman">
+                      {labels['project_page.units.representative_media']}
+                    </p>
+                  ) : null}
                   <h3 className="text-heading-3 font-bold text-text-ink mb-8">{unit.name}</h3>
                   <p className="text-small text-text-secondary mb-12">
                     {labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms))}

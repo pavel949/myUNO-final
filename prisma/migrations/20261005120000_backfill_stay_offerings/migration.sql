@@ -15,7 +15,7 @@ INSERT INTO "commercial_offering" (
   "pricing_terms", "rules_and_policies", "ownership_tenure"
 )
 SELECT
-  gen_random_uuid()::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, u."id", 'short_stay', 'active',
+  gen_random_uuid()::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, u."id", 'short_term_stay', 'active',
   '{}'::jsonb, '{}'::jsonb, '{}'::jsonb
 FROM "unit" u
 WHERE u."status" = 'live'
